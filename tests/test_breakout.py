@@ -76,6 +76,52 @@ def test_executor_returns_state_patch_and_runner_applies_it():
     assert snapshot["buckets"][key]["available_usdt"] == 400.0
 
 
+def test_executor_exit_aggregates_contract_amount_not_usdt_notional():
+    class FakeClient:
+        def __init__(self):
+            self.calls = []
+
+        def create_exit_order(self, symbol, position_side, amount):
+            self.calls.append({
+                "symbol": symbol,
+                "position_side": position_side,
+                "amount": amount,
+            })
+            return {"order_id": "exit-1", "status": "filled", "amount": amount}
+
+    client = FakeClient()
+    executor = DemoExecutor(armed=True, client=client)
+    key = position_key("meanrev", "BTC-USDT-SWAP")
+    positions = [
+        {"status": "open", "side": "short", "notional_usdt": 100.0, "amount": 0.56},
+        {"status": "open", "side": "short", "notional_usdt": 100.0, "amount": 0.56},
+        {"status": "open", "side": "short", "notional_usdt": 100.0, "amount": 0.56},
+        {"status": "open", "side": "short", "notional_usdt": 100.0, "amount": 0.14},
+    ]
+    bucket = {
+        "initial_capital_usdt": 500.0,
+        "available_usdt": 100.0,
+        "allocated_usdt": 400.0,
+    }
+
+    result = executor.submit_exit_signal(
+        position_key=key,
+        symbol="BTC/USDT:USDT",
+        strategy="meanrev",
+        positions=positions,
+        reason="no_meanrev|exit_all",
+        bar_id=789,
+        bucket=bucket,
+        exit_side=None,
+    )
+
+    assert client.calls[0]["symbol"] == "BTC/USDT:USDT"
+    assert client.calls[0]["position_side"] == "short"
+    assert abs(client.calls[0]["amount"] - 1.82) < 1e-9
+    assert result.submitted is True
+    assert abs(result.venue_response["amount"] - 1.82) < 1e-9
+
+
 def test_executor_exit_releases_bucket_capital():
     executor = DemoExecutor(armed=False)
     key = position_key("meanrev", "SOL-USDT-SWAP")

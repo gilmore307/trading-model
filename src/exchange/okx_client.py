@@ -15,6 +15,17 @@ def exit_order_side(position_side: str) -> str:
     raise ValueError(f"Unsupported position side for exit order: {position_side}")
 
 
+def normalize_contract_amount(exchange: Any, execution_symbol: str, amount: float) -> float:
+    normalized = float(exchange.amount_to_precision(execution_symbol, amount))
+    market = exchange.market(execution_symbol)
+    min_amount = float((market.get("limits", {}).get("amount", {}) or {}).get("min") or 0)
+    if normalized < min_amount:
+        raise RuntimeError(
+            f"Refusing to submit {execution_symbol}: normalized amount {normalized} is below minimum {min_amount}"
+        )
+    return normalized
+
+
 class OkxClient:
     def __init__(self, settings: Settings):
         self.settings = settings
@@ -117,18 +128,20 @@ class OkxClient:
 
         self.ensure_markets_loaded()
         execution_symbol = self.settings.ccxt_symbol(symbol)
+        normalized_amount = normalize_contract_amount(self.exchange, execution_symbol, amount)
         order_side = exit_order_side(position_side)
         params = {
             "tdMode": "cross",
             "reduceOnly": True,
         }
-        order = self.exchange.create_order(execution_symbol, "market", order_side, amount, None, params)
+        order = self.exchange.create_order(execution_symbol, "market", order_side, normalized_amount, None, params)
         return {
             "symbol": symbol,
             "ccxt_symbol": execution_symbol,
             "position_side": position_side,
             "order_side": order_side,
-            "amount": amount,
+            "amount": normalized_amount,
+            "requested_amount": amount,
             "order_id": order.get("id"),
             "status": order.get("status"),
             "raw": order,
