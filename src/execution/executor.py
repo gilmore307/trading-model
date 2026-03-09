@@ -55,7 +55,11 @@ class DemoExecutor:
             "status": "open",
             "venue_order_id": None if venue_response is None else venue_response.get("order_id"),
             "venue_status": None if venue_response is None else venue_response.get("status"),
+            "venue_order_side": None if venue_response is None else venue_response.get("order_side"),
+            "venue_ccxt_symbol": None if venue_response is None else venue_response.get("ccxt_symbol"),
+            "requested_notional_usdt": None if venue_response is None else venue_response.get("notional_usdt"),
             "amount": None if venue_response is None else venue_response.get("amount"),
+            "requested_amount": None if venue_response is None else venue_response.get("amount"),
             "reference_price": None if venue_response is None else venue_response.get("reference_price"),
         }
         event = {
@@ -70,6 +74,12 @@ class DemoExecutor:
             "notional_usdt": order_size_usdt,
             "leverage": leverage,
             "venue_order_id": None if venue_response is None else venue_response.get("order_id"),
+            "venue_status": None if venue_response is None else venue_response.get("status"),
+            "venue_order_side": None if venue_response is None else venue_response.get("order_side"),
+            "venue_ccxt_symbol": None if venue_response is None else venue_response.get("ccxt_symbol"),
+            "requested_notional_usdt": None if venue_response is None else venue_response.get("notional_usdt"),
+            "executed_amount": None if venue_response is None else venue_response.get("amount"),
+            "reference_price": None if venue_response is None else venue_response.get("reference_price"),
         }
         updated_positions = list(existing_positions) + [position]
         state_patch = {
@@ -138,6 +148,10 @@ class DemoExecutor:
                     "exit_reason": reason,
                     "exit_order_id": None if venue_response is None else venue_response.get("order_id"),
                     "exit_status": None if venue_response is None else venue_response.get("status"),
+                    "exit_order_side": None if venue_response is None else venue_response.get("order_side"),
+                    "exit_ccxt_symbol": None if venue_response is None else venue_response.get("ccxt_symbol"),
+                    "exit_requested_amount": None if venue_response is None else venue_response.get("requested_amount"),
+                    "exit_amount": None if venue_response is None else venue_response.get("amount"),
                 })
             else:
                 updated_positions.append(position)
@@ -152,7 +166,13 @@ class DemoExecutor:
             "bar_id": bar_id,
             "mode": mode,
             "released_usdt": released_usdt,
+            "tracked_amount": total_amount,
             "venue_order_id": None if venue_response is None else venue_response.get("order_id"),
+            "venue_status": None if venue_response is None else venue_response.get("status"),
+            "venue_order_side": None if venue_response is None else venue_response.get("order_side"),
+            "venue_ccxt_symbol": None if venue_response is None else venue_response.get("ccxt_symbol"),
+            "requested_amount": None if venue_response is None else venue_response.get("requested_amount"),
+            "executed_amount": None if venue_response is None else venue_response.get("amount"),
         }
         state_patch = {
             "positions": {position_key: updated_positions},

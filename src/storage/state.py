@@ -50,19 +50,32 @@ class StateStore:
         migrated = {}
         for key, position in positions.items():
             if isinstance(position, list):
-                migrated[key] = position
+                migrated[key] = [self._normalize_position_fields(item, key) for item in position]
                 continue
             if ":" in key:
                 migrated[key] = [position]
                 continue
             new_key = f"breakout:{key}"
-            migrated[new_key] = [{
+            migrated[new_key] = [self._normalize_position_fields({
                 **position,
                 "position_key": new_key,
                 "strategy": position.get("strategy", "breakout"),
                 "symbol": position.get("symbol", key),
-            }]
+            }, new_key)]
         return migrated
+
+    def _normalize_position_fields(self, position: dict, key: str) -> dict:
+        normalized = dict(position)
+        normalized.setdefault("position_key", key)
+        normalized.setdefault("venue_order_side", None)
+        normalized.setdefault("venue_ccxt_symbol", normalized.get("symbol"))
+        normalized.setdefault("requested_notional_usdt", normalized.get("notional_usdt"))
+        normalized.setdefault("requested_amount", normalized.get("amount"))
+        normalized.setdefault("exit_order_side", None)
+        normalized.setdefault("exit_ccxt_symbol", normalized.get("symbol"))
+        normalized.setdefault("exit_requested_amount", normalized.get("exit_amount", normalized.get("amount")))
+        normalized.setdefault("exit_amount", None)
+        return normalized
 
     def _migrate_last_signals(self, last_signals: dict) -> dict:
         migrated = {}

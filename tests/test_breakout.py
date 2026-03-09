@@ -71,7 +71,10 @@ def test_executor_returns_state_patch_and_runner_applies_it():
     snapshot = apply_state_patch(snapshot, result.state_patch)
     assert result.mode == "dry_run"
     assert snapshot["positions"][key][0]["status"] == "open"
+    assert snapshot["positions"][key][0]["venue_order_side"] is None
+    assert snapshot["positions"][key][0]["requested_amount"] is None
     assert snapshot["last_signals"][key]["bar_id"] == 123
+    assert snapshot["history"][0]["venue_order_side"] is None
     assert snapshot["open_positions"] == 1
     assert snapshot["buckets"][key]["available_usdt"] == 400.0
 
@@ -87,7 +90,14 @@ def test_executor_exit_aggregates_contract_amount_not_usdt_notional():
                 "position_side": position_side,
                 "amount": amount,
             })
-            return {"order_id": "exit-1", "status": "filled", "amount": amount}
+            return {
+                "order_id": "exit-1",
+                "status": "filled",
+                "amount": amount,
+                "requested_amount": amount,
+                "order_side": "buy",
+                "ccxt_symbol": symbol,
+            }
 
     client = FakeClient()
     executor = DemoExecutor(armed=True, client=client)
@@ -120,6 +130,10 @@ def test_executor_exit_aggregates_contract_amount_not_usdt_notional():
     assert abs(client.calls[0]["amount"] - 1.82) < 1e-9
     assert result.submitted is True
     assert abs(result.venue_response["amount"] - 1.82) < 1e-9
+    snapshot = apply_state_patch({"positions": {}, "last_signals": {}, "history": [], "buckets": {}}, result.state_patch)
+    assert abs(snapshot["positions"][key][0]["exit_requested_amount"] - 1.82) < 1e-9
+    assert abs(snapshot["positions"][key][0]["exit_amount"] - 1.82) < 1e-9
+    assert snapshot["history"][0]["tracked_amount"] == client.calls[0]["amount"]
 
 
 def test_executor_exit_releases_bucket_capital():
@@ -168,6 +182,25 @@ def test_state_store_backfills_open_positions_and_buckets(tmp_path):
     snapshot = store.load()
     assert snapshot["open_positions"] == 1
     assert snapshot["buckets"]["breakout:BTC-USDT-SWAP"]["available_usdt"] == 400.0
+
+
+def test_state_store_normalizes_execution_metadata_fields(tmp_path):
+    store = StateStore(tmp_path / "state.json")
+    store.save({
+        "positions": {
+            "meanrev:BTC-USDT-SWAP": [{"status": "open", "side": "short", "symbol": "BTC/USDT:USDT", "amount": 0.14, "notional_usdt": 100.0}],
+        },
+        "last_signals": {},
+        "history": [],
+        "buckets": {},
+    })
+    snapshot = store.load()
+    pos = snapshot["positions"]["meanrev:BTC-USDT-SWAP"][0]
+    assert pos["venue_ccxt_symbol"] == "BTC/USDT:USDT"
+    assert pos["requested_amount"] == 0.14
+    assert pos["requested_notional_usdt"] == 100.0
+    assert pos["exit_requested_amount"] == 0.14
+    assert pos["exit_amount"] is None
 
 
 def test_state_store_migrates_legacy_symbol_only_positions(tmp_path):
