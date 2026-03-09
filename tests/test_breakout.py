@@ -1,0 +1,138 @@
+from src.execution.executor import DemoExecutor
+from src.risk.manager import RiskManager
+from src.runner.live_trader import apply_state_patch, ensure_bucket, position_key
+from src.storage.state import StateStore
+from src.strategy.breakout import BreakoutStrategy
+from src.strategy.meanrev import MeanReversionStrategy
+from src.strategy.pullback import PullbackStrategy
+
+
+def test_breakout_long_signal():
+    strategy = BreakoutStrategy(lookback=3)
+    candles = [
+        [0, 0, 10, 5, 8, 0],
+        [1, 0, 11, 6, 9, 0],
+        [2, 0, 12, 7, 10, 0],
+        [3, 0, 13, 8, 14, 0],
+    ]
+    signal = strategy.evaluate("BTC-USDT-SWAP", candles)
+    assert signal.side == "long"
+    assert signal.strategy == "breakout"
+
+
+def test_pullback_and_meanrev_frameworks_return_named_signals():
+    pullback = PullbackStrategy(lookback=3)
+    meanrev = MeanReversionStrategy(lookback=4, threshold=0.01)
+    candles = [
+        [0, 0, 10, 9, 9.5, 0],
+        [1, 0, 11, 10, 10.5, 0],
+        [2, 0, 12, 11, 11.5, 0],
+        [3, 0, 12, 10, 10.8, 0],
+        [4, 0, 12, 9, 9.6, 0],
+    ]
+    assert pullback.evaluate("ETH-USDT-SWAP", candles).strategy == "pullback"
+    assert meanrev.evaluate("ETH-USDT-SWAP", candles).strategy == "meanrev"
+
+
+def test_risk_blocks_duplicate_signal_for_open_position():
+    risk = RiskManager(max_open_positions=2, signal_cooldown_bars=12)
+    key = position_key("breakout", "BTC-USDT-SWAP")
+    snapshot = {
+        "positions": {
+            key: {"status": "open", "side": "long"},
+        },
+        "last_signals": {},
+        "history": [],
+        "buckets": {
+            key: {"initial_capital_usdt": 500.0, "available_usdt": 400.0, "allocated_usdt": 100.0},
+        },
+    }
+    decision = risk.allow_entry(snapshot=snapshot, position_key=key, side="long", bar_id=100, notional_usdt=100)
+    assert decision.allowed is False
+    assert decision.reason.startswith("position_already_open")
+
+
+def test_executor_returns_state_patch_and_runner_applies_it():
+    executor = DemoExecutor(armed=False)
+    key = position_key("breakout", "BTC-USDT-SWAP")
+    snapshot = {"positions": {}, "last_signals": {}, "history": [], "buckets": {}}
+    bucket = ensure_bucket(snapshot, key, "breakout", "BTC-USDT-SWAP", 500.0)
+    result = executor.submit_entry_signal(
+        position_key=key,
+        symbol="BTC-USDT-SWAP",
+        strategy="breakout",
+        side="long",
+        reason="breakout_high",
+        bar_id=123,
+        order_size_usdt=100,
+        bucket=bucket,
+    )
+    snapshot = apply_state_patch(snapshot, result.state_patch)
+    assert result.mode == "dry_run"
+    assert snapshot["positions"][key]["status"] == "open"
+    assert snapshot["last_signals"][key]["bar_id"] == 123
+    assert snapshot["open_positions"] == 1
+    assert snapshot["buckets"][key]["available_usdt"] == 400.0
+
+
+def test_executor_exit_releases_bucket_capital():
+    executor = DemoExecutor(armed=False)
+    key = position_key("meanrev", "SOL-USDT-SWAP")
+    position = {
+        "status": "open",
+        "side": "short",
+        "notional_usdt": 100.0,
+        "amount": 5.0,
+    }
+    bucket = {
+        "initial_capital_usdt": 500.0,
+        "available_usdt": 400.0,
+        "allocated_usdt": 100.0,
+    }
+    result = executor.submit_exit_signal(
+        position_key=key,
+        symbol="SOL-USDT-SWAP",
+        strategy="meanrev",
+        position=position,
+        reason="no_meanrev|exit_short",
+        bar_id=456,
+        bucket=bucket,
+    )
+    snapshot = apply_state_patch({"positions": {}, "last_signals": {}, "history": [], "buckets": {}}, result.state_patch)
+    assert snapshot["positions"][key]["status"] == "closed"
+    assert snapshot["buckets"][key]["available_usdt"] == 500.0
+    assert snapshot["open_positions"] == 0
+
+
+def test_state_store_backfills_open_positions_and_buckets(tmp_path):
+    store = StateStore(tmp_path / "state.json")
+    store.save({
+        "positions": {
+            "breakout:BTC-USDT-SWAP": {"status": "open", "side": "long"},
+            "pullback:ETH-USDT-SWAP": {"status": "closed", "side": "short"},
+        },
+        "last_signals": {},
+        "history": [],
+        "buckets": {
+            "breakout:BTC-USDT-SWAP": {"available_usdt": 400.0},
+        },
+    })
+    snapshot = store.load()
+    assert snapshot["open_positions"] == 1
+    assert snapshot["buckets"]["breakout:BTC-USDT-SWAP"]["available_usdt"] == 400.0
+
+
+def test_state_store_migrates_legacy_symbol_only_positions(tmp_path):
+    store = StateStore(tmp_path / "state.json")
+    (tmp_path / "state.json").write_text(
+        '{\n'
+        '  "positions": {"BTC-USDT-SWAP": {"status": "open", "side": "long", "notional_usdt": 100}},\n'
+        '  "last_signals": {"BTC-USDT-SWAP": {"side": "flat", "bar_id": 1, "reason": "legacy"}},\n'
+        '  "history": [{"type": "entry", "symbol": "BTC-USDT-SWAP", "side": "long"}]\n'
+        '}'
+    )
+    snapshot = store.load()
+    assert "breakout:BTC-USDT-SWAP" in snapshot["positions"]
+    assert "breakout:BTC-USDT-SWAP" in snapshot["last_signals"]
+    assert snapshot["history"][0]["position_key"] == "breakout:BTC-USDT-SWAP"
+    assert snapshot["buckets"]["breakout:BTC-USDT-SWAP"]["allocated_usdt"] == 100.0
