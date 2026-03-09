@@ -9,6 +9,7 @@ from src.review.windows import rolling_windows
 ROOT = Path('/root/.openclaw/workspace/projects/okx-trading')
 LOGS = ROOT / 'logs'
 REPORTS = ROOT / 'reports'
+CHANGES = REPORTS / 'changes'
 REPORTS.mkdir(parents=True, exist_ok=True)
 
 
@@ -60,6 +61,10 @@ def main() -> None:
         },
         'health': health,
         'snapshot': snapshot,
+        'workflow': load_json(CHANGES / 'latest-review-workflow.json'),
+        'usdt_reset_plan': load_json(CHANGES / 'prepare-usdt-reset-plan.json'),
+        'latest_weekly_reset': load_json(CHANGES / 'latest-weekly-reset.json'),
+        'latest_parameter_change': load_json(CHANGES / 'latest-parameter-change.json'),
         'state_summary': {
             'open_positions': None if state is None else state.get('open_positions', 0),
             'bucket_count': 0 if state is None else len(state.get('buckets', {})),
