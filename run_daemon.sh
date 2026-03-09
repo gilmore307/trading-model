@@ -14,6 +14,7 @@ while true; do
   trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
   mode=$(python scripts_mode.py | python -c 'import sys,json; print(json.load(sys.stdin)["mode"])')
   echo "[$ts] cycle_start mode=$mode" | tee -a logs/service/daemon.log
+  python -m src.review.reconcile_state 2>&1 | tee -a logs/service/daemon.log || true
   if [ "$mode" = "review" ]; then
     if python -m src.runner.live_trader 2>&1 | tee -a logs/service/daemon.log; then
       echo "[$ts] cycle_ok mode=review" | tee -a logs/service/daemon.log
