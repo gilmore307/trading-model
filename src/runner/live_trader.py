@@ -20,6 +20,104 @@ from src.strategy.pullback import PullbackStrategy
 BJ = ZoneInfo('Asia/Shanghai')
 
 
+def exchange_live_position_map(exchange_positions: list[dict]) -> dict[str, dict]:
+    live_positions: dict[str, dict] = {}
+    for position in exchange_positions:
+        contracts = float(position.get("contracts") or 0.0)
+        if contracts == 0:
+            continue
+        symbol = position.get("symbol")
+        if not symbol:
+            continue
+        live_positions[symbol] = {
+            "side": position.get("side"),
+            "contracts": abs(contracts),
+            "hedged": bool(position.get("hedged")),
+            "pos_side": position.get("info", {}).get("posSide"),
+            "raw_pos": position.get("info", {}).get("pos"),
+        }
+    return live_positions
+
+
+def local_live_position_map(snapshot: dict) -> dict[str, dict]:
+    local_positions: dict[str, dict] = {}
+    for key, value in snapshot.get("positions", {}).items():
+        items = value if isinstance(value, list) else [value]
+        open_items = [item for item in items if item.get("status") == "open"]
+        if not open_items:
+            continue
+        symbol = open_items[0].get("symbol")
+        if not symbol:
+            continue
+        local_positions[symbol] = {
+            "position_keys": sorted({item.get("position_key") or key for item in open_items}),
+            "strategies": sorted({item.get("strategy") for item in open_items if item.get("strategy")}),
+            "count": len(open_items),
+            "sides": sorted({item.get("side") for item in open_items}),
+            "amount": round(sum(float(item.get("amount") or 0.0) for item in open_items), 10),
+            "notional_usdt": round(sum(float(item.get("notional_usdt") or 0.0) for item in open_items), 10),
+        }
+    return local_positions
+
+
+def position_alignment_report(snapshot: dict, exchange_positions: list[dict]) -> dict:
+    local_positions = local_live_position_map(snapshot)
+    live_positions = exchange_live_position_map(exchange_positions)
+    mismatches = []
+    all_symbols = sorted(set(local_positions) | set(live_positions))
+    for symbol in all_symbols:
+        local = local_positions.get(symbol)
+        exchange = live_positions.get(symbol)
+        if local is None:
+            mismatches.append({
+                "symbol": symbol,
+                "type": "missing_local_position",
+                "exchange": exchange,
+            })
+            continue
+        if exchange is None:
+            mismatches.append({
+                "symbol": symbol,
+                "type": "missing_exchange_position",
+                "local": local,
+            })
+            continue
+        local_sides = local.get("sides") or []
+        if len(local_sides) != 1:
+            mismatches.append({
+                "symbol": symbol,
+                "type": "multiple_local_sides",
+                "local": local,
+                "exchange": exchange,
+            })
+            continue
+        local_side = local_sides[0]
+        local_amount = float(local.get("amount") or 0.0)
+        exchange_contracts = float(exchange.get("contracts") or 0.0)
+        if local_side != exchange.get("side"):
+            mismatches.append({
+                "symbol": symbol,
+                "type": "side_mismatch",
+                "local": local,
+                "exchange": exchange,
+            })
+            continue
+        if abs(local_amount - exchange_contracts) > 1e-9:
+            mismatches.append({
+                "symbol": symbol,
+                "type": "amount_mismatch",
+                "local": local,
+                "exchange": exchange,
+                "difference": round(local_amount - exchange_contracts, 10),
+            })
+    return {
+        "ok": len(mismatches) == 0,
+        "mismatches": mismatches,
+        "exchange_live_positions": live_positions,
+        "local_live_positions": local_positions,
+    }
+
+
 def position_key(strategy_name: str, symbol: str) -> str:
     return f"{strategy_name}:{symbol}"
 
@@ -120,7 +218,21 @@ def main() -> None:
         settings.pullback_lookback,
         settings.meanrev_lookback,
     )
-
+    tracked_symbols = sorted({settings.execution_symbol(strategy.name, symbol) for symbol in settings.symbols for strategy in strategies})
+    alignment = position_alignment_report(snapshot, client.exchange.fetch_positions(tracked_symbols))
+    if trading_enabled and not alignment["ok"]:
+        trading_enabled = False
+        executor.armed = False
+        report.append({
+            "action": "protection_block",
+            "reason": "position_alignment_mismatch",
+            "mismatches": alignment["mismatches"],
+        })
+        if settings.discord_channel:
+            notifier.send(
+                "OKX demo trader paused new submissions: local/exchange position alignment mismatch detected. "
+                f"Mismatches: {json.dumps(alignment['mismatches'], ensure_ascii=False)}"
+            )
     for symbol in settings.symbols:
         for strategy in strategies:
             exec_symbol = settings.execution_symbol(strategy.name, symbol)
@@ -244,6 +356,8 @@ def main() -> None:
     print(json.dumps({
         "mode": "dry_run" if executor.armed is False else "demo_submit",
         "trading_enabled": trading_enabled,
+        "alignment_ok": alignment["ok"],
+        "alignment_mismatches": alignment["mismatches"],
         "symbols": settings.symbols,
         "strategies": [strategy.name for strategy in strategies],
         "report": report,
