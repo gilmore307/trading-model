@@ -14,6 +14,26 @@ REPORTS = ROOT / 'reports' / 'changes'
 REPORTS.mkdir(parents=True, exist_ok=True)
 
 
+def _live_position_map(exchange_positions: list[dict]) -> dict[str, dict]:
+    live: dict[str, dict] = {}
+    for position in exchange_positions:
+        contracts = float(position.get('contracts') or 0)
+        if contracts == 0:
+            continue
+        symbol = position.get('symbol')
+        if not symbol:
+            continue
+        live[symbol] = {
+            'symbol': symbol,
+            'contracts': abs(contracts),
+            'side': position.get('side'),
+            'hedged': bool(position.get('hedged')),
+            'pos_side': position.get('info', {}).get('posSide'),
+            'raw_pos': position.get('info', {}).get('pos'),
+        }
+    return live
+
+
 def main() -> None:
     settings = Settings.load()
     client = OkxClient(settings)
@@ -22,33 +42,73 @@ def main() -> None:
 
     syms = sorted({settings.execution_symbol(strategy, symbol) for strategy in settings.strategies for symbol in settings.symbols})
     exchange_positions = client.exchange.fetch_positions(syms)
-    live_open = {
-        p.get('symbol'): float(p.get('contracts') or 0)
-        for p in exchange_positions
-        if p.get('contracts') and float(p.get('contracts')) != 0
-    }
+    live_open = _live_position_map(exchange_positions)
 
     closed_keys = []
+    normalized_keys = []
     buckets = state.get('buckets', {})
+    now_bar_id = int(datetime.now(UTC).timestamp() * 1000)
+
     for key, value in list(state.get('positions', {}).items()):
         items = value if isinstance(value, list) else [value]
         updated_items = []
         released_usdt = 0.0
+
+        symbol = None
         for item in items:
+            if item.get('status') == 'open' and item.get('symbol'):
+                symbol = item.get('symbol')
+                break
+            symbol = symbol or item.get('symbol')
+
+        live = live_open.get(symbol) if symbol else None
+        matching_open_indexes: list[int] = []
+
+        for idx, item in enumerate(items):
             if item.get('status') != 'open':
                 updated_items.append(item)
                 continue
-            symbol = item.get('symbol')
-            if symbol not in live_open:
+
+            item_symbol = item.get('symbol')
+            item_side = item.get('side')
+            live_for_item = live_open.get(item_symbol) if item_symbol else None
+
+            should_close = False
+            exit_reason = None
+            if live_for_item is None:
+                should_close = True
+                exit_reason = 'reconcile_exchange_no_position'
+            elif item_side != live_for_item.get('side'):
+                should_close = True
+                exit_reason = f"reconcile_exchange_side_mismatch:{item_side}!={live_for_item.get('side')}"
+
+            if should_close:
                 released_usdt += float(item.get('notional_usdt') or 0.0)
                 updated_items.append({
                     **item,
                     'status': 'closed',
-                    'exit_reason': 'reconcile_exchange_no_position',
-                    'exit_bar_id': int(datetime.now(UTC).timestamp() * 1000),
+                    'exit_reason': exit_reason,
+                    'exit_bar_id': now_bar_id,
                 })
-            else:
-                updated_items.append(item)
+                continue
+
+            matching_open_indexes.append(len(updated_items))
+            updated_items.append(dict(item))
+
+        if matching_open_indexes and live is not None:
+            live_contracts = float(live.get('contracts') or 0.0)
+            per_position_amount = live_contracts / len(matching_open_indexes)
+            for idx in matching_open_indexes:
+                updated_items[idx]['amount'] = per_position_amount
+            normalized_keys.append({
+                'position_key': key,
+                'symbol': live.get('symbol'),
+                'side': live.get('side'),
+                'live_contracts': live_contracts,
+                'open_items': len(matching_open_indexes),
+                'per_position_amount': per_position_amount,
+            })
+
         if released_usdt > 0:
             closed_keys.append({'position_key': key, 'released_usdt': released_usdt})
             bucket = buckets.get(key, {})
@@ -65,6 +125,7 @@ def main() -> None:
         'type': 'reconcile_state',
         'live_open_symbols': live_open,
         'closed_keys': closed_keys,
+        'normalized_keys': normalized_keys,
     }
     out = REPORTS / 'latest-reconcile-state.json'
     out.write_text(json.dumps(payload, indent=2))
