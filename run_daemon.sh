@@ -12,15 +12,26 @@ while true; do
     continue
   fi
   trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
-  echo "[$ts] cycle_start" | tee -a logs/service/daemon.log
-  if python -m src.runner.live_trader --arm-demo-submit 2>&1 | tee -a logs/service/daemon.log; then
-    echo "[$ts] cycle_ok" | tee -a logs/service/daemon.log
+  mode=$(python scripts_mode.py | python -c 'import sys,json; print(json.load(sys.stdin)["mode"])')
+  echo "[$ts] cycle_start mode=$mode" | tee -a logs/service/daemon.log
+  if [ "$mode" = "review" ]; then
+    if python -m src.runner.live_trader 2>&1 | tee -a logs/service/daemon.log; then
+      echo "[$ts] cycle_ok mode=review" | tee -a logs/service/daemon.log
+    else
+      echo "[$ts] cycle_error mode=review" | tee -a logs/service/daemon.log
+    fi
+    python -m src.review.review_runner 2>&1 | tee -a logs/service/daemon.log || true
   else
-    echo "[$ts] cycle_error" | tee -a logs/service/daemon.log
+    if python -m src.runner.live_trader --arm-demo-submit 2>&1 | tee -a logs/service/daemon.log; then
+      echo "[$ts] cycle_ok mode=trade" | tee -a logs/service/daemon.log
+    else
+      echo "[$ts] cycle_error mode=trade" | tee -a logs/service/daemon.log
+    fi
   fi
   python scripts_status.py > logs/service/health.json 2>> logs/service/daemon.log || true
+  python scripts_snapshot.py > logs/service/snapshot.json 2>> logs/service/daemon.log || true
   sync || true
-  echo "[$ts] cycle_end" | tee -a logs/service/daemon.log
+  echo "[$ts] cycle_end mode=$mode" | tee -a logs/service/daemon.log
   rmdir "$LOCK_DIR" 2>/dev/null || true
   trap - EXIT
   sleep 60

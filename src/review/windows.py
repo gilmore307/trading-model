@@ -20,15 +20,17 @@ def current_bj_week_window(now_utc: datetime | None = None) -> ReviewWindow:
     now_utc = now_utc or datetime.now(UTC)
     now_bj = now_utc.astimezone(BJ)
     weekday = now_bj.weekday()  # Monday=0 ... Sunday=6
-    days_since_sunday = (weekday + 1) % 7
-    current_sunday = (now_bj - timedelta(days=days_since_sunday)).replace(hour=0, minute=0, second=0, microsecond=0)
-    previous_sunday = current_sunday - timedelta(days=7)
+    days_since_sunday = weekday + 1 if weekday < 6 else 0
+    last_sunday_start = (now_bj - timedelta(days=days_since_sunday)).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_bj = last_sunday_start
+    start_bj = end_bj - timedelta(days=7)
+
     return ReviewWindow(
         name='weekly',
-        start_utc=previous_sunday.astimezone(UTC),
-        end_utc=current_sunday.astimezone(UTC),
-        start_bj=previous_sunday,
-        end_bj=current_sunday,
+        start_utc=start_bj.astimezone(UTC),
+        end_utc=end_bj.astimezone(UTC),
+        start_bj=start_bj,
+        end_bj=end_bj,
     )
 
 
