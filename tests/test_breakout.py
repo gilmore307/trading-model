@@ -51,6 +51,26 @@ def test_risk_allows_add_on_same_side_when_bucket_has_capital():
     assert decision.allowed is True
 
 
+def test_risk_sizes_entry_from_bucket_risk_budget_and_volatility():
+    risk = RiskManager(risk_per_trade_fraction=0.01, min_stop_distance_ratio=0.003, atr_lookback=3, stop_atr_multiple=1.5)
+    bucket = {
+        "initial_capital_usdt": 500.0,
+        "available_usdt": 500.0,
+        "allocated_usdt": 0.0,
+    }
+    candles = [
+        [0, 0, 102, 99, 100, 0],
+        [1, 0, 103, 100, 101, 0],
+        [2, 0, 104, 101, 102, 0],
+        [3, 0, 105, 102, 103, 0],
+    ]
+    sizing = risk.plan_entry_size(bucket=bucket, candles=candles, leverage=5)
+    assert round(sizing.risk_budget_usdt, 6) == 5.0
+    assert sizing.stop_distance_ratio > 0.003
+    assert sizing.capped_notional_usdt > 0
+    assert round(sizing.margin_required_usdt * sizing.leverage, 8) == round(sizing.capped_notional_usdt, 8)
+
+
 def test_executor_returns_state_patch_and_runner_applies_it():
     executor = DemoExecutor(armed=False)
     key = position_key("breakout", "BTC-USDT-SWAP")
@@ -64,6 +84,7 @@ def test_executor_returns_state_patch_and_runner_applies_it():
         reason="breakout_high",
         bar_id=123,
         order_size_usdt=100,
+        margin_required_usdt=20,
         leverage=5,
         bucket=bucket,
         existing_positions=[],
@@ -72,11 +93,13 @@ def test_executor_returns_state_patch_and_runner_applies_it():
     assert result.mode == "dry_run"
     assert snapshot["positions"][key][0]["status"] == "open"
     assert snapshot["positions"][key][0]["venue_order_side"] is None
+    assert snapshot["positions"][key][0]["margin_required_usdt"] == 20
     assert snapshot["positions"][key][0]["requested_amount"] is None
     assert snapshot["last_signals"][key]["bar_id"] == 123
     assert snapshot["history"][0]["venue_order_side"] is None
+    assert snapshot["history"][0]["margin_required_usdt"] == 20
     assert snapshot["open_positions"] == 1
-    assert snapshot["buckets"][key]["available_usdt"] == 400.0
+    assert snapshot["buckets"][key]["available_usdt"] == 480.0
 
 
 def test_executor_exit_aggregates_contract_amount_not_usdt_notional():

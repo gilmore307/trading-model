@@ -28,6 +28,7 @@ class DemoExecutor:
         reason: str,
         bar_id: int,
         order_size_usdt: float,
+        margin_required_usdt: float,
         leverage: int,
         bucket: dict,
         existing_positions: list[dict],
@@ -51,6 +52,7 @@ class DemoExecutor:
             "reason": reason,
             "entry_bar_id": bar_id,
             "notional_usdt": order_size_usdt,
+            "margin_required_usdt": margin_required_usdt,
             "leverage": leverage,
             "status": "open",
             "venue_order_id": None if venue_response is None else venue_response.get("order_id"),
@@ -72,6 +74,7 @@ class DemoExecutor:
             "bar_id": bar_id,
             "mode": mode,
             "notional_usdt": order_size_usdt,
+            "margin_required_usdt": margin_required_usdt,
             "leverage": leverage,
             "venue_order_id": None if venue_response is None else venue_response.get("order_id"),
             "venue_status": None if venue_response is None else venue_response.get("status"),
@@ -94,8 +97,8 @@ class DemoExecutor:
             "buckets": {
                 position_key: {
                     **bucket,
-                    "available_usdt": float(bucket.get("available_usdt", 0.0)) - order_size_usdt,
-                    "allocated_usdt": float(bucket.get("allocated_usdt", 0.0)) + order_size_usdt,
+                    "available_usdt": float(bucket.get("available_usdt", 0.0)) - margin_required_usdt,
+                    "allocated_usdt": float(bucket.get("allocated_usdt", 0.0)) + margin_required_usdt,
                     "last_leverage": leverage,
                 }
             },
@@ -136,7 +139,7 @@ class DemoExecutor:
             mode = "demo_submit"
             submitted = True
 
-        released_usdt = sum(float(p.get("notional_usdt") or 0.0) for p in open_positions)
+        released_usdt = sum(float(p.get("margin_required_usdt") or p.get("notional_usdt") or 0.0) for p in open_positions)
         closed_ids = {id(p) for p in open_positions}
         updated_positions: list[dict] = []
         for position in positions:

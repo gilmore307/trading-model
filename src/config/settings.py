@@ -44,6 +44,10 @@ class Settings(BaseModel):
     meanrev_lookback: int = 20
     meanrev_threshold: float = 0.015
     signal_cooldown_bars: int = 12
+    risk_per_trade_fraction: float = 0.01
+    min_stop_distance_ratio: float = 0.003
+    atr_lookback: int = 14
+    stop_atr_multiple: float = 1.5
     bucket_initial_capital_usdt: float = 500.0
     buffer_capital_usdt: float = 500.0
     default_order_size_usdt: float = 100.0
@@ -87,6 +91,10 @@ class Settings(BaseModel):
             "meanrev_lookback": int(os.getenv("MEANREV_LOOKBACK", os.getenv("BREAKOUT_LOOKBACK", "20"))),
             "meanrev_threshold": float(os.getenv("MEANREV_THRESHOLD", "0.015")),
             "signal_cooldown_bars": int(os.getenv("SIGNAL_COOLDOWN_BARS", "12")),
+            "risk_per_trade_fraction": float(os.getenv("RISK_PER_TRADE_FRACTION", "0.01")),
+            "min_stop_distance_ratio": float(os.getenv("MIN_STOP_DISTANCE_RATIO", "0.003")),
+            "atr_lookback": int(os.getenv("ATR_LOOKBACK", "14")),
+            "stop_atr_multiple": float(os.getenv("STOP_ATR_MULTIPLE", "1.5")),
             "bucket_initial_capital_usdt": float(os.getenv("BUCKET_INITIAL_CAPITAL_USDT", "500")),
             "buffer_capital_usdt": float(os.getenv("BUFFER_CAPITAL_USDT", "500")),
             "default_order_size_usdt": float(os.getenv("DEFAULT_ORDER_SIZE_USDT", "100")),

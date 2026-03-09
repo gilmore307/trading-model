@@ -191,7 +191,13 @@ def main() -> None:
     logs_root = Path.home() / ".openclaw" / "workspace" / "projects" / "okx-trading" / "logs"
     state = StateStore(logs_root / "state.json")
     market_data = MarketDataStore(logs_root / "market-data")
-    risk = RiskManager(signal_cooldown_bars=settings.signal_cooldown_bars)
+    risk = RiskManager(
+        signal_cooldown_bars=settings.signal_cooldown_bars,
+        risk_per_trade_fraction=settings.risk_per_trade_fraction,
+        min_stop_distance_ratio=settings.min_stop_distance_ratio,
+        atr_lookback=settings.atr_lookback,
+        stop_atr_multiple=settings.stop_atr_multiple,
+    )
     strategies = build_strategies(settings)
     client = OkxClient(settings)
     trading_enabled = (args.arm_demo_submit and not settings.dry_run and not in_review_pause_window())
@@ -288,8 +294,9 @@ def main() -> None:
                 })
                 continue
 
-            order_size_usdt = min(settings.default_order_size_usdt, float(bucket.get("available_usdt", 0.0)))
             leverage = risk.dynamic_leverage(symbol, signal.side, candles)
+            sizing = risk.plan_entry_size(bucket=bucket, candles=candles, leverage=leverage)
+            order_size_usdt = sizing.margin_required_usdt
             decision = risk.allow_entry(
                 snapshot=snapshot,
                 position_key=key,
@@ -321,7 +328,8 @@ def main() -> None:
                 side=signal.side,
                 reason=signal.reason,
                 bar_id=bar_id,
-                order_size_usdt=order_size_usdt,
+                order_size_usdt=sizing.capped_notional_usdt,
+                margin_required_usdt=sizing.margin_required_usdt,
                 leverage=leverage,
                 bucket=bucket,
                 existing_positions=position_list,
@@ -337,7 +345,10 @@ def main() -> None:
                 "reason": signal.reason,
                 "execution": execution.mode,
                 "detail": execution.detail,
-                "notional_usdt": order_size_usdt,
+                "margin_usdt": order_size_usdt,
+                "effective_notional_usdt": sizing.capped_notional_usdt,
+                "risk_budget_usdt": sizing.risk_budget_usdt,
+                "stop_distance_ratio": sizing.stop_distance_ratio,
                 "leverage": leverage,
                 "bucket_available_usdt": snapshot.get("buckets", {}).get(key, {}).get("available_usdt"),
             }
