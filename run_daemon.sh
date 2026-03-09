@@ -20,6 +20,8 @@ while true; do
     else
       echo "[$ts] cycle_error mode=review" | tee -a logs/service/daemon.log
     fi
+    python -m src.review.workflow 2>&1 | tee -a logs/service/daemon.log || true
+    python -m src.review.prepare_usdt_reset 2>&1 | tee -a logs/service/daemon.log || true
     python -m src.review.review_runner 2>&1 | tee -a logs/service/daemon.log || true
   else
     if python -m src.runner.live_trader --arm-demo-submit 2>&1 | tee -a logs/service/daemon.log; then
