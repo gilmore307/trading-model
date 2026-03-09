@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from datetime import datetime, UTC
 from pathlib import Path
 
@@ -34,22 +35,13 @@ def _live_position_map(exchange_positions: list[dict]) -> dict[str, dict]:
     return live
 
 
-def main() -> None:
-    settings = Settings.load()
-    client = OkxClient(settings)
-    store = StateStore(LOGS / 'state.json')
-    state = store.load()
+def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int) -> tuple[dict, list[dict], list[dict]]:
+    updated_state = deepcopy(state)
+    buckets = updated_state.get('buckets', {})
+    closed_keys: list[dict] = []
+    normalized_keys: list[dict] = []
 
-    syms = sorted({settings.execution_symbol(strategy, symbol) for strategy in settings.strategies for symbol in settings.symbols})
-    exchange_positions = client.exchange.fetch_positions(syms)
-    live_open = _live_position_map(exchange_positions)
-
-    closed_keys = []
-    normalized_keys = []
-    buckets = state.get('buckets', {})
-    now_bar_id = int(datetime.now(UTC).timestamp() * 1000)
-
-    for key, value in list(state.get('positions', {}).items()):
+    for key, value in list(updated_state.get('positions', {}).items()):
         items = value if isinstance(value, list) else [value]
         updated_items = []
         released_usdt = 0.0
@@ -64,7 +56,7 @@ def main() -> None:
         live = live_open.get(symbol) if symbol else None
         matching_open_indexes: list[int] = []
 
-        for idx, item in enumerate(items):
+        for item in items:
             if item.get('status') != 'open':
                 updated_items.append(item)
                 continue
@@ -117,9 +109,24 @@ def main() -> None:
                 'available_usdt': float(bucket.get('available_usdt', 0.0)) + released_usdt,
                 'allocated_usdt': max(0.0, float(bucket.get('allocated_usdt', 0.0)) - released_usdt),
             }
-        state['positions'][key] = updated_items
+        updated_state['positions'][key] = updated_items
 
-    store.save(state)
+    return updated_state, closed_keys, normalized_keys
+
+
+def main() -> None:
+    settings = Settings.load()
+    client = OkxClient(settings)
+    store = StateStore(LOGS / 'state.json')
+    state = store.load()
+
+    syms = sorted({settings.execution_symbol(strategy, symbol) for strategy in settings.strategies for symbol in settings.symbols})
+    exchange_positions = client.exchange.fetch_positions(syms)
+    live_open = _live_position_map(exchange_positions)
+    now_bar_id = int(datetime.now(UTC).timestamp() * 1000)
+
+    updated_state, closed_keys, normalized_keys = reconcile_snapshot(state, live_open, now_bar_id)
+    store.save(updated_state)
     payload = {
         'generated_at': datetime.now(UTC).isoformat(),
         'type': 'reconcile_state',
