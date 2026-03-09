@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from datetime import datetime, UTC
+from zoneinfo import ZoneInfo
 
 from src.config.settings import Settings
 from src.exchange.okx_client import OkxClient
@@ -14,6 +16,8 @@ from src.storage.state import StateStore
 from src.strategy.breakout import BreakoutStrategy
 from src.strategy.meanrev import MeanReversionStrategy
 from src.strategy.pullback import PullbackStrategy
+
+BJ = ZoneInfo('Asia/Shanghai')
 
 
 def position_key(strategy_name: str, symbol: str) -> str:
@@ -68,6 +72,12 @@ def build_strategies(settings: Settings) -> list:
     return [registry[name] for name in settings.strategies if name in registry]
 
 
+def in_review_pause_window(now_utc: datetime | None = None) -> bool:
+    now_utc = now_utc or datetime.now(UTC)
+    now_bj = now_utc.astimezone(BJ)
+    return now_bj.weekday() == 6 and now_bj.hour == 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true", help="Read-only connectivity check")
@@ -83,14 +93,12 @@ def main() -> None:
     logs_root = Path.home() / ".openclaw" / "workspace" / "projects" / "okx-trading" / "logs"
     state = StateStore(logs_root / "state.json")
     market_data = MarketDataStore(logs_root / "market-data")
-    risk = RiskManager(
-        max_open_positions=settings.max_open_positions,
-        signal_cooldown_bars=settings.signal_cooldown_bars,
-    )
+    risk = RiskManager(signal_cooldown_bars=settings.signal_cooldown_bars)
     strategies = build_strategies(settings)
     client = OkxClient(settings)
+    trading_enabled = (args.arm_demo_submit and not settings.dry_run and not in_review_pause_window())
     executor = DemoExecutor(
-        armed=(args.arm_demo_submit and not settings.dry_run),
+        armed=trading_enabled,
         client=client,
     )
 
@@ -150,35 +158,6 @@ def main() -> None:
                 position_list = snapshot.get("positions", {}).get(key, []) or []
                 open_positions = [p for p in position_list if p.get("status") == "open"]
                 bucket = snapshot.get("buckets", {}).get(key, bucket)
-
-            elif signal.side in {"long", "short"} and open_positions:
-                opposite_side = "short" if signal.side == "long" else "long"
-                opposite_positions = [p for p in open_positions if p.get("side") == opposite_side]
-                if opposite_positions:
-                    execution = executor.submit_exit_signal(
-                        position_key=key,
-                        symbol=exec_symbol,
-                        strategy=strategy.name,
-                        positions=position_list,
-                        reason=f"{signal.reason}|close_{opposite_side}",
-                        bar_id=bar_id,
-                        bucket=bucket,
-                        exit_side=opposite_side,
-                    )
-                    snapshot = apply_state_patch(snapshot, execution.state_patch)
-                    report.append({
-                        "symbol": symbol,
-                        "execution_symbol": exec_symbol,
-                        "strategy": strategy.name,
-                        "action": "close_opposite",
-                        "position_key": key,
-                        "reason": f"{signal.reason}|close_{opposite_side}",
-                        "execution": execution.mode,
-                        "detail": execution.detail,
-                    })
-                    position_list = snapshot.get("positions", {}).get(key, []) or []
-                    open_positions = [p for p in position_list if p.get("status") == "open"]
-                    bucket = snapshot.get("buckets", {}).get(key, bucket)
 
             if signal.side == "flat":
                 snapshot.setdefault("last_signals", {})[key] = {
@@ -264,6 +243,7 @@ def main() -> None:
 
     print(json.dumps({
         "mode": "dry_run" if executor.armed is False else "demo_submit",
+        "trading_enabled": trading_enabled,
         "symbols": settings.symbols,
         "strategies": [strategy.name for strategy in strategies],
         "report": report,

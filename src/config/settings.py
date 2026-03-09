@@ -16,14 +16,14 @@ DEFAULT_STRATEGY_SYMBOLS = {
         "SOL-USDT-SWAP": "SOL/USDT:USDT",
     },
     "pullback": {
-        "BTC-USDT-SWAP": "BTC/USD:USD",
-        "ETH-USDT-SWAP": "ETH/USD:USD",
-        "SOL-USDT-SWAP": "SOL/USD:USD",
+        "BTC-USDT-SWAP": "BTC/USDT:USDT",
+        "ETH-USDT-SWAP": "ETH/USDT:USDT",
+        "SOL-USDT-SWAP": "SOL/USDT:USDT",
     },
     "meanrev": {
-        "BTC-USDT-SWAP": "BTC/USD:BTC",
-        "ETH-USDT-SWAP": "ETH/USD:ETH",
-        "SOL-USDT-SWAP": "SOL/USD:SOL",
+        "BTC-USDT-SWAP": "BTC/USDT:USDT",
+        "ETH-USDT-SWAP": "ETH/USDT:USDT",
+        "SOL-USDT-SWAP": "SOL/USDT:USDT",
     },
 }
 
@@ -43,9 +43,9 @@ class Settings(BaseModel):
     pullback_lookback: int = 20
     meanrev_lookback: int = 20
     meanrev_threshold: float = 0.015
-    max_open_positions: int = 2
     signal_cooldown_bars: int = 12
     bucket_initial_capital_usdt: float = 500.0
+    buffer_capital_usdt: float = 500.0
     default_order_size_usdt: float = 100.0
     dry_run: bool = True
     confirm_real_trading: bool = False
@@ -86,9 +86,9 @@ class Settings(BaseModel):
             "pullback_lookback": int(os.getenv("PULLBACK_LOOKBACK", os.getenv("BREAKOUT_LOOKBACK", "20"))),
             "meanrev_lookback": int(os.getenv("MEANREV_LOOKBACK", os.getenv("BREAKOUT_LOOKBACK", "20"))),
             "meanrev_threshold": float(os.getenv("MEANREV_THRESHOLD", "0.015")),
-            "max_open_positions": int(os.getenv("MAX_OPEN_POSITIONS", "2")),
             "signal_cooldown_bars": int(os.getenv("SIGNAL_COOLDOWN_BARS", "12")),
             "bucket_initial_capital_usdt": float(os.getenv("BUCKET_INITIAL_CAPITAL_USDT", "500")),
+            "buffer_capital_usdt": float(os.getenv("BUFFER_CAPITAL_USDT", "500")),
             "default_order_size_usdt": float(os.getenv("DEFAULT_ORDER_SIZE_USDT", "100")),
             "dry_run": str(os.getenv("DRY_RUN", "true")).strip().lower() in {"1", "true", "yes", "on"},
             "confirm_real_trading": str(os.getenv("CONFIRM_REAL_TRADING", "false")).strip().lower() in {"1", "true", "yes", "on"},
