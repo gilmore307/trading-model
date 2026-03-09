@@ -30,7 +30,7 @@
 
 ## Account Reset Model
 - Weekly reset of the virtual comparison account baseline
-- Before local weekly reset, convert visible non-USDT account assets into USDT (after the user resets the OKX demo account on their side)
+- Before local weekly reset, convert primary strategy-related non-USDT assets into USDT (after the user resets the OKX demo account on their side). Ignore small non-core residual assets like OKB unless they later become operationally relevant.
 - Preserve full historical events, OHLC, reviews, and parameter changes
 
 ## Outputs

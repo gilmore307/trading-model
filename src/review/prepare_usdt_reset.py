@@ -11,13 +11,12 @@ ROOT = Path('/root/.openclaw/workspace/projects/okx-trading')
 OUT_DIR = ROOT / 'reports' / 'changes'
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-TARGET_ASSETS = ['BTC', 'ETH', 'SOL', 'USDC', 'OKB']
+TARGET_ASSETS = ['BTC', 'ETH', 'SOL', 'USDC']
 PAIR_MAP = {
     'BTC': 'BTC/USDT',
     'ETH': 'ETH/USDT',
     'SOL': 'SOL/USDT',
     'USDC': 'USDC/USDT',
-    'OKB': 'OKB/USDT',
 }
 
 
