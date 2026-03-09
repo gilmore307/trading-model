@@ -7,6 +7,14 @@ import ccxt
 from src.config.settings import Settings
 
 
+def exit_order_side(position_side: str) -> str:
+    if position_side == "long":
+        return "sell"
+    if position_side == "short":
+        return "buy"
+    raise ValueError(f"Unsupported position side for exit order: {position_side}")
+
+
 class OkxClient:
     def __init__(self, settings: Settings):
         self.settings = settings
@@ -109,7 +117,7 @@ class OkxClient:
 
         self.ensure_markets_loaded()
         execution_symbol = self.settings.ccxt_symbol(symbol)
-        order_side = "sell" if position_side == "long" else "buy"
+        order_side = exit_order_side(position_side)
         params = {
             "tdMode": "cross",
             "reduceOnly": True,
@@ -124,4 +132,33 @@ class OkxClient:
             "order_id": order.get("id"),
             "status": order.get("status"),
             "raw": order,
+        }
+
+    def convert_asset_to_usdt(self, asset: str, amount: float) -> dict[str, Any]:
+        if asset == 'USDT':
+            return {'asset': asset, 'skipped': True, 'reason': 'already_usdt'}
+        if amount <= 0:
+            return {'asset': asset, 'skipped': True, 'reason': 'non_positive_amount'}
+
+        self.ensure_markets_loaded()
+        symbol = f'{asset}/USDT'
+        market = self.exchange.market(symbol)
+        min_amount = float((market.get('limits', {}).get('amount', {}) or {}).get('min') or 0)
+        sell_amount = float(self.exchange.amount_to_precision(symbol, amount))
+        if sell_amount < min_amount:
+            return {
+                'asset': asset,
+                'skipped': True,
+                'reason': f'amount_below_min:{sell_amount}<{min_amount}',
+                'symbol': symbol,
+            }
+        order = self.exchange.create_order(symbol, 'market', 'sell', sell_amount, None, {'tdMode': 'cash'})
+        return {
+            'asset': asset,
+            'symbol': symbol,
+            'side': 'sell',
+            'amount': sell_amount,
+            'order_id': order.get('id'),
+            'status': order.get('status'),
+            'raw': order,
         }
