@@ -29,31 +29,39 @@ class StateStore:
         merged["last_signals"] = self._migrate_last_signals(data.get("last_signals", {}))
         merged["history"] = self._migrate_history(data.get("history", []))
         merged["buckets"] = self._build_buckets(data.get("buckets", {}), merged["positions"])
-        merged["open_positions"] = sum(
-            1 for item in merged["positions"].values() if item.get("status") == "open"
-        )
+        merged["open_positions"] = self._count_open_positions(merged["positions"])
         return merged
 
     def save(self, data: dict) -> None:
         payload = deepcopy(data)
-        payload["open_positions"] = sum(
-            1 for item in payload.get("positions", {}).values() if item.get("status") == "open"
-        )
+        payload["open_positions"] = self._count_open_positions(payload.get("positions", {}))
         self.path.write_text(json.dumps(payload, indent=2, sort_keys=True))
+
+    def _count_open_positions(self, positions: dict) -> int:
+        total = 0
+        for value in positions.values():
+            if isinstance(value, list):
+                total += sum(1 for item in value if item.get("status") == "open")
+            elif isinstance(value, dict) and value.get("status") == "open":
+                total += 1
+        return total
 
     def _migrate_positions(self, positions: dict) -> dict:
         migrated = {}
         for key, position in positions.items():
-            if ":" in key:
+            if isinstance(position, list):
                 migrated[key] = position
                 continue
+            if ":" in key:
+                migrated[key] = [position]
+                continue
             new_key = f"breakout:{key}"
-            migrated[new_key] = {
+            migrated[new_key] = [{
                 **position,
                 "position_key": new_key,
                 "strategy": position.get("strategy", "breakout"),
                 "symbol": position.get("symbol", key),
-            }
+            }]
         return migrated
 
     def _migrate_last_signals(self, last_signals: dict) -> dict:
@@ -89,15 +97,17 @@ class StateStore:
                 }
                 normalized.pop(key)
 
-        for key, position in positions.items():
+        for key, position_list in positions.items():
+            positions_for_key = position_list if isinstance(position_list, list) else [position_list]
             if key not in normalized:
-                initial_capital = float(position.get("notional_usdt") or 500.0)
-                allocated = float(position.get("notional_usdt") or 0.0) if position.get("status") == "open" else 0.0
+                initial_capital = max(500.0, sum(float(p.get("notional_usdt") or 0.0) for p in positions_for_key) or 500.0)
+                allocated = sum(float(p.get("notional_usdt") or 0.0) for p in positions_for_key if p.get("status") == "open")
+                sample = positions_for_key[0] if positions_for_key else {}
                 normalized[key] = {
-                    "strategy": position.get("strategy", key.split(":", 1)[0]),
-                    "symbol": position.get("symbol", key.split(":", 1)[-1]),
-                    "initial_capital_usdt": max(500.0, initial_capital),
-                    "available_usdt": max(0.0, max(500.0, initial_capital) - allocated),
+                    "strategy": sample.get("strategy", key.split(":", 1)[0]),
+                    "symbol": sample.get("symbol", key.split(":", 1)[-1]),
+                    "initial_capital_usdt": initial_capital,
+                    "available_usdt": max(0.0, initial_capital - allocated),
                     "allocated_usdt": allocated,
                 }
         return normalized

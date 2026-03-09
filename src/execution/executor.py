@@ -28,7 +28,9 @@ class DemoExecutor:
         reason: str,
         bar_id: int,
         order_size_usdt: float,
+        leverage: int,
         bucket: dict,
+        existing_positions: list[dict],
     ) -> ExecutionResult:
         venue_response = None
         mode = "dry_run"
@@ -41,6 +43,7 @@ class DemoExecutor:
             submitted = True
 
         position = {
+            "entry_id": f"{position_key}:{bar_id}:{len(existing_positions)+1}",
             "position_key": position_key,
             "symbol": symbol,
             "strategy": strategy,
@@ -48,6 +51,7 @@ class DemoExecutor:
             "reason": reason,
             "entry_bar_id": bar_id,
             "notional_usdt": order_size_usdt,
+            "leverage": leverage,
             "status": "open",
             "venue_order_id": None if venue_response is None else venue_response.get("order_id"),
             "venue_status": None if venue_response is None else venue_response.get("status"),
@@ -64,10 +68,12 @@ class DemoExecutor:
             "bar_id": bar_id,
             "mode": mode,
             "notional_usdt": order_size_usdt,
+            "leverage": leverage,
             "venue_order_id": None if venue_response is None else venue_response.get("order_id"),
         }
+        updated_positions = list(existing_positions) + [position]
         state_patch = {
-            "positions": {position_key: position},
+            "positions": {position_key: updated_positions},
             "last_signals": {
                 position_key: {
                     "side": side,
@@ -80,6 +86,7 @@ class DemoExecutor:
                     **bucket,
                     "available_usdt": float(bucket.get("available_usdt", 0.0)) - order_size_usdt,
                     "allocated_usdt": float(bucket.get("allocated_usdt", 0.0)) + order_size_usdt,
+                    "last_leverage": leverage,
                 }
             },
             "history_append": [event],
@@ -98,36 +105,49 @@ class DemoExecutor:
         position_key: str,
         symbol: str,
         strategy: str,
-        position: dict,
+        positions: list[dict],
         reason: str,
         bar_id: int,
         bucket: dict,
+        exit_side: str | None = None,
     ) -> ExecutionResult:
+        open_positions = [p for p in positions if p.get("status") == "open"]
+        if exit_side is not None:
+            open_positions = [p for p in open_positions if p.get("side") == exit_side]
+
+        total_amount = sum(float(p.get("amount") or 0.0) for p in open_positions)
         venue_response = None
         mode = "dry_run"
         submitted = False
-        if self.armed:
+        if self.armed and open_positions:
             if self.client is None:
                 raise RuntimeError("Executor is armed but no exchange client was supplied.")
-            venue_response = self.client.create_exit_order(symbol, position.get("side", "long"), float(position.get("amount") or 0.0))
+            venue_response = self.client.create_exit_order(symbol, open_positions[0].get("side", "long"), total_amount)
             mode = "demo_submit"
             submitted = True
 
-        released_usdt = float(position.get("notional_usdt") or 0.0)
-        closed_position = {
-            **position,
-            "status": "closed",
-            "exit_bar_id": bar_id,
-            "exit_reason": reason,
-            "exit_order_id": None if venue_response is None else venue_response.get("order_id"),
-            "exit_status": None if venue_response is None else venue_response.get("status"),
-        }
+        released_usdt = sum(float(p.get("notional_usdt") or 0.0) for p in open_positions)
+        closed_ids = {id(p) for p in open_positions}
+        updated_positions: list[dict] = []
+        for position in positions:
+            if id(position) in closed_ids:
+                updated_positions.append({
+                    **position,
+                    "status": "closed",
+                    "exit_bar_id": bar_id,
+                    "exit_reason": reason,
+                    "exit_order_id": None if venue_response is None else venue_response.get("order_id"),
+                    "exit_status": None if venue_response is None else venue_response.get("status"),
+                })
+            else:
+                updated_positions.append(position)
+
         event = {
             "type": "exit",
             "position_key": position_key,
             "symbol": symbol,
             "strategy": strategy,
-            "side": position.get("side"),
+            "side": exit_side,
             "reason": reason,
             "bar_id": bar_id,
             "mode": mode,
@@ -135,10 +155,10 @@ class DemoExecutor:
             "venue_order_id": None if venue_response is None else venue_response.get("order_id"),
         }
         state_patch = {
-            "positions": {position_key: closed_position},
+            "positions": {position_key: updated_positions},
             "last_signals": {
                 position_key: {
-                    "side": "flat",
+                    "side": "flat" if exit_side is None else exit_side,
                     "reason": reason,
                     "bar_id": bar_id,
                 }

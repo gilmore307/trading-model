@@ -7,6 +7,27 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 
+DEFAULT_SYMBOLS = ["BTC-USDT-SWAP", "ETH-USDT-SWAP", "SOL-USDT-SWAP"]
+DEFAULT_STRATEGIES = ["breakout", "pullback", "meanrev"]
+DEFAULT_STRATEGY_SYMBOLS = {
+    "breakout": {
+        "BTC-USDT-SWAP": "BTC/USDT:USDT",
+        "ETH-USDT-SWAP": "ETH/USDT:USDT",
+        "SOL-USDT-SWAP": "SOL/USDT:USDT",
+    },
+    "pullback": {
+        "BTC-USDT-SWAP": "BTC/USD:USD",
+        "ETH-USDT-SWAP": "ETH/USD:USD",
+        "SOL-USDT-SWAP": "SOL/USD:USD",
+    },
+    "meanrev": {
+        "BTC-USDT-SWAP": "BTC/USD:BTC",
+        "ETH-USDT-SWAP": "ETH/USD:ETH",
+        "SOL-USDT-SWAP": "SOL/USD:SOL",
+    },
+}
+
+
 class Settings(BaseModel):
     okx_api_key: str = Field(alias="OKX_API_KEY")
     okx_api_secret: str = Field(alias="OKX_API_SECRET")
@@ -14,8 +35,9 @@ class Settings(BaseModel):
     okx_demo: bool = Field(alias="OKX_DEMO")
     discord_channel: str | None = Field(default=None, alias="OPENCLAW_DISCORD_CHANNEL")
 
-    symbols: list[str] = ["BTC-USDT-SWAP", "ETH-USDT-SWAP", "SOL-USDT-SWAP"]
-    strategies: list[str] = ["breakout", "pullback", "meanrev"]
+    symbols: list[str] = DEFAULT_SYMBOLS.copy()
+    strategies: list[str] = DEFAULT_STRATEGIES.copy()
+    strategy_symbols: dict[str, dict[str, str]] = DEFAULT_STRATEGY_SYMBOLS.copy()
     timeframe: str = "5m"
     breakout_lookback: int = 20
     pullback_lookback: int = 20
@@ -29,10 +51,16 @@ class Settings(BaseModel):
     confirm_real_trading: bool = False
 
     def ccxt_symbol(self, raw_symbol: str) -> str:
+        if ":" in raw_symbol and "/" in raw_symbol:
+            return raw_symbol
         if raw_symbol.endswith("-USDT-SWAP"):
             base = raw_symbol.removesuffix("-USDT-SWAP")
             return f"{base}/USDT:USDT"
         return raw_symbol
+
+    def execution_symbol(self, strategy_name: str, symbol: str) -> str:
+        mapped = self.strategy_symbols.get(strategy_name, {}).get(symbol, symbol)
+        return self.ccxt_symbol(mapped)
 
     @classmethod
     def load(cls, env_path: str | Path | None = None) -> "Settings":
@@ -50,8 +78,9 @@ class Settings(BaseModel):
             "OKX_API_PASSPHRASE": os.getenv("OKX_API_PASSPHRASE", ""),
             "OKX_DEMO": str(os.getenv("OKX_DEMO", "")).strip().lower() in {"1", "true", "yes", "on"},
             "OPENCLAW_DISCORD_CHANNEL": os.getenv("OPENCLAW_DISCORD_CHANNEL"),
-            "symbols": symbols or ["BTC-USDT-SWAP", "ETH-USDT-SWAP", "SOL-USDT-SWAP"],
-            "strategies": strategies or ["breakout", "pullback", "meanrev"],
+            "symbols": symbols or DEFAULT_SYMBOLS.copy(),
+            "strategies": strategies or DEFAULT_STRATEGIES.copy(),
+            "strategy_symbols": DEFAULT_STRATEGY_SYMBOLS.copy(),
             "timeframe": os.getenv("TIMEFRAME", "5m"),
             "breakout_lookback": int(os.getenv("BREAKOUT_LOOKBACK", "20")),
             "pullback_lookback": int(os.getenv("PULLBACK_LOOKBACK", os.getenv("BREAKOUT_LOOKBACK", "20"))),

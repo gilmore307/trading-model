@@ -18,20 +18,16 @@ class RiskManager:
         if side == "flat":
             return RiskDecision(False, "flat_signal")
 
-        positions = snapshot.get("positions", {})
-        position = positions.get(position_key)
-        if position and position.get("status") == "open":
-            if position.get("side") == side:
-                return RiskDecision(False, f"position_already_open:{position_key}:{side}")
-            return RiskDecision(False, f"opposite_position_open:{position_key}:{position.get('side')}")
-
-        open_positions = sum(1 for item in positions.values() if item.get("status") == "open")
-        if open_positions >= self.max_open_positions:
-            return RiskDecision(False, f"max_open_positions_reached:{position_key}")
-
         buckets = snapshot.get("buckets", {})
         bucket = buckets.get(position_key, {})
         available_usdt = float(bucket.get("available_usdt", bucket.get("initial_capital_usdt", 0.0)))
+        initial_capital_usdt = float(bucket.get("initial_capital_usdt", 0.0))
+        realized_pnl_usdt = float(bucket.get("realized_pnl_usdt", 0.0))
+        fees_usdt = float(bucket.get("fees_usdt", 0.0))
+        equity_usdt = available_usdt + float(bucket.get("allocated_usdt", 0.0)) + realized_pnl_usdt - fees_usdt
+        if initial_capital_usdt > 0 and equity_usdt <= initial_capital_usdt * 0.5:
+            return RiskDecision(False, f"bucket_eliminated_50pct_drawdown:{position_key}:{equity_usdt}")
+
         if available_usdt < notional_usdt:
             return RiskDecision(False, f"bucket_insufficient_capital:{position_key}:{available_usdt}")
 
@@ -44,3 +40,34 @@ class RiskManager:
                 return RiskDecision(False, f"signal_cooldown:{position_key}:{side}:{bars_since}")
 
         return RiskDecision(True, "ok")
+
+    def dynamic_leverage(self, symbol: str, signal_side: str, candles: list[list[float]]) -> int:
+        if len(candles) < 10:
+            return 3
+
+        closes = [float(c[4]) for c in candles[-10:]]
+        highs = [float(c[2]) for c in candles[-10:]]
+        lows = [float(c[3]) for c in candles[-10:]]
+        latest_close = closes[-1]
+        if latest_close <= 0:
+            return 3
+
+        range_ratio = (max(highs) - min(lows)) / latest_close
+        momentum = abs(closes[-1] - closes[0]) / latest_close
+
+        leverage = 3
+        if range_ratio < 0.01 and momentum > 0.006:
+            leverage = 12
+        elif range_ratio < 0.015 and momentum > 0.004:
+            leverage = 8
+        elif range_ratio < 0.025:
+            leverage = 5
+
+        if symbol.startswith("SOL"):
+            leverage = min(leverage, 10)
+        if symbol.startswith("BTC"):
+            leverage = min(max(leverage, 4), 20)
+        else:
+            leverage = min(max(leverage, 3), 20)
+
+        return max(3, min(leverage, 20))

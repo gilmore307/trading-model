@@ -9,6 +9,7 @@ from src.exchange.okx_client import OkxClient
 from src.execution.executor import DemoExecutor
 from src.notify.openclaw_notify import OpenClawNotifier
 from src.risk.manager import RiskManager
+from src.storage.market_data import MarketDataStore
 from src.storage.state import StateStore
 from src.strategy.breakout import BreakoutStrategy
 from src.strategy.meanrev import MeanReversionStrategy
@@ -47,7 +48,10 @@ def apply_state_patch(snapshot: dict, patch: dict) -> dict:
     updated["buckets"].update(patch.get("buckets", {}))
     updated["history"].extend(patch.get("history_append", []))
     updated["open_positions"] = sum(
-        1 for item in updated["positions"].values() if item.get("status") == "open"
+        1
+        for value in updated["positions"].values()
+        for item in (value if isinstance(value, list) else [value])
+        if item.get("status") == "open"
     )
     return updated
 
@@ -76,7 +80,9 @@ def main() -> None:
     settings.ensure_demo_only()
 
     notifier = OpenClawNotifier(target=settings.discord_channel)
-    state = StateStore(Path.home() / "openclaw-automation" / "logs" / "state.json")
+    logs_root = Path.home() / ".openclaw" / "workspace" / "projects" / "okx-trading" / "logs"
+    state = StateStore(logs_root / "state.json")
+    market_data = MarketDataStore(logs_root / "market-data")
     risk = RiskManager(
         max_open_positions=settings.max_open_positions,
         signal_cooldown_bars=settings.signal_cooldown_bars,
@@ -99,6 +105,7 @@ def main() -> None:
         return
 
     snapshot = state.load()
+    starting_history_len = len(snapshot.get("history", []))
     report = []
     max_lookback = max(
         settings.breakout_lookback,
@@ -107,51 +114,71 @@ def main() -> None:
     )
 
     for symbol in settings.symbols:
-        candles = client.fetch_ohlcv(symbol, settings.timeframe, limit=max(50, max_lookback + 5))
-        bar_id = int(candles[-1][0]) if candles else -1
-
         for strategy in strategies:
+            exec_symbol = settings.execution_symbol(strategy.name, symbol)
             key = position_key(strategy.name, symbol)
             bucket = ensure_bucket(snapshot, key, strategy.name, symbol, settings.bucket_initial_capital_usdt)
-            current_position = snapshot.get("positions", {}).get(key)
+            position_list = snapshot.get("positions", {}).get(key, []) or []
+            open_positions = [p for p in position_list if p.get("status") == "open"]
+            candles = client.fetch_ohlcv(exec_symbol, settings.timeframe, limit=max(50, max_lookback + 5))
+            market_data.append_ohlc(exec_symbol, candles)
+            bar_id = int(candles[-1][0]) if candles else -1
             signal = strategy.evaluate(symbol, candles)
 
-            if current_position and current_position.get("status") == "open":
-                current_side = current_position.get("side")
-                should_exit = signal.side == "flat" or signal.side != current_side
-                if should_exit:
-                    exit_reason = f"{signal.reason}|exit_{current_side}"
+            if signal.side == "flat" and open_positions:
+                execution = executor.submit_exit_signal(
+                    position_key=key,
+                    symbol=exec_symbol,
+                    strategy=strategy.name,
+                    positions=position_list,
+                    reason=f"{signal.reason}|exit_all",
+                    bar_id=bar_id,
+                    bucket=bucket,
+                    exit_side=None,
+                )
+                snapshot = apply_state_patch(snapshot, execution.state_patch)
+                report.append({
+                    "symbol": symbol,
+                    "execution_symbol": exec_symbol,
+                    "strategy": strategy.name,
+                    "action": "exit_all",
+                    "position_key": key,
+                    "reason": f"{signal.reason}|exit_all",
+                    "execution": execution.mode,
+                    "detail": execution.detail,
+                })
+                position_list = snapshot.get("positions", {}).get(key, []) or []
+                open_positions = [p for p in position_list if p.get("status") == "open"]
+                bucket = snapshot.get("buckets", {}).get(key, bucket)
+
+            elif signal.side in {"long", "short"} and open_positions:
+                opposite_side = "short" if signal.side == "long" else "long"
+                opposite_positions = [p for p in open_positions if p.get("side") == opposite_side]
+                if opposite_positions:
                     execution = executor.submit_exit_signal(
                         position_key=key,
-                        symbol=symbol,
+                        symbol=exec_symbol,
                         strategy=strategy.name,
-                        position=current_position,
-                        reason=exit_reason,
+                        positions=position_list,
+                        reason=f"{signal.reason}|close_{opposite_side}",
                         bar_id=bar_id,
                         bucket=bucket,
+                        exit_side=opposite_side,
                     )
                     snapshot = apply_state_patch(snapshot, execution.state_patch)
                     report.append({
                         "symbol": symbol,
+                        "execution_symbol": exec_symbol,
                         "strategy": strategy.name,
-                        "action": "exit",
+                        "action": "close_opposite",
                         "position_key": key,
-                        "reason": exit_reason,
+                        "reason": f"{signal.reason}|close_{opposite_side}",
                         "execution": execution.mode,
                         "detail": execution.detail,
                     })
-                    current_position = snapshot.get("positions", {}).get(key)
+                    position_list = snapshot.get("positions", {}).get(key, []) or []
+                    open_positions = [p for p in position_list if p.get("status") == "open"]
                     bucket = snapshot.get("buckets", {}).get(key, bucket)
-                else:
-                    report.append({
-                        "symbol": symbol,
-                        "strategy": strategy.name,
-                        "action": "hold",
-                        "position_key": key,
-                        "side": current_side,
-                        "reason": signal.reason,
-                    })
-                    continue
 
             if signal.side == "flat":
                 snapshot.setdefault("last_signals", {})[key] = {
@@ -161,6 +188,7 @@ def main() -> None:
                 }
                 report.append({
                     "symbol": symbol,
+                    "execution_symbol": exec_symbol,
                     "strategy": strategy.name,
                     "action": "skip",
                     "position_key": key,
@@ -169,10 +197,8 @@ def main() -> None:
                 })
                 continue
 
-            if current_position and current_position.get("status") == "open":
-                continue
-
             order_size_usdt = min(settings.default_order_size_usdt, float(bucket.get("available_usdt", 0.0)))
+            leverage = risk.dynamic_leverage(symbol, signal.side, candles)
             decision = risk.allow_entry(
                 snapshot=snapshot,
                 position_key=key,
@@ -188,6 +214,7 @@ def main() -> None:
                 }
                 report.append({
                     "symbol": symbol,
+                    "execution_symbol": exec_symbol,
                     "strategy": strategy.name,
                     "action": "blocked",
                     "position_key": key,
@@ -198,17 +225,20 @@ def main() -> None:
 
             execution = executor.submit_entry_signal(
                 position_key=key,
-                symbol=symbol,
+                symbol=exec_symbol,
                 strategy=strategy.name,
                 side=signal.side,
                 reason=signal.reason,
                 bar_id=bar_id,
                 order_size_usdt=order_size_usdt,
+                leverage=leverage,
                 bucket=bucket,
+                existing_positions=position_list,
             )
             snapshot = apply_state_patch(snapshot, execution.state_patch)
             report_item = {
                 "symbol": symbol,
+                "execution_symbol": exec_symbol,
                 "strategy": strategy.name,
                 "action": "entry",
                 "position_key": key,
@@ -217,6 +247,7 @@ def main() -> None:
                 "execution": execution.mode,
                 "detail": execution.detail,
                 "notional_usdt": order_size_usdt,
+                "leverage": leverage,
                 "bucket_available_usdt": snapshot.get("buckets", {}).get(key, {}).get("available_usdt"),
             }
             if execution.venue_response is not None:
@@ -225,6 +256,8 @@ def main() -> None:
                 report_item["reference_price"] = execution.venue_response.get("reference_price")
                 report_item["amount"] = execution.venue_response.get("amount")
             report.append(report_item)
+
+    market_data.append_events(snapshot.get("history", [])[starting_history_len:])
 
     if not args.no_state_write:
         state.save(snapshot)
