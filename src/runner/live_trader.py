@@ -409,6 +409,42 @@ def main() -> None:
                 })
                 continue
 
+            if not open_positions:
+                live_position = client.current_live_position(exec_symbol)
+                if live_position is not None:
+                    locked_bucket = {
+                        **bucket,
+                        "locked": True,
+                        "lock_reason": f"pre_entry_live_position_detected:{bar_id}",
+                    }
+                    snapshot = apply_state_patch(snapshot, {
+                        "buckets": {key: locked_bucket},
+                        "history_append": [{
+                            "event_id": f"{key}:bucket_lock:{bar_id}",
+                            "trade_id": key,
+                            "type": "bucket_lock",
+                            "position_key": key,
+                            "symbol": exec_symbol,
+                            "strategy": strategy.name,
+                            "reason": f"pre_entry_live_position_detected:{bar_id}",
+                            "bar_id": bar_id,
+                            "mode": "guard",
+                        }],
+                    })
+                    report.append({
+                        "account_alias": client.account_alias,
+                        "account_label": client.account_label,
+                        "symbol": symbol,
+                        "execution_symbol": exec_symbol,
+                        "strategy": strategy.name,
+                        "action": "blocked",
+                        "position_key": key,
+                        "signal": signal.side,
+                        "blocked": "pre_entry_live_position_detected",
+                        "live_position": live_position,
+                    })
+                    continue
+
             leverage = risk.dynamic_leverage(symbol, signal.side, candles)
             sizing = risk.plan_entry_size(bucket=bucket, candles=candles, leverage=leverage)
             order_size_usdt = sizing.margin_required_usdt

@@ -87,6 +87,18 @@ def live_position_snapshot(exchange: Any, execution_symbol: str) -> dict[str, An
     return None
 
 
+def amount_close_enough(expected: float, actual: float, tolerance_ratio: float = 0.15, tolerance_abs: float = 2.0) -> bool:
+    try:
+        expected = float(expected)
+        actual = float(actual)
+    except Exception:
+        return False
+    if expected <= 0 or actual <= 0:
+        return False
+    diff = abs(actual - expected)
+    return diff <= max(tolerance_abs, expected * tolerance_ratio)
+
+
 class OkxClient:
     def __init__(self, settings: Settings, account: StrategyAccountConfig | None = None):
         self.settings = settings
@@ -164,6 +176,11 @@ class OkxClient:
         if not getattr(self.exchange, "markets", None):
             self.exchange.load_markets()
 
+    def current_live_position(self, symbol: str) -> dict[str, Any] | None:
+        self.ensure_markets_loaded()
+        execution_symbol = self.settings.ccxt_symbol(symbol)
+        return live_position_snapshot(self.exchange, execution_symbol)
+
     def create_entry_order(self, symbol: str, signal_side: str, notional_usdt: float) -> dict[str, Any]:
         self.ensure_markets_loaded()
         execution_symbol = self.settings.ccxt_symbol(symbol)
@@ -199,7 +216,7 @@ class OkxClient:
                 continue
             live_contracts = float(live.get('contracts') or 0.0)
             live_side = live.get('side')
-            if live_side == signal_side and live_contracts > 0:
+            if live_side == signal_side and amount_close_enough(amount, live_contracts):
                 verified_entry = True
                 break
 
