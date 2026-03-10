@@ -51,6 +51,14 @@ python -m src.runner.live_trader --check
 python -m src.runner.live_trader
 ```
 
+## Modes
+- `develop` — development / debugging mode; should not intentionally progress into normal trading workflows
+- `trade` — normal trading mode
+- `review` — review/report generation mode; completes into `calibrate`
+- `calibrate` — weekly operational flow: flatten, convert to USDT, reset local buckets, then auto-return to `trade`
+- `reset` — development-only destructive reset: backup + clear runtime/history artifacts + rebuild buckets, then auto-return to `test`
+- `test` — buffer-funded stress test mode on fixed test symbol `XRP-USDT-SWAP`, routed through the Breakout account, then auto-return to `develop`
+
 To simulate a run **without** persisting state:
 ```bash
 python -m src.runner.live_trader --no-state-write

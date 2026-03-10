@@ -46,8 +46,8 @@ class RiskManager:
         bucket = buckets.get(position_key, {})
         available_usdt = float(bucket.get("available_usdt", bucket.get("initial_capital_usdt", 0.0)))
         initial_capital_usdt = float(bucket.get("initial_capital_usdt", 0.0))
-        realized_pnl_usdt = float(bucket.get("realized_pnl_usdt", 0.0))
-        fees_usdt = float(bucket.get("fees_usdt", 0.0))
+        realized_pnl_usdt = float(bucket.get("realized_pnl_usdt") or 0.0)
+        fees_usdt = float(bucket.get("fees_usdt") or 0.0)
         equity_usdt = available_usdt + float(bucket.get("allocated_usdt", 0.0)) + realized_pnl_usdt - fees_usdt
         if initial_capital_usdt > 0 and equity_usdt <= initial_capital_usdt * 0.5:
             return RiskDecision(False, f"bucket_eliminated_50pct_drawdown:{position_key}:{equity_usdt}")
@@ -122,8 +122,8 @@ class RiskManager:
     def bucket_equity_usdt(self, bucket: dict) -> float:
         available_usdt = float(bucket.get("available_usdt", bucket.get("initial_capital_usdt", 0.0)))
         allocated_usdt = float(bucket.get("allocated_usdt", 0.0))
-        realized_pnl_usdt = float(bucket.get("realized_pnl_usdt", 0.0))
-        fees_usdt = float(bucket.get("fees_usdt", 0.0))
+        realized_pnl_usdt = float(bucket.get("realized_pnl_usdt") or 0.0)
+        fees_usdt = float(bucket.get("fees_usdt") or 0.0)
         return available_usdt + allocated_usdt + realized_pnl_usdt - fees_usdt
 
     def plan_entry_size(self, *, bucket: dict, candles: list[list[float]], leverage: int) -> SizingPlan:
