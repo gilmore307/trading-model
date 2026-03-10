@@ -5,6 +5,23 @@ from copy import deepcopy
 from pathlib import Path
 
 
+def realized_pnl_from_position(position: dict) -> float | None:
+    try:
+        qty = float(position.get("amount") or position.get("requested_amount") or 0.0)
+        entry = float(position.get("reference_price") or 0.0)
+        exit_ = float(position.get("exit_reference_price") or 0.0)
+    except Exception:
+        return None
+    if qty <= 0 or entry <= 0 or exit_ <= 0:
+        return None
+    side = position.get("side")
+    if side == "long":
+        return (exit_ - entry) * qty
+    if side == "short":
+        return (entry - exit_) * qty
+    return None
+
+
 DEFAULT_STATE = {
     "open_positions": 0,
     "positions": {},
@@ -83,6 +100,9 @@ class StateStore:
         normalized.setdefault("exit_amount", None)
         normalized.setdefault("exit_reference_price", None)
         normalized.setdefault("exit_fee_usdt", None)
+        normalized.setdefault("realized_pnl_usdt", None)
+        if normalized.get("status") == "closed" and normalized.get("realized_pnl_usdt") is None:
+            normalized["realized_pnl_usdt"] = realized_pnl_from_position(normalized)
         return normalized
 
     def _migrate_last_signals(self, last_signals: dict) -> dict:
@@ -141,4 +161,17 @@ class StateStore:
         for key, bucket in normalized.items():
             bucket.setdefault("locked", False)
             bucket.setdefault("lock_reason", None)
+            closed_realized = 0.0
+            for position in positions.get(key, []):
+                if position.get("status") == "closed":
+                    closed_realized += float(position.get("realized_pnl_usdt") or 0.0)
+            stored_realized = bucket.get("realized_pnl_usdt")
+            if stored_realized is None:
+                bucket["realized_pnl_usdt"] = closed_realized
+            else:
+                bucket["realized_pnl_usdt"] = float(stored_realized or 0.0)
+                if bucket["realized_pnl_usdt"] == 0.0 and closed_realized != 0.0:
+                    bucket["realized_pnl_usdt"] = closed_realized
+            if bucket.get("fees_usdt") is None:
+                bucket["fees_usdt"] = 0.0
         return normalized

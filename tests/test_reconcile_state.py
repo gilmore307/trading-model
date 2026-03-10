@@ -1,3 +1,4 @@
+import src.review.reconcile_state as reconcile_state_module
 from src.review.reconcile_state import reconcile_snapshot
 
 
@@ -54,6 +55,48 @@ def test_reconcile_closes_positions_when_exchange_side_mismatches_and_releases_b
     assert updated["buckets"]["breakout:ETH-USDT-SWAP"]["available_usdt"] == 500.0
     assert updated["buckets"]["breakout:ETH-USDT-SWAP"]["allocated_usdt"] == 0.0
     assert closed_keys == [{"position_key": "breakout:ETH-USDT-SWAP", "released_usdt": 300.0}]
+    assert normalized_keys == []
+
+
+def test_reconcile_closes_entry_incomplete_when_exchange_has_no_position(monkeypatch):
+    state = {
+        "positions": {
+            "pullback:BTC-USDT-SWAP": [
+                {
+                    "position_key": "pullback:BTC-USDT-SWAP",
+                    "symbol": "BTC/USDT:USDT",
+                    "strategy": "pullback",
+                    "side": "long",
+                    "status": "entry_incomplete",
+                    "notional_usdt": 100.0,
+                    "amount": 0.25,
+                    "reference_price": 100.0,
+                    "account_alias": "openclaw2",
+                }
+            ]
+        },
+        "buckets": {
+            "pullback:BTC-USDT-SWAP": {
+                "available_usdt": 50.0,
+                "allocated_usdt": 100.0,
+            }
+        },
+        "last_signals": {},
+        "history": [],
+    }
+    live_open = {}
+    monkeypatch.setattr(reconcile_state_module, '_latest_close_price', lambda *_args, **_kwargs: 110.0)
+
+    updated, closed_keys, normalized_keys = reconcile_snapshot(state, live_open, now_bar_id=456)
+
+    positions = updated["positions"]["pullback:BTC-USDT-SWAP"]
+    assert [p["status"] for p in positions] == ["closed"]
+    assert positions[0]["exit_reason"] == "reconcile_exchange_no_position"
+    assert positions[0]["realized_pnl_usdt"] == 2.5
+    assert updated["buckets"]["pullback:BTC-USDT-SWAP"]["available_usdt"] == 150.0
+    assert updated["buckets"]["pullback:BTC-USDT-SWAP"]["allocated_usdt"] == 0.0
+    assert updated["buckets"]["pullback:BTC-USDT-SWAP"]["realized_pnl_usdt"] == 2.5
+    assert closed_keys == [{"position_key": "pullback:BTC-USDT-SWAP", "released_usdt": 100.0}]
     assert normalized_keys == []
 
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+import os
+import tempfile
 
 from src.config.settings import Settings
 from src.exchange.okx_client import OkxClientRegistry
@@ -12,6 +14,22 @@ from src.runtime_mode import load_mode_state
 ROOT = Path('/root/.openclaw/workspace/projects/okx-trading')
 state_path = ROOT / 'logs' / 'state.json'
 log_path = ROOT / 'logs' / 'service' / 'daemon.log'
+health_path = ROOT / 'logs' / 'service' / 'health.json'
+
+
+def atomic_write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile('w', dir=path.parent, prefix=path.name + '.', suffix='.tmp', delete=False) as tmp:
+        json.dump(payload, tmp, indent=2)
+        tmp.write('\n')
+        tmp.flush()
+        os.fsync(tmp.fileno())
+        tmp_path = Path(tmp.name)
+    os.replace(tmp_path, path)
+
+def is_test_position_key(value: str | None) -> bool:
+    return bool(value and value.startswith('test:'))
+
 
 summary = {
     'generated_at': datetime.now(UTC).isoformat(),
@@ -38,18 +56,25 @@ data = None
 if state_path.exists():
     data = json.loads(state_path.read_text())
     summary['state_mtime'] = datetime.fromtimestamp(state_path.stat().st_mtime, UTC).isoformat()
-    summary['open_positions'] = data.get('open_positions')
-    summary['bucket_count'] = len(data.get('buckets', {}))
     positions = data.get('positions', {})
+    summary['open_positions'] = 0
+    summary['bucket_count'] = len([key for key in data.get('buckets', {}) if not is_test_position_key(key)])
     open_keys = []
     for key, value in positions.items():
+        if is_test_position_key(key):
+            continue
         items = value if isinstance(value, list) else [value]
         open_items = [item for item in items if item.get('status') == 'open']
         if not open_items:
             continue
         open_keys.append(key)
+        summary['open_positions'] += len(open_items)
     summary['open_position_keys'] = open_keys
-    summary['local_live_positions'] = local_live_position_map(data)
+    filtered_data = {
+        **data,
+        'positions': {key: value for key, value in positions.items() if not is_test_position_key(key)},
+    }
+    summary['local_live_positions'] = local_live_position_map(filtered_data)
 
 try:
     settings = Settings.load()
@@ -104,4 +129,5 @@ if log_path.exists():
             summary['last_cycle_marker'] = line
             break
 
+atomic_write_json(health_path, summary)
 print(json.dumps(summary, indent=2))

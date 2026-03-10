@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.config.settings import Settings
 from src.exchange.okx_client import OkxClientRegistry
+from src.execution.executor import realized_pnl_from_prices
 from src.runner.live_trader import account_symbol_key
 from src.storage.state import StateStore
 
@@ -87,7 +88,7 @@ def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int)
 
         for item in items:
             item_status = item.get('status')
-            if item_status not in {'open', 'closed', 'exit_verifying'}:
+            if item_status not in {'open', 'closed', 'exit_verifying', 'entry_incomplete'}:
                 updated_items.append(item)
                 continue
 
@@ -139,6 +140,12 @@ def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int)
             if should_close:
                 released_usdt += float(item.get('margin_required_usdt') or item.get('notional_usdt') or 0.0)
                 exit_reference_price = _latest_close_price(item_account_alias, item_symbol) if item_symbol else None
+                realized_pnl_usdt = realized_pnl_from_prices(
+                    item.get('side'),
+                    item.get('amount') or item.get('requested_amount'),
+                    item.get('reference_price'),
+                    exit_reference_price,
+                )
                 updated_items.append({
                     **item,
                     'trade_id': item.get('trade_id'),
@@ -147,6 +154,7 @@ def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int)
                     'exit_bar_id': now_bar_id,
                     'exit_reference_price': exit_reference_price,
                     'exit_fee_usdt': None,
+                    'realized_pnl_usdt': realized_pnl_usdt,
                 })
                 history.append({
                     'event_id': f"{item.get('trade_id') or item.get('position_key') or key}:reconcile_exit:{now_bar_id}",
@@ -161,6 +169,7 @@ def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int)
                     'mode': 'reconcile',
                     'released_usdt': float(item.get('margin_required_usdt') or item.get('notional_usdt') or 0.0),
                     'tracked_amount': item.get('amount') or item.get('requested_amount'),
+                    'realized_pnl_usdt': realized_pnl_usdt,
                     'venue_order_id': None,
                     'venue_status': 'reconcile',
                     'venue_order_side': None,
@@ -195,10 +204,12 @@ def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int)
         if released_usdt > 0:
             closed_keys.append({'position_key': key, 'released_usdt': released_usdt})
             bucket = buckets.get(key, {})
+            realized_total = sum(float(item.get('realized_pnl_usdt') or 0.0) for item in updated_items if item.get('status') == 'closed')
             buckets[key] = {
                 **bucket,
                 'available_usdt': float(bucket.get('available_usdt', 0.0)) + released_usdt,
                 'allocated_usdt': max(0.0, float(bucket.get('allocated_usdt', 0.0)) - released_usdt),
+                'realized_pnl_usdt': realized_total,
             }
         updated_state['positions'][key] = updated_items
 

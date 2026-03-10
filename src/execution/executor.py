@@ -5,6 +5,22 @@ from typing import Any
 from datetime import datetime, UTC
 
 
+def realized_pnl_from_prices(side: str | None, amount: float | None, entry_price: float | None, exit_price: float | None) -> float | None:
+    try:
+        qty = float(amount or 0.0)
+        entry = float(entry_price or 0.0)
+        exit_ = float(exit_price or 0.0)
+    except Exception:
+        return None
+    if qty <= 0 or entry <= 0 or exit_ <= 0:
+        return None
+    if side == 'long':
+        return (exit_ - entry) * qty
+    if side == 'short':
+        return (entry - exit_) * qty
+    return None
+
+
 @dataclass
 class ExecutionResult:
     submitted: bool
@@ -122,6 +138,7 @@ class DemoExecutor:
         }
         updated_positions = list(existing_positions) + [position]
         allocate_margin = (venue_response is None or verified_entry)
+        entry_fee_usdt = 0.0 if venue_response is None else float(venue_response.get("fee_usdt") or 0.0)
         state_patch = {
             "positions": {position_key: updated_positions},
             "last_signals": {
@@ -134,8 +151,9 @@ class DemoExecutor:
             "buckets": {
                 position_key: {
                     **bucket,
-                    "available_usdt": float(bucket.get("available_usdt", 0.0)) - (margin_required_usdt if allocate_margin else 0.0),
-                    "allocated_usdt": float(bucket.get("allocated_usdt", 0.0)) + (margin_required_usdt if allocate_margin else 0.0),
+                    "available_usdt": float(bucket.get("available_usdt") or 0.0) - (margin_required_usdt if allocate_margin else 0.0),
+                    "allocated_usdt": float(bucket.get("allocated_usdt") or 0.0) + (margin_required_usdt if allocate_margin else 0.0),
+                    "fees_usdt": float(bucket.get("fees_usdt") or 0.0) + entry_fee_usdt,
                     "last_leverage": leverage,
                 }
             },
@@ -180,11 +198,20 @@ class DemoExecutor:
         released_usdt = 0.0 if (venue_response is not None and not verified_flat) else sum(float(p.get("margin_required_usdt") or p.get("notional_usdt") or 0.0) for p in open_positions)
         closed_ids = {id(p) for p in open_positions}
         updated_positions: list[dict] = []
+        realized_pnl_total = 0.0
         for position in positions:
             if id(position) in closed_ids:
                 next_status = "closed" if (venue_response is None or verified_flat) else "exit_verifying"
                 next_exit_status = None if venue_response is None else venue_response.get("status")
                 next_exit_reason = reason if (venue_response is None or verified_flat) else f"{reason}|exit_incomplete"
+                realized_pnl_usdt = None if venue_response is None else realized_pnl_from_prices(
+                    position.get("side"),
+                    position.get("amount"),
+                    position.get("reference_price"),
+                    venue_response.get("reference_price"),
+                )
+                if realized_pnl_usdt is not None and (venue_response is None or verified_flat):
+                    realized_pnl_total += realized_pnl_usdt
                 updated_positions.append({
                     **position,
                     "trade_id": position.get("trade_id"),
@@ -194,6 +221,7 @@ class DemoExecutor:
                     "last_confirmed_live_side": None if (venue_response is None or verified_flat) else venue_response.get("remaining_side"),
                     "last_exchange_observed_at": datetime.now(UTC).isoformat(),
                     "exit_reason": next_exit_reason,
+                    "realized_pnl_usdt": realized_pnl_usdt if (venue_response is None or verified_flat) else position.get("realized_pnl_usdt"),
                     "exit_order_id": None if venue_response is None else venue_response.get("order_id"),
                     "exit_status": next_exit_status,
                     "exit_order_side": None if venue_response is None else venue_response.get("order_side"),
@@ -214,6 +242,10 @@ class DemoExecutor:
             else:
                 updated_positions.append(position)
 
+        event_realized_pnl_usdt = None if open_positions else 0.0
+        if open_positions and verified_flat:
+            event_realized_pnl_usdt = realized_pnl_total
+
         event = {
             "event_id": self._make_event_id(open_positions[0].get("trade_id", position_key), "exit", bar_id) if open_positions else self._make_event_id(position_key, "exit", bar_id),
             "trade_id": open_positions[0].get("trade_id", position_key) if open_positions else position_key,
@@ -227,6 +259,7 @@ class DemoExecutor:
             "mode": mode,
             "released_usdt": released_usdt,
             "tracked_amount": total_amount,
+            "realized_pnl_usdt": event_realized_pnl_usdt,
             "venue_order_id": None if venue_response is None else venue_response.get("order_id"),
             "venue_status": None if venue_response is None else venue_response.get("status"),
             "venue_order_side": None if venue_response is None else venue_response.get("order_side"),
@@ -245,6 +278,7 @@ class DemoExecutor:
             "verification_attempts": None if venue_response is None else venue_response.get("verification_attempts"),
             "order_attempts": None if venue_response is None else venue_response.get("order_attempts"),
         }
+        exit_fee_usdt = 0.0 if venue_response is None else float(venue_response.get("fee_usdt") or 0.0)
         state_patch = {
             "positions": {position_key: updated_positions},
             "last_signals": {
@@ -257,8 +291,10 @@ class DemoExecutor:
             "buckets": {
                 position_key: {
                     **bucket,
-                    "available_usdt": float(bucket.get("available_usdt", 0.0)) + released_usdt,
-                    "allocated_usdt": max(0.0, float(bucket.get("allocated_usdt", 0.0)) - released_usdt),
+                    "available_usdt": float(bucket.get("available_usdt") or 0.0) + released_usdt,
+                    "allocated_usdt": max(0.0, float(bucket.get("allocated_usdt") or 0.0) - released_usdt),
+                    "fees_usdt": float(bucket.get("fees_usdt") or 0.0) + exit_fee_usdt,
+                    "realized_pnl_usdt": float(bucket.get("realized_pnl_usdt") or 0.0) + (realized_pnl_total if verified_flat else 0.0),
                 }
             },
             "history_append": [event],

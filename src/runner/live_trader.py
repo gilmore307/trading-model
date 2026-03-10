@@ -45,26 +45,45 @@ def exchange_live_position_map(exchange_positions: list[dict], account_alias: st
     return live_positions
 
 
+ALIGNMENT_ACTIVE_STATUSES = {"open", "entry_incomplete", "exit_verifying"}
+
+
+def is_test_position_key(value: str | None) -> bool:
+    return bool(value and value.startswith("test:"))
+
+
+def _alignment_amount(item: dict) -> float:
+    status = item.get("status")
+    if status == "exit_verifying":
+        return float(item.get("exit_remaining_contracts") or item.get("last_confirmed_live_contracts") or item.get("amount") or 0.0)
+    if status == "entry_incomplete":
+        return float(item.get("entry_live_contracts") or item.get("last_confirmed_live_contracts") or item.get("amount") or 0.0)
+    return float(item.get("amount") or 0.0)
+
+
 def local_live_position_map(snapshot: dict) -> dict[str, dict]:
     local_positions: dict[str, dict] = {}
     for key, value in snapshot.get("positions", {}).items():
-        items = value if isinstance(value, list) else [value]
-        open_items = [item for item in items if item.get("status") == "open"]
-        if not open_items:
+        if is_test_position_key(key):
             continue
-        symbol = open_items[0].get("symbol")
-        account_alias = open_items[0].get("account_alias", "default")
+        items = value if isinstance(value, list) else [value]
+        active_items = [item for item in items if item.get("status") in ALIGNMENT_ACTIVE_STATUSES]
+        if not active_items:
+            continue
+        symbol = active_items[0].get("symbol")
+        account_alias = active_items[0].get("account_alias", "default")
         if not symbol:
             continue
         local_positions[account_symbol_key(account_alias, symbol)] = {
             "account_alias": account_alias,
             "symbol": symbol,
-            "position_keys": sorted({item.get("position_key") or key for item in open_items}),
-            "strategies": sorted({item.get("strategy") for item in open_items if item.get("strategy")}),
-            "count": len(open_items),
-            "sides": sorted({item.get("side") for item in open_items}),
-            "amount": round(sum(float(item.get("amount") or 0.0) for item in open_items), 10),
-            "notional_usdt": round(sum(float(item.get("notional_usdt") or 0.0) for item in open_items), 10),
+            "position_keys": sorted({item.get("position_key") or key for item in active_items}),
+            "strategies": sorted({item.get("strategy") for item in active_items if item.get("strategy")}),
+            "count": len(active_items),
+            "sides": sorted({item.get("side") for item in active_items}),
+            "statuses": sorted({item.get("status") for item in active_items if item.get("status")}),
+            "amount": round(sum(_alignment_amount(item) for item in active_items), 10),
+            "notional_usdt": round(sum(float(item.get("notional_usdt") or 0.0) for item in active_items), 10),
         }
     return local_positions
 
