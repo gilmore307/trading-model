@@ -13,6 +13,7 @@ def test_reconcile_closes_positions_when_exchange_side_mismatches_and_releases_b
                     "status": "open",
                     "notional_usdt": 100.0,
                     "amount": 0.48,
+                    "account_alias": "default",
                 },
                 {
                     "position_key": "breakout:ETH-USDT-SWAP",
@@ -22,6 +23,7 @@ def test_reconcile_closes_positions_when_exchange_side_mismatches_and_releases_b
                     "status": "open",
                     "notional_usdt": 200.0,
                     "amount": 0.48,
+                    "account_alias": "default",
                 },
             ]
         },
@@ -35,7 +37,8 @@ def test_reconcile_closes_positions_when_exchange_side_mismatches_and_releases_b
         "history": [],
     }
     live_open = {
-        "ETH/USDT:USDT": {
+        "default::ETH/USDT:USDT": {
+            "account_alias": "default",
             "symbol": "ETH/USDT:USDT",
             "contracts": 0.48,
             "side": "long",
@@ -66,6 +69,7 @@ def test_reconcile_normalizes_live_contracts_across_matching_open_positions():
                     "status": "open",
                     "notional_usdt": 100.0,
                     "amount": 0.98,
+                    "account_alias": "openclaw3",
                 },
                 {
                     "position_key": "meanrev:BTC-USDT-SWAP",
@@ -75,6 +79,7 @@ def test_reconcile_normalizes_live_contracts_across_matching_open_positions():
                     "status": "open",
                     "notional_usdt": 100.0,
                     "amount": 0.98,
+                    "account_alias": "openclaw3",
                 },
             ]
         },
@@ -88,7 +93,8 @@ def test_reconcile_normalizes_live_contracts_across_matching_open_positions():
         "history": [],
     }
     live_open = {
-        "BTC/USDT:USDT": {
+        "openclaw3::BTC/USDT:USDT": {
+            "account_alias": "openclaw3",
             "symbol": "BTC/USDT:USDT",
             "contracts": 1.54,
             "side": "short",
@@ -105,6 +111,7 @@ def test_reconcile_normalizes_live_contracts_across_matching_open_positions():
     assert closed_keys == []
     assert normalized_keys == [{
         "position_key": "meanrev:BTC-USDT-SWAP",
+        "account_alias": "openclaw3",
         "symbol": "BTC/USDT:USDT",
         "side": "short",
         "live_contracts": 1.54,

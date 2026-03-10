@@ -1,4 +1,4 @@
-from src.exchange.okx_client import exit_order_side, normalize_contract_amount
+from src.exchange.okx_client import OkxClientRegistry, exit_order_side, normalize_contract_amount
 
 
 class FakeExchange:
@@ -27,15 +27,36 @@ class FakeExchange:
         return {"id": "order-1", "status": "filled"}
 
 
+class FakeAccount:
+    def __init__(self, alias="default", label="OpenClaw1"):
+        self.alias = alias
+        self.label = label
+        self.api_key = f"key-{alias}"
+        self.api_secret = f"secret-{alias}"
+        self.api_passphrase = f"pass-{alias}"
+
+
 class FakeSettings:
+    okx_demo = True
+
     def ccxt_symbol(self, raw_symbol: str) -> str:
         return raw_symbol
+
+    def account_for_strategy(self, strategy_name: str):
+        mapping = {
+            "breakout": FakeAccount("default", "OpenClaw1"),
+            "pullback": FakeAccount("openclaw2", "OpenClaw2"),
+            "meanrev": FakeAccount("openclaw3", "OpenClaw3"),
+        }
+        return mapping[strategy_name]
 
 
 class DummyOkxClient:
     def __init__(self):
         self.settings = FakeSettings()
         self.exchange = FakeExchange()
+        self.account_alias = "default"
+        self.account_label = "OpenClaw1"
 
     def ensure_markets_loaded(self):
         if not getattr(self.exchange, "markets", None):
@@ -127,3 +148,18 @@ def test_create_exit_order_normalizes_aggregated_amount_before_submit():
     }]
     assert result["requested_amount"] == 1.8199999999
     assert result["amount"] == 1.82
+
+
+def test_okx_client_registry_reuses_clients_by_account_alias():
+    settings = FakeSettings()
+    registry = OkxClientRegistry(settings)
+
+    breakout_client = registry.for_strategy("breakout")
+    breakout_client_2 = registry.for_strategy("breakout")
+    pullback_client = registry.for_strategy("pullback")
+
+    assert breakout_client is breakout_client_2
+    assert breakout_client.account_alias == "default"
+    assert breakout_client.account_label == "OpenClaw1"
+    assert pullback_client.account_alias == "openclaw2"
+    assert pullback_client.account_label == "OpenClaw2"

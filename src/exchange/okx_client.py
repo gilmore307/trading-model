@@ -4,7 +4,7 @@ from typing import Any
 
 import ccxt
 
-from src.config.settings import Settings
+from src.config.settings import Settings, StrategyAccountConfig
 
 
 def exit_order_side(position_side: str) -> str:
@@ -27,12 +27,15 @@ def normalize_contract_amount(exchange: Any, execution_symbol: str, amount: floa
 
 
 class OkxClient:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, account: StrategyAccountConfig | None = None):
         self.settings = settings
+        self.account = account or settings.account_for_strategy("breakout")
+        self.account_alias = self.account.alias
+        self.account_label = self.account.label or self.account.alias
         self.exchange = ccxt.okx({
-            "apiKey": settings.okx_api_key,
-            "secret": settings.okx_api_secret,
-            "password": settings.okx_api_passphrase,
+            "apiKey": self.account.api_key,
+            "secret": self.account.api_secret,
+            "password": self.account.api_passphrase,
             "enableRateLimit": True,
             "options": {
                 "defaultType": "swap",
@@ -75,6 +78,8 @@ class OkxClient:
         return {
             "exchange": self.exchange.id,
             "demo": self.settings.okx_demo,
+            "account_alias": self.account_alias,
+            "account_label": self.account_label,
             "symbols_found": symbols_found,
             "ticker_status": ticker_status,
             "balance_keys": sorted(list(balance.keys()))[:10],
@@ -119,6 +124,8 @@ class OkxClient:
             "reference_price": last_price,
             "order_id": order.get("id"),
             "status": order.get("status"),
+            "account_alias": self.account_alias,
+            "account_label": self.account_label,
             "raw": order,
         }
 
@@ -144,6 +151,8 @@ class OkxClient:
             "requested_amount": amount,
             "order_id": order.get("id"),
             "status": order.get("status"),
+            "account_alias": self.account_alias,
+            "account_label": self.account_label,
             "raw": order,
         }
 
@@ -173,5 +182,22 @@ class OkxClient:
             'amount': sell_amount,
             'order_id': order.get('id'),
             'status': order.get('status'),
+            'account_alias': self.account_alias,
+            'account_label': self.account_label,
             'raw': order,
         }
+
+
+class OkxClientRegistry:
+    def __init__(self, settings: Settings):
+        self.settings = settings
+        self._clients: dict[str, OkxClient] = {}
+
+    def for_strategy(self, strategy_name: str) -> OkxClient:
+        account = self.settings.account_for_strategy(strategy_name)
+        if account.alias not in self._clients:
+            self._clients[account.alias] = OkxClient(self.settings, account)
+        return self._clients[account.alias]
+
+    def accounts_by_strategy(self) -> dict[str, str]:
+        return {strategy: self.settings.account_for_strategy(strategy).alias for strategy in self.settings.strategies}

@@ -7,7 +7,7 @@ from datetime import datetime, UTC
 from zoneinfo import ZoneInfo
 
 from src.config.settings import Settings
-from src.exchange.okx_client import OkxClient
+from src.exchange.okx_client import OkxClientRegistry
 from src.execution.executor import DemoExecutor
 from src.notify.openclaw_notify import OpenClawNotifier
 from src.risk.manager import RiskManager
@@ -20,7 +20,11 @@ from src.strategy.pullback import PullbackStrategy
 BJ = ZoneInfo('Asia/Shanghai')
 
 
-def exchange_live_position_map(exchange_positions: list[dict]) -> dict[str, dict]:
+def account_symbol_key(account_alias: str, symbol: str) -> str:
+    return f"{account_alias}::{symbol}"
+
+
+def exchange_live_position_map(exchange_positions: list[dict], account_alias: str) -> dict[str, dict]:
     live_positions: dict[str, dict] = {}
     for position in exchange_positions:
         contracts = float(position.get("contracts") or 0.0)
@@ -29,12 +33,14 @@ def exchange_live_position_map(exchange_positions: list[dict]) -> dict[str, dict
         symbol = position.get("symbol")
         if not symbol:
             continue
-        live_positions[symbol] = {
+        live_positions[account_symbol_key(account_alias, symbol)] = {
+            "account_alias": account_alias,
             "side": position.get("side"),
             "contracts": abs(contracts),
             "hedged": bool(position.get("hedged")),
             "pos_side": position.get("info", {}).get("posSide"),
             "raw_pos": position.get("info", {}).get("pos"),
+            "symbol": symbol,
         }
     return live_positions
 
@@ -47,9 +53,12 @@ def local_live_position_map(snapshot: dict) -> dict[str, dict]:
         if not open_items:
             continue
         symbol = open_items[0].get("symbol")
+        account_alias = open_items[0].get("account_alias", "default")
         if not symbol:
             continue
-        local_positions[symbol] = {
+        local_positions[account_symbol_key(account_alias, symbol)] = {
+            "account_alias": account_alias,
+            "symbol": symbol,
             "position_keys": sorted({item.get("position_key") or key for item in open_items}),
             "strategies": sorted({item.get("strategy") for item in open_items if item.get("strategy")}),
             "count": len(open_items),
@@ -60,24 +69,33 @@ def local_live_position_map(snapshot: dict) -> dict[str, dict]:
     return local_positions
 
 
-def position_alignment_report(snapshot: dict, exchange_positions: list[dict]) -> dict:
+def merge_exchange_live_positions(per_account_positions: dict[str, list[dict]]) -> dict[str, dict]:
+    merged: dict[str, dict] = {}
+    for account_alias, positions in per_account_positions.items():
+        merged.update(exchange_live_position_map(positions, account_alias))
+    return merged
+
+
+def position_alignment_report(snapshot: dict, per_account_positions: dict[str, list[dict]]) -> dict:
     local_positions = local_live_position_map(snapshot)
-    live_positions = exchange_live_position_map(exchange_positions)
+    live_positions = merge_exchange_live_positions(per_account_positions)
     mismatches = []
-    all_symbols = sorted(set(local_positions) | set(live_positions))
-    for symbol in all_symbols:
-        local = local_positions.get(symbol)
-        exchange = live_positions.get(symbol)
+    all_keys = sorted(set(local_positions) | set(live_positions))
+    for composite_key in all_keys:
+        local = local_positions.get(composite_key)
+        exchange = live_positions.get(composite_key)
         if local is None:
             mismatches.append({
-                "symbol": symbol,
+                "account_alias": exchange.get("account_alias") if exchange else None,
+                "symbol": exchange.get("symbol") if exchange else composite_key,
                 "type": "missing_local_position",
                 "exchange": exchange,
             })
             continue
         if exchange is None:
             mismatches.append({
-                "symbol": symbol,
+                "account_alias": local.get("account_alias"),
+                "symbol": local.get("symbol"),
                 "type": "missing_exchange_position",
                 "local": local,
             })
@@ -85,7 +103,8 @@ def position_alignment_report(snapshot: dict, exchange_positions: list[dict]) ->
         local_sides = local.get("sides") or []
         if len(local_sides) != 1:
             mismatches.append({
-                "symbol": symbol,
+                "account_alias": local.get("account_alias"),
+                "symbol": local.get("symbol"),
                 "type": "multiple_local_sides",
                 "local": local,
                 "exchange": exchange,
@@ -96,7 +115,8 @@ def position_alignment_report(snapshot: dict, exchange_positions: list[dict]) ->
         exchange_contracts = float(exchange.get("contracts") or 0.0)
         if local_side != exchange.get("side"):
             mismatches.append({
-                "symbol": symbol,
+                "account_alias": local.get("account_alias"),
+                "symbol": local.get("symbol"),
                 "type": "side_mismatch",
                 "local": local,
                 "exchange": exchange,
@@ -104,7 +124,8 @@ def position_alignment_report(snapshot: dict, exchange_positions: list[dict]) ->
             continue
         if abs(local_amount - exchange_contracts) > 1e-9:
             mismatches.append({
-                "symbol": symbol,
+                "account_alias": local.get("account_alias"),
+                "symbol": local.get("symbol"),
                 "type": "amount_mismatch",
                 "local": local,
                 "exchange": exchange,
@@ -199,12 +220,8 @@ def main() -> None:
         stop_atr_multiple=settings.stop_atr_multiple,
     )
     strategies = build_strategies(settings)
-    client = OkxClient(settings)
+    client_registry = OkxClientRegistry(settings)
     trading_enabled = (args.arm_demo_submit and not settings.dry_run and not in_review_pause_window())
-    executor = DemoExecutor(
-        armed=trading_enabled,
-        client=client,
-    )
 
     if args.notify_test:
         result = notifier.send("OKX demo trader scaffold test: notifier path is working.")
@@ -212,7 +229,7 @@ def main() -> None:
         return
 
     if args.check:
-        result = client.check_connectivity()
+        result = {strategy.name: client_registry.for_strategy(strategy.name).check_connectivity() for strategy in strategies}
         print(json.dumps(result, indent=2, default=str))
         return
 
@@ -224,11 +241,24 @@ def main() -> None:
         settings.pullback_lookback,
         settings.meanrev_lookback,
     )
-    tracked_symbols = sorted({settings.execution_symbol(strategy.name, symbol) for symbol in settings.symbols for strategy in strategies})
-    alignment = position_alignment_report(snapshot, client.exchange.fetch_positions(tracked_symbols))
+
+    tracked_symbols_by_alias: dict[str, set[str]] = {}
+    for strategy in strategies:
+        client = client_registry.for_strategy(strategy.name)
+        tracked_symbols_by_alias.setdefault(client.account_alias, set())
+        for symbol in settings.symbols:
+            tracked_symbols_by_alias[client.account_alias].add(settings.execution_symbol(strategy.name, symbol))
+
+    per_account_positions: dict[str, list[dict]] = {}
+    for strategy in strategies:
+        client = client_registry.for_strategy(strategy.name)
+        if client.account_alias in per_account_positions:
+            continue
+        per_account_positions[client.account_alias] = client.exchange.fetch_positions(sorted(tracked_symbols_by_alias[client.account_alias]))
+
+    alignment = position_alignment_report(snapshot, per_account_positions)
     if trading_enabled and not alignment["ok"]:
         trading_enabled = False
-        executor.armed = False
         report.append({
             "action": "protection_block",
             "reason": "position_alignment_mismatch",
@@ -239,15 +269,21 @@ def main() -> None:
                 "OKX demo trader paused new submissions: local/exchange position alignment mismatch detected. "
                 f"Mismatches: {json.dumps(alignment['mismatches'], ensure_ascii=False)}"
             )
+
     for symbol in settings.symbols:
         for strategy in strategies:
+            client = client_registry.for_strategy(strategy.name)
+            executor = DemoExecutor(
+                armed=trading_enabled,
+                client=client,
+            )
             exec_symbol = settings.execution_symbol(strategy.name, symbol)
             key = position_key(strategy.name, symbol)
             bucket = ensure_bucket(snapshot, key, strategy.name, symbol, settings.bucket_initial_capital_usdt)
             position_list = snapshot.get("positions", {}).get(key, []) or []
             open_positions = [p for p in position_list if p.get("status") == "open"]
             candles = client.fetch_ohlcv(exec_symbol, settings.timeframe, limit=max(50, max_lookback + 5))
-            market_data.append_ohlc(exec_symbol, candles)
+            market_data.append_ohlc(f"{client.account_alias}:{exec_symbol}", candles)
             bar_id = int(candles[-1][0]) if candles else -1
             signal = strategy.evaluate(symbol, candles)
 
@@ -264,6 +300,8 @@ def main() -> None:
                 )
                 snapshot = apply_state_patch(snapshot, execution.state_patch)
                 report.append({
+                    "account_alias": client.account_alias,
+                    "account_label": client.account_label,
                     "symbol": symbol,
                     "execution_symbol": exec_symbol,
                     "strategy": strategy.name,
@@ -284,6 +322,8 @@ def main() -> None:
                     "bar_id": bar_id,
                 }
                 report.append({
+                    "account_alias": client.account_alias,
+                    "account_label": client.account_label,
                     "symbol": symbol,
                     "execution_symbol": exec_symbol,
                     "strategy": strategy.name,
@@ -311,6 +351,8 @@ def main() -> None:
                     "bar_id": bar_id,
                 }
                 report.append({
+                    "account_alias": client.account_alias,
+                    "account_label": client.account_label,
                     "symbol": symbol,
                     "execution_symbol": exec_symbol,
                     "strategy": strategy.name,
@@ -336,6 +378,8 @@ def main() -> None:
             )
             snapshot = apply_state_patch(snapshot, execution.state_patch)
             report_item = {
+                "account_alias": client.account_alias,
+                "account_label": client.account_label,
                 "symbol": symbol,
                 "execution_symbol": exec_symbol,
                 "strategy": strategy.name,
@@ -365,8 +409,9 @@ def main() -> None:
         state.save(snapshot)
 
     print(json.dumps({
-        "mode": "dry_run" if executor.armed is False else "demo_submit",
+        "mode": "dry_run" if trading_enabled is False else "demo_submit",
         "trading_enabled": trading_enabled,
+        "strategy_accounts": client_registry.accounts_by_strategy(),
         "alignment_ok": alignment["ok"],
         "alignment_mismatches": alignment["mismatches"],
         "symbols": settings.symbols,

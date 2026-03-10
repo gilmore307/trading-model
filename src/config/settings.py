@@ -26,6 +26,19 @@ DEFAULT_STRATEGY_SYMBOLS = {
         "SOL-USDT-SWAP": "SOL/USDT:USDT",
     },
 }
+DEFAULT_STRATEGY_ACCOUNT_ALIASES = {
+    "breakout": "default",
+    "pullback": "default",
+    "meanrev": "default",
+}
+
+
+class StrategyAccountConfig(BaseModel):
+    alias: str
+    api_key: str
+    api_secret: str
+    api_passphrase: str
+    label: str | None = None
 
 
 class Settings(BaseModel):
@@ -38,6 +51,8 @@ class Settings(BaseModel):
     symbols: list[str] = DEFAULT_SYMBOLS.copy()
     strategies: list[str] = DEFAULT_STRATEGIES.copy()
     strategy_symbols: dict[str, dict[str, str]] = DEFAULT_STRATEGY_SYMBOLS.copy()
+    strategy_account_aliases: dict[str, str] = DEFAULT_STRATEGY_ACCOUNT_ALIASES.copy()
+    strategy_accounts: dict[str, StrategyAccountConfig] = {}
     timeframe: str = "5m"
     breakout_lookback: int = 20
     pullback_lookback: int = 20
@@ -66,6 +81,12 @@ class Settings(BaseModel):
         mapped = self.strategy_symbols.get(strategy_name, {}).get(symbol, symbol)
         return self.ccxt_symbol(mapped)
 
+    def account_for_strategy(self, strategy_name: str) -> StrategyAccountConfig:
+        alias = self.strategy_account_aliases.get(strategy_name, "default")
+        if alias not in self.strategy_accounts:
+            raise KeyError(f"No strategy account configured for strategy={strategy_name}, alias={alias}")
+        return self.strategy_accounts[alias]
+
     @classmethod
     def load(cls, env_path: str | Path | None = None) -> "Settings":
         path = Path(env_path or Path.home() / "openclaw-automation" / ".env")
@@ -76,6 +97,33 @@ class Settings(BaseModel):
         symbols = [item.strip() for item in symbols_raw.split(",") if item.strip()]
         strategies = [item.strip() for item in strategies_raw.split(",") if item.strip()]
 
+        default_account = {
+            "alias": "default",
+            "api_key": os.getenv("OKX_API_KEY", ""),
+            "api_secret": os.getenv("OKX_API_SECRET", ""),
+            "api_passphrase": os.getenv("OKX_API_PASSPHRASE", ""),
+            "label": os.getenv("OKX_ACCOUNT_LABEL", "default"),
+        }
+        strategy_account_aliases = {
+            "breakout": os.getenv("BREAKOUT_ACCOUNT_ALIAS", "default"),
+            "pullback": os.getenv("PULLBACK_ACCOUNT_ALIAS", "default"),
+            "meanrev": os.getenv("MEANREV_ACCOUNT_ALIAS", "default"),
+        }
+        strategy_accounts = {
+            "default": default_account,
+        }
+        for alias in sorted(set(strategy_account_aliases.values())):
+            if alias == "default":
+                continue
+            prefix = alias.upper()
+            strategy_accounts[alias] = {
+                "alias": alias,
+                "api_key": os.getenv(f"OKX_{prefix}_API_KEY", ""),
+                "api_secret": os.getenv(f"OKX_{prefix}_API_SECRET", ""),
+                "api_passphrase": os.getenv(f"OKX_{prefix}_API_PASSPHRASE", ""),
+                "label": os.getenv(f"OKX_{prefix}_ACCOUNT_LABEL", alias),
+            }
+
         data = {
             "OKX_API_KEY": os.getenv("OKX_API_KEY", ""),
             "OKX_API_SECRET": os.getenv("OKX_API_SECRET", ""),
@@ -85,6 +133,8 @@ class Settings(BaseModel):
             "symbols": symbols or DEFAULT_SYMBOLS.copy(),
             "strategies": strategies or DEFAULT_STRATEGIES.copy(),
             "strategy_symbols": DEFAULT_STRATEGY_SYMBOLS.copy(),
+            "strategy_account_aliases": strategy_account_aliases,
+            "strategy_accounts": strategy_accounts,
             "timeframe": os.getenv("TIMEFRAME", "5m"),
             "breakout_lookback": int(os.getenv("BREAKOUT_LOOKBACK", "20")),
             "pullback_lookback": int(os.getenv("PULLBACK_LOOKBACK", os.getenv("BREAKOUT_LOOKBACK", "20"))),
