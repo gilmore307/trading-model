@@ -450,6 +450,25 @@ def main() -> None:
                 existing_positions=position_list,
             )
             snapshot = apply_state_patch(snapshot, execution.state_patch)
+            entry_verified = None if execution.venue_response is None else execution.venue_response.get("verified_entry")
+            if entry_verified is False:
+                locked_bucket = {
+                    **snapshot.get("buckets", {}).get(key, bucket),
+                    "locked": True,
+                    "lock_reason": f"entry_incomplete:{bar_id}",
+                }
+                snapshot = apply_state_patch(snapshot, {
+                    "buckets": {key: locked_bucket},
+                    "history_append": [{
+                        "type": "bucket_lock",
+                        "position_key": key,
+                        "symbol": exec_symbol,
+                        "strategy": strategy.name,
+                        "reason": f"entry_incomplete:{bar_id}",
+                        "bar_id": bar_id,
+                        "mode": execution.mode,
+                    }],
+                })
             report_item = {
                 "account_alias": client.account_alias,
                 "account_label": client.account_label,
@@ -474,6 +493,10 @@ def main() -> None:
                 report_item["venue_status"] = execution.venue_response.get("status")
                 report_item["reference_price"] = execution.venue_response.get("reference_price")
                 report_item["amount"] = execution.venue_response.get("amount")
+                report_item["entry_verified"] = execution.venue_response.get("verified_entry")
+                report_item["live_contracts"] = execution.venue_response.get("live_contracts")
+                report_item["live_side"] = execution.venue_response.get("live_side")
+            report_item["bucket_locked"] = bool(entry_verified is False)
             report.append(report_item)
 
     market_data.append_events(snapshot.get("history", [])[starting_history_len:])

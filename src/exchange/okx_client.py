@@ -186,6 +186,23 @@ class OkxClient:
         }
         order = self.exchange.create_order(execution_symbol, "market", order_side, amount, None, params)
         fee_usdt = extract_order_fee(order)
+
+        verified_entry = False
+        live_contracts = 0.0
+        live_side = None
+        verification = []
+        for attempt in range(1, 4):
+            time.sleep(1.0)
+            live = live_position_snapshot(self.exchange, execution_symbol)
+            verification.append({'attempt': attempt, 'live': live})
+            if live is None:
+                continue
+            live_contracts = float(live.get('contracts') or 0.0)
+            live_side = live.get('side')
+            if live_side == signal_side and live_contracts > 0:
+                verified_entry = True
+                break
+
         return {
             "symbol": symbol,
             "ccxt_symbol": execution_symbol,
@@ -195,6 +212,10 @@ class OkxClient:
             "notional_usdt": notional_usdt,
             "reference_price": last_price,
             "fee_usdt": fee_usdt,
+            "verified_entry": verified_entry,
+            "live_contracts": live_contracts,
+            "live_side": live_side,
+            "verification_attempts": verification,
             "order_id": order.get("id"),
             "status": order.get("status"),
             "account_alias": self.account_alias,

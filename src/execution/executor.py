@@ -43,6 +43,7 @@ class DemoExecutor:
             mode = "demo_submit"
             submitted = True
 
+        verified_entry = True if venue_response is None else bool(venue_response.get("verified_entry", False))
         position = {
             "entry_id": f"{position_key}:{bar_id}:{len(existing_positions)+1}",
             "position_key": position_key,
@@ -54,7 +55,7 @@ class DemoExecutor:
             "notional_usdt": order_size_usdt,
             "margin_required_usdt": margin_required_usdt,
             "leverage": leverage,
-            "status": "open",
+            "status": "open" if (venue_response is None or verified_entry) else "entry_incomplete",
             "account_alias": None if self.client is None else getattr(self.client, "account_alias", None),
             "account_label": None if self.client is None else getattr(self.client, "account_label", None),
             "venue_order_id": None if venue_response is None else venue_response.get("order_id"),
@@ -66,6 +67,9 @@ class DemoExecutor:
             "requested_amount": None if venue_response is None else venue_response.get("amount"),
             "reference_price": None if venue_response is None else venue_response.get("reference_price"),
             "fee_usdt": None if venue_response is None else venue_response.get("fee_usdt"),
+            "entry_verified": verified_entry if venue_response is not None else None,
+            "entry_live_contracts": None if venue_response is None else venue_response.get("live_contracts"),
+            "entry_live_side": None if venue_response is None else venue_response.get("live_side"),
         }
         event = {
             "type": "entry",
@@ -89,8 +93,13 @@ class DemoExecutor:
             "executed_amount": None if venue_response is None else venue_response.get("amount"),
             "reference_price": None if venue_response is None else venue_response.get("reference_price"),
             "fee_usdt": None if venue_response is None else venue_response.get("fee_usdt"),
+            "verified_entry": None if venue_response is None else venue_response.get("verified_entry"),
+            "live_contracts": None if venue_response is None else venue_response.get("live_contracts"),
+            "live_side": None if venue_response is None else venue_response.get("live_side"),
+            "verification_attempts": None if venue_response is None else venue_response.get("verification_attempts"),
         }
         updated_positions = list(existing_positions) + [position]
+        allocate_margin = (venue_response is None or verified_entry)
         state_patch = {
             "positions": {position_key: updated_positions},
             "last_signals": {
@@ -103,8 +112,8 @@ class DemoExecutor:
             "buckets": {
                 position_key: {
                     **bucket,
-                    "available_usdt": float(bucket.get("available_usdt", 0.0)) - margin_required_usdt,
-                    "allocated_usdt": float(bucket.get("allocated_usdt", 0.0)) + margin_required_usdt,
+                    "available_usdt": float(bucket.get("available_usdt", 0.0)) - (margin_required_usdt if allocate_margin else 0.0),
+                    "allocated_usdt": float(bucket.get("allocated_usdt", 0.0)) + (margin_required_usdt if allocate_margin else 0.0),
                     "last_leverage": leverage,
                 }
             },
