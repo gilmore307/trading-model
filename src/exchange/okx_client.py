@@ -210,20 +210,36 @@ class OkxClient:
         execution_symbol = self.settings.ccxt_symbol(symbol)
         ticker = self.exchange.fetch_ticker(execution_symbol)
         last_price = float(ticker.get("last") or ticker.get("bid") or ticker.get("ask") or 0)
-        normalized_amount = normalize_contract_amount(self.exchange, execution_symbol, amount)
         order_side = exit_order_side(position_side)
         params = {
             "tdMode": "cross",
             "reduceOnly": True,
         }
-        order = self.exchange.create_order(execution_symbol, "market", order_side, normalized_amount, None, params)
-        fee_usdt = extract_order_fee(order)
 
-        verified_flat = True
-        remaining_contracts = 0.0
-        remaining_side = None
+        orders = []
         verification = []
+        total_fee_usdt = 0.0
+        fee_found = False
+        verified_flat = False
+        remaining_contracts = float(amount)
+        remaining_side = position_side
+
+        current_amount = float(amount)
         for attempt in range(1, 4):
+            normalized_amount = normalize_contract_amount(self.exchange, execution_symbol, current_amount)
+            order = self.exchange.create_order(execution_symbol, "market", order_side, normalized_amount, None, params)
+            fee_usdt = extract_order_fee(order)
+            if fee_usdt is not None:
+                total_fee_usdt += fee_usdt
+                fee_found = True
+            orders.append({
+                'attempt': attempt,
+                'order_id': order.get('id'),
+                'status': order.get('status'),
+                'amount': normalized_amount,
+                'fee_usdt': fee_usdt,
+            })
+
             time.sleep(1.0)
             live = live_position_snapshot(self.exchange, execution_symbol)
             verification.append({'attempt': attempt, 'live': live})
@@ -232,28 +248,34 @@ class OkxClient:
                 remaining_contracts = 0.0
                 remaining_side = None
                 break
+
             verified_flat = False
             remaining_contracts = float(live.get('contracts') or 0.0)
             remaining_side = live.get('side')
+            current_amount = remaining_contracts
+            if remaining_contracts <= 0:
+                break
 
+        final_order = orders[-1] if orders else {}
         return {
             "symbol": symbol,
             "ccxt_symbol": execution_symbol,
             "position_side": position_side,
             "order_side": order_side,
-            "amount": normalized_amount,
+            "amount": final_order.get('amount'),
             "requested_amount": amount,
             "reference_price": last_price if last_price > 0 else None,
-            "fee_usdt": fee_usdt,
+            "fee_usdt": total_fee_usdt if fee_found else None,
             "verified_flat": verified_flat,
             "remaining_contracts": remaining_contracts,
             "remaining_side": remaining_side,
             "verification_attempts": verification,
-            "order_id": order.get("id"),
-            "status": order.get("status"),
+            "order_attempts": orders,
+            "order_id": final_order.get("order_id"),
+            "status": final_order.get("status"),
             "account_alias": self.account_alias,
             "account_label": self.account_label,
-            "raw": order,
+            "raw": final_order,
         }
 
     def convert_asset_to_usdt(self, asset: str, amount: float) -> dict[str, Any]:

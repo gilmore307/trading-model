@@ -170,6 +170,7 @@ class DemoExecutor:
                     "exit_verified_flat": verified_flat if venue_response is not None else None,
                     "exit_remaining_contracts": None if venue_response is None else venue_response.get("remaining_contracts"),
                     "exit_remaining_side": None if venue_response is None else venue_response.get("remaining_side"),
+                    "exit_order_attempts": None if venue_response is None else venue_response.get("order_attempts"),
                 })
             else:
                 updated_positions.append(position)
@@ -197,6 +198,7 @@ class DemoExecutor:
             "remaining_contracts": None if venue_response is None else venue_response.get("remaining_contracts"),
             "remaining_side": None if venue_response is None else venue_response.get("remaining_side"),
             "verification_attempts": None if venue_response is None else venue_response.get("verification_attempts"),
+            "order_attempts": None if venue_response is None else venue_response.get("order_attempts"),
         }
         state_patch = {
             "positions": {position_key: updated_positions},

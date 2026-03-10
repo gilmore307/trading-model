@@ -338,6 +338,7 @@ def main() -> None:
                     "detail": execution.detail,
                     "exit_verified_flat": None if execution.venue_response is None else execution.venue_response.get("verified_flat"),
                     "remaining_contracts": None if execution.venue_response is None else execution.venue_response.get("remaining_contracts"),
+                    "exit_attempt_count": 0 if execution.venue_response is None else len(execution.venue_response.get("order_attempts") or []),
                 })
                 position_list = snapshot.get("positions", {}).get(key, []) or []
                 open_positions = [p for p in position_list if p.get("status") == "open"]
