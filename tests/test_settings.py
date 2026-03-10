@@ -43,3 +43,5 @@ def test_settings_loads_strategy_account_aliases_and_credentials(tmp_path: Path)
     assert meanrev.alias == "openclaw3"
     assert meanrev.api_key == "key-3"
     assert meanrev.label == "OpenClaw3"
+    assert settings.bucket_initial_capital_usdt == 20000.0
+    assert settings.reset_equity_threshold_usdt == 66000.0

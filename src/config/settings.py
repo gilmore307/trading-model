@@ -63,8 +63,9 @@ class Settings(BaseModel):
     min_stop_distance_ratio: float = 0.003
     atr_lookback: int = 14
     stop_atr_multiple: float = 1.5
-    bucket_initial_capital_usdt: float = 500.0
+    bucket_initial_capital_usdt: float = 20000.0
     buffer_capital_usdt: float = 500.0
+    reset_equity_threshold_usdt: float = 66000.0
     default_order_size_usdt: float = 100.0
     dry_run: bool = True
     confirm_real_trading: bool = False
@@ -145,8 +146,9 @@ class Settings(BaseModel):
             "min_stop_distance_ratio": float(os.getenv("MIN_STOP_DISTANCE_RATIO", "0.003")),
             "atr_lookback": int(os.getenv("ATR_LOOKBACK", "14")),
             "stop_atr_multiple": float(os.getenv("STOP_ATR_MULTIPLE", "1.5")),
-            "bucket_initial_capital_usdt": float(os.getenv("BUCKET_INITIAL_CAPITAL_USDT", "500")),
+            "bucket_initial_capital_usdt": float(os.getenv("BUCKET_INITIAL_CAPITAL_USDT", "20000")),
             "buffer_capital_usdt": float(os.getenv("BUFFER_CAPITAL_USDT", "500")),
+            "reset_equity_threshold_usdt": float(os.getenv("RESET_EQUITY_THRESHOLD_USDT", "66000")),
             "default_order_size_usdt": float(os.getenv("DEFAULT_ORDER_SIZE_USDT", "100")),
             "dry_run": str(os.getenv("DRY_RUN", "true")).strip().lower() in {"1", "true", "yes", "on"},
             "confirm_real_trading": str(os.getenv("CONFIRM_REAL_TRADING", "false")).strip().lower() in {"1", "true", "yes", "on"},

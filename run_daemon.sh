@@ -25,7 +25,6 @@ while true; do
   elif [ "$mode" = "review" ]; then
     python -m src.review.flatten_all 2>&1 | tee -a logs/service/daemon.log || true
     python -m src.review.workflow 2>&1 | tee -a logs/service/daemon.log || true
-    python -m src.review.prepare_usdt_reset 2>&1 | tee -a logs/service/daemon.log || true
     if python -m src.review.review_runner 2>&1 | tee -a logs/service/daemon.log; then
       python scripts_set_mode.py reset --reason "review_complete_auto_transition" --actor daemon 2>&1 | tee -a logs/service/daemon.log || true
       echo "[$ts] cycle_ok mode=review" | tee -a logs/service/daemon.log
@@ -33,18 +32,11 @@ while true; do
       echo "[$ts] cycle_error mode=review" | tee -a logs/service/daemon.log
     fi
   elif [ "$mode" = "reset" ]; then
-    python -m src.review.flatten_all 2>&1 | tee -a logs/service/daemon.log || true
-    python - <<'PY' 2>&1 | tee -a logs/service/daemon.log || true
-from src.config.settings import Settings
-from src.notify.openclaw_notify import OpenClawNotifier
-settings = Settings.load()
-if settings.discord_channel:
-    OpenClawNotifier(target=settings.discord_channel).send(
-        'OKX demo trader is in RESET mode. Please reset the demo accounts, then switch mode or continue the reset workflow.'
-    )
-print('reset_mode_notification_sent')
-PY
-    echo "[$ts] cycle_ok mode=reset" | tee -a logs/service/daemon.log
+    if python -m src.review.reset_orchestrator 2>&1 | tee -a logs/service/daemon.log; then
+      echo "[$ts] cycle_ok mode=reset" | tee -a logs/service/daemon.log
+    else
+      echo "[$ts] cycle_error mode=reset" | tee -a logs/service/daemon.log
+    fi
   else
     echo "[$ts] cycle_ok mode=develop" | tee -a logs/service/daemon.log
   fi

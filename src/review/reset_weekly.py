@@ -17,8 +17,7 @@ REPORTS = ROOT / 'reports' / 'changes'
 REPORTS.mkdir(parents=True, exist_ok=True)
 
 
-def main() -> None:
-    settings = Settings.load()
+def perform_reset(settings: Settings) -> dict:
     state_path = LOGS / 'state.json'
     store = StateStore(state_path)
     old_state = store.load() if state_path.exists() else {
@@ -38,6 +37,7 @@ def main() -> None:
         'weekly_reset': {
             'at': datetime.now(UTC).isoformat(),
             'window': current_bj_week_window().end_bj.isoformat(),
+            'strategy_accounts': {strategy: settings.account_for_strategy(strategy).alias for strategy in settings.strategies},
         },
     }
 
@@ -55,9 +55,16 @@ def main() -> None:
         'buffer_capital_usdt': settings.buffer_capital_usdt,
         'symbols': settings.symbols,
         'strategies': settings.strategies,
+        'strategy_accounts': {strategy: settings.account_for_strategy(strategy).alias for strategy in settings.strategies},
     }
     out = REPORTS / 'latest-weekly-reset.json'
     out.write_text(json.dumps(change, indent=2))
+    return change
+
+
+def main() -> None:
+    settings = Settings.load()
+    change = perform_reset(settings)
     print(json.dumps(change, indent=2))
 
 
