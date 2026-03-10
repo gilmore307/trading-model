@@ -65,6 +65,7 @@ class DemoExecutor:
             "amount": None if venue_response is None else venue_response.get("amount"),
             "requested_amount": None if venue_response is None else venue_response.get("amount"),
             "reference_price": None if venue_response is None else venue_response.get("reference_price"),
+            "fee_usdt": None if venue_response is None else venue_response.get("fee_usdt"),
         }
         event = {
             "type": "entry",
@@ -87,6 +88,7 @@ class DemoExecutor:
             "requested_notional_usdt": None if venue_response is None else venue_response.get("notional_usdt"),
             "executed_amount": None if venue_response is None else venue_response.get("amount"),
             "reference_price": None if venue_response is None else venue_response.get("reference_price"),
+            "fee_usdt": None if venue_response is None else venue_response.get("fee_usdt"),
         }
         updated_positions = list(existing_positions) + [position]
         state_patch = {
@@ -159,6 +161,8 @@ class DemoExecutor:
                     "exit_ccxt_symbol": None if venue_response is None else venue_response.get("ccxt_symbol"),
                     "exit_requested_amount": None if venue_response is None else venue_response.get("requested_amount"),
                     "exit_amount": None if venue_response is None else venue_response.get("amount"),
+                    "exit_reference_price": None if venue_response is None else venue_response.get("reference_price"),
+                    "exit_fee_usdt": None if venue_response is None else venue_response.get("fee_usdt"),
                 })
             else:
                 updated_positions.append(position)
@@ -180,6 +184,8 @@ class DemoExecutor:
             "venue_ccxt_symbol": None if venue_response is None else venue_response.get("ccxt_symbol"),
             "requested_amount": None if venue_response is None else venue_response.get("requested_amount"),
             "executed_amount": None if venue_response is None else venue_response.get("amount"),
+            "reference_price": None if venue_response is None else venue_response.get("reference_price"),
+            "fee_usdt": None if venue_response is None else venue_response.get("fee_usdt"),
         }
         state_patch = {
             "positions": {position_key: updated_positions},

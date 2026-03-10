@@ -7,6 +7,44 @@ import ccxt
 from src.config.settings import Settings, StrategyAccountConfig
 
 
+def extract_order_fee(order: dict[str, Any] | None) -> float | None:
+    if not order:
+        return None
+    fee = order.get('fee')
+    if isinstance(fee, dict):
+        cost = fee.get('cost')
+        if cost is not None:
+            try:
+                return float(cost)
+            except Exception:
+                pass
+    fees = order.get('fees')
+    if isinstance(fees, list) and fees:
+        total = 0.0
+        found = False
+        for item in fees:
+            if not isinstance(item, dict):
+                continue
+            cost = item.get('cost')
+            if cost is None:
+                continue
+            try:
+                total += float(cost)
+                found = True
+            except Exception:
+                continue
+        if found:
+            return total
+    info = order.get('info') if isinstance(order.get('info'), dict) else {}
+    for key in ['fee', 'fillFee', 'fill_fee', 'execFee']:
+        if info.get(key) is not None:
+            try:
+                return abs(float(info.get(key)))
+            except Exception:
+                continue
+    return None
+
+
 def exit_order_side(position_side: str) -> str:
     if position_side == "long":
         return "sell"
@@ -124,6 +162,7 @@ class OkxClient:
             "tdMode": "cross",
         }
         order = self.exchange.create_order(execution_symbol, "market", order_side, amount, None, params)
+        fee_usdt = extract_order_fee(order)
         return {
             "symbol": symbol,
             "ccxt_symbol": execution_symbol,
@@ -132,6 +171,7 @@ class OkxClient:
             "amount": amount,
             "notional_usdt": notional_usdt,
             "reference_price": last_price,
+            "fee_usdt": fee_usdt,
             "order_id": order.get("id"),
             "status": order.get("status"),
             "account_alias": self.account_alias,
@@ -145,6 +185,8 @@ class OkxClient:
 
         self.ensure_markets_loaded()
         execution_symbol = self.settings.ccxt_symbol(symbol)
+        ticker = self.exchange.fetch_ticker(execution_symbol)
+        last_price = float(ticker.get("last") or ticker.get("bid") or ticker.get("ask") or 0)
         normalized_amount = normalize_contract_amount(self.exchange, execution_symbol, amount)
         order_side = exit_order_side(position_side)
         params = {
@@ -152,6 +194,7 @@ class OkxClient:
             "reduceOnly": True,
         }
         order = self.exchange.create_order(execution_symbol, "market", order_side, normalized_amount, None, params)
+        fee_usdt = extract_order_fee(order)
         return {
             "symbol": symbol,
             "ccxt_symbol": execution_symbol,
@@ -159,6 +202,8 @@ class OkxClient:
             "order_side": order_side,
             "amount": normalized_amount,
             "requested_amount": amount,
+            "reference_price": last_price if last_price > 0 else None,
+            "fee_usdt": fee_usdt,
             "order_id": order.get("id"),
             "status": order.get("status"),
             "account_alias": self.account_alias,

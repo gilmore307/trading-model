@@ -10,6 +10,27 @@ from src.exchange.okx_client import OkxClientRegistry
 from src.runner.live_trader import account_symbol_key
 from src.storage.state import StateStore
 
+
+def _latest_close_price(account_alias: str, symbol: str) -> float | None:
+    symbol_key = symbol.replace('/', '_').replace(':', '_')
+    path = LOGS / 'market-data' / 'ohlc' / '1m' / f'{account_alias}_{symbol_key}.jsonl'
+    if not path.exists():
+        return None
+    last = None
+    with path.open() as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+                last = row
+            except Exception:
+                continue
+    if not last:
+        return None
+    return last.get('close')
+
 ROOT = Path('/root/.openclaw/workspace/projects/okx-trading')
 LOGS = ROOT / 'logs'
 REPORTS = ROOT / 'reports' / 'changes'
@@ -41,6 +62,7 @@ def _live_position_map(per_account_positions: dict[str, list[dict]]) -> dict[str
 def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int) -> tuple[dict, list[dict], list[dict]]:
     updated_state = deepcopy(state)
     buckets = updated_state.get('buckets', {})
+    history = updated_state.setdefault('history', [])
     closed_keys: list[dict] = []
     normalized_keys: list[dict] = []
 
@@ -84,11 +106,36 @@ def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int)
 
             if should_close:
                 released_usdt += float(item.get('margin_required_usdt') or item.get('notional_usdt') or 0.0)
+                exit_reference_price = _latest_close_price(item_account_alias, item_symbol) if item_symbol else None
                 updated_items.append({
                     **item,
                     'status': 'closed',
                     'exit_reason': exit_reason,
                     'exit_bar_id': now_bar_id,
+                    'exit_reference_price': exit_reference_price,
+                    'exit_fee_usdt': None,
+                })
+                history.append({
+                    'type': 'exit',
+                    'position_key': item.get('position_key') or key,
+                    'symbol': item_symbol,
+                    'strategy': item.get('strategy'),
+                    'side': None,
+                    'reason': exit_reason,
+                    'bar_id': now_bar_id,
+                    'mode': 'reconcile',
+                    'released_usdt': float(item.get('margin_required_usdt') or item.get('notional_usdt') or 0.0),
+                    'tracked_amount': item.get('amount') or item.get('requested_amount'),
+                    'venue_order_id': None,
+                    'venue_status': 'reconcile',
+                    'venue_order_side': None,
+                    'venue_ccxt_symbol': item_symbol,
+                    'requested_amount': item.get('requested_amount') or item.get('amount'),
+                    'executed_amount': item.get('amount') or item.get('requested_amount'),
+                    'reference_price': exit_reference_price,
+                    'fee_usdt': None,
+                    'account_alias': item_account_alias,
+                    'account_label': item.get('account_label'),
                 })
                 continue
 

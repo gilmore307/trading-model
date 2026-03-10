@@ -71,10 +71,13 @@ class StateStore:
         normalized.setdefault("venue_ccxt_symbol", normalized.get("symbol"))
         normalized.setdefault("requested_notional_usdt", normalized.get("notional_usdt"))
         normalized.setdefault("requested_amount", normalized.get("amount"))
+        normalized.setdefault("fee_usdt", None)
         normalized.setdefault("exit_order_side", None)
         normalized.setdefault("exit_ccxt_symbol", normalized.get("symbol"))
         normalized.setdefault("exit_requested_amount", normalized.get("exit_amount", normalized.get("amount")))
         normalized.setdefault("exit_amount", None)
+        normalized.setdefault("exit_reference_price", None)
+        normalized.setdefault("exit_fee_usdt", None)
         return normalized
 
     def _migrate_last_signals(self, last_signals: dict) -> dict:
