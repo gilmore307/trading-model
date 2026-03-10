@@ -67,6 +67,7 @@ class StateStore:
     def _normalize_position_fields(self, position: dict, key: str) -> dict:
         normalized = dict(position)
         normalized.setdefault("position_key", key)
+        normalized.setdefault("trade_id", normalized.get("entry_id") or key)
         normalized.setdefault("venue_order_side", None)
         normalized.setdefault("venue_ccxt_symbol", normalized.get("symbol"))
         normalized.setdefault("requested_notional_usdt", normalized.get("notional_usdt"))
@@ -91,6 +92,9 @@ class StateStore:
         migrated = []
         for event in history:
             if "position_key" in event:
+                event = dict(event)
+                event.setdefault("trade_id", event.get("position_key"))
+                event.setdefault("event_id", f"{event.get('trade_id')}:{event.get('type', 'event')}:{event.get('bar_id', 'na')}")
                 migrated.append(event)
                 continue
             symbol = event.get("symbol")

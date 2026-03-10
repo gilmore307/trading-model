@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+from datetime import datetime, UTC
 
 
 @dataclass
@@ -17,6 +18,14 @@ class DemoExecutor:
     def __init__(self, armed: bool = False, client: Any | None = None):
         self.armed = armed
         self.client = client
+
+    def _make_trade_id(self, position_key: str, bar_id: int, existing_positions: list[dict]) -> str:
+        ts = datetime.fromtimestamp(int(bar_id) / 1000, tz=UTC).strftime('%Y%m%dT%H%M%SZ')
+        seq = len(existing_positions) + 1
+        return f"{position_key}:{ts}:{seq:04d}"
+
+    def _make_event_id(self, trade_id: str, event_type: str, bar_id: int) -> str:
+        return f"{trade_id}:{event_type}:{bar_id}"
 
     def submit_entry_signal(
         self,
@@ -44,7 +53,9 @@ class DemoExecutor:
             submitted = True
 
         verified_entry = True if venue_response is None else bool(venue_response.get("verified_entry", False))
+        trade_id = self._make_trade_id(position_key, bar_id, existing_positions)
         position = {
+            "trade_id": trade_id,
             "entry_id": f"{position_key}:{bar_id}:{len(existing_positions)+1}",
             "position_key": position_key,
             "symbol": symbol,
@@ -72,6 +83,8 @@ class DemoExecutor:
             "entry_live_side": None if venue_response is None else venue_response.get("live_side"),
         }
         event = {
+            "event_id": self._make_event_id(trade_id, "entry", bar_id),
+            "trade_id": trade_id,
             "type": "entry",
             "position_key": position_key,
             "symbol": symbol,
@@ -165,6 +178,7 @@ class DemoExecutor:
                 next_exit_reason = reason if (venue_response is None or verified_flat) else f"{reason}|exit_incomplete"
                 updated_positions.append({
                     **position,
+                    "trade_id": position.get("trade_id"),
                     "status": next_status,
                     "exit_bar_id": bar_id if (venue_response is None or verified_flat) else position.get("exit_bar_id"),
                     "exit_reason": next_exit_reason,
@@ -185,6 +199,8 @@ class DemoExecutor:
                 updated_positions.append(position)
 
         event = {
+            "event_id": self._make_event_id(open_positions[0].get("trade_id", position_key), "exit", bar_id) if open_positions else self._make_event_id(position_key, "exit", bar_id),
+            "trade_id": open_positions[0].get("trade_id", position_key) if open_positions else position_key,
             "type": "exit",
             "position_key": position_key,
             "symbol": symbol,

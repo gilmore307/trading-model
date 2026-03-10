@@ -109,6 +109,7 @@ def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int)
                 exit_reference_price = _latest_close_price(item_account_alias, item_symbol) if item_symbol else None
                 updated_items.append({
                     **item,
+                    'trade_id': item.get('trade_id'),
                     'status': 'closed',
                     'exit_reason': exit_reason,
                     'exit_bar_id': now_bar_id,
@@ -116,6 +117,8 @@ def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int)
                     'exit_fee_usdt': None,
                 })
                 history.append({
+                    'event_id': f"{item.get('trade_id') or item.get('position_key') or key}:reconcile_exit:{now_bar_id}",
+                    'trade_id': item.get('trade_id') or item.get('position_key') or key,
                     'type': 'exit',
                     'position_key': item.get('position_key') or key,
                     'symbol': item_symbol,

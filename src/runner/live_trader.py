@@ -340,6 +340,8 @@ def main() -> None:
                     snapshot = apply_state_patch(snapshot, {
                         "buckets": {key: locked_bucket},
                         "history_append": [{
+                            "event_id": f"{key}:bucket_lock:{bar_id}",
+                            "trade_id": key,
                             "type": "bucket_lock",
                             "position_key": key,
                             "symbol": exec_symbol,
@@ -460,6 +462,8 @@ def main() -> None:
                 snapshot = apply_state_patch(snapshot, {
                     "buckets": {key: locked_bucket},
                     "history_append": [{
+                        "event_id": f"{key}:bucket_lock:{bar_id}",
+                        "trade_id": key,
                         "type": "bucket_lock",
                         "position_key": key,
                         "symbol": exec_symbol,
