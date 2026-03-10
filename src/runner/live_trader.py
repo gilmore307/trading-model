@@ -153,8 +153,13 @@ def ensure_bucket(snapshot: dict, key: str, strategy_name: str, symbol: str, ini
             "initial_capital_usdt": initial_capital_usdt,
             "available_usdt": initial_capital_usdt,
             "allocated_usdt": 0.0,
+            "locked": False,
+            "lock_reason": None,
         }
         buckets[key] = bucket
+    else:
+        bucket.setdefault("locked", False)
+        bucket.setdefault("lock_reason", None)
     return bucket
 
 
@@ -325,6 +330,25 @@ def main() -> None:
                     exit_side=None,
                 )
                 snapshot = apply_state_patch(snapshot, execution.state_patch)
+                exit_verified_flat = None if execution.venue_response is None else execution.venue_response.get("verified_flat")
+                if exit_verified_flat is False:
+                    locked_bucket = {
+                        **snapshot.get("buckets", {}).get(key, bucket),
+                        "locked": True,
+                        "lock_reason": f"exit_incomplete:{bar_id}",
+                    }
+                    snapshot = apply_state_patch(snapshot, {
+                        "buckets": {key: locked_bucket},
+                        "history_append": [{
+                            "type": "bucket_lock",
+                            "position_key": key,
+                            "symbol": exec_symbol,
+                            "strategy": strategy.name,
+                            "reason": f"exit_incomplete:{bar_id}",
+                            "bar_id": bar_id,
+                            "mode": execution.mode,
+                        }],
+                    })
                 report.append({
                     "account_alias": client.account_alias,
                     "account_label": client.account_label,
@@ -336,9 +360,10 @@ def main() -> None:
                     "reason": f"{signal.reason}|exit_all",
                     "execution": execution.mode,
                     "detail": execution.detail,
-                    "exit_verified_flat": None if execution.venue_response is None else execution.venue_response.get("verified_flat"),
+                    "exit_verified_flat": exit_verified_flat,
                     "remaining_contracts": None if execution.venue_response is None else execution.venue_response.get("remaining_contracts"),
                     "exit_attempt_count": 0 if execution.venue_response is None else len(execution.venue_response.get("order_attempts") or []),
+                    "bucket_locked": bool(exit_verified_flat is False),
                 })
                 position_list = snapshot.get("positions", {}).get(key, []) or []
                 open_positions = [p for p in position_list if p.get("status") == "open"]
@@ -360,6 +385,25 @@ def main() -> None:
                     "position_key": key,
                     "signal": signal.side,
                     "reason": signal.reason,
+                })
+                continue
+
+            if bucket.get("locked"):
+                snapshot.setdefault("last_signals", {})[key] = {
+                    "side": signal.side,
+                    "reason": signal.reason,
+                    "bar_id": bar_id,
+                }
+                report.append({
+                    "account_alias": client.account_alias,
+                    "account_label": client.account_label,
+                    "symbol": symbol,
+                    "execution_symbol": exec_symbol,
+                    "strategy": strategy.name,
+                    "action": "blocked",
+                    "position_key": key,
+                    "signal": signal.side,
+                    "blocked": f"bucket_locked:{bucket.get('lock_reason') or 'unknown'}",
                 })
                 continue
 

@@ -110,6 +110,8 @@ class StateStore:
                     **bucket,
                     "strategy": bucket.get("strategy", "breakout"),
                     "symbol": bucket.get("symbol", key),
+                    "locked": bucket.get("locked", False),
+                    "lock_reason": bucket.get("lock_reason"),
                 }
                 normalized.pop(key)
 
@@ -125,5 +127,10 @@ class StateStore:
                     "initial_capital_usdt": initial_capital,
                     "available_usdt": max(0.0, initial_capital - allocated),
                     "allocated_usdt": allocated,
+                    "locked": False,
+                    "lock_reason": None,
                 }
+        for key, bucket in normalized.items():
+            bucket.setdefault("locked", False)
+            bucket.setdefault("lock_reason", None)
         return normalized
