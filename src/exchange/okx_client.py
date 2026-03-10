@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 import time
+from datetime import datetime, UTC
 
 import ccxt
 
@@ -99,6 +100,51 @@ def amount_close_enough(expected: float, actual: float, tolerance_ratio: float =
     return diff <= max(tolerance_abs, expected * tolerance_ratio)
 
 
+def fee_summary_from_trades(trades: list[dict]) -> dict[str, Any] | None:
+    if not trades:
+        return None
+    total_fee = 0.0
+    found_fee = False
+    fee_ccys = []
+    fee_rates = []
+    fill_ids = []
+    for trade in trades:
+        fee = trade.get('fee')
+        if isinstance(fee, dict):
+            cost = fee.get('cost')
+            if cost is not None:
+                try:
+                    total_fee += abs(float(cost))
+                    found_fee = True
+                except Exception:
+                    pass
+            currency = fee.get('currency')
+            if currency:
+                fee_ccys.append(str(currency))
+        elif fee is not None:
+            try:
+                total_fee += abs(float(fee))
+                found_fee = True
+            except Exception:
+                pass
+        fee_ccy = trade.get('feeCurrency') or trade.get('feeCcy')
+        if fee_ccy:
+            fee_ccys.append(str(fee_ccy))
+        fee_rate = trade.get('feeRate')
+        if fee_rate is not None:
+            fee_rates.append(str(fee_rate))
+        tid = trade.get('id') or trade.get('tradeId')
+        if tid:
+            fill_ids.append(str(tid))
+    return {
+        'fee_usdt': total_fee if found_fee else None,
+        'fee_ccy': sorted(set(fee_ccys)) if fee_ccys else None,
+        'fee_rate': sorted(set(fee_rates)) if fee_rates else None,
+        'fill_ids': fill_ids or None,
+        'fill_count': len(trades),
+    }
+
+
 class OkxClient:
     def __init__(self, settings: Settings, account: StrategyAccountConfig | None = None):
         self.settings = settings
@@ -181,6 +227,40 @@ class OkxClient:
         execution_symbol = self.settings.ccxt_symbol(symbol)
         return live_position_snapshot(self.exchange, execution_symbol)
 
+    def fetch_order_fees(
+        self,
+        execution_symbol: str,
+        order_id: str | None,
+        since_ms: int | None = None,
+        side: str | None = None,
+        amount: float | None = None,
+    ) -> dict[str, Any] | None:
+        if not order_id:
+            return None
+        try:
+            trades = self.exchange.fetch_my_trades(execution_symbol, since=since_ms, limit=100)
+        except Exception:
+            trades = []
+        exact = []
+        fallback = []
+        for trade in trades:
+            info = trade.get('info') or {}
+            trade_order_id = str(trade.get('order') or info.get('ordId') or '')
+            if trade_order_id == str(order_id):
+                exact.append(trade)
+                continue
+            if side and str(trade.get('side')) != str(side):
+                continue
+            if amount is not None:
+                try:
+                    trade_amount = float(trade.get('amount') or 0.0)
+                except Exception:
+                    trade_amount = 0.0
+                if trade_amount <= 0 or not amount_close_enough(float(amount), trade_amount, tolerance_ratio=0.35, tolerance_abs=5.0):
+                    continue
+            fallback.append(trade)
+        return fee_summary_from_trades(exact or fallback[:5])
+
     def create_entry_order(self, symbol: str, signal_side: str, notional_usdt: float, current_open_amount: float = 0.0) -> dict[str, Any]:
         self.ensure_markets_loaded()
         execution_symbol = self.settings.ccxt_symbol(symbol)
@@ -203,6 +283,15 @@ class OkxClient:
         }
         order = self.exchange.create_order(execution_symbol, "market", order_side, amount, None, params)
         fee_usdt = extract_order_fee(order)
+        fee_meta = self.fetch_order_fees(
+            execution_symbol,
+            order.get('id'),
+            since_ms=int(datetime.now(UTC).timestamp() * 1000) - 300000,
+            side=order_side,
+            amount=amount,
+        )
+        if fee_meta and fee_meta.get('fee_usdt') is not None:
+            fee_usdt = fee_meta.get('fee_usdt')
 
         verified_entry = False
         live_contracts = 0.0
@@ -230,6 +319,10 @@ class OkxClient:
             "notional_usdt": notional_usdt,
             "reference_price": last_price,
             "fee_usdt": fee_usdt,
+            "fee_ccy": None if fee_meta is None else fee_meta.get('fee_ccy'),
+            "fee_rate": None if fee_meta is None else fee_meta.get('fee_rate'),
+            "fill_ids": None if fee_meta is None else fee_meta.get('fill_ids'),
+            "fill_count": None if fee_meta is None else fee_meta.get('fill_count'),
             "verified_entry": verified_entry,
             "live_contracts": live_contracts,
             "live_side": live_side,
@@ -268,6 +361,15 @@ class OkxClient:
             normalized_amount = normalize_contract_amount(self.exchange, execution_symbol, current_amount)
             order = self.exchange.create_order(execution_symbol, "market", order_side, normalized_amount, None, params)
             fee_usdt = extract_order_fee(order)
+            fee_meta = self.fetch_order_fees(
+                execution_symbol,
+                order.get('id'),
+                since_ms=int(datetime.now(UTC).timestamp() * 1000) - 300000,
+                side=order_side,
+                amount=normalized_amount,
+            )
+            if fee_meta and fee_meta.get('fee_usdt') is not None:
+                fee_usdt = fee_meta.get('fee_usdt')
             if fee_usdt is not None:
                 total_fee_usdt += fee_usdt
                 fee_found = True
@@ -277,16 +379,31 @@ class OkxClient:
                 'status': order.get('status'),
                 'amount': normalized_amount,
                 'fee_usdt': fee_usdt,
+                'fee_ccy': None if fee_meta is None else fee_meta.get('fee_ccy'),
+                'fee_rate': None if fee_meta is None else fee_meta.get('fee_rate'),
+                'fill_ids': None if fee_meta is None else fee_meta.get('fill_ids'),
+                'fill_count': None if fee_meta is None else fee_meta.get('fill_count'),
             })
 
             time.sleep(1.0)
             live = live_position_snapshot(self.exchange, execution_symbol)
-            verification.append({'attempt': attempt, 'live': live})
+            trade_confirmed = bool(fee_meta and fee_meta.get('fill_count'))
+            verification.append({'attempt': attempt, 'live': live, 'trade_confirmed': trade_confirmed})
             if live is None:
                 verified_flat = True
                 remaining_contracts = 0.0
                 remaining_side = None
                 break
+            if trade_confirmed and attempt == 1:
+                time.sleep(2.0)
+                live_retry = live_position_snapshot(self.exchange, execution_symbol)
+                verification.append({'attempt': f'{attempt}-retry', 'live': live_retry, 'trade_confirmed': trade_confirmed})
+                if live_retry is None:
+                    verified_flat = True
+                    remaining_contracts = 0.0
+                    remaining_side = None
+                    break
+                live = live_retry
 
             verified_flat = False
             remaining_contracts = float(live.get('contracts') or 0.0)
@@ -305,6 +422,10 @@ class OkxClient:
             "requested_amount": amount,
             "reference_price": last_price if last_price > 0 else None,
             "fee_usdt": total_fee_usdt if fee_found else None,
+            "fee_ccy": sorted({ccy for row in orders for ccy in (row.get('fee_ccy') or [])}) or None,
+            "fee_rate": sorted({rate for row in orders for rate in (row.get('fee_rate') or [])}) or None,
+            "fill_ids": [fid for row in orders for fid in (row.get('fill_ids') or [])] or None,
+            "fill_count": sum(int(row.get('fill_count') or 0) for row in orders) or None,
             "verified_flat": verified_flat,
             "remaining_contracts": remaining_contracts,
             "remaining_side": remaining_side,
