@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from src.runtime_mode import default_mode
+from src.runtime_mode import default_mode, load_mode_state
 
 
 def test_default_mode_is_review_during_sunday_midnight_beijing_window():
@@ -11,3 +11,8 @@ def test_default_mode_is_review_during_sunday_midnight_beijing_window():
 def test_default_mode_is_develop_outside_review_window():
     now_utc = datetime(2026, 3, 10, 4, 0, tzinfo=UTC)
     assert default_mode(now_utc) == 'develop'
+
+
+def test_valid_modes_include_test():
+    payload = load_mode_state(datetime(2026, 3, 10, 4, 0, tzinfo=UTC))
+    assert 'test' in payload['valid_modes']

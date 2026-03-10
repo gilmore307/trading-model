@@ -1,3 +1,6 @@
+import pytest
+
+import src.exchange.okx_client as okx_client_module
 from src.exchange.okx_client import OkxClientRegistry, exit_order_side, normalize_contract_amount
 
 
@@ -8,6 +11,15 @@ class FakeExchange:
             "ETH/USDT": {"limits": {"amount": {"min": 0.01}}},
         }
         self.calls = []
+
+    def fetch_ticker(self, symbol):
+        return {"last": 2000.0, "bid": 1999.0, "ask": 2001.0}
+
+    def fetch_positions(self, symbols):
+        return []
+
+    def fetch_my_trades(self, symbol, since=None, limit=None):
+        return []
 
     def load_markets(self):
         return self.markets
@@ -62,9 +74,17 @@ class DummyOkxClient:
         self.account_alias = "default"
         self.account_label = "OpenClaw1"
 
+    def fetch_order_fees(self, execution_symbol, order_id, since_ms=None, side=None, amount=None):
+        return None
+
     def ensure_markets_loaded(self):
         if not getattr(self.exchange, "markets", None):
             self.exchange.load_markets()
+
+
+@pytest.fixture(autouse=True)
+def no_sleep(monkeypatch):
+    monkeypatch.setattr(okx_client_module.time, "sleep", lambda _seconds: None)
 
 
 def test_exit_order_side_maps_net_long_to_sell_and_net_short_to_buy():
@@ -108,7 +128,7 @@ def test_create_exit_order_uses_reduce_only_sell_for_long():
         "side": "sell",
         "amount": 0.48,
         "price": None,
-        "params": {"tdMode": "cross", "reduceOnly": True},
+        "params": {"tdMode": "cross", "posSide": "net", "reduceOnly": True},
     }]
     assert result["position_side"] == "long"
     assert result["order_side"] == "sell"
@@ -128,7 +148,7 @@ def test_create_exit_order_uses_reduce_only_buy_for_short():
         "side": "buy",
         "amount": 0.48,
         "price": None,
-        "params": {"tdMode": "cross", "reduceOnly": True},
+        "params": {"tdMode": "cross", "posSide": "net", "reduceOnly": True},
     }]
     assert result["position_side"] == "short"
     assert result["order_side"] == "buy"
@@ -148,13 +168,13 @@ def test_create_exit_order_normalizes_aggregated_amount_before_submit():
         "side": "buy",
         "amount": 1.82,
         "price": None,
-        "params": {"tdMode": "cross", "reduceOnly": True},
+        "params": {"tdMode": "cross", "posSide": "net", "reduceOnly": True},
     }]
     assert result["requested_amount"] == 1.8199999999
     assert result["amount"] == 1.82
 
 
-def test_convert_asset_to_usdt_uses_spot_cash_mode():
+def test_convert_asset_to_usdt_uses_spot_cross_mode():
     from src.exchange.okx_client import OkxClient
 
     client = DummyOkxClient()
@@ -166,11 +186,55 @@ def test_convert_asset_to_usdt_uses_spot_cash_mode():
         "side": "sell",
         "amount": 1.82,
         "price": None,
-        "params": {"tdMode": "cash"},
+        "params": {"tdMode": "cross"},
     }]
     assert result["symbol"] == "ETH/USDT"
     assert result["amount"] == 1.82
     assert result["account_alias"] == "default"
+
+
+def test_create_entry_order_uses_windowed_verification_delays(monkeypatch):
+    from src.exchange.okx_client import OkxClient
+
+    client = DummyOkxClient()
+    snapshots = [
+        None,
+        {"symbol": "ETH/USDT:USDT", "side": "long", "contracts": 0.05},
+    ]
+
+    def fake_snapshot(_exchange, _symbol):
+        return snapshots.pop(0)
+
+    monkeypatch.setattr(okx_client_module, "live_position_snapshot", fake_snapshot)
+    result = OkxClient.create_entry_order(client, "ETH/USDT:USDT", "long", 100.0)
+
+    assert [row["delay_seconds"] for row in result["verification_attempts"]] == [5.0, 10.0]
+    assert result["verified_entry"] is True
+    assert result["live_side"] == "long"
+    assert result["live_contracts"] == 0.05
+
+
+def test_create_exit_order_adds_single_doublecheck_when_trade_was_confirmed(monkeypatch):
+    from src.exchange.okx_client import OkxClient
+
+    client = DummyOkxClient()
+    client.fetch_order_fees = lambda *args, **kwargs: {"fill_count": 1, "fee_usdt": 0.1}
+    snapshots = [
+        {"symbol": "ETH/USDT:USDT", "side": "long", "contracts": 0.48},
+        None,
+    ]
+
+    def fake_snapshot(_exchange, _symbol):
+        return snapshots.pop(0)
+
+    monkeypatch.setattr(okx_client_module, "live_position_snapshot", fake_snapshot)
+    result = OkxClient.create_exit_order(client, "ETH/USDT:USDT", "long", 0.48)
+
+    assert [row["attempt"] for row in result["verification_attempts"]] == [1, "1-doublecheck"]
+    assert [row["delay_seconds"] for row in result["verification_attempts"]] == [5.0, 1.5]
+    assert all(row["trade_confirmed"] is True for row in result["verification_attempts"])
+    assert result["verified_flat"] is True
+    assert result["remaining_contracts"] == 0.0
 
 
 def test_okx_client_registry_reuses_clients_by_account_alias():

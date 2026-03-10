@@ -67,6 +67,16 @@ class Settings(BaseModel):
     buffer_capital_usdt: float = 500.0
     reset_equity_threshold_usdt: float = 66000.0
     default_order_size_usdt: float = 100.0
+    test_symbols: list[str] = ["XRP-USDT-SWAP"]
+    test_strategy: str = "breakout"
+    test_account_alias: str = "default"
+    test_duration_minutes: int = 10
+    test_action_interval_seconds: float = 2.0
+    test_entry_usdt: float = 120.0
+    test_add_usdt: float = 180.0
+    test_add_count: int = 3
+    test_cycles: int = 6
+    test_reverse_signal: bool = True
     dry_run: bool = True
     confirm_real_trading: bool = False
 
@@ -150,6 +160,16 @@ class Settings(BaseModel):
             "buffer_capital_usdt": float(os.getenv("BUFFER_CAPITAL_USDT", "500")),
             "reset_equity_threshold_usdt": float(os.getenv("RESET_EQUITY_THRESHOLD_USDT", "66000")),
             "default_order_size_usdt": float(os.getenv("DEFAULT_ORDER_SIZE_USDT", "100")),
+            "test_symbols": [item.strip() for item in os.getenv("TEST_SYMBOLS", "XRP-USDT-SWAP").split(",") if item.strip()],
+            "test_strategy": os.getenv("TEST_STRATEGY", "breakout"),
+            "test_account_alias": os.getenv("TEST_ACCOUNT_ALIAS", "default"),
+            "test_duration_minutes": int(os.getenv("TEST_DURATION_MINUTES", "10")),
+            "test_action_interval_seconds": float(os.getenv("TEST_ACTION_INTERVAL_SECONDS", "2")),
+            "test_entry_usdt": float(os.getenv("TEST_ENTRY_USDT", "120")),
+            "test_add_usdt": float(os.getenv("TEST_ADD_USDT", "180")),
+            "test_add_count": int(os.getenv("TEST_ADD_COUNT", "3")),
+            "test_cycles": int(os.getenv("TEST_CYCLES", "6")),
+            "test_reverse_signal": str(os.getenv("TEST_REVERSE_SIGNAL", "true")).strip().lower() in {"1", "true", "yes", "on"},
             "dry_run": str(os.getenv("DRY_RUN", "true")).strip().lower() in {"1", "true", "yes", "on"},
             "confirm_real_trading": str(os.getenv("CONFIRM_REAL_TRADING", "false")).strip().lower() in {"1", "true", "yes", "on"},
         }

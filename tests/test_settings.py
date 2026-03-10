@@ -45,3 +45,7 @@ def test_settings_loads_strategy_account_aliases_and_credentials(tmp_path: Path)
     assert meanrev.label == "OpenClaw3"
     assert settings.bucket_initial_capital_usdt == 20000.0
     assert settings.reset_equity_threshold_usdt == 66000.0
+    assert settings.test_symbols == ['XRP-USDT-SWAP']
+    assert settings.test_strategy == 'breakout'
+    assert settings.test_account_alias == 'default'
+    assert settings.test_duration_minutes == 10

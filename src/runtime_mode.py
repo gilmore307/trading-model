@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path('/root/.openclaw/workspace/projects/okx-trading')
 MODE_PATH = ROOT / 'logs' / 'service' / 'mode-state.json'
 BJ = ZoneInfo('Asia/Shanghai')
-VALID_MODES = {'trade', 'review', 'reset', 'develop'}
+VALID_MODES = {'trade', 'review', 'calibrate', 'reset', 'test', 'develop'}
 
 
 def default_mode(now_utc: datetime | None = None) -> str:

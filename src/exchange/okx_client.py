@@ -145,6 +145,55 @@ def fee_summary_from_trades(trades: list[dict]) -> dict[str, Any] | None:
     }
 
 
+VERIFICATION_DELAYS_SECONDS = (5.0, 10.0, 20.0)
+DOUBLECHECK_DELAY_SECONDS = 1.5
+
+
+def verify_position_with_delays(
+    exchange: Any,
+    execution_symbol: str,
+    *,
+    delays: tuple[float, ...] = VERIFICATION_DELAYS_SECONDS,
+    predicate,
+    include_doublecheck: bool = False,
+    doublecheck_delay: float = DOUBLECHECK_DELAY_SECONDS,
+    meta_factory=None,
+) -> tuple[bool, dict[str, Any] | None, list[dict[str, Any]]]:
+    verification: list[dict[str, Any]] = []
+    last_live = None
+    for attempt, delay in enumerate(delays, start=1):
+        time.sleep(delay)
+        live = live_position_snapshot(exchange, execution_symbol)
+        last_live = live
+        matched = bool(predicate(live))
+        meta = {} if meta_factory is None else dict(meta_factory(attempt, live) or {})
+        verification.append({
+            'attempt': attempt,
+            'delay_seconds': delay,
+            'live': live,
+            'matched': matched,
+            **meta,
+        })
+        if matched:
+            return True, live, verification
+        if include_doublecheck:
+            time.sleep(doublecheck_delay)
+            live_retry = live_position_snapshot(exchange, execution_symbol)
+            last_live = live_retry
+            matched_retry = bool(predicate(live_retry))
+            retry_meta = {} if meta_factory is None else dict(meta_factory(f'{attempt}-doublecheck', live_retry) or {})
+            verification.append({
+                'attempt': f'{attempt}-doublecheck',
+                'delay_seconds': doublecheck_delay,
+                'live': live_retry,
+                'matched': matched_retry,
+                **retry_meta,
+            })
+            if matched_retry:
+                return True, live_retry, verification
+    return False, last_live, verification
+
+
 class OkxClient:
     def __init__(self, settings: Settings, account: StrategyAccountConfig | None = None):
         self.settings = settings
@@ -280,6 +329,7 @@ class OkxClient:
         order_side = "buy" if signal_side == "long" else "sell"
         params = {
             "tdMode": "cross",
+            "posSide": "net",
         }
         order = self.exchange.create_order(execution_symbol, "market", order_side, amount, None, params)
         fee_usdt = extract_order_fee(order)
@@ -293,22 +343,14 @@ class OkxClient:
         if fee_meta and fee_meta.get('fee_usdt') is not None:
             fee_usdt = fee_meta.get('fee_usdt')
 
-        verified_entry = False
-        live_contracts = 0.0
-        live_side = None
-        verification = []
-        for attempt in range(1, 4):
-            time.sleep(1.0)
-            live = live_position_snapshot(self.exchange, execution_symbol)
-            verification.append({'attempt': attempt, 'live': live})
-            if live is None:
-                continue
-            live_contracts = float(live.get('contracts') or 0.0)
-            live_side = live.get('side')
-            target_amount = float(current_open_amount or 0.0) + float(amount)
-            if live_side == signal_side and amount_close_enough(target_amount, live_contracts):
-                verified_entry = True
-                break
+        target_amount = float(current_open_amount or 0.0) + float(amount)
+        verified_entry, live, verification = verify_position_with_delays(
+            self.exchange,
+            execution_symbol,
+            predicate=lambda snapshot: snapshot is not None and snapshot.get('side') == signal_side and amount_close_enough(target_amount, float(snapshot.get('contracts') or 0.0)),
+        )
+        live_contracts = 0.0 if live is None else float(live.get('contracts') or 0.0)
+        live_side = None if live is None else live.get('side')
 
         return {
             "symbol": symbol,
@@ -345,6 +387,7 @@ class OkxClient:
         order_side = exit_order_side(position_side)
         params = {
             "tdMode": "cross",
+            "posSide": "net",
             "reduceOnly": True,
         }
 
@@ -385,29 +428,22 @@ class OkxClient:
                 'fill_count': None if fee_meta is None else fee_meta.get('fill_count'),
             })
 
-            time.sleep(1.0)
-            live = live_position_snapshot(self.exchange, execution_symbol)
             trade_confirmed = bool(fee_meta and fee_meta.get('fill_count'))
-            verification.append({'attempt': attempt, 'live': live, 'trade_confirmed': trade_confirmed})
-            if live is None:
-                verified_flat = True
+            verified_flat, live, verification_attempts = verify_position_with_delays(
+                self.exchange,
+                execution_symbol,
+                predicate=lambda snapshot: snapshot is None,
+                include_doublecheck=trade_confirmed,
+                meta_factory=lambda verify_attempt, _live: {'trade_confirmed': trade_confirmed, 'order_attempt': attempt},
+            )
+            verification.extend(verification_attempts)
+            if verified_flat:
                 remaining_contracts = 0.0
                 remaining_side = None
                 break
-            if trade_confirmed and attempt == 1:
-                time.sleep(2.0)
-                live_retry = live_position_snapshot(self.exchange, execution_symbol)
-                verification.append({'attempt': f'{attempt}-retry', 'live': live_retry, 'trade_confirmed': trade_confirmed})
-                if live_retry is None:
-                    verified_flat = True
-                    remaining_contracts = 0.0
-                    remaining_side = None
-                    break
-                live = live_retry
 
-            verified_flat = False
-            remaining_contracts = float(live.get('contracts') or 0.0)
-            remaining_side = live.get('side')
+            remaining_contracts = 0.0 if live is None else float(live.get('contracts') or 0.0)
+            remaining_side = None if live is None else live.get('side')
             current_amount = remaining_contracts
             if remaining_contracts <= 0:
                 break
@@ -457,7 +493,7 @@ class OkxClient:
                 'reason': f'amount_below_min:{sell_amount}<{min_amount}',
                 'symbol': symbol,
             }
-        order = self.spot_exchange.create_order(symbol, 'market', 'sell', sell_amount, None, {'tdMode': 'cash'})
+        order = self.spot_exchange.create_order(symbol, 'market', 'sell', sell_amount, None, {'tdMode': 'cross'})
         return {
             'asset': asset,
             'symbol': symbol,
