@@ -7,6 +7,7 @@ from pathlib import Path
 from src.config.settings import Settings
 from src.exchange.okx_client import OkxClientRegistry
 from src.runner.live_trader import local_live_position_map, position_alignment_report
+from src.runtime_mode import load_mode_state
 
 ROOT = Path('/root/.openclaw/workspace/projects/okx-trading')
 state_path = ROOT / 'logs' / 'state.json'
@@ -14,6 +15,7 @@ log_path = ROOT / 'logs' / 'service' / 'daemon.log'
 
 summary = {
     'generated_at': datetime.now(UTC).isoformat(),
+    'mode': load_mode_state(),
     'state_exists': state_path.exists(),
     'log_exists': log_path.exists(),
     'state_mtime': None,

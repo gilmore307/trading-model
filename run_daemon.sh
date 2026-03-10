@@ -14,22 +14,39 @@ while true; do
   trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
   mode=$(python scripts_mode.py | python -c 'import sys,json; print(json.load(sys.stdin)["mode"])')
   echo "[$ts] cycle_start mode=$mode" | tee -a logs/service/daemon.log
+  python -m src.runner.live_trader --market-only 2>&1 | tee -a logs/service/daemon.log || true
   python -m src.review.reconcile_state 2>&1 | tee -a logs/service/daemon.log || true
-  if [ "$mode" = "review" ]; then
-    if python -m src.runner.live_trader 2>&1 | tee -a logs/service/daemon.log; then
-      echo "[$ts] cycle_ok mode=review" | tee -a logs/service/daemon.log
-    else
-      echo "[$ts] cycle_error mode=review" | tee -a logs/service/daemon.log
-    fi
-    python -m src.review.workflow 2>&1 | tee -a logs/service/daemon.log || true
-    python -m src.review.prepare_usdt_reset 2>&1 | tee -a logs/service/daemon.log || true
-    python -m src.review.review_runner 2>&1 | tee -a logs/service/daemon.log || true
-  else
+  if [ "$mode" = "trade" ]; then
     if python -m src.runner.live_trader --arm-demo-submit 2>&1 | tee -a logs/service/daemon.log; then
       echo "[$ts] cycle_ok mode=trade" | tee -a logs/service/daemon.log
     else
       echo "[$ts] cycle_error mode=trade" | tee -a logs/service/daemon.log
     fi
+  elif [ "$mode" = "review" ]; then
+    python -m src.review.flatten_all 2>&1 | tee -a logs/service/daemon.log || true
+    python -m src.review.workflow 2>&1 | tee -a logs/service/daemon.log || true
+    python -m src.review.prepare_usdt_reset 2>&1 | tee -a logs/service/daemon.log || true
+    if python -m src.review.review_runner 2>&1 | tee -a logs/service/daemon.log; then
+      python scripts_set_mode.py reset --reason "review_complete_auto_transition" --actor daemon 2>&1 | tee -a logs/service/daemon.log || true
+      echo "[$ts] cycle_ok mode=review" | tee -a logs/service/daemon.log
+    else
+      echo "[$ts] cycle_error mode=review" | tee -a logs/service/daemon.log
+    fi
+  elif [ "$mode" = "reset" ]; then
+    python -m src.review.flatten_all 2>&1 | tee -a logs/service/daemon.log || true
+    python - <<'PY' 2>&1 | tee -a logs/service/daemon.log || true
+from src.config.settings import Settings
+from src.notify.openclaw_notify import OpenClawNotifier
+settings = Settings.load()
+if settings.discord_channel:
+    OpenClawNotifier(target=settings.discord_channel).send(
+        'OKX demo trader is in RESET mode. Please reset the demo accounts, then switch mode or continue the reset workflow.'
+    )
+print('reset_mode_notification_sent')
+PY
+    echo "[$ts] cycle_ok mode=reset" | tee -a logs/service/daemon.log
+  else
+    echo "[$ts] cycle_ok mode=develop" | tee -a logs/service/daemon.log
   fi
   python scripts_status.py > logs/service/health.json 2>> logs/service/daemon.log || true
   python scripts_snapshot.py > logs/service/snapshot.json 2>> logs/service/daemon.log || true

@@ -203,6 +203,7 @@ def main() -> None:
     parser.add_argument("--notify-test", action="store_true", help="Send a Discord test message via OpenClaw")
     parser.add_argument("--arm-demo-submit", action="store_true", help="Allow demo submission path in executor")
     parser.add_argument("--no-state-write", action="store_true", help="Do not persist state updates")
+    parser.add_argument("--market-only", action="store_true", help="Collect market data only, without signals or state mutations")
     args = parser.parse_args()
 
     settings = Settings.load()
@@ -228,19 +229,44 @@ def main() -> None:
         print(json.dumps(result, indent=2))
         return
 
-    if args.check:
-        result = {strategy.name: client_registry.for_strategy(strategy.name).check_connectivity() for strategy in strategies}
-        print(json.dumps(result, indent=2, default=str))
-        return
-
-    snapshot = state.load()
-    starting_history_len = len(snapshot.get("history", []))
-    report = []
     max_lookback = max(
         settings.breakout_lookback,
         settings.pullback_lookback,
         settings.meanrev_lookback,
     )
+
+    if args.check:
+        result = {strategy.name: client_registry.for_strategy(strategy.name).check_connectivity() for strategy in strategies}
+        print(json.dumps(result, indent=2, default=str))
+        return
+
+    if args.market_only:
+        writes = []
+        for strategy in strategies:
+            client = client_registry.for_strategy(strategy.name)
+            for symbol in settings.symbols:
+                exec_symbol = settings.execution_symbol(strategy.name, symbol)
+                candles = client.fetch_ohlcv(exec_symbol, settings.timeframe, limit=max(50, max_lookback + 5))
+                written = market_data.append_ohlc(f"{client.account_alias}:{exec_symbol}", candles)
+                writes.append({
+                    'account_alias': client.account_alias,
+                    'account_label': client.account_label,
+                    'strategy': strategy.name,
+                    'symbol': symbol,
+                    'execution_symbol': exec_symbol,
+                    'candles': len(candles),
+                    'written': written,
+                })
+        print(json.dumps({
+            'mode': 'market_only',
+            'strategy_accounts': client_registry.accounts_by_strategy(),
+            'writes': writes,
+        }, indent=2, default=str))
+        return
+
+    snapshot = state.load()
+    starting_history_len = len(snapshot.get("history", []))
+    report = []
 
     tracked_symbols_by_alias: dict[str, set[str]] = {}
     for strategy in strategies:
