@@ -3,7 +3,10 @@ from src.exchange.okx_client import OkxClientRegistry, exit_order_side, normaliz
 
 class FakeExchange:
     def __init__(self):
-        self.markets = {"ETH/USDT:USDT": {"limits": {"amount": {"min": 0.01}}}}
+        self.markets = {
+            "ETH/USDT:USDT": {"limits": {"amount": {"min": 0.01}}},
+            "ETH/USDT": {"limits": {"amount": {"min": 0.01}}},
+        }
         self.calls = []
 
     def load_markets(self):
@@ -55,6 +58,7 @@ class DummyOkxClient:
     def __init__(self):
         self.settings = FakeSettings()
         self.exchange = FakeExchange()
+        self.spot_exchange = FakeExchange()
         self.account_alias = "default"
         self.account_label = "OpenClaw1"
 
@@ -148,6 +152,25 @@ def test_create_exit_order_normalizes_aggregated_amount_before_submit():
     }]
     assert result["requested_amount"] == 1.8199999999
     assert result["amount"] == 1.82
+
+
+def test_convert_asset_to_usdt_uses_spot_cash_mode():
+    from src.exchange.okx_client import OkxClient
+
+    client = DummyOkxClient()
+    result = OkxClient.convert_asset_to_usdt(client, "ETH", 1.8199999999)
+
+    assert client.spot_exchange.calls == [{
+        "symbol": "ETH/USDT",
+        "order_type": "market",
+        "side": "sell",
+        "amount": 1.82,
+        "price": None,
+        "params": {"tdMode": "cash"},
+    }]
+    assert result["symbol"] == "ETH/USDT"
+    assert result["amount"] == 1.82
+    assert result["account_alias"] == "default"
 
 
 def test_okx_client_registry_reuses_clients_by_account_alias():

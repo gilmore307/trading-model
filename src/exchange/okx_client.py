@@ -32,16 +32,26 @@ class OkxClient:
         self.account = account or settings.account_for_strategy("breakout")
         self.account_alias = self.account.alias
         self.account_label = self.account.label or self.account.alias
-        self.exchange = ccxt.okx({
+        base_config = {
             "apiKey": self.account.api_key,
             "secret": self.account.api_secret,
             "password": self.account.api_passphrase,
             "enableRateLimit": True,
+        }
+        self.exchange = ccxt.okx({
+            **base_config,
             "options": {
                 "defaultType": "swap",
             },
         })
+        self.spot_exchange = ccxt.okx({
+            **base_config,
+            "options": {
+                "defaultType": "spot",
+            },
+        })
         self.exchange.set_sandbox_mode(settings.okx_demo)
+        self.spot_exchange.set_sandbox_mode(settings.okx_demo)
 
     def check_connectivity(self) -> dict[str, Any]:
         markets = self.exchange.load_markets()
@@ -162,11 +172,12 @@ class OkxClient:
         if amount <= 0:
             return {'asset': asset, 'skipped': True, 'reason': 'non_positive_amount'}
 
-        self.ensure_markets_loaded()
+        if not getattr(self.spot_exchange, 'markets', None):
+            self.spot_exchange.load_markets()
         symbol = f'{asset}/USDT'
-        market = self.exchange.market(symbol)
+        market = self.spot_exchange.market(symbol)
         min_amount = float((market.get('limits', {}).get('amount', {}) or {}).get('min') or 0)
-        sell_amount = float(self.exchange.amount_to_precision(symbol, amount))
+        sell_amount = float(self.spot_exchange.amount_to_precision(symbol, amount))
         if sell_amount < min_amount:
             return {
                 'asset': asset,
@@ -174,7 +185,7 @@ class OkxClient:
                 'reason': f'amount_below_min:{sell_amount}<{min_amount}',
                 'symbol': symbol,
             }
-        order = self.exchange.create_order(symbol, 'market', 'sell', sell_amount, None, {'tdMode': 'cash'})
+        order = self.spot_exchange.create_order(symbol, 'market', 'sell', sell_amount, None, {'tdMode': 'cash'})
         return {
             'asset': asset,
             'symbol': symbol,
