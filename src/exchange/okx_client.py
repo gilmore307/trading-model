@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+import time
 
 import ccxt
 
@@ -62,6 +63,28 @@ def normalize_contract_amount(exchange: Any, execution_symbol: str, amount: floa
             f"Refusing to submit {execution_symbol}: normalized amount {normalized} is below minimum {min_amount}"
         )
     return normalized
+
+
+def live_position_snapshot(exchange: Any, execution_symbol: str) -> dict[str, Any] | None:
+    positions = exchange.fetch_positions([execution_symbol])
+    for position in positions:
+        info = position.get('info') or {}
+        if info.get('instType') != 'SWAP':
+            continue
+        if position.get('symbol') != execution_symbol:
+            continue
+        contracts = float(position.get('contracts') or 0.0)
+        if contracts == 0:
+            continue
+        return {
+            'symbol': position.get('symbol'),
+            'side': position.get('side'),
+            'contracts': abs(contracts),
+            'hedged': bool(position.get('hedged')),
+            'pos_side': info.get('posSide'),
+            'raw_pos': info.get('pos'),
+        }
+    return None
 
 
 class OkxClient:
@@ -195,6 +218,24 @@ class OkxClient:
         }
         order = self.exchange.create_order(execution_symbol, "market", order_side, normalized_amount, None, params)
         fee_usdt = extract_order_fee(order)
+
+        verified_flat = True
+        remaining_contracts = 0.0
+        remaining_side = None
+        verification = []
+        for attempt in range(1, 4):
+            time.sleep(1.0)
+            live = live_position_snapshot(self.exchange, execution_symbol)
+            verification.append({'attempt': attempt, 'live': live})
+            if live is None:
+                verified_flat = True
+                remaining_contracts = 0.0
+                remaining_side = None
+                break
+            verified_flat = False
+            remaining_contracts = float(live.get('contracts') or 0.0)
+            remaining_side = live.get('side')
+
         return {
             "symbol": symbol,
             "ccxt_symbol": execution_symbol,
@@ -204,6 +245,10 @@ class OkxClient:
             "requested_amount": amount,
             "reference_price": last_price if last_price > 0 else None,
             "fee_usdt": fee_usdt,
+            "verified_flat": verified_flat,
+            "remaining_contracts": remaining_contracts,
+            "remaining_side": remaining_side,
+            "verification_attempts": verification,
             "order_id": order.get("id"),
             "status": order.get("status"),
             "account_alias": self.account_alias,

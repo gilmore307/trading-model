@@ -336,6 +336,8 @@ def main() -> None:
                     "reason": f"{signal.reason}|exit_all",
                     "execution": execution.mode,
                     "detail": execution.detail,
+                    "exit_verified_flat": None if execution.venue_response is None else execution.venue_response.get("verified_flat"),
+                    "remaining_contracts": None if execution.venue_response is None else execution.venue_response.get("remaining_contracts"),
                 })
                 position_list = snapshot.get("positions", {}).get(key, []) or []
                 open_positions = [p for p in position_list if p.get("status") == "open"]

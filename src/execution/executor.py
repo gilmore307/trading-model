@@ -145,24 +145,31 @@ class DemoExecutor:
             mode = "demo_submit"
             submitted = True
 
-        released_usdt = sum(float(p.get("margin_required_usdt") or p.get("notional_usdt") or 0.0) for p in open_positions)
+        verified_flat = True if venue_response is None else bool(venue_response.get("verified_flat", False))
+        released_usdt = 0.0 if (venue_response is not None and not verified_flat) else sum(float(p.get("margin_required_usdt") or p.get("notional_usdt") or 0.0) for p in open_positions)
         closed_ids = {id(p) for p in open_positions}
         updated_positions: list[dict] = []
         for position in positions:
             if id(position) in closed_ids:
+                next_status = "closed" if (venue_response is None or verified_flat) else "open"
+                next_exit_status = None if venue_response is None else venue_response.get("status")
+                next_exit_reason = reason if (venue_response is None or verified_flat) else f"{reason}|exit_incomplete"
                 updated_positions.append({
                     **position,
-                    "status": "closed",
-                    "exit_bar_id": bar_id,
-                    "exit_reason": reason,
+                    "status": next_status,
+                    "exit_bar_id": bar_id if (venue_response is None or verified_flat) else position.get("exit_bar_id"),
+                    "exit_reason": next_exit_reason,
                     "exit_order_id": None if venue_response is None else venue_response.get("order_id"),
-                    "exit_status": None if venue_response is None else venue_response.get("status"),
+                    "exit_status": next_exit_status,
                     "exit_order_side": None if venue_response is None else venue_response.get("order_side"),
                     "exit_ccxt_symbol": None if venue_response is None else venue_response.get("ccxt_symbol"),
                     "exit_requested_amount": None if venue_response is None else venue_response.get("requested_amount"),
                     "exit_amount": None if venue_response is None else venue_response.get("amount"),
                     "exit_reference_price": None if venue_response is None else venue_response.get("reference_price"),
                     "exit_fee_usdt": None if venue_response is None else venue_response.get("fee_usdt"),
+                    "exit_verified_flat": verified_flat if venue_response is not None else None,
+                    "exit_remaining_contracts": None if venue_response is None else venue_response.get("remaining_contracts"),
+                    "exit_remaining_side": None if venue_response is None else venue_response.get("remaining_side"),
                 })
             else:
                 updated_positions.append(position)
@@ -186,6 +193,10 @@ class DemoExecutor:
             "executed_amount": None if venue_response is None else venue_response.get("amount"),
             "reference_price": None if venue_response is None else venue_response.get("reference_price"),
             "fee_usdt": None if venue_response is None else venue_response.get("fee_usdt"),
+            "verified_flat": None if venue_response is None else venue_response.get("verified_flat"),
+            "remaining_contracts": None if venue_response is None else venue_response.get("remaining_contracts"),
+            "remaining_side": None if venue_response is None else venue_response.get("remaining_side"),
+            "verification_attempts": None if venue_response is None else venue_response.get("verification_attempts"),
         }
         state_patch = {
             "positions": {position_key: updated_positions},
