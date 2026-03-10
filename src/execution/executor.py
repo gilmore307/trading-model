@@ -41,6 +41,7 @@ class DemoExecutor:
         leverage: int,
         bucket: dict,
         existing_positions: list[dict],
+        current_open_amount: float = 0.0,
     ) -> ExecutionResult:
         venue_response = None
         mode = "dry_run"
@@ -48,7 +49,7 @@ class DemoExecutor:
         if self.armed:
             if self.client is None:
                 raise RuntimeError("Executor is armed but no exchange client was supplied.")
-            venue_response = self.client.create_entry_order(symbol, side, order_size_usdt)
+            venue_response = self.client.create_entry_order(symbol, side, order_size_usdt, current_open_amount=current_open_amount)
             mode = "demo_submit"
             submitted = True
 

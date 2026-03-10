@@ -318,6 +318,58 @@ def main() -> None:
             bar_id = int(candles[-1][0]) if candles else -1
             signal = strategy.evaluate(symbol, candles)
 
+            local_sides = sorted({p.get("side") for p in open_positions if p.get("side")})
+            if signal.side != "flat" and open_positions and any(side != signal.side for side in local_sides):
+                execution = executor.submit_exit_signal(
+                    position_key=key,
+                    symbol=exec_symbol,
+                    strategy=strategy.name,
+                    positions=position_list,
+                    reason=f"reverse_signal:{signal.side}|exit_all",
+                    bar_id=bar_id,
+                    bucket=bucket,
+                    exit_side=None,
+                )
+                snapshot = apply_state_patch(snapshot, execution.state_patch)
+                exit_verified_flat = None if execution.venue_response is None else execution.venue_response.get("verified_flat")
+                if exit_verified_flat is False:
+                    locked_bucket = {
+                        **snapshot.get("buckets", {}).get(key, bucket),
+                        "locked": True,
+                        "lock_reason": f"reverse_exit_incomplete:{bar_id}",
+                    }
+                    snapshot = apply_state_patch(snapshot, {
+                        "buckets": {key: locked_bucket},
+                        "history_append": [{
+                            "event_id": f"{key}:bucket_lock:{bar_id}",
+                            "trade_id": key,
+                            "type": "bucket_lock",
+                            "position_key": key,
+                            "symbol": exec_symbol,
+                            "strategy": strategy.name,
+                            "reason": f"reverse_exit_incomplete:{bar_id}",
+                            "bar_id": bar_id,
+                            "mode": execution.mode,
+                        }],
+                    })
+                report.append({
+                    "account_alias": client.account_alias,
+                    "account_label": client.account_label,
+                    "symbol": symbol,
+                    "execution_symbol": exec_symbol,
+                    "strategy": strategy.name,
+                    "action": "exit_all",
+                    "position_key": key,
+                    "reason": f"reverse_signal:{signal.side}|exit_all",
+                    "execution": execution.mode,
+                    "detail": execution.detail,
+                    "exit_verified_flat": exit_verified_flat,
+                    "remaining_contracts": None if execution.venue_response is None else execution.venue_response.get("remaining_contracts"),
+                    "exit_attempt_count": 0 if execution.venue_response is None else len(execution.venue_response.get("order_attempts") or []),
+                    "bucket_locked": bool(exit_verified_flat is False),
+                })
+                continue
+
             if signal.side == "flat" and open_positions:
                 execution = executor.submit_exit_signal(
                     position_key=key,
@@ -474,6 +526,7 @@ def main() -> None:
                 })
                 continue
 
+            current_open_amount = sum(float(p.get("amount") or 0.0) for p in open_positions if p.get("side") == signal.side)
             execution = executor.submit_entry_signal(
                 position_key=key,
                 symbol=exec_symbol,
@@ -486,6 +539,7 @@ def main() -> None:
                 leverage=leverage,
                 bucket=bucket,
                 existing_positions=position_list,
+                current_open_amount=current_open_amount,
             )
             snapshot = apply_state_patch(snapshot, execution.state_patch)
             entry_verified = None if execution.venue_response is None else execution.venue_response.get("verified_entry")

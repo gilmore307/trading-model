@@ -181,7 +181,7 @@ class OkxClient:
         execution_symbol = self.settings.ccxt_symbol(symbol)
         return live_position_snapshot(self.exchange, execution_symbol)
 
-    def create_entry_order(self, symbol: str, signal_side: str, notional_usdt: float) -> dict[str, Any]:
+    def create_entry_order(self, symbol: str, signal_side: str, notional_usdt: float, current_open_amount: float = 0.0) -> dict[str, Any]:
         self.ensure_markets_loaded()
         execution_symbol = self.settings.ccxt_symbol(symbol)
         market = self.exchange.market(execution_symbol)
@@ -216,7 +216,8 @@ class OkxClient:
                 continue
             live_contracts = float(live.get('contracts') or 0.0)
             live_side = live.get('side')
-            if live_side == signal_side and amount_close_enough(amount, live_contracts):
+            target_amount = float(current_open_amount or 0.0) + float(amount)
+            if live_side == signal_side and amount_close_enough(target_amount, live_contracts):
                 verified_entry = True
                 break
 
