@@ -182,7 +182,7 @@ class DemoExecutor:
         updated_positions: list[dict] = []
         for position in positions:
             if id(position) in closed_ids:
-                next_status = "closed" if (venue_response is None or verified_flat) else "open"
+                next_status = "closed" if (venue_response is None or verified_flat) else "exit_verifying"
                 next_exit_status = None if venue_response is None else venue_response.get("status")
                 next_exit_reason = reason if (venue_response is None or verified_flat) else f"{reason}|exit_incomplete"
                 updated_positions.append({
@@ -190,6 +190,9 @@ class DemoExecutor:
                     "trade_id": position.get("trade_id"),
                     "status": next_status,
                     "exit_bar_id": bar_id if (venue_response is None or verified_flat) else position.get("exit_bar_id"),
+                    "last_confirmed_live_contracts": 0.0 if (venue_response is None or verified_flat) else venue_response.get("remaining_contracts"),
+                    "last_confirmed_live_side": None if (venue_response is None or verified_flat) else venue_response.get("remaining_side"),
+                    "last_exchange_observed_at": datetime.now(UTC).isoformat(),
                     "exit_reason": next_exit_reason,
                     "exit_order_id": None if venue_response is None else venue_response.get("order_id"),
                     "exit_status": next_exit_status,

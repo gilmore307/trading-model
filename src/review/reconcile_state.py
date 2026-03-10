@@ -86,7 +86,8 @@ def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int)
         matching_open_indexes: list[int] = []
 
         for item in items:
-            if item.get('status') != 'open':
+            item_status = item.get('status')
+            if item_status not in {'open', 'closed', 'exit_verifying'}:
                 updated_items.append(item)
                 continue
 
@@ -94,6 +95,37 @@ def reconcile_snapshot(state: dict, live_open: dict[str, dict], now_bar_id: int)
             item_side = item.get('side')
             item_account_alias = item.get('account_alias', 'default')
             live_for_item = live_open.get(account_symbol_key(item_account_alias, item_symbol)) if item_symbol else None
+
+            if item_status == 'closed' and live_for_item is not None:
+                updated_items.append({
+                    **item,
+                    'status': 'reconcile_mismatch',
+                    'reconcile_reason': 'closed_but_exchange_position_exists',
+                    'last_confirmed_live_contracts': float(live_for_item.get('contracts') or 0.0),
+                    'last_confirmed_live_side': live_for_item.get('side'),
+                    'last_exchange_observed_at': datetime.now(UTC).isoformat(),
+                })
+                history.append({
+                    'event_id': f"{item.get('trade_id') or item.get('position_key') or key}:reconcile_mismatch:{now_bar_id}",
+                    'trade_id': item.get('trade_id') or item.get('position_key') or key,
+                    'type': 'reconcile_mismatch',
+                    'position_key': item.get('position_key') or key,
+                    'symbol': item_symbol,
+                    'strategy': item.get('strategy'),
+                    'side': item_side,
+                    'reason': 'closed_but_exchange_position_exists',
+                    'bar_id': now_bar_id,
+                    'mode': 'reconcile',
+                    'exchange_contracts': float(live_for_item.get('contracts') or 0.0),
+                    'exchange_side': live_for_item.get('side'),
+                    'account_alias': item_account_alias,
+                    'account_label': item.get('account_label'),
+                })
+                continue
+
+            if item_status == 'closed':
+                updated_items.append(item)
+                continue
 
             should_close = False
             exit_reason = None
