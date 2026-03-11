@@ -368,6 +368,65 @@ Not the first target:
 - ML overlay
 - replay / audit improvements
 - dashboard refinement
+- periodic review framework (weekly / monthly / quarterly)
+
+---
+
+## 14. Review framework
+### Weekly review
+Run every Sunday.
+Review window:
+- previous Saturday 00:00 UTC
+- to current Saturday 00:00 UTC
+
+Purpose:
+- compare the always-on strategy accounts
+- compare `router_composite` and `flat_compare`
+- review fee burden / trading frequency
+- produce small calibration candidates
+
+Allowed adjustment style:
+- small threshold / cooldown / frequency tuning
+- avoid structural strategy changes
+
+### Monthly review
+Run on the first Sunday of each month.
+Review window:
+- previous monthly review boundary
+- to current monthly review boundary
+
+Purpose:
+- multi-week strategy stability review
+- strategy-internal parameter discussion
+- router/composite attribution-aware comparison
+- regime-recognition quality review
+
+Allowed adjustment style:
+- strategy-internal parameter tuning
+- generate recommendations first, usually confirm before applying to live trading behavior
+
+### Quarterly review
+Run on the first Sunday every three months.
+Review window:
+- previous quarterly review boundary
+- to current quarterly review boundary
+
+Purpose:
+- structural review of strategy fitness
+- regime taxonomy review
+- review/risk framework review
+- ML/RL roadmap review
+
+Allowed adjustment style:
+- structural changes may be discussed here
+- preserve auditability and comparability across periods
+
+### ML / RL role in review
+Planned learning direction:
+- build a learning system for market/regime recognition
+- use weekly/monthly review outputs as calibration feedback
+- use monthly review as the primary layer for internal parameter discussion
+- reserve stronger RL/policy-learning usage for later router/meta-policy stages rather than immediate raw price prediction
 
 ---
 

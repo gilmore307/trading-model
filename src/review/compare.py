@@ -6,6 +6,9 @@ from typing import Any
 from src.config.accounts import V2_ACCOUNTS
 from src.execution.pipeline import ExecutionCycleResult
 
+# This module intentionally focuses on state/ownership comparison first.
+# Performance comparison should layer on top once per-account PnL/equity inputs are available.
+
 
 FLAT_COMPARE_ALIAS = 'flat_compare'
 
