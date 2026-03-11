@@ -18,9 +18,19 @@ This project now supports:
 - entry + exit state transitions
 - dry-run execution with state persistence
 - optional OKX demo order submission path
+- route/state reconciliation before normal cycle actions
+- execution-cycle artifact persistence under `logs/runtime/`
+- review/report scaffolding with history aggregation from `execution-cycles.jsonl`
+- canonical review metric ingestion path for fee data, with pnl/equity hooks prepared
 - test coverage for signal / risk / state / bucket wiring
 
 It is still **demo-only** and still **not ready for unattended real-money trading**.
+
+## Project traceability
+For resumable project state and milestone backfill, see:
+- `TRACEABILITY.md`
+- `PROJECT_STATUS.md`
+- `reports/review-ingestion-status.md`
 
 ## Environment
 Expected in `.env`:
