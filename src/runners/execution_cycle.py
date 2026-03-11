@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from src.execution.pipeline import ExecutionCycleResult, ExecutionPipeline
+from src.review.account_metrics import build_account_metrics_from_cycle
 from src.review.compare import build_compare_snapshot
 
 
@@ -51,6 +52,7 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         'alignment_ok': None if result.reconcile_result is None else result.reconcile_result.alignment.ok,
         'policy_action': None if result.reconcile_result is None else result.reconcile_result.policy.action,
         'policy_reason': None if result.reconcile_result is None else result.reconcile_result.policy.reason,
+        'account_metrics': build_account_metrics_from_cycle(receipt=result.receipt, reconcile_result=result.reconcile_result),
     }
     return payload
 
