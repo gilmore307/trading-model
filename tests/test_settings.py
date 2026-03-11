@@ -10,42 +10,46 @@ def test_settings_loads_strategy_account_aliases_and_credentials(tmp_path: Path)
             "OKX_API_KEY=default-key",
             "OKX_API_SECRET=default-secret",
             "OKX_API_PASSPHRASE=default-pass",
-            "OKX_ACCOUNT_LABEL=OpenClaw1",
+            "OKX_ACCOUNT_LABEL=Trend",
             "OKX_DEMO=true",
-            "BREAKOUT_ACCOUNT_ALIAS=default",
-            "PULLBACK_ACCOUNT_ALIAS=openclaw2",
-            "MEANREV_ACCOUNT_ALIAS=openclaw3",
-            "OKX_OPENCLAW2_API_KEY=key-2",
-            "OKX_OPENCLAW2_API_SECRET=secret-2",
-            "OKX_OPENCLAW2_API_PASSPHRASE=pass-2",
-            "OKX_OPENCLAW2_ACCOUNT_LABEL=OpenClaw2",
-            "OKX_OPENCLAW3_API_KEY=key-3",
-            "OKX_OPENCLAW3_API_SECRET=secret-3",
-            "OKX_OPENCLAW3_API_PASSPHRASE=pass-3",
-            "OKX_OPENCLAW3_ACCOUNT_LABEL=OpenClaw3",
+            "BREAKOUT_ACCOUNT_ALIAS=trend",
+            "PULLBACK_ACCOUNT_ALIAS=crowded",
+            "MEANREV_ACCOUNT_ALIAS=meanrev",
+            "OKX_TREND_API_KEY=default-key",
+            "OKX_TREND_API_SECRET=default-secret",
+            "OKX_TREND_API_PASSPHRASE=default-pass",
+            "OKX_TREND_ACCOUNT_LABEL=Trend",
+            "OKX_CROWDED_API_KEY=key-2",
+            "OKX_CROWDED_API_SECRET=secret-2",
+            "OKX_CROWDED_API_PASSPHRASE=pass-2",
+            "OKX_CROWDED_ACCOUNT_LABEL=Crowded",
+            "OKX_MEANREV_API_KEY=key-3",
+            "OKX_MEANREV_API_SECRET=secret-3",
+            "OKX_MEANREV_API_PASSPHRASE=pass-3",
+            "OKX_MEANREV_ACCOUNT_LABEL=Meanrev",
         ])
     )
 
     settings = Settings.load(env)
 
-    breakout = settings.account_for_strategy("breakout")
-    pullback = settings.account_for_strategy("pullback")
+    trend = settings.account_for_strategy("trend")
+    crowded = settings.account_for_strategy("crowded")
     meanrev = settings.account_for_strategy("meanrev")
 
-    assert breakout.alias == "default"
-    assert breakout.api_key == "default-key"
-    assert breakout.label == "OpenClaw1"
+    assert trend.alias == "trend"
+    assert trend.api_key == "default-key"
+    assert trend.label == "Trend"
 
-    assert pullback.alias == "openclaw2"
-    assert pullback.api_key == "key-2"
-    assert pullback.label == "OpenClaw2"
+    assert crowded.alias == "crowded"
+    assert crowded.api_key == "key-2"
+    assert crowded.label == "Crowded"
 
-    assert meanrev.alias == "openclaw3"
+    assert meanrev.alias == "meanrev"
     assert meanrev.api_key == "key-3"
-    assert meanrev.label == "OpenClaw3"
+    assert meanrev.label == "Meanrev"
     assert settings.bucket_initial_capital_usdt == 20000.0
     assert settings.reset_equity_threshold_usdt == 66000.0
     assert settings.test_symbols == ['XRP-USDT-SWAP']
-    assert settings.test_strategy == 'breakout'
-    assert settings.test_account_alias == 'default'
+    assert settings.test_strategy == 'trend'
+    assert settings.test_account_alias == 'trend'
     assert settings.test_duration_minutes == 10

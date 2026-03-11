@@ -1,1 +1,1 @@
-# openclaw-automation package
+# crypto-trading package

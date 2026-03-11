@@ -1,6 +1,6 @@
-# openclaw-automation
+# crypto-trading
 
-OKX demo trading automation scaffold for same-day demo testing.
+虚拟币交易系统重构工作区。当前处于重做阶段，旧的 OKX demo 交易脚手架已不再作为目标架构。
 
 ## Scope
 - Exchange: OKX perpetual swaps
@@ -78,7 +78,7 @@ pytest -q
 
 ## State
 State is stored at:
-- `~/openclaw-automation/logs/state.json`
+- `/root/.openclaw/workspace/projects/crypto-trading/logs/state.json`
 
 Tracked state includes:
 - open positions keyed as `strategy:symbol`
