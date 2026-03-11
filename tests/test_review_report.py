@@ -1,5 +1,8 @@
 from datetime import UTC, datetime
 
+import json
+from pathlib import Path
+
 from src.review.framework import build_quarterly_window, build_weekly_window
 from src.review.report import build_report_scaffold
 
@@ -22,6 +25,19 @@ def test_weekly_report_scaffold_includes_compare_sections():
     trend_row = next(row for row in report['metrics']['performance']['accounts'] if row['account'] == 'trend')
     assert trend_row['pnl_usdt'] == 12.5
     assert report['parameter_candidates']['auto_candidate_params']
+
+
+def test_report_scaffold_can_aggregate_from_history(tmp_path: Path):
+    history = tmp_path / 'execution-cycles.jsonl'
+    history.write_text(json.dumps({
+        'summary': {'plan_account': 'trend', 'plan_action': 'enter', 'receipt_accepted': True, 'composite_position_owner': 'trend', 'composite_plan_action': 'enter'},
+        'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]}
+    }) + '\n', encoding='utf-8')
+    window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
+    report = build_report_scaffold(window, history_path=str(history))
+    trend_row = next(row for row in report['metrics']['performance']['accounts'] if row['account'] == 'trend')
+    assert trend_row['trade_count'] == 1
+    assert trend_row['exposure_time_pct'] == 100.0
 
 
 def test_quarterly_report_scaffold_includes_structural_review_section():

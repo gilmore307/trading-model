@@ -4,6 +4,7 @@ from dataclasses import dataclass, asdict
 from datetime import UTC, datetime
 from typing import Any
 
+from src.review.aggregator import aggregate_from_execution_history
 from src.review.framework import ReviewWindow, build_review_plan
 from src.review.performance import build_performance_snapshot
 
@@ -19,7 +20,7 @@ class ReviewReport:
     notes: list[str]
 
 
-def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any] | None = None, metrics_by_account: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any] | None = None, metrics_by_account: dict[str, dict[str, Any]] | None = None, history_path: str | None = None) -> dict[str, Any]:
     plan = build_review_plan(window)
     cadence = plan['cadence']
 
@@ -60,7 +61,10 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
             }
         )
 
-    performance_snapshot = build_performance_snapshot(metrics_by_account)
+    aggregated_metrics = metrics_by_account
+    if history_path is not None:
+        aggregated_metrics = aggregate_from_execution_history(history_path, metrics_by_account)
+    performance_snapshot = build_performance_snapshot(aggregated_metrics)
 
     report = ReviewReport(
         meta={
