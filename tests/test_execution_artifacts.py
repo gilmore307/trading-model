@@ -55,6 +55,7 @@ def test_build_execution_artifact_includes_summary_fields():
 
     artifact = build_execution_artifact(result)
     assert artifact['artifact_type'] == 'execution_cycle'
+    assert artifact['compare_snapshot']['selected_strategy'] == 'trend'
     assert artifact['summary']['runtime_mode'] == 'develop'
     assert artifact['summary']['regime'] == 'trend'
     assert artifact['summary']['plan_action'] == 'enter'
@@ -103,7 +104,7 @@ def test_build_execution_artifact_captures_blocked_reason():
         runtime_state={'mode': 'trade', 'reason': 'manual', 'updated_at': datetime.now(UTC)},
         route_state=None,
         live_positions=[],
-        router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': None, 'source_regime': 'chaotic', 'source_confidence': 0.2, 'plan': {'action': 'hold'}, 'notes': ['router_not_actionable'], 'position': None},
+        router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': None, 'source_regime': 'chaotic', 'source_confidence': 0.2, 'switch_action': 'hold', 'position_owner': None, 'plan': {'action': 'hold'}, 'notes': ['router_not_actionable'], 'position': None},
     )
 
     artifact = build_execution_artifact(result)

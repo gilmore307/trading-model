@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from src.execution.pipeline import ExecutionCycleResult, ExecutionPipeline
+from src.review.compare import build_compare_snapshot
 
 
 OUT_DIR = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime')
@@ -25,6 +26,7 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     payload = asdict(result)
     payload['artifact_type'] = 'execution_cycle'
     payload['recorded_at'] = datetime.now(UTC).isoformat()
+    payload['compare_snapshot'] = build_compare_snapshot(result)
     payload['summary'] = {
         'symbol': result.regime_output.symbol,
         'runtime_mode': result.runtime_state.get('mode'),
