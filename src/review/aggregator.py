@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from src.review.compare import FLAT_COMPARE_ALIAS
+from src.review.ingestion import canonicalize_history_row
 from src.review.performance import DEFAULT_COMPARE_ACCOUNTS
 
 
@@ -38,6 +39,8 @@ def aggregate_from_execution_history(history_path: str | Path, base_metrics: dic
     counts = {alias: 0 for alias in DEFAULT_COMPARE_ACCOUNTS}
     fee_totals = {alias: 0.0 for alias in DEFAULT_COMPARE_ACCOUNTS}
     fee_seen = {alias: False for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_equity = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     exposure_counts = {alias: 0 for alias in DEFAULT_COMPARE_ACCOUNTS}
 
     total_rows = len(rows)
@@ -64,8 +67,20 @@ def aggregate_from_execution_history(history_path: str | Path, base_metrics: dic
         elif composite_owner in counts and composite_action in {'enter', 'exit'}:
             counts['router_composite'] += 1
 
-        # Fee aggregation remains placeholder-friendly until a canonical receipt fee source is persisted.
-        # Accept externally supplied fee values via base_metrics for now.
+        canonical_metrics = canonicalize_history_row(row)
+        for alias, metric_row in canonical_metrics.items():
+            if alias not in fee_totals:
+                continue
+            fee_usdt = metric_row.get('fee_usdt')
+            if fee_usdt is not None:
+                fee_totals[alias] += float(fee_usdt)
+                fee_seen[alias] = True
+            pnl_usdt = metric_row.get('pnl_usdt')
+            if pnl_usdt is not None:
+                latest_pnl[alias] = float(pnl_usdt)
+            equity_usdt = metric_row.get('equity_usdt')
+            if equity_usdt is not None:
+                latest_equity[alias] = float(equity_usdt)
 
     for alias in DEFAULT_COMPARE_ACCOUNTS:
         existing = base_metrics.setdefault(alias, {})
@@ -73,6 +88,10 @@ def aggregate_from_execution_history(history_path: str | Path, base_metrics: dic
         existing['trade_count'] = int(existing.get('trade_count') or 0) + counts[alias]
         if total_rows > 0:
             existing['exposure_time_pct'] = float(existing.get('exposure_time_pct') or 0.0) or round(100.0 * exposure_counts[alias] / total_rows, 2)
+        if latest_pnl[alias] is not None and existing.get('pnl_usdt') is None:
+            existing['pnl_usdt'] = latest_pnl[alias]
+        if latest_equity[alias] is not None and existing.get('equity_usdt') is None:
+            existing['equity_usdt'] = latest_equity[alias]
         if fee_seen[alias]:
             existing['fee_usdt'] = float(existing.get('fee_usdt') or 0.0) + fee_totals[alias]
 
