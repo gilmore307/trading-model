@@ -61,7 +61,7 @@ class ExecutionPipeline:
         self.snapshot_provider = snapshot_provider or ExchangeSnapshotProvider(self.settings)
         self.adapter = adapter or DryRunExecutionAdapter()
         self.runtime_store = runtime_store or RuntimeStore()
-        self.composite_simulator = composite_simulator or RouterCompositeSimulator()
+        self.composite_simulator = composite_simulator or RouterCompositeSimulator(self.controller.store)
 
     def build_plan(self, output: RegimeRunnerOutput) -> ExecutionPlan:
         return executor_for(output).build_plan(output)

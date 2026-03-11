@@ -2,6 +2,8 @@ from datetime import UTC, datetime
 
 from src.routing.composite import COMPOSITE_ACCOUNT, RouterCompositeSimulator
 from src.runners.regime_runner import RegimeRunnerOutput
+from src.state.live_position import LivePosition, LivePositionStatus
+from src.state.store import LiveStateStore
 
 
 def _output(regime='trend', account='trend', trade_enabled=True):
@@ -37,18 +39,23 @@ def test_router_composite_holds_when_router_not_actionable():
     assert 'router_not_actionable' in snap['notes']
 
 
-def test_router_composite_keeps_existing_position_on_higher_priority_switch():
-    sim = RouterCompositeSimulator()
-    first = sim.snapshot(_output('range', 'meanrev', True))
-    # range setup enters short under current executor thresholds
-    if first['plan']['action'] == 'enter':
-        assert first['position'] is not None
+def test_router_composite_keeps_when_target_strategy_has_same_direction_position():
+    store = LiveStateStore()
+    store.upsert(LivePosition(account='trend', symbol='BTC-USDT-SWAP', route='trend', status=LivePositionStatus.OPEN, side='long', size=1.0))
+    sim = RouterCompositeSimulator(store)
+    sim._positions['BTC-USDT-SWAP'] = LivePosition(account='router_composite', symbol='BTC-USDT-SWAP', route='range', status=LivePositionStatus.OPEN, side='long', size=1.0)
     snap = sim.snapshot(_output('trend', 'trend', True))
-    assert snap['switch_action'] in {'keep_current_position', 'adopt_target_plan'}
+    assert snap['switch_action'] == 'keep_current_position'
+    assert snap['plan']['action'] == 'hold'
+    assert 'target_position_side:long' in snap['notes']
 
 
-def test_router_composite_closes_and_waits_on_lower_priority_switch():
-    sim = RouterCompositeSimulator()
-    sim.snapshot(_output('trend', 'trend', True))
-    snap = sim.snapshot(_output('range', 'meanrev', True))
-    assert snap['switch_action'] in {'close_and_wait', 'keep_current_position', 'adopt_target_plan'}
+def test_router_composite_closes_when_target_strategy_has_opposite_direction_position():
+    store = LiveStateStore()
+    store.upsert(LivePosition(account='crowded', symbol='BTC-USDT-SWAP', route='crowded', status=LivePositionStatus.OPEN, side='short', size=1.0))
+    sim = RouterCompositeSimulator(store)
+    sim._positions['BTC-USDT-SWAP'] = LivePosition(account='router_composite', symbol='BTC-USDT-SWAP', route='trend', status=LivePositionStatus.OPEN, side='long', size=1.0)
+    snap = sim.snapshot(_output('crowded', 'crowded', True))
+    assert snap['switch_action'] == 'close_and_wait'
+    assert snap['plan']['action'] == 'exit'
+    assert 'target_position_side:short' in snap['notes']

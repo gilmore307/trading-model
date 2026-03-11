@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 
 from src.runners.regime_runner import RegimeRunnerOutput
 from src.state.live_position import LivePosition, LivePositionStatus
+from src.state.store import LiveStateStore
 from src.strategies.executors import ExecutionPlan, executor_for
 from src.routing.switch_policy import SwitchContext, evaluate_switch
 
@@ -32,11 +33,17 @@ class RouterCompositeSimulator:
     position state for review-time comparison against always-on single-strategy accounts.
     """
 
-    def __init__(self):
+    def __init__(self, live_store: LiveStateStore | None = None):
         self._positions: dict[str, LivePosition] = {}
+        self.live_store = live_store or LiveStateStore()
 
     def current_position(self, symbol: str) -> LivePosition | None:
         return self._positions.get(symbol)
+
+    def target_strategy_position(self, strategy: str | None, symbol: str) -> LivePosition | None:
+        if not strategy:
+            return None
+        return self.live_store.get(strategy, symbol)
 
     def _target_plan(self, output: RegimeRunnerOutput, selected_strategy: str) -> ExecutionPlan:
         routed_output = RegimeRunnerOutput(
@@ -93,14 +100,21 @@ class RouterCompositeSimulator:
             )
 
         target_plan = self._target_plan(output, selected_strategy)
+        target_position = self.target_strategy_position(selected_strategy, output.symbol)
+        target_has_position = bool(
+            target_position is not None
+            and target_position.status != LivePositionStatus.FLAT
+            and target_position.side is not None
+            and target_position.size > 0
+        )
         switch = evaluate_switch(
             SwitchContext(
                 current_position=current,
                 current_strategy=None if current is None else current.route,
                 target_strategy=selected_strategy,
                 target_plan=target_plan,
-                target_has_position=current is not None,
-                target_position_side=None if current is None else current.side,
+                target_has_position=target_has_position,
+                target_position_side=None if target_position is None else target_position.side,
             )
         )
 
@@ -124,6 +138,9 @@ class RouterCompositeSimulator:
             plan = target_plan
 
         notes = [f'selected_strategy:{selected_strategy}', *switch.notes]
+        if target_position is not None:
+            notes.append(f'target_position_side:{target_position.side}')
+            notes.append(f'target_position_size:{target_position.size}')
         return CompositeDecision(
             account=COMPOSITE_ACCOUNT,
             symbol=output.symbol,
