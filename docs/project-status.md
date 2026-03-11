@@ -24,11 +24,11 @@ The project has moved beyond a raw demo scaffold and now has several distinct la
 ### Review stack
 - `src/review/performance.py` established a normalized per-account performance input layer.
 - `src/review/aggregator.py` added history-based aggregation from execution artifacts.
-- Artifact production now persists `summary.account_metrics`, making the data path more explicit.
+- Artifact production now persists `summary.account_metrics`, making the data path more explicit. Fee is live, and equity/pnl carriage is now wired when upstream balance summaries are present.
 
 ### Verification history
 - Earlier full validation: `107 passed`
-- Current full validation: `109 passed`
+- Current full validation: `111 passed`
 
 ## Open gaps
 

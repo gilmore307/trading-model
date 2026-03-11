@@ -14,9 +14,10 @@ Execution cycle artifacts now write:
 
 - `summary.account_metrics`
 
-Current populated metric source:
+Current populated metric sources:
 
 - `fee_usdt` from `receipt.raw`
+- `equity_usdt` / `pnl_usdt` from account balance summaries when available upstream
 
 Files:
 
@@ -62,7 +63,8 @@ Files:
 
 - Canonical fee ingestion is live
 - Artifact-level `summary.account_metrics` is live
-- PnL/equity ingestion hooks are live, but upstream producers still need to persist canonical values
+- Canonical `equity_usdt` / `pnl_usdt` can now be carried when upstream balance summaries are present
+- A final always-on upstream producer for live balance snapshots is still pending
 
 ## Open gaps
 

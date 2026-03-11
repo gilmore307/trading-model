@@ -145,6 +145,45 @@ def fee_summary_from_trades(trades: list[dict]) -> dict[str, Any] | None:
     }
 
 
+def _safe_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+def account_balance_summary(balance: dict[str, Any] | None, *, account_alias: str | None = None, account_label: str | None = None) -> dict[str, Any]:
+    balance = balance or {}
+    info = balance.get('info') if isinstance(balance.get('info'), dict) else {}
+
+    equity = None
+    unrealized_pnl = None
+
+    details = info.get('details')
+    if isinstance(details, list):
+        for row in details:
+            if not isinstance(row, dict):
+                continue
+            if str(row.get('ccy') or '').upper() == 'USDT':
+                equity = _safe_float(row.get('eqUsd') or row.get('eq'))
+                unrealized_pnl = _safe_float(row.get('upl'))
+                break
+
+    if equity is None:
+        equity = _safe_float(info.get('totalEq'))
+    if unrealized_pnl is None:
+        unrealized_pnl = _safe_float(info.get('upl'))
+
+    return {
+        'account_alias': account_alias,
+        'account_label': account_label,
+        'equity_usdt': equity,
+        'pnl_usdt': unrealized_pnl,
+    }
+
+
 VERIFICATION_DELAYS_SECONDS = (5.0, 10.0, 20.0)
 DOUBLECHECK_DELAY_SECONDS = 1.5
 
@@ -262,6 +301,10 @@ class OkxClient:
             "ticker_status": ticker_status,
             "balance_keys": sorted(list(balance.keys()))[:10],
         }
+
+    def account_balance_summary(self) -> dict[str, Any]:
+        balance = self.exchange.fetch_balance()
+        return account_balance_summary(balance, account_alias=self.account_alias, account_label=self.account_label)
 
     def fetch_ohlcv(self, symbol: str, timeframe: str, limit: int = 200):
         execution_symbol = self.settings.ccxt_symbol(symbol)

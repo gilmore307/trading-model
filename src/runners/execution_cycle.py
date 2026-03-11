@@ -23,11 +23,30 @@ def _json_default(value: Any):
     return str(value)
 
 
+def _balance_summary_for_result(result: ExecutionCycleResult) -> dict[str, Any] | None:
+    receipt = result.receipt
+    if receipt is None or not receipt.accepted or not receipt.account:
+        return None
+    if receipt.mode not in {'okx_demo', 'okx_live'}:
+        return None
+    raw = receipt.raw if isinstance(receipt.raw, dict) else {}
+    summary = {
+        'account_alias': raw.get('account_alias') or receipt.account,
+        'account_label': raw.get('account_label'),
+        'equity_usdt': raw.get('equity_usdt'),
+        'pnl_usdt': raw.get('pnl_usdt'),
+    }
+    if summary['equity_usdt'] is not None or summary['pnl_usdt'] is not None:
+        return summary
+    return None
+
+
 def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     payload = asdict(result)
     payload['artifact_type'] = 'execution_cycle'
     payload['recorded_at'] = datetime.now(UTC).isoformat()
     payload['compare_snapshot'] = build_compare_snapshot(result)
+    balance_summary = _balance_summary_for_result(result)
     payload['summary'] = {
         'symbol': result.regime_output.symbol,
         'runtime_mode': result.runtime_state.get('mode'),
@@ -52,7 +71,7 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         'alignment_ok': None if result.reconcile_result is None else result.reconcile_result.alignment.ok,
         'policy_action': None if result.reconcile_result is None else result.reconcile_result.policy.action,
         'policy_reason': None if result.reconcile_result is None else result.reconcile_result.policy.reason,
-        'account_metrics': build_account_metrics_from_cycle(receipt=result.receipt, reconcile_result=result.reconcile_result),
+        'account_metrics': build_account_metrics_from_cycle(receipt=result.receipt, reconcile_result=result.reconcile_result, balance_summary=balance_summary),
     }
     return payload
 

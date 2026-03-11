@@ -1,7 +1,7 @@
 import pytest
 
 import src.exchange.okx_client as okx_client_module
-from src.exchange.okx_client import OkxClientRegistry, exit_order_side, normalize_contract_amount
+from src.exchange.okx_client import OkxClientRegistry, account_balance_summary, exit_order_side, normalize_contract_amount
 
 
 class FakeExchange:
@@ -11,9 +11,20 @@ class FakeExchange:
             "ETH/USDT": {"limits": {"amount": {"min": 0.01}}},
         }
         self.calls = []
+        self.balance = {
+            "info": {
+                "totalEq": "1500",
+                "details": [
+                    {"ccy": "USDT", "eqUsd": "1500", "upl": "25.5"},
+                ],
+            }
+        }
 
     def fetch_ticker(self, symbol):
         return {"last": 2000.0, "bid": 1999.0, "ask": 2001.0}
+
+    def fetch_balance(self):
+        return self.balance
 
     def fetch_positions(self, symbols):
         return []
@@ -235,6 +246,24 @@ def test_create_exit_order_adds_single_doublecheck_when_trade_was_confirmed(monk
     assert all(row["trade_confirmed"] is True for row in result["verification_attempts"])
     assert result["verified_flat"] is True
     assert result["remaining_contracts"] == 0.0
+
+
+def test_account_balance_summary_extracts_usdt_equity_and_upl():
+    summary = account_balance_summary(
+        {
+            'info': {
+                'totalEq': '1500',
+                'details': [
+                    {'ccy': 'USDT', 'eqUsd': '1500.5', 'upl': '20.25'},
+                ],
+            }
+        },
+        account_alias='trend',
+        account_label='Trend',
+    )
+    assert summary['account_alias'] == 'trend'
+    assert summary['equity_usdt'] == 1500.5
+    assert summary['pnl_usdt'] == 20.25
 
 
 def test_okx_client_registry_reuses_clients_by_account_alias():

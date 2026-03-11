@@ -29,7 +29,7 @@ def test_build_execution_artifact_includes_summary_fields():
     result = ExecutionCycleResult(
         regime_output=regime_output,
         plan=ExecutionPlan(regime='trend', account='trend', action='enter', reason='trend_follow_through_confirmed'),
-        receipt=ExecutionReceipt(accepted=True, mode='dry_run', account='trend', symbol='BTC-USDT-SWAP', action='entry', side='long', size=1.0, order_id='ord-1', reason='trend_follow_through_confirmed', observed_at=datetime.now(UTC), raw={'dry_run': True, 'account_alias': 'trend', 'fee_usdt': 0.15}),
+        receipt=ExecutionReceipt(accepted=True, mode='okx_demo', account='trend', symbol='BTC-USDT-SWAP', action='entry', side='long', size=1.0, order_id='ord-1', reason='trend_follow_through_confirmed', observed_at=datetime.now(UTC), raw={'dry_run': True, 'account_alias': 'trend', 'fee_usdt': 0.15, 'equity_usdt': 1500.0, 'pnl_usdt': 25.0}),
         local_position=None,
         verification_position=None,
         reconcile_result=RouteControlResult(
@@ -69,6 +69,8 @@ def test_build_execution_artifact_includes_summary_fields():
     assert artifact['summary']['receipt_accepted'] is True
     assert artifact['summary']['alignment_ok'] is True
     assert artifact['summary']['account_metrics']['trend']['fee_usdt'] == 0.15
+    assert artifact['summary']['account_metrics']['trend']['equity_usdt'] == 1500.0
+    assert artifact['summary']['account_metrics']['trend']['pnl_usdt'] == 25.0
 
 
 def test_build_execution_artifact_captures_blocked_reason():
