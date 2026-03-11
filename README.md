@@ -9,28 +9,32 @@
 - Strategies: breakout, pullback, meanrev
 - Notifications: sent via OpenClaw's configured Discord channel
 
-## Current status
-This project now supports:
+## Core status
+### What this project is
+- OKX perpetual demo/simulated trading rebuild
+- execution + state + review/reporting stack under active reconstruction
+- still **not ready for unattended real-money trading**
+
+### Core capabilities already in place
 - config loading from `.env`
-- demo-safe exchange connectivity checks
 - multi-strategy evaluation across BTC/ETH/SOL
 - per-strategy-per-symbol budget buckets
-- entry + exit state transitions
-- dry-run execution with state persistence
+- entry/exit state transitions
+- dry-run state persistence
 - optional OKX demo order submission path
 - route/state reconciliation before normal cycle actions
-- execution-cycle artifact persistence under `logs/runtime/`
+- execution artifact persistence under `logs/runtime/`
 - review/report scaffolding with history aggregation from `execution-cycles.jsonl`
 - canonical review metric ingestion path for fee data, with pnl/equity hooks prepared
-- test coverage for signal / risk / state / bucket wiring
 
-It is still **demo-only** and still **not ready for unattended real-money trading**.
+### Current priority
+- finish canonical `pnl_usdt` / `equity_usdt` production into `summary.account_metrics`
+- continue making every important node traceable in Markdown
 
-## Project traceability
-For resumable project state and milestone backfill, see:
-- `TRACEABILITY.md`
-- `PROJECT_STATUS.md`
-- `reports/review-ingestion-status.md`
+## Documentation map
+- `PROJECT_STATUS.md` — project-level status and major milestones
+- `TRACEABILITY.md` — documentation rule and traceability standard
+- `reports/review-ingestion-status.md` — review/performance ingestion status
 
 ## Environment
 Expected in `.env`:
