@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.config.settings import Settings
 from src.execution.adapters import DryRunExecutionAdapter, ExecutionAdapter, ExecutionReceipt
@@ -8,11 +8,22 @@ from src.execution.controller import RouteController, RouteControlResult
 from src.execution.exchange_snapshot import ExchangeSnapshotProvider
 from src.reconcile.alignment import ExchangePositionSnapshot
 from src.runners.regime_runner import BtcRegimeRunner, RegimeRunnerOutput
-from src.runtime.mode import RuntimeMode
 from src.runtime.mode_policy import policy_for_mode
 from src.runtime.store import RuntimeStore
-from src.state.live_position import LivePosition, LivePositionStatus
+from src.state.live_position import LivePosition
 from src.strategies.executors import ExecutionPlan, executor_for
+
+
+@dataclass(slots=True)
+class ExecutionDecisionTrace:
+    mode: str
+    mode_allows_routing: bool
+    decision_trade_enabled: bool
+    route_trade_enabled: bool
+    pipeline_trade_enabled: bool
+    allow_reason: str | None = None
+    block_reason: str | None = None
+    diagnostics: list[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -23,6 +34,7 @@ class ExecutionCycleResult:
     local_position: LivePosition | None
     verification_position: LivePosition | None
     reconcile_result: RouteControlResult | None
+    decision_trace: ExecutionDecisionTrace
 
 
 class ExecutionPipeline:
@@ -48,16 +60,48 @@ class ExecutionPipeline:
     def build_plan(self, output: RegimeRunnerOutput) -> ExecutionPlan:
         return executor_for(output).build_plan(output)
 
+    def _initial_trace(self, mode, mode_policy, regime_output: RegimeRunnerOutput) -> ExecutionDecisionTrace:
+        summary = regime_output.decision_summary or {}
+        return ExecutionDecisionTrace(
+            mode=mode.value,
+            mode_allows_routing=mode_policy.allow_normal_routing,
+            decision_trade_enabled=bool(summary.get('trade_enabled', regime_output.final_decision.get('tradable', False))),
+            route_trade_enabled=bool(regime_output.route_decision.get('trade_enabled', False)),
+            pipeline_trade_enabled=False,
+            allow_reason=summary.get('allow_reason'),
+            block_reason=summary.get('block_reason'),
+            diagnostics=list(summary.get('diagnostics', [])),
+        )
+
     def run_cycle(self, exchange_snapshot: ExchangePositionSnapshot | None = None) -> ExecutionCycleResult:
         mode = self.runtime_store.get().mode
         mode_policy = policy_for_mode(mode)
         regime_output = self.regime_runner.run_once()
+        trace = self._initial_trace(mode, mode_policy, regime_output)
+
         if not mode_policy.allow_normal_routing:
-            plan = ExecutionPlan(regime=regime_output.final_decision['primary'], account=None, action='hold', reason=f'mode_blocked:{mode.value}')
+            trace.block_reason = f'mode_blocked:{mode.value}'
+            trace.allow_reason = None
+            trace.diagnostics.append('mode_blocked')
+            plan = ExecutionPlan(regime=regime_output.final_decision['primary'], account=None, action='hold', reason=trace.block_reason)
+        elif not trace.decision_trade_enabled:
+            if trace.block_reason is None:
+                trace.block_reason = 'decision_trade_disabled'
+            trace.allow_reason = None
+            trace.diagnostics.append('decision_gate_blocked')
+            plan = ExecutionPlan(regime=regime_output.final_decision['primary'], account=None, action='hold', reason=trace.block_reason)
         else:
             plan = self.build_plan(regime_output)
+
         if plan.account is not None and not self.controller.routes.is_enabled(plan.account, regime_output.symbol):
-            plan = ExecutionPlan(regime=plan.regime, account=plan.account, action='hold', reason=self.controller.routes.get(plan.account, regime_output.symbol).frozen_reason or 'route_frozen')
+            frozen_reason = self.controller.routes.get(plan.account, regime_output.symbol).frozen_reason or 'route_frozen'
+            trace.block_reason = frozen_reason
+            trace.allow_reason = None
+            trace.diagnostics.append('route_frozen')
+            plan = ExecutionPlan(regime=plan.regime, account=plan.account, action='hold', reason=frozen_reason)
+
+        trace.pipeline_trade_enabled = plan.action != 'hold' or plan.account is not None
+
         if exchange_snapshot is None and plan.account is not None:
             exchange_snapshot = self.snapshot_provider.fetch_position(plan.account, regime_output.symbol)
         if mode_policy.force_dry_run:
@@ -90,6 +134,12 @@ class ExecutionPipeline:
                 local_position = current
                 verification_position = current
 
+        if reconcile_result is not None and not reconcile_result.policy.trade_enabled:
+            trace.block_reason = reconcile_result.policy.reason
+            trace.allow_reason = None
+            if reconcile_result.policy.action not in trace.diagnostics:
+                trace.diagnostics.append(reconcile_result.policy.action)
+
         return ExecutionCycleResult(
             regime_output=regime_output,
             plan=plan,
@@ -97,4 +147,5 @@ class ExecutionPipeline:
             local_position=local_position,
             verification_position=verification_position,
             reconcile_result=reconcile_result,
+            decision_trace=trace,
         )

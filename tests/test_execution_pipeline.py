@@ -54,6 +54,8 @@ def test_execution_pipeline_holds_when_route_disabled():
     result = pipe.run_cycle(None)
     assert result.plan.action == 'hold'
     assert result.local_position is None
+    assert result.decision_trace.block_reason == 'no_route_for_regime'
+    assert 'decision_gate_blocked' in result.decision_trace.diagnostics
 
 
 def test_execution_pipeline_range_enter_submits_order():

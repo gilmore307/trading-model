@@ -19,7 +19,8 @@ class DummyRunner:
             primary_features={'adx': 28.0, 'vwap_deviation_z': 0.9, 'bollinger_bandwidth_pct': 0.03},
             override_features={'vwap_deviation_z': 1.0, 'trade_burst_score': 0.7},
             final_decision={'primary': 'trend', 'confidence': 0.8, 'reasons': [], 'secondary': [], 'tradable': True},
-            route_decision={'regime': 'trend', 'account': 'trend', 'strategy_family': 'trend', 'trade_enabled': True},
+            route_decision={'regime': 'trend', 'account': 'trend', 'strategy_family': 'trend', 'trade_enabled': True, 'allow_reason': 'route_to_trend', 'block_reason': None},
+            decision_summary={'regime': 'trend', 'confidence': 0.8, 'tradable': True, 'account': 'trend', 'strategy_family': 'trend', 'trade_enabled': True, 'allow_reason': 'route_to_trend', 'block_reason': None, 'reasons': [], 'secondary': [], 'diagnostics': ['high_confidence']},
         )
 
 
@@ -30,6 +31,8 @@ def test_calibrate_mode_blocks_normal_routing():
     result = pipe.run_cycle(None)
     assert result.plan.action == 'hold'
     assert result.plan.reason == 'mode_blocked:calibrate'
+    assert result.decision_trace.block_reason == 'mode_blocked:calibrate'
+    assert 'mode_blocked' in result.decision_trace.diagnostics
 
 
 def test_develop_mode_forces_dry_run_adapter_behavior():
@@ -39,3 +42,6 @@ def test_develop_mode_forces_dry_run_adapter_behavior():
     result = pipe.run_cycle(None)
     assert result.receipt is not None
     assert result.receipt.mode == 'dry_run'
+    assert result.decision_trace.pipeline_trade_enabled is True
+    assert result.decision_trace.block_reason == 'alignment_requires_manual_or_delayed_confirmation'
+    assert 'verify_only' in result.decision_trace.diagnostics
