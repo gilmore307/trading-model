@@ -10,11 +10,17 @@ def test_weekly_report_scaffold_includes_compare_sections():
         'accounts': [{'account': 'trend', 'label': 'Trend'}],
         'highlights': ['router_selected:trend'],
     }
-    report = build_report_scaffold(window, compare_snapshot)
+    metrics_by_account = {
+        'trend': {'pnl_usdt': 12.5, 'trade_count': 3, 'source': 'demo'},
+    }
+    report = build_report_scaffold(window, compare_snapshot, metrics_by_account)
     section_keys = [section['key'] for section in report['sections']]
     assert 'account_comparison' in section_keys
     assert 'router_composite_review' in section_keys
     assert report['compare_snapshot']['highlights'] == ['router_selected:trend']
+    assert report['metrics']['performance']['status'] == 'ready'
+    trend_row = next(row for row in report['metrics']['performance']['accounts'] if row['account'] == 'trend')
+    assert trend_row['pnl_usdt'] == 12.5
     assert report['parameter_candidates']['auto_candidate_params']
 
 

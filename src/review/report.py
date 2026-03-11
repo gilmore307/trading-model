@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from src.review.framework import ReviewWindow, build_review_plan
+from src.review.performance import build_performance_snapshot
 
 
 @dataclass(slots=True)
@@ -18,7 +19,7 @@ class ReviewReport:
     notes: list[str]
 
 
-def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any] | None = None) -> dict[str, Any]:
+def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any] | None = None, metrics_by_account: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     plan = build_review_plan(window)
     cadence = plan['cadence']
 
@@ -59,6 +60,8 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
             }
         )
 
+    performance_snapshot = build_performance_snapshot(metrics_by_account)
+
     report = ReviewReport(
         meta={
             'cadence': cadence,
@@ -72,7 +75,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         sections=sections,
         compare_snapshot=compare_snapshot,
         metrics={
-            'performance': [],
+            'performance': performance_snapshot,
             'risk': [],
             'fees': [],
             'regime_quality': [],
