@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 from src.config.settings import Settings
 from src.execution.adapters import DryRunExecutionAdapter, ExecutionAdapter, ExecutionReceipt
@@ -35,6 +35,9 @@ class ExecutionCycleResult:
     verification_position: LivePosition | None
     reconcile_result: RouteControlResult | None
     decision_trace: ExecutionDecisionTrace
+    runtime_state: dict
+    route_state: dict | None
+    live_positions: list[dict]
 
 
 class ExecutionPipeline:
@@ -140,6 +143,10 @@ class ExecutionPipeline:
             if reconcile_result.policy.action not in trace.diagnostics:
                 trace.diagnostics.append(reconcile_result.policy.action)
 
+        route_state = None
+        if plan.account is not None:
+            route_state = asdict(self.controller.routes.get(plan.account, regime_output.symbol))
+
         return ExecutionCycleResult(
             regime_output=regime_output,
             plan=plan,
@@ -148,4 +155,7 @@ class ExecutionPipeline:
             verification_position=verification_position,
             reconcile_result=reconcile_result,
             decision_trace=trace,
+            runtime_state=asdict(self.runtime_store.get()),
+            route_state=route_state,
+            live_positions=[asdict(position) for position in self.controller.store.list_positions()],
         )

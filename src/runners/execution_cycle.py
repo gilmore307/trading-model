@@ -27,6 +27,7 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     payload['recorded_at'] = datetime.now(UTC).isoformat()
     payload['summary'] = {
         'symbol': result.regime_output.symbol,
+        'runtime_mode': result.runtime_state.get('mode'),
         'regime': result.regime_output.final_decision.get('primary'),
         'confidence': result.regime_output.final_decision.get('confidence'),
         'plan_action': result.plan.action,
@@ -36,6 +37,9 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         'allow_reason': result.decision_trace.allow_reason,
         'block_reason': result.decision_trace.block_reason,
         'diagnostics': list(result.decision_trace.diagnostics),
+        'route_enabled': None if result.route_state is None else result.route_state.get('enabled'),
+        'route_frozen_reason': None if result.route_state is None else result.route_state.get('frozen_reason'),
+        'live_position_count': len(result.live_positions),
         'receipt_mode': None if result.receipt is None else result.receipt.mode,
         'receipt_accepted': None if result.receipt is None else result.receipt.accepted,
         'alignment_ok': None if result.reconcile_result is None else result.reconcile_result.alignment.ok,

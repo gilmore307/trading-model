@@ -47,13 +47,19 @@ def test_build_execution_artifact_includes_summary_fields():
             block_reason=None,
             diagnostics=['high_confidence'],
         ),
+        runtime_state={'mode': 'develop', 'reason': 'dev', 'updated_at': datetime.now(UTC)},
+        route_state={'account': 'trend', 'symbol': 'BTC-USDT-SWAP', 'enabled': True, 'frozen_reason': None, 'updated_at': datetime.now(UTC)},
+        live_positions=[],
     )
 
     artifact = build_execution_artifact(result)
     assert artifact['artifact_type'] == 'execution_cycle'
+    assert artifact['summary']['runtime_mode'] == 'develop'
     assert artifact['summary']['regime'] == 'trend'
     assert artifact['summary']['plan_action'] == 'enter'
     assert artifact['summary']['allow_reason'] == 'route_to_trend'
+    assert artifact['summary']['route_enabled'] is True
+    assert artifact['summary']['live_position_count'] == 0
     assert artifact['summary']['receipt_accepted'] is True
     assert artifact['summary']['alignment_ok'] is True
 
@@ -89,6 +95,9 @@ def test_build_execution_artifact_captures_blocked_reason():
             block_reason='regime_non_tradable',
             diagnostics=['decision_gate_blocked', 'low_confidence'],
         ),
+        runtime_state={'mode': 'trade', 'reason': 'manual', 'updated_at': datetime.now(UTC)},
+        route_state=None,
+        live_positions=[],
     )
 
     artifact = build_execution_artifact(result)
