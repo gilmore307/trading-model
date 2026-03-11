@@ -7,6 +7,7 @@ from src.execution.adapters import DryRunExecutionAdapter, ExecutionAdapter, Exe
 from src.execution.controller import RouteController, RouteControlResult
 from src.execution.exchange_snapshot import ExchangeSnapshotProvider
 from src.reconcile.alignment import ExchangePositionSnapshot
+from src.routing.composite import RouterCompositeSimulator
 from src.runners.regime_runner import BtcRegimeRunner, RegimeRunnerOutput
 from src.runtime.mode_policy import policy_for_mode
 from src.runtime.store import RuntimeStore
@@ -38,6 +39,7 @@ class ExecutionCycleResult:
     runtime_state: dict
     route_state: dict | None
     live_positions: list[dict]
+    router_composite: dict
 
 
 class ExecutionPipeline:
@@ -52,13 +54,14 @@ class ExecutionPipeline:
     This intentionally stops short of real order placement.
     """
 
-    def __init__(self, regime_runner: BtcRegimeRunner | None = None, controller: RouteController | None = None, snapshot_provider: ExchangeSnapshotProvider | None = None, adapter: ExecutionAdapter | None = None, settings: Settings | None = None, runtime_store: RuntimeStore | None = None):
+    def __init__(self, regime_runner: BtcRegimeRunner | None = None, controller: RouteController | None = None, snapshot_provider: ExchangeSnapshotProvider | None = None, adapter: ExecutionAdapter | None = None, settings: Settings | None = None, runtime_store: RuntimeStore | None = None, composite_simulator: RouterCompositeSimulator | None = None):
         self.settings = settings or Settings.load()
         self.regime_runner = regime_runner or BtcRegimeRunner(self.settings)
         self.controller = controller or RouteController()
         self.snapshot_provider = snapshot_provider or ExchangeSnapshotProvider(self.settings)
         self.adapter = adapter or DryRunExecutionAdapter()
         self.runtime_store = runtime_store or RuntimeStore()
+        self.composite_simulator = composite_simulator or RouterCompositeSimulator()
 
     def build_plan(self, output: RegimeRunnerOutput) -> ExecutionPlan:
         return executor_for(output).build_plan(output)
@@ -158,4 +161,5 @@ class ExecutionPipeline:
             runtime_state=asdict(self.runtime_store.get()),
             route_state=route_state,
             live_positions=[asdict(position) for position in self.controller.store.list_positions()],
+            router_composite=self.composite_simulator.snapshot(regime_output),
         )

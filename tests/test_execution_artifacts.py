@@ -50,6 +50,7 @@ def test_build_execution_artifact_includes_summary_fields():
         runtime_state={'mode': 'develop', 'reason': 'dev', 'updated_at': datetime.now(UTC)},
         route_state={'account': 'trend', 'symbol': 'BTC-USDT-SWAP', 'enabled': True, 'frozen_reason': None, 'updated_at': datetime.now(UTC)},
         live_positions=[],
+        router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': 'trend', 'source_regime': 'trend', 'source_confidence': 0.8, 'plan': {'action': 'enter'}, 'notes': ['selected_strategy:trend'], 'position': {'side': 'long'}},
     )
 
     artifact = build_execution_artifact(result)
@@ -60,6 +61,9 @@ def test_build_execution_artifact_includes_summary_fields():
     assert artifact['summary']['allow_reason'] == 'route_to_trend'
     assert artifact['summary']['route_enabled'] is True
     assert artifact['summary']['live_position_count'] == 0
+    assert artifact['summary']['composite_selected_strategy'] == 'trend'
+    assert artifact['summary']['composite_plan_action'] == 'enter'
+    assert artifact['summary']['composite_position_side'] == 'long'
     assert artifact['summary']['receipt_accepted'] is True
     assert artifact['summary']['alignment_ok'] is True
 
@@ -98,6 +102,7 @@ def test_build_execution_artifact_captures_blocked_reason():
         runtime_state={'mode': 'trade', 'reason': 'manual', 'updated_at': datetime.now(UTC)},
         route_state=None,
         live_positions=[],
+        router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': None, 'source_regime': 'chaotic', 'source_confidence': 0.2, 'plan': {'action': 'hold'}, 'notes': ['router_not_actionable'], 'position': None},
     )
 
     artifact = build_execution_artifact(result)

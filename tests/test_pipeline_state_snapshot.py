@@ -41,3 +41,5 @@ def test_pipeline_emits_runtime_route_and_live_position_snapshots():
     assert len(result.live_positions) == 1
     assert result.live_positions[0]['account'] == 'trend'
     assert result.live_positions[0]['symbol'] == 'BTC-USDT-SWAP'
+    assert result.router_composite['account'] == 'router_composite'
+    assert result.router_composite['selected_strategy'] == 'trend'
