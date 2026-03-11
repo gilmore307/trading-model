@@ -50,7 +50,7 @@ def test_build_execution_artifact_includes_summary_fields():
         runtime_state={'mode': 'develop', 'reason': 'dev', 'updated_at': datetime.now(UTC)},
         route_state={'account': 'trend', 'symbol': 'BTC-USDT-SWAP', 'enabled': True, 'frozen_reason': None, 'updated_at': datetime.now(UTC)},
         live_positions=[],
-        router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': 'trend', 'source_regime': 'trend', 'source_confidence': 0.8, 'plan': {'action': 'enter'}, 'notes': ['selected_strategy:trend'], 'position': {'side': 'long'}},
+        router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': 'trend', 'source_regime': 'trend', 'source_confidence': 0.8, 'switch_action': 'adopt_target_plan', 'position_owner': 'trend', 'plan': {'action': 'enter'}, 'notes': ['selected_strategy:trend'], 'position': {'side': 'long'}},
     )
 
     artifact = build_execution_artifact(result)
@@ -62,6 +62,7 @@ def test_build_execution_artifact_includes_summary_fields():
     assert artifact['summary']['route_enabled'] is True
     assert artifact['summary']['live_position_count'] == 0
     assert artifact['summary']['composite_selected_strategy'] == 'trend'
+    assert artifact['summary']['composite_position_owner'] == 'trend'
     assert artifact['summary']['composite_plan_action'] == 'enter'
     assert artifact['summary']['composite_position_side'] == 'long'
     assert artifact['summary']['receipt_accepted'] is True

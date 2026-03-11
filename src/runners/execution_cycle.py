@@ -41,6 +41,7 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         'route_frozen_reason': None if result.route_state is None else result.route_state.get('frozen_reason'),
         'live_position_count': len(result.live_positions),
         'composite_selected_strategy': result.router_composite.get('selected_strategy'),
+        'composite_position_owner': result.router_composite.get('position_owner'),
         'composite_plan_action': result.router_composite.get('plan', {}).get('action'),
         'composite_position_side': None if result.router_composite.get('position') is None else result.router_composite.get('position', {}).get('side'),
         'receipt_mode': None if result.receipt is None else result.receipt.mode,

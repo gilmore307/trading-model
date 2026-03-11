@@ -156,15 +156,22 @@ class RouterCompositeSimulator:
         current = self._positions.get(decision.symbol)
         plan = decision.plan
         if plan.action == 'enter' and plan.side is not None and plan.size is not None:
+            opened_by = decision.selected_strategy or decision.source_regime
             current = LivePosition(
                 account=COMPOSITE_ACCOUNT,
                 symbol=decision.symbol,
-                route=decision.selected_strategy or decision.source_regime,
+                route=opened_by,
                 status=LivePositionStatus.OPEN,
                 side=plan.side,
                 size=plan.size,
                 reason=plan.reason,
-                meta={'selected_strategy': decision.selected_strategy or '', 'mode': 'simulated', 'switch_action': decision.switch_action},
+                meta={
+                    'selected_strategy': decision.selected_strategy or '',
+                    'opened_by_strategy': opened_by,
+                    'position_owner': opened_by,
+                    'mode': 'simulated',
+                    'switch_action': decision.switch_action,
+                },
             )
             current.last_local_updated_at = datetime.now(UTC)
             self._positions[decision.symbol] = current
@@ -183,6 +190,8 @@ class RouterCompositeSimulator:
         if current is not None:
             current.reason = plan.reason
             current.meta['switch_action'] = decision.switch_action
+            current.meta.setdefault('opened_by_strategy', current.route)
+            current.meta.setdefault('position_owner', current.route)
             current.last_local_updated_at = datetime.now(UTC)
             self._positions[decision.symbol] = current
         return current
@@ -197,6 +206,7 @@ class RouterCompositeSimulator:
             'source_regime': decision.source_regime,
             'source_confidence': decision.source_confidence,
             'switch_action': decision.switch_action,
+            'position_owner': None if position is None else position.meta.get('position_owner', position.route),
             'plan': asdict(decision.plan),
             'notes': list(decision.notes),
             'position': None if position is None else asdict(position),

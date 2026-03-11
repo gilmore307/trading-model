@@ -29,6 +29,9 @@ def test_router_composite_follows_router_selected_strategy():
     assert snap['selected_strategy'] == 'trend'
     assert snap['plan']['account'] == COMPOSITE_ACCOUNT
     assert snap['plan']['action'] in {'enter', 'arm', 'watch'}
+    if snap['position'] is not None:
+        assert snap['position_owner'] == 'trend'
+        assert snap['position']['meta']['opened_by_strategy'] == 'trend'
 
 
 def test_router_composite_holds_when_router_not_actionable():
