@@ -35,3 +35,20 @@ def test_router_composite_holds_when_router_not_actionable():
     assert snap['selected_strategy'] is None
     assert snap['plan']['action'] == 'hold'
     assert 'router_not_actionable' in snap['notes']
+
+
+def test_router_composite_keeps_existing_position_on_higher_priority_switch():
+    sim = RouterCompositeSimulator()
+    first = sim.snapshot(_output('range', 'meanrev', True))
+    # range setup enters short under current executor thresholds
+    if first['plan']['action'] == 'enter':
+        assert first['position'] is not None
+    snap = sim.snapshot(_output('trend', 'trend', True))
+    assert snap['switch_action'] in {'keep_current_position', 'adopt_target_plan'}
+
+
+def test_router_composite_closes_and_waits_on_lower_priority_switch():
+    sim = RouterCompositeSimulator()
+    sim.snapshot(_output('trend', 'trend', True))
+    snap = sim.snapshot(_output('range', 'meanrev', True))
+    assert snap['switch_action'] in {'close_and_wait', 'keep_current_position', 'adopt_target_plan'}

@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from src.runners.regime_runner import RegimeRunnerOutput
 from src.state.live_position import LivePosition, LivePositionStatus
 from src.strategies.executors import ExecutionPlan, executor_for
+from src.routing.switch_policy import SwitchContext, evaluate_switch
 
 
 COMPOSITE_ACCOUNT = 'router_composite'
@@ -19,6 +20,7 @@ class CompositeDecision:
     source_regime: str
     source_confidence: float
     plan: ExecutionPlan
+    switch_action: str
     notes: list[str] = field(default_factory=list)
 
 
@@ -36,26 +38,7 @@ class RouterCompositeSimulator:
     def current_position(self, symbol: str) -> LivePosition | None:
         return self._positions.get(symbol)
 
-    def build_decision(self, output: RegimeRunnerOutput) -> CompositeDecision:
-        selected_strategy = output.route_decision.get('account')
-        if not selected_strategy or not output.decision_summary.get('trade_enabled', False):
-            plan = ExecutionPlan(
-                regime=output.final_decision['primary'],
-                account=COMPOSITE_ACCOUNT,
-                action='hold',
-                reason=output.decision_summary.get('block_reason') or 'composite_router_hold',
-            )
-            notes = ['router_not_actionable']
-            return CompositeDecision(
-                account=COMPOSITE_ACCOUNT,
-                symbol=output.symbol,
-                selected_strategy=None,
-                source_regime=output.final_decision['primary'],
-                source_confidence=float(output.final_decision.get('confidence') or 0.0),
-                plan=plan,
-                notes=notes,
-            )
-
+    def _target_plan(self, output: RegimeRunnerOutput, selected_strategy: str) -> ExecutionPlan:
         routed_output = RegimeRunnerOutput(
             observed_at=output.observed_at,
             symbol=output.symbol,
@@ -85,7 +68,62 @@ class RouterCompositeSimulator:
         )
         plan = executor_for(routed_output).build_plan(routed_output)
         plan.account = COMPOSITE_ACCOUNT
-        notes = [f'selected_strategy:{selected_strategy}']
+        return plan
+
+    def build_decision(self, output: RegimeRunnerOutput) -> CompositeDecision:
+        selected_strategy = output.route_decision.get('account')
+        current = self.current_position(output.symbol)
+        if not selected_strategy or not output.decision_summary.get('trade_enabled', False):
+            plan = ExecutionPlan(
+                regime=output.final_decision['primary'],
+                account=COMPOSITE_ACCOUNT,
+                action='hold',
+                reason=output.decision_summary.get('block_reason') or 'composite_router_hold',
+            )
+            notes = ['router_not_actionable']
+            return CompositeDecision(
+                account=COMPOSITE_ACCOUNT,
+                symbol=output.symbol,
+                selected_strategy=None,
+                source_regime=output.final_decision['primary'],
+                source_confidence=float(output.final_decision.get('confidence') or 0.0),
+                plan=plan,
+                switch_action='hold',
+                notes=notes,
+            )
+
+        target_plan = self._target_plan(output, selected_strategy)
+        switch = evaluate_switch(
+            SwitchContext(
+                current_position=current,
+                current_strategy=None if current is None else current.route,
+                target_strategy=selected_strategy,
+                target_plan=target_plan,
+                target_has_position=current is not None,
+                target_position_side=None if current is None else current.side,
+            )
+        )
+
+        if switch.action == 'keep_current_position' and current is not None:
+            plan = ExecutionPlan(
+                regime=selected_strategy,
+                account=COMPOSITE_ACCOUNT,
+                action='hold',
+                side=current.side,
+                size=current.size,
+                reason=switch.reason,
+            )
+        elif switch.action == 'close_and_wait':
+            plan = ExecutionPlan(
+                regime=selected_strategy,
+                account=COMPOSITE_ACCOUNT,
+                action='exit' if current is not None and current.status != LivePositionStatus.FLAT else 'hold',
+                reason=switch.reason,
+            )
+        else:
+            plan = target_plan
+
+        notes = [f'selected_strategy:{selected_strategy}', *switch.notes]
         return CompositeDecision(
             account=COMPOSITE_ACCOUNT,
             symbol=output.symbol,
@@ -93,6 +131,7 @@ class RouterCompositeSimulator:
             source_regime=output.final_decision['primary'],
             source_confidence=float(output.final_decision.get('confidence') or 0.0),
             plan=plan,
+            switch_action=switch.action,
             notes=notes,
         )
 
@@ -108,7 +147,7 @@ class RouterCompositeSimulator:
                 side=plan.side,
                 size=plan.size,
                 reason=plan.reason,
-                meta={'selected_strategy': decision.selected_strategy or '', 'mode': 'simulated'},
+                meta={'selected_strategy': decision.selected_strategy or '', 'mode': 'simulated', 'switch_action': decision.switch_action},
             )
             current.last_local_updated_at = datetime.now(UTC)
             self._positions[decision.symbol] = current
@@ -120,11 +159,13 @@ class RouterCompositeSimulator:
             current.side = None
             current.size = 0.0
             current.reason = plan.reason
+            current.meta['switch_action'] = decision.switch_action
             current.last_local_updated_at = datetime.now(UTC)
             self._positions[decision.symbol] = current
             return current
         if current is not None:
             current.reason = plan.reason
+            current.meta['switch_action'] = decision.switch_action
             current.last_local_updated_at = datetime.now(UTC)
             self._positions[decision.symbol] = current
         return current
@@ -138,6 +179,7 @@ class RouterCompositeSimulator:
             'selected_strategy': decision.selected_strategy,
             'source_regime': decision.source_regime,
             'source_confidence': decision.source_confidence,
+            'switch_action': decision.switch_action,
             'plan': asdict(decision.plan),
             'notes': list(decision.notes),
             'position': None if position is None else asdict(position),
