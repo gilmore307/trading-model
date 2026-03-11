@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 import asyncio
@@ -11,7 +11,7 @@ from src.market.hub import MarketDataHub
 from src.market.ingestion import BtcPollingIngestor
 from src.market.okx_ws import OkxPublicWsClient
 from src.regimes.layered_classifier import LayeredRegimeClassifier
-from src.routing.router import route_regime
+from src.routing.router import summarize_decision, route_regime
 
 
 OUT_DIR = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime')
@@ -31,6 +31,7 @@ class RegimeRunnerOutput:
     override_features: dict
     final_decision: dict
     route_decision: dict
+    decision_summary: dict = field(default_factory=dict)
 
 
 class BtcRegimeRunner:
@@ -57,6 +58,7 @@ class BtcRegimeRunner:
         snapshot = self.hub.snapshot(self.symbol)
         layered = self.layered.classify(snapshot)
         route = route_regime(layered.final.primary)
+        summary = summarize_decision(layered.final, route)
         payload = RegimeRunnerOutput(
             observed_at=datetime.now(UTC),
             symbol=self.symbol,
@@ -68,6 +70,7 @@ class BtcRegimeRunner:
             override_features=asdict(layered.override_features),
             final_decision=self._decision_dict(layered.final),
             route_decision=asdict(route),
+            decision_summary=asdict(summary),
         )
         LATEST_PATH.write_text(json.dumps(asdict(payload), indent=2, default=str, ensure_ascii=False))
         return payload

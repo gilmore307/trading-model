@@ -23,7 +23,8 @@ class DummyRunner:
             primary_features={'vwap_deviation_z': 1.0, 'basis_deviation_pct': 0.01},
             override_features={'vwap_deviation_z': 1.0},
             final_decision={'primary': self.regime, 'confidence': 0.8, 'reasons': [], 'secondary': [], 'tradable': self.trade_enabled},
-            route_decision={'regime': self.regime, 'account': self.account, 'strategy_family': self.regime, 'trade_enabled': self.trade_enabled},
+            route_decision={'regime': self.regime, 'account': self.account, 'strategy_family': self.regime, 'trade_enabled': self.trade_enabled, 'block_reason': None if self.trade_enabled else 'no_route_for_regime', 'allow_reason': None if not self.trade_enabled else f'route_to_{self.account}'},
+            decision_summary={'regime': self.regime, 'confidence': 0.8, 'tradable': self.trade_enabled, 'account': self.account, 'strategy_family': self.regime, 'trade_enabled': self.trade_enabled, 'allow_reason': None if not self.trade_enabled else f'route_to_{self.account}', 'block_reason': None if self.trade_enabled else 'no_route_for_regime', 'reasons': [], 'secondary': [], 'diagnostics': []},
         )
 
 
