@@ -35,10 +35,11 @@ def _balance_summary_for_result(result: ExecutionCycleResult) -> dict[str, Any] 
         'account_label': raw.get('account_label'),
         'equity_usdt': raw.get('equity_end_usdt', raw.get('equity_usdt')),
         'equity_end_usdt': raw.get('equity_end_usdt', raw.get('equity_usdt')),
+        'realized_pnl_usdt': raw.get('realized_pnl_usdt'),
         'unrealized_pnl_usdt': raw.get('unrealized_pnl_usdt', raw.get('pnl_usdt')),
         'pnl_usdt': raw.get('pnl_usdt'),
     }
-    if summary['equity_usdt'] is not None or summary['unrealized_pnl_usdt'] is not None or summary['pnl_usdt'] is not None:
+    if summary['equity_usdt'] is not None or summary['realized_pnl_usdt'] is not None or summary['unrealized_pnl_usdt'] is not None or summary['pnl_usdt'] is not None:
         return summary
     return None
 

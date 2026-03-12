@@ -47,6 +47,25 @@ def extract_order_fee(order: dict[str, Any] | None) -> float | None:
     return None
 
 
+def extract_realized_pnl(payload: dict[str, Any] | None) -> float | None:
+    if not isinstance(payload, dict):
+        return None
+    candidates = [payload]
+    info = payload.get('info') if isinstance(payload.get('info'), dict) else None
+    if info is not None:
+        candidates.append(info)
+    for row in candidates:
+        for key in ('realizedPnl', 'realized_pnl', 'realized_pnl_usdt', 'fillPnl', 'fill_pnl', 'closedPnl', 'closed_pnl', 'pnl'):
+            value = row.get(key)
+            if value is None:
+                continue
+            try:
+                return float(value)
+            except Exception:
+                continue
+    return None
+
+
 def exit_order_side(position_side: str) -> str:
     if position_side == "long":
         return "sell"
@@ -105,6 +124,8 @@ def fee_summary_from_trades(trades: list[dict]) -> dict[str, Any] | None:
         return None
     total_fee = 0.0
     found_fee = False
+    realized_pnl_total = 0.0
+    found_realized_pnl = False
     fee_ccys = []
     fee_rates = []
     fill_ids = []
@@ -127,6 +148,10 @@ def fee_summary_from_trades(trades: list[dict]) -> dict[str, Any] | None:
                 found_fee = True
             except Exception:
                 pass
+        realized_pnl = extract_realized_pnl(trade)
+        if realized_pnl is not None:
+            realized_pnl_total += realized_pnl
+            found_realized_pnl = True
         fee_ccy = trade.get('feeCurrency') or trade.get('feeCcy')
         if fee_ccy:
             fee_ccys.append(str(fee_ccy))
@@ -138,6 +163,7 @@ def fee_summary_from_trades(trades: list[dict]) -> dict[str, Any] | None:
             fill_ids.append(str(tid))
     return {
         'fee_usdt': total_fee if found_fee else None,
+        'realized_pnl_usdt': realized_pnl_total if found_realized_pnl else None,
         'fee_ccy': sorted(set(fee_ccys)) if fee_ccys else None,
         'fee_rate': sorted(set(fee_rates)) if fee_rates else None,
         'fill_ids': fill_ids or None,
@@ -378,6 +404,7 @@ class OkxClient:
         }
         order = self.exchange.create_order(execution_symbol, "market", order_side, amount, None, params)
         fee_usdt = extract_order_fee(order)
+        realized_pnl_usdt = extract_realized_pnl(order)
         fee_meta = self.fetch_order_fees(
             execution_symbol,
             order.get('id'),
@@ -387,6 +414,8 @@ class OkxClient:
         )
         if fee_meta and fee_meta.get('fee_usdt') is not None:
             fee_usdt = fee_meta.get('fee_usdt')
+        if fee_meta and fee_meta.get('realized_pnl_usdt') is not None:
+            realized_pnl_usdt = fee_meta.get('realized_pnl_usdt')
 
         target_amount = float(current_open_amount or 0.0) + float(amount)
         verified_entry, live, verification = verify_position_with_delays(
@@ -406,6 +435,7 @@ class OkxClient:
             "notional_usdt": notional_usdt,
             "reference_price": last_price,
             "fee_usdt": fee_usdt,
+            "realized_pnl_usdt": realized_pnl_usdt,
             "fee_ccy": None if fee_meta is None else fee_meta.get('fee_ccy'),
             "fee_rate": None if fee_meta is None else fee_meta.get('fee_rate'),
             "fill_ids": None if fee_meta is None else fee_meta.get('fill_ids'),
@@ -439,7 +469,9 @@ class OkxClient:
         orders = []
         verification = []
         total_fee_usdt = 0.0
+        realized_pnl_usdt = 0.0
         fee_found = False
+        realized_pnl_found = False
         verified_flat = False
         remaining_contracts = float(amount)
         remaining_side = position_side
@@ -449,6 +481,7 @@ class OkxClient:
             normalized_amount = normalize_contract_amount(self.exchange, execution_symbol, current_amount)
             order = self.exchange.create_order(execution_symbol, "market", order_side, normalized_amount, None, params)
             fee_usdt = extract_order_fee(order)
+            order_realized_pnl_usdt = extract_realized_pnl(order)
             fee_meta = self.fetch_order_fees(
                 execution_symbol,
                 order.get('id'),
@@ -458,15 +491,21 @@ class OkxClient:
             )
             if fee_meta and fee_meta.get('fee_usdt') is not None:
                 fee_usdt = fee_meta.get('fee_usdt')
+            if fee_meta and fee_meta.get('realized_pnl_usdt') is not None:
+                order_realized_pnl_usdt = fee_meta.get('realized_pnl_usdt')
             if fee_usdt is not None:
                 total_fee_usdt += fee_usdt
                 fee_found = True
+            if order_realized_pnl_usdt is not None:
+                realized_pnl_usdt += order_realized_pnl_usdt
+                realized_pnl_found = True
             orders.append({
                 'attempt': attempt,
                 'order_id': order.get('id'),
                 'status': order.get('status'),
                 'amount': normalized_amount,
                 'fee_usdt': fee_usdt,
+                'realized_pnl_usdt': order_realized_pnl_usdt,
                 'fee_ccy': None if fee_meta is None else fee_meta.get('fee_ccy'),
                 'fee_rate': None if fee_meta is None else fee_meta.get('fee_rate'),
                 'fill_ids': None if fee_meta is None else fee_meta.get('fill_ids'),
@@ -503,6 +542,7 @@ class OkxClient:
             "requested_amount": amount,
             "reference_price": last_price if last_price > 0 else None,
             "fee_usdt": total_fee_usdt if fee_found else None,
+            "realized_pnl_usdt": realized_pnl_usdt if realized_pnl_found else None,
             "fee_ccy": sorted({ccy for row in orders for ccy in (row.get('fee_ccy') or [])}) or None,
             "fee_rate": sorted({rate for row in orders for rate in (row.get('fee_rate') or [])}) or None,
             "fill_ids": [fid for row in orders for fid in (row.get('fill_ids') or [])] or None,

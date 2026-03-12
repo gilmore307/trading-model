@@ -1,7 +1,7 @@
 import pytest
 
 import src.exchange.okx_client as okx_client_module
-from src.exchange.okx_client import OkxClientRegistry, account_balance_summary, exit_order_side, normalize_contract_amount
+from src.exchange.okx_client import OkxClientRegistry, account_balance_summary, exit_order_side, fee_summary_from_trades, normalize_contract_amount
 
 
 class FakeExchange:
@@ -246,6 +246,18 @@ def test_create_exit_order_adds_single_doublecheck_when_trade_was_confirmed(monk
     assert all(row["trade_confirmed"] is True for row in result["verification_attempts"])
     assert result["verified_flat"] is True
     assert result["remaining_contracts"] == 0.0
+
+
+def test_fee_summary_from_trades_aggregates_realized_pnl_when_available():
+    summary = fee_summary_from_trades(
+        [
+            {'id': '1', 'fee': {'cost': '0.1', 'currency': 'USDT'}, 'info': {'fillPnl': '2.5'}},
+            {'id': '2', 'fee': {'cost': '0.2', 'currency': 'USDT'}, 'info': {'fillPnl': '-0.5'}},
+        ]
+    )
+    assert summary['fee_usdt'] == 0.30000000000000004
+    assert summary['realized_pnl_usdt'] == 2.0
+    assert summary['fill_count'] == 2
 
 
 def test_account_balance_summary_extracts_usdt_equity_and_upl():

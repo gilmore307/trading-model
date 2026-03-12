@@ -109,6 +109,14 @@ Current input sources:
 - receipt raw payload performance hints
 - optional balance/equity summary pulled from receipt context
 
+Current realized pnl sourcing priority:
+
+1. realized pnl extracted directly from order payloads when available (for example `fillPnl` / `closedPnl` / similar exchange-native fields)
+2. realized pnl aggregated from fetched fill/trade payloads for the submitted order when available
+3. downstream review compatibility via canonical artifact fields
+
+This is materially better than the earlier placeholder-only path, but it is still not equivalent to audited production accounting.
+
 Current compatibility mirror fields:
 
 - `pnl_usdt`
