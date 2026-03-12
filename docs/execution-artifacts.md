@@ -136,6 +136,12 @@ Extended canonical review fields already supported:
 - `funding_total_usdt`
 - `max_drawdown_pct`
 
+Current drawdown semantics:
+
+- `max_drawdown_pct` in review aggregation is treated as review-window drawdown, not lifetime account drawdown
+- when enough equity points are available inside the review window, drawdown is computed from the observed equity path (peak-to-trough percentage decline)
+- if an artifact also provides explicit `max_drawdown_pct`, aggregation keeps the more conservative value
+
 Funding semantics should be interpreted as:
 
 - `funding_usdt` = per-artifact funding delta / event contribution

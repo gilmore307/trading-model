@@ -13,6 +13,25 @@ from src.review.performance import DEFAULT_COMPARE_ACCOUNTS
 ROUND_DIGITS = 10
 
 
+def _update_drawdown_state(
+    *,
+    equity_value: float,
+    peak_by_alias: dict[str, float | None],
+    max_drawdown_by_alias: dict[str, float | None],
+    alias: str,
+) -> None:
+    peak = peak_by_alias[alias]
+    if peak is None or equity_value > peak:
+        peak_by_alias[alias] = equity_value
+        peak = equity_value
+    if peak is None or peak <= 0:
+        return
+    drawdown_pct = ((peak - equity_value) / peak) * 100.0
+    current = max_drawdown_by_alias[alias]
+    if current is None or drawdown_pct > current:
+        max_drawdown_by_alias[alias] = drawdown_pct
+
+
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
@@ -88,6 +107,8 @@ def aggregate_from_execution_history(
     latest_equity_snapshot = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_equity_end = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     first_equity_start = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    max_drawdown_by_curve = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    equity_peak = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_drawdown = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     exposure_counts = {alias: 0 for alias in DEFAULT_COMPARE_ACCOUNTS}
     earliest_metric_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
@@ -164,12 +185,18 @@ def aggregate_from_execution_history(
             equity_start_usdt = metric_row.get('equity_start_usdt')
             if equity_start_usdt is not None:
                 if row_ts is None:
-                    if first_equity[alias] is None:
+                    if first_equity_start[alias] is None:
                         first_equity_start[alias] = float(equity_start_usdt)
                 else:
                     if earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]:
                         earliest_metric_ts[alias] = row_ts
                         first_equity_start[alias] = float(equity_start_usdt)
+                _update_drawdown_state(
+                    equity_value=float(equity_start_usdt),
+                    peak_by_alias=equity_peak,
+                    max_drawdown_by_alias=max_drawdown_by_curve,
+                    alias=alias,
+                )
 
             equity_usdt = metric_row.get('equity_usdt')
             if equity_usdt is not None:
@@ -180,6 +207,12 @@ def aggregate_from_execution_history(
                     elif earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]:
                         earliest_metric_ts[alias] = row_ts
                         first_equity_start[alias] = float(equity_usdt)
+                _update_drawdown_state(
+                    equity_value=float(equity_usdt),
+                    peak_by_alias=equity_peak,
+                    max_drawdown_by_alias=max_drawdown_by_curve,
+                    alias=alias,
+                )
             equity_end_usdt = metric_row.get('equity_end_usdt')
             if equity_end_usdt is not None:
                 if row_ts is None:
@@ -193,6 +226,12 @@ def aggregate_from_execution_history(
                     if latest_metric_ts[alias] is None or row_ts >= latest_metric_ts[alias]:
                         latest_metric_ts[alias] = row_ts
                         latest_equity_end[alias] = float(equity_end_usdt)
+                _update_drawdown_state(
+                    equity_value=float(equity_end_usdt),
+                    peak_by_alias=equity_peak,
+                    max_drawdown_by_alias=max_drawdown_by_curve,
+                    alias=alias,
+                )
             elif equity_usdt is not None and row_ts is not None:
                 if latest_metric_ts[alias] is None or row_ts >= latest_metric_ts[alias]:
                     latest_metric_ts[alias] = row_ts
@@ -224,8 +263,15 @@ def aggregate_from_execution_history(
             end = existing.get('equity_end_usdt', existing.get('equity_usdt'))
             if start is not None and end is not None:
                 existing['equity_change_usdt'] = float(end) - float(start)
-        if latest_drawdown[alias] is not None and existing.get('max_drawdown_pct') is None:
-            existing['max_drawdown_pct'] = latest_drawdown[alias]
+        curve_drawdown = max_drawdown_by_curve[alias]
+        explicit_drawdown = latest_drawdown[alias]
+        chosen_drawdown = None
+        if curve_drawdown is not None and explicit_drawdown is not None:
+            chosen_drawdown = max(curve_drawdown, explicit_drawdown)
+        else:
+            chosen_drawdown = curve_drawdown if curve_drawdown is not None else explicit_drawdown
+        if chosen_drawdown is not None and existing.get('max_drawdown_pct') is None:
+            existing['max_drawdown_pct'] = round(float(chosen_drawdown), 6)
         if fee_seen[alias]:
             existing['fee_usdt'] = round(float(existing.get('fee_usdt') or 0.0) + fee_totals[alias], ROUND_DIGITS)
         if latest_funding_total[alias] is not None:

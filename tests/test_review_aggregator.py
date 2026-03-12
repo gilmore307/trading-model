@@ -216,6 +216,60 @@ def test_aggregate_from_execution_history_prefers_explicit_equity_start_semantic
     assert metrics['trend']['equity_change_usdt'] == 6.0
 
 
+def test_aggregate_from_execution_history_computes_window_drawdown_from_equity_path(tmp_path: Path):
+    history = tmp_path / 'execution-cycles.jsonl'
+    rows = [
+        {
+            'observed_at': '2026-03-08T00:00:00+00:00',
+            'summary': {
+                'plan_account': 'trend',
+                'plan_action': 'hold',
+                'receipt_accepted': True,
+                'account_metrics': {
+                    'trend': {
+                        'equity_start_usdt': 1000.0,
+                        'equity_end_usdt': 1050.0,
+                    },
+                },
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]},
+        },
+        {
+            'observed_at': '2026-03-09T00:00:00+00:00',
+            'summary': {
+                'plan_account': 'trend',
+                'plan_action': 'hold',
+                'receipt_accepted': True,
+                'account_metrics': {
+                    'trend': {
+                        'equity_end_usdt': 990.0,
+                    },
+                },
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]},
+        },
+        {
+            'observed_at': '2026-03-10T00:00:00+00:00',
+            'summary': {
+                'plan_account': 'trend',
+                'plan_action': 'hold',
+                'receipt_accepted': True,
+                'account_metrics': {
+                    'trend': {
+                        'equity_end_usdt': 1010.0,
+                    },
+                },
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]},
+        },
+    ]
+    history.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+    metrics = aggregate_from_execution_history(history)
+    assert metrics['trend']['equity_start_usdt'] == 1000.0
+    assert metrics['trend']['equity_end_usdt'] == 1010.0
+    assert metrics['trend']['max_drawdown_pct'] == 5.714286
+
+
 def test_aggregate_from_execution_history_respects_review_window_and_timestamp_order(tmp_path: Path):
     history = tmp_path / 'execution-cycles.jsonl'
     rows = [
