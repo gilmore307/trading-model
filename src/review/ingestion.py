@@ -9,6 +9,8 @@ from src.review.performance import DEFAULT_COMPARE_ACCOUNTS
 CANONICAL_NUMERIC_FIELDS = (
     'realized_pnl_usdt',
     'unrealized_pnl_usdt',
+    'unrealized_pnl_start_usdt',
+    'unrealized_pnl_change_usdt',
     'pnl_usdt',
     'equity_usdt',
     'equity_start_usdt',

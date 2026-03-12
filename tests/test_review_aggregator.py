@@ -120,12 +120,62 @@ def test_aggregate_from_execution_history_tracks_extended_canonical_performance(
     history.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
     metrics = aggregate_from_execution_history(history)
     assert metrics['trend']['realized_pnl_usdt'] == 7.0
+    assert metrics['trend']['unrealized_pnl_start_usdt'] == 1.0
     assert metrics['trend']['unrealized_pnl_usdt'] == 2.0
+    assert metrics['trend']['unrealized_pnl_change_usdt'] == 1.0
     assert metrics['trend']['pnl_usdt'] == 9.0
     assert metrics['trend']['equity_start_usdt'] == 1005.0
     assert metrics['trend']['equity_end_usdt'] == 1009.0
     assert metrics['trend']['equity_change_usdt'] == 4.0
     assert metrics['trend']['funding_usdt'] == -0.25
+
+
+
+def test_aggregate_from_execution_history_inferrs_window_realized_from_equity_and_unrealized_boundaries(tmp_path: Path):
+    history = tmp_path / 'execution-cycles.jsonl'
+    rows = [
+        {
+            'observed_at': '2026-03-08T00:00:00+00:00',
+            'summary': {
+                'plan_account': 'trend',
+                'plan_action': 'hold',
+                'receipt_accepted': True,
+                'account_metrics': {
+                    'trend': {
+                        'unrealized_pnl_usdt': 4.0,
+                        'equity_start_usdt': 1000.0,
+                        'equity_end_usdt': 1012.0,
+                        'funding_total_usdt': -1.0,
+                    },
+                },
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]},
+        },
+        {
+            'observed_at': '2026-03-10T00:00:00+00:00',
+            'summary': {
+                'plan_account': 'trend',
+                'plan_action': 'hold',
+                'receipt_accepted': True,
+                'account_metrics': {
+                    'trend': {
+                        'unrealized_pnl_usdt': 6.0,
+                        'equity_end_usdt': 1017.0,
+                        'funding_total_usdt': -2.0,
+                    },
+                },
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]},
+        },
+    ]
+    history.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+    metrics = aggregate_from_execution_history(history)
+    assert metrics['trend']['equity_change_usdt'] == 17.0
+    assert metrics['trend']['funding_usdt'] == -1.0
+    assert metrics['trend']['unrealized_pnl_start_usdt'] == 4.0
+    assert metrics['trend']['unrealized_pnl_usdt'] == 6.0
+    assert metrics['trend']['unrealized_pnl_change_usdt'] == 2.0
+    assert metrics['trend']['realized_pnl_usdt'] == 16.0
 
 
 def test_aggregate_from_execution_history_prefers_cumulative_funding_snapshots(tmp_path: Path):

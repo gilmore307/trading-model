@@ -117,6 +117,8 @@ def aggregate_from_execution_history(
     latest_total_pnl_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_realized_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_realized_pnl_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    first_unrealized_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    first_unrealized_pnl_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_unrealized_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_unrealized_pnl_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_equity_snapshot = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
@@ -199,9 +201,19 @@ def aggregate_from_execution_history(
                 latest_realized_pnl[alias] = float(realized_pnl_usdt)
                 latest_realized_pnl_ts[alias] = row_ts
             unrealized_pnl_usdt = metric_row.get('unrealized_pnl_usdt')
-            if unrealized_pnl_usdt is not None and _later_metric_candidate(current_ts=latest_unrealized_pnl_ts[alias], candidate_ts=row_ts):
-                latest_unrealized_pnl[alias] = float(unrealized_pnl_usdt)
-                latest_unrealized_pnl_ts[alias] = row_ts
+            if unrealized_pnl_usdt is not None:
+                unrealized_value = float(unrealized_pnl_usdt)
+                if row_ts is None:
+                    if first_unrealized_pnl[alias] is None:
+                        first_unrealized_pnl[alias] = unrealized_value
+                        first_unrealized_pnl_ts[alias] = row_ts
+                else:
+                    if first_unrealized_pnl_ts[alias] is None or row_ts < first_unrealized_pnl_ts[alias]:
+                        first_unrealized_pnl[alias] = unrealized_value
+                        first_unrealized_pnl_ts[alias] = row_ts
+                if _later_metric_candidate(current_ts=latest_unrealized_pnl_ts[alias], candidate_ts=row_ts):
+                    latest_unrealized_pnl[alias] = unrealized_value
+                    latest_unrealized_pnl_ts[alias] = row_ts
             equity_start_usdt = metric_row.get('equity_start_usdt')
             if equity_start_usdt is not None:
                 if row_ts is None:
@@ -274,6 +286,8 @@ def aggregate_from_execution_history(
             existing['pnl_usdt'] = latest_total_pnl[alias]
         if latest_realized_pnl[alias] is not None and existing.get('realized_pnl_usdt') is None:
             existing['realized_pnl_usdt'] = latest_realized_pnl[alias]
+        if first_unrealized_pnl[alias] is not None and existing.get('unrealized_pnl_start_usdt') is None:
+            existing['unrealized_pnl_start_usdt'] = first_unrealized_pnl[alias]
         if latest_unrealized_pnl[alias] is not None and existing.get('unrealized_pnl_usdt') is None:
             existing['unrealized_pnl_usdt'] = latest_unrealized_pnl[alias]
         if latest_equity_snapshot[alias] is not None and existing.get('equity_usdt') is None:
@@ -287,6 +301,11 @@ def aggregate_from_execution_history(
             end = existing.get('equity_end_usdt', existing.get('equity_usdt'))
             if start is not None and end is not None:
                 existing['equity_change_usdt'] = float(end) - float(start)
+        if existing.get('unrealized_pnl_change_usdt') is None:
+            start_unrealized = existing.get('unrealized_pnl_start_usdt')
+            end_unrealized = existing.get('unrealized_pnl_usdt')
+            if start_unrealized is not None and end_unrealized is not None:
+                existing['unrealized_pnl_change_usdt'] = float(end_unrealized) - float(start_unrealized)
         curve_drawdown = max_drawdown_by_curve[alias]
         explicit_drawdown = latest_drawdown[alias]
         chosen_drawdown = None
@@ -309,6 +328,12 @@ def aggregate_from_execution_history(
                     existing['funding_usdt'] = round(float(end_total) - float(start_total), ROUND_DIGITS)
         elif funding_seen[alias]:
             existing['funding_usdt'] = round(float(existing.get('funding_usdt') or 0.0) + funding_totals[alias], ROUND_DIGITS)
+        if existing.get('realized_pnl_usdt') is None:
+            equity_change = existing.get('equity_change_usdt')
+            unrealized_change = existing.get('unrealized_pnl_change_usdt')
+            if equity_change is not None and unrealized_change is not None:
+                funding_component = float(existing.get('funding_usdt') or 0.0)
+                existing['realized_pnl_usdt'] = round(float(equity_change) - float(unrealized_change) - funding_component, ROUND_DIGITS)
 
     if FLAT_COMPARE_ALIAS not in base_metrics:
         base_metrics[FLAT_COMPARE_ALIAS] = {'source': 'aggregated', 'trade_count': 0, 'exposure_time_pct': 0.0}

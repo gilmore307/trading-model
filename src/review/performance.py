@@ -13,6 +13,8 @@ class AccountPerformance:
     pnl_usdt: float | None = None
     realized_pnl_usdt: float | None = None
     unrealized_pnl_usdt: float | None = None
+    unrealized_pnl_start_usdt: float | None = None
+    unrealized_pnl_change_usdt: float | None = None
     equity_usdt: float | None = None
     equity_start_usdt: float | None = None
     equity_end_usdt: float | None = None
@@ -64,6 +66,8 @@ def build_performance_snapshot(metrics_by_account: dict[str, dict[str, Any]] | N
             pnl_usdt=canonical_pnl,
             realized_pnl_usdt=None if raw.get('realized_pnl_usdt') is None else float(raw.get('realized_pnl_usdt')),
             unrealized_pnl_usdt=None if raw.get('unrealized_pnl_usdt') is None else float(raw.get('unrealized_pnl_usdt')),
+            unrealized_pnl_start_usdt=None if raw.get('unrealized_pnl_start_usdt') is None else float(raw.get('unrealized_pnl_start_usdt')),
+            unrealized_pnl_change_usdt=None if raw.get('unrealized_pnl_change_usdt') is None else float(raw.get('unrealized_pnl_change_usdt')),
             equity_usdt=canonical_equity_end,
             equity_start_usdt=None if raw.get('equity_start_usdt') is None else float(raw.get('equity_start_usdt')),
             equity_end_usdt=canonical_equity_end,

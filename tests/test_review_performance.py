@@ -12,6 +12,8 @@ def test_build_performance_snapshot_expands_known_accounts():
     assert accounts['trend']['pnl_usdt'] == 12.5
     assert accounts['trend']['realized_pnl_usdt'] == 10.0
     assert accounts['trend']['unrealized_pnl_usdt'] == 2.5
+    assert accounts['trend']['unrealized_pnl_start_usdt'] is None
+    assert accounts['trend']['unrealized_pnl_change_usdt'] is None
     assert accounts['trend']['trade_count'] == 3
     assert accounts['router_composite']['fee_usdt'] == 0.4
     assert snapshot['status'] == 'ready'
@@ -30,6 +32,8 @@ def test_build_performance_snapshot_exposes_extended_fields_and_highlights():
             'trend': {
                 'realized_pnl_usdt': 8.0,
                 'unrealized_pnl_usdt': 2.0,
+                'unrealized_pnl_start_usdt': 1.0,
+                'unrealized_pnl_change_usdt': 1.0,
                 'pnl_usdt': 10.0,
                 'equity_start_usdt': 1000.0,
                 'equity_end_usdt': 1010.0,
@@ -42,6 +46,8 @@ def test_build_performance_snapshot_exposes_extended_fields_and_highlights():
     trend = next(row for row in snapshot['accounts'] if row['account'] == 'trend')
     assert trend['realized_pnl_usdt'] == 8.0
     assert trend['unrealized_pnl_usdt'] == 2.0
+    assert trend['unrealized_pnl_start_usdt'] == 1.0
+    assert trend['unrealized_pnl_change_usdt'] == 1.0
     assert trend['equity_end_usdt'] == 1010.0
     assert trend['equity_change_usdt'] == 10.0
     assert trend['funding_usdt'] == -0.2
