@@ -109,11 +109,13 @@ Current input sources:
 - receipt raw payload performance hints
 - optional balance/equity summary pulled from receipt context
 
-Current backward-compatible fields:
+Current compatibility mirror fields:
 
 - `pnl_usdt`
 - `equity_usdt`
 - `fee_usdt`
+
+These remain available for older consumers, but new code should prefer the more explicit canonical fields below.
 
 Extended canonical review fields already supported:
 
@@ -156,8 +158,10 @@ These are stable enough to depend on operationally:
 - `summary.composite_*` router ownership summary
 - `compare_snapshot`
 - `summary.account_metrics.fee_usdt`
-- `summary.account_metrics.pnl_usdt`
-- `summary.account_metrics.equity_usdt`
+- `summary.account_metrics.realized_pnl_usdt`
+- `summary.account_metrics.unrealized_pnl_usdt`
+- `summary.account_metrics.equity_end_usdt`
+- compatibility mirrors `summary.account_metrics.pnl_usdt` / `summary.account_metrics.equity_usdt`
 
 ### Still transitional / improving
 
