@@ -56,7 +56,7 @@ def test_aggregate_from_execution_history_ingests_receipt_fee_and_summary_perfor
                 'plan_action': 'enter',
                 'receipt_accepted': True,
                 'account_metrics': {
-                    'trend': {'pnl_usdt': 15.5, 'equity_usdt': 1020.0},
+                    'trend': {'pnl_usdt': 15.5, 'equity_end_usdt': 1020.0},
                 },
             },
             'receipt': {
@@ -75,6 +75,7 @@ def test_aggregate_from_execution_history_ingests_receipt_fee_and_summary_perfor
     assert metrics['trend']['trade_count'] == 1
     assert metrics['trend']['fee_usdt'] == 0.25
     assert metrics['trend']['pnl_usdt'] == 15.5
+    assert metrics['trend']['equity_end_usdt'] == 1020.0
     assert metrics['trend']['equity_usdt'] == 1020.0
 
 
@@ -91,7 +92,7 @@ def test_aggregate_from_execution_history_tracks_extended_canonical_performance(
                         'realized_pnl_usdt': 5.0,
                         'unrealized_pnl_usdt': 1.0,
                         'pnl_usdt': 6.0,
-                        'equity_usdt': 1005.0,
+                        'equity_end_usdt': 1005.0,
                         'funding_usdt': -0.1,
                     },
                 },
@@ -108,7 +109,7 @@ def test_aggregate_from_execution_history_tracks_extended_canonical_performance(
                         'realized_pnl_usdt': 7.0,
                         'unrealized_pnl_usdt': 2.0,
                         'pnl_usdt': 9.0,
-                        'equity_usdt': 1009.0,
+                        'equity_end_usdt': 1009.0,
                         'funding_usdt': -0.15,
                     },
                 },
@@ -227,7 +228,7 @@ def test_aggregate_from_execution_history_respects_review_window_and_timestamp_o
                 'account_metrics': {
                     'trend': {
                         'pnl_usdt': 1.0,
-                        'equity_usdt': 999.0,
+                        'equity_end_usdt': 999.0,
                         'funding_usdt': -0.05,
                     },
                 },

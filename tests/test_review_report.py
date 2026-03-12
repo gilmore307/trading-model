@@ -49,7 +49,7 @@ def test_report_scaffold_filters_history_to_review_window(tmp_path: Path):
                 'plan_account': 'trend',
                 'plan_action': 'enter',
                 'receipt_accepted': True,
-                'account_metrics': {'trend': {'pnl_usdt': 1.0, 'equity_usdt': 999.0}},
+                'account_metrics': {'trend': {'pnl_usdt': 1.0, 'equity_end_usdt': 999.0}},
             },
             'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': False}]},
         },

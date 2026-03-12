@@ -61,19 +61,19 @@ The project now has:
 - weekly/monthly/quarterly review runners
 - latest pointers + report index
 - a much stronger documentation and handoff spine
+- materially hardened canonical performance semantics across unrealized pnl, funding, and equity window boundaries
+- review/performance/report layers that now prefer canonical fields over legacy compatibility mirrors
 
-The project still does **not** have fully hardened canonical performance semantics.
+The project still does **not** have final accounting-grade realized pnl or drawdown semantics.
 
 ## Highest-priority next work
 
 ### P0
 Return focus to real project advancement, specifically:
-- harden `realized_pnl_usdt`
-- harden `unrealized_pnl_usdt`
-- harden `funding_usdt`
-- harden `equity_start_usdt`
-- harden `equity_end_usdt`
-- harden `equity_change_usdt`
+- further harden `realized_pnl_usdt`
+- reduce residual dependence on legacy mirror fields in tests/docs/runtime helpers
+- harden drawdown semantics
+- harden longer-window accounting semantics beyond the current review-layer improvements
 
 ### P1
 Improve report realism by linking regime explanation more tightly to review outputs.

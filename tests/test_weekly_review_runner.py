@@ -16,7 +16,7 @@ def test_run_weekly_review_exports_artifacts_from_history(tmp_path: Path):
                 'composite_position_owner': 'trend',
                 'composite_plan_action': 'enter',
                 'account_metrics': {
-                    'trend': {'pnl_usdt': 5.0, 'equity_usdt': 1005.0, 'fee_usdt': 0.1},
+                    'trend': {'pnl_usdt': 5.0, 'equity_end_usdt': 1005.0, 'fee_usdt': 0.1},
                     'router_composite': {'pnl_usdt': 4.0, 'fee_usdt': 0.05},
                     'flat_compare': {'pnl_usdt': 1.0},
                 },

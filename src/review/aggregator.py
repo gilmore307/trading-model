@@ -82,12 +82,12 @@ def aggregate_from_execution_history(
     latest_funding_total = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     earliest_funding_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_funding_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
-    latest_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
-    latest_realized = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
-    latest_unrealized = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
-    latest_equity = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_total_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_realized_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_unrealized_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_equity_snapshot = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_equity_end = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
-    first_equity = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    first_equity_start = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_drawdown = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     exposure_counts = {alias: 0 for alias in DEFAULT_COMPARE_ACCOUNTS}
     earliest_metric_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
@@ -154,42 +154,42 @@ def aggregate_from_execution_history(
                         latest_funding_total[alias] = float(funding_total_usdt)
             pnl_usdt = metric_row.get('pnl_usdt')
             if pnl_usdt is not None:
-                latest_pnl[alias] = float(pnl_usdt)
+                latest_total_pnl[alias] = float(pnl_usdt)
             realized_pnl_usdt = metric_row.get('realized_pnl_usdt')
             if realized_pnl_usdt is not None:
-                latest_realized[alias] = float(realized_pnl_usdt)
+                latest_realized_pnl[alias] = float(realized_pnl_usdt)
             unrealized_pnl_usdt = metric_row.get('unrealized_pnl_usdt')
             if unrealized_pnl_usdt is not None:
-                latest_unrealized[alias] = float(unrealized_pnl_usdt)
+                latest_unrealized_pnl[alias] = float(unrealized_pnl_usdt)
             equity_start_usdt = metric_row.get('equity_start_usdt')
             if equity_start_usdt is not None:
                 if row_ts is None:
                     if first_equity[alias] is None:
-                        first_equity[alias] = float(equity_start_usdt)
+                        first_equity_start[alias] = float(equity_start_usdt)
                 else:
                     if earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]:
                         earliest_metric_ts[alias] = row_ts
-                        first_equity[alias] = float(equity_start_usdt)
+                        first_equity_start[alias] = float(equity_start_usdt)
 
             equity_usdt = metric_row.get('equity_usdt')
             if equity_usdt is not None:
-                latest_equity[alias] = float(equity_usdt)
-                if first_equity[alias] is None:
+                latest_equity_snapshot[alias] = float(equity_usdt)
+                if first_equity_start[alias] is None:
                     if row_ts is None:
-                        first_equity[alias] = float(equity_usdt)
+                        first_equity_start[alias] = float(equity_usdt)
                     elif earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]:
                         earliest_metric_ts[alias] = row_ts
-                        first_equity[alias] = float(equity_usdt)
+                        first_equity_start[alias] = float(equity_usdt)
             equity_end_usdt = metric_row.get('equity_end_usdt')
             if equity_end_usdt is not None:
                 if row_ts is None:
                     latest_equity_end[alias] = float(equity_end_usdt)
-                    if first_equity[alias] is None:
-                        first_equity[alias] = float(equity_end_usdt)
+                    if first_equity_start[alias] is None:
+                        first_equity_start[alias] = float(equity_end_usdt)
                 else:
-                    if first_equity[alias] is None and (earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]):
+                    if first_equity_start[alias] is None and (earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]):
                         earliest_metric_ts[alias] = row_ts
-                        first_equity[alias] = float(equity_end_usdt)
+                        first_equity_start[alias] = float(equity_end_usdt)
                     if latest_metric_ts[alias] is None or row_ts >= latest_metric_ts[alias]:
                         latest_metric_ts[alias] = row_ts
                         latest_equity_end[alias] = float(equity_end_usdt)
@@ -207,18 +207,18 @@ def aggregate_from_execution_history(
         existing['trade_count'] = int(existing.get('trade_count') or 0) + counts[alias]
         if total_rows > 0:
             existing['exposure_time_pct'] = float(existing.get('exposure_time_pct') or 0.0) or round(100.0 * exposure_counts[alias] / total_rows, 2)
-        if latest_pnl[alias] is not None and existing.get('pnl_usdt') is None:
-            existing['pnl_usdt'] = latest_pnl[alias]
-        if latest_realized[alias] is not None and existing.get('realized_pnl_usdt') is None:
-            existing['realized_pnl_usdt'] = latest_realized[alias]
-        if latest_unrealized[alias] is not None and existing.get('unrealized_pnl_usdt') is None:
-            existing['unrealized_pnl_usdt'] = latest_unrealized[alias]
-        if latest_equity[alias] is not None and existing.get('equity_usdt') is None:
-            existing['equity_usdt'] = latest_equity[alias]
+        if latest_total_pnl[alias] is not None and existing.get('pnl_usdt') is None:
+            existing['pnl_usdt'] = latest_total_pnl[alias]
+        if latest_realized_pnl[alias] is not None and existing.get('realized_pnl_usdt') is None:
+            existing['realized_pnl_usdt'] = latest_realized_pnl[alias]
+        if latest_unrealized_pnl[alias] is not None and existing.get('unrealized_pnl_usdt') is None:
+            existing['unrealized_pnl_usdt'] = latest_unrealized_pnl[alias]
+        if latest_equity_snapshot[alias] is not None and existing.get('equity_usdt') is None:
+            existing['equity_usdt'] = latest_equity_snapshot[alias]
         if latest_equity_end[alias] is not None and existing.get('equity_end_usdt') is None:
             existing['equity_end_usdt'] = latest_equity_end[alias]
-        if first_equity[alias] is not None and existing.get('equity_start_usdt') is None:
-            existing['equity_start_usdt'] = first_equity[alias]
+        if first_equity_start[alias] is not None and existing.get('equity_start_usdt') is None:
+            existing['equity_start_usdt'] = first_equity_start[alias]
         if existing.get('equity_change_usdt') is None:
             start = existing.get('equity_start_usdt')
             end = existing.get('equity_end_usdt', existing.get('equity_usdt'))

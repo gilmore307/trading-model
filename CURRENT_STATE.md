@@ -8,7 +8,7 @@ Read this before diving into detailed docs or chat history.
 
 ## One-paragraph status
 
-The crypto-trading rebuild now has a real execution artifact chain, a review/report pipeline with weekly/monthly/quarterly runners, portable JSON/Markdown report export, latest-pointer/index convenience files, and a growing documentation spine. The system is structurally much stronger than the earlier demo scaffold, but canonical performance semantics (especially realized/unrealized/funding/equity boundaries) are still being hardened and the project is **not** ready for unattended real-money deployment.
+The crypto-trading rebuild now has a real execution artifact chain, a review/report pipeline with weekly/monthly/quarterly runners, portable JSON/Markdown report export, latest-pointer/index convenience files, and a growing documentation spine. Canonical performance semantics have been materially hardened across unrealized pnl, funding, and equity window boundaries, and the review stack now prefers explicit canonical fields over legacy mirrors. The project is structurally much stronger than the earlier demo scaffold, but it is still **not** ready for unattended real-money deployment.
 
 ## What is already completed
 
@@ -75,9 +75,9 @@ Do **not** over-claim yet:
 ## Highest-priority remaining work
 
 ### P0 — realism and semantics
-- improve canonical realized/unrealized pnl semantics
-- improve funding semantics
-- improve equity start/end/change semantics over longer windows
+- continue reducing legacy mirror dependence in tests/docs/runtime helpers
+- harden realized pnl sourcing beyond current review-side semantics
+- harden drawdown semantics and longer-window equity accounting
 
 ### P1 — report depth
 - richer regime narrative in reports
@@ -111,4 +111,4 @@ If continuing with best payoff now, prefer:
 ## Verification status
 
 - full test suite currently passes
-- latest recorded full validation: `127 passed`
+- latest recorded full validation: `131 passed`

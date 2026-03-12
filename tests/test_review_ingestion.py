@@ -14,7 +14,7 @@ def test_canonicalize_history_row_prefers_receipt_and_collects_summary_metrics()
             'account_metrics': {
                 'trend': {
                     'pnl_usdt': 10.0,
-                    'equity_usdt': 1005.0,
+                    'equity_end_usdt': 1005.0,
                 },
                 'router_composite': {
                     'fee_usdt': 0.33,

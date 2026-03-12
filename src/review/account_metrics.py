@@ -13,8 +13,8 @@ def build_account_metrics_from_cycle(*, receipt: Any = None, reconcile_result: A
     - fee/funding/performance hints from execution receipt raw payloads
     - equity / pnl snapshots from optional balance summaries
 
-    The result keeps backward-compatible fields (`pnl_usdt`, `equity_usdt`,
-    `fee_usdt`) while also exposing richer canonical review fields.
+    The result preserves compatibility mirrors (`pnl_usdt`, `equity_usdt`,
+    `fee_usdt`) while centering richer canonical review fields.
     """
 
     metrics: dict[str, dict[str, float]] = {}
