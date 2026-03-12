@@ -31,14 +31,28 @@ def build_account_metrics_from_cycle(*, receipt: Any = None, reconcile_result: A
         alias = balance_summary.get('account_alias') or account
         if alias in DEFAULT_COMPARE_ACCOUNTS:
             target = metrics.setdefault(alias, {})
-            _merge_metric_fields(target, balance_summary, overwrite=True)
-            equity_usdt = _safe_float(balance_summary.get('equity_usdt'))
-            pnl_usdt = _safe_float(balance_summary.get('pnl_usdt'))
+            sanitized_balance_summary = {k: v for k, v in balance_summary.items() if k != 'pnl_usdt'}
+            _merge_metric_fields(target, sanitized_balance_summary, overwrite=True)
+            equity_usdt = _safe_float(balance_summary.get('equity_end_usdt', balance_summary.get('equity_usdt')))
+            unrealized_pnl_usdt = _safe_float(
+                balance_summary.get('unrealized_pnl_usdt', balance_summary.get('pnl_usdt'))
+            )
             if equity_usdt is not None:
                 target.setdefault('equity_end_usdt', equity_usdt)
                 target.setdefault('equity_usdt', equity_usdt)
-            if pnl_usdt is not None:
-                target.setdefault('unrealized_pnl_usdt', pnl_usdt)
-                target.setdefault('pnl_usdt', pnl_usdt)
+            if unrealized_pnl_usdt is not None:
+                target['unrealized_pnl_usdt'] = unrealized_pnl_usdt
+                if target.get('realized_pnl_usdt') is not None:
+                    target['pnl_usdt'] = float(target.get('realized_pnl_usdt') or 0.0) + unrealized_pnl_usdt
+                elif target.get('pnl_usdt') is None:
+                    target['pnl_usdt'] = unrealized_pnl_usdt
+
+    if isinstance(balance_summary, dict):
+        for alias, target in metrics.items():
+            if target.get('equity_change_usdt') is None:
+                start = _safe_float(target.get('equity_start_usdt'))
+                end = _safe_float(target.get('equity_end_usdt', target.get('equity_usdt')))
+                if start is not None and end is not None:
+                    target['equity_change_usdt'] = end - start
 
     return metrics

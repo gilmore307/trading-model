@@ -70,6 +70,8 @@ def test_build_execution_artifact_includes_summary_fields():
     assert artifact['summary']['alignment_ok'] is True
     assert artifact['summary']['account_metrics']['trend']['fee_usdt'] == 0.15
     assert artifact['summary']['account_metrics']['trend']['equity_usdt'] == 1500.0
+    assert artifact['summary']['account_metrics']['trend']['equity_end_usdt'] == 1500.0
+    assert artifact['summary']['account_metrics']['trend']['unrealized_pnl_usdt'] == 25.0
     assert artifact['summary']['account_metrics']['trend']['pnl_usdt'] == 25.0
 
 
