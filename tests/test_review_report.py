@@ -14,7 +14,7 @@ def test_weekly_report_scaffold_includes_compare_sections():
         'highlights': ['router_selected:trend'],
     }
     metrics_by_account = {
-        'trend': {'pnl_usdt': 12.5, 'trade_count': 3, 'source': 'demo'},
+        'trend': {'realized_pnl_usdt': 10.0, 'unrealized_pnl_usdt': 2.5, 'trade_count': 3, 'source': 'demo'},
     }
     report = build_report_scaffold(window, compare_snapshot, metrics_by_account)
     section_keys = [section['key'] for section in report['sections']]

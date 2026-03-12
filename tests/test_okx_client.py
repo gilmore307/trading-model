@@ -262,7 +262,9 @@ def test_account_balance_summary_extracts_usdt_equity_and_upl():
         account_label='Trend',
     )
     assert summary['account_alias'] == 'trend'
+    assert summary['equity_end_usdt'] == 1500.5
     assert summary['equity_usdt'] == 1500.5
+    assert summary['unrealized_pnl_usdt'] == 20.25
     assert summary['pnl_usdt'] == 20.25
 
 

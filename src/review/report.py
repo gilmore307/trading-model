@@ -9,6 +9,27 @@ from src.review.framework import ReviewWindow, build_review_plan
 from src.review.performance import build_performance_snapshot
 
 
+def _row_pnl(row: dict[str, Any]) -> float:
+    value = row.get('pnl_usdt')
+    if value is not None:
+        return float(value)
+    realized = row.get('realized_pnl_usdt')
+    unrealized = row.get('unrealized_pnl_usdt')
+    if realized is not None or unrealized is not None:
+        return float(realized or 0.0) + float(unrealized or 0.0)
+    return 0.0
+
+
+def _row_equity_change(row: dict[str, Any]) -> float:
+    value = row.get('equity_change_usdt')
+    return 0.0 if value is None else float(value)
+
+
+def _row_funding(row: dict[str, Any]) -> float:
+    value = row.get('funding_usdt')
+    return 0.0 if value is None else float(value)
+
+
 @dataclass(slots=True)
 class ReviewReport:
     meta: dict[str, Any]
@@ -24,16 +45,22 @@ class ReviewReport:
 
 
 def _score_row(row: dict[str, Any]) -> tuple[float, float, float, float]:
-    pnl = float(row.get('pnl_usdt') or 0.0)
-    equity_change = float(row.get('equity_change_usdt') or 0.0)
+    pnl = _row_pnl(row)
+    equity_change = _row_equity_change(row)
     fee = float(row.get('fee_usdt') or 0.0)
-    funding = float(row.get('funding_usdt') or 0.0)
+    funding = _row_funding(row)
     return (pnl, equity_change, -fee, funding)
 
 
 def _build_performance_summary(performance_snapshot: dict[str, Any]) -> dict[str, Any]:
     accounts = performance_snapshot.get('accounts', []) if isinstance(performance_snapshot, dict) else []
-    ranked = [row for row in accounts if isinstance(row, dict) and any(row.get(key) is not None for key in ('pnl_usdt', 'equity_change_usdt', 'fee_usdt', 'funding_usdt'))]
+    ranked = [
+        row for row in accounts
+        if isinstance(row, dict) and any(
+            row.get(key) is not None
+            for key in ('pnl_usdt', 'realized_pnl_usdt', 'unrealized_pnl_usdt', 'equity_change_usdt', 'fee_usdt', 'funding_usdt')
+        )
+    ]
     ranked.sort(key=_score_row, reverse=True)
 
     def slim(row: dict[str, Any]) -> dict[str, Any]:
@@ -43,6 +70,10 @@ def _build_performance_summary(performance_snapshot: dict[str, Any]) -> dict[str
             'equity_change_usdt': row.get('equity_change_usdt'),
             'fee_usdt': row.get('fee_usdt'),
             'funding_usdt': row.get('funding_usdt'),
+            'realized_pnl_usdt': row.get('realized_pnl_usdt'),
+            'unrealized_pnl_usdt': row.get('unrealized_pnl_usdt'),
+            'equity_end_usdt': row.get('equity_end_usdt'),
+            'funding_total_usdt': row.get('funding_total_usdt'),
             'trade_count': row.get('trade_count'),
             'exposure_time_pct': row.get('exposure_time_pct'),
             'source': row.get('source'),
@@ -74,16 +105,16 @@ def _build_performance_summary(performance_snapshot: dict[str, Any]) -> dict[str
         insights.append(f"highest_fee_drag:{highest_fee['account']}")
     if highest_exposure is not None and float(highest_exposure.get('exposure_time_pct') or 0.0) >= 80.0:
         insights.append(f"high_exposure:{highest_exposure['account']}")
-    if bottom is not None and float(bottom.get('pnl_usdt') or 0.0) < 0.0:
+    if bottom is not None and _row_pnl(bottom) < 0.0:
         insights.append(f"negative_pnl:{bottom['account']}")
     if router_row is not None and best_strategy is not None:
-        router_pnl = float(router_row.get('pnl_usdt') or 0.0)
-        best_pnl = float(best_strategy.get('pnl_usdt') or 0.0)
+        router_pnl = _row_pnl(router_row)
+        best_pnl = _row_pnl(best_strategy)
         relation = 'outperformed' if router_pnl > best_pnl else 'underperformed' if router_pnl < best_pnl else 'matched'
         insights.append(f"router_vs_best_strategy:{relation}:{best_strategy.get('account')}")
     if router_row is not None and flat_compare is not None:
-        router_pnl = float(router_row.get('pnl_usdt') or 0.0)
-        flat_pnl = float(flat_compare.get('pnl_usdt') or 0.0)
+        router_pnl = _row_pnl(router_row)
+        flat_pnl = _row_pnl(flat_compare)
         relation = 'ahead' if router_pnl > flat_pnl else 'behind' if router_pnl < flat_pnl else 'matched'
         insights.append(f"router_vs_flat_compare:{relation}")
 
@@ -96,14 +127,14 @@ def _build_performance_summary(performance_snapshot: dict[str, Any]) -> dict[str
         'router_vs_best_strategy': None if router_row is None or best_strategy is None else {
             'router_account': 'router_composite',
             'best_strategy_account': best_strategy.get('account'),
-            'router_pnl_usdt': router_row.get('pnl_usdt'),
-            'best_strategy_pnl_usdt': best_strategy.get('pnl_usdt'),
+            'router_pnl_usdt': _row_pnl(router_row),
+            'best_strategy_pnl_usdt': _row_pnl(best_strategy),
         },
         'router_vs_flat_compare': None if router_row is None or flat_compare is None else {
             'router_account': 'router_composite',
             'flat_compare_account': 'flat_compare',
-            'router_pnl_usdt': router_row.get('pnl_usdt'),
-            'flat_compare_pnl_usdt': flat_compare.get('pnl_usdt'),
+            'router_pnl_usdt': _row_pnl(router_row),
+            'flat_compare_pnl_usdt': _row_pnl(flat_compare),
         },
         'insights': insights,
     }
@@ -195,7 +226,7 @@ def _build_parameter_review_section(
         })
 
     if bottom is not None:
-        pnl = float(bottom.get('pnl_usdt') or 0.0)
+        pnl = _row_pnl(bottom)
         if pnl < 0.0:
             items.append({
                 'kind': 'candidate',

@@ -179,7 +179,9 @@ def account_balance_summary(balance: dict[str, Any] | None, *, account_alias: st
     return {
         'account_alias': account_alias,
         'account_label': account_label,
+        'equity_end_usdt': equity,
         'equity_usdt': equity,
+        'unrealized_pnl_usdt': unrealized_pnl,
         'pnl_usdt': unrealized_pnl,
     }
 

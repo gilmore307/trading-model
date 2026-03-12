@@ -28,7 +28,7 @@
 - canonical review metric ingestion path for fee data, with pnl/equity hooks prepared
 
 ### Current priority
-- finish canonical `pnl_usdt` / `equity_usdt` production into `summary.account_metrics`
+- finish full canonical performance production into `summary.account_metrics`, with `realized_pnl_usdt` / `unrealized_pnl_usdt` / `equity_end_usdt` preferred over legacy compatibility mirrors
 - continue making every important node traceable in Markdown
 
 ## Documentation map

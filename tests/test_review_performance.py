@@ -4,12 +4,14 @@ from src.review.performance import build_performance_snapshot
 def test_build_performance_snapshot_expands_known_accounts():
     snapshot = build_performance_snapshot(
         {
-            'trend': {'pnl_usdt': 12.5, 'trade_count': 3, 'source': 'demo'},
+            'trend': {'realized_pnl_usdt': 10.0, 'unrealized_pnl_usdt': 2.5, 'trade_count': 3, 'source': 'demo'},
             'router_composite': {'pnl_usdt': 7.0, 'fee_usdt': 0.4, 'source': 'simulated'},
         }
     )
     accounts = {row['account']: row for row in snapshot['accounts']}
     assert accounts['trend']['pnl_usdt'] == 12.5
+    assert accounts['trend']['realized_pnl_usdt'] == 10.0
+    assert accounts['trend']['unrealized_pnl_usdt'] == 2.5
     assert accounts['trend']['trade_count'] == 3
     assert accounts['router_composite']['fee_usdt'] == 0.4
     assert snapshot['status'] == 'ready'
