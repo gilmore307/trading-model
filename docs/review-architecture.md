@@ -48,8 +48,12 @@ Current behavior includes:
 - fee accumulation
 - funding accumulation
 - review-window filtering using artifact timestamps when available
+- timestamp-ordered aggregation rather than trusting JSONL append order for latest-metric semantics
 - earliest/latest equity boundary inference inside the requested review window
 - equity-change inference from window-bounded start/end snapshots
+- earliest/latest unrealized-pnl boundary inference inside the requested review window
+- inferred realized-pnl fallback from equity-change, funding, and unrealized-boundary movement when explicit realized window snapshots are absent
+- window-consistent total-pnl fallback when only compatibility-style pnl snapshots are present
 - exposure percentage estimation
 
 ### `src/review/performance.py`

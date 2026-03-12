@@ -129,6 +129,8 @@ Extended canonical review fields already supported:
 
 - `realized_pnl_usdt`
 - `unrealized_pnl_usdt`
+- `unrealized_pnl_start_usdt`
+- `unrealized_pnl_change_usdt`
 - `equity_start_usdt`
 - `equity_end_usdt`
 - `equity_change_usdt`
@@ -148,6 +150,14 @@ Funding semantics should be interpreted as:
 - `funding_total_usdt` = cumulative funding snapshot at that point in time
 
 During review aggregation, window funding should prefer cumulative snapshot differencing (`end - start`) when `funding_total_usdt` is available; otherwise it falls back to summing per-artifact `funding_usdt` deltas.
+
+Window pnl semantics in the current review layer should be interpreted as:
+
+- `unrealized_pnl_start_usdt` = earliest unrealized pnl snapshot observed inside the review window
+- `unrealized_pnl_usdt` = latest unrealized pnl snapshot observed inside the review window
+- `unrealized_pnl_change_usdt` = window-bounded unrealized movement (`end - start`)
+- if explicit window-level `realized_pnl_usdt` is absent, review aggregation may infer it as `equity_change_usdt - unrealized_pnl_change_usdt - funding_usdt`
+- if explicit window-level `pnl_usdt` is absent or only reflects a compatibility snapshot, review aggregation falls back to a window-consistent total via `realized_pnl_usdt + unrealized_pnl_usdt`
 
 ## Current downstream consumers
 

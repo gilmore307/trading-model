@@ -113,4 +113,4 @@ If continuing with best payoff now, prefer:
 ## Verification status
 
 - full test suite currently passes
-- latest recorded full validation: `131 passed`
+- latest recorded full validation: `135 passed`
