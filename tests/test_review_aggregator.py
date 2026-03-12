@@ -127,6 +127,53 @@ def test_aggregate_from_execution_history_tracks_extended_canonical_performance(
     assert metrics['trend']['funding_usdt'] == -0.25
 
 
+def test_aggregate_from_execution_history_prefers_explicit_equity_start_semantics(tmp_path: Path):
+    history = tmp_path / 'execution-cycles.jsonl'
+    rows = [
+        {
+            'observed_at': '2026-03-08T00:00:00+00:00',
+            'summary': {
+                'plan_account': 'trend',
+                'plan_action': 'hold',
+                'receipt_accepted': True,
+                'account_metrics': {
+                    'trend': {
+                        'realized_pnl_usdt': 2.0,
+                        'unrealized_pnl_usdt': 1.0,
+                        'pnl_usdt': 3.0,
+                        'equity_start_usdt': 1000.0,
+                        'equity_end_usdt': 1003.0,
+                    },
+                },
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]},
+        },
+        {
+            'observed_at': '2026-03-10T12:00:00+00:00',
+            'summary': {
+                'plan_account': 'trend',
+                'plan_action': 'hold',
+                'receipt_accepted': True,
+                'account_metrics': {
+                    'trend': {
+                        'realized_pnl_usdt': 4.0,
+                        'unrealized_pnl_usdt': 2.0,
+                        'pnl_usdt': 6.0,
+                        'equity_start_usdt': 1004.0,
+                        'equity_end_usdt': 1006.0,
+                    },
+                },
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]},
+        },
+    ]
+    history.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+    metrics = aggregate_from_execution_history(history)
+    assert metrics['trend']['equity_start_usdt'] == 1000.0
+    assert metrics['trend']['equity_end_usdt'] == 1006.0
+    assert metrics['trend']['equity_change_usdt'] == 6.0
+
+
 def test_aggregate_from_execution_history_respects_review_window_and_timestamp_order(tmp_path: Path):
     history = tmp_path / 'execution-cycles.jsonl'
     rows = [

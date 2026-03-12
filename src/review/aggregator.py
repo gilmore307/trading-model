@@ -144,14 +144,23 @@ def aggregate_from_execution_history(
             unrealized_pnl_usdt = metric_row.get('unrealized_pnl_usdt')
             if unrealized_pnl_usdt is not None:
                 latest_unrealized[alias] = float(unrealized_pnl_usdt)
+            equity_start_usdt = metric_row.get('equity_start_usdt')
+            if equity_start_usdt is not None:
+                if row_ts is None:
+                    if first_equity[alias] is None:
+                        first_equity[alias] = float(equity_start_usdt)
+                else:
+                    if earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]:
+                        earliest_metric_ts[alias] = row_ts
+                        first_equity[alias] = float(equity_start_usdt)
+
             equity_usdt = metric_row.get('equity_usdt')
             if equity_usdt is not None:
                 latest_equity[alias] = float(equity_usdt)
-                if row_ts is None:
-                    if first_equity[alias] is None:
+                if first_equity[alias] is None:
+                    if row_ts is None:
                         first_equity[alias] = float(equity_usdt)
-                else:
-                    if earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]:
+                    elif earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]:
                         earliest_metric_ts[alias] = row_ts
                         first_equity[alias] = float(equity_usdt)
             equity_end_usdt = metric_row.get('equity_end_usdt')
@@ -161,7 +170,7 @@ def aggregate_from_execution_history(
                     if first_equity[alias] is None:
                         first_equity[alias] = float(equity_end_usdt)
                 else:
-                    if earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]:
+                    if first_equity[alias] is None and (earliest_metric_ts[alias] is None or row_ts < earliest_metric_ts[alias]):
                         earliest_metric_ts[alias] = row_ts
                         first_equity[alias] = float(equity_end_usdt)
                     if latest_metric_ts[alias] is None or row_ts >= latest_metric_ts[alias]:
