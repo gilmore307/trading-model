@@ -176,6 +176,7 @@ def test_aggregate_from_execution_history_inferrs_window_realized_from_equity_an
     assert metrics['trend']['unrealized_pnl_usdt'] == 6.0
     assert metrics['trend']['unrealized_pnl_change_usdt'] == 2.0
     assert metrics['trend']['realized_pnl_usdt'] == 16.0
+    assert metrics['trend']['pnl_usdt'] == 22.0
 
 
 def test_aggregate_from_execution_history_prefers_cumulative_funding_snapshots(tmp_path: Path):

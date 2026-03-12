@@ -334,6 +334,11 @@ def aggregate_from_execution_history(
             if equity_change is not None and unrealized_change is not None:
                 funding_component = float(existing.get('funding_usdt') or 0.0)
                 existing['realized_pnl_usdt'] = round(float(equity_change) - float(unrealized_change) - funding_component, ROUND_DIGITS)
+        if existing.get('pnl_usdt') is None or latest_realized_pnl[alias] is None:
+            realized = existing.get('realized_pnl_usdt')
+            unrealized = existing.get('unrealized_pnl_usdt')
+            if realized is not None or unrealized is not None:
+                existing['pnl_usdt'] = round(float(realized or 0.0) + float(unrealized or 0.0), ROUND_DIGITS)
 
     if FLAT_COMPARE_ALIAS not in base_metrics:
         base_metrics[FLAT_COMPARE_ALIAS] = {'source': 'aggregated', 'trade_count': 0, 'exposure_time_pct': 0.0}

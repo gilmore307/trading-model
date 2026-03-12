@@ -25,7 +25,7 @@ The crypto-trading rebuild now has a real execution artifact chain, a review/rep
 - history aggregation exists
 - review-window-aware aggregation now exists when artifact timestamps are present
 - aggregation now sorts artifact rows by timestamp instead of trusting JSONL append order for latest-metric and drawdown semantics
-- review aggregation now preserves window-bounded unrealized start/end/change semantics and can infer window realized pnl from equity-change + funding + unrealized-boundary movement when explicit realized snapshots are absent
+- review aggregation now preserves window-bounded unrealized start/end/change semantics, can infer window realized pnl from equity-change + funding + unrealized-boundary movement when explicit realized snapshots are absent, and falls back to window-consistent `pnl_usdt = realized + unrealized` when no explicit total-window pnl is available
 - normalized account performance snapshot exists
 - operator-facing report sections exist
 - parameter candidate generation exists
