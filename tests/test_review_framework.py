@@ -10,12 +10,12 @@ from src.review.framework import (
 )
 
 
-def test_build_weekly_window_uses_saturday_midnight_bounds():
+def test_build_weekly_window_uses_sunday_midnight_bounds():
     now = datetime(2026, 3, 15, 12, 0, tzinfo=UTC)  # Sunday
     window = build_weekly_window(now)
     assert window.cadence == ReviewCadence.WEEKLY
-    assert window.window_start == datetime(2026, 3, 7, 0, 0, tzinfo=UTC)
-    assert window.window_end == datetime(2026, 3, 14, 0, 0, tzinfo=UTC)
+    assert window.window_start == datetime(2026, 3, 8, 0, 0, tzinfo=UTC)
+    assert window.window_end == datetime(2026, 3, 15, 0, 0, tzinfo=UTC)
 
 
 def test_monthly_window_uses_previous_review_boundary():

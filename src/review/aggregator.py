@@ -10,6 +10,9 @@ from src.review.ingestion import canonicalize_history_row
 from src.review.performance import DEFAULT_COMPARE_ACCOUNTS
 
 
+ROUND_DIGITS = 10
+
+
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
@@ -198,9 +201,9 @@ def aggregate_from_execution_history(
         if latest_drawdown[alias] is not None and existing.get('max_drawdown_pct') is None:
             existing['max_drawdown_pct'] = latest_drawdown[alias]
         if fee_seen[alias]:
-            existing['fee_usdt'] = float(existing.get('fee_usdt') or 0.0) + fee_totals[alias]
+            existing['fee_usdt'] = round(float(existing.get('fee_usdt') or 0.0) + fee_totals[alias], ROUND_DIGITS)
         if funding_seen[alias]:
-            existing['funding_usdt'] = float(existing.get('funding_usdt') or 0.0) + funding_totals[alias]
+            existing['funding_usdt'] = round(float(existing.get('funding_usdt') or 0.0) + funding_totals[alias], ROUND_DIGITS)
 
     if FLAT_COMPARE_ALIAS not in base_metrics:
         base_metrics[FLAT_COMPARE_ALIAS] = {'source': 'aggregated', 'trade_count': 0, 'exposure_time_pct': 0.0}

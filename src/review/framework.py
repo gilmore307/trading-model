@@ -66,17 +66,17 @@ STRUCTURAL_PARAMS = [
 ]
 
 
-def _saturday_midnight(dt: datetime) -> datetime:
+def _sunday_midnight(dt: datetime) -> datetime:
     dt = dt.astimezone(UTC)
     weekday = dt.weekday()  # Mon=0 ... Sun=6
-    days_since_saturday = (weekday - 5) % 7
-    saturday = datetime(dt.year, dt.month, dt.day, tzinfo=UTC) - timedelta(days=days_since_saturday)
-    return saturday
+    days_since_sunday = (weekday - 6) % 7
+    sunday = datetime(dt.year, dt.month, dt.day, tzinfo=UTC) - timedelta(days=days_since_sunday)
+    return sunday
 
 
 def build_weekly_window(now: datetime) -> ReviewWindow:
     now = now.astimezone(UTC)
-    end = _saturday_midnight(now)
+    end = _sunday_midnight(now)
     start = end - timedelta(days=7)
     return ReviewWindow(
         cadence=ReviewCadence.WEEKLY,

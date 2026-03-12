@@ -32,8 +32,17 @@
 - continue making every important node traceable in Markdown
 
 ## Documentation map
+- `CURRENT_STATE.md` — fast-resume spine / current handoff status
 - `PROJECT_STATUS.md` — project-level status and major milestones
 - `TRACEABILITY.md` — documentation rule and traceability standard
+- `docs/project-map.md` — high-level project orientation map
+- `docs/execution-artifacts.md` — execution artifact writer/fields/downstream-consumer map
+- `docs/review-architecture.md` — review pipeline architecture and boundaries
+- `docs/router-composite.md` — router-composite / ownership / compare-snapshot model
+- `docs/review-operations.md` — review runner / export / report operations runbook
+- `docs/review-automation.md` — scheduling / deployment / automation notes for review jobs
+- `docs/regime-and-decision-flow.md` — layered regime / route / execution gating model
+- `docs/known-gaps-and-boundaries.md` — realism boundary / current transitional semantics
 - `reports/review-ingestion-status.md` — review/performance ingestion status
 
 ## Environment
@@ -63,6 +72,13 @@ Optional:
 source .venv/bin/activate
 python -m src.runner.live_trader --check
 python -m src.runner.live_trader
+```
+
+## Review runners
+```bash
+./.venv/bin/python scripts_weekly_review.py --now 2026-03-15T12:00:00+00:00
+./.venv/bin/python scripts_monthly_review.py --now 2026-03-15T12:00:00+00:00
+./.venv/bin/python scripts_quarterly_review.py --now 2026-05-15T12:00:00+00:00
 ```
 
 ## Modes

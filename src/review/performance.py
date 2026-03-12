@@ -11,10 +11,17 @@ from src.review.compare import FLAT_COMPARE_ALIAS
 class AccountPerformance:
     account: str
     pnl_usdt: float | None = None
+    realized_pnl_usdt: float | None = None
+    unrealized_pnl_usdt: float | None = None
     equity_usdt: float | None = None
+    equity_start_usdt: float | None = None
+    equity_end_usdt: float | None = None
+    equity_change_usdt: float | None = None
     trade_count: int | None = None
     fee_usdt: float | None = None
+    funding_usdt: float | None = None
     exposure_time_pct: float | None = None
+    max_drawdown_pct: float | None = None
     source: str = 'pending'
 
 
@@ -31,17 +38,28 @@ def build_performance_snapshot(metrics_by_account: dict[str, dict[str, Any]] | N
         row = AccountPerformance(
             account=alias,
             pnl_usdt=None if raw.get('pnl_usdt') is None else float(raw.get('pnl_usdt')),
+            realized_pnl_usdt=None if raw.get('realized_pnl_usdt') is None else float(raw.get('realized_pnl_usdt')),
+            unrealized_pnl_usdt=None if raw.get('unrealized_pnl_usdt') is None else float(raw.get('unrealized_pnl_usdt')),
             equity_usdt=None if raw.get('equity_usdt') is None else float(raw.get('equity_usdt')),
+            equity_start_usdt=None if raw.get('equity_start_usdt') is None else float(raw.get('equity_start_usdt')),
+            equity_end_usdt=None if raw.get('equity_end_usdt') is None else float(raw.get('equity_end_usdt')),
+            equity_change_usdt=None if raw.get('equity_change_usdt') is None else float(raw.get('equity_change_usdt')),
             trade_count=None if raw.get('trade_count') is None else int(raw.get('trade_count')),
             fee_usdt=None if raw.get('fee_usdt') is None else float(raw.get('fee_usdt')),
+            funding_usdt=None if raw.get('funding_usdt') is None else float(raw.get('funding_usdt')),
             exposure_time_pct=None if raw.get('exposure_time_pct') is None else float(raw.get('exposure_time_pct')),
+            max_drawdown_pct=None if raw.get('max_drawdown_pct') is None else float(raw.get('max_drawdown_pct')),
             source=str(raw.get('source') or 'pending'),
         )
         accounts.append(asdict(row))
         if row.pnl_usdt is not None:
             highlights.append(f'pnl_available:{alias}')
+        if row.equity_end_usdt is not None or row.equity_usdt is not None:
+            highlights.append(f'equity_available:{alias}')
         if row.fee_usdt is not None:
             highlights.append(f'fee_available:{alias}')
+        if row.funding_usdt is not None:
+            highlights.append(f'funding_available:{alias}')
 
     return {
         'accounts': accounts,
