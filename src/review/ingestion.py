@@ -16,6 +16,7 @@ CANONICAL_NUMERIC_FIELDS = (
     'equity_change_usdt',
     'fee_usdt',
     'funding_usdt',
+    'funding_total_usdt',
     'trade_count',
     'exposure_time_pct',
     'max_drawdown_pct',

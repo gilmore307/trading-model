@@ -37,6 +37,7 @@ def test_canonicalize_history_row_extracts_extended_performance_fields():
                 'account_alias': 'trend',
                 'fee_usdt': 0.2,
                 'funding_usdt': -0.05,
+                'funding_total_usdt': -0.75,
                 'realized_pnl_usdt': 4.0,
                 'unrealized_pnl_usdt': 1.5,
                 'equity_end_usdt': 1006.5,
@@ -47,6 +48,7 @@ def test_canonicalize_history_row_extracts_extended_performance_fields():
     metrics = canonicalize_history_row(row)
     assert metrics['trend']['fee_usdt'] == 0.2
     assert metrics['trend']['funding_usdt'] == -0.05
+    assert metrics['trend']['funding_total_usdt'] == -0.75
     assert metrics['trend']['realized_pnl_usdt'] == 4.0
     assert metrics['trend']['unrealized_pnl_usdt'] == 1.5
     assert metrics['trend']['pnl_usdt'] == 5.5

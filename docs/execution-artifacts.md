@@ -123,7 +123,15 @@ Extended canonical review fields already supported:
 - `equity_end_usdt`
 - `equity_change_usdt`
 - `funding_usdt`
+- `funding_total_usdt`
 - `max_drawdown_pct`
+
+Funding semantics should be interpreted as:
+
+- `funding_usdt` = per-artifact funding delta / event contribution
+- `funding_total_usdt` = cumulative funding snapshot at that point in time
+
+During review aggregation, window funding should prefer cumulative snapshot differencing (`end - start`) when `funding_total_usdt` is available; otherwise it falls back to summing per-artifact `funding_usdt` deltas.
 
 ## Current downstream consumers
 

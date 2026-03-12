@@ -78,6 +78,10 @@ def aggregate_from_execution_history(
     fee_seen = {alias: False for alias in DEFAULT_COMPARE_ACCOUNTS}
     funding_totals = {alias: 0.0 for alias in DEFAULT_COMPARE_ACCOUNTS}
     funding_seen = {alias: False for alias in DEFAULT_COMPARE_ACCOUNTS}
+    first_funding_total = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_funding_total = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    earliest_funding_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_funding_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_realized = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_unrealized = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
@@ -135,6 +139,19 @@ def aggregate_from_execution_history(
             if funding_usdt is not None:
                 funding_totals[alias] += float(funding_usdt)
                 funding_seen[alias] = True
+            funding_total_usdt = metric_row.get('funding_total_usdt')
+            if funding_total_usdt is not None:
+                if row_ts is None:
+                    if first_funding_total[alias] is None:
+                        first_funding_total[alias] = float(funding_total_usdt)
+                    latest_funding_total[alias] = float(funding_total_usdt)
+                else:
+                    if earliest_funding_ts[alias] is None or row_ts < earliest_funding_ts[alias]:
+                        earliest_funding_ts[alias] = row_ts
+                        first_funding_total[alias] = float(funding_total_usdt)
+                    if latest_funding_ts[alias] is None or row_ts >= latest_funding_ts[alias]:
+                        latest_funding_ts[alias] = row_ts
+                        latest_funding_total[alias] = float(funding_total_usdt)
             pnl_usdt = metric_row.get('pnl_usdt')
             if pnl_usdt is not None:
                 latest_pnl[alias] = float(pnl_usdt)
@@ -211,7 +228,16 @@ def aggregate_from_execution_history(
             existing['max_drawdown_pct'] = latest_drawdown[alias]
         if fee_seen[alias]:
             existing['fee_usdt'] = round(float(existing.get('fee_usdt') or 0.0) + fee_totals[alias], ROUND_DIGITS)
-        if funding_seen[alias]:
+        if latest_funding_total[alias] is not None:
+            existing['funding_total_usdt'] = latest_funding_total[alias]
+            if first_funding_total[alias] is not None:
+                existing['funding_start_total_usdt'] = first_funding_total[alias]
+            if existing.get('funding_usdt') is None:
+                start_total = first_funding_total[alias]
+                end_total = latest_funding_total[alias]
+                if start_total is not None and end_total is not None:
+                    existing['funding_usdt'] = round(float(end_total) - float(start_total), ROUND_DIGITS)
+        elif funding_seen[alias]:
             existing['funding_usdt'] = round(float(existing.get('funding_usdt') or 0.0) + funding_totals[alias], ROUND_DIGITS)
 
     if FLAT_COMPARE_ALIAS not in base_metrics:

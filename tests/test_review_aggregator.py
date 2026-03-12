@@ -127,6 +127,47 @@ def test_aggregate_from_execution_history_tracks_extended_canonical_performance(
     assert metrics['trend']['funding_usdt'] == -0.25
 
 
+def test_aggregate_from_execution_history_prefers_cumulative_funding_snapshots(tmp_path: Path):
+    history = tmp_path / 'execution-cycles.jsonl'
+    rows = [
+        {
+            'observed_at': '2026-03-08T00:00:00+00:00',
+            'summary': {
+                'plan_account': 'trend',
+                'plan_action': 'hold',
+                'receipt_accepted': True,
+                'account_metrics': {
+                    'trend': {
+                        'funding_usdt': -0.10,
+                        'funding_total_usdt': -1.50,
+                    },
+                },
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]},
+        },
+        {
+            'observed_at': '2026-03-10T12:00:00+00:00',
+            'summary': {
+                'plan_account': 'trend',
+                'plan_action': 'hold',
+                'receipt_accepted': True,
+                'account_metrics': {
+                    'trend': {
+                        'funding_usdt': -0.20,
+                        'funding_total_usdt': -1.90,
+                    },
+                },
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]},
+        },
+    ]
+    history.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+    metrics = aggregate_from_execution_history(history)
+    assert metrics['trend']['funding_start_total_usdt'] == -1.5
+    assert metrics['trend']['funding_total_usdt'] == -1.9
+    assert metrics['trend']['funding_usdt'] == -0.4
+
+
 def test_aggregate_from_execution_history_prefers_explicit_equity_start_semantics(tmp_path: Path):
     history = tmp_path / 'execution-cycles.jsonl'
     rows = [
