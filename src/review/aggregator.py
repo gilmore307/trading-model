@@ -79,6 +79,18 @@ def _row_timestamp(row: dict[str, Any]) -> datetime | None:
     return None
 
 
+def _later_metric_candidate(
+    *,
+    current_ts: datetime | None,
+    candidate_ts: datetime | None,
+) -> bool:
+    if candidate_ts is None:
+        return current_ts is None
+    if current_ts is None:
+        return True
+    return candidate_ts >= current_ts
+
+
 def aggregate_from_execution_history(
     history_path: str | Path,
     base_metrics: dict[str, dict[str, Any]] | None = None,
@@ -102,9 +114,13 @@ def aggregate_from_execution_history(
     earliest_funding_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_funding_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_total_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_total_pnl_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_realized_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_realized_pnl_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_unrealized_pnl = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_unrealized_pnl_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_equity_snapshot = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
+    latest_equity_snapshot_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_equity_end = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     first_equity_start = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     max_drawdown_by_curve = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
@@ -114,19 +130,20 @@ def aggregate_from_execution_history(
     earliest_metric_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
     latest_metric_ts = {alias: None for alias in DEFAULT_COMPARE_ACCOUNTS}
 
-    filtered_rows: list[dict[str, Any]] = []
-    for row in rows:
+    filtered_rows: list[tuple[datetime | None, int, dict[str, Any]]] = []
+    for idx, row in enumerate(rows):
         row_ts = _row_timestamp(row)
         if row_ts is not None:
             if window_start is not None and row_ts < window_start:
                 continue
             if window_end is not None and row_ts >= window_end:
                 continue
-        filtered_rows.append(row)
+        filtered_rows.append((row_ts, idx, row))
+
+    filtered_rows.sort(key=lambda item: (item[0] is None, item[0] or datetime.max.replace(tzinfo=UTC), item[1]))
 
     total_rows = len(filtered_rows)
-    for row in filtered_rows:
-        row_ts = _row_timestamp(row)
+    for row_ts, _, row in filtered_rows:
         summary = row.get('summary', {})
         plan_account = summary.get('plan_account')
         plan_action = summary.get('plan_action')
@@ -174,14 +191,17 @@ def aggregate_from_execution_history(
                         latest_funding_ts[alias] = row_ts
                         latest_funding_total[alias] = float(funding_total_usdt)
             pnl_usdt = metric_row.get('pnl_usdt')
-            if pnl_usdt is not None:
+            if pnl_usdt is not None and _later_metric_candidate(current_ts=latest_total_pnl_ts[alias], candidate_ts=row_ts):
                 latest_total_pnl[alias] = float(pnl_usdt)
+                latest_total_pnl_ts[alias] = row_ts
             realized_pnl_usdt = metric_row.get('realized_pnl_usdt')
-            if realized_pnl_usdt is not None:
+            if realized_pnl_usdt is not None and _later_metric_candidate(current_ts=latest_realized_pnl_ts[alias], candidate_ts=row_ts):
                 latest_realized_pnl[alias] = float(realized_pnl_usdt)
+                latest_realized_pnl_ts[alias] = row_ts
             unrealized_pnl_usdt = metric_row.get('unrealized_pnl_usdt')
-            if unrealized_pnl_usdt is not None:
+            if unrealized_pnl_usdt is not None and _later_metric_candidate(current_ts=latest_unrealized_pnl_ts[alias], candidate_ts=row_ts):
                 latest_unrealized_pnl[alias] = float(unrealized_pnl_usdt)
+                latest_unrealized_pnl_ts[alias] = row_ts
             equity_start_usdt = metric_row.get('equity_start_usdt')
             if equity_start_usdt is not None:
                 if row_ts is None:
@@ -200,7 +220,9 @@ def aggregate_from_execution_history(
 
             equity_usdt = metric_row.get('equity_usdt')
             if equity_usdt is not None:
-                latest_equity_snapshot[alias] = float(equity_usdt)
+                if _later_metric_candidate(current_ts=latest_equity_snapshot_ts[alias], candidate_ts=row_ts):
+                    latest_equity_snapshot[alias] = float(equity_usdt)
+                    latest_equity_snapshot_ts[alias] = row_ts
                 if first_equity_start[alias] is None:
                     if row_ts is None:
                         first_equity_start[alias] = float(equity_usdt)
@@ -238,7 +260,9 @@ def aggregate_from_execution_history(
                     latest_equity_end[alias] = float(equity_usdt)
             max_drawdown_pct = metric_row.get('max_drawdown_pct')
             if max_drawdown_pct is not None:
-                latest_drawdown[alias] = float(max_drawdown_pct)
+                explicit_value = float(max_drawdown_pct)
+                if latest_drawdown[alias] is None or explicit_value > latest_drawdown[alias]:
+                    latest_drawdown[alias] = explicit_value
 
     for alias in DEFAULT_COMPARE_ACCOUNTS:
         existing = base_metrics.setdefault(alias, {})

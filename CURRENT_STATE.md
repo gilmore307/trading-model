@@ -1,6 +1,6 @@
 # CURRENT_STATE
 
-_Last updated: 2026-03-12_
+_Last updated: 2026-03-13_
 
 This file is the fast-resume spine for future sessions.
 
@@ -24,6 +24,7 @@ The crypto-trading rebuild now has a real execution artifact chain, a review/rep
 - canonical row ingestion exists
 - history aggregation exists
 - review-window-aware aggregation now exists when artifact timestamps are present
+- aggregation now sorts artifact rows by timestamp instead of trusting JSONL append order for latest-metric and drawdown semantics
 - normalized account performance snapshot exists
 - operator-facing report sections exist
 - parameter candidate generation exists
@@ -77,7 +78,7 @@ Do **not** over-claim yet:
 ### P0 — realism and semantics
 - continue reducing legacy mirror dependence in tests/docs/runtime helpers
 - harden realized pnl sourcing beyond current review-side semantics
-- harden drawdown semantics and longer-window equity accounting
+- extend longer-window accounting semantics beyond the now-hardened timestamp-ordered latest/equity/drawdown aggregation base
 
 ### P1 — report depth
 - richer regime narrative in reports
