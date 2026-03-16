@@ -11,6 +11,7 @@ from typing import Any
 from src.config.settings import Settings
 from src.execution.adapters import DryRunExecutionAdapter, OkxExecutionAdapter
 from src.execution.pipeline import ExecutionPipeline
+from src.runners.discord_notifier import DiscordNotifier
 from src.runners.execution_cycle import persist_execution_artifact
 from src.runtime.mode import RuntimeMode
 from src.runtime.store import RuntimeStore
@@ -47,6 +48,7 @@ def main() -> None:
     runtime_store = RuntimeStore()
     runtime_store.set_mode(RuntimeMode.TRADE, reason='daemon_start_trade_mode')
 
+    notifier = DiscordNotifier(settings)
     adapter = DryRunExecutionAdapter() if settings.dry_run else OkxExecutionAdapter(settings)
     pipeline = ExecutionPipeline(settings=settings, runtime_store=runtime_store, adapter=adapter)
 
@@ -66,7 +68,7 @@ def main() -> None:
             result = pipeline.run_cycle(exchange_snapshot=None)
             artifact = persist_execution_artifact(result)
             summary = artifact.get('summary', {}) if isinstance(artifact, dict) else {}
-            _log_event({
+            cycle_event = {
                 'event': 'cycle_ok',
                 'observed_at': cycle_started_at,
                 'runtime_mode': summary.get('runtime_mode'),
@@ -79,13 +81,19 @@ def main() -> None:
                 'block_reason': summary.get('block_reason'),
                 'policy_reason': summary.get('policy_reason'),
                 'diagnostics': summary.get('diagnostics'),
-            })
+            }
+            _log_event(cycle_event)
+
+            notifier.notify_trade(summary, artifact)
+            notifier.notify_warning(summary)
         except Exception as exc:
-            _log_event({
+            error_event = {
                 'event': 'cycle_error',
                 'observed_at': cycle_started_at,
                 'error': repr(exc),
-            })
+            }
+            _log_event(error_event)
+            notifier.notify_error(error_event)
 
         cycles += 1
         if args.max_cycles > 0 and cycles >= args.max_cycles:

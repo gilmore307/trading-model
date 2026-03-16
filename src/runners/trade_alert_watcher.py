@@ -80,15 +80,40 @@ def format_error_message(event: dict[str, Any]) -> str:
 
 
 def format_reconcile_message(summary: dict[str, Any]) -> str:
+    symbol = summary.get('symbol') or '未知标的'
+    regime = summary.get('regime') or '未知状态'
+    action = summary.get('plan_action') or 'hold'
+    account = summary.get('plan_account') or '无'
+    block_reason = summary.get('block_reason')
+    policy_reason = summary.get('policy_reason')
+
+    if block_reason == 'regime_non_tradable':
+        headline = f'市场太乱，暂不交易：{symbol}'
+        detail = (
+            f'系统刚判断 {symbol} 当前属于 {regime} 行情，短时间内不适合开仓，'
+            '所以这轮选择继续观察，不下单。'
+        )
+    elif block_reason:
+        headline = f'本轮未执行交易：{symbol}'
+        detail = (
+            f'系统判断这轮先不动手。当前市场状态：{regime}；'
+            f'主要原因：{block_reason}。'
+        )
+    elif policy_reason:
+        headline = f'交易策略主动跳过：{symbol}'
+        detail = (
+            f'市场判断已完成，但策略层这轮选择不执行。当前市场状态：{regime}；'
+            f'原因：{policy_reason}。'
+        )
+    else:
+        headline = f'系统保持观望：{symbol}'
+        detail = f'当前市场状态：{regime}，本轮动作：{action}。'
+
     return (
-        'crypto-trading 运行告警\n\n'
-        f"- action: {summary.get('plan_action')}\n"
-        f"- account: {summary.get('plan_account')}\n"
-        f"- symbol: {summary.get('symbol')}\n"
-        f"- regime: {summary.get('regime')}\n"
-        f"- block_reason: {summary.get('block_reason')}\n"
-        f"- policy_reason: {summary.get('policy_reason')}\n"
-        f"- diagnostics: {summary.get('diagnostics')}"
+        f'{headline}\n\n'
+        f'{detail}\n\n'
+        f'当前动作：{action}\n'
+        f'当前账户：{account}'
     )
 
 

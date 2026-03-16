@@ -59,6 +59,9 @@ class Settings(BaseModel):
     okx_api_passphrase: str = Field(alias="OKX_API_PASSPHRASE")
     okx_demo: bool = Field(alias="OKX_DEMO")
     discord_channel: str | None = Field(default=None, alias="OPENCLAW_DISCORD_CHANNEL")
+    discord_bot_token: str | None = Field(default=None, alias="DISCORD_BOT_TOKEN")
+    discord_webhook_url: str | None = Field(default=None, alias="DISCORD_WEBHOOK_URL")
+    notify_runtime_warnings: bool = Field(default=False, alias="NOTIFY_RUNTIME_WARNINGS")
 
     symbols: list[str] = DEFAULT_SYMBOLS.copy()
     strategies: list[str] = DEFAULT_STRATEGIES.copy()
@@ -169,6 +172,9 @@ class Settings(BaseModel):
             "OKX_API_PASSPHRASE": os.getenv("OKX_API_PASSPHRASE", ""),
             "OKX_DEMO": str(os.getenv("OKX_DEMO", "")).strip().lower() in {"1", "true", "yes", "on"},
             "OPENCLAW_DISCORD_CHANNEL": os.getenv("OPENCLAW_DISCORD_CHANNEL"),
+            "DISCORD_BOT_TOKEN": os.getenv("DISCORD_BOT_TOKEN", os.getenv("CHANNELS_DISCORD_TOKEN")),
+            "DISCORD_WEBHOOK_URL": os.getenv("DISCORD_WEBHOOK_URL"),
+            "NOTIFY_RUNTIME_WARNINGS": str(os.getenv("NOTIFY_RUNTIME_WARNINGS", "false")).strip().lower() in {"1", "true", "yes", "on"},
             "symbols": symbols or DEFAULT_SYMBOLS.copy(),
             "strategies": strategies or DEFAULT_STRATEGIES.copy(),
             "strategy_symbols": DEFAULT_STRATEGY_SYMBOLS.copy(),

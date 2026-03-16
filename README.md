@@ -54,6 +54,9 @@ Expected in `.env`:
 
 Optional:
 - `OPENCLAW_DISCORD_CHANNEL`
+- `DISCORD_BOT_TOKEN` (or inherited `CHANNELS_DISCORD_TOKEN`)
+- `DISCORD_WEBHOOK_URL` (preferred if you want repo-local direct push without bot token handling)
+- `NOTIFY_RUNTIME_WARNINGS=false` (default false; false still sends severe alignment/freeze alerts, true also sends ordinary hold/skip warnings)
 - `SYMBOLS=BTC-USDT-SWAP,ETH-USDT-SWAP,SOL-USDT-SWAP`
 - `STRATEGIES=breakout,pullback,meanrev`
 - `TIMEFRAME=5m`
