@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from src.execution.confirm import verify_entry, verify_exit
 from src.execution.locks import AccountSymbolLockRegistry
@@ -51,11 +52,27 @@ class RouteController:
             current.reason = 'exit_submitted'
             return self.store.upsert(current)
 
+    def refresh_local_position_from_exchange(self, account: str, symbol: str, exchange_snapshot: ExchangePositionSnapshot | None) -> LivePosition | None:
+        with self.locks.hold(account, symbol):
+            current = self.store.get(account, symbol)
+            if current is None or exchange_snapshot is None:
+                return current
+            current.side = exchange_snapshot.side
+            current.size = float(exchange_snapshot.size or 0.0)
+            current.last_exchange_observed_at = datetime.now(UTC)
+            current.reason = 'exchange_snapshot_refreshed'
+            return self.store.upsert(current)
+
     def verify_position(self, account: str, symbol: str, exchange_snapshot: ExchangePositionSnapshot | None) -> LivePosition | None:
         with self.locks.hold(account, symbol):
             current = self.store.get(account, symbol)
             if current is None:
                 return None
+
+            if exchange_snapshot is not None:
+                current.side = exchange_snapshot.side
+                current.size = float(exchange_snapshot.size or 0.0)
+                current.last_exchange_observed_at = datetime.now(UTC)
 
             if current.status in {LivePositionStatus.ENTRY_SUBMITTED, LivePositionStatus.ENTRY_VERIFYING}:
                 decision = verify_entry(current, exchange_snapshot)

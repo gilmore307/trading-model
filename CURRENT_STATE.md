@@ -1,116 +1,85 @@
 # CURRENT_STATE
 
-_Last updated: 2026-03-13_
+_Last updated: 2026-03-17 01:57 Asia/Shanghai_
 
-This file is the fast-resume spine for future sessions.
+## Current session focus
 
-Read this before diving into detailed docs or chat history.
+This session returned to the crypto-trading runtime line and focused on three operational goals:
 
-## One-paragraph status
+1. replace the crowded account API credentials locally
+2. investigate why the trade daemon stopped / why routing was freezing
+3. harden the runtime reconciliation path and re-enable direct Discord notifications from the daemon itself
 
-The crypto-trading rebuild now has a real execution artifact chain, a review/report pipeline with weekly/monthly/quarterly runners, portable JSON/Markdown report export, latest-pointer/index convenience files, and a growing documentation spine. Canonical performance semantics have been materially hardened across unrealized pnl, funding, and equity window boundaries, and the review stack now prefers explicit canonical fields over legacy mirrors. The project is structurally much stronger than the earlier demo scaffold, but it is still **not** ready for unattended real-money deployment.
+## What was completed this session
 
-## What is already completed
+### 1. Crowded account API credentials updated locally
+- crowded API key / secret / passphrase were updated in project `.env`
+- crowded account label was explicitly reverted to remain `Crowded`
+- no external account-side changes were made from the codebase; this was local config only
 
-### Runtime / execution side
-- layered regime runner exists
-- execution pipeline exists
-- decision trace exists
-- route reconciliation exists
-- execution artifacts persist to `logs/runtime/`
-- compare snapshot and router ownership fields are persisted
+### 2. Trade daemon / runtime status investigation
+Findings from live repo/log inspection:
+- daemon was **not** running at session start
+- historical daemon runs were not under systemd supervision
+- prior long runs showed `daemon_started` without matching `daemon_stopped` or `cycle_error`, which strongly suggested process/session loss rather than an application-level clean exit
+- the system could still start and complete bounded runs successfully
 
-### Review / reporting side
-- canonical row ingestion exists
-- history aggregation exists
-- review-window-aware aggregation now exists when artifact timestamps are present
-- aggregation now sorts artifact rows by timestamp instead of trusting JSONL append order for latest-metric and drawdown semantics
-- review aggregation now preserves window-bounded unrealized start/end/change semantics, can infer window realized pnl from equity-change + funding + unrealized-boundary movement when explicit realized snapshots are absent, and falls back to window-consistent `pnl_usdt = realized + unrealized` when no explicit total-window pnl is available
-- normalized account performance snapshot exists
-- operator-facing report sections exist
-- parameter candidate generation exists
-- executive summary / recommended actions / narrative blocks exist
-- JSON + Markdown export exists
-- weekly/monthly/quarterly review runners exist
-- latest cadence pointers and report index exist
+### 3. Direct Discord notification path completed
+Implemented and validated:
+- repo-local direct Discord notifier via webhook / bot token support
+- trade daemon now notifies directly instead of depending on the old watcher polling path
+- direct notify includes de-duplication state to reduce repeated alerts
+- default behavior now emphasizes critical events:
+  - accepted enter/exit trade notifications
+  - cycle errors
+  - severe alignment / freeze-route conditions
+- webhook was configured locally and a standalone test message was successfully delivered
 
-### Meta work already backfilled
-- project map
-- execution artifacts doc
-- review architecture doc
-- review operations doc
-- review automation doc
-- router composite / ownership doc
-- regime and decision flow doc
-- known gaps / boundaries doc
+### 4. Reconciliation hardening work shipped
+A mismatch/freeze root-cause analysis identified three interacting causes:
+- local `size` semantics not matching exchange `contracts`
+- verify/reconcile using stale pre-submit exchange snapshots
+- live state / route state being in-memory only and lost across restarts
 
-## Current operator-friendly outputs
+Changes implemented and pushed:
+- record local submitted position size from execution receipt size when available, instead of blindly using raw plan size
+- refresh exchange snapshot after submit before verification / reconciliation
+- persist live position state to disk
+- persist route registry state to disk
+- add regression tests for state persistence and refreshed entry flow
 
-### Runtime artifacts
-- `logs/runtime/latest-execution-cycle.json`
-- `logs/runtime/execution-cycles.jsonl`
+## Git / code state landed
+Pushed this session:
+- `3de2713` — `Add direct Discord notifications for trade daemon`
+- `8c84ed1` — `Harden runtime state reconciliation`
 
-### Review artifacts
-- `reports/trade-review/*.json`
-- `reports/trade-review/*.md`
-- `reports/trade-review/latest_weekly.json`
-- `reports/trade-review/latest_weekly.md`
-- `reports/trade-review/latest_monthly.json`
-- `reports/trade-review/latest_monthly.md`
-- `reports/trade-review/latest_quarterly.json`
-- `reports/trade-review/latest_quarterly.md`
-- `reports/trade-review/index.json`
+## Runtime state at closeout
+- daemon was started successfully during this session and confirmed running in background
+- immediately after restart, first live cycle still reported:
+  - `symbol = BTC-USDT-SWAP`
+  - `regime = trend`
+  - `plan_action = hold`
+  - `block_reason = severe_alignment_issue`
+  - diagnostics included frozen-route behavior
+- this means the daemon process is up, but the mismatch/freeze problem is **not yet fully resolved**
 
-## Current boundaries
+## Highest-priority next actions
+1. restart or re-run the daemon and observe whether the new post-submit snapshot sync removes periodic `SIZE_MISMATCH` freezes
+2. inspect the persisted live-state / route-state artifacts after the next live cycle
+3. inspect the exact exchange snapshot vs persisted local position for BTC trend account if `severe_alignment_issue` still appears
+4. continue narrowing any remaining issue to:
+   - stale persisted state carried forward
+   - residual exchange-side position not represented locally before the cycle starts
+   - route freeze state being restored correctly but not cleared when alignment recovers
+5. only after mismatch is resolved, allow daemon to continue as trusted runtime
 
-Treat as real enough today:
-- execution artifact persistence boundary
-- review runners and exported report artifacts
-- operator/debug/report workflow structure
+## Incremental update
+- patched execution flow so local entry/exit state is no longer finalized from receipt size semantics
+- pipeline now refreshes exchange snapshot after submit and explicitly copies latest exchange side/size into local state before verify/reconcile
+- added regression coverage proving post-submit exchange contracts override mismatched receipt size during entry flow
 
-Do **not** over-claim yet:
-- final accounting-grade pnl semantics
-- unattended live trading readiness
-- fully OpenClaw-independent operator workflow
-- fully mature report-side regime explanation
-
-## Highest-priority remaining work
-
-### P0 — realism and semantics
-- continue reducing legacy mirror dependence in tests/docs/runtime helpers
-- harden realized pnl sourcing beyond current review-side semantics
-- extend longer-window accounting semantics beyond the now-hardened timestamp-ordered latest/equity/drawdown aggregation base
-
-### P1 — report depth
-- richer regime narrative in reports
-- stronger linkage between regime shifts and review findings
-- more diagnostic review explanations beyond current heuristic summaries
-
-### P2 — operator convenience / deployment
-- optional notifier wrapper after report generation
-- exact scheduler wiring examples when automation is enabled
-- optional latest-report convenience beyond current pointers if needed
-
-## Recommended reading order for a new session
-
-1. `CURRENT_STATE.md`
-2. `README.md`
-3. `docs/project-map.md`
-4. `docs/known-gaps-and-boundaries.md`
-5. `docs/execution-artifacts.md`
-6. `docs/review-architecture.md`
-7. `docs/regime-and-decision-flow.md`
-8. relevant runner/export/report files
-
-## Recommended next implementation direction
-
-If continuing with best payoff now, prefer:
-
-1. canonical performance semantics hardening
-2. richer regime/report integration
-3. deployment/operator wrappers
-
-## Verification status
-
-- full test suite currently passes
-- latest recorded full validation: `135 passed`
+## Important notes for next session
+- direct Discord webhook path is working
+- daemon direct notify is enabled
+- daemon supervision is still just background process execution, not systemd-managed
+- repo still has unrelated unstaged workspace changes/deletions/backups that were intentionally not included in the last pushes

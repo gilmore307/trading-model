@@ -124,15 +124,16 @@ class ExecutionPipeline:
 
         if plan.account is not None and plan.action == 'enter' and plan.side is not None and plan.size is not None:
             receipt = self.adapter.submit_entry(account=plan.account, symbol=regime_output.symbol, side=plan.side, size=plan.size, reason=plan.reason or 'entry')
-            recorded_size = float(receipt.size) if receipt and receipt.size is not None else float(plan.size)
-            local_position = self.controller.submit_entry(plan.account, regime_output.symbol, plan.regime, plan.side, recorded_size, entry_order_id=receipt.order_id)
+            local_position = self.controller.submit_entry(plan.account, regime_output.symbol, plan.regime, plan.side, float(plan.size), entry_order_id=receipt.order_id)
             exchange_snapshot = refresh_snapshot()
+            local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or local_position
             verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
             reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
         elif plan.account is not None and plan.action == 'exit':
             receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason=plan.reason or 'exit')
             local_position = self.controller.submit_exit(plan.account, regime_output.symbol, exit_order_id=receipt.order_id)
             exchange_snapshot = refresh_snapshot()
+            local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or local_position
             verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
             reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
         elif plan.account is not None and plan.action == 'arm':

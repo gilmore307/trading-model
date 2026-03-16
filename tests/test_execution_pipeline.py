@@ -165,7 +165,7 @@ def test_execution_pipeline_arm_does_not_submit_order():
     assert result.receipt is None
 
 
-def test_execution_pipeline_records_receipt_size_and_refreshes_snapshot_after_entry(tmp_path: Path):
+def test_execution_pipeline_uses_exchange_snapshot_as_authoritative_size_after_entry(tmp_path: Path):
     runner = DummyRunner(regime='trend', account='trend', trade_enabled=True)
     out = runner.run_once()
     out.background_features['adx'] = 32.0
@@ -200,3 +200,60 @@ def test_execution_pipeline_records_receipt_size_and_refreshes_snapshot_after_en
     assert result.verification_position is not None
     assert result.verification_position.status.value == 'open'
     assert snapshots.calls >= 2
+
+
+def test_execution_pipeline_prefers_post_submit_exchange_contracts_over_receipt_size(tmp_path: Path):
+    runner = DummyRunner(regime='trend', account='trend', trade_enabled=True)
+    out = runner.run_once()
+    out.background_features['adx'] = 32.0
+    out.background_features['ema20_slope'] = 1.0
+    out.background_features['ema50_slope'] = 0.8
+    out.primary_features['adx'] = 28.0
+    out.primary_features['vwap_deviation_z'] = 0.9
+    out.override_features['vwap_deviation_z'] = 1.0
+    out.override_features['trade_burst_score'] = 0.7
+    runner.run_once = lambda: out
+
+    class MismatchAdapter(ExecutionAdapter):
+        def submit_entry(self, *, account: str, symbol: str, side: str, size: float, reason: str) -> ExecutionReceipt:
+            return ExecutionReceipt(
+                accepted=True,
+                mode='okx_demo',
+                account=account,
+                symbol=symbol,
+                action='entry',
+                side=side,
+                size=99.0,
+                order_id='entry-1',
+                reason=reason,
+                observed_at=datetime.now(UTC),
+                raw={'amount': 99.0},
+            )
+
+        def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
+            raise AssertionError('submit_exit should not be called')
+
+    class SnapshotProvider:
+        def __init__(self):
+            self.calls = 0
+
+        def fetch_position(self, account, symbol):
+            self.calls += 1
+            if self.calls == 1:
+                return None
+            return ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=0.27)
+
+    snapshots = SnapshotProvider()
+    runtime_store = RuntimeStore()
+    runtime_store.set_mode(RuntimeMode.TRADE, reason='test_trade_mode')
+    controller = RouteController(store=LiveStateStore(path=tmp_path / 'live-state.json'), routes=RouteRegistry(path=tmp_path / 'routes.json'))
+    pipe = ExecutionPipeline(regime_runner=runner, controller=controller, snapshot_provider=snapshots, adapter=MismatchAdapter(), runtime_store=runtime_store)
+    result = pipe.run_cycle(None)
+    assert result.receipt is not None
+    assert result.receipt.size == 99.0
+    assert result.local_position is not None
+    assert result.local_position.size == 0.27
+    assert result.verification_position is not None
+    assert result.verification_position.size == 0.27
+    assert result.reconcile_result is not None
+    assert result.reconcile_result.alignment.ok is True
