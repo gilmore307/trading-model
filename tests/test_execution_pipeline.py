@@ -1,9 +1,48 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 
+from src.execution.adapters import ExecutionAdapter, ExecutionReceipt
+from src.execution.controller import RouteController
 from src.execution.pipeline import ExecutionPipeline
 from src.reconcile.alignment import ExchangePositionSnapshot
 from src.runners.regime_runner import RegimeRunnerOutput
+from src.runtime.mode import RuntimeMode
+from src.runtime.store import RuntimeStore
+from src.state.route_registry import RouteRegistry
+from src.state.store import LiveStateStore
+
+
+class DummyAdapter(ExecutionAdapter):
+    def submit_entry(self, *, account: str, symbol: str, side: str, size: float, reason: str) -> ExecutionReceipt:
+        return ExecutionReceipt(
+            accepted=True,
+            mode='okx_demo',
+            account=account,
+            symbol=symbol,
+            action='entry',
+            side=side,
+            size=0.27,
+            order_id='entry-1',
+            reason=reason,
+            observed_at=datetime.now(UTC),
+            raw={'amount': 0.27},
+        )
+
+    def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
+        return ExecutionReceipt(
+            accepted=True,
+            mode='okx_demo',
+            account=account,
+            symbol=symbol,
+            action='exit',
+            side=None,
+            size=None,
+            order_id='exit-1',
+            reason=reason,
+            observed_at=datetime.now(UTC),
+            raw={},
+        )
 
 
 class DummyRunner:
@@ -28,7 +67,7 @@ class DummyRunner:
         )
 
 
-def test_execution_pipeline_enters_and_verifies_via_controller():
+def test_execution_pipeline_enters_and_verifies_via_controller(tmp_path: Path):
     runner = DummyRunner(regime='trend', account='trend', trade_enabled=True)
     out = runner.run_once()
     out.background_features['adx'] = 32.0
@@ -39,7 +78,8 @@ def test_execution_pipeline_enters_and_verifies_via_controller():
     out.override_features['vwap_deviation_z'] = 1.0
     out.override_features['trade_burst_score'] = 0.7
     runner.run_once = lambda: out
-    pipe = ExecutionPipeline(regime_runner=runner, snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=1.0)})())
+    controller = RouteController(store=LiveStateStore(path=tmp_path / 'live-state.json'), routes=RouteRegistry(path=tmp_path / 'routes.json'))
+    pipe = ExecutionPipeline(regime_runner=runner, controller=controller, snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=1.0)})())
     result = pipe.run_cycle(None)
     assert result.plan.action == 'enter'
     assert result.receipt is not None
@@ -123,3 +163,40 @@ def test_execution_pipeline_arm_does_not_submit_order():
     result = pipe.run_cycle(None)
     assert result.plan.action == 'arm'
     assert result.receipt is None
+
+
+def test_execution_pipeline_records_receipt_size_and_refreshes_snapshot_after_entry(tmp_path: Path):
+    runner = DummyRunner(regime='trend', account='trend', trade_enabled=True)
+    out = runner.run_once()
+    out.background_features['adx'] = 32.0
+    out.background_features['ema20_slope'] = 1.0
+    out.background_features['ema50_slope'] = 0.8
+    out.primary_features['adx'] = 28.0
+    out.primary_features['vwap_deviation_z'] = 0.9
+    out.override_features['vwap_deviation_z'] = 1.0
+    out.override_features['trade_burst_score'] = 0.7
+    runner.run_once = lambda: out
+
+    class SnapshotProvider:
+        def __init__(self):
+            self.calls = 0
+
+        def fetch_position(self, account, symbol):
+            self.calls += 1
+            if self.calls == 1:
+                return None
+            return ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=0.27)
+
+    snapshots = SnapshotProvider()
+    runtime_store = RuntimeStore()
+    runtime_store.set_mode(RuntimeMode.TRADE, reason='test_trade_mode')
+    controller = RouteController(store=LiveStateStore(path=tmp_path / 'live-state.json'), routes=RouteRegistry(path=tmp_path / 'routes.json'))
+    pipe = ExecutionPipeline(regime_runner=runner, controller=controller, snapshot_provider=snapshots, adapter=DummyAdapter(), runtime_store=runtime_store)
+    result = pipe.run_cycle(None)
+    assert result.receipt is not None
+    assert result.receipt.size == 0.27
+    assert result.local_position is not None
+    assert result.local_position.size == 0.27
+    assert result.verification_position is not None
+    assert result.verification_position.status.value == 'open'
+    assert snapshots.calls >= 2

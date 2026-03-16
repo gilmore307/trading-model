@@ -117,25 +117,35 @@ class ExecutionPipeline:
         verification_position = None
         reconcile_result = None
 
+        def refresh_snapshot() -> ExchangePositionSnapshot | None:
+            if plan.account is None:
+                return exchange_snapshot
+            return self.snapshot_provider.fetch_position(plan.account, regime_output.symbol)
+
         if plan.account is not None and plan.action == 'enter' and plan.side is not None and plan.size is not None:
             receipt = self.adapter.submit_entry(account=plan.account, symbol=regime_output.symbol, side=plan.side, size=plan.size, reason=plan.reason or 'entry')
-            local_position = self.controller.submit_entry(plan.account, regime_output.symbol, plan.regime, plan.side, plan.size, entry_order_id=receipt.order_id)
+            recorded_size = float(receipt.size) if receipt and receipt.size is not None else float(plan.size)
+            local_position = self.controller.submit_entry(plan.account, regime_output.symbol, plan.regime, plan.side, recorded_size, entry_order_id=receipt.order_id)
+            exchange_snapshot = refresh_snapshot()
             verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
             reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
         elif plan.account is not None and plan.action == 'exit':
             receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason=plan.reason or 'exit')
             local_position = self.controller.submit_exit(plan.account, regime_output.symbol, exit_order_id=receipt.order_id)
+            exchange_snapshot = refresh_snapshot()
             verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
             reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
         elif plan.account is not None and plan.action == 'arm':
             current = self.controller.store.get(plan.account, regime_output.symbol)
             if current is not None:
+                exchange_snapshot = refresh_snapshot()
                 reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
                 local_position = current
                 verification_position = current
         elif plan.account is not None:
             current = self.controller.store.get(plan.account, regime_output.symbol)
             if current is not None:
+                exchange_snapshot = refresh_snapshot()
                 reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
                 local_position = current
                 verification_position = current
