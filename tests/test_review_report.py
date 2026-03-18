@@ -30,7 +30,7 @@ def test_weekly_report_scaffold_includes_compare_sections():
 def test_report_scaffold_can_aggregate_from_history(tmp_path: Path):
     history = tmp_path / 'execution-cycles.jsonl'
     history.write_text(json.dumps({
-        'summary': {'plan_account': 'trend', 'plan_action': 'enter', 'receipt_accepted': True, 'composite_position_owner': 'trend', 'composite_plan_action': 'enter'},
+        'summary': {'plan_account': 'trend', 'plan_action': 'enter', 'receipt_accepted': True, 'strategy_stats_eligible': True, 'strategy_stats_reason': 'clean_execution', 'composite_position_owner': 'trend', 'composite_plan_action': 'enter'},
         'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]}
     }) + '\n', encoding='utf-8')
     window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
@@ -38,6 +38,7 @@ def test_report_scaffold_can_aggregate_from_history(tmp_path: Path):
     trend_row = next(row for row in report['metrics']['performance']['accounts'] if row['account'] == 'trend')
     assert trend_row['trade_count'] == 1
     assert trend_row['exposure_time_pct'] == 100.0
+    assert report['metrics']['execution_quality']['clean_trade_count'] == 1
 
 
 def test_report_scaffold_filters_history_to_review_window(tmp_path: Path):
@@ -220,3 +221,35 @@ def test_report_scaffold_builds_executive_summary_and_actions():
     assert any(action['title'] == 'Review fee_burden_frequency_gate' for action in report['recommended_actions'])
     assert report['narrative_blocks']
     assert report['narrative_blocks'][0]['key'] == 'executive_summary'
+
+
+def test_report_scaffold_surfaces_execution_quality_dual_ledger(tmp_path: Path):
+    history = tmp_path / 'execution-cycles.jsonl'
+    rows = [
+        {
+            'summary': {
+                'plan_account': 'trend', 'plan_action': 'enter', 'receipt_accepted': True,
+                'strategy_stats_eligible': True, 'strategy_stats_reason': 'clean_execution',
+                'account_metrics': {'trend': {'pnl_usdt': 5.0}},
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': True}]},
+        },
+        {
+            'summary': {
+                'plan_account': 'trend', 'plan_action': 'exit', 'receipt_accepted': True,
+                'strategy_stats_eligible': False, 'strategy_stats_reason': 'forced_exit_recovery',
+                'account_metrics': {'trend': {'pnl_usdt': -2.5}},
+            },
+            'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': False}]},
+        },
+    ]
+    history.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+    window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
+    report = build_report_scaffold(window, history_path=str(history))
+    eq = report['metrics']['execution_quality']
+    assert eq['clean_trade_count'] == 1
+    assert eq['excluded_trade_count'] == 1
+    assert eq['excluded_pnl_usdt'] == -2.5
+    section = next(section for section in report['sections'] if section['key'] == 'execution_quality')
+    assert section['status'] == 'ready'
+    assert any(row['reason'] == 'forced_exit_recovery' for row in eq['top_excluded_reasons'])

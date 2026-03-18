@@ -4,6 +4,9 @@ from dataclasses import dataclass, asdict
 from datetime import UTC, datetime
 from typing import Any
 
+from pathlib import Path
+import json
+
 from src.review.aggregator import aggregate_from_execution_history
 from src.review.framework import ReviewWindow, build_review_plan
 from src.review.performance import build_performance_snapshot
@@ -137,6 +140,80 @@ def _build_performance_summary(performance_snapshot: dict[str, Any]) -> dict[str
             'flat_compare_pnl_usdt': _row_pnl(flat_compare),
         },
         'insights': insights,
+    }
+
+
+def _load_history_rows(path: str | None) -> list[dict[str, Any]]:
+    if not path:
+        return []
+    p = Path(path)
+    if not p.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    for line in p.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except Exception:
+            continue
+    return rows
+
+
+def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    clean = 0
+    excluded = 0
+    reasons: dict[str, int] = {}
+    excluded_pnl_usdt = 0.0
+    excluded_rows: list[dict[str, Any]] = []
+    for row in history_rows:
+        summary = row.get('summary') if isinstance(row.get('summary'), dict) else {}
+        eligible = bool(summary.get('strategy_stats_eligible', False))
+        reason = str(summary.get('strategy_stats_reason') or ('clean_execution' if eligible else 'unknown'))
+        if eligible:
+            clean += 1
+            continue
+        excluded += 1
+        reasons[reason] = reasons.get(reason, 0) + 1
+        metrics = summary.get('account_metrics') if isinstance(summary.get('account_metrics'), dict) else {}
+        account = summary.get('plan_account') or (next(iter(metrics.keys())) if metrics else None)
+        pnl = 0.0
+        if account in metrics and isinstance(metrics.get(account), dict):
+            pnl = _row_pnl(metrics[account])
+        excluded_pnl_usdt += pnl
+        excluded_rows.append({'account': account, 'reason': reason, 'pnl_usdt': pnl})
+    top_excluded_reasons = [
+        {'reason': key, 'count': value}
+        for key, value in sorted(reasons.items(), key=lambda item: (-item[1], item[0]))
+    ]
+    return {
+        'clean_trade_count': clean,
+        'excluded_trade_count': excluded,
+        'excluded_pnl_usdt': round(excluded_pnl_usdt, 10),
+        'top_excluded_reasons': top_excluded_reasons,
+        'excluded_samples': excluded_rows[:20],
+        'status': 'ready' if history_rows else 'placeholder',
+    }
+
+
+def _build_execution_quality_section(execution_quality: dict[str, Any]) -> dict[str, Any]:
+    items = []
+    if execution_quality.get('top_excluded_reasons'):
+        items.append({'kind': 'excluded_reasons', 'rows': execution_quality.get('top_excluded_reasons', [])})
+    if execution_quality.get('excluded_samples'):
+        items.append({'kind': 'excluded_samples', 'rows': execution_quality.get('excluded_samples', [])})
+    highlights = []
+    if execution_quality.get('excluded_trade_count'):
+        highlights.append(f"excluded_trade_count:{execution_quality.get('excluded_trade_count')}")
+    if execution_quality.get('excluded_pnl_usdt'):
+        highlights.append(f"excluded_pnl_usdt:{execution_quality.get('excluded_pnl_usdt')}")
+    return {
+        'key': 'execution_quality',
+        'title': 'Execution Quality',
+        'status': execution_quality.get('status', 'placeholder'),
+        'items': items,
+        'highlights': highlights,
     }
 
 
@@ -283,7 +360,7 @@ def _build_parameter_review_section(
     }
 
 
-def _build_executive_summary(meta: dict[str, Any], performance_summary: dict[str, Any], parameter_section: dict[str, Any]) -> dict[str, Any]:
+def _build_executive_summary(meta: dict[str, Any], performance_summary: dict[str, Any], parameter_section: dict[str, Any], execution_quality: dict[str, Any]) -> dict[str, Any]:
     top = performance_summary.get('top_account') if isinstance(performance_summary, dict) else None
     bottom = performance_summary.get('bottom_account') if isinstance(performance_summary, dict) else None
     router_vs_best = performance_summary.get('router_vs_best_strategy') if isinstance(performance_summary, dict) else None
@@ -305,6 +382,12 @@ def _build_executive_summary(meta: dict[str, Any], performance_summary: dict[str
         )
     if candidate_count:
         bullets.append(f"Parameter candidates flagged: {candidate_count}")
+    if execution_quality.get('status') == 'ready':
+        bullets.append(
+            f"Clean vs excluded trades: {execution_quality.get('clean_trade_count', 0)} clean / {execution_quality.get('excluded_trade_count', 0)} excluded"
+        )
+        if execution_quality.get('excluded_trade_count', 0):
+            bullets.append(f"Excluded execution-impact pnl: {execution_quality.get('excluded_pnl_usdt')} USDT")
 
     return {
         'label': meta.get('label'),
@@ -367,6 +450,16 @@ def _build_narrative_blocks(executive_summary: dict[str, Any], sections: list[di
                 if item.get('kind') == 'candidate'
             ]
             blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
+        elif key == 'execution_quality' and section.get('status') == 'ready':
+            lines = []
+            for item in section.get('items', []):
+                if item.get('kind') == 'excluded_reasons':
+                    for row in item.get('rows', [])[:5]:
+                        lines.append(f"excluded_reason {row.get('reason')}: {row.get('count')}")
+                elif item.get('kind') == 'excluded_samples':
+                    for row in item.get('rows', [])[:3]:
+                        lines.append(f"excluded_sample {row.get('account')}: reason={row.get('reason')} pnl={row.get('pnl_usdt')}")
+            blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
     return blocks
 
 
@@ -375,6 +468,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
     cadence = plan['cadence']
 
     aggregated_metrics = metrics_by_account
+    history_rows: list[dict[str, Any]] = []
     if history_path is not None:
         aggregated_metrics = aggregate_from_execution_history(
             history_path,
@@ -382,8 +476,10 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
             window_start=window.window_start,
             window_end=window.window_end,
         )
+        history_rows = _load_history_rows(history_path)
     performance_snapshot = build_performance_snapshot(aggregated_metrics)
     performance_summary = _build_performance_summary(performance_snapshot)
+    execution_quality = _build_execution_quality_summary(history_rows)
 
     auto_candidate_params = [{'name': name, 'status': 'pending_data'} for name in plan['adjustment_policy']['auto_candidate_params']]
     discuss_first_params = [{'name': name, 'status': 'pending_data'} for name in plan['adjustment_policy']['discuss_first_params']]
@@ -399,6 +495,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         },
         _build_account_comparison_section(compare_snapshot, performance_summary),
         _build_router_composite_section(compare_snapshot, performance_summary),
+        _build_execution_quality_section(execution_quality),
         parameter_section,
     ]
 
@@ -421,7 +518,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         'focus_areas': plan['focus_areas'],
         'adjustment_policy': plan['adjustment_policy'],
     }
-    executive_summary = _build_executive_summary(meta, performance_summary, parameter_section)
+    executive_summary = _build_executive_summary(meta, performance_summary, parameter_section, execution_quality)
     recommended_actions = _build_recommended_actions(parameter_section)
     narrative_blocks = _build_narrative_blocks(executive_summary, sections)
 
@@ -432,6 +529,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         metrics={
             'performance': performance_snapshot,
             'performance_summary': performance_summary,
+            'execution_quality': execution_quality,
             'risk': [],
             'fees': [],
             'regime_quality': [],
