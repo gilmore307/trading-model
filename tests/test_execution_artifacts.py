@@ -122,3 +122,47 @@ def test_build_execution_artifact_captures_blocked_reason():
     assert artifact['summary']['trade_enabled'] is False
     assert artifact['summary']['strategy_stats_eligible'] is False
     assert artifact['summary']['strategy_stats_reason'] == 'receipt_not_accepted'
+
+
+def test_persist_execution_artifact_writes_anomaly_ledger_for_excluded_execution(tmp_path: Path, monkeypatch):
+    from src.state.live_position import LivePosition, LivePositionStatus
+
+    anomaly_path = tmp_path / 'execution-anomalies.jsonl'
+    monkeypatch.setattr('src.runners.execution_cycle.ANOMALY_HISTORY_PATH', anomaly_path)
+    monkeypatch.setattr('src.runners.execution_cycle.LATEST_PATH', tmp_path / 'latest-execution-cycle.json')
+    monkeypatch.setattr('src.runners.execution_cycle.HISTORY_PATH', tmp_path / 'execution-cycles.jsonl')
+
+    regime_output = RegimeRunnerOutput(
+        observed_at=datetime.now(UTC),
+        symbol='BTC-USDT-SWAP',
+        background_4h={'primary': 'trend', 'confidence': 0.8, 'reasons': [], 'secondary': [], 'tradable': True},
+        primary_15m={'primary': 'trend', 'confidence': 0.8, 'reasons': [], 'secondary': [], 'tradable': True},
+        override_1m=None,
+        background_features={},
+        primary_features={},
+        override_features={},
+        final_decision={'primary': 'trend', 'confidence': 0.8, 'reasons': [], 'secondary': [], 'tradable': True},
+        route_decision={'regime': 'trend', 'account': 'trend', 'strategy_family': 'trend', 'trade_enabled': True, 'allow_reason': 'route_to_trend', 'block_reason': None},
+        decision_summary={'regime': 'trend', 'confidence': 0.8, 'tradable': True, 'account': 'trend', 'strategy_family': 'trend', 'trade_enabled': True, 'allow_reason': 'route_to_trend', 'block_reason': None, 'reasons': [], 'secondary': [], 'diagnostics': []},
+    )
+    result = ExecutionCycleResult(
+        regime_output=regime_output,
+        plan=ExecutionPlan(regime='trend', account='trend', action='exit', reason='forced_exit_recovery'),
+        receipt=ExecutionReceipt(accepted=True, mode='okx_demo', account='trend', symbol='BTC-USDT-SWAP', action='exit', side=None, size=None, order_id='x1', reason='forced_exit_recovery', observed_at=datetime.now(UTC), raw={'account_alias': 'trend', 'realized_pnl_usdt': -1.5}),
+        local_position=LivePosition(account='trend', symbol='BTC-USDT-SWAP', route='trend', status=LivePositionStatus.FLAT, side=None, size=0.0, reason='forced_exit_recovery', meta={'strategy_stats_eligible': 'false', 'strategy_stats_reason': 'forced_exit_recovery', 'execution_recovery': 'forced_exit'}),
+        verification_position=None,
+        reconcile_result=RouteControlResult(alignment=AlignmentResult(ok=True, issues=[]), policy=PolicyDecision(trade_enabled=True, action='continue', reason='alignment_ok'), position=None),
+        decision_trace=ExecutionDecisionTrace(mode='trade', mode_allows_routing=True, decision_trade_enabled=True, route_trade_enabled=True, pipeline_trade_enabled=True, allow_reason='route_to_trend', block_reason=None, diagnostics=[]),
+        runtime_state={'mode': 'trade', 'reason': 'auto', 'updated_at': datetime.now(UTC)},
+        route_state={'account': 'trend', 'symbol': 'BTC-USDT-SWAP', 'enabled': True, 'frozen_reason': None, 'updated_at': datetime.now(UTC)},
+        live_positions=[],
+        router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': 'trend', 'source_regime': 'trend', 'source_confidence': 0.8, 'switch_action': 'hold', 'position_owner': None, 'plan': {'action': 'hold'}, 'notes': [], 'position': None},
+    )
+    persist_execution_artifact(result)
+    lines = anomaly_path.read_text(encoding='utf-8').splitlines()
+    assert len(lines) == 1
+    anomaly = json.loads(lines[0])
+    assert anomaly['artifact_type'] == 'execution_anomaly'
+    assert anomaly['execution_recovery'] == 'forced_exit'
+    assert anomaly['strategy_stats_reason'] == 'forced_exit_recovery'
+    assert anomaly['account'] == 'trend'
