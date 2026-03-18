@@ -23,6 +23,14 @@ class DummyHooks(WorkflowHooks):
         self.calls.append('verify_flat')
         return super().verify_flat()
 
+    def flatten_all_margin_positions(self):
+        self.calls.append('flatten_all_margin_positions')
+        return super().flatten_all_margin_positions()
+
+    def verify_margin_flat(self):
+        self.calls.append('verify_margin_flat')
+        return super().verify_margin_flat()
+
     def convert_non_usdt_assets(self):
         self.calls.append('convert_non_usdt_assets')
         return super().convert_non_usdt_assets()
@@ -56,21 +64,21 @@ def test_test_workflow_runs_dedicated_test_actions_and_returns_to_develop():
     assert store.get().mode == RuntimeMode.DEVELOP
 
 
-def test_calibrate_workflow_includes_flatten_convert_verify_reset_and_returns_to_trade():
+def test_calibrate_workflow_includes_flatten_margin_convert_verify_reset_and_returns_to_trade():
     store = RuntimeStore()
     hooks = DummyHooks()
     runner = RuntimeWorkflowRunner(runtime_store=store, hooks=hooks)
     result = runner.run(RuntimeMode.CALIBRATE)
-    assert hooks.calls == ['flatten', 'verify_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:False']
+    assert hooks.calls == ['flatten', 'verify_flat', 'flatten_all_margin_positions', 'verify_margin_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:False']
     assert result.ended_mode == 'trade'
     assert store.get().mode == RuntimeMode.TRADE
 
 
-def test_reset_workflow_includes_flatten_convert_verify_reset_and_returns_to_develop():
+def test_reset_workflow_includes_flatten_margin_convert_verify_reset_and_returns_to_develop():
     store = RuntimeStore()
     hooks = DummyHooks()
     runner = RuntimeWorkflowRunner(runtime_store=store, hooks=hooks)
     result = runner.run(RuntimeMode.RESET)
-    assert hooks.calls == ['flatten', 'verify_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:True']
+    assert hooks.calls == ['flatten', 'verify_flat', 'flatten_all_margin_positions', 'verify_margin_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:True']
     assert result.ended_mode == 'develop'
     assert store.get().mode == RuntimeMode.DEVELOP

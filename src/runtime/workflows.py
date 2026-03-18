@@ -55,6 +55,12 @@ class WorkflowHooks:
     def verify_flat(self) -> WorkflowStepResult:
         return WorkflowStepResult(name='verify_flat', ok=True, detail='stub')
 
+    def flatten_all_margin_positions(self) -> WorkflowStepResult:
+        return WorkflowStepResult(name='flatten_all_margin_positions', ok=True, detail='stub')
+
+    def verify_margin_flat(self) -> WorkflowStepResult:
+        return WorkflowStepResult(name='verify_margin_flat', ok=True, detail='stub')
+
     def convert_non_usdt_assets(self) -> WorkflowStepResult:
         return WorkflowStepResult(name='convert_non_usdt_assets', ok=True, detail='stub')
 
@@ -229,6 +235,53 @@ class OkxWorkflowHooks(WorkflowHooks):
             detail='all_flat' if not non_flat else 'non_flat=' + '; '.join(non_flat),
         )
 
+    def flatten_all_margin_positions(self) -> WorkflowStepResult:
+        actions = []
+        errors = []
+        for strategy, account in self._unique_accounts():
+            client = OkxClient(self.settings, self.settings.account_for_strategy(strategy))
+            try:
+                positions = client.all_live_margin_positions()
+            except Exception as exc:
+                errors.append(f'{account}:margin_positions:{exc}')
+                continue
+            if not positions:
+                actions.append(f'{account}:no_margin_positions')
+                continue
+            for row in positions:
+                try:
+                    result = client.close_margin_position(row)
+                    status = result.get('reason') if result.get('skipped') else (result.get('order_id') or 'submitted')
+                    actions.append(f'{account}:{row.get("symbol")}:{status}')
+                except Exception as exc:
+                    errors.append(f'{account}:{row.get("symbol")}:{exc}')
+        return WorkflowStepResult(
+            name='flatten_all_margin_positions',
+            ok=not errors,
+            detail='; '.join(actions if actions else ['no_margin_positions']) + ('' if not errors else ' | errors=' + '; '.join(errors)),
+        )
+
+    def verify_margin_flat(self) -> WorkflowStepResult:
+        remains = []
+        for strategy, account in self._unique_accounts():
+            client = OkxClient(self.settings, self.settings.account_for_strategy(strategy))
+            try:
+                positions = client.all_live_margin_positions()
+            except Exception as exc:
+                remains.append(f'{account}:margin_positions_error:{exc}')
+                continue
+            for row in positions:
+                pos = float(row.get('pos') or 0.0)
+                liab = float(row.get('liability') or 0.0)
+                interest = float(row.get('interest') or 0.0)
+                if pos > 0 or liab > 0 or interest > 0:
+                    remains.append(f'{account}:{row.get("symbol")}:pos={pos}:liab={liab}:interest={interest}:posCcy={row.get("pos_ccy")}:mgnMode={row.get("margin_mode")}')
+        return WorkflowStepResult(
+            name='verify_margin_flat',
+            ok=not remains,
+            detail='all_margin_flat' if not remains else 'margin_remaining=' + '; '.join(remains),
+        )
+
     def convert_non_usdt_assets(self) -> WorkflowStepResult:
         actions = []
         errors = []
@@ -354,6 +407,8 @@ class RuntimeWorkflowRunner:
             steps = [
                 self.hooks.flatten_all_positions(),
                 self.hooks.verify_flat(),
+                self.hooks.flatten_all_margin_positions(),
+                self.hooks.verify_margin_flat(),
                 self.hooks.convert_non_usdt_assets(),
                 self.hooks.verify_startup_capital(),
                 self.hooks.reset_bucket_state(destructive=destructive),

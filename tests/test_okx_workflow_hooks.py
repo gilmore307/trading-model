@@ -23,18 +23,27 @@ class FakeBucketStore:
 
 
 class FakeClient:
-    def __init__(self, positions=None, summaries=None, margin_exposures=None):
+    def __init__(self, positions=None, margin_positions=None, summaries=None, margin_exposures=None):
         self._positions = list(positions or [])
+        self._margin_positions = list(margin_positions or [])
         self._summaries = list(summaries or [])
         self._margin_exposures = list(margin_exposures or [])
         self.exit_calls = []
+        self.margin_close_calls = []
 
     def all_live_positions(self):
         return list(self._positions)
 
+    def all_live_margin_positions(self):
+        return list(self._margin_positions)
+
     def create_exit_order(self, symbol, side, amount):
         self.exit_calls.append((symbol, side, amount))
         return {'order_id': f'exit-{symbol}'}
+
+    def close_margin_position(self, row):
+        self.margin_close_calls.append(row)
+        return {'order_id': f'margin-{row.get("symbol")}', 'symbol': row.get('symbol')}
 
     def account_balance_summary(self):
         if self._summaries:
@@ -70,6 +79,24 @@ def test_verify_flat_checks_all_positions(monkeypatch):
     result = hooks.verify_flat()
     assert result.ok is False
     assert 'OKB/USDT:USDT' in (result.detail or '')
+
+
+def test_flatten_all_margin_positions_uses_margin_close_logic(monkeypatch):
+    client = FakeClient(margin_positions=[{'symbol': 'BTC/USDT', 'pos': 1.0, 'liability': 1.0, 'interest': 0.0, 'pos_ccy': 'USDT', 'margin_mode': 'cross'}])
+    monkeypatch.setattr('src.runtime.workflows.OkxClient', lambda settings, account: client)
+    hooks = OkxWorkflowHooks(FakeSettings(), bucket_store=FakeBucketStore())
+    result = hooks.flatten_all_margin_positions()
+    assert result.ok is True
+    assert len(client.margin_close_calls) == 1
+
+
+def test_verify_margin_flat_checks_pos_liability_and_interest(monkeypatch):
+    client = FakeClient(margin_positions=[{'symbol': 'BTC/USDT', 'pos': 0.0, 'liability': 0.5, 'interest': 0.01, 'pos_ccy': 'USDT', 'margin_mode': 'cross'}])
+    monkeypatch.setattr('src.runtime.workflows.OkxClient', lambda settings, account: client)
+    hooks = OkxWorkflowHooks(FakeSettings(), bucket_store=FakeBucketStore())
+    result = hooks.verify_margin_flat()
+    assert result.ok is False
+    assert 'BTC/USDT' in (result.detail or '')
 
 
 def test_verify_startup_capital_retries_before_failing(monkeypatch):

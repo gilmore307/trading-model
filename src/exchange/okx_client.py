@@ -105,6 +105,37 @@ def _normalize_live_position_row(position: dict[str, Any], *, expected_symbol: s
     }
 
 
+def _normalize_margin_position_row(exchange: Any, position: dict[str, Any]) -> dict[str, Any] | None:
+    info = position.get('info') or {}
+    if info.get('instType') != 'MARGIN':
+        return None
+    raw_pos = _safe_float(info.get('pos')) or 0.0
+    liab = abs(_safe_float(info.get('liab')) or 0.0)
+    interest = abs(_safe_float(info.get('interest')) or 0.0)
+    if raw_pos <= 0 and liab <= 0 and interest <= 0:
+        return None
+    inst_id = info.get('instId')
+    if not inst_id:
+        return None
+    symbol = exchange.safe_symbol(inst_id)
+    market = exchange.market(symbol)
+    base = market.get('base')
+    quote = market.get('quote')
+    pos_ccy = info.get('posCcy')
+    return {
+        'symbol': symbol,
+        'inst_id': inst_id,
+        'base': base,
+        'quote': quote,
+        'pos_ccy': pos_ccy,
+        'margin_mode': info.get('mgnMode', 'cross'),
+        'pos': raw_pos,
+        'avail_pos': _safe_float(info.get('availPos')) or raw_pos,
+        'liability': liab,
+        'interest': interest,
+    }
+
+
 def live_position_snapshot(exchange: Any, execution_symbol: str) -> dict[str, Any] | None:
     positions = exchange.fetch_positions([execution_symbol])
     for position in positions:
@@ -491,6 +522,50 @@ class OkxClient:
             if normalized is not None:
                 rows.append(normalized)
         return rows
+
+    def all_live_margin_positions(self) -> list[dict[str, Any]]:
+        self.ensure_markets_loaded()
+        positions = self.exchange.fetch_positions(params={'instType': 'MARGIN'})
+        rows: list[dict[str, Any]] = []
+        for position in positions:
+            normalized = _normalize_margin_position_row(self.exchange, position)
+            if normalized is not None:
+                rows.append(normalized)
+        return rows
+
+    def close_margin_position(self, row: dict[str, Any]) -> dict[str, Any]:
+        symbol = str(row.get('symbol') or '')
+        base = str(row.get('base') or '')
+        quote = str(row.get('quote') or '')
+        pos_ccy = str(row.get('pos_ccy') or '')
+        td_mode = str(row.get('margin_mode') or 'cross')
+        avail_pos = float(row.get('avail_pos') or row.get('pos') or 0.0)
+        liab = abs(float(row.get('liability') or 0.0))
+        interest = abs(float(row.get('interest') or 0.0))
+        if pos_ccy == base:
+            side = 'sell'
+            raw_amount = avail_pos
+            params = {'tdMode': td_mode, 'reduceOnly': True}
+        elif pos_ccy == quote:
+            side = 'buy'
+            raw_amount = liab if liab > 0 else avail_pos
+            params = {'tdMode': td_mode, 'reduceOnly': True, 'tgtCcy': 'base_ccy'}
+        else:
+            return {'symbol': symbol, 'skipped': True, 'reason': f'unrecognized_pos_ccy:{pos_ccy}', 'raw': row}
+        if raw_amount <= 0:
+            return {'symbol': symbol, 'skipped': True, 'reason': 'non_positive_amount', 'raw': row}
+        amount = float(self.exchange.amount_to_precision(symbol, raw_amount))
+        order = self.exchange.create_order(symbol, 'market', side, amount, None, params)
+        return {
+            'symbol': symbol,
+            'side': side,
+            'amount': amount,
+            'order_id': order.get('id'),
+            'status': order.get('status'),
+            'account_alias': self.account_alias,
+            'account_label': self.account_label,
+            'raw': order,
+        }
 
     def fetch_order_fees(
         self,
