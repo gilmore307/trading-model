@@ -175,6 +175,9 @@ class ExecutionPipeline:
             exchange_snapshot = refresh_snapshot()
             local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or local_position
             verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
+            if verification_position is not None and verification_position.status.value == 'entry_verifying' and exchange_snapshot is None:
+                local_position = self.controller.mark_missed_entry(plan.account, regime_output.symbol, detail='missed_entry_not_opened_on_exchange') or verification_position
+                verification_position = local_position
             reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
         elif plan.account is not None and plan.action == 'exit':
             receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason=plan.reason or 'exit')

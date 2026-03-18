@@ -449,3 +449,53 @@ def test_execution_pipeline_forced_exit_recovery_submits_exit_and_marks_stats_in
     assert result.local_position.status.value == 'flat'
     assert result.local_position.meta['strategy_stats_eligible'] == 'false'
     assert result.local_position.meta['strategy_stats_reason'] == 'forced_exit_recovery'
+
+
+def test_execution_pipeline_marks_missed_entry_without_reopening_on_exchange(tmp_path: Path):
+    runner = DummyRunner(regime='trend', account='trend', trade_enabled=True)
+    out = runner.run_once()
+    out.background_features['adx'] = 32.0
+    out.background_features['ema20_slope'] = 1.0
+    out.background_features['ema50_slope'] = 0.8
+    out.primary_features['adx'] = 28.0
+    out.primary_features['vwap_deviation_z'] = 0.9
+    out.override_features['vwap_deviation_z'] = 1.0
+    out.override_features['trade_burst_score'] = 0.7
+    runner.run_once = lambda: out
+
+    class MissedEntryAdapter(ExecutionAdapter):
+        def __init__(self):
+            self.entry_calls = 0
+
+        def submit_entry(self, *, account: str, symbol: str, side: str, size: float, reason: str) -> ExecutionReceipt:
+            self.entry_calls += 1
+            return ExecutionReceipt(
+                accepted=True,
+                mode='okx_demo',
+                account=account,
+                symbol=symbol,
+                action='entry',
+                side=side,
+                size=size,
+                order_id='entry-1',
+                reason=reason,
+                observed_at=datetime.now(UTC),
+                raw={'account_alias': account},
+            )
+
+        def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
+            raise AssertionError('submit_exit should not be called')
+
+    adapter = MissedEntryAdapter()
+    runtime_store = RuntimeStore()
+    runtime_store.set_mode(RuntimeMode.TRADE, reason='test_trade_mode')
+    controller = RouteController(store=LiveStateStore(path=tmp_path / 'live-state.json'), routes=RouteRegistry(path=tmp_path / 'routes.json'))
+    pipe = ExecutionPipeline(regime_runner=runner, controller=controller, snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: None})(), adapter=adapter, runtime_store=runtime_store)
+    result = pipe.run_cycle(None)
+    assert adapter.entry_calls == 1
+    assert result.receipt is not None
+    assert result.local_position is not None
+    assert result.local_position.status.value == 'flat'
+    assert result.local_position.meta['strategy_stats_eligible'] == 'false'
+    assert result.local_position.meta['strategy_stats_reason'] == 'missed_entry'
+    assert result.local_position.reason == 'missed_entry_not_opened_on_exchange'

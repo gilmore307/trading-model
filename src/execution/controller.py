@@ -40,6 +40,24 @@ class RouteController:
             current.reason = detail or 'forced_exit_recovery'
             return self.store.upsert(current)
 
+    def mark_missed_entry(self, account: str, symbol: str, *, detail: str | None = None) -> LivePosition | None:
+        with self.locks.hold(account, symbol):
+            current = self.store.get(account, symbol)
+            if current is None:
+                return None
+            meta = dict(current.meta or {})
+            meta['strategy_stats_eligible'] = 'false'
+            meta['strategy_stats_reason'] = 'missed_entry'
+            meta['execution_recovery'] = 'missed_entry'
+            if detail is not None:
+                meta['execution_recovery_detail'] = detail
+            current.meta = meta
+            current.status = LivePositionStatus.FLAT
+            current.side = None
+            current.size = 0.0
+            current.reason = detail or 'missed_entry_cleared'
+            return self.store.upsert(current)
+
     def submit_entry(self, account: str, symbol: str, route: str, side: str, size: float, entry_order_id: str | None = None) -> LivePosition:
         with self.locks.hold(account, symbol):
             if not self.routes.is_enabled(account, symbol):

@@ -63,3 +63,16 @@ def test_route_controller_marks_forced_exit_recovery_metadata(tmp_path: Path):
     assert pos.meta['strategy_stats_eligible'] == 'false'
     assert pos.meta['strategy_stats_reason'] == 'forced_exit_recovery'
     assert pos.meta['execution_recovery'] == 'forced_exit'
+
+
+def test_route_controller_marks_missed_entry_and_clears_local_position(tmp_path: Path):
+    c = build_controller(tmp_path)
+    c.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'long', 1.0, entry_order_id='e1')
+    pos = c.mark_missed_entry('trend', 'BTC-USDT-SWAP', detail='missed_entry_not_opened_on_exchange')
+    assert pos is not None
+    assert pos.status == LivePositionStatus.FLAT
+    assert pos.side is None
+    assert pos.size == 0.0
+    assert pos.meta['strategy_stats_eligible'] == 'false'
+    assert pos.meta['strategy_stats_reason'] == 'missed_entry'
+    assert pos.meta['execution_recovery'] == 'missed_entry'
