@@ -85,25 +85,32 @@ def normalize_contract_amount(exchange: Any, execution_symbol: str, amount: floa
     return normalized
 
 
+def _normalize_live_position_row(position: dict[str, Any], *, expected_symbol: str | None = None) -> dict[str, Any] | None:
+    info = position.get('info') or {}
+    if info.get('instType') != 'SWAP':
+        return None
+    symbol = position.get('symbol')
+    if expected_symbol is not None and symbol != expected_symbol:
+        return None
+    contracts = float(position.get('contracts') or 0.0)
+    if contracts == 0:
+        return None
+    return {
+        'symbol': symbol,
+        'side': position.get('side'),
+        'contracts': abs(contracts),
+        'hedged': bool(position.get('hedged')),
+        'pos_side': info.get('posSide'),
+        'raw_pos': info.get('pos'),
+    }
+
+
 def live_position_snapshot(exchange: Any, execution_symbol: str) -> dict[str, Any] | None:
     positions = exchange.fetch_positions([execution_symbol])
     for position in positions:
-        info = position.get('info') or {}
-        if info.get('instType') != 'SWAP':
-            continue
-        if position.get('symbol') != execution_symbol:
-            continue
-        contracts = float(position.get('contracts') or 0.0)
-        if contracts == 0:
-            continue
-        return {
-            'symbol': position.get('symbol'),
-            'side': position.get('side'),
-            'contracts': abs(contracts),
-            'hedged': bool(position.get('hedged')),
-            'pos_side': info.get('posSide'),
-            'raw_pos': info.get('pos'),
-        }
+        normalized = _normalize_live_position_row(position, expected_symbol=execution_symbol)
+        if normalized is not None:
+            return normalized
     return None
 
 
@@ -403,6 +410,16 @@ class OkxClient:
         self.ensure_markets_loaded()
         execution_symbol = self.settings.ccxt_symbol(symbol)
         return live_position_snapshot(self.exchange, execution_symbol)
+
+    def all_live_positions(self) -> list[dict[str, Any]]:
+        self.ensure_markets_loaded()
+        positions = self.exchange.fetch_positions()
+        rows: list[dict[str, Any]] = []
+        for position in positions:
+            normalized = _normalize_live_position_row(position)
+            if normalized is not None:
+                rows.append(normalized)
+        return rows
 
     def fetch_order_fees(
         self,

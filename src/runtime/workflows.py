@@ -4,6 +4,7 @@ from dataclasses import dataclass, asdict
 from datetime import UTC, datetime
 from pathlib import Path
 import json
+import time
 
 from src.config.settings import Settings
 from src.exchange.okx_client import OkxClient
@@ -20,6 +21,8 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 WORKFLOW_LOG = OUT_DIR / 'workflow-events.jsonl'
 TEST_REPORT_JSON = OUT_DIR / 'latest-test-summary.json'
 TEST_REPORT_MD = OUT_DIR / 'latest-test-summary.md'
+CONVERSION_SETTLE_SECONDS = 5.0
+CONVERSION_VERIFY_RETRIES = 3
 
 
 @dataclass(slots=True)
@@ -181,20 +184,27 @@ class OkxWorkflowHooks(WorkflowHooks):
     def flatten_all_positions(self) -> WorkflowStepResult:
         actions = []
         errors = []
-        for strategy, account, symbol in self._account_symbol_pairs():
+        for strategy, account in self._unique_accounts():
             client = OkxClient(self.settings, self.settings.account_for_strategy(strategy))
-            live = client.current_live_position(self.settings.execution_symbol(strategy, symbol))
-            if not live:
-                continue
-            side = live.get('side')
-            amount = float(live.get('contracts') or 0.0)
-            if not side or amount <= 0:
-                continue
             try:
-                result = client.create_exit_order(self.settings.execution_symbol(strategy, symbol), side, amount)
-                actions.append(f'{account}:{symbol}:{result.get("order_id") or "submitted"}')
+                positions = client.all_live_positions()
             except Exception as exc:
-                errors.append(f'{account}:{symbol}:{exc}')
+                errors.append(f'{account}:positions:{exc}')
+                continue
+            if not positions:
+                actions.append(f'{account}:no_live_positions')
+                continue
+            for live in positions:
+                symbol = str(live.get('symbol') or '')
+                side = live.get('side')
+                amount = float(live.get('contracts') or 0.0)
+                if not symbol or not side or amount <= 0:
+                    continue
+                try:
+                    result = client.create_exit_order(symbol, str(side), amount)
+                    actions.append(f'{account}:{symbol}:{result.get("order_id") or "submitted"}')
+                except Exception as exc:
+                    errors.append(f'{account}:{symbol}:{exc}')
         return WorkflowStepResult(
             name='flatten_all_positions',
             ok=not errors,
@@ -203,11 +213,16 @@ class OkxWorkflowHooks(WorkflowHooks):
 
     def verify_flat(self) -> WorkflowStepResult:
         non_flat = []
-        for strategy, account, symbol in self._account_symbol_pairs():
+        for strategy, account in self._unique_accounts():
             client = OkxClient(self.settings, self.settings.account_for_strategy(strategy))
-            live = client.current_live_position(self.settings.execution_symbol(strategy, symbol))
-            if live and float(live.get('contracts') or 0.0) > 0.0:
-                non_flat.append(f'{account}:{symbol}:{live.get("side")}:{live.get("contracts")}')
+            try:
+                positions = client.all_live_positions()
+            except Exception as exc:
+                non_flat.append(f'{account}:positions_error:{exc}')
+                continue
+            for live in positions:
+                if float(live.get('contracts') or 0.0) > 0.0:
+                    non_flat.append(f'{account}:{live.get("symbol")}:{live.get("side")}:{live.get("contracts")}')
         return WorkflowStepResult(
             name='verify_flat',
             ok=not non_flat,
@@ -251,28 +266,40 @@ class OkxWorkflowHooks(WorkflowHooks):
 
     def verify_startup_capital(self) -> WorkflowStepResult:
         threshold = float(self.settings.buffer_capital_usdt or 0.0)
-        failures = []
+        last_failures = []
         ready = []
-        for strategy, account in self._unique_accounts():
-            client = OkxClient(self.settings, self.settings.account_for_strategy(strategy))
-            try:
-                summary = client.account_balance_summary()
-            except Exception as exc:
-                failures.append(f'{account}:balance:{exc}')
-                continue
-            usdt_available = float(summary.get('usdt_available') or 0.0)
-            non_usdt = [row.get('asset') for row in (summary.get('assets') or []) if str(row.get('asset') or '').upper() != 'USDT' and float(row.get('available') or row.get('equity') or 0.0) > 0.0]
-            if usdt_available < threshold:
-                failures.append(f'{account}:usdt_available={usdt_available}<buffer={threshold}')
-                continue
-            if non_usdt:
-                failures.append(f'{account}:residual_non_usdt={"/".join(sorted(str(x) for x in non_usdt))}')
-                continue
-            ready.append(f'{account}:usdt_available={usdt_available}')
+        for attempt in range(CONVERSION_VERIFY_RETRIES):
+            failures = []
+            ready = []
+            for strategy, account in self._unique_accounts():
+                client = OkxClient(self.settings, self.settings.account_for_strategy(strategy))
+                try:
+                    summary = client.account_balance_summary()
+                except Exception as exc:
+                    failures.append(f'{account}:balance:{exc}')
+                    continue
+                usdt_available = float(summary.get('usdt_available') or 0.0)
+                non_usdt = [row.get('asset') for row in (summary.get('assets') or []) if str(row.get('asset') or '').upper() != 'USDT' and float(row.get('available') or row.get('equity') or 0.0) > 0.0]
+                if usdt_available < threshold:
+                    failures.append(f'{account}:usdt_available={usdt_available}<buffer={threshold}')
+                    continue
+                if non_usdt:
+                    failures.append(f'{account}:residual_non_usdt={"/".join(sorted(str(x) for x in non_usdt))}')
+                    continue
+                ready.append(f'{account}:usdt_available={usdt_available}')
+            if not failures:
+                return WorkflowStepResult(
+                    name='verify_startup_capital',
+                    ok=True,
+                    detail='; '.join(ready if ready else ['ready']),
+                )
+            last_failures = failures
+            if attempt < CONVERSION_VERIFY_RETRIES - 1:
+                time.sleep(CONVERSION_SETTLE_SECONDS)
         return WorkflowStepResult(
             name='verify_startup_capital',
-            ok=not failures,
-            detail='; '.join(ready if ready else ['not_ready']) + ('' if not failures else ' | failures=' + '; '.join(failures)),
+            ok=False,
+            detail='; '.join(ready if ready else ['not_ready']) + ' | failures=' + '; '.join(last_failures),
         )
 
     def reset_bucket_state(self, destructive: bool) -> WorkflowStepResult:
