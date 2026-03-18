@@ -90,7 +90,7 @@ python -m src.runner.live_trader
 - `review` — review/report generation mode; completes into `calibrate`
 - `calibrate` — weekly operational flow: flatten, verify flat, convert non-USDT assets to USDT, verify startup capital, reset local buckets, then auto-return to `trade`
 - `reset` — development-only destructive reset: flatten / verify / bucket reset, then auto-return to `develop`
-- `test` — dedicated execution-system test mode; does not run normal strategy logic and auto-returns to `develop`
+- `test` — dedicated execution-system test mode; does not run normal strategy logic, runs a fixed demo-only stress workflow (entry -> adds -> exit on the configured test symbol/account), then auto-returns to `develop`
 
 Trade-mode safety guard:
 - before a real entry, the pipeline checks the target account has enough available USDT margin

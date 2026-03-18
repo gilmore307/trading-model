@@ -41,6 +41,9 @@ class WorkflowHooks:
     def run_review(self) -> WorkflowStepResult:
         return WorkflowStepResult(name='run_review', ok=True, detail='stub')
 
+    def run_test_workflow(self) -> WorkflowStepResult:
+        return WorkflowStepResult(name='run_test_workflow', ok=True, detail='stub')
+
     def flatten_all_positions(self) -> WorkflowStepResult:
         return WorkflowStepResult(name='flatten_all_positions', ok=True, detail='stub')
 
@@ -98,6 +101,35 @@ class OkxWorkflowHooks(WorkflowHooks):
             )
         except Exception as exc:
             return WorkflowStepResult(name='run_review', ok=False, detail=str(exc))
+
+    def run_test_workflow(self) -> WorkflowStepResult:
+        try:
+            self.settings.ensure_demo_only()
+            symbol = self.settings.test_symbols[0]
+            account_alias = self.settings.test_account_alias
+            account = self.settings.strategy_accounts[account_alias]
+            client = OkxClient(self.settings, account)
+            total_actions: list[str] = []
+            for cycle in range(self.settings.test_cycles):
+                side = 'long'
+                if self.settings.test_reverse_signal and cycle % 2 == 1:
+                    side = 'short'
+                entry = client.create_entry_order(symbol, side, float(self.settings.test_entry_usdt))
+                total_actions.append(f'cycle={cycle + 1}:entry:{side}:{entry.get("order_id") or "submitted"}')
+                current_open_amount = float(entry.get('live_contracts') or entry.get('amount') or 0.0)
+                for add_idx in range(self.settings.test_add_count):
+                    add = client.create_entry_order(symbol, side, float(self.settings.test_add_usdt), current_open_amount=current_open_amount)
+                    current_open_amount = float(add.get('live_contracts') or (current_open_amount + float(add.get('amount') or 0.0)))
+                    total_actions.append(f'cycle={cycle + 1}:add={add_idx + 1}:{side}:{add.get("order_id") or "submitted"}')
+                live = client.current_live_position(symbol)
+                if live and float(live.get('contracts') or 0.0) > 0.0 and live.get('side'):
+                    exit_result = client.create_exit_order(symbol, str(live.get('side')), float(live.get('contracts') or 0.0))
+                    total_actions.append(f'cycle={cycle + 1}:exit:{exit_result.get("order_id") or "submitted"}')
+                else:
+                    total_actions.append(f'cycle={cycle + 1}:exit_skipped:no_live_position')
+            return WorkflowStepResult(name='run_test_workflow', ok=True, detail='; '.join(total_actions) if total_actions else 'no_test_actions')
+        except Exception as exc:
+            return WorkflowStepResult(name='run_test_workflow', ok=False, detail=str(exc))
 
     def flatten_all_positions(self) -> WorkflowStepResult:
         actions = []
@@ -218,7 +250,7 @@ class RuntimeWorkflowRunner:
             f.write(json.dumps(asdict(result), default=str, ensure_ascii=False) + '\n')
 
     def run(self, mode: RuntimeMode) -> WorkflowRunResult:
-        if mode not in {RuntimeMode.REVIEW, RuntimeMode.CALIBRATE, RuntimeMode.RESET}:
+        if mode not in {RuntimeMode.REVIEW, RuntimeMode.TEST, RuntimeMode.CALIBRATE, RuntimeMode.RESET}:
             raise ValueError(f'workflow mode not supported: {mode}')
 
         started_mode = self.runtime_store.get().mode
@@ -228,6 +260,10 @@ class RuntimeWorkflowRunner:
         if mode == RuntimeMode.REVIEW:
             steps = [
                 self.hooks.run_review(),
+            ]
+        elif mode == RuntimeMode.TEST:
+            steps = [
+                self.hooks.run_test_workflow(),
             ]
         else:
             steps = [

@@ -11,6 +11,10 @@ class DummyHooks(WorkflowHooks):
         self.calls.append('run_review')
         return super().run_review()
 
+    def run_test_workflow(self):
+        self.calls.append('run_test_workflow')
+        return super().run_test_workflow()
+
     def flatten_all_positions(self):
         self.calls.append('flatten')
         return super().flatten_all_positions()
@@ -40,6 +44,16 @@ def test_review_workflow_runs_review_and_returns_to_calibrate():
     assert hooks.calls == ['run_review']
     assert result.ended_mode == 'calibrate'
     assert store.get().mode == RuntimeMode.CALIBRATE
+
+
+def test_test_workflow_runs_dedicated_test_actions_and_returns_to_develop():
+    store = RuntimeStore()
+    hooks = DummyHooks()
+    runner = RuntimeWorkflowRunner(runtime_store=store, hooks=hooks)
+    result = runner.run(RuntimeMode.TEST)
+    assert hooks.calls == ['run_test_workflow']
+    assert result.ended_mode == 'develop'
+    assert store.get().mode == RuntimeMode.DEVELOP
 
 
 def test_calibrate_workflow_includes_flatten_convert_verify_reset_and_returns_to_trade():

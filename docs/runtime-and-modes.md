@@ -14,6 +14,9 @@ Document the runtime mode model and operational meaning of each mode.
 - `calibrate` — weekly operational flow: flatten, verify flat, convert non-USDT assets to USDT, verify startup capital, reset local buckets, then auto-return to `trade`
 - `reset` — development-only destructive reset: flatten, verify flat, convert residual assets if needed, rebuild/reset local bucket state, then auto-return to `develop`
 - `test` — dedicated execution-system test mode; does not run normal strategy logic and should return to `develop`
+  - workflow: fixed demo-only stress cycle on the configured test symbol/account
+  - default pattern: entry -> add(s) -> exit, repeated for `TEST_CYCLES`
+  - safeguard: refuses to run unless `OKX_DEMO=true`
 
 ## User terminology
 
