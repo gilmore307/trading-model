@@ -242,14 +242,28 @@ def test_report_scaffold_surfaces_execution_quality_dual_ledger(tmp_path: Path):
             },
             'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': False}]},
         },
+        {
+            'summary': {
+                'plan_account': 'meanrev', 'plan_action': 'enter', 'receipt_accepted': True,
+                'strategy_stats_eligible': False, 'strategy_stats_reason': 'missed_entry',
+                'account_metrics': {'meanrev': {'pnl_usdt': 0.0}},
+            },
+            'compare_snapshot': {'accounts': [{'account': 'meanrev', 'has_position': False}]},
+        },
     ]
     history.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
     window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
     report = build_report_scaffold(window, history_path=str(history))
     eq = report['metrics']['execution_quality']
     assert eq['clean_trade_count'] == 1
-    assert eq['excluded_trade_count'] == 1
+    assert eq['excluded_trade_count'] == 2
     assert eq['excluded_pnl_usdt'] == -2.5
     section = next(section for section in report['sections'] if section['key'] == 'execution_quality')
     assert section['status'] == 'ready'
     assert any(row['reason'] == 'forced_exit_recovery' for row in eq['top_excluded_reasons'])
+    assert any(row['reason'] == 'missed_entry' for row in eq['top_excluded_reasons'])
+    breakdown = {row['reason']: row for row in eq['anomaly_breakdown']}
+    assert breakdown['forced_exit_recovery']['count'] == 1
+    assert breakdown['forced_exit_recovery']['pnl_usdt'] == -2.5
+    assert breakdown['missed_entry']['count'] == 1
+    assert breakdown['missed_entry']['accounts'] == ['meanrev']

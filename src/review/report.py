@@ -167,6 +167,7 @@ def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict
     reasons: dict[str, int] = {}
     excluded_pnl_usdt = 0.0
     excluded_rows: list[dict[str, Any]] = []
+    anomaly_groups: dict[str, dict[str, Any]] = {}
     for row in history_rows:
         summary = row.get('summary') if isinstance(row.get('summary'), dict) else {}
         eligible = bool(summary.get('strategy_stats_eligible', False))
@@ -182,23 +183,35 @@ def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict
         if account in metrics and isinstance(metrics.get(account), dict):
             pnl = _row_pnl(metrics[account])
         excluded_pnl_usdt += pnl
-        excluded_rows.append({'account': account, 'reason': reason, 'pnl_usdt': pnl})
+        sample = {'account': account, 'reason': reason, 'pnl_usdt': pnl}
+        excluded_rows.append(sample)
+        group = anomaly_groups.setdefault(reason, {'reason': reason, 'count': 0, 'pnl_usdt': 0.0, 'accounts': [], 'samples': []})
+        group['count'] += 1
+        group['pnl_usdt'] = round(float(group['pnl_usdt']) + pnl, 10)
+        if account is not None and account not in group['accounts']:
+            group['accounts'].append(account)
+        if len(group['samples']) < 5:
+            group['samples'].append(sample)
     top_excluded_reasons = [
         {'reason': key, 'count': value}
         for key, value in sorted(reasons.items(), key=lambda item: (-item[1], item[0]))
     ]
+    anomaly_breakdown = sorted(anomaly_groups.values(), key=lambda item: (-int(item['count']), str(item['reason'])))
     return {
         'clean_trade_count': clean,
         'excluded_trade_count': excluded,
         'excluded_pnl_usdt': round(excluded_pnl_usdt, 10),
         'top_excluded_reasons': top_excluded_reasons,
         'excluded_samples': excluded_rows[:20],
+        'anomaly_breakdown': anomaly_breakdown,
         'status': 'ready' if history_rows else 'placeholder',
     }
 
 
 def _build_execution_quality_section(execution_quality: dict[str, Any]) -> dict[str, Any]:
     items = []
+    if execution_quality.get('anomaly_breakdown'):
+        items.append({'kind': 'anomaly_breakdown', 'rows': execution_quality.get('anomaly_breakdown', [])})
     if execution_quality.get('top_excluded_reasons'):
         items.append({'kind': 'excluded_reasons', 'rows': execution_quality.get('top_excluded_reasons', [])})
     if execution_quality.get('excluded_samples'):
@@ -453,7 +466,12 @@ def _build_narrative_blocks(executive_summary: dict[str, Any], sections: list[di
         elif key == 'execution_quality' and section.get('status') == 'ready':
             lines = []
             for item in section.get('items', []):
-                if item.get('kind') == 'excluded_reasons':
+                if item.get('kind') == 'anomaly_breakdown':
+                    for row in item.get('rows', [])[:5]:
+                        lines.append(
+                            f"anomaly {row.get('reason')}: count={row.get('count')} pnl={row.get('pnl_usdt')} accounts={','.join(row.get('accounts', []))}"
+                        )
+                elif item.get('kind') == 'excluded_reasons':
                     for row in item.get('rows', [])[:5]:
                         lines.append(f"excluded_reason {row.get('reason')}: {row.get('count')}")
                 elif item.get('kind') == 'excluded_samples':

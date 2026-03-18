@@ -29,6 +29,23 @@ def test_render_report_markdown_contains_core_sections():
     assert '## Parameter Review' in markdown
 
 
+def test_render_report_markdown_includes_execution_quality_block(tmp_path: Path):
+    history = tmp_path / 'execution-cycles.jsonl'
+    history.write_text(json.dumps({
+        'summary': {
+            'plan_account': 'trend', 'plan_action': 'exit', 'receipt_accepted': True,
+            'strategy_stats_eligible': False, 'strategy_stats_reason': 'forced_exit_recovery',
+            'account_metrics': {'trend': {'pnl_usdt': -1.25}},
+        },
+        'compare_snapshot': {'accounts': [{'account': 'trend', 'has_position': False}]}
+    }) + '\n', encoding='utf-8')
+    window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
+    report = build_report_scaffold(window, history_path=str(history))
+    markdown = render_report_markdown(report)
+    assert '## Execution Quality' in markdown
+    assert 'anomaly forced_exit_recovery: count=1 pnl=-1.25 accounts=trend' in markdown
+
+
 def test_export_report_artifacts_writes_json_and_markdown(tmp_path: Path):
     window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
     exported = export_report_artifacts(
