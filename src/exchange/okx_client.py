@@ -208,12 +208,25 @@ def account_balance_summary(balance: dict[str, Any] | None, *, account_alias: st
             eq_usd = _safe_float(row.get('eqUsd'))
             avail = _safe_float(row.get('availEq') or row.get('availBal') or row.get('cashBal'))
             upl = _safe_float(row.get('upl'))
+            liab = _safe_float(row.get('liab'))
+            cross_liab = _safe_float(row.get('crossLiab'))
+            iso_liab = _safe_float(row.get('isoLiab'))
+            interest = _safe_float(row.get('interest'))
+            upl_liab = _safe_float(row.get('uplLiab'))
+            notional_lever = _safe_float(row.get('notionalLever'))
             assets.append({
                 'asset': ccy,
                 'equity': eq,
                 'equity_usdt': eq_usd,
                 'available': avail,
                 'unrealized_pnl_usdt': upl,
+                'liability': liab,
+                'cross_liability': cross_liab,
+                'isolated_liability': iso_liab,
+                'interest': interest,
+                'upl_liability': upl_liab,
+                'notional_leverage': notional_lever,
+                'margin_ratio': row.get('mgnRatio'),
             })
             if ccy == 'USDT':
                 equity = eq_usd if eq_usd is not None else eq
@@ -393,6 +406,38 @@ class OkxClient:
             rows.append({
                 'asset': asset,
                 'amount': amount,
+                'account_alias': self.account_alias,
+                'account_label': self.account_label,
+            })
+        return rows
+
+    def margin_exposure_summary(self) -> list[dict[str, Any]]:
+        summary = self.account_balance_summary()
+        assets = summary.get('assets') or []
+        rows = []
+        for row in assets:
+            asset = str(row.get('asset') or '').upper()
+            if not asset:
+                continue
+            liability = _safe_float(row.get('liability')) or 0.0
+            cross_liability = _safe_float(row.get('cross_liability')) or 0.0
+            isolated_liability = _safe_float(row.get('isolated_liability')) or 0.0
+            interest = _safe_float(row.get('interest')) or 0.0
+            leverage = _safe_float(row.get('notional_leverage')) or 0.0
+            available = _safe_float(row.get('available')) or 0.0
+            equity = _safe_float(row.get('equity')) or 0.0
+            if max(abs(liability), abs(cross_liability), abs(isolated_liability), abs(interest), abs(leverage)) <= 0:
+                continue
+            rows.append({
+                'asset': asset,
+                'available': available,
+                'equity': equity,
+                'liability': liability,
+                'cross_liability': cross_liability,
+                'isolated_liability': isolated_liability,
+                'interest': interest,
+                'notional_leverage': leverage,
+                'margin_ratio': row.get('margin_ratio'),
                 'account_alias': self.account_alias,
                 'account_label': self.account_label,
             })

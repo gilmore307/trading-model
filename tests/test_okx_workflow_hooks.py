@@ -23,9 +23,10 @@ class FakeBucketStore:
 
 
 class FakeClient:
-    def __init__(self, positions=None, summaries=None):
+    def __init__(self, positions=None, summaries=None, margin_exposures=None):
         self._positions = list(positions or [])
         self._summaries = list(summaries or [])
+        self._margin_exposures = list(margin_exposures or [])
         self.exit_calls = []
 
     def all_live_positions(self):
@@ -39,6 +40,9 @@ class FakeClient:
         if self._summaries:
             return self._summaries.pop(0)
         return {'usdt_available': 1000.0, 'assets': [{'asset': 'USDT', 'available': 1000.0, 'equity': 1000.0}]}
+
+    def margin_exposure_summary(self):
+        return list(self._margin_exposures)
 
     def non_usdt_assets(self):
         return []

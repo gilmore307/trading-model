@@ -280,6 +280,28 @@ def test_account_balance_summary_extracts_usdt_equity_and_upl():
     assert summary['pnl_usdt'] == 20.25
 
 
+def test_account_balance_summary_keeps_margin_liability_fields():
+    summary = account_balance_summary(
+        {
+            'info': {
+                'details': [
+                    {'ccy': 'BTC', 'eq': '0.02', 'availEq': '0.01', 'liab': '0.005', 'crossLiab': '0.004', 'isoLiab': '0', 'interest': '0.0001', 'notionalLever': '5', 'mgnRatio': '9.5'},
+                ],
+            }
+        },
+        account_alias='trend',
+        account_label='Trend',
+    )
+    row = summary['assets'][0]
+    assert row['asset'] == 'BTC'
+    assert row['liability'] == 0.005
+    assert row['cross_liability'] == 0.004
+    assert row['isolated_liability'] == 0.0
+    assert row['interest'] == 0.0001
+    assert row['notional_leverage'] == 5.0
+    assert row['margin_ratio'] == '9.5'
+
+
 def test_okx_client_registry_reuses_clients_by_account_alias():
     settings = FakeSettings()
     registry = OkxClientRegistry(settings)

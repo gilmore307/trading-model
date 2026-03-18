@@ -279,12 +279,23 @@ class OkxWorkflowHooks(WorkflowHooks):
                     failures.append(f'{account}:balance:{exc}')
                     continue
                 usdt_available = float(summary.get('usdt_available') or 0.0)
-                non_usdt = [row.get('asset') for row in (summary.get('assets') or []) if str(row.get('asset') or '').upper() != 'USDT' and float(row.get('available') or row.get('equity') or 0.0) > 0.0]
+                margin_exposures = client.margin_exposure_summary()
+                non_usdt = [
+                    f"{row.get('asset')}(avail={row.get('available')},eq={row.get('equity')},liab={row.get('liability')},cross={row.get('cross_liability')},iso={row.get('isolated_liability')},lev={row.get('notional_leverage')})"
+                    for row in (summary.get('assets') or [])
+                    if str(row.get('asset') or '').upper() != 'USDT' and float(row.get('available') or row.get('equity') or 0.0) > 0.0
+                ]
                 if usdt_available < threshold:
                     failures.append(f'{account}:usdt_available={usdt_available}<buffer={threshold}')
                     continue
+                if margin_exposures:
+                    failures.append('margin_exposure=' + ';'.join(
+                        f"{account}:{row.get('asset')}:liab={row.get('liability')}:cross={row.get('cross_liability')}:iso={row.get('isolated_liability')}:lev={row.get('notional_leverage')}:mgn={row.get('margin_ratio')}"
+                        for row in margin_exposures
+                    ))
+                    continue
                 if non_usdt:
-                    failures.append(f'{account}:residual_non_usdt={"/".join(sorted(str(x) for x in non_usdt))}')
+                    failures.append(f'{account}:residual_non_usdt=' + '|'.join(sorted(str(x) for x in non_usdt)))
                     continue
                 ready.append(f'{account}:usdt_available={usdt_available}')
             if not failures:
