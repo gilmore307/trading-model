@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 
 from src.config.settings import Settings
-from src.execution.adapters import DryRunExecutionAdapter, ExecutionAdapter, ExecutionReceipt
+from src.execution.adapters import DryRunExecutionAdapter, ExecutionAdapter, ExecutionReceipt, OkxExecutionAdapter
 from src.execution.controller import RouteController, RouteControlResult
 from src.execution.exchange_snapshot import ExchangeSnapshotProvider
 from src.reconcile.alignment import ExchangePositionSnapshot
@@ -94,6 +94,30 @@ class ExecutionPipeline:
             decision_summary={'regime': 'idle', 'confidence': 0.0, 'tradable': False, 'account': None, 'strategy_family': None, 'trade_enabled': False, 'allow_reason': None, 'block_reason': 'strategy_execution_disabled', 'reasons': ['strategy_execution_disabled'], 'secondary': [], 'diagnostics': ['strategy_execution_disabled']},
         )
 
+    def _entry_preflight(self, account: str, symbol: str, size: float | None) -> tuple[bool, str | None]:
+        if not isinstance(self.adapter, OkxExecutionAdapter):
+            return True, None
+        try:
+            strategy_name = self.settings.strategy_for_account_alias(account) or account
+            client = self.adapter._client(account)
+            summary = client.account_balance_summary()
+        except Exception as exc:
+            return False, f'preflight_balance_check_failed:{exc}'
+
+        usdt_available = float(summary.get('usdt_available') or 0.0)
+        notional_needed = float(self.settings.default_order_size_usdt) * float(size or 0.0)
+        threshold = notional_needed + float(self.settings.buffer_capital_usdt or 0.0)
+        non_usdt_assets = [
+            str(row.get('asset')) for row in (summary.get('assets') or [])
+            if str(row.get('asset') or '').upper() != 'USDT' and float(row.get('available') or row.get('equity') or 0.0) > 0.0
+        ]
+        if non_usdt_assets:
+            return False, 'preflight_requires_calibrate:non_usdt_assets=' + '/'.join(sorted(non_usdt_assets))
+        if usdt_available < threshold:
+            execution_symbol = self.settings.execution_symbol(strategy_name, symbol)
+            return False, f'preflight_insufficient_usdt_margin:{account}:{execution_symbol}:available={usdt_available}:required={threshold}'
+        return True, None
+
     def run_cycle(self, exchange_snapshot: ExchangePositionSnapshot | None = None) -> ExecutionCycleResult:
         mode = self.runtime_store.get().mode
         mode_policy = policy_for_mode(mode)
@@ -126,6 +150,14 @@ class ExecutionPipeline:
             trace.allow_reason = None
             trace.diagnostics.append('route_frozen')
             plan = ExecutionPlan(regime=plan.regime, account=plan.account, action='hold', reason=frozen_reason)
+
+        if plan.account is not None and plan.action == 'enter':
+            preflight_ok, preflight_reason = self._entry_preflight(plan.account, regime_output.symbol, plan.size)
+            if not preflight_ok:
+                trace.block_reason = preflight_reason
+                trace.allow_reason = None
+                trace.diagnostics.append('preflight_blocked')
+                plan = ExecutionPlan(regime=plan.regime, account=plan.account, action='hold', reason=preflight_reason)
 
         trace.pipeline_trade_enabled = plan.action != 'hold' or plan.account is not None
 

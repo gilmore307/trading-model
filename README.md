@@ -85,12 +85,17 @@ python -m src.runner.live_trader
 ```
 
 ## Modes
-- `develop` — development / debugging mode; should not intentionally progress into normal trading workflows
-- `trade` — normal trading mode
+- `develop` — idle development / maintenance mode; should not run normal strategy workflows
+- `trade` — normal trading mode; the only mode that runs normal strategy routing/execution
 - `review` — review/report generation mode; completes into `calibrate`
-- `calibrate` — weekly operational flow: flatten, convert to USDT, reset local buckets, then auto-return to `trade`
-- `reset` — development-only destructive reset: backup + clear runtime/history artifacts + rebuild buckets, then auto-return to `test`
-- `test` — buffer-funded stress test mode on fixed test symbol `XRP-USDT-SWAP`, routed through the Breakout account, then auto-return to `develop`
+- `calibrate` — weekly operational flow: flatten, verify flat, convert non-USDT assets to USDT, verify startup capital, reset local buckets, then auto-return to `trade`
+- `reset` — development-only destructive reset: flatten / verify / bucket reset, then auto-return to `develop`
+- `test` — dedicated execution-system test mode; does not run normal strategy logic and auto-returns to `develop`
+
+Trade-mode safety guard:
+- before a real entry, the pipeline now checks the target account for residual non-USDT assets and minimum available USDT margin
+- if residual non-USDT assets remain, trade mode blocks entry and requires `calibrate`
+- if available USDT is below `planned_notional + BUFFER_CAPITAL_USDT`, trade mode blocks entry before order submission
 
 To simulate a run **without** persisting state:
 ```bash
