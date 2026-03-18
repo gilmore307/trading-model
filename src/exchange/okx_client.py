@@ -684,6 +684,43 @@ class OkxClient:
         if amount <= 0:
             return {'asset': asset, 'skipped': True, 'reason': 'non_positive_amount'}
 
+        amount_str = str(amount)
+        convert_error = None
+        try:
+            quote = self.spot_exchange.privatePostAssetConvertEstimateQuote({
+                'baseCcy': asset,
+                'quoteCcy': 'USDT',
+                'side': 'sell',
+                'rfqSz': amount_str,
+                'rfqSzCcy': asset,
+            })
+            quote_row = ((quote or {}).get('data') or [None])[0]
+            if isinstance(quote_row, dict) and quote_row.get('quoteId'):
+                trade = self.spot_exchange.privatePostAssetConvertTrade({
+                    'baseCcy': asset,
+                    'quoteCcy': 'USDT',
+                    'side': 'sell',
+                    'sz': quote_row.get('rfqSz') or amount_str,
+                    'szCcy': quote_row.get('rfqSzCcy') or asset,
+                    'quoteId': quote_row.get('quoteId'),
+                })
+                trade_row = ((trade or {}).get('data') or [None])[0]
+                return {
+                    'asset': asset,
+                    'symbol': f'{asset}/USDT',
+                    'side': 'sell',
+                    'amount': amount,
+                    'convert': True,
+                    'quote_id': quote_row.get('quoteId'),
+                    'order_id': None if not isinstance(trade_row, dict) else trade_row.get('tradeId') or trade_row.get('fillId') or trade_row.get('orderId'),
+                    'status': None if not isinstance(trade_row, dict) else trade_row.get('state') or trade_row.get('status'),
+                    'account_alias': self.account_alias,
+                    'account_label': self.account_label,
+                    'raw': trade,
+                }
+        except Exception as exc:
+            convert_error = str(exc)
+
         if not getattr(self.spot_exchange, 'markets', None):
             self.spot_exchange.load_markets()
         symbol = f'{asset}/USDT'
@@ -696,13 +733,16 @@ class OkxClient:
                 'skipped': True,
                 'reason': f'amount_below_min:{sell_amount}<{min_amount}',
                 'symbol': symbol,
+                'convert_error': convert_error,
             }
-        order = self.spot_exchange.create_order(symbol, 'market', 'sell', sell_amount, None, {'tdMode': 'cross'})
+        order = self.spot_exchange.create_order(symbol, 'market', 'sell', sell_amount, None, {'tdMode': 'cash'})
         return {
             'asset': asset,
             'symbol': symbol,
             'side': 'sell',
             'amount': sell_amount,
+            'convert': False,
+            'convert_error': convert_error,
             'order_id': order.get('id'),
             'status': order.get('status'),
             'account_alias': self.account_alias,

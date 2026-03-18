@@ -185,7 +185,7 @@ def test_create_exit_order_normalizes_aggregated_amount_before_submit():
     assert result["amount"] == 1.82
 
 
-def test_convert_asset_to_usdt_uses_spot_cross_mode():
+def test_convert_asset_to_usdt_falls_back_to_spot_cash_mode_when_convert_unavailable():
     from src.exchange.okx_client import OkxClient
 
     client = DummyOkxClient()
@@ -197,10 +197,11 @@ def test_convert_asset_to_usdt_uses_spot_cross_mode():
         "side": "sell",
         "amount": 1.82,
         "price": None,
-        "params": {"tdMode": "cross"},
+        "params": {"tdMode": "cash"},
     }]
     assert result["symbol"] == "ETH/USDT"
     assert result["amount"] == 1.82
+    assert result["convert"] is False
     assert result["account_alias"] == "default"
 
 
