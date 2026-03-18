@@ -104,6 +104,13 @@ class ExecutionPipeline:
         except Exception as exc:
             return False, f'preflight_balance_check_failed:{exc}'
 
+        current_position = self.controller.store.get(account, symbol)
+        has_live_position = bool(
+            current_position is not None
+            and current_position.participates_in_alignment
+            and float(current_position.size or 0.0) > 0.0
+        )
+
         usdt_available = float(summary.get('usdt_available') or 0.0)
         notional_needed = float(self.settings.default_order_size_usdt) * float(size or 0.0)
         threshold = notional_needed + float(self.settings.buffer_capital_usdt or 0.0)
@@ -111,7 +118,7 @@ class ExecutionPipeline:
             str(row.get('asset')) for row in (summary.get('assets') or [])
             if str(row.get('asset') or '').upper() != 'USDT' and float(row.get('available') or row.get('equity') or 0.0) > 0.0
         ]
-        if non_usdt_assets:
+        if non_usdt_assets and not has_live_position:
             return False, 'preflight_requires_calibrate:non_usdt_assets=' + '/'.join(sorted(non_usdt_assets))
         if usdt_available < threshold:
             execution_symbol = self.settings.execution_symbol(strategy_name, symbol)

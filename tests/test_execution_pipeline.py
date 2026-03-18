@@ -378,3 +378,75 @@ def test_execution_pipeline_blocks_real_entry_when_usdt_margin_insufficient(tmp_
     assert result.receipt is None
     assert adapter.submitted is False
     assert 'preflight_blocked' in result.decision_trace.diagnostics
+
+
+def test_execution_pipeline_allows_add_signal_with_non_usdt_assets_when_live_position_exists(tmp_path: Path):
+    runner = DummyRunner(regime='trend', account='trend', trade_enabled=True)
+    out = runner.run_once()
+    out.background_features['adx'] = 32.0
+    out.background_features['ema20_slope'] = 1.0
+    out.background_features['ema50_slope'] = 0.8
+    out.primary_features['adx'] = 28.0
+    out.primary_features['vwap_deviation_z'] = 0.9
+    out.override_features['vwap_deviation_z'] = 1.0
+    out.override_features['trade_burst_score'] = 0.7
+    runner.run_once = lambda: out
+
+    class FakeClient:
+        def account_balance_summary(self):
+            return {
+                'usdt_available': 1200.0,
+                'assets': [
+                    {'asset': 'USDT', 'available': 1200.0, 'equity': 1200.0},
+                    {'asset': 'ETH', 'available': 0.3, 'equity': 0.3},
+                ],
+            }
+
+    class PreflightAdapter(OkxExecutionAdapter):
+        def __init__(self):
+            self.settings = type('S', (), {
+                'default_order_size_usdt': 100.0,
+                'buffer_capital_usdt': 500.0,
+                'strategy_for_account_alias': staticmethod(lambda account: 'trend'),
+                'execution_symbol': staticmethod(lambda strategy, symbol: symbol),
+            })()
+            self.submitted = False
+
+        def _client(self, account: str):
+            return FakeClient()
+
+        def submit_entry(self, *, account: str, symbol: str, side: str, size: float, reason: str) -> ExecutionReceipt:
+            self.submitted = True
+            return ExecutionReceipt(
+                accepted=True,
+                mode='okx_demo',
+                account=account,
+                symbol=symbol,
+                action='entry',
+                side=side,
+                size=size,
+                order_id='entry-1',
+                reason=reason,
+                observed_at=datetime.now(UTC),
+                raw={'amount': size},
+            )
+
+        def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
+            raise AssertionError('submit_exit should not be called')
+
+    adapter = PreflightAdapter()
+    runtime_store = RuntimeStore()
+    runtime_store.set_mode(RuntimeMode.TRADE, reason='test_trade_mode')
+    controller = RouteController(store=LiveStateStore(path=tmp_path / 'live-state.json'), routes=RouteRegistry(path=tmp_path / 'routes.json'))
+    controller.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'long', 1.0, entry_order_id='existing')
+    existing = controller.store.get('trend', 'BTC-USDT-SWAP')
+    assert existing is not None
+    existing.status = existing.status.OPEN
+    controller.store.upsert(existing)
+    pipe = ExecutionPipeline(regime_runner=runner, controller=controller, snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=1.2)})(), adapter=adapter, runtime_store=runtime_store, settings=adapter.settings)
+    result = pipe.run_cycle(None)
+    assert result.plan.action == 'enter'
+    assert result.receipt is not None
+    assert result.receipt.accepted is True
+    assert adapter.submitted is True
+    assert result.plan.reason == 'trend_follow_through_confirmed'
