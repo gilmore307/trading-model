@@ -271,61 +271,6 @@ def test_execution_pipeline_prefers_post_submit_exchange_contracts_over_receipt_
     assert result.reconcile_result.alignment.ok is True
 
 
-def test_execution_pipeline_blocks_real_entry_when_non_usdt_assets_present(tmp_path: Path):
-    runner = DummyRunner(regime='trend', account='trend', trade_enabled=True)
-    out = runner.run_once()
-    out.background_features['adx'] = 32.0
-    out.background_features['ema20_slope'] = 1.0
-    out.background_features['ema50_slope'] = 0.8
-    out.primary_features['adx'] = 28.0
-    out.primary_features['vwap_deviation_z'] = 0.9
-    out.override_features['vwap_deviation_z'] = 1.0
-    out.override_features['trade_burst_score'] = 0.7
-    runner.run_once = lambda: out
-
-    class FakeClient:
-        def account_balance_summary(self):
-            return {
-                'usdt_available': 1200.0,
-                'assets': [
-                    {'asset': 'USDT', 'available': 1200.0, 'equity': 1200.0},
-                    {'asset': 'ETH', 'available': 0.3, 'equity': 0.3},
-                ],
-            }
-
-    class PreflightAdapter(OkxExecutionAdapter):
-        def __init__(self):
-            self.settings = type('S', (), {
-                'default_order_size_usdt': 100.0,
-                'buffer_capital_usdt': 500.0,
-                'strategy_for_account_alias': staticmethod(lambda account: 'trend'),
-                'execution_symbol': staticmethod(lambda strategy, symbol: symbol),
-            })()
-            self.submitted = False
-
-        def _client(self, account: str):
-            return FakeClient()
-
-        def submit_entry(self, *, account: str, symbol: str, side: str, size: float, reason: str) -> ExecutionReceipt:
-            self.submitted = True
-            raise AssertionError('submit_entry should be blocked by preflight')
-
-        def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
-            raise AssertionError('submit_exit should not be called')
-
-    adapter = PreflightAdapter()
-    runtime_store = RuntimeStore()
-    runtime_store.set_mode(RuntimeMode.TRADE, reason='test_trade_mode')
-    controller = RouteController(store=LiveStateStore(path=tmp_path / 'live-state.json'), routes=RouteRegistry(path=tmp_path / 'routes.json'))
-    pipe = ExecutionPipeline(regime_runner=runner, controller=controller, snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: None})(), adapter=adapter, runtime_store=runtime_store, settings=adapter.settings)
-    result = pipe.run_cycle(None)
-    assert result.plan.action == 'hold'
-    assert result.plan.reason == 'preflight_requires_calibrate:non_usdt_assets=ETH'
-    assert result.receipt is None
-    assert adapter.submitted is False
-    assert 'preflight_blocked' in result.decision_trace.diagnostics
-
-
 def test_execution_pipeline_blocks_real_entry_when_usdt_margin_insufficient(tmp_path: Path):
     runner = DummyRunner(regime='trend', account='trend', trade_enabled=True)
     out = runner.run_once()
@@ -380,7 +325,7 @@ def test_execution_pipeline_blocks_real_entry_when_usdt_margin_insufficient(tmp_
     assert 'preflight_blocked' in result.decision_trace.diagnostics
 
 
-def test_execution_pipeline_allows_add_signal_with_non_usdt_assets_when_live_position_exists(tmp_path: Path):
+def test_execution_pipeline_allows_entry_when_funds_sufficient_even_if_non_usdt_assets_exist(tmp_path: Path):
     runner = DummyRunner(regime='trend', account='trend', trade_enabled=True)
     out = runner.run_once()
     out.background_features['adx'] = 32.0
@@ -438,11 +383,6 @@ def test_execution_pipeline_allows_add_signal_with_non_usdt_assets_when_live_pos
     runtime_store = RuntimeStore()
     runtime_store.set_mode(RuntimeMode.TRADE, reason='test_trade_mode')
     controller = RouteController(store=LiveStateStore(path=tmp_path / 'live-state.json'), routes=RouteRegistry(path=tmp_path / 'routes.json'))
-    controller.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'long', 1.0, entry_order_id='existing')
-    existing = controller.store.get('trend', 'BTC-USDT-SWAP')
-    assert existing is not None
-    existing.status = existing.status.OPEN
-    controller.store.upsert(existing)
     pipe = ExecutionPipeline(regime_runner=runner, controller=controller, snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=1.2)})(), adapter=adapter, runtime_store=runtime_store, settings=adapter.settings)
     result = pipe.run_cycle(None)
     assert result.plan.action == 'enter'

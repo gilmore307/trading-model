@@ -8,6 +8,8 @@ Document the runtime mode model and operational meaning of each mode.
 
 - `develop` — idle development / maintenance mode; do not run normal strategy execution or routing
 - `trade` — normal trading mode; the only mode that runs normal strategy routing and real execution
+  - runtime check: only verify enough available USDT margin before a real entry
+  - do not decide whether to run `calibrate` inside normal trade execution; `calibrate` is the fixed gate after `review`
 - `review` — review/report generation mode; runs review artifacts only, then auto-transitions into `calibrate`
 - `calibrate` — weekly operational flow: flatten, verify flat, convert non-USDT assets to USDT, verify startup capital, reset local buckets, then auto-return to `trade`
 - `reset` — development-only destructive reset: flatten, verify flat, convert residual assets if needed, rebuild/reset local bucket state, then auto-return to `develop`

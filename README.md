@@ -93,9 +93,9 @@ python -m src.runner.live_trader
 - `test` — dedicated execution-system test mode; does not run normal strategy logic and auto-returns to `develop`
 
 Trade-mode safety guard:
-- before a real entry, the pipeline now checks the target account for residual non-USDT assets and minimum available USDT margin
-- if residual non-USDT assets remain, trade mode blocks entry and requires `calibrate`
+- before a real entry, the pipeline checks the target account has enough available USDT margin
 - if available USDT is below `planned_notional + BUFFER_CAPITAL_USDT`, trade mode blocks entry before order submission
+- `calibrate` remains a mandatory workflow gate between `review` and `trade`, not a runtime trade-mode branch
 
 To simulate a run **without** persisting state:
 ```bash
