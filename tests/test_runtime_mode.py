@@ -7,6 +7,9 @@ from src.runtime.workflow import next_mode_after
 def test_mode_policy_semantics_match_project_rules():
     assert policy_for_mode(RuntimeMode.TRADE).allow_strategy_execution is True
     assert policy_for_mode(RuntimeMode.TRADE).force_dry_run is False
+    assert policy_for_mode(RuntimeMode.DEVELOP).allow_strategy_execution is False
+    assert policy_for_mode(RuntimeMode.TEST).allow_strategy_execution is False
+    assert policy_for_mode(RuntimeMode.REVIEW).allow_normal_routing is False
     assert policy_for_mode(RuntimeMode.CALIBRATE).allow_normal_routing is False
     assert policy_for_mode(RuntimeMode.CALIBRATE).requires_flatten_workflow is True
     assert policy_for_mode(RuntimeMode.RESET).requires_flatten_workflow is True
@@ -20,6 +23,7 @@ def test_runtime_store_changes_mode():
 
 
 def test_workflow_auto_transitions():
+    assert next_mode_after(RuntimeMode.REVIEW).to_mode == RuntimeMode.CALIBRATE
     assert next_mode_after(RuntimeMode.CALIBRATE).to_mode == RuntimeMode.TRADE
     assert next_mode_after(RuntimeMode.RESET).to_mode == RuntimeMode.DEVELOP
     assert next_mode_after(RuntimeMode.TEST).to_mode == RuntimeMode.DEVELOP

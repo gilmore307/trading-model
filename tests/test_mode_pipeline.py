@@ -24,24 +24,25 @@ class DummyRunner:
         )
 
 
-def test_calibrate_mode_blocks_normal_routing():
+def test_calibrate_mode_blocks_strategy_execution_and_normal_routing():
     store = RuntimeStore()
     store.set_mode(RuntimeMode.CALIBRATE, 'weekly')
     pipe = ExecutionPipeline(regime_runner=DummyRunner(), snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: None})(), runtime_store=store)
     result = pipe.run_cycle(None)
     assert result.plan.action == 'hold'
-    assert result.plan.reason == 'mode_blocked:calibrate'
-    assert result.decision_trace.block_reason == 'mode_blocked:calibrate'
-    assert 'mode_blocked' in result.decision_trace.diagnostics
+    assert result.plan.reason == 'mode_no_strategy:calibrate'
+    assert result.decision_trace.block_reason == 'mode_no_strategy:calibrate'
+    assert 'strategy_execution_disabled' in result.decision_trace.diagnostics
 
 
-def test_develop_mode_forces_dry_run_adapter_behavior():
+def test_develop_mode_blocks_strategy_execution_and_stays_idle():
     store = RuntimeStore()
     store.set_mode(RuntimeMode.DEVELOP, 'dev')
     pipe = ExecutionPipeline(regime_runner=DummyRunner(), snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: None})(), runtime_store=store)
     result = pipe.run_cycle(None)
-    assert result.receipt is not None
-    assert result.receipt.mode == 'dry_run'
-    assert result.decision_trace.pipeline_trade_enabled is True
-    assert result.decision_trace.block_reason == 'alignment_requires_manual_or_delayed_confirmation'
-    assert 'verify_only' in result.decision_trace.diagnostics
+    assert result.receipt is None
+    assert result.plan.action == 'hold'
+    assert result.plan.reason == 'mode_no_strategy:develop'
+    assert result.decision_trace.pipeline_trade_enabled is False
+    assert result.decision_trace.block_reason == 'mode_no_strategy:develop'
+    assert 'strategy_execution_disabled' in result.decision_trace.diagnostics

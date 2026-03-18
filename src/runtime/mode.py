@@ -7,5 +7,6 @@ class RuntimeMode(StrEnum):
     DEVELOP = 'develop'
     TEST = 'test'
     TRADE = 'trade'
+    REVIEW = 'review'
     CALIBRATE = 'calibrate'
     RESET = 'reset'

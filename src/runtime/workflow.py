@@ -13,6 +13,7 @@ class WorkflowTransition:
 
 
 AUTO_TRANSITIONS: dict[RuntimeMode, WorkflowTransition] = {
+    RuntimeMode.REVIEW: WorkflowTransition(from_mode=RuntimeMode.REVIEW, to_mode=RuntimeMode.CALIBRATE, reason='review_complete_enter_calibrate'),
     RuntimeMode.CALIBRATE: WorkflowTransition(from_mode=RuntimeMode.CALIBRATE, to_mode=RuntimeMode.TRADE, reason='calibrate_complete_return_to_trade'),
     RuntimeMode.RESET: WorkflowTransition(from_mode=RuntimeMode.RESET, to_mode=RuntimeMode.DEVELOP, reason='reset_complete_return_to_develop'),
     RuntimeMode.TEST: WorkflowTransition(from_mode=RuntimeMode.TEST, to_mode=RuntimeMode.DEVELOP, reason='test_complete_return_to_develop'),

@@ -79,13 +79,34 @@ class ExecutionPipeline:
             diagnostics=list(summary.get('diagnostics', [])),
         )
 
+    def _idle_regime_output(self) -> RegimeRunnerOutput:
+        return RegimeRunnerOutput(
+            observed_at=self.runtime_store.get().updated_at,
+            symbol='BTC-USDT-SWAP',
+            background_4h={'primary': 'idle', 'confidence': 0.0, 'reasons': ['strategy_execution_disabled'], 'secondary': [], 'tradable': False},
+            primary_15m={'primary': 'idle', 'confidence': 0.0, 'reasons': ['strategy_execution_disabled'], 'secondary': [], 'tradable': False},
+            override_1m=None,
+            background_features={},
+            primary_features={},
+            override_features={},
+            final_decision={'primary': 'idle', 'confidence': 0.0, 'reasons': ['strategy_execution_disabled'], 'secondary': [], 'tradable': False},
+            route_decision={'regime': 'idle', 'account': None, 'strategy_family': None, 'trade_enabled': False, 'allow_reason': None, 'block_reason': 'strategy_execution_disabled'},
+            decision_summary={'regime': 'idle', 'confidence': 0.0, 'tradable': False, 'account': None, 'strategy_family': None, 'trade_enabled': False, 'allow_reason': None, 'block_reason': 'strategy_execution_disabled', 'reasons': ['strategy_execution_disabled'], 'secondary': [], 'diagnostics': ['strategy_execution_disabled']},
+        )
+
     def run_cycle(self, exchange_snapshot: ExchangePositionSnapshot | None = None) -> ExecutionCycleResult:
         mode = self.runtime_store.get().mode
         mode_policy = policy_for_mode(mode)
-        regime_output = self.regime_runner.run_once()
+        regime_output = self.regime_runner.run_once() if mode_policy.allow_strategy_execution else self._idle_regime_output()
         trace = self._initial_trace(mode, mode_policy, regime_output)
 
-        if not mode_policy.allow_normal_routing:
+        if not mode_policy.allow_strategy_execution:
+            trace.block_reason = f'mode_no_strategy:{mode.value}'
+            trace.allow_reason = None
+            if 'strategy_execution_disabled' not in trace.diagnostics:
+                trace.diagnostics.append('strategy_execution_disabled')
+            plan = ExecutionPlan(regime='idle', account=None, action='hold', reason=trace.block_reason)
+        elif not mode_policy.allow_normal_routing:
             trace.block_reason = f'mode_blocked:{mode.value}'
             trace.allow_reason = None
             trace.diagnostics.append('mode_blocked')

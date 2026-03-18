@@ -7,6 +7,8 @@ import json
 
 from src.config.settings import Settings
 from src.exchange.okx_client import OkxClient
+from src.review.framework import build_weekly_window
+from src.review.export import export_report_artifacts
 from src.runtime.bucket_state import BucketStateStore
 from src.runtime.mode import RuntimeMode
 from src.runtime.store import RuntimeStore
@@ -36,11 +38,20 @@ class WorkflowRunResult:
 
 
 class WorkflowHooks:
+    def run_review(self) -> WorkflowStepResult:
+        return WorkflowStepResult(name='run_review', ok=True, detail='stub')
+
     def flatten_all_positions(self) -> WorkflowStepResult:
         return WorkflowStepResult(name='flatten_all_positions', ok=True, detail='stub')
 
     def verify_flat(self) -> WorkflowStepResult:
         return WorkflowStepResult(name='verify_flat', ok=True, detail='stub')
+
+    def convert_non_usdt_assets(self) -> WorkflowStepResult:
+        return WorkflowStepResult(name='convert_non_usdt_assets', ok=True, detail='stub')
+
+    def verify_startup_capital(self) -> WorkflowStepResult:
+        return WorkflowStepResult(name='verify_startup_capital', ok=True, detail='stub')
 
     def reset_bucket_state(self, destructive: bool) -> WorkflowStepResult:
         return WorkflowStepResult(name='reset_bucket_state', ok=True, detail=f'destructive={destructive}')
@@ -58,6 +69,35 @@ class OkxWorkflowHooks(WorkflowHooks):
             for symbol in self.settings.symbols:
                 pairs.append((strategy, account, symbol))
         return pairs
+
+    def _unique_accounts(self) -> list[tuple[str, str]]:
+        seen: set[str] = set()
+        accounts: list[tuple[str, str]] = []
+        for strategy in self.settings.strategies:
+            account = self.settings.account_for_strategy(strategy)
+            if account.alias in seen:
+                continue
+            seen.add(account.alias)
+            accounts.append((strategy, account.alias))
+        return accounts
+
+    def run_review(self) -> WorkflowStepResult:
+        try:
+            now = datetime.now(UTC)
+            window = build_weekly_window(now)
+            exported = export_report_artifacts(
+                window,
+                history_path=str(OUT_DIR / 'execution-cycles.jsonl'),
+                out_dir=None,
+                generated_at=now,
+            )
+            return WorkflowStepResult(
+                name='run_review',
+                ok=True,
+                detail=f"json={exported.get('json_path')} markdown={exported.get('markdown_path')}",
+            )
+        except Exception as exc:
+            return WorkflowStepResult(name='run_review', ok=False, detail=str(exc))
 
     def flatten_all_positions(self) -> WorkflowStepResult:
         actions = []
@@ -95,6 +135,67 @@ class OkxWorkflowHooks(WorkflowHooks):
             detail='all_flat' if not non_flat else 'non_flat=' + '; '.join(non_flat),
         )
 
+    def convert_non_usdt_assets(self) -> WorkflowStepResult:
+        actions = []
+        errors = []
+        converted_any = False
+        for strategy, account in self._unique_accounts():
+            client = OkxClient(self.settings, self.settings.account_for_strategy(strategy))
+            try:
+                assets = client.non_usdt_assets()
+            except Exception as exc:
+                errors.append(f'{account}:balance:{exc}')
+                continue
+            if not assets:
+                actions.append(f'{account}:already_usdt')
+                continue
+            for row in assets:
+                asset = str(row.get('asset') or '').upper()
+                amount = float(row.get('amount') or 0.0)
+                if amount <= 0:
+                    continue
+                try:
+                    result = client.convert_asset_to_usdt(asset, amount)
+                    converted_any = converted_any or not bool(result.get('skipped'))
+                    status = result.get('reason') if result.get('skipped') else (result.get('order_id') or 'submitted')
+                    actions.append(f'{account}:{asset}:{status}')
+                except Exception as exc:
+                    errors.append(f'{account}:{asset}:{exc}')
+        detail_rows = actions if actions else ['no_convertible_assets']
+        if converted_any and not actions:
+            detail_rows = ['converted']
+        return WorkflowStepResult(
+            name='convert_non_usdt_assets',
+            ok=not errors,
+            detail='; '.join(detail_rows) + ('' if not errors else ' | errors=' + '; '.join(errors)),
+        )
+
+    def verify_startup_capital(self) -> WorkflowStepResult:
+        threshold = float(self.settings.buffer_capital_usdt or 0.0)
+        failures = []
+        ready = []
+        for strategy, account in self._unique_accounts():
+            client = OkxClient(self.settings, self.settings.account_for_strategy(strategy))
+            try:
+                summary = client.account_balance_summary()
+            except Exception as exc:
+                failures.append(f'{account}:balance:{exc}')
+                continue
+            usdt_available = float(summary.get('usdt_available') or 0.0)
+            non_usdt = [row.get('asset') for row in (summary.get('assets') or []) if str(row.get('asset') or '').upper() != 'USDT' and float(row.get('available') or row.get('equity') or 0.0) > 0.0]
+            if usdt_available < threshold:
+                failures.append(f'{account}:usdt_available={usdt_available}<buffer={threshold}')
+                continue
+            if non_usdt:
+                failures.append(f'{account}:residual_non_usdt={"/".join(sorted(str(x) for x in non_usdt))}')
+                continue
+            ready.append(f'{account}:usdt_available={usdt_available}')
+        return WorkflowStepResult(
+            name='verify_startup_capital',
+            ok=not failures,
+            detail='; '.join(ready if ready else ['not_ready']) + ('' if not failures else ' | failures=' + '; '.join(failures)),
+        )
+
     def reset_bucket_state(self, destructive: bool) -> WorkflowStepResult:
         reset = []
         for strategy, account, symbol in self._account_symbol_pairs():
@@ -117,18 +218,25 @@ class RuntimeWorkflowRunner:
             f.write(json.dumps(asdict(result), default=str, ensure_ascii=False) + '\n')
 
     def run(self, mode: RuntimeMode) -> WorkflowRunResult:
-        if mode not in {RuntimeMode.CALIBRATE, RuntimeMode.RESET}:
+        if mode not in {RuntimeMode.REVIEW, RuntimeMode.CALIBRATE, RuntimeMode.RESET}:
             raise ValueError(f'workflow mode not supported: {mode}')
 
         started_mode = self.runtime_store.get().mode
         destructive = mode == RuntimeMode.RESET
         self.runtime_store.set_mode(mode, reason='workflow_start')
 
-        steps = [
-            self.hooks.flatten_all_positions(),
-            self.hooks.verify_flat(),
-            self.hooks.reset_bucket_state(destructive=destructive),
-        ]
+        if mode == RuntimeMode.REVIEW:
+            steps = [
+                self.hooks.run_review(),
+            ]
+        else:
+            steps = [
+                self.hooks.flatten_all_positions(),
+                self.hooks.verify_flat(),
+                self.hooks.convert_non_usdt_assets(),
+                self.hooks.verify_startup_capital(),
+                self.hooks.reset_bucket_state(destructive=destructive),
+            ]
 
         transition = next_mode_after(mode)
         ended = mode
