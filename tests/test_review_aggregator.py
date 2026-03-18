@@ -55,6 +55,7 @@ def test_aggregate_from_execution_history_ingests_receipt_fee_and_summary_perfor
                 'plan_account': 'trend',
                 'plan_action': 'enter',
                 'receipt_accepted': True,
+                'strategy_stats_eligible': True,
                 'account_metrics': {
                     'trend': {'pnl_usdt': 15.5, 'equity_end_usdt': 1020.0},
                 },
@@ -77,6 +78,36 @@ def test_aggregate_from_execution_history_ingests_receipt_fee_and_summary_perfor
     assert metrics['trend']['pnl_usdt'] == 15.5
     assert metrics['trend']['equity_end_usdt'] == 1020.0
     assert metrics['trend']['equity_usdt'] == 1020.0
+
+
+def test_aggregate_from_execution_history_excludes_non_clean_strategy_samples_from_trade_count(tmp_path: Path):
+    history = tmp_path / 'execution-cycles.jsonl'
+    rows = [
+        {
+            'summary': {
+                'plan_account': 'trend',
+                'plan_action': 'enter',
+                'receipt_accepted': True,
+                'strategy_stats_eligible': False,
+                'strategy_stats_reason': 'severe_alignment_issue',
+                'account_metrics': {
+                    'trend': {'pnl_usdt': 7.0, 'equity_end_usdt': 1007.0},
+                },
+            },
+            'receipt': {
+                'account': 'trend',
+                'raw': {'account_alias': 'trend', 'fee_usdt': 0.10},
+            },
+            'compare_snapshot': {
+                'accounts': [
+                    {'account': 'trend', 'has_position': True},
+                ]
+            },
+        }
+    ]
+    history.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+    metrics = aggregate_from_execution_history(history)
+    assert metrics['trend']['trade_count'] == 0
 
 
 def test_aggregate_from_execution_history_tracks_extended_canonical_performance(tmp_path: Path):

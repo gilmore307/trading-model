@@ -68,6 +68,8 @@ def test_build_execution_artifact_includes_summary_fields():
     assert artifact['summary']['composite_position_side'] == 'long'
     assert artifact['summary']['receipt_accepted'] is True
     assert artifact['summary']['alignment_ok'] is True
+    assert artifact['summary']['strategy_stats_eligible'] is True
+    assert artifact['summary']['strategy_stats_reason'] == 'clean_execution'
     assert artifact['summary']['account_metrics']['trend']['fee_usdt'] == 0.15
     assert artifact['summary']['account_metrics']['trend']['realized_pnl_usdt'] == 3.0
     assert artifact['summary']['account_metrics']['trend']['equity_usdt'] == 1500.0
@@ -117,3 +119,5 @@ def test_build_execution_artifact_captures_blocked_reason():
     assert artifact['summary']['plan_action'] == 'hold'
     assert artifact['summary']['block_reason'] == 'regime_non_tradable'
     assert artifact['summary']['trade_enabled'] is False
+    assert artifact['summary']['strategy_stats_eligible'] is False
+    assert artifact['summary']['strategy_stats_reason'] == 'receipt_not_accepted'

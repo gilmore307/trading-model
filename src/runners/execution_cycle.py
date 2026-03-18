@@ -44,12 +44,30 @@ def _balance_summary_for_result(result: ExecutionCycleResult) -> dict[str, Any] 
     return None
 
 
+def _strategy_stats_summary(result: ExecutionCycleResult) -> dict[str, Any]:
+    if result.receipt is None or not result.receipt.accepted:
+        return {
+            'strategy_stats_eligible': False,
+            'strategy_stats_reason': 'receipt_not_accepted',
+        }
+    if result.reconcile_result is not None and not result.reconcile_result.alignment.ok:
+        return {
+            'strategy_stats_eligible': False,
+            'strategy_stats_reason': result.reconcile_result.policy.reason,
+        }
+    return {
+        'strategy_stats_eligible': True,
+        'strategy_stats_reason': 'clean_execution',
+    }
+
+
 def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     payload = asdict(result)
     payload['artifact_type'] = 'execution_cycle'
     payload['recorded_at'] = datetime.now(UTC).isoformat()
     payload['compare_snapshot'] = build_compare_snapshot(result)
     balance_summary = _balance_summary_for_result(result)
+    stats_summary = _strategy_stats_summary(result)
     payload['summary'] = {
         'symbol': result.regime_output.symbol,
         'runtime_mode': result.runtime_state.get('mode'),
@@ -75,6 +93,7 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         'policy_action': None if result.reconcile_result is None else result.reconcile_result.policy.action,
         'policy_reason': None if result.reconcile_result is None else result.reconcile_result.policy.reason,
         'account_metrics': build_account_metrics_from_cycle(receipt=result.receipt, reconcile_result=result.reconcile_result, balance_summary=balance_summary),
+        **stats_summary,
     }
     return payload
 

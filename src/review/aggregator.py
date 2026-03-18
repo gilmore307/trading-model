@@ -150,8 +150,9 @@ def aggregate_from_execution_history(
         plan_account = summary.get('plan_account')
         plan_action = summary.get('plan_action')
         receipt_accepted = summary.get('receipt_accepted')
+        strategy_stats_eligible = bool(summary.get('strategy_stats_eligible', True))
 
-        if plan_account in counts and plan_action in {'enter', 'exit'} and receipt_accepted is not False:
+        if plan_account in counts and plan_action in {'enter', 'exit'} and receipt_accepted is not False and strategy_stats_eligible:
             counts[plan_account] += 1
 
         compare_snapshot = row.get('compare_snapshot', {})
