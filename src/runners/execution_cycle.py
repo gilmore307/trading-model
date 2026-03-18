@@ -15,6 +15,7 @@ OUT_DIR = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime')
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 LATEST_PATH = OUT_DIR / 'latest-execution-cycle.json'
 HISTORY_PATH = OUT_DIR / 'execution-cycles.jsonl'
+ANOMALY_HISTORY_PATH = OUT_DIR / 'execution-anomalies.jsonl'
 
 
 def _json_default(value: Any):
@@ -104,11 +105,44 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     return payload
 
 
+def _build_anomaly_artifact(result: ExecutionCycleResult, artifact: dict[str, Any]) -> dict[str, Any] | None:
+    summary = artifact.get('summary') if isinstance(artifact.get('summary'), dict) else {}
+    if bool(summary.get('strategy_stats_eligible', True)):
+        return None
+    local = result.local_position
+    meta = (local.meta if local is not None else {}) or {}
+    recovery_type = meta.get('execution_recovery') or summary.get('strategy_stats_reason')
+    return {
+        'artifact_type': 'execution_anomaly',
+        'recorded_at': artifact.get('recorded_at'),
+        'runtime_mode': summary.get('runtime_mode'),
+        'symbol': summary.get('symbol'),
+        'account': summary.get('plan_account') or (None if result.receipt is None else result.receipt.account),
+        'plan_action': summary.get('plan_action'),
+        'strategy_stats_reason': summary.get('strategy_stats_reason'),
+        'execution_recovery': recovery_type,
+        'execution_recovery_detail': meta.get('execution_recovery_detail'),
+        'route_enabled': summary.get('route_enabled'),
+        'route_frozen_reason': summary.get('route_frozen_reason'),
+        'receipt_mode': summary.get('receipt_mode'),
+        'receipt_accepted': summary.get('receipt_accepted'),
+        'policy_action': summary.get('policy_action'),
+        'policy_reason': summary.get('policy_reason'),
+        'local_position_status': None if local is None else local.status.value,
+        'local_position_reason': None if local is None else local.reason,
+        'account_metrics': summary.get('account_metrics'),
+    }
+
+
 def persist_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     artifact = build_execution_artifact(result)
     LATEST_PATH.write_text(json.dumps(artifact, indent=2, default=_json_default, ensure_ascii=False))
     with HISTORY_PATH.open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(artifact, default=_json_default, ensure_ascii=False) + '\n')
+    anomaly = _build_anomaly_artifact(result, artifact)
+    if anomaly is not None:
+        with ANOMALY_HISTORY_PATH.open('a', encoding='utf-8') as handle:
+            handle.write(json.dumps(anomaly, default=_json_default, ensure_ascii=False) + '\n')
     return artifact
 
 
