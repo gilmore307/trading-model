@@ -76,3 +76,16 @@ def test_route_controller_marks_missed_entry_and_clears_local_position(tmp_path:
     assert pos.meta['strategy_stats_eligible'] == 'false'
     assert pos.meta['strategy_stats_reason'] == 'missed_entry'
     assert pos.meta['execution_recovery'] == 'missed_entry'
+
+
+def test_route_controller_enable_route_if_flat_unfreezes_recovered_route(tmp_path: Path):
+    c = build_controller(tmp_path)
+    c.routes.freeze('trend', 'BTC-USDT-SWAP', 'severe_alignment_issue')
+    c.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'long', 1.0, entry_order_id='e1')
+    pos = c.mark_missed_entry('trend', 'BTC-USDT-SWAP', detail='missed_entry_not_opened_on_exchange')
+    assert pos is not None
+    restored = c.enable_route_if_flat('trend', 'BTC-USDT-SWAP')
+    assert restored is True
+    route = c.routes.get('trend', 'BTC-USDT-SWAP')
+    assert route.enabled is True
+    assert route.frozen_reason is None

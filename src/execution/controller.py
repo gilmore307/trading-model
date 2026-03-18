@@ -40,6 +40,17 @@ class RouteController:
             current.reason = detail or 'forced_exit_recovery'
             return self.store.upsert(current)
 
+    def enable_route_if_flat(self, account: str, symbol: str) -> bool:
+        with self.locks.hold(account, symbol):
+            current = self.store.get(account, symbol)
+            if current is None:
+                self.routes.enable(account, symbol)
+                return True
+            if current.status == LivePositionStatus.FLAT and float(current.size or 0.0) <= 0.0 and current.side is None:
+                self.routes.enable(account, symbol)
+                return True
+            return False
+
     def mark_missed_entry(self, account: str, symbol: str, *, detail: str | None = None) -> LivePosition | None:
         with self.locks.hold(account, symbol):
             current = self.store.get(account, symbol)

@@ -441,6 +441,7 @@ def test_execution_pipeline_forced_exit_recovery_submits_exit_and_marks_stats_in
     controller.submit_exit('trend', 'BTC-USDT-SWAP', exit_order_id='x1')
     controller.verify_position('trend', 'BTC-USDT-SWAP', ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=1.0))
     pipe = ExecutionPipeline(regime_runner=runner, controller=controller, snapshot_provider=SnapshotProvider(), adapter=adapter, runtime_store=runtime_store)
+    controller.routes.freeze('trend', 'BTC-USDT-SWAP', 'severe_alignment_issue')
     result = pipe.run_cycle(None)
     assert adapter.exit_calls == 1
     assert result.receipt is not None
@@ -449,6 +450,7 @@ def test_execution_pipeline_forced_exit_recovery_submits_exit_and_marks_stats_in
     assert result.local_position.status.value == 'flat'
     assert result.local_position.meta['strategy_stats_eligible'] == 'false'
     assert result.local_position.meta['strategy_stats_reason'] == 'forced_exit_recovery'
+    assert controller.routes.get('trend', 'BTC-USDT-SWAP').enabled is True
 
 
 def test_execution_pipeline_marks_missed_entry_without_reopening_on_exchange(tmp_path: Path):
@@ -490,6 +492,8 @@ def test_execution_pipeline_marks_missed_entry_without_reopening_on_exchange(tmp
     runtime_store = RuntimeStore()
     runtime_store.set_mode(RuntimeMode.TRADE, reason='test_trade_mode')
     controller = RouteController(store=LiveStateStore(path=tmp_path / 'live-state.json'), routes=RouteRegistry(path=tmp_path / 'routes.json'))
+    controller.routes.freeze('trend', 'BTC-USDT-SWAP', 'severe_alignment_issue')
+    controller.routes.enable('trend', 'BTC-USDT-SWAP')
     pipe = ExecutionPipeline(regime_runner=runner, controller=controller, snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: None})(), adapter=adapter, runtime_store=runtime_store)
     result = pipe.run_cycle(None)
     assert adapter.entry_calls == 1
@@ -499,3 +503,4 @@ def test_execution_pipeline_marks_missed_entry_without_reopening_on_exchange(tmp
     assert result.local_position.meta['strategy_stats_eligible'] == 'false'
     assert result.local_position.meta['strategy_stats_reason'] == 'missed_entry'
     assert result.local_position.reason == 'missed_entry_not_opened_on_exchange'
+    assert controller.routes.get('trend', 'BTC-USDT-SWAP').enabled is True
