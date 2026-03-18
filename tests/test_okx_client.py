@@ -205,6 +205,41 @@ def test_convert_asset_to_usdt_falls_back_to_spot_cash_mode_when_convert_unavail
     assert result["account_alias"] == "default"
 
 
+def test_trading_free_balances_reads_spot_free_map():
+    from src.exchange.okx_client import OkxClient
+
+    client = DummyOkxClient()
+    client.spot_exchange.balance = {
+        'free': {
+            'USDT': 1000.0,
+            'BTC': 0.25,
+            'ETH': 0.0,
+            'OKB': 5.0,
+        }
+    }
+    free = OkxClient.trading_free_balances(client)
+    assert free == {'USDT': 1000.0, 'BTC': 0.25, 'ETH': 0.0, 'OKB': 5.0}
+
+
+def test_non_usdt_assets_prefers_spot_free_balances():
+    from src.exchange.okx_client import OkxClient
+
+    client = DummyOkxClient()
+    client.spot_exchange.balance = {
+        'free': {
+            'USDT': 1000.0,
+            'BTC': 0.25,
+            'ETH': 0.0,
+            'OKB': 5.0,
+        }
+    }
+    rows = OkxClient.non_usdt_assets(client)
+    assert rows == [
+        {'asset': 'BTC', 'amount': 0.25, 'account_alias': 'default', 'account_label': 'OpenClaw1'},
+        {'asset': 'OKB', 'amount': 5.0, 'account_alias': 'default', 'account_label': 'OpenClaw1'},
+    ]
+
+
 def test_create_entry_order_uses_windowed_verification_delays(monkeypatch):
     from src.exchange.okx_client import OkxClient
 

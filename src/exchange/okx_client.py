@@ -390,7 +390,33 @@ class OkxClient:
         balance = self.exchange.fetch_balance()
         return account_balance_summary(balance, account_alias=self.account_alias, account_label=self.account_label)
 
+    def trading_free_balances(self) -> dict[str, float]:
+        balance = self.spot_exchange.fetch_balance()
+        free_map = balance.get('free') if isinstance(balance, dict) else None
+        if not isinstance(free_map, dict):
+            return {}
+        result: dict[str, float] = {}
+        for asset, value in free_map.items():
+            numeric = _safe_float(value)
+            if numeric is None:
+                continue
+            result[str(asset).upper()] = numeric
+        return result
+
     def non_usdt_assets(self) -> list[dict[str, Any]]:
+        free_balances = OkxClient.trading_free_balances(self)
+        rows = []
+        for asset, amount in free_balances.items():
+            if not asset or asset == 'USDT' or amount <= 0:
+                continue
+            rows.append({
+                'asset': asset,
+                'amount': amount,
+                'account_alias': self.account_alias,
+                'account_label': self.account_label,
+            })
+        if rows:
+            return rows
         summary = self.account_balance_summary()
         assets = summary.get('assets') or []
         rows = []
