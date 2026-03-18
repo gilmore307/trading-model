@@ -15,6 +15,7 @@ from src.runners.discord_notifier import DiscordNotifier
 from src.runners.execution_cycle import persist_execution_artifact
 from src.runtime.mode import RuntimeMode
 from src.runtime.store import RuntimeStore
+from src.runtime.workflows import OkxWorkflowHooks, RuntimeWorkflowRunner, WorkflowHooks, WorkflowRunResult, WorkflowStepResult
 
 OUT_DIR = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime')
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -40,6 +41,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def ensure_trade_start_ready(*, settings: Settings, runtime_store: RuntimeStore, hooks: WorkflowHooks | None = None) -> WorkflowRunResult | None:
+    if runtime_store.get().mode != RuntimeMode.TRADE:
+        return None
+    hooks = hooks or OkxWorkflowHooks(settings)
+    startup = hooks.verify_startup_capital()
+    if startup.ok:
+        return None
+    runtime_store.set_mode(RuntimeMode.CALIBRATE, reason=f'trade_start_requires_calibrate:{startup.detail}')
+    runner = RuntimeWorkflowRunner(runtime_store=runtime_store, hooks=hooks)
+    return runner.run(RuntimeMode.CALIBRATE)
+
+
 def main() -> None:
     args = build_arg_parser().parse_args()
     settings = Settings.load()
@@ -47,6 +60,8 @@ def main() -> None:
 
     runtime_store = RuntimeStore()
     runtime_store.set_mode(RuntimeMode.TRADE, reason='daemon_start_trade_mode')
+
+    startup_workflow = ensure_trade_start_ready(settings=settings, runtime_store=runtime_store)
 
     notifier = DiscordNotifier(settings)
     adapter = DryRunExecutionAdapter() if settings.dry_run else OkxExecutionAdapter(settings)
@@ -59,6 +74,12 @@ def main() -> None:
         'interval_seconds': args.interval_seconds,
         'dry_run': settings.dry_run,
         'mode': runtime_store.get().mode.value,
+        'startup_workflow': None if startup_workflow is None else {
+            'workflow': startup_workflow.workflow,
+            'started_mode': startup_workflow.started_mode,
+            'ended_mode': startup_workflow.ended_mode,
+            'steps': [asdict(step) for step in startup_workflow.steps],
+        },
     })
 
     cycles = 0
