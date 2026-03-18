@@ -50,3 +50,16 @@ def test_route_controller_reconcile_freezes_on_unexpected_exchange_position(tmp_
     assert result.alignment.issues[0].type == AlignmentIssueType.UNEXPECTED_EXCHANGE_POSITION
     assert result.policy.trade_enabled is False
     assert result.policy.action == 'freeze_route'
+
+
+def test_route_controller_marks_forced_exit_recovery_metadata(tmp_path: Path):
+    c = build_controller(tmp_path)
+    c.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'long', 1.0, entry_order_id='e1')
+    c.verify_position('trend', 'BTC-USDT-SWAP', ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=1.0))
+    c.submit_exit('trend', 'BTC-USDT-SWAP', exit_order_id='x1')
+    c.verify_position('trend', 'BTC-USDT-SWAP', ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=1.0))
+    pos = c.mark_forced_exit_recovery('trend', 'BTC-USDT-SWAP', detail='forced_exit_recovery_submitted')
+    assert pos is not None
+    assert pos.meta['strategy_stats_eligible'] == 'false'
+    assert pos.meta['strategy_stats_reason'] == 'forced_exit_recovery'
+    assert pos.meta['execution_recovery'] == 'forced_exit'

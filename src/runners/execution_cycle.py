@@ -45,6 +45,12 @@ def _balance_summary_for_result(result: ExecutionCycleResult) -> dict[str, Any] 
 
 
 def _strategy_stats_summary(result: ExecutionCycleResult) -> dict[str, Any]:
+    meta = ((result.local_position.meta if result.local_position is not None else None) or {})
+    if str(meta.get('strategy_stats_eligible') or '').lower() == 'false':
+        return {
+            'strategy_stats_eligible': False,
+            'strategy_stats_reason': meta.get('strategy_stats_reason') or 'execution_recovery',
+        }
     if result.receipt is None or not result.receipt.accepted:
         return {
             'strategy_stats_eligible': False,

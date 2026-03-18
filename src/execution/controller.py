@@ -25,6 +25,21 @@ class RouteController:
         self.locks = locks or AccountSymbolLockRegistry()
         self.routes = routes or RouteRegistry()
 
+    def mark_forced_exit_recovery(self, account: str, symbol: str, *, detail: str | None = None) -> LivePosition | None:
+        with self.locks.hold(account, symbol):
+            current = self.store.get(account, symbol)
+            if current is None:
+                return None
+            meta = dict(current.meta or {})
+            meta['strategy_stats_eligible'] = 'false'
+            meta['strategy_stats_reason'] = 'forced_exit_recovery'
+            meta['execution_recovery'] = 'forced_exit'
+            if detail is not None:
+                meta['execution_recovery_detail'] = detail
+            current.meta = meta
+            current.reason = detail or 'forced_exit_recovery'
+            return self.store.upsert(current)
+
     def submit_entry(self, account: str, symbol: str, route: str, side: str, size: float, entry_order_id: str | None = None) -> LivePosition:
         with self.locks.hold(account, symbol):
             if not self.routes.is_enabled(account, symbol):

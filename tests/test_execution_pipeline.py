@@ -390,3 +390,62 @@ def test_execution_pipeline_allows_entry_when_funds_sufficient_even_if_non_usdt_
     assert result.receipt.accepted is True
     assert adapter.submitted is True
     assert result.plan.reason == 'trend_follow_through_confirmed'
+
+
+def test_execution_pipeline_forced_exit_recovery_submits_exit_and_marks_stats_ineligible(tmp_path: Path):
+    runner = DummyRunner(regime='trend', account='trend', trade_enabled=True)
+    out = runner.run_once()
+    out.background_features['adx'] = 10.0
+    out.override_features['trade_burst_score'] = 0.0
+    runner.run_once = lambda: out
+
+    class RecoveryAdapter(ExecutionAdapter):
+        def __init__(self):
+            self.exit_calls = 0
+
+        def submit_entry(self, *, account: str, symbol: str, side: str, size: float, reason: str) -> ExecutionReceipt:
+            raise AssertionError('submit_entry should not be called')
+
+        def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
+            self.exit_calls += 1
+            return ExecutionReceipt(
+                accepted=True,
+                mode='okx_demo',
+                account=account,
+                symbol=symbol,
+                action='exit',
+                side=None,
+                size=None,
+                order_id='forced-exit-1',
+                reason=reason,
+                observed_at=datetime.now(UTC),
+                raw={'account_alias': account, 'realized_pnl_usdt': -3.2},
+            )
+
+    class SnapshotProvider:
+        def __init__(self):
+            self.calls = 0
+
+        def fetch_position(self, account, symbol):
+            self.calls += 1
+            if self.calls == 1:
+                return ExchangePositionSnapshot(account=account, symbol=symbol, side='long', size=1.0)
+            return None
+
+    adapter = RecoveryAdapter()
+    runtime_store = RuntimeStore()
+    runtime_store.set_mode(RuntimeMode.TRADE, reason='test_trade_mode')
+    controller = RouteController(store=LiveStateStore(path=tmp_path / 'live-state.json'), routes=RouteRegistry(path=tmp_path / 'routes.json'))
+    controller.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'long', 1.0, entry_order_id='e1')
+    controller.verify_position('trend', 'BTC-USDT-SWAP', ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=1.0))
+    controller.submit_exit('trend', 'BTC-USDT-SWAP', exit_order_id='x1')
+    controller.verify_position('trend', 'BTC-USDT-SWAP', ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='long', size=1.0))
+    pipe = ExecutionPipeline(regime_runner=runner, controller=controller, snapshot_provider=SnapshotProvider(), adapter=adapter, runtime_store=runtime_store)
+    result = pipe.run_cycle(None)
+    assert adapter.exit_calls == 1
+    assert result.receipt is not None
+    assert result.receipt.reason == 'forced_exit_recovery'
+    assert result.local_position is not None
+    assert result.local_position.status.value == 'flat'
+    assert result.local_position.meta['strategy_stats_eligible'] == 'false'
+    assert result.local_position.meta['strategy_stats_reason'] == 'forced_exit_recovery'

@@ -193,10 +193,20 @@ class ExecutionPipeline:
         elif plan.account is not None:
             current = self.controller.store.get(plan.account, regime_output.symbol)
             if current is not None:
-                exchange_snapshot = refresh_snapshot()
-                reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
-                local_position = current
-                verification_position = current
+                current_snapshot = exchange_snapshot if exchange_snapshot is not None else refresh_snapshot()
+                if current.status.value == 'exit_verifying' and current_snapshot is not None and float(current_snapshot.size or 0.0) > 0.0:
+                    self.controller.mark_forced_exit_recovery(plan.account, regime_output.symbol, detail='forced_exit_recovery_submitted')
+                    receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason='forced_exit_recovery')
+                    current = self.controller.submit_exit(plan.account, regime_output.symbol, exit_order_id=receipt.order_id) or current
+                    exchange_snapshot = refresh_snapshot()
+                    local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or current
+                    verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
+                    reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
+                else:
+                    exchange_snapshot = current_snapshot
+                    reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
+                    local_position = current
+                    verification_position = current
 
         if reconcile_result is not None and not reconcile_result.policy.trade_enabled:
             trace.block_reason = reconcile_result.policy.reason
