@@ -116,6 +116,61 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     payload['compare_snapshot'] = build_compare_snapshot(result)
     payload['feature_snapshot'] = _feature_snapshot(result)
     payload['shadow_plans'] = build_shadow_plans(result.regime_output)
+    payload['ledger_snapshot'] = None if result.local_position is None else {
+        'open_legs': [
+            {
+                'leg_id': leg.leg_id,
+                'execution_id': leg.execution_id,
+                'client_order_id': leg.client_order_id,
+                'order_id': leg.order_id,
+                'trade_ids': leg.trade_ids,
+                'side': leg.side,
+                'requested_size': leg.requested_size,
+                'filled_size': leg.filled_size,
+                'remaining_size': leg.remaining_size,
+                'status': leg.status,
+                'reason': leg.reason,
+            }
+            for leg in result.local_position.open_legs
+        ],
+        'closed_legs': [
+            {
+                'leg_id': leg.leg_id,
+                'execution_id': leg.execution_id,
+                'client_order_id': leg.client_order_id,
+                'order_id': leg.order_id,
+                'trade_ids': leg.trade_ids,
+                'side': leg.side,
+                'requested_size': leg.requested_size,
+                'filled_size': leg.filled_size,
+                'remaining_size': leg.remaining_size,
+                'status': leg.status,
+                'close_execution_id': leg.close_execution_id,
+                'close_client_order_id': leg.close_client_order_id,
+                'close_order_id': leg.close_order_id,
+                'close_trade_ids': leg.close_trade_ids,
+            }
+            for leg in result.local_position.closed_legs
+        ],
+        'pending_exit': None if result.local_position.pending_exit is None else {
+            'execution_id': result.local_position.pending_exit.execution_id,
+            'client_order_id': result.local_position.pending_exit.client_order_id,
+            'order_id': result.local_position.pending_exit.order_id,
+            'trade_ids': result.local_position.pending_exit.trade_ids,
+            'requested_size': result.local_position.pending_exit.requested_size,
+            'side': result.local_position.pending_exit.side,
+            'status': result.local_position.pending_exit.status,
+            'reason': result.local_position.pending_exit.reason,
+            'allocations': [
+                {
+                    'leg_id': alloc.leg_id,
+                    'requested_size': alloc.requested_size,
+                    'closed_size': alloc.closed_size,
+                }
+                for alloc in result.local_position.pending_exit.allocations
+            ],
+        },
+    }
     balance_summary = _balance_summary_for_result(result)
     stats_summary = _strategy_stats_summary(result)
     payload['summary'] = {
@@ -124,6 +179,9 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         'client_order_id': None if result.receipt is None else result.receipt.client_order_id,
         'order_id': None if result.receipt is None else result.receipt.order_id,
         'trade_ids': None if result.receipt is None else result.receipt.trade_ids,
+        'open_leg_count': 0 if result.local_position is None else len(result.local_position.open_legs),
+        'closed_leg_count': 0 if result.local_position is None else len(result.local_position.closed_legs),
+        'pending_exit_leg_count': 0 if result.local_position is None or result.local_position.pending_exit is None else len(result.local_position.pending_exit.allocations),
         'runtime_mode': result.runtime_state.get('mode'),
         'regime': result.regime_output.final_decision.get('primary'),
         'confidence': result.regime_output.final_decision.get('confidence'),

@@ -56,6 +56,10 @@ def send_discord_message(token: str, channel_id: str, content: str) -> None:
 def format_trade_message(summary: dict[str, Any], artifact: dict[str, Any]) -> str:
     receipt = artifact.get('receipt') or {}
     plan = artifact.get('plan') or {}
+    ledger = artifact.get('ledger_snapshot') or {}
+    open_legs = ledger.get('open_legs') or []
+    pending_exit = ledger.get('pending_exit') or {}
+    allocations = pending_exit.get('allocations') or []
     return (
         'crypto-trading 交易执行\n\n'
         f"- action: {summary.get('plan_action')}\n"
@@ -65,7 +69,14 @@ def format_trade_message(summary: dict[str, Any], artifact: dict[str, Any]) -> s
         f"- side: {receipt.get('side') or plan.get('side')}\n"
         f"- size: {receipt.get('size') or plan.get('size')}\n"
         f"- receipt_mode: {summary.get('receipt_mode')}\n"
+        f"- execution_id: {summary.get('execution_id')}\n"
+        f"- client_order_id: {summary.get('client_order_id')}\n"
         f"- order_id: {(receipt or {}).get('order_id')}\n"
+        f"- trade_ids: {summary.get('trade_ids')}\n"
+        f"- open_leg_count: {summary.get('open_leg_count')}\n"
+        f"- pending_exit_leg_count: {summary.get('pending_exit_leg_count')}\n"
+        f"- latest_open_leg: {None if not open_legs else open_legs[-1].get('leg_id')}\n"
+        f"- exit_allocations: {[{'leg_id': a.get('leg_id'), 'requested_size': a.get('requested_size'), 'closed_size': a.get('closed_size')} for a in allocations]}\n"
         f"- reason: {summary.get('plan_reason')}"
     )
 

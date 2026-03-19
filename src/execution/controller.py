@@ -180,15 +180,17 @@ class RouteController:
             if current is None:
                 return None
 
+            previous_ledger_size = float(current.ledger_open_size or 0.0)
+            previous_side = current.side
             if exchange_snapshot is not None:
                 current.side = exchange_snapshot.side
                 current.size = float(exchange_snapshot.size or 0.0)
                 current.last_exchange_observed_at = datetime.now(UTC)
 
             if current.open_legs and current.status in {LivePositionStatus.ENTRY_SUBMITTED, LivePositionStatus.ENTRY_VERIFYING, LivePositionStatus.OPEN} and exchange_snapshot is not None:
-                total_before = sum(float(leg.remaining_size or 0.0) for leg in current.open_legs)
                 exchange_size = float(exchange_snapshot.size or 0.0)
-                delta = max(0.0, exchange_size - max(0.0, total_before - float(current.open_legs[-1].remaining_size or 0.0)))
+                baseline = max(0.0, previous_ledger_size - float(current.open_legs[-1].remaining_size or 0.0))
+                delta = max(0.0, exchange_size - baseline)
                 newest = current.open_legs[-1]
                 newest.filled_size = max(float(newest.filled_size or 0.0), delta)
                 newest.remaining_size = max(float(newest.remaining_size or 0.0), delta)
@@ -197,6 +199,38 @@ class RouteController:
             if current.pending_exit is not None:
                 current.pending_exit.trade_ids = list(current.exit_trade_ids or current.pending_exit.trade_ids or [])
                 current.pending_exit.order_id = current.exit_order_id or current.pending_exit.order_id
+                if exchange_snapshot is not None:
+                    exchange_size = float(exchange_snapshot.size or 0.0)
+                    total_before_exit = sum(float(leg.remaining_size or 0.0) for leg in current.open_legs)
+                    closed_delta = max(0.0, total_before_exit - exchange_size)
+                    remaining_to_apply = closed_delta
+                    updated_open_legs = []
+                    for leg in current.open_legs:
+                        leg_remaining = float(leg.remaining_size or 0.0)
+                        if remaining_to_apply > 0.0:
+                            consume = min(leg_remaining, remaining_to_apply)
+                            leg.remaining_size = leg_remaining - consume
+                            remaining_to_apply -= consume
+                            for alloc in current.pending_exit.allocations:
+                                if alloc.leg_id == leg.leg_id:
+                                    alloc.closed_size = min(alloc.requested_size, float(alloc.closed_size or 0.0) + consume)
+                                    break
+                        if float(leg.remaining_size or 0.0) <= 1e-12:
+                            leg.remaining_size = 0.0
+                            leg.status = 'closed'
+                            leg.closed_at = datetime.now(UTC)
+                            leg.close_execution_id = current.exit_execution_id
+                            leg.close_client_order_id = current.exit_client_order_id
+                            leg.close_order_id = current.exit_order_id
+                            leg.close_trade_ids = list(current.exit_trade_ids or [])
+                            current.closed_legs.append(leg)
+                        else:
+                            updated_open_legs.append(leg)
+                    current.open_legs = updated_open_legs
+                    if exchange_size <= 1e-12:
+                        current.pending_exit.status = 'closed'
+                    elif closed_delta > 0:
+                        current.pending_exit.status = 'partial'
 
             if current.status in {LivePositionStatus.ENTRY_SUBMITTED, LivePositionStatus.ENTRY_VERIFYING}:
                 decision = verify_entry(current, exchange_snapshot)
@@ -226,7 +260,6 @@ class RouteController:
                         leg.close_trade_ids = list(current.exit_trade_ids or [])
                         current.closed_legs.append(leg)
                     current.open_legs = remaining_open
-                    current.pending_exit = None
                 return self.store.upsert(current)
 
             return current
