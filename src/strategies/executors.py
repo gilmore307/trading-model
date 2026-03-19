@@ -188,29 +188,59 @@ class CompressionExecutor(BaseExecutor):
         oi_accel = float(output.primary_features.get('oi_accel') or 0.0)
         bg_slope = float(output.background_features.get('ema20_slope') or 0.0)
 
-        if bw <= cfg.compression_bandwidth_max and rv <= cfg.compression_realized_vol_max:
-            launch_bias = 0.0
-            if abs(z1) >= 1.0:
-                launch_bias += 1.0
-            if abs(z15) >= 0.9:
-                launch_bias += 1.0
-            if trade_burst >= cfg.compression_trade_burst_min:
-                launch_bias += 1.0
+        compression_regime = bw <= cfg.compression_bandwidth_max and rv <= cfg.compression_realized_vol_max
+        structure_block = abs(basis) >= 0.02 and abs(oi_accel) >= 0.5
+        launch_bias = 0.0
+        subscores = {
+            'bandwidth_compression_confirmation': 1.0 if bw <= cfg.compression_bandwidth_max else 0.0,
+            'realized_vol_compression_confirmation': 1.0 if rv <= cfg.compression_realized_vol_max else 0.0,
+            'override_dislocation_confirmation': 1.0 if abs(z1) >= 1.0 else 0.0,
+            'primary_dislocation_confirmation': 1.0 if abs(z15) >= 0.9 else 0.0,
+            'trade_burst_confirmation': 1.0 if trade_burst >= cfg.compression_trade_burst_min else 0.0,
+            'structure_block_penalty': -1.0 if structure_block else 0.0,
+        }
+        if subscores['override_dislocation_confirmation']:
+            launch_bias += 1.0
+        if subscores['primary_dislocation_confirmation']:
+            launch_bias += 1.0
+        if subscores['trade_burst_confirmation']:
+            launch_bias += 1.0
 
-            structure_block = abs(basis) >= 0.02 and abs(oi_accel) >= 0.5
+        blockers: list[str] = []
+        if bw > cfg.compression_bandwidth_max:
+            blockers.append('bandwidth_not_compressed')
+        if rv > cfg.compression_realized_vol_max:
+            blockers.append('realized_vol_not_compressed')
+        if structure_block:
+            blockers.append('structure_block')
+
+        signals = {
+            'bw': bw,
+            'rv': rv,
+            'z15': z15,
+            'z1': z1,
+            'trade_burst': trade_burst,
+            'basis': basis,
+            'oi_accel': oi_accel,
+            'bg_slope': bg_slope,
+            'compression_regime': compression_regime,
+            'structure_block': structure_block,
+        }
+
+        if compression_regime:
             if launch_bias >= cfg.compression_launch_bias_enter_min and not structure_block:
                 side = 'long' if bg_slope >= 0 else 'short'
                 if abs(z1) >= 1.0:
                     side = 'long' if z1 > 0 else 'short'
-                return ExecutionPlan(regime=self.regime, account=account, action='enter', side=side, size=1.0, reason='compression_breakout_confirmed')
+                return ExecutionPlan(regime=self.regime, account=account, action='enter', side=side, size=1.0, reason='compression_breakout_confirmed', score=launch_bias, blockers=blockers, signals=signals, subscores=subscores)
 
             if launch_bias >= cfg.compression_launch_bias_arm_min:
                 side = 'long' if bg_slope >= 0 else 'short'
                 if abs(z1) >= 0.8:
                     side = 'long' if z1 > 0 else 'short'
-                return ExecutionPlan(regime=self.regime, account=account, action='arm', side=side, size=1.0, reason='compression_breakout_arming')
+                return ExecutionPlan(regime=self.regime, account=account, action='arm', side=side, size=1.0, reason='compression_breakout_arming', score=launch_bias, blockers=blockers, signals=signals, subscores=subscores)
 
-        return ExecutionPlan(regime=self.regime, account=account, action='watch', reason='compression_wait_or_probe')
+        return ExecutionPlan(regime=self.regime, account=account, action='watch', reason='compression_wait_or_probe', score=launch_bias, blockers=blockers, signals=signals, subscores=subscores)
 
 
 class CrowdedExecutor(BaseExecutor):
@@ -228,23 +258,51 @@ class CrowdedExecutor(BaseExecutor):
 
         crowd_extreme = max(funding, 1.0 - funding)
         side = 'short' if basis >= 0 or p_z >= 0 else 'long'
+        fast_event_conflict = trade_burst >= cfg.crowded_fast_event_trade_burst_min and abs(e_z) >= cfg.crowded_fast_event_ez_min
 
         rejection_score = 0.0
-        if crowd_extreme >= cfg.crowded_extreme_min:
+        subscores = {
+            'crowd_extreme_confirmation': 1.0 if crowd_extreme >= cfg.crowded_extreme_min else 0.0,
+            'oi_accel_confirmation': 1.0 if abs(oi_accel) >= cfg.crowded_oi_accel_min else 0.0,
+            'basis_extension_confirmation': 1.0 if abs(basis) >= cfg.crowded_basis_min else 0.0,
+            'price_extension_confirmation': 1.0 if abs(p_z) >= 1.2 else 0.0,
+            'fast_event_conflict_penalty': -1.0 if fast_event_conflict else 0.0,
+        }
+        if subscores['crowd_extreme_confirmation']:
             rejection_score += 1.0
-        if abs(oi_accel) >= cfg.crowded_oi_accel_min:
+        if subscores['oi_accel_confirmation']:
             rejection_score += 1.0
-        if abs(basis) >= cfg.crowded_basis_min:
+        if subscores['basis_extension_confirmation']:
             rejection_score += 1.0
-        if abs(p_z) >= 1.2:
+        if subscores['price_extension_confirmation']:
             rejection_score += 1.0
 
-        fast_event_conflict = trade_burst >= cfg.crowded_fast_event_trade_burst_min and abs(e_z) >= cfg.crowded_fast_event_ez_min
+        blockers: list[str] = []
+        if crowd_extreme < cfg.crowded_extreme_min:
+            blockers.append('crowd_not_extreme_enough')
+        if abs(oi_accel) < cfg.crowded_oi_accel_min:
+            blockers.append('oi_accel_too_small')
+        if abs(basis) < cfg.crowded_basis_min:
+            blockers.append('basis_extension_too_small')
+        if fast_event_conflict:
+            blockers.append('fast_event_conflict')
+
+        signals = {
+            'funding_pctile': funding,
+            'crowd_extreme': crowd_extreme,
+            'oi_accel': oi_accel,
+            'basis': basis,
+            'p_z': p_z,
+            'e_z': e_z,
+            'trade_burst': trade_burst,
+            'fast_event_conflict': fast_event_conflict,
+        }
+
         if rejection_score >= cfg.crowded_rejection_enter_min and not fast_event_conflict:
-            return ExecutionPlan(regime=self.regime, account=account, action='enter', side=side, size=1.0, reason='crowded_reversal_confirmed')
+            return ExecutionPlan(regime=self.regime, account=account, action='enter', side=side, size=1.0, reason='crowded_reversal_confirmed', score=rejection_score, blockers=blockers, signals=signals, subscores=subscores)
         if rejection_score >= cfg.crowded_rejection_arm_min:
-            return ExecutionPlan(regime=self.regime, account=account, action='arm', side=side, size=1.0, reason='crowded_reversal_arming')
-        return ExecutionPlan(regime=self.regime, account=account, action='watch', reason='crowded_wait_or_insufficient_extension')
+            return ExecutionPlan(regime=self.regime, account=account, action='arm', side=side, size=1.0, reason='crowded_reversal_arming', score=rejection_score, blockers=blockers, signals=signals, subscores=subscores)
+        return ExecutionPlan(regime=self.regime, account=account, action='watch', reason='crowded_wait_or_insufficient_extension', score=rejection_score, blockers=blockers, signals=signals, subscores=subscores)
 
 
 class ShockExecutor(BaseExecutor):
@@ -261,22 +319,40 @@ class ShockExecutor(BaseExecutor):
 
         side = 'short' if e_z >= 0 else 'long'
         event_score = 0.0
-        if trade_burst >= cfg.shock_trade_burst_min:
-            event_score += 1.0
-        if liq >= cfg.shock_liq_min:
-            event_score += 1.0
-        if imbalance >= cfg.shock_imbalance_min:
-            event_score += 1.0
-        if abs(e_z) >= 1.5:
-            event_score += 1.0
-        if rv >= 0.8:
-            event_score += 1.0
+        subscores = {
+            'trade_burst_confirmation': 1.0 if trade_burst >= cfg.shock_trade_burst_min else 0.0,
+            'liquidation_spike_confirmation': 1.0 if liq >= cfg.shock_liq_min else 0.0,
+            'imbalance_confirmation': 1.0 if imbalance >= cfg.shock_imbalance_min else 0.0,
+            'dislocation_confirmation': 1.0 if abs(e_z) >= 1.5 else 0.0,
+            'realized_vol_confirmation': 1.0 if rv >= 0.8 else 0.0,
+        }
+        for key in subscores:
+            if subscores[key] > 0:
+                event_score += 1.0
+
+        blockers: list[str] = []
+        if trade_burst < cfg.shock_trade_burst_min:
+            blockers.append('trade_burst_too_small')
+        if liq < cfg.shock_liq_min:
+            blockers.append('liquidation_spike_too_small')
+        if imbalance < cfg.shock_imbalance_min:
+            blockers.append('imbalance_too_small')
+        if abs(e_z) < 1.5:
+            blockers.append('dislocation_too_small')
+
+        signals = {
+            'e_z': e_z,
+            'trade_burst': trade_burst,
+            'liq': liq,
+            'imbalance': imbalance,
+            'rv': rv,
+        }
 
         if event_score >= cfg.shock_event_enter_min:
-            return ExecutionPlan(regime=self.regime, account=account, action='enter', side=side, size=1.0, reason='shock_reversal_confirmed')
+            return ExecutionPlan(regime=self.regime, account=account, action='enter', side=side, size=1.0, reason='shock_reversal_confirmed', score=event_score, blockers=blockers, signals=signals, subscores=subscores)
         if event_score >= cfg.shock_event_arm_min:
-            return ExecutionPlan(regime=self.regime, account=account, action='arm', side=side, size=1.0, reason='shock_reversal_arming')
-        return ExecutionPlan(regime=self.regime, account=account, action='watch', reason='shock_wait_for_confirmation')
+            return ExecutionPlan(regime=self.regime, account=account, action='arm', side=side, size=1.0, reason='shock_reversal_arming', score=event_score, blockers=blockers, signals=signals, subscores=subscores)
+        return ExecutionPlan(regime=self.regime, account=account, action='watch', reason='shock_wait_for_confirmation', score=event_score, blockers=blockers, signals=signals, subscores=subscores)
 
 
 class HoldExecutor(BaseExecutor):
