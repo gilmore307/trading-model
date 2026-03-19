@@ -6,6 +6,7 @@ from typing import Any
 import json
 
 from src.research.dataset_builder import build_research_row
+from src.research.runtime_adapters import regime_local_artifact_to_snapshot_row
 from src.runners.regime_runner import RegimeRunnerOutput
 
 
@@ -18,6 +19,8 @@ def _parse_dt(value: Any) -> datetime:
 
 
 def output_from_row(row: dict[str, Any]) -> RegimeRunnerOutput:
+    if row.get('artifact_type') == 'regime_local_cycle':
+        row = regime_local_artifact_to_snapshot_row(row)
     return RegimeRunnerOutput(
         observed_at=_parse_dt(row['observed_at'] if 'observed_at' in row else row['timestamp']),
         symbol=row['symbol'],
