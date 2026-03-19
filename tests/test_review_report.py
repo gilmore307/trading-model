@@ -278,3 +278,10 @@ def test_report_scaffold_surfaces_execution_quality_dual_ledger(tmp_path: Path):
     assert regime_rows['trend']['excluded_cycles'] == 1
     assert regime_rows['trend']['dominant_route_family'] == 'trend'
     assert regime_rows['crowded']['excluded_cycles'] == 1
+    mapping_rows = {row['regime']: row for row in report['metrics']['mapping_validity']['rows']}
+    assert mapping_rows['trend']['expected_account'] == 'trend'
+    assert mapping_rows['trend']['dominant_route'] == 'trend'
+    assert mapping_rows['trend']['matched_cycles'] == 2
+    assert mapping_rows['crowded']['expected_account'] == 'crowded'
+    assert mapping_rows['crowded']['dominant_route'] == 'meanrev'
+    assert mapping_rows['crowded']['matched_cycles'] == 0

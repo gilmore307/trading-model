@@ -10,6 +10,7 @@ import json
 from src.review.aggregator import aggregate_from_execution_history
 from src.review.framework import ReviewWindow, build_review_plan
 from src.review.performance import build_performance_snapshot
+from src.routing.router import REGIME_ACCOUNT_MAP
 
 
 def _row_pnl(row: dict[str, Any]) -> float:
@@ -212,6 +213,52 @@ def _build_regime_local_summary(history_rows: list[dict[str, Any]]) -> dict[str,
     }
 
 
+def _build_mapping_validity_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    expected_map = {str(regime.value): account for regime, account in REGIME_ACCOUNT_MAP.items()}
+    buckets: dict[str, dict[str, Any]] = {}
+    for row in history_rows:
+        summary = row.get('summary') if isinstance(row.get('summary'), dict) else row
+        regime = str(summary.get('regime') or summary.get('final_regime') or 'unknown')
+        route_account = summary.get('route_account') or summary.get('plan_account')
+        expected_account = expected_map.get(regime)
+        bucket = buckets.setdefault(regime, {
+            'regime': regime,
+            'expected_account': expected_account,
+            'total_cycles': 0,
+            'matched_cycles': 0,
+            'routed_none_cycles': 0,
+            'route_counts': {},
+        })
+        bucket['total_cycles'] += 1
+        route_key = 'none' if route_account is None else str(route_account)
+        bucket['route_counts'][route_key] = bucket['route_counts'].get(route_key, 0) + 1
+        if route_account is None:
+            bucket['routed_none_cycles'] += 1
+        if route_account == expected_account:
+            bucket['matched_cycles'] += 1
+    rows = []
+    for regime, bucket in buckets.items():
+        total = int(bucket['total_cycles'])
+        matched = int(bucket['matched_cycles'])
+        match_rate = 0.0 if total <= 0 else round((matched / total) * 100.0, 4)
+        dominant_route = sorted(bucket['route_counts'].items(), key=lambda item: (-item[1], item[0]))[0][0] if bucket['route_counts'] else None
+        rows.append({
+            'regime': regime,
+            'expected_account': bucket['expected_account'],
+            'dominant_route': dominant_route,
+            'total_cycles': total,
+            'matched_cycles': matched,
+            'match_rate_pct': match_rate,
+            'routed_none_cycles': int(bucket['routed_none_cycles']),
+            'route_counts': bucket['route_counts'],
+        })
+    rows.sort(key=lambda item: (-int(item['total_cycles']), item['regime']))
+    return {
+        'rows': rows,
+        'status': 'ready' if rows else 'placeholder',
+    }
+
+
 def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
     clean = 0
     excluded = 0
@@ -271,6 +318,21 @@ def _build_regime_local_section(regime_local: dict[str, Any]) -> dict[str, Any]:
         'key': 'regime_local_review',
         'title': 'Regime-Local Review',
         'status': regime_local.get('status', 'placeholder'),
+        'items': items,
+        'highlights': highlights,
+    }
+
+
+def _build_mapping_validity_section(mapping_validity: dict[str, Any]) -> dict[str, Any]:
+    rows = mapping_validity.get('rows', []) if isinstance(mapping_validity, dict) else []
+    items = [{'kind': 'mapping_rows', 'rows': rows}] if rows else []
+    highlights = []
+    for row in rows[:6]:
+        highlights.append(f"{row.get('regime')}:expected={row.get('expected_account')} dominant={row.get('dominant_route')} match={row.get('match_rate_pct')}%")
+    return {
+        'key': 'mapping_validity_review',
+        'title': 'Mapping Validity Review',
+        'status': mapping_validity.get('status', 'placeholder'),
         'items': items,
         'highlights': highlights,
     }
@@ -555,6 +617,15 @@ def _build_narrative_blocks(executive_summary: dict[str, Any], sections: list[di
                             f"regime {row.get('regime')}: cycles={row.get('total_cycles')} clean={row.get('clean_cycles')} excluded={row.get('excluded_cycles')} clean_pnl={row.get('clean_pnl_usdt')} dominant_route={row.get('dominant_route_family')}"
                         )
             blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
+        elif key == 'mapping_validity_review' and section.get('status') == 'ready':
+            lines = []
+            for item in section.get('items', []):
+                if item.get('kind') == 'mapping_rows':
+                    for row in item.get('rows', [])[:6]:
+                        lines.append(
+                            f"mapping {row.get('regime')}: expected={row.get('expected_account')} dominant={row.get('dominant_route')} matched={row.get('matched_cycles')}/{row.get('total_cycles')} ({row.get('match_rate_pct')}%)"
+                        )
+            blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
     return blocks
 
 
@@ -575,6 +646,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
     performance_snapshot = build_performance_snapshot(aggregated_metrics)
     performance_summary = _build_performance_summary(performance_snapshot)
     regime_local = _build_regime_local_summary(history_rows)
+    mapping_validity = _build_mapping_validity_summary(history_rows)
     execution_quality = _build_execution_quality_summary(history_rows)
 
     auto_candidate_params = [{'name': name, 'status': 'pending_data'} for name in plan['adjustment_policy']['auto_candidate_params']]
@@ -592,6 +664,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         _build_account_comparison_section(compare_snapshot, performance_summary),
         _build_router_composite_section(compare_snapshot, performance_summary),
         _build_regime_local_section(regime_local),
+        _build_mapping_validity_section(mapping_validity),
         _build_execution_quality_section(execution_quality),
         parameter_section,
     ]
@@ -627,6 +700,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
             'performance': performance_snapshot,
             'performance_summary': performance_summary,
             'regime_local': regime_local,
+            'mapping_validity': mapping_validity,
             'execution_quality': execution_quality,
             'risk': [],
             'fees': [],
