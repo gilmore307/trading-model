@@ -20,6 +20,7 @@ def decide_alignment_policy(result: AlignmentResult) -> PolicyDecision:
         AlignmentIssueType.UNEXPECTED_EXCHANGE_POSITION,
         AlignmentIssueType.SIDE_MISMATCH,
         AlignmentIssueType.SIZE_MISMATCH,
+        AlignmentIssueType.LEDGER_POSITION_MISMATCH,
     }
     if any(issue.type in severe_types for issue in result.issues):
         return PolicyDecision(trade_enabled=False, action='freeze_route', reason='severe_alignment_issue')

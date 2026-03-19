@@ -173,6 +173,8 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     }
     balance_summary = _balance_summary_for_result(result)
     stats_summary = _strategy_stats_summary(result)
+    ledger_open_size = 0.0 if result.local_position is None else float(result.local_position.ledger_open_size or 0.0)
+    position_size = 0.0 if result.local_position is None else float(result.local_position.size or 0.0)
     payload['summary'] = {
         'symbol': result.regime_output.symbol,
         'execution_id': None if result.receipt is None else result.receipt.execution_id,
@@ -182,6 +184,9 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         'open_leg_count': 0 if result.local_position is None else len(result.local_position.open_legs),
         'closed_leg_count': 0 if result.local_position is None else len(result.local_position.closed_legs),
         'pending_exit_leg_count': 0 if result.local_position is None or result.local_position.pending_exit is None else len(result.local_position.pending_exit.allocations),
+        'ledger_open_size': ledger_open_size,
+        'position_size': position_size,
+        'position_ledger_diff': position_size - ledger_open_size,
         'runtime_mode': result.runtime_state.get('mode'),
         'regime': result.regime_output.final_decision.get('primary'),
         'confidence': result.regime_output.final_decision.get('confidence'),

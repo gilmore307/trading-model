@@ -11,6 +11,7 @@ class AlignmentIssueType(StrEnum):
     UNEXPECTED_EXCHANGE_POSITION = 'unexpected_exchange_position'
     SIDE_MISMATCH = 'side_mismatch'
     SIZE_MISMATCH = 'size_mismatch'
+    LEDGER_POSITION_MISMATCH = 'ledger_position_mismatch'
     STALE_LOCAL_STATE = 'stale_local_state'
 
 
@@ -124,6 +125,22 @@ def reconcile_positions(
                 exchange_side=exchange.side,
                 exchange_size=exchange_size,
                 detail=f'diff={diff}, allowed={allowed}',
+            ))
+
+        position_size = float(local.size or 0.0)
+        position_diff = abs(position_size - local_size)
+        position_allowed = max(size_tolerance_abs, abs(local_size) * size_tolerance_ratio)
+        if position_diff > position_allowed:
+            issues.append(AlignmentIssue(
+                type=AlignmentIssueType.LEDGER_POSITION_MISMATCH,
+                account=account,
+                symbol=symbol,
+                local_status=local.status.value,
+                local_side=local.side,
+                local_size=position_size,
+                exchange_side=local.side,
+                exchange_size=local_size,
+                detail=f'position_vs_ledger_diff={position_diff}, allowed={position_allowed}',
             ))
 
     return AlignmentResult(ok=not issues, issues=issues)
