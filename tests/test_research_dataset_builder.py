@@ -28,6 +28,9 @@ def test_build_research_row_includes_shadow_plans_and_forward_labels():
     assert row['executor_action'] in {'enter', 'arm', 'watch'}
     assert 'trend' in row['shadow_plans']
     assert 'score' in row['shadow_plans']['trend']
+    assert isinstance(row['shadow_plans']['trend']['signals'], dict)
+    assert isinstance(row['shadow_plans']['trend']['subscores'], dict)
+    assert isinstance(row['shadow_plans']['trend']['blockers'], list)
     assert row['fwd_ret_15m'] == 0.01
 
 

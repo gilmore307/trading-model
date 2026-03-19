@@ -47,27 +47,60 @@ class TrendExecutor(BaseExecutor):
 
         aligned = bg_slope20 * bg_slope50 > 0
         side = 'long' if bg_slope20 >= 0 else 'short'
+        stretched = abs(p_z) >= 2.2 and abs(e_z) >= 1.8
+        compressed_pause = p_bw <= 0.015 and trade_burst < cfg.trend_trade_burst_min
+
+        follow_through = 0.0
+        subscores = {
+            'bg_regime_strength': 1.0 if bg_adx >= cfg.trend_bg_adx_min else 0.0,
+            'bg_alignment': 1.0 if aligned else 0.0,
+            'primary_adx_confirmation': 1.0 if p_adx >= cfg.trend_primary_adx_min else 0.0,
+            'primary_extension_confirmation': 1.0 if abs(p_z) >= 0.6 else 0.0,
+            'override_extension_confirmation': 1.0 if abs(e_z) >= 0.8 else 0.0,
+            'trade_burst_confirmation': 1.0 if trade_burst >= cfg.trend_trade_burst_min else 0.0,
+            'stretch_penalty': -1.0 if stretched else 0.0,
+            'compression_pause_penalty': -1.0 if compressed_pause else 0.0,
+        }
+        if subscores['primary_adx_confirmation']:
+            follow_through += 1.0
+        if subscores['primary_extension_confirmation']:
+            follow_through += 1.0
+        if subscores['override_extension_confirmation']:
+            follow_through += 1.0
+        if subscores['trade_burst_confirmation']:
+            follow_through += 1.0
+
+        blockers: list[str] = []
+        if bg_adx < cfg.trend_bg_adx_min:
+            blockers.append('bg_adx_below_threshold')
+        if not aligned:
+            blockers.append('background_slopes_not_aligned')
+        if stretched:
+            blockers.append('overextended_trend')
+        if compressed_pause:
+            blockers.append('compressed_pause')
+
+        signals = {
+            'bg_adx': bg_adx,
+            'bg_slope20': bg_slope20,
+            'bg_slope50': bg_slope50,
+            'p_adx': p_adx,
+            'p_z': p_z,
+            'p_bw': p_bw,
+            'e_z': e_z,
+            'trade_burst': trade_burst,
+            'aligned': aligned,
+            'stretched': stretched,
+            'compressed_pause': compressed_pause,
+        }
 
         if bg_adx >= cfg.trend_bg_adx_min and aligned:
-            follow_through = 0.0
-            if p_adx >= cfg.trend_primary_adx_min:
-                follow_through += 1.0
-            if abs(p_z) >= 0.6:
-                follow_through += 1.0
-            if abs(e_z) >= 0.8:
-                follow_through += 1.0
-            if trade_burst >= cfg.trend_trade_burst_min:
-                follow_through += 1.0
-
-            stretched = abs(p_z) >= 2.2 and abs(e_z) >= 1.8
-            compressed_pause = p_bw <= 0.015 and trade_burst < cfg.trend_trade_burst_min
-
             if follow_through >= cfg.trend_follow_through_enter_min and not stretched:
-                return ExecutionPlan(regime=self.regime, account=account, action='enter', side=side, size=1.0, reason='trend_follow_through_confirmed')
+                return ExecutionPlan(regime=self.regime, account=account, action='enter', side=side, size=1.0, reason='trend_follow_through_confirmed', score=follow_through, blockers=blockers, signals=signals, subscores=subscores)
             if follow_through >= cfg.trend_follow_through_arm_min and not compressed_pause:
-                return ExecutionPlan(regime=self.regime, account=account, action='arm', side=side, size=1.0, reason='trend_setup_arming')
+                return ExecutionPlan(regime=self.regime, account=account, action='arm', side=side, size=1.0, reason='trend_setup_arming', score=follow_through, blockers=blockers, signals=signals, subscores=subscores)
 
-        return ExecutionPlan(regime=self.regime, account=account, action='watch', reason='trend_wait_or_overextended')
+        return ExecutionPlan(regime=self.regime, account=account, action='watch', reason='trend_wait_or_overextended', score=follow_through, blockers=blockers, signals=signals, subscores=subscores)
 
 
 class RangeExecutor(BaseExecutor):
@@ -88,22 +121,56 @@ class RangeExecutor(BaseExecutor):
         side = 'short' if p_z >= 0 else 'long'
         trend_pressure = bg_adx >= cfg.trend_bg_adx_min and bg_slope20 * bg_slope50 > 0 and abs(bg_slope20) > 0.5
         bursty = trade_burst >= cfg.range_trade_burst_max or abs(e_z) >= 1.8
+        bandwidth_in_range = 0.08 <= p_bw <= 0.30
 
-        if p_adx <= cfg.range_primary_adx_max and 0.08 <= p_bw <= 0.30:
-            reversion_score = 0.0
-            if abs(p_z) >= 0.8:
-                reversion_score += 1.0
-            if abs(e_z) >= 0.5:
-                reversion_score += 1.0
-            if trade_burst < cfg.range_trade_burst_max:
-                reversion_score += 1.0
+        reversion_score = 0.0
+        subscores = {
+            'low_adx_confirmation': 1.0 if p_adx <= cfg.range_primary_adx_max else 0.0,
+            'bandwidth_in_range': 1.0 if bandwidth_in_range else 0.0,
+            'primary_dislocation_confirmation': 1.0 if abs(p_z) >= 0.8 else 0.0,
+            'override_dislocation_confirmation': 1.0 if abs(e_z) >= 0.5 else 0.0,
+            'low_burst_confirmation': 1.0 if trade_burst < cfg.range_trade_burst_max else 0.0,
+            'trend_pressure_penalty': -1.0 if trend_pressure else 0.0,
+            'burst_conflict_penalty': -1.0 if bursty else 0.0,
+        }
+        if subscores['primary_dislocation_confirmation']:
+            reversion_score += 1.0
+        if subscores['override_dislocation_confirmation']:
+            reversion_score += 1.0
+        if subscores['low_burst_confirmation']:
+            reversion_score += 1.0
 
+        blockers: list[str] = []
+        if p_adx > cfg.range_primary_adx_max:
+            blockers.append('primary_adx_above_range_threshold')
+        if not bandwidth_in_range:
+            blockers.append('bandwidth_outside_range_window')
+        if trend_pressure:
+            blockers.append('background_trend_pressure')
+        if bursty:
+            blockers.append('burst_conflict')
+
+        signals = {
+            'p_adx': p_adx,
+            'p_z': p_z,
+            'p_bw': p_bw,
+            'e_z': e_z,
+            'trade_burst': trade_burst,
+            'bg_adx': bg_adx,
+            'bg_slope20': bg_slope20,
+            'bg_slope50': bg_slope50,
+            'trend_pressure': trend_pressure,
+            'bursty': bursty,
+            'bandwidth_in_range': bandwidth_in_range,
+        }
+
+        if p_adx <= cfg.range_primary_adx_max and bandwidth_in_range:
             if reversion_score >= cfg.range_reversion_enter_min and not trend_pressure and not bursty:
-                return ExecutionPlan(regime=self.regime, account=account, action='enter', side=side, size=1.0, reason='range_reversion_confirmed')
+                return ExecutionPlan(regime=self.regime, account=account, action='enter', side=side, size=1.0, reason='range_reversion_confirmed', score=reversion_score, blockers=blockers, signals=signals, subscores=subscores)
             if reversion_score >= cfg.range_reversion_arm_min and not trend_pressure:
-                return ExecutionPlan(regime=self.regime, account=account, action='arm', side=side, size=1.0, reason='range_reversion_arming')
+                return ExecutionPlan(regime=self.regime, account=account, action='arm', side=side, size=1.0, reason='range_reversion_arming', score=reversion_score, blockers=blockers, signals=signals, subscores=subscores)
 
-        return ExecutionPlan(regime=self.regime, account=account, action='watch', reason='range_wait_or_breakout_risk')
+        return ExecutionPlan(regime=self.regime, account=account, action='watch', reason='range_wait_or_breakout_risk', score=reversion_score, blockers=blockers, signals=signals, subscores=subscores)
 
 
 class CompressionExecutor(BaseExecutor):
