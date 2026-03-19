@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from itertools import combinations
 from typing import Any
 
 
@@ -40,6 +41,80 @@ def build_regime_quality_summary(rows: list[dict[str, Any]], *, forward_fields: 
             summary[regime][f'avg_{field}'] = _mean(metrics[field])
             summary[regime][f'positive_rate_{field}'] = _positive_rate(metrics[field])
     return summary
+
+
+DEFAULT_SEPARABILITY_FIELDS = [
+    'background_features.adx',
+    'background_features.ema20_slope',
+    'background_features.ema50_slope',
+    'primary_features.adx',
+    'primary_features.vwap_deviation_z',
+    'primary_features.bollinger_bandwidth_pct',
+    'primary_features.realized_vol_pct',
+    'primary_features.funding_pctile',
+    'primary_features.oi_accel',
+    'primary_features.basis_deviation_pct',
+    'override_features.vwap_deviation_z',
+    'override_features.trade_burst_score',
+    'override_features.liquidation_spike_score',
+    'override_features.orderbook_imbalance',
+    'override_features.realized_vol_pct',
+]
+
+
+def _extract_nested(row: dict[str, Any], path: str) -> Any:
+    current: Any = row
+    for part in path.split('.'):
+        if not isinstance(current, dict):
+            return None
+        current = current.get(part)
+    return current
+
+
+def build_regime_separability_summary(rows: list[dict[str, Any]], *, feature_fields: list[str] | None = None) -> dict[str, Any]:
+    feature_fields = feature_fields or DEFAULT_SEPARABILITY_FIELDS
+    buckets: dict[str, dict[str, list]] = defaultdict(lambda: defaultdict(list))
+
+    for row in rows:
+        regime = row.get('final_regime') or 'unknown'
+        for field in feature_fields:
+            buckets[regime][field].append(_extract_nested(row, field))
+
+    feature_means: dict[str, dict[str, float | None]] = {}
+    for regime, metrics in buckets.items():
+        feature_means[regime] = {field: _mean(values) for field, values in metrics.items()}
+
+    pairwise_distance: dict[str, dict[str, Any]] = {}
+    regimes = sorted(feature_means)
+    for left, right in combinations(regimes, 2):
+        comparable = []
+        for field in feature_fields:
+            lv = feature_means[left].get(field)
+            rv = feature_means[right].get(field)
+            if lv is None or rv is None:
+                continue
+            comparable.append(abs(float(lv) - float(rv)))
+        distance = sum(comparable) / len(comparable) if comparable else None
+        pairwise_distance[f'{left}__vs__{right}'] = {
+            'distance': distance,
+            'comparable_feature_count': len(comparable),
+        }
+
+    ranked_overlap = sorted(
+        (
+            {'pair': pair, **values}
+            for pair, values in pairwise_distance.items()
+            if values.get('distance') is not None
+        ),
+        key=lambda item: item['distance'],
+    )
+
+    return {
+        'feature_fields': feature_fields,
+        'feature_means_by_regime': feature_means,
+        'pairwise_distance': pairwise_distance,
+        'closest_pairs': ranked_overlap[:5],
+    }
 
 
 def build_strategy_regime_matrix(rows: list[dict[str, Any]], *, forward_field: str = 'fwd_ret_1h') -> dict[str, dict[str, dict[str, Any]]]:

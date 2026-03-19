@@ -7,6 +7,7 @@ def render_research_report_markdown(report: dict[str, Any]) -> str:
     summary = report.get('summary') or {}
     regime_quality = report.get('regime_quality') or {}
     matrix = report.get('strategy_regime_matrix') or {}
+    separability = report.get('regime_separability') or {}
 
     lines: list[str] = []
     lines.append('# Regime Research Report')
@@ -31,6 +32,17 @@ def render_research_report_markdown(report: dict[str, Any]) -> str:
             for key in ['avg_fwd_ret_15m', 'positive_rate_fwd_ret_15m', 'avg_fwd_ret_1h', 'positive_rate_fwd_ret_1h', 'avg_fwd_ret_4h', 'positive_rate_fwd_ret_4h']:
                 if key in row:
                     lines.append(f"- {key}: {row.get(key)}")
+
+    lines.append('')
+    lines.append('')
+    lines.append('## Regime Separability')
+    closest_pairs = separability.get('closest_pairs') or []
+    if not closest_pairs:
+        lines.append('')
+        lines.append('- No separability rows')
+    else:
+        for row in closest_pairs:
+            lines.append(f"- {row.get('pair')}: distance={row.get('distance')} comparable_feature_count={row.get('comparable_feature_count')}")
 
     lines.append('')
     lines.append('## Strategy × Regime Matrix')

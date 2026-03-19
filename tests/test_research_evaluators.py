@@ -1,4 +1,4 @@
-from src.research.evaluators import build_regime_quality_summary, build_strategy_regime_matrix
+from src.research.evaluators import build_regime_quality_summary, build_regime_separability_summary, build_strategy_regime_matrix
 
 
 def test_build_regime_quality_summary_aggregates_confidence_and_forward_returns():
@@ -14,6 +14,28 @@ def test_build_regime_quality_summary_aggregates_confidence_and_forward_returns(
     assert summary['trend']['positive_rate_fwd_ret_1h'] == 0.5
     assert summary['range']['sample_count'] == 1
     assert summary['range']['avg_fwd_ret_4h'] == -0.01
+
+
+def test_build_regime_separability_summary_reports_feature_means_and_closest_pairs():
+    rows = [
+        {
+            'final_regime': 'trend',
+            'background_features': {'adx': 30.0, 'ema20_slope': 1.0, 'ema50_slope': 0.8},
+            'primary_features': {'adx': 25.0, 'vwap_deviation_z': 1.0, 'bollinger_bandwidth_pct': 0.1, 'realized_vol_pct': 0.5, 'funding_pctile': 0.6, 'oi_accel': 0.1, 'basis_deviation_pct': 0.01},
+            'override_features': {'vwap_deviation_z': 1.2, 'trade_burst_score': 0.7, 'liquidation_spike_score': 0.1, 'orderbook_imbalance': 0.2, 'realized_vol_pct': 0.6},
+        },
+        {
+            'final_regime': 'range',
+            'background_features': {'adx': 15.0, 'ema20_slope': 0.1, 'ema50_slope': 0.05},
+            'primary_features': {'adx': 12.0, 'vwap_deviation_z': -0.8, 'bollinger_bandwidth_pct': 0.15, 'realized_vol_pct': 0.3, 'funding_pctile': 0.5, 'oi_accel': 0.0, 'basis_deviation_pct': 0.0},
+            'override_features': {'vwap_deviation_z': -0.5, 'trade_burst_score': 0.2, 'liquidation_spike_score': 0.0, 'orderbook_imbalance': 0.05, 'realized_vol_pct': 0.31},
+        },
+    ]
+    summary = build_regime_separability_summary(rows)
+    assert summary['feature_means_by_regime']['trend']['background_features.adx'] == 30.0
+    assert summary['feature_means_by_regime']['range']['primary_features.adx'] == 12.0
+    assert summary['closest_pairs'][0]['pair'] == 'range__vs__trend'
+    assert summary['closest_pairs'][0]['comparable_feature_count'] > 0
 
 
 def test_build_strategy_regime_matrix_aggregates_shadow_plan_behavior():
