@@ -60,6 +60,9 @@ def test_build_execution_artifact_includes_summary_fields():
     assert artifact['feature_snapshot']['background_4h']['adx'] == 30.0
     assert artifact['feature_snapshot']['primary_15m']['adx'] == 28.0
     assert artifact['feature_snapshot']['override_1m']['trade_burst_score'] == 0.7
+    assert 'trend' in artifact['shadow_plans']
+    assert 'crowded' in artifact['shadow_plans']
+    assert artifact['shadow_plans']['trend']['action'] in {'enter', 'arm', 'watch'}
     assert artifact['summary']['runtime_mode'] == 'develop'
     assert artifact['summary']['regime'] == 'trend'
     assert artifact['summary']['plan_action'] == 'enter'
@@ -170,6 +173,8 @@ def test_persist_execution_artifact_writes_anomaly_ledger_for_excluded_execution
     assert regime_row['final_regime'] == 'trend'
     assert regime_row['route_strategy_family'] == 'trend'
     assert regime_row['strategy_stats_eligible'] is False
+    assert 'shadow_plans' in regime_row
+    assert 'trend' in regime_row['shadow_plans']
     lines = anomaly_path.read_text(encoding='utf-8').splitlines()
     assert len(lines) == 1
     anomaly = json.loads(lines[0])

@@ -9,6 +9,7 @@ from typing import Any
 from src.execution.pipeline import ExecutionCycleResult, ExecutionPipeline
 from src.review.account_metrics import build_account_metrics_from_cycle
 from src.review.compare import build_compare_snapshot
+from src.strategies.executors import build_shadow_plans
 
 
 OUT_DIR = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime')
@@ -113,6 +114,7 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     payload['recorded_at'] = datetime.now(UTC).isoformat()
     payload['compare_snapshot'] = build_compare_snapshot(result)
     payload['feature_snapshot'] = _feature_snapshot(result)
+    payload['shadow_plans'] = build_shadow_plans(result.regime_output)
     balance_summary = _balance_summary_for_result(result)
     stats_summary = _strategy_stats_summary(result)
     payload['summary'] = {
@@ -170,6 +172,7 @@ def _build_regime_local_artifact(result: ExecutionCycleResult, artifact: dict[st
         'strategy_stats_reason': summary.get('strategy_stats_reason'),
         'account_metrics': summary.get('account_metrics'),
         'feature_snapshot': artifact.get('feature_snapshot'),
+        'shadow_plans': artifact.get('shadow_plans'),
     }
 
 

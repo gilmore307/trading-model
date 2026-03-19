@@ -215,6 +215,21 @@ EXECUTORS = {
 }
 
 
+def build_shadow_plans(output: RegimeRunnerOutput) -> dict[str, dict]:
+    plans: dict[str, dict] = {}
+    for name, executor in EXECUTORS.items():
+        plan = executor.build_plan(output)
+        plans[name] = {
+            'regime': plan.regime,
+            'account': plan.account,
+            'action': plan.action,
+            'side': plan.side,
+            'size': plan.size,
+            'reason': plan.reason,
+        }
+    return plans
+
+
 def executor_for(output: RegimeRunnerOutput) -> BaseExecutor:
     regime = output.final_decision['primary']
     if not output.route_decision['trade_enabled'] or output.route_decision['account'] is None:
