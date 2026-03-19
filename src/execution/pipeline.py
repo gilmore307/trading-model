@@ -60,7 +60,7 @@ class ExecutionPipeline:
     def __init__(self, regime_runner: BtcRegimeRunner | None = None, controller: RouteController | None = None, snapshot_provider: ExchangeSnapshotProvider | None = None, adapter: ExecutionAdapter | None = None, settings: Settings | None = None, runtime_store: RuntimeStore | None = None, composite_simulator: RouterCompositeSimulator | None = None):
         self.settings = settings or Settings.load()
         self.regime_runner = regime_runner or BtcRegimeRunner(self.settings)
-        self.controller = controller or RouteController()
+        self.controller = controller or RouteController(verification_cycle_timeout=self.settings.verification_cycle_timeout)
         self.snapshot_provider = snapshot_provider or ExchangeSnapshotProvider(self.settings)
         self.adapter = adapter or DryRunExecutionAdapter()
         self.runtime_store = runtime_store or RuntimeStore()

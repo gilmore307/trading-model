@@ -174,8 +174,8 @@ class Settings(BaseModel):
             "label": os.getenv("OKX_TREND_ACCOUNT_LABEL", os.getenv("OKX_ACCOUNT_LABEL", "Trend")),
         }
         strategy_account_aliases = {
-            "trend": os.getenv("BREAKOUT_ACCOUNT_ALIAS", "trend"),
-            "crowded": os.getenv("PULLBACK_ACCOUNT_ALIAS", "crowded"),
+            "trend": os.getenv("TREND_ACCOUNT_ALIAS", os.getenv("BREAKOUT_ACCOUNT_ALIAS", "trend")),
+            "crowded": os.getenv("CROWDED_ACCOUNT_ALIAS", os.getenv("PULLBACK_ACCOUNT_ALIAS", "crowded")),
             "meanrev": os.getenv("MEANREV_ACCOUNT_ALIAS", "meanrev"),
             "compression": os.getenv("COMPRESSION_ACCOUNT_ALIAS", "compression"),
             "realtime": os.getenv("REALTIME_ACCOUNT_ALIAS", "realtime"),
