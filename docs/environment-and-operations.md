@@ -13,8 +13,8 @@ Optional:
 - `SYMBOLS=BTC-USDT-SWAP`  # current active trade path; add ETH/SOL only when intentionally expanding scope
 - `STRATEGIES=trend,crowded,meanrev,compression,realtime`
 - `TIMEFRAME=5m`
-- `BREAKOUT_LOOKBACK=20`
-- `PULLBACK_LOOKBACK=20`
+- `TREND_LOOKBACK=20`  # naming cleanup target; code still accepts legacy BREAKOUT_LOOKBACK today
+- `CROWDED_LOOKBACK=20`  # naming cleanup target; code still accepts legacy PULLBACK_LOOKBACK today
 - `MEANREV_LOOKBACK=20`
 - `MEANREV_THRESHOLD=0.015`
 - `MAX_OPEN_POSITIONS=2`
