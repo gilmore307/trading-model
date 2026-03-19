@@ -23,6 +23,7 @@ TEST_REPORT_JSON = OUT_DIR / 'latest-test-summary.json'
 TEST_REPORT_MD = OUT_DIR / 'latest-test-summary.md'
 CONVERSION_SETTLE_SECONDS = 5.0
 CONVERSION_VERIFY_RETRIES = 3
+DUST_ASSET_THRESHOLD = 0.001
 
 
 @dataclass(slots=True)
@@ -299,7 +300,7 @@ class OkxWorkflowHooks(WorkflowHooks):
             for row in assets:
                 asset = str(row.get('asset') or '').upper()
                 amount = float(row.get('amount') or 0.0)
-                if amount <= 0:
+                if amount <= DUST_ASSET_THRESHOLD:
                     continue
                 try:
                     result = client.convert_asset_to_usdt(asset, amount)
@@ -336,7 +337,7 @@ class OkxWorkflowHooks(WorkflowHooks):
                 non_usdt = [
                     f"{row.get('asset')}(avail={row.get('available')},eq={row.get('equity')},liab={row.get('liability')},cross={row.get('cross_liability')},iso={row.get('isolated_liability')},lev={row.get('notional_leverage')})"
                     for row in (summary.get('assets') or [])
-                    if str(row.get('asset') or '').upper() != 'USDT' and float(row.get('available') or row.get('equity') or 0.0) > 0.0
+                    if str(row.get('asset') or '').upper() != 'USDT' and max(float(row.get('available') or 0.0), float(row.get('equity') or 0.0)) > DUST_ASSET_THRESHOLD
                 ]
                 if usdt_available < threshold:
                     failures.append(f'{account}:usdt_available={usdt_available}<buffer={threshold}')

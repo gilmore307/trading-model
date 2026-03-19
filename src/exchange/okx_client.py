@@ -549,7 +549,7 @@ class OkxClient:
         elif pos_ccy == quote:
             side = 'buy'
             raw_amount = liab if liab > 0 else avail_pos
-            params = {'tdMode': td_mode, 'reduceOnly': True, 'tgtCcy': 'base_ccy'}
+            params = {'tdMode': td_mode, 'reduceOnly': True}
         else:
             return {'symbol': symbol, 'skipped': True, 'reason': f'unrecognized_pos_ccy:{pos_ccy}', 'raw': row}
         if raw_amount <= 0:
