@@ -56,12 +56,23 @@ class RouteController:
             if current is None:
                 return None
             meta = dict(current.meta or {})
+            if meta.get('execution_recovery') == 'forced_exit' and meta.get('execution_recovery_detail') == (detail or meta.get('execution_recovery_detail')):
+                self._append_event(current, {
+                    'kind': 'forced_exit_recovery_duplicate_ignored',
+                    'detail': detail,
+                })
+                current.reason = detail or 'forced_exit_recovery_duplicate_ignored'
+                return self.store.upsert(current)
             meta['strategy_stats_eligible'] = 'false'
             meta['strategy_stats_reason'] = 'forced_exit_recovery'
             meta['execution_recovery'] = 'forced_exit'
             if detail is not None:
                 meta['execution_recovery_detail'] = detail
             current.meta = meta
+            self._append_event(current, {
+                'kind': 'forced_exit_recovery_marked',
+                'detail': detail,
+            })
             current.reason = detail or 'forced_exit_recovery'
             return self.store.upsert(current)
 
