@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from src.config.settings import Settings
+from src.execution.identifiers import build_okx_cl_ord_id, generate_execution_id
 from src.exchange.okx_client import OkxClient
 
 
@@ -20,6 +21,9 @@ class ExecutionReceipt:
     reason: str
     observed_at: datetime
     raw: dict | None = None
+    execution_id: str | None = None
+    client_order_id: str | None = None
+    trade_ids: list[str] | None = None
 
 
 class ExecutionAdapter:
@@ -32,6 +36,8 @@ class ExecutionAdapter:
 
 class DryRunExecutionAdapter(ExecutionAdapter):
     def submit_entry(self, *, account: str, symbol: str, side: str, size: float, reason: str) -> ExecutionReceipt:
+        execution_id = generate_execution_id(account=account, symbol=symbol, action='entry')
+        client_order_id = build_okx_cl_ord_id(execution_id=execution_id, account=account, symbol=symbol, action='entry')
         return ExecutionReceipt(
             accepted=True,
             mode='dry_run',
@@ -43,10 +49,15 @@ class DryRunExecutionAdapter(ExecutionAdapter):
             order_id='dry-run-entry',
             reason=reason,
             observed_at=datetime.now(UTC),
-            raw={'dry_run': True},
+            raw={'dry_run': True, 'execution_id': execution_id, 'client_order_id': client_order_id, 'trade_ids': []},
+            execution_id=execution_id,
+            client_order_id=client_order_id,
+            trade_ids=[],
         )
 
     def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
+        execution_id = generate_execution_id(account=account, symbol=symbol, action='exit')
+        client_order_id = build_okx_cl_ord_id(execution_id=execution_id, account=account, symbol=symbol, action='exit')
         return ExecutionReceipt(
             accepted=True,
             mode='dry_run',
@@ -58,7 +69,10 @@ class DryRunExecutionAdapter(ExecutionAdapter):
             order_id='dry-run-exit',
             reason=reason,
             observed_at=datetime.now(UTC),
-            raw={'dry_run': True},
+            raw={'dry_run': True, 'execution_id': execution_id, 'client_order_id': client_order_id, 'trade_ids': []},
+            execution_id=execution_id,
+            client_order_id=client_order_id,
+            trade_ids=[],
         )
 
 
@@ -74,7 +88,15 @@ class OkxExecutionAdapter(ExecutionAdapter):
         strategy_name = self.settings.strategy_for_account_alias(account) or account
         client = self._client(account)
         notional_usdt = float(self.settings.default_order_size_usdt) * float(size)
-        result = client.create_entry_order(self.settings.execution_symbol(strategy_name, symbol), side, notional_usdt)
+        execution_id = generate_execution_id(account=account, symbol=symbol, action='entry')
+        client_order_id = build_okx_cl_ord_id(execution_id=execution_id, account=account, symbol=symbol, action='entry')
+        result = client.create_entry_order(
+            self.settings.execution_symbol(strategy_name, symbol),
+            side,
+            notional_usdt,
+            client_order_id=client_order_id,
+            execution_id=execution_id,
+        )
         return ExecutionReceipt(
             accepted=bool(result.get('order_id')),
             mode='okx_demo' if self.settings.okx_demo else 'okx_live',
@@ -87,11 +109,16 @@ class OkxExecutionAdapter(ExecutionAdapter):
             reason=reason,
             observed_at=datetime.now(UTC),
             raw=result,
+            execution_id=result.get('execution_id') or execution_id,
+            client_order_id=result.get('client_order_id') or client_order_id,
+            trade_ids=result.get('trade_ids'),
         )
 
     def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
         strategy_name = self.settings.strategy_for_account_alias(account) or account
         client = self._client(account)
+        execution_id = generate_execution_id(account=account, symbol=symbol, action='exit')
+        client_order_id = build_okx_cl_ord_id(execution_id=execution_id, account=account, symbol=symbol, action='exit')
         current = client.current_live_position(self.settings.execution_symbol(strategy_name, symbol))
         if current is None:
             return ExecutionReceipt(
@@ -105,9 +132,18 @@ class OkxExecutionAdapter(ExecutionAdapter):
                 order_id=None,
                 reason='no_live_exchange_position_for_exit',
                 observed_at=datetime.now(UTC),
-                raw=None,
+                raw={'execution_id': execution_id, 'client_order_id': client_order_id, 'trade_ids': []},
+                execution_id=execution_id,
+                client_order_id=client_order_id,
+                trade_ids=[],
             )
-        result = client.create_exit_order(self.settings.execution_symbol(strategy_name, symbol), current.get('side'), float(current.get('contracts') or 0.0))
+        result = client.create_exit_order(
+            self.settings.execution_symbol(strategy_name, symbol),
+            current.get('side'),
+            float(current.get('contracts') or 0.0),
+            client_order_id=client_order_id,
+            execution_id=execution_id,
+        )
         return ExecutionReceipt(
             accepted=bool(result.get('order_id')),
             mode='okx_demo' if self.settings.okx_demo else 'okx_live',
@@ -120,4 +156,7 @@ class OkxExecutionAdapter(ExecutionAdapter):
             reason=reason,
             observed_at=datetime.now(UTC),
             raw=result,
+            execution_id=result.get('execution_id') or execution_id,
+            client_order_id=result.get('client_order_id') or client_order_id,
+            trade_ids=result.get('trade_ids'),
         )

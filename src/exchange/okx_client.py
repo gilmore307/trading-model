@@ -601,7 +601,16 @@ class OkxClient:
             fallback.append(trade)
         return fee_summary_from_trades(exact or fallback[:5])
 
-    def create_entry_order(self, symbol: str, signal_side: str, notional_usdt: float, current_open_amount: float = 0.0) -> dict[str, Any]:
+    def create_entry_order(
+        self,
+        symbol: str,
+        signal_side: str,
+        notional_usdt: float,
+        current_open_amount: float = 0.0,
+        *,
+        client_order_id: str | None = None,
+        execution_id: str | None = None,
+    ) -> dict[str, Any]:
         self.ensure_markets_loaded()
         execution_symbol = self.settings.ccxt_symbol(symbol)
         market = self.exchange.market(execution_symbol)
@@ -622,6 +631,8 @@ class OkxClient:
             "tdMode": "cross",
             "posSide": "net",
         }
+        if client_order_id:
+            params['clOrdId'] = client_order_id
         order = self.exchange.create_order(execution_symbol, "market", order_side, amount, None, params)
         fee_usdt = extract_order_fee(order)
         realized_pnl_usdt = extract_realized_pnl(order)
@@ -646,6 +657,7 @@ class OkxClient:
         live_contracts = 0.0 if live is None else float(live.get('contracts') or 0.0)
         live_side = None if live is None else live.get('side')
 
+        info = order.get('info') if isinstance(order.get('info'), dict) else {}
         return {
             "symbol": symbol,
             "ccxt_symbol": execution_symbol,
@@ -660,18 +672,31 @@ class OkxClient:
             "fee_rate": None if fee_meta is None else fee_meta.get('fee_rate'),
             "fill_ids": None if fee_meta is None else fee_meta.get('fill_ids'),
             "fill_count": None if fee_meta is None else fee_meta.get('fill_count'),
+            "trade_ids": None if fee_meta is None else fee_meta.get('fill_ids'),
             "verified_entry": verified_entry,
             "live_contracts": live_contracts,
             "live_side": live_side,
             "verification_attempts": verification,
-            "order_id": order.get("id"),
+            "execution_id": execution_id,
+            "client_order_id": client_order_id or order.get('clientOrderId') or info.get('clOrdId'),
+            "order_id": order.get("id") or info.get('ordId'),
+            "okx_ord_id": order.get("id") or info.get('ordId'),
+            "okx_cl_ord_id": client_order_id or order.get('clientOrderId') or info.get('clOrdId'),
             "status": order.get("status"),
             "account_alias": self.account_alias,
             "account_label": self.account_label,
             "raw": order,
         }
 
-    def create_exit_order(self, symbol: str, position_side: str, amount: float) -> dict[str, Any]:
+    def create_exit_order(
+        self,
+        symbol: str,
+        position_side: str,
+        amount: float,
+        *,
+        client_order_id: str | None = None,
+        execution_id: str | None = None,
+    ) -> dict[str, Any]:
         if amount <= 0:
             raise RuntimeError(f"Refusing to exit {symbol}: tracked amount is missing or invalid")
 
@@ -685,6 +710,8 @@ class OkxClient:
             "posSide": "net",
             "reduceOnly": True,
         }
+        if client_order_id:
+            params['clOrdId'] = client_order_id
 
         orders = []
         verification = []
@@ -767,12 +794,17 @@ class OkxClient:
             "fee_rate": sorted({rate for row in orders for rate in (row.get('fee_rate') or [])}) or None,
             "fill_ids": [fid for row in orders for fid in (row.get('fill_ids') or [])] or None,
             "fill_count": sum(int(row.get('fill_count') or 0) for row in orders) or None,
+            "trade_ids": [fid for row in orders for fid in (row.get('fill_ids') or [])] or None,
             "verified_flat": verified_flat,
             "remaining_contracts": remaining_contracts,
             "remaining_side": remaining_side,
             "verification_attempts": verification,
             "order_attempts": orders,
+            "execution_id": execution_id,
+            "client_order_id": client_order_id,
             "order_id": final_order.get("order_id"),
+            "okx_ord_id": final_order.get("order_id"),
+            "okx_cl_ord_id": client_order_id,
             "status": final_order.get("status"),
             "account_alias": self.account_alias,
             "account_label": self.account_label,

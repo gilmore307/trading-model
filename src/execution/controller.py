@@ -69,7 +69,19 @@ class RouteController:
             current.reason = detail or 'missed_entry_cleared'
             return self.store.upsert(current)
 
-    def submit_entry(self, account: str, symbol: str, route: str, side: str, size: float, entry_order_id: str | None = None) -> LivePosition:
+    def submit_entry(
+        self,
+        account: str,
+        symbol: str,
+        route: str,
+        side: str,
+        size: float,
+        entry_order_id: str | None = None,
+        *,
+        entry_execution_id: str | None = None,
+        entry_client_order_id: str | None = None,
+        entry_trade_ids: list[str] | None = None,
+    ) -> LivePosition:
         with self.locks.hold(account, symbol):
             if not self.routes.is_enabled(account, symbol):
                 current = self.store.get(account, symbol) or LivePosition(account=account, symbol=symbol, route=route)
@@ -83,16 +95,31 @@ class RouteController:
             current.side = side
             current.size = size
             current.entry_order_id = entry_order_id
+            current.entry_execution_id = entry_execution_id
+            current.entry_client_order_id = entry_client_order_id
+            current.entry_trade_ids = list(entry_trade_ids or [])
             current.reason = 'entry_submitted'
             return self.store.upsert(current)
 
-    def submit_exit(self, account: str, symbol: str, exit_order_id: str | None = None) -> LivePosition | None:
+    def submit_exit(
+        self,
+        account: str,
+        symbol: str,
+        exit_order_id: str | None = None,
+        *,
+        exit_execution_id: str | None = None,
+        exit_client_order_id: str | None = None,
+        exit_trade_ids: list[str] | None = None,
+    ) -> LivePosition | None:
         with self.locks.hold(account, symbol):
             current = self.store.get(account, symbol)
             if current is None:
                 return None
             current.status = LivePositionStatus.EXIT_SUBMITTED
             current.exit_order_id = exit_order_id
+            current.exit_execution_id = exit_execution_id
+            current.exit_client_order_id = exit_client_order_id
+            current.exit_trade_ids = list(exit_trade_ids or [])
             current.reason = 'exit_submitted'
             return self.store.upsert(current)
 

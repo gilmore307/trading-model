@@ -35,6 +35,12 @@ class LivePosition:
     size: float = 0.0
     entry_order_id: str | None = None
     exit_order_id: str | None = None
+    entry_execution_id: str | None = None
+    exit_execution_id: str | None = None
+    entry_client_order_id: str | None = None
+    exit_client_order_id: str | None = None
+    entry_trade_ids: list[str] | None = None
+    exit_trade_ids: list[str] | None = None
     last_exchange_observed_at: datetime | None = None
     last_local_updated_at: datetime | None = None
     reason: str | None = None

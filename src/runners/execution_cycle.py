@@ -120,6 +120,10 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     stats_summary = _strategy_stats_summary(result)
     payload['summary'] = {
         'symbol': result.regime_output.symbol,
+        'execution_id': None if result.receipt is None else result.receipt.execution_id,
+        'client_order_id': None if result.receipt is None else result.receipt.client_order_id,
+        'order_id': None if result.receipt is None else result.receipt.order_id,
+        'trade_ids': None if result.receipt is None else result.receipt.trade_ids,
         'runtime_mode': result.runtime_state.get('mode'),
         'regime': result.regime_output.final_decision.get('primary'),
         'confidence': result.regime_output.final_decision.get('confidence'),
@@ -216,6 +220,10 @@ def _build_anomaly_artifact(result: ExecutionCycleResult, artifact: dict[str, An
         'symbol': summary.get('symbol'),
         'account': summary.get('plan_account') or (None if result.receipt is None else result.receipt.account),
         'plan_action': summary.get('plan_action'),
+        'execution_id': summary.get('execution_id'),
+        'client_order_id': summary.get('client_order_id'),
+        'order_id': summary.get('order_id'),
+        'trade_ids': summary.get('trade_ids'),
         'strategy_stats_reason': summary.get('strategy_stats_reason'),
         'execution_recovery': recovery_type,
         'execution_recovery_detail': meta.get('execution_recovery_detail'),

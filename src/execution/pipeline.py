@@ -171,7 +171,17 @@ class ExecutionPipeline:
 
         if plan.account is not None and plan.action == 'enter' and plan.side is not None and plan.size is not None:
             receipt = self.adapter.submit_entry(account=plan.account, symbol=regime_output.symbol, side=plan.side, size=plan.size, reason=plan.reason or 'entry')
-            local_position = self.controller.submit_entry(plan.account, regime_output.symbol, plan.regime, plan.side, float(plan.size), entry_order_id=receipt.order_id)
+            local_position = self.controller.submit_entry(
+                plan.account,
+                regime_output.symbol,
+                plan.regime,
+                plan.side,
+                float(plan.size),
+                entry_order_id=receipt.order_id,
+                entry_execution_id=receipt.execution_id,
+                entry_client_order_id=receipt.client_order_id,
+                entry_trade_ids=receipt.trade_ids,
+            )
             exchange_snapshot = refresh_snapshot()
             local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or local_position
             verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
@@ -182,7 +192,14 @@ class ExecutionPipeline:
             reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
         elif plan.account is not None and plan.action == 'exit':
             receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason=plan.reason or 'exit')
-            local_position = self.controller.submit_exit(plan.account, regime_output.symbol, exit_order_id=receipt.order_id)
+            local_position = self.controller.submit_exit(
+                plan.account,
+                regime_output.symbol,
+                exit_order_id=receipt.order_id,
+                exit_execution_id=receipt.execution_id,
+                exit_client_order_id=receipt.client_order_id,
+                exit_trade_ids=receipt.trade_ids,
+            )
             exchange_snapshot = refresh_snapshot()
             local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or local_position
             verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
@@ -201,7 +218,14 @@ class ExecutionPipeline:
                 if current.status.value == 'exit_verifying' and current_snapshot is not None and float(current_snapshot.size or 0.0) > 0.0:
                     self.controller.mark_forced_exit_recovery(plan.account, regime_output.symbol, detail='forced_exit_recovery_submitted')
                     receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason='forced_exit_recovery')
-                    current = self.controller.submit_exit(plan.account, regime_output.symbol, exit_order_id=receipt.order_id) or current
+                    current = self.controller.submit_exit(
+                        plan.account,
+                        regime_output.symbol,
+                        exit_order_id=receipt.order_id,
+                        exit_execution_id=receipt.execution_id,
+                        exit_client_order_id=receipt.client_order_id,
+                        exit_trade_ids=receipt.trade_ids,
+                    ) or current
                     exchange_snapshot = refresh_snapshot()
                     local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or current
                     verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
