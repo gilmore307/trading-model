@@ -129,6 +129,17 @@ def _build_attribution_snapshot(result: ExecutionCycleResult) -> dict[str, Any]:
         'realized_pnl_source': 'fill_aggregation' if raw.get('fill_count') else ('order_payload' if raw.get('realized_pnl_usdt') is not None else None),
         'equity_source': 'balance_summary' if raw.get('equity_end_usdt') is not None or raw.get('equity_usdt') is not None else None,
         'ledger': ledger,
+        'pending_exit_allocations': [] if local is None or local.pending_exit is None else [
+            {
+                'leg_id': alloc.leg_id,
+                'requested_size': alloc.requested_size,
+                'closed_size': alloc.closed_size,
+                'trade_ids': alloc.trade_ids,
+                'fee_usdt': alloc.fee_usdt,
+                'realized_pnl_usdt': alloc.realized_pnl_usdt,
+            }
+            for alloc in local.pending_exit.allocations
+        ],
     }
 
 
@@ -190,6 +201,9 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
                     'leg_id': alloc.leg_id,
                     'requested_size': alloc.requested_size,
                     'closed_size': alloc.closed_size,
+                    'trade_ids': alloc.trade_ids,
+                    'fee_usdt': alloc.fee_usdt,
+                    'realized_pnl_usdt': alloc.realized_pnl_usdt,
                 }
                 for alloc in result.local_position.pending_exit.allocations
             ],

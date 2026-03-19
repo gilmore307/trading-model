@@ -213,7 +213,7 @@ class RouteController:
                 alloc_size = min(float(leg.remaining_size or 0.0), remaining_to_allocate)
                 if alloc_size <= 0:
                     continue
-                allocations.append(ExitAllocation(leg_id=leg.leg_id, requested_size=alloc_size, closed_size=0.0))
+                allocations.append(ExitAllocation(leg_id=leg.leg_id, requested_size=alloc_size, closed_size=0.0, trade_ids=[], fee_usdt=None, realized_pnl_usdt=None))
                 remaining_to_allocate -= alloc_size
             self._reset_verification_cycles(current, phase='exit')
             current.pending_exit = ExitExecution(
@@ -283,6 +283,9 @@ class RouteController:
                     already_closed = sum(float(a.closed_size or 0.0) for a in current.pending_exit.allocations)
                     remaining_to_apply = min(closed_delta, max(0.0, alloc_cap - already_closed))
                     updated_open_legs = []
+                    pending_trade_ids = list(current.pending_exit.trade_ids or [])
+                    exit_fee_total = None if not isinstance((current.meta or {}).get('last_exit_fee_usdt'), (int, float)) else float((current.meta or {}).get('last_exit_fee_usdt'))
+                    exit_realized_total = None if not isinstance((current.meta or {}).get('last_exit_realized_pnl_usdt'), (int, float)) else float((current.meta or {}).get('last_exit_realized_pnl_usdt'))
                     for leg in current.open_legs:
                         leg_remaining = float(leg.remaining_size or 0.0)
                         if remaining_to_apply > 0.0:
@@ -292,6 +295,12 @@ class RouteController:
                             for alloc in current.pending_exit.allocations:
                                 if alloc.leg_id == leg.leg_id:
                                     alloc.closed_size = min(alloc.requested_size, float(alloc.closed_size or 0.0) + consume)
+                                    alloc.trade_ids = list(dict.fromkeys([*(alloc.trade_ids or []), *pending_trade_ids]))
+                                    ratio = 0.0 if not current.pending_exit.requested_size else float(consume) / float(current.pending_exit.requested_size)
+                                    if exit_fee_total is not None:
+                                        alloc.fee_usdt = round(float(exit_fee_total) * ratio, 12)
+                                    if exit_realized_total is not None:
+                                        alloc.realized_pnl_usdt = round(float(exit_realized_total) * ratio, 12)
                                     break
                         if float(leg.remaining_size or 0.0) <= 1e-12:
                             leg.remaining_size = 0.0

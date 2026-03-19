@@ -9,6 +9,9 @@ class ExitAllocation:
     leg_id: str
     requested_size: float
     closed_size: float = 0.0
+    trade_ids: list[str] = field(default_factory=list)
+    fee_usdt: float | None = None
+    realized_pnl_usdt: float | None = None
 
 
 @dataclass(slots=True)

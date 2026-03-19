@@ -234,6 +234,12 @@ class ExecutionPipeline:
                 exit_trade_ids=receipt.trade_ids,
                 requested_size=requested_exit_size,
             )
+            if local_position is not None and isinstance(receipt.raw, dict):
+                meta = dict(local_position.meta or {})
+                meta['last_exit_fee_usdt'] = receipt.raw.get('fee_usdt')
+                meta['last_exit_realized_pnl_usdt'] = receipt.raw.get('realized_pnl_usdt')
+                local_position.meta = meta
+                local_position = self.controller.store.upsert(local_position)
             exchange_snapshot = refresh_snapshot()
             local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or local_position
             verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
@@ -266,6 +272,12 @@ class ExecutionPipeline:
                         exit_trade_ids=receipt.trade_ids,
                         requested_size=requested_exit_size,
                     ) or current
+                    if current is not None and isinstance(receipt.raw, dict):
+                        meta = dict(current.meta or {})
+                        meta['last_exit_fee_usdt'] = receipt.raw.get('fee_usdt')
+                        meta['last_exit_realized_pnl_usdt'] = receipt.raw.get('realized_pnl_usdt')
+                        current.meta = meta
+                        current = self.controller.store.upsert(current)
                     exchange_snapshot = refresh_snapshot()
                     local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or current
                     verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
