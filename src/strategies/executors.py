@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.config.settings import Settings
 from src.runners.regime_runner import RegimeRunnerOutput
@@ -14,6 +14,10 @@ class ExecutionPlan:
     side: str | None = None
     size: float | None = None
     reason: str | None = None
+    score: float | None = None
+    blockers: list[str] = field(default_factory=list)
+    signals: dict = field(default_factory=dict)
+    subscores: dict[str, float] = field(default_factory=dict)
 
 
 class BaseExecutor:
@@ -235,6 +239,10 @@ def build_shadow_plans(output: RegimeRunnerOutput) -> dict[str, dict]:
             'side': plan.side,
             'size': plan.size,
             'reason': plan.reason,
+            'score': plan.score,
+            'blockers': plan.blockers,
+            'signals': plan.signals,
+            'subscores': plan.subscores,
         }
     return plans
 
