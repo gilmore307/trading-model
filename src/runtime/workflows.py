@@ -24,6 +24,16 @@ TEST_REPORT_MD = OUT_DIR / 'latest-test-summary.md'
 CONVERSION_SETTLE_SECONDS = 5.0
 CONVERSION_VERIFY_RETRIES = 3
 DUST_ASSET_THRESHOLD = 0.001
+RUNTIME_HISTORY_FILES = [
+    OUT_DIR / 'execution-cycles.jsonl',
+    OUT_DIR / 'execution-anomalies.jsonl',
+    OUT_DIR / 'regime-local-history.jsonl',
+    OUT_DIR / 'strategy-activity-history.jsonl',
+    OUT_DIR / 'latest-execution-cycle.json',
+    TEST_REPORT_JSON,
+    TEST_REPORT_MD,
+]
+REPORT_DIR = Path('/root/.openclaw/workspace/projects/crypto-trading/reports/trade-review')
 
 
 @dataclass(slots=True)
@@ -49,6 +59,9 @@ class WorkflowHooks:
 
     def run_test_workflow(self) -> WorkflowStepResult:
         return WorkflowStepResult(name='run_test_workflow', ok=True, detail='stub')
+
+    def clear_analysis_history(self) -> WorkflowStepResult:
+        return WorkflowStepResult(name='clear_analysis_history', ok=True, detail='stub')
 
     def flatten_all_positions(self) -> WorkflowStepResult:
         return WorkflowStepResult(name='flatten_all_positions', ok=True, detail='stub')
@@ -187,6 +200,40 @@ class OkxWorkflowHooks(WorkflowHooks):
             return WorkflowStepResult(name='run_test_workflow', ok=True, detail=f"summary_json={TEST_REPORT_JSON} summary_md={TEST_REPORT_MD} | " + ('; '.join(total_actions) if total_actions else 'no_test_actions'))
         except Exception as exc:
             return WorkflowStepResult(name='run_test_workflow', ok=False, detail=str(exc))
+
+    def clear_analysis_history(self) -> WorkflowStepResult:
+        removed = []
+        missing = []
+        errors = []
+        for path in RUNTIME_HISTORY_FILES:
+            try:
+                if path.exists():
+                    path.unlink()
+                    removed.append(str(path.name))
+                else:
+                    missing.append(str(path.name))
+            except Exception as exc:
+                errors.append(f'{path.name}:{exc}')
+        try:
+            if REPORT_DIR.exists():
+                for child in REPORT_DIR.iterdir():
+                    if child.is_file():
+                        child.unlink()
+                        removed.append(f'reports/{child.name}')
+            else:
+                missing.append('reports/trade-review')
+        except Exception as exc:
+            errors.append(f'reports/trade-review:{exc}')
+        detail_parts = []
+        if removed:
+            detail_parts.append('removed=' + '; '.join(removed))
+        if missing:
+            detail_parts.append('missing=' + '; '.join(missing))
+        return WorkflowStepResult(
+            name='clear_analysis_history',
+            ok=not errors,
+            detail=' | '.join(detail_parts) + ('' if not errors else ' | errors=' + '; '.join(errors)),
+        )
 
     def flatten_all_positions(self) -> WorkflowStepResult:
         actions = []
@@ -414,6 +461,8 @@ class RuntimeWorkflowRunner:
                 self.hooks.verify_startup_capital(),
                 self.hooks.reset_bucket_state(destructive=destructive),
             ]
+            if destructive:
+                steps.append(self.hooks.clear_analysis_history())
 
         transition = next_mode_after(mode)
         ended = mode

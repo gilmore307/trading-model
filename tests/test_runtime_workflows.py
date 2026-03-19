@@ -43,6 +43,10 @@ class DummyHooks(WorkflowHooks):
         self.calls.append(f'reset_bucket_state:{destructive}')
         return super().reset_bucket_state(destructive)
 
+    def clear_analysis_history(self):
+        self.calls.append('clear_analysis_history')
+        return super().clear_analysis_history()
+
 
 def test_review_workflow_runs_review_and_returns_to_calibrate():
     store = RuntimeStore()
@@ -74,11 +78,11 @@ def test_calibrate_workflow_includes_flatten_margin_convert_verify_reset_and_ret
     assert store.get().mode == RuntimeMode.TRADE
 
 
-def test_reset_workflow_includes_flatten_margin_convert_verify_reset_and_returns_to_develop():
+def test_reset_workflow_includes_flatten_margin_convert_verify_reset_clear_history_and_returns_to_develop():
     store = RuntimeStore()
     hooks = DummyHooks()
     runner = RuntimeWorkflowRunner(runtime_store=store, hooks=hooks)
     result = runner.run(RuntimeMode.RESET)
-    assert hooks.calls == ['flatten', 'verify_flat', 'flatten_all_margin_positions', 'verify_margin_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:True']
+    assert hooks.calls == ['flatten', 'verify_flat', 'flatten_all_margin_positions', 'verify_margin_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:True', 'clear_analysis_history']
     assert result.ended_mode == 'develop'
     assert store.get().mode == RuntimeMode.DEVELOP
