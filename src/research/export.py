@@ -9,6 +9,7 @@ def render_research_report_markdown(report: dict[str, Any]) -> str:
     matrix = report.get('strategy_regime_matrix') or {}
     separability = report.get('regime_separability') or {}
     ranking = report.get('strategy_ranking') or {}
+    parameter_search_preview = report.get('parameter_search_preview') or {}
 
     lines: list[str] = []
     lines.append('# Regime Research Report')
@@ -60,6 +61,20 @@ def render_research_report_markdown(report: dict[str, Any]) -> str:
             for idx, row in enumerate(rows[:3], start=1):
                 lines.append(
                     f"- #{idx} {row.get('strategy')}: avg_enter_forward_return={row.get('avg_enter_forward_return')} enter_rate={row.get('enter_rate')} avg_score={row.get('avg_score')}"
+                )
+
+    lines.append('')
+    lines.append('## Parameter Search Preview')
+    if not parameter_search_preview:
+        lines.append('')
+        lines.append('- No parameter search preview rows')
+    else:
+        for regime, rows in parameter_search_preview.items():
+            lines.append('')
+            lines.append(f"### {regime}")
+            for idx, row in enumerate(rows[:3], start=1):
+                lines.append(
+                    f"- #{idx}: candidate_objective_score={row.get('candidate_objective_score')} baseline={row.get('baseline_objective_score')} parameters={row.get('parameters')}"
                 )
 
     lines.append('')

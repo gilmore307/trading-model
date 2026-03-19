@@ -17,6 +17,11 @@ def test_render_research_report_markdown_contains_quality_and_matrix_sections():
                 {'strategy': 'trend', 'avg_enter_forward_return': 0.01, 'enter_rate': 1.0, 'avg_score': 4.0},
             ],
         },
+        'parameter_search_preview': {
+            'trend': [
+                {'candidate_objective_score': 8.5, 'baseline_objective_score': 7.0, 'parameters': {'trend_bg_adx_min': 25.0}},
+            ],
+        },
         'strategy_regime_matrix': {
             'trend': {
                 'trend': {'sample_count': 2, 'enter_rate': 1.0, 'arm_rate': 0.0, 'watch_rate': 0.0, 'hold_rate': 0.0, 'avg_score': 4.0, 'avg_forward_return': 0.01, 'avg_enter_forward_return': 0.01, 'avg_arm_forward_return': None, 'positive_forward_rate': 0.5},
@@ -31,5 +36,7 @@ def test_render_research_report_markdown_contains_quality_and_matrix_sections():
     assert 'range__vs__trend' in md
     assert '## Strategy Ranking Summary' in md
     assert '#1 trend' in md
+    assert '## Parameter Search Preview' in md
+    assert 'trend_bg_adx_min' in md
     assert '## Strategy × Regime Matrix' in md
     assert '#### Strategy: trend' in md
