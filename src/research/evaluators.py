@@ -117,6 +117,30 @@ def build_regime_separability_summary(rows: list[dict[str, Any]], *, feature_fie
     }
 
 
+def build_strategy_ranking_summary(matrix: dict[str, dict[str, dict[str, Any]]]) -> dict[str, list[dict[str, Any]]]:
+    summary: dict[str, list[dict[str, Any]]] = {}
+    for regime, strategies in matrix.items():
+        ranked = sorted(
+            (
+                {
+                    'strategy': strategy,
+                    'avg_enter_forward_return': row.get('avg_enter_forward_return'),
+                    'enter_rate': row.get('enter_rate'),
+                    'avg_score': row.get('avg_score'),
+                }
+                for strategy, row in strategies.items()
+            ),
+            key=lambda item: (
+                float('-inf') if item.get('avg_enter_forward_return') is None else item.get('avg_enter_forward_return'),
+                item.get('enter_rate') or 0.0,
+                float('-inf') if item.get('avg_score') is None else item.get('avg_score'),
+            ),
+            reverse=True,
+        )
+        summary[regime] = ranked
+    return summary
+
+
 def build_strategy_regime_matrix(rows: list[dict[str, Any]], *, forward_field: str = 'fwd_ret_1h') -> dict[str, dict[str, dict[str, Any]]]:
     buckets: dict[str, dict[str, dict[str, list]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 

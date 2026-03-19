@@ -1,4 +1,4 @@
-from src.research.evaluators import build_regime_quality_summary, build_regime_separability_summary, build_strategy_regime_matrix
+from src.research.evaluators import build_regime_quality_summary, build_regime_separability_summary, build_strategy_ranking_summary, build_strategy_regime_matrix
 
 
 def test_build_regime_quality_summary_aggregates_confidence_and_forward_returns():
@@ -36,6 +36,18 @@ def test_build_regime_separability_summary_reports_feature_means_and_closest_pai
     assert summary['feature_means_by_regime']['range']['primary_features.adx'] == 12.0
     assert summary['closest_pairs'][0]['pair'] == 'range__vs__trend'
     assert summary['closest_pairs'][0]['comparable_feature_count'] > 0
+
+
+def test_build_strategy_ranking_summary_prefers_higher_enter_forward_return_then_score():
+    matrix = {
+        'trend': {
+            'trend': {'avg_enter_forward_return': 0.02, 'enter_rate': 0.5, 'avg_score': 3.0},
+            'range': {'avg_enter_forward_return': None, 'enter_rate': 0.0, 'avg_score': 4.0},
+            'compression': {'avg_enter_forward_return': 0.01, 'enter_rate': 0.7, 'avg_score': 2.0},
+        },
+    }
+    ranking = build_strategy_ranking_summary(matrix)
+    assert [row['strategy'] for row in ranking['trend']] == ['trend', 'compression', 'range']
 
 
 def test_build_strategy_regime_matrix_aggregates_shadow_plan_behavior():

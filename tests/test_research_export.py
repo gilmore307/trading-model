@@ -12,6 +12,11 @@ def test_render_research_report_markdown_contains_quality_and_matrix_sections():
                 {'pair': 'range__vs__trend', 'distance': 0.42, 'comparable_feature_count': 5},
             ],
         },
+        'strategy_ranking': {
+            'trend': [
+                {'strategy': 'trend', 'avg_enter_forward_return': 0.01, 'enter_rate': 1.0, 'avg_score': 4.0},
+            ],
+        },
         'strategy_regime_matrix': {
             'trend': {
                 'trend': {'sample_count': 2, 'enter_rate': 1.0, 'arm_rate': 0.0, 'watch_rate': 0.0, 'hold_rate': 0.0, 'avg_score': 4.0, 'avg_forward_return': 0.01, 'avg_enter_forward_return': 0.01, 'avg_arm_forward_return': None, 'positive_forward_rate': 0.5},
@@ -24,5 +29,7 @@ def test_render_research_report_markdown_contains_quality_and_matrix_sections():
     assert '### trend' in md
     assert '## Regime Separability' in md
     assert 'range__vs__trend' in md
+    assert '## Strategy Ranking Summary' in md
+    assert '#1 trend' in md
     assert '## Strategy × Regime Matrix' in md
     assert '#### Strategy: trend' in md

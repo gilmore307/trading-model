@@ -31,3 +31,4 @@ def test_build_research_report_combines_regime_quality_and_strategy_matrix():
     assert report['regime_quality']['trend']['sample_count'] == 1
     assert report['strategy_regime_matrix']['trend']['trend']['enter_rate'] == 1.0
     assert report['strategy_regime_matrix']['range']['range']['avg_enter_forward_return'] == -0.01
+    assert report['strategy_ranking']['trend'][0]['strategy'] == 'trend'

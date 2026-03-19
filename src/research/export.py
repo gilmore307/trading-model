@@ -8,6 +8,7 @@ def render_research_report_markdown(report: dict[str, Any]) -> str:
     regime_quality = report.get('regime_quality') or {}
     matrix = report.get('strategy_regime_matrix') or {}
     separability = report.get('regime_separability') or {}
+    ranking = report.get('strategy_ranking') or {}
 
     lines: list[str] = []
     lines.append('# Regime Research Report')
@@ -43,6 +44,23 @@ def render_research_report_markdown(report: dict[str, Any]) -> str:
     else:
         for row in closest_pairs:
             lines.append(f"- {row.get('pair')}: distance={row.get('distance')} comparable_feature_count={row.get('comparable_feature_count')}")
+
+    lines.append('')
+    lines.append('## Strategy Ranking Summary')
+    if not ranking:
+        lines.append('')
+        lines.append('- No ranking rows')
+    else:
+        for regime, rows in ranking.items():
+            lines.append('')
+            lines.append(f"### {regime}")
+            if not rows:
+                lines.append('- No ranked strategies')
+                continue
+            for idx, row in enumerate(rows[:3], start=1):
+                lines.append(
+                    f"- #{idx} {row.get('strategy')}: avg_enter_forward_return={row.get('avg_enter_forward_return')} enter_rate={row.get('enter_rate')} avg_score={row.get('avg_score')}"
+                )
 
     lines.append('')
     lines.append('## Strategy × Regime Matrix')
