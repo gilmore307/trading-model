@@ -8,7 +8,7 @@ from src.state.execution_ledger import ExecutionLeg, ExitAllocation, ExitExecuti
 from src.execution.confirm import verify_entry, verify_exit
 from src.execution.locks import AccountSymbolLockRegistry
 from src.execution.policy import PolicyDecision, decide_alignment_policy
-from src.reconcile.alignment import AlignmentResult, ExchangePositionSnapshot, reconcile_positions
+from src.reconcile.alignment import AlignmentIssueType, AlignmentResult, ExchangePositionSnapshot, reconcile_positions
 from src.state.live_position import LivePosition, LivePositionStatus
 from src.state.route_registry import RouteRegistry
 from src.state.store import LiveStateStore
@@ -378,7 +378,24 @@ class RouteController:
             local_positions = [local] if local is not None else []
             exchange_positions = [exchange_snapshot] if exchange_snapshot is not None else []
             alignment = reconcile_positions(local_positions, exchange_positions)
+
+            verification_grace = False
+            if local is not None and local.status in {LivePositionStatus.ENTRY_SUBMITTED, LivePositionStatus.ENTRY_VERIFYING}:
+                cycles = int((local.meta or {}).get('entry_verification_cycles') or 0)
+                if cycles < self.verification_cycle_timeout:
+                    filtered = [issue for issue in alignment.issues if issue.type not in {AlignmentIssueType.MISSING_EXCHANGE_POSITION, AlignmentIssueType.UNEXPECTED_EXCHANGE_POSITION, AlignmentIssueType.SIZE_MISMATCH}]
+                    verification_grace = len(filtered) != len(alignment.issues)
+                    alignment = AlignmentResult(ok=not filtered, issues=filtered)
+            elif local is not None and local.status in {LivePositionStatus.EXIT_SUBMITTED, LivePositionStatus.EXIT_VERIFYING}:
+                cycles = int((local.meta or {}).get('exit_verification_cycles') or 0)
+                if cycles < self.verification_cycle_timeout:
+                    filtered = [issue for issue in alignment.issues if issue.type not in {AlignmentIssueType.MISSING_EXCHANGE_POSITION, AlignmentIssueType.UNEXPECTED_EXCHANGE_POSITION, AlignmentIssueType.SIZE_MISMATCH}]
+                    verification_grace = len(filtered) != len(alignment.issues)
+                    alignment = AlignmentResult(ok=not filtered, issues=filtered)
+
             policy = decide_alignment_policy(alignment)
+            if verification_grace and alignment.ok and local is not None:
+                policy = PolicyDecision(trade_enabled=False, action='verify_only', reason='verification_grace_window')
 
             if not alignment.ok:
                 if policy.action == 'freeze_route':
@@ -391,6 +408,7 @@ class RouteController:
                         'policy_action': policy.action,
                         'policy_reason': policy.reason,
                         'issue_types': [issue.type.value for issue in alignment.issues],
+                        'verification_grace': verification_grace,
                     })
                     self.store.upsert(local)
             else:
@@ -400,6 +418,7 @@ class RouteController:
                         'kind': 'reconcile_ok',
                         'policy_action': policy.action,
                         'policy_reason': policy.reason,
+                        'verification_grace': verification_grace,
                     })
                     self.store.upsert(local)
 

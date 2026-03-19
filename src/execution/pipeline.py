@@ -151,6 +151,22 @@ class ExecutionPipeline:
             trace.diagnostics.append('route_frozen')
             plan = ExecutionPlan(regime=plan.regime, account=plan.account, action='hold', reason=frozen_reason)
 
+        current_position = None
+        pending_verification_priority = False
+        if plan.account is not None:
+            current_position = self.controller.store.get(plan.account, regime_output.symbol)
+            if current_position is not None and current_position.status.value in {'entry_submitted', 'entry_verifying', 'exit_submitted', 'exit_verifying'}:
+                pending_verification_priority = True
+                trace.allow_reason = 'pending_verification_priority'
+                if 'pending_verification_priority' not in trace.diagnostics:
+                    trace.diagnostics.append('pending_verification_priority')
+                plan = ExecutionPlan(
+                    regime=plan.regime,
+                    account=plan.account,
+                    action='hold',
+                    reason=f'pending_verification:{current_position.status.value}',
+                )
+
         if plan.account is not None and plan.action == 'enter':
             preflight_ok, preflight_reason = self._entry_preflight(plan.account, regime_output.symbol, plan.size)
             if not preflight_ok:
@@ -178,7 +194,7 @@ class ExecutionPipeline:
                 return exchange_snapshot
             return self.snapshot_provider.fetch_position(plan.account, regime_output.symbol)
 
-        if plan.account is not None and plan.action == 'enter' and plan.side is not None and plan.size is not None:
+        if plan.account is not None and not pending_verification_priority and plan.action == 'enter' and plan.side is not None and plan.size is not None:
             trace.submission_attempted = True
             receipt = self.adapter.submit_entry(account=plan.account, symbol=regime_output.symbol, side=plan.side, size=plan.size, reason=plan.reason or 'entry')
             local_position = self.controller.submit_entry(
@@ -205,7 +221,7 @@ class ExecutionPipeline:
             local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or local_position
             verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
             reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
-        elif plan.account is not None and plan.action == 'exit':
+        elif plan.account is not None and not pending_verification_priority and plan.action == 'exit':
             trace.submission_attempted = True
             receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason=plan.reason or 'exit')
             local_position = self.controller.submit_exit(
@@ -231,10 +247,10 @@ class ExecutionPipeline:
                 local_position = current
                 verification_position = current
         elif plan.account is not None:
-            current = self.controller.store.get(plan.account, regime_output.symbol)
+            current = current_position or self.controller.store.get(plan.account, regime_output.symbol)
             if current is not None:
                 current_snapshot = exchange_snapshot if exchange_snapshot is not None else refresh_snapshot()
-                if current.status.value == 'exit_verifying' and current_snapshot is not None and float(current_snapshot.size or 0.0) > 0.0:
+                if current.status.value == 'exit_verifying' and current_snapshot is not None and float(current_snapshot.size or 0.0) > 0.0 and plan.reason != f'pending_verification:{current.status.value}':
                     self.controller.mark_forced_exit_recovery(plan.account, regime_output.symbol, detail='forced_exit_recovery_submitted')
                     trace.submission_attempted = True
                     receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason='forced_exit_recovery')
