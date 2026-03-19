@@ -16,6 +16,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 LATEST_PATH = OUT_DIR / 'latest-execution-cycle.json'
 HISTORY_PATH = OUT_DIR / 'execution-cycles.jsonl'
 ANOMALY_HISTORY_PATH = OUT_DIR / 'execution-anomalies.jsonl'
+REGIME_HISTORY_PATH = OUT_DIR / 'regime-local-history.jsonl'
 
 
 def _json_default(value: Any):
@@ -68,11 +69,47 @@ def _strategy_stats_summary(result: ExecutionCycleResult) -> dict[str, Any]:
     }
 
 
+def _feature_snapshot(result: ExecutionCycleResult) -> dict[str, Any]:
+    return {
+        'background_4h': {
+            'regime': result.regime_output.background_4h.get('primary'),
+            'confidence': result.regime_output.background_4h.get('confidence'),
+            'tradable': result.regime_output.background_4h.get('tradable'),
+            'adx': result.regime_output.background_features.get('adx'),
+            'ema20_slope': result.regime_output.background_features.get('ema20_slope'),
+            'ema50_slope': result.regime_output.background_features.get('ema50_slope'),
+        },
+        'primary_15m': {
+            'regime': result.regime_output.primary_15m.get('primary'),
+            'confidence': result.regime_output.primary_15m.get('confidence'),
+            'tradable': result.regime_output.primary_15m.get('tradable'),
+            'adx': result.regime_output.primary_features.get('adx'),
+            'vwap_deviation_z': result.regime_output.primary_features.get('vwap_deviation_z'),
+            'bollinger_bandwidth_pct': result.regime_output.primary_features.get('bollinger_bandwidth_pct'),
+            'realized_vol_pct': result.regime_output.primary_features.get('realized_vol_pct'),
+            'funding_pctile': result.regime_output.primary_features.get('funding_pctile'),
+            'oi_accel': result.regime_output.primary_features.get('oi_accel'),
+            'basis_deviation_pct': result.regime_output.primary_features.get('basis_deviation_pct'),
+        },
+        'override_1m': {
+            'regime': None if result.regime_output.override_1m is None else result.regime_output.override_1m.get('primary'),
+            'confidence': None if result.regime_output.override_1m is None else result.regime_output.override_1m.get('confidence'),
+            'tradable': None if result.regime_output.override_1m is None else result.regime_output.override_1m.get('tradable'),
+            'vwap_deviation_z': result.regime_output.override_features.get('vwap_deviation_z'),
+            'trade_burst_score': result.regime_output.override_features.get('trade_burst_score'),
+            'liquidation_spike_score': result.regime_output.override_features.get('liquidation_spike_score'),
+            'orderbook_imbalance': result.regime_output.override_features.get('orderbook_imbalance'),
+            'realized_vol_pct': result.regime_output.override_features.get('realized_vol_pct'),
+        },
+    }
+
+
 def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     payload = asdict(result)
     payload['artifact_type'] = 'execution_cycle'
     payload['recorded_at'] = datetime.now(UTC).isoformat()
     payload['compare_snapshot'] = build_compare_snapshot(result)
+    payload['feature_snapshot'] = _feature_snapshot(result)
     balance_summary = _balance_summary_for_result(result)
     stats_summary = _strategy_stats_summary(result)
     payload['summary'] = {
@@ -83,6 +120,9 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         'plan_action': result.plan.action,
         'plan_account': result.plan.account,
         'plan_reason': result.plan.reason,
+        'route_strategy_family': result.regime_output.route_decision.get('strategy_family'),
+        'route_account': result.regime_output.route_decision.get('account'),
+        'route_trade_enabled': result.regime_output.route_decision.get('trade_enabled'),
         'trade_enabled': result.decision_trace.pipeline_trade_enabled,
         'allow_reason': result.decision_trace.allow_reason,
         'block_reason': result.decision_trace.block_reason,
@@ -103,6 +143,31 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         **stats_summary,
     }
     return payload
+
+
+def _build_regime_local_artifact(result: ExecutionCycleResult, artifact: dict[str, Any]) -> dict[str, Any]:
+    summary = artifact.get('summary') if isinstance(artifact.get('summary'), dict) else {}
+    return {
+        'artifact_type': 'regime_local_cycle',
+        'recorded_at': artifact.get('recorded_at'),
+        'symbol': summary.get('symbol'),
+        'runtime_mode': summary.get('runtime_mode'),
+        'final_regime': summary.get('regime'),
+        'final_confidence': summary.get('confidence'),
+        'background_regime': ((artifact.get('feature_snapshot') or {}).get('background_4h') or {}).get('regime'),
+        'primary_regime': ((artifact.get('feature_snapshot') or {}).get('primary_15m') or {}).get('regime'),
+        'override_regime': ((artifact.get('feature_snapshot') or {}).get('override_1m') or {}).get('regime'),
+        'route_strategy_family': summary.get('route_strategy_family'),
+        'route_account': summary.get('route_account'),
+        'route_trade_enabled': summary.get('route_trade_enabled'),
+        'plan_action': summary.get('plan_action'),
+        'plan_account': summary.get('plan_account'),
+        'plan_reason': summary.get('plan_reason'),
+        'strategy_stats_eligible': summary.get('strategy_stats_eligible'),
+        'strategy_stats_reason': summary.get('strategy_stats_reason'),
+        'account_metrics': summary.get('account_metrics'),
+        'feature_snapshot': artifact.get('feature_snapshot'),
+    }
 
 
 def _build_anomaly_artifact(result: ExecutionCycleResult, artifact: dict[str, Any]) -> dict[str, Any] | None:
@@ -139,6 +204,9 @@ def persist_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     LATEST_PATH.write_text(json.dumps(artifact, indent=2, default=_json_default, ensure_ascii=False))
     with HISTORY_PATH.open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(artifact, default=_json_default, ensure_ascii=False) + '\n')
+    regime_local = _build_regime_local_artifact(result, artifact)
+    with REGIME_HISTORY_PATH.open('a', encoding='utf-8') as handle:
+        handle.write(json.dumps(regime_local, default=_json_default, ensure_ascii=False) + '\n')
     anomaly = _build_anomaly_artifact(result, artifact)
     if anomaly is not None:
         with ANOMALY_HISTORY_PATH.open('a', encoding='utf-8') as handle:

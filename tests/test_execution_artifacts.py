@@ -8,7 +8,7 @@ from src.execution.adapters import ExecutionReceipt
 from src.execution.controller import RouteControlResult
 from src.execution.policy import PolicyDecision
 from src.reconcile.alignment import AlignmentResult
-from src.runners.execution_cycle import build_execution_artifact, persist_execution_artifact, ANOMALY_HISTORY_PATH
+from src.runners.execution_cycle import build_execution_artifact, persist_execution_artifact, ANOMALY_HISTORY_PATH, REGIME_HISTORY_PATH
 from src.runners.regime_runner import RegimeRunnerOutput
 from src.strategies.executors import ExecutionPlan
 
@@ -57,6 +57,9 @@ def test_build_execution_artifact_includes_summary_fields():
     artifact = build_execution_artifact(result)
     assert artifact['artifact_type'] == 'execution_cycle'
     assert artifact['compare_snapshot']['selected_strategy'] == 'trend'
+    assert artifact['feature_snapshot']['background_4h']['adx'] == 30.0
+    assert artifact['feature_snapshot']['primary_15m']['adx'] == 28.0
+    assert artifact['feature_snapshot']['override_1m']['trade_burst_score'] == 0.7
     assert artifact['summary']['runtime_mode'] == 'develop'
     assert artifact['summary']['regime'] == 'trend'
     assert artifact['summary']['plan_action'] == 'enter'
@@ -129,6 +132,7 @@ def test_persist_execution_artifact_writes_anomaly_ledger_for_excluded_execution
 
     anomaly_path = tmp_path / 'execution-anomalies.jsonl'
     monkeypatch.setattr('src.runners.execution_cycle.ANOMALY_HISTORY_PATH', anomaly_path)
+    monkeypatch.setattr('src.runners.execution_cycle.REGIME_HISTORY_PATH', tmp_path / 'regime-local-history.jsonl')
     monkeypatch.setattr('src.runners.execution_cycle.LATEST_PATH', tmp_path / 'latest-execution-cycle.json')
     monkeypatch.setattr('src.runners.execution_cycle.HISTORY_PATH', tmp_path / 'execution-cycles.jsonl')
 
@@ -159,6 +163,13 @@ def test_persist_execution_artifact_writes_anomaly_ledger_for_excluded_execution
         router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': 'trend', 'source_regime': 'trend', 'source_confidence': 0.8, 'switch_action': 'hold', 'position_owner': None, 'plan': {'action': 'hold'}, 'notes': [], 'position': None},
     )
     persist_execution_artifact(result)
+    regime_lines = (tmp_path / 'regime-local-history.jsonl').read_text(encoding='utf-8').splitlines()
+    assert len(regime_lines) == 1
+    regime_row = json.loads(regime_lines[0])
+    assert regime_row['artifact_type'] == 'regime_local_cycle'
+    assert regime_row['final_regime'] == 'trend'
+    assert regime_row['route_strategy_family'] == 'trend'
+    assert regime_row['strategy_stats_eligible'] is False
     lines = anomaly_path.read_text(encoding='utf-8').splitlines()
     assert len(lines) == 1
     anomaly = json.loads(lines[0])
