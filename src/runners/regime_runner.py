@@ -32,6 +32,7 @@ class RegimeRunnerOutput:
     final_decision: dict
     route_decision: dict
     decision_summary: dict = field(default_factory=dict)
+    settings: Settings | None = field(default=None, repr=False, compare=False)
 
 
 class BtcRegimeRunner:
@@ -72,6 +73,7 @@ class BtcRegimeRunner:
             final_decision=self._decision_dict(layered.final),
             route_decision=asdict(route),
             decision_summary=asdict(summary),
+            settings=self.settings,
         )
         LATEST_PATH.write_text(json.dumps(asdict(payload), indent=2, default=str, ensure_ascii=False))
         return payload

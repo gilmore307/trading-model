@@ -78,6 +78,32 @@ class Settings(BaseModel):
     min_stop_distance_ratio: float = 0.003
     atr_lookback: int = 14
     stop_atr_multiple: float = 1.5
+    trend_bg_adx_min: float = 25.0
+    trend_primary_adx_min: float = 22.0
+    trend_trade_burst_min: float = 0.4
+    trend_follow_through_enter_min: float = 3.0
+    trend_follow_through_arm_min: float = 1.0
+    range_primary_adx_max: float = 18.0
+    range_trade_burst_max: float = 0.5
+    range_reversion_enter_min: float = 3.0
+    range_reversion_arm_min: float = 1.0
+    compression_bandwidth_max: float = 0.015
+    compression_realized_vol_max: float = 0.10
+    compression_trade_burst_min: float = 0.5
+    compression_launch_bias_enter_min: float = 3.0
+    compression_launch_bias_arm_min: float = 1.0
+    crowded_extreme_min: float = 0.85
+    crowded_oi_accel_min: float = 0.15
+    crowded_basis_min: float = 0.004
+    crowded_rejection_enter_min: float = 4.0
+    crowded_rejection_arm_min: float = 2.0
+    crowded_fast_event_trade_burst_min: float = 0.8
+    crowded_fast_event_ez_min: float = 2.5
+    shock_trade_burst_min: float = 0.5
+    shock_liq_min: float = 0.4
+    shock_imbalance_min: float = 0.45
+    shock_event_enter_min: float = 4.0
+    shock_event_arm_min: float = 2.0
     bucket_initial_capital_usdt: float = 20000.0
     buffer_capital_usdt: float = 500.0
     reset_equity_threshold_usdt: float = 66000.0
@@ -190,6 +216,32 @@ class Settings(BaseModel):
             "min_stop_distance_ratio": float(os.getenv("MIN_STOP_DISTANCE_RATIO", "0.003")),
             "atr_lookback": int(os.getenv("ATR_LOOKBACK", "14")),
             "stop_atr_multiple": float(os.getenv("STOP_ATR_MULTIPLE", "1.5")),
+            "trend_bg_adx_min": float(os.getenv("TREND_BG_ADX_MIN", "25")),
+            "trend_primary_adx_min": float(os.getenv("TREND_PRIMARY_ADX_MIN", "22")),
+            "trend_trade_burst_min": float(os.getenv("TREND_TRADE_BURST_MIN", "0.4")),
+            "trend_follow_through_enter_min": float(os.getenv("TREND_FOLLOW_THROUGH_ENTER_MIN", "3")),
+            "trend_follow_through_arm_min": float(os.getenv("TREND_FOLLOW_THROUGH_ARM_MIN", "1")),
+            "range_primary_adx_max": float(os.getenv("RANGE_PRIMARY_ADX_MAX", "18")),
+            "range_trade_burst_max": float(os.getenv("RANGE_TRADE_BURST_MAX", "0.5")),
+            "range_reversion_enter_min": float(os.getenv("RANGE_REVERSION_ENTER_MIN", "3")),
+            "range_reversion_arm_min": float(os.getenv("RANGE_REVERSION_ARM_MIN", "1")),
+            "compression_bandwidth_max": float(os.getenv("COMPRESSION_BANDWIDTH_MAX", "0.015")),
+            "compression_realized_vol_max": float(os.getenv("COMPRESSION_REALIZED_VOL_MAX", "0.10")),
+            "compression_trade_burst_min": float(os.getenv("COMPRESSION_TRADE_BURST_MIN", "0.5")),
+            "compression_launch_bias_enter_min": float(os.getenv("COMPRESSION_LAUNCH_BIAS_ENTER_MIN", "3")),
+            "compression_launch_bias_arm_min": float(os.getenv("COMPRESSION_LAUNCH_BIAS_ARM_MIN", "1")),
+            "crowded_extreme_min": float(os.getenv("CROWDED_EXTREME_MIN", "0.85")),
+            "crowded_oi_accel_min": float(os.getenv("CROWDED_OI_ACCEL_MIN", "0.15")),
+            "crowded_basis_min": float(os.getenv("CROWDED_BASIS_MIN", "0.004")),
+            "crowded_rejection_enter_min": float(os.getenv("CROWDED_REJECTION_ENTER_MIN", "4")),
+            "crowded_rejection_arm_min": float(os.getenv("CROWDED_REJECTION_ARM_MIN", "2")),
+            "crowded_fast_event_trade_burst_min": float(os.getenv("CROWDED_FAST_EVENT_TRADE_BURST_MIN", "0.8")),
+            "crowded_fast_event_ez_min": float(os.getenv("CROWDED_FAST_EVENT_EZ_MIN", "2.5")),
+            "shock_trade_burst_min": float(os.getenv("SHOCK_TRADE_BURST_MIN", "0.5")),
+            "shock_liq_min": float(os.getenv("SHOCK_LIQ_MIN", "0.4")),
+            "shock_imbalance_min": float(os.getenv("SHOCK_IMBALANCE_MIN", "0.45")),
+            "shock_event_enter_min": float(os.getenv("SHOCK_EVENT_ENTER_MIN", "4")),
+            "shock_event_arm_min": float(os.getenv("SHOCK_EVENT_ARM_MIN", "2")),
             "bucket_initial_capital_usdt": float(os.getenv("BUCKET_INITIAL_CAPITAL_USDT", "20000")),
             "buffer_capital_usdt": float(os.getenv("BUFFER_CAPITAL_USDT", "500")),
             "reset_equity_threshold_usdt": float(os.getenv("RESET_EQUITY_THRESHOLD_USDT", "66000")),
