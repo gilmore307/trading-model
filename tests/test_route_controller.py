@@ -78,6 +78,17 @@ def test_route_controller_marks_missed_entry_and_clears_local_position(tmp_path:
     assert pos.meta['execution_recovery'] == 'missed_entry'
 
 
+def test_route_controller_exit_creates_fifo_allocations_across_legs(tmp_path: Path):
+    c = build_controller(tmp_path)
+    c.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'short', 0.14, entry_order_id='e1', entry_execution_id='exec-1', entry_client_order_id='cl-1', entry_trade_ids=['t1'])
+    c.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'short', 0.14, entry_order_id='e2', entry_execution_id='exec-2', entry_client_order_id='cl-2', entry_trade_ids=['t2'])
+    pos = c.submit_exit('trend', 'BTC-USDT-SWAP', exit_order_id='x1', exit_execution_id='exec-x', exit_client_order_id='cl-x', exit_trade_ids=['tx'])
+    assert pos is not None
+    assert pos.pending_exit is not None
+    assert [a.leg_id for a in pos.pending_exit.allocations] == ['exec-1', 'exec-2']
+    assert [a.requested_size for a in pos.pending_exit.allocations] == [0.14, 0.14]
+
+
 def test_route_controller_enable_route_if_flat_unfreezes_recovered_route(tmp_path: Path):
     c = build_controller(tmp_path)
     c.routes.freeze('trend', 'BTC-USDT-SWAP', 'severe_alignment_issue')

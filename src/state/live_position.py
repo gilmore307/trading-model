@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 
+from src.state.execution_ledger import ExecutionLeg, ExitExecution
+
 
 class LivePositionStatus(StrEnum):
     FLAT = 'flat'
@@ -41,11 +43,20 @@ class LivePosition:
     exit_client_order_id: str | None = None
     entry_trade_ids: list[str] | None = None
     exit_trade_ids: list[str] | None = None
+    open_legs: list[ExecutionLeg] = field(default_factory=list)
+    closed_legs: list[ExecutionLeg] = field(default_factory=list)
+    pending_exit: ExitExecution | None = None
     last_exchange_observed_at: datetime | None = None
     last_local_updated_at: datetime | None = None
     reason: str | None = None
-    meta: dict[str, str | float | None] = field(default_factory=dict)
+    meta: dict[str, str | float | list | dict | None] = field(default_factory=dict)
 
     @property
     def participates_in_alignment(self) -> bool:
         return self.status in LIVE_ALIGNMENT_STATUSES
+
+    @property
+    def ledger_open_size(self) -> float:
+        if self.open_legs:
+            return float(sum(float(leg.remaining_size or 0.0) for leg in self.open_legs))
+        return float(self.size or 0.0)

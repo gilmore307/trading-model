@@ -74,7 +74,7 @@ def reconcile_positions(
                 symbol=symbol,
                 local_status=local.status.value,
                 local_side=local.side,
-                local_size=local.size,
+                local_size=local.ledger_open_size,
                 exchange_side=None,
                 exchange_size=None,
             ))
@@ -103,13 +103,13 @@ def reconcile_positions(
                 symbol=symbol,
                 local_status=local.status.value,
                 local_side=local.side,
-                local_size=local.size,
+                local_size=local.ledger_open_size,
                 exchange_side=exchange.side,
                 exchange_size=exchange.size,
             ))
             continue
 
-        local_size = float(local.size or 0.0)
+        local_size = float(local.ledger_open_size or 0.0)
         exchange_size = float(exchange.size or 0.0)
         diff = abs(local_size - exchange_size)
         allowed = max(size_tolerance_abs, abs(exchange_size) * size_tolerance_ratio)

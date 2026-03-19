@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from src.state.execution_ledger import ExecutionLeg, ExitAllocation, ExitExecution
+
 from src.execution.confirm import verify_entry, verify_exit
 from src.execution.locks import AccountSymbolLockRegistry
 from src.execution.policy import PolicyDecision, decide_alignment_policy
@@ -93,11 +95,27 @@ class RouteController:
                 current = LivePosition(account=account, symbol=symbol, route=route)
             current.status = LivePositionStatus.ENTRY_SUBMITTED
             current.side = side
-            current.size = size
+            current.size = float(current.size or 0.0) + float(size or 0.0)
             current.entry_order_id = entry_order_id
             current.entry_execution_id = entry_execution_id
             current.entry_client_order_id = entry_client_order_id
             current.entry_trade_ids = list(entry_trade_ids or [])
+            current.open_legs.append(ExecutionLeg(
+                leg_id=entry_execution_id or entry_order_id or f'leg-{len(current.open_legs)+1}',
+                execution_id=entry_execution_id,
+                client_order_id=entry_client_order_id,
+                order_id=entry_order_id,
+                trade_ids=list(entry_trade_ids or []),
+                action='entry',
+                side=side,
+                requested_size=float(size or 0.0),
+                filled_size=float(size or 0.0),
+                remaining_size=float(size or 0.0),
+                status='open',
+                reason='entry_submitted',
+                opened_at=datetime.now(UTC),
+            ))
+            current.pending_exit = None
             current.reason = 'entry_submitted'
             return self.store.upsert(current)
 
@@ -120,6 +138,28 @@ class RouteController:
             current.exit_execution_id = exit_execution_id
             current.exit_client_order_id = exit_client_order_id
             current.exit_trade_ids = list(exit_trade_ids or [])
+            remaining_to_allocate = float(current.ledger_open_size or current.size or 0.0)
+            allocations: list[ExitAllocation] = []
+            for leg in current.open_legs:
+                if remaining_to_allocate <= 0:
+                    break
+                alloc_size = min(float(leg.remaining_size or 0.0), remaining_to_allocate)
+                if alloc_size <= 0:
+                    continue
+                allocations.append(ExitAllocation(leg_id=leg.leg_id, requested_size=alloc_size, closed_size=0.0))
+                remaining_to_allocate -= alloc_size
+            current.pending_exit = ExitExecution(
+                execution_id=exit_execution_id,
+                client_order_id=exit_client_order_id,
+                order_id=exit_order_id,
+                trade_ids=list(exit_trade_ids or []),
+                requested_size=float(current.ledger_open_size or current.size or 0.0),
+                side=current.side,
+                status='submitted',
+                reason='exit_submitted',
+                allocations=allocations,
+                submitted_at=datetime.now(UTC),
+            )
             current.reason = 'exit_submitted'
             return self.store.upsert(current)
 
@@ -145,6 +185,19 @@ class RouteController:
                 current.size = float(exchange_snapshot.size or 0.0)
                 current.last_exchange_observed_at = datetime.now(UTC)
 
+            if current.open_legs and current.status in {LivePositionStatus.ENTRY_SUBMITTED, LivePositionStatus.ENTRY_VERIFYING, LivePositionStatus.OPEN} and exchange_snapshot is not None:
+                total_before = sum(float(leg.remaining_size or 0.0) for leg in current.open_legs)
+                exchange_size = float(exchange_snapshot.size or 0.0)
+                delta = max(0.0, exchange_size - max(0.0, total_before - float(current.open_legs[-1].remaining_size or 0.0)))
+                newest = current.open_legs[-1]
+                newest.filled_size = max(float(newest.filled_size or 0.0), delta)
+                newest.remaining_size = max(float(newest.remaining_size or 0.0), delta)
+                newest.status = 'open'
+
+            if current.pending_exit is not None:
+                current.pending_exit.trade_ids = list(current.exit_trade_ids or current.pending_exit.trade_ids or [])
+                current.pending_exit.order_id = current.exit_order_id or current.pending_exit.order_id
+
             if current.status in {LivePositionStatus.ENTRY_SUBMITTED, LivePositionStatus.ENTRY_VERIFYING}:
                 decision = verify_entry(current, exchange_snapshot)
                 current.status = decision.next_status
@@ -158,6 +211,22 @@ class RouteController:
                 if decision.next_status == LivePositionStatus.FLAT:
                     current.side = None
                     current.size = 0.0
+                    if current.pending_exit is not None:
+                        for alloc in current.pending_exit.allocations:
+                            alloc.closed_size = alloc.requested_size
+                        current.pending_exit.status = 'closed'
+                    remaining_open = []
+                    for leg in current.open_legs:
+                        leg.remaining_size = 0.0
+                        leg.status = 'closed'
+                        leg.closed_at = datetime.now(UTC)
+                        leg.close_execution_id = current.exit_execution_id
+                        leg.close_client_order_id = current.exit_client_order_id
+                        leg.close_order_id = current.exit_order_id
+                        leg.close_trade_ids = list(current.exit_trade_ids or [])
+                        current.closed_legs.append(leg)
+                    current.open_legs = remaining_open
+                    current.pending_exit = None
                 return self.store.upsert(current)
 
             return current
