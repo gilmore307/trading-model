@@ -351,7 +351,9 @@ def verify_position_with_delays(
 class OkxClient:
     def __init__(self, settings: Settings, account: StrategyAccountConfig | None = None):
         self.settings = settings
-        self.account = account or settings.account_for_strategy("breakout")
+        if account is None:
+            raise ValueError('OkxClient requires an explicit StrategyAccountConfig; do not rely on implicit default strategy selection.')
+        self.account = account
         self.account_alias = self.account.alias
         self.account_label = self.account.label or self.account.alias
         base_config = {

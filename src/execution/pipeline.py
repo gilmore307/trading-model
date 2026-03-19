@@ -22,6 +22,9 @@ class ExecutionDecisionTrace:
     decision_trade_enabled: bool
     route_trade_enabled: bool
     pipeline_trade_enabled: bool
+    pipeline_entered: bool = False
+    submission_allowed: bool = False
+    submission_attempted: bool = False
     allow_reason: str | None = None
     block_reason: str | None = None
     diagnostics: list[str] = field(default_factory=list)
@@ -74,6 +77,9 @@ class ExecutionPipeline:
             decision_trade_enabled=bool(summary.get('trade_enabled', regime_output.final_decision.get('tradable', False))),
             route_trade_enabled=bool(regime_output.route_decision.get('trade_enabled', False)),
             pipeline_trade_enabled=False,
+            pipeline_entered=False,
+            submission_allowed=False,
+            submission_attempted=False,
             allow_reason=summary.get('allow_reason'),
             block_reason=summary.get('block_reason'),
             diagnostics=list(summary.get('diagnostics', [])),
@@ -153,7 +159,10 @@ class ExecutionPipeline:
                 trace.diagnostics.append('preflight_blocked')
                 plan = ExecutionPlan(regime=plan.regime, account=plan.account, action='hold', reason=preflight_reason)
 
-        trace.pipeline_trade_enabled = plan.action != 'hold' or plan.account is not None
+        trace.pipeline_entered = plan.account is not None
+        trace.submission_allowed = plan.account is not None and plan.action in {'enter', 'exit'}
+        trace.submission_attempted = False
+        trace.pipeline_trade_enabled = trace.submission_allowed
 
         if exchange_snapshot is None and plan.account is not None:
             exchange_snapshot = self.snapshot_provider.fetch_position(plan.account, regime_output.symbol)
@@ -170,6 +179,7 @@ class ExecutionPipeline:
             return self.snapshot_provider.fetch_position(plan.account, regime_output.symbol)
 
         if plan.account is not None and plan.action == 'enter' and plan.side is not None and plan.size is not None:
+            trace.submission_attempted = True
             receipt = self.adapter.submit_entry(account=plan.account, symbol=regime_output.symbol, side=plan.side, size=plan.size, reason=plan.reason or 'entry')
             local_position = self.controller.submit_entry(
                 plan.account,
@@ -191,6 +201,7 @@ class ExecutionPipeline:
                 self.controller.enable_route_if_flat(plan.account, regime_output.symbol)
             reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
         elif plan.account is not None and plan.action == 'exit':
+            trace.submission_attempted = True
             receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason=plan.reason or 'exit')
             local_position = self.controller.submit_exit(
                 plan.account,
@@ -217,6 +228,7 @@ class ExecutionPipeline:
                 current_snapshot = exchange_snapshot if exchange_snapshot is not None else refresh_snapshot()
                 if current.status.value == 'exit_verifying' and current_snapshot is not None and float(current_snapshot.size or 0.0) > 0.0:
                     self.controller.mark_forced_exit_recovery(plan.account, regime_output.symbol, detail='forced_exit_recovery_submitted')
+                    trace.submission_attempted = True
                     receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason='forced_exit_recovery')
                     current = self.controller.submit_exit(
                         plan.account,

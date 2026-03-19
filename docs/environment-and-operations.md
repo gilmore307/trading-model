@@ -11,7 +11,7 @@ Expected in `.env`:
 Optional:
 - `OPENCLAW_DISCORD_CHANNEL`
 - `SYMBOLS=BTC-USDT-SWAP,ETH-USDT-SWAP,SOL-USDT-SWAP`
-- `STRATEGIES=breakout,pullback,meanrev`
+- `STRATEGIES=trend,crowded,meanrev,compression,realtime`
 - `TIMEFRAME=5m`
 - `BREAKOUT_LOOKBACK=20`
 - `PULLBACK_LOOKBACK=20`
@@ -27,8 +27,8 @@ Optional:
 
 ```bash
 source .venv/bin/activate
-python -m src.runner.live_trader --check
-python -m src.runner.live_trader
+./.venv/bin/python -m src.runners.trade_daemon --max-cycles 1
+./run_daemon.sh
 ```
 
 ## Demo submit
@@ -36,7 +36,7 @@ python -m src.runner.live_trader
 ```bash
 # keep OKX_DEMO=true
 # set DRY_RUN=false in .env
-python -m src.runner.live_trader --arm-demo-submit
+./run_daemon.sh
 ```
 
 ## Tests

@@ -1,14 +1,14 @@
 # crypto-trading architecture
 
 ## Goal
-Build a BTC-first crypto trading system that:
+Build a regime-routed crypto trading system that:
 - classifies the current market regime first
 - routes capital to the strategy account best matched to that regime
 - treats `no-trade` as a first-class system state
 - supports both minute-level and real-time execution paths
 
-## Scope for phase 1
-- Asset universe: `BTC-USDT-SWAP` only
+## Scope for current implementation
+- Asset universe: `BTC-USDT-SWAP`, `ETH-USDT-SWAP`, `SOL-USDT-SWAP`
 - Exchange: OKX demo first
 - Strategy accounts:
   - `trend`

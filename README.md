@@ -6,7 +6,7 @@
 - Exchange: OKX perpetual swaps
 - Environment: demo / simulated trading only
 - Symbols: BTC-USDT-SWAP, ETH-USDT-SWAP, SOL-USDT-SWAP
-- Strategies: breakout, pullback, meanrev
+- Strategy accounts / families: trend, crowded, meanrev, compression, realtime
 - Notifications: sent via OpenClaw's configured Discord channel
 
 ## Core status
@@ -17,7 +17,7 @@
 
 ### Core capabilities already in place
 - config loading from `.env`
-- multi-strategy evaluation across BTC/ETH/SOL
+- multi-strategy evaluation across BTC/ETH/SOL with current routed families `trend/crowded/meanrev/compression/realtime`
 - per-strategy-per-symbol budget buckets
 - entry/exit state transitions
 - dry-run state persistence
@@ -58,7 +58,7 @@ Optional:
 - `DISCORD_WEBHOOK_URL` (preferred if you want repo-local direct push without bot token handling)
 - `NOTIFY_RUNTIME_WARNINGS=false` (default false; false still sends severe alignment/freeze alerts, true also sends ordinary hold/skip warnings)
 - `SYMBOLS=BTC-USDT-SWAP,ETH-USDT-SWAP,SOL-USDT-SWAP`
-- `STRATEGIES=breakout,pullback,meanrev`
+- `STRATEGIES=trend,crowded,meanrev,compression,realtime`
 - `TIMEFRAME=5m`
 - `BREAKOUT_LOOKBACK=20`
 - `PULLBACK_LOOKBACK=20`
@@ -73,8 +73,8 @@ Optional:
 ## Run
 ```bash
 source .venv/bin/activate
-python -m src.runner.live_trader --check
-python -m src.runner.live_trader
+./.venv/bin/python -m src.runners.trade_daemon --max-cycles 1
+./run_daemon.sh
 ```
 
 ## Review runners
@@ -97,16 +97,16 @@ Trade-mode safety guard:
 - if available USDT is below `planned_notional + BUFFER_CAPITAL_USDT`, trade mode blocks entry before order submission
 - `calibrate` remains a mandatory workflow gate between `review` and `trade`, not a runtime trade-mode branch
 
-To simulate a run **without** persisting state:
+To run one bounded cycle for inspection:
 ```bash
-python -m src.runner.live_trader --no-state-write
+./.venv/bin/python -m src.runners.trade_daemon --max-cycles 1
 ```
 
 To allow actual OKX **demo** submissions:
 ```bash
 # keep OKX_DEMO=true
 # set DRY_RUN=false in .env
-python -m src.runner.live_trader --arm-demo-submit
+./run_daemon.sh
 ```
 
 To run tests:

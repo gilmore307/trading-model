@@ -170,7 +170,10 @@ Important fields:
 - `mode_allows_routing`
 - `decision_trade_enabled`
 - `route_trade_enabled`
-- `pipeline_trade_enabled`
+- `pipeline_trade_enabled` — legacy summary bit kept for compatibility; now means `submission_allowed`
+- `pipeline_entered`
+- `submission_allowed`
+- `submission_attempted`
 - `allow_reason`
 - `block_reason`
 - `diagnostics`
