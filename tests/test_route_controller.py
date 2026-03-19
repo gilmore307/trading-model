@@ -89,6 +89,28 @@ def test_route_controller_exit_creates_fifo_allocations_across_legs(tmp_path: Pa
     assert [a.requested_size for a in pos.pending_exit.allocations] == [0.14, 0.14]
 
 
+def test_route_controller_ignores_duplicate_entry_submission(tmp_path: Path):
+    c = build_controller(tmp_path)
+    pos1 = c.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'short', 0.14, entry_order_id='e1', entry_execution_id='exec-1', entry_client_order_id='cl-1', entry_trade_ids=['t1'])
+    pos2 = c.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'short', 0.14, entry_order_id='e1', entry_execution_id='exec-1', entry_client_order_id='cl-1', entry_trade_ids=['t1'])
+    assert len(pos2.open_legs) == 1
+    assert pos2.size == pos1.size
+    assert pos2.reason == 'entry_duplicate_ignored'
+    assert any(evt.get('kind') == 'entry_duplicate_ignored' for evt in (pos2.meta.get('event_history') or []))
+
+
+def test_route_controller_ignores_duplicate_exit_submission(tmp_path: Path):
+    c = build_controller(tmp_path)
+    c.submit_entry('trend', 'BTC-USDT-SWAP', 'trend', 'short', 0.14, entry_order_id='e1', entry_execution_id='exec-1', entry_client_order_id='cl-1', entry_trade_ids=['t1'])
+    pos1 = c.submit_exit('trend', 'BTC-USDT-SWAP', exit_order_id='x1', exit_execution_id='exec-x', exit_client_order_id='cl-x', exit_trade_ids=['tx'])
+    pos2 = c.submit_exit('trend', 'BTC-USDT-SWAP', exit_order_id='x1', exit_execution_id='exec-x', exit_client_order_id='cl-x', exit_trade_ids=['tx'])
+    assert pos2 is not None
+    assert pos2.pending_exit is not None
+    assert pos2.reason == 'exit_duplicate_ignored'
+    assert any(evt.get('kind') == 'exit_duplicate_ignored' for evt in (pos2.meta.get('event_history') or []))
+    assert len(pos2.pending_exit.allocations) == len(pos1.pending_exit.allocations)
+
+
 def test_route_controller_enable_route_if_flat_unfreezes_recovered_route(tmp_path: Path):
     c = build_controller(tmp_path)
     c.routes.freeze('trend', 'BTC-USDT-SWAP', 'severe_alignment_issue')

@@ -27,6 +27,13 @@ class RouteController:
         self.locks = locks or AccountSymbolLockRegistry()
         self.routes = routes or RouteRegistry()
 
+    def _append_event(self, position: LivePosition, event: dict) -> None:
+        meta = dict(position.meta or {})
+        history = list(meta.get('event_history') or [])
+        history.append({**event, 'observed_at': datetime.now(UTC).isoformat()})
+        meta['event_history'] = history[-50:]
+        position.meta = meta
+
     def mark_forced_exit_recovery(self, account: str, symbol: str, *, detail: str | None = None) -> LivePosition | None:
         with self.locks.hold(account, symbol):
             current = self.store.get(account, symbol)
@@ -93,6 +100,15 @@ class RouteController:
             current = self.store.get(account, symbol)
             if current is None:
                 current = LivePosition(account=account, symbol=symbol, route=route)
+            if current.has_open_leg(execution_id=entry_execution_id, order_id=entry_order_id, client_order_id=entry_client_order_id):
+                self._append_event(current, {
+                    'kind': 'entry_duplicate_ignored',
+                    'execution_id': entry_execution_id,
+                    'order_id': entry_order_id,
+                    'client_order_id': entry_client_order_id,
+                })
+                current.reason = 'entry_duplicate_ignored'
+                return self.store.upsert(current)
             current.status = LivePositionStatus.ENTRY_SUBMITTED
             current.side = side
             current.size = float(current.size or 0.0) + float(size or 0.0)
@@ -116,6 +132,14 @@ class RouteController:
                 opened_at=datetime.now(UTC),
             ))
             current.pending_exit = None
+            self._append_event(current, {
+                'kind': 'entry_submitted',
+                'execution_id': entry_execution_id,
+                'order_id': entry_order_id,
+                'client_order_id': entry_client_order_id,
+                'requested_size': float(size or 0.0),
+                'side': side,
+            })
             current.reason = 'entry_submitted'
             return self.store.upsert(current)
 
@@ -133,6 +157,19 @@ class RouteController:
             current = self.store.get(account, symbol)
             if current is None:
                 return None
+            if current.pending_exit is not None and (
+                (exit_execution_id and current.pending_exit.execution_id == exit_execution_id)
+                or (exit_order_id and current.pending_exit.order_id == exit_order_id)
+                or (exit_client_order_id and current.pending_exit.client_order_id == exit_client_order_id)
+            ):
+                self._append_event(current, {
+                    'kind': 'exit_duplicate_ignored',
+                    'execution_id': exit_execution_id,
+                    'order_id': exit_order_id,
+                    'client_order_id': exit_client_order_id,
+                })
+                current.reason = 'exit_duplicate_ignored'
+                return self.store.upsert(current)
             current.status = LivePositionStatus.EXIT_SUBMITTED
             current.exit_order_id = exit_order_id
             current.exit_execution_id = exit_execution_id
@@ -160,6 +197,14 @@ class RouteController:
                 allocations=allocations,
                 submitted_at=datetime.now(UTC),
             )
+            self._append_event(current, {
+                'kind': 'exit_submitted',
+                'execution_id': exit_execution_id,
+                'order_id': exit_order_id,
+                'client_order_id': exit_client_order_id,
+                'requested_size': float(current.pending_exit.requested_size or 0.0),
+                'allocation_leg_ids': [a.leg_id for a in allocations],
+            })
             current.reason = 'exit_submitted'
             return self.store.upsert(current)
 
@@ -236,12 +281,26 @@ class RouteController:
                 decision = verify_entry(current, exchange_snapshot)
                 current.status = decision.next_status
                 current.reason = decision.reason
+                self._append_event(current, {
+                    'kind': 'entry_verification',
+                    'accepted': decision.accepted,
+                    'next_status': decision.next_status.value,
+                    'reason': decision.reason,
+                    'exchange_size': None if exchange_snapshot is None else float(exchange_snapshot.size or 0.0),
+                })
                 return self.store.upsert(current)
 
             if current.status in {LivePositionStatus.EXIT_SUBMITTED, LivePositionStatus.EXIT_VERIFYING}:
                 decision = verify_exit(current, exchange_snapshot)
                 current.status = decision.next_status
                 current.reason = decision.reason
+                self._append_event(current, {
+                    'kind': 'exit_verification',
+                    'accepted': decision.accepted,
+                    'next_status': decision.next_status.value,
+                    'reason': decision.reason,
+                    'exchange_size': None if exchange_snapshot is None else float(exchange_snapshot.size or 0.0),
+                })
                 if decision.next_status == LivePositionStatus.FLAT:
                     current.side = None
                     current.size = 0.0
@@ -278,9 +337,22 @@ class RouteController:
                 if local is not None:
                     local.status = LivePositionStatus.RECONCILE_MISMATCH
                     local.reason = policy.reason
+                    self._append_event(local, {
+                        'kind': 'reconcile_failed',
+                        'policy_action': policy.action,
+                        'policy_reason': policy.reason,
+                        'issue_types': [issue.type.value for issue in alignment.issues],
+                    })
                     self.store.upsert(local)
             else:
                 self.routes.enable(account, symbol)
+                if local is not None:
+                    self._append_event(local, {
+                        'kind': 'reconcile_ok',
+                        'policy_action': policy.action,
+                        'policy_reason': policy.reason,
+                    })
+                    self.store.upsert(local)
 
             return RouteControlResult(
                 alignment=alignment,

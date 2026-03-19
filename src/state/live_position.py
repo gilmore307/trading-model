@@ -51,6 +51,16 @@ class LivePosition:
     reason: str | None = None
     meta: dict[str, str | float | list | dict | None] = field(default_factory=dict)
 
+    def has_open_leg(self, *, execution_id: str | None = None, order_id: str | None = None, client_order_id: str | None = None) -> bool:
+        for leg in self.open_legs:
+            if execution_id and leg.execution_id == execution_id:
+                return True
+            if order_id and leg.order_id == order_id:
+                return True
+            if client_order_id and leg.client_order_id == client_order_id:
+                return True
+        return False
+
     @property
     def participates_in_alignment(self) -> bool:
         return self.status in LIVE_ALIGNMENT_STATUSES
