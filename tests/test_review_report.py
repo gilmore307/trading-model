@@ -331,6 +331,8 @@ def test_report_scaffold_surfaces_overlap_review_from_score_vectors(tmp_path: Pa
     assert activity_rows['trend']['enter_count'] == 1
     assert activity_rows['crowded']['arm_count'] == 1
     assert activity_rows['range']['watch_count'] == 1
+    assert report['metrics']['strategy_activity']['matrix']['trend']['trend']['enter'] == 1
+    assert report['metrics']['strategy_activity']['matrix']['crowded']['trend']['arm'] == 1
     shadow_rows = {row['regime']: row for row in report['metrics']['shadow_decision']['rows']}
     assert shadow_rows['trend']['selected_family'] == 'trend'
     assert shadow_rows['trend']['enter_top'][0]['strategy_name'] == 'trend'

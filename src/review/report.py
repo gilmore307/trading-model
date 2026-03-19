@@ -291,11 +291,13 @@ def _build_mapping_validity_summary(history_rows: list[dict[str, Any]]) -> dict[
 
 def _build_strategy_activity_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
     buckets: dict[str, dict[str, Any]] = {}
+    matrix: dict[str, dict[str, dict[str, int]]] = {}
     for row in history_rows:
         shadow_plans = row.get('shadow_plans') if isinstance(row.get('shadow_plans'), dict) else {}
         if not shadow_plans:
             continue
         final_regime = row.get('final_regime') or ((row.get('summary') or {}).get('regime') if isinstance(row.get('summary'), dict) else None)
+        regime_key = str(final_regime or 'unknown')
         for strategy_name, plan in shadow_plans.items():
             if not isinstance(plan, dict):
                 continue
@@ -315,14 +317,17 @@ def _build_strategy_activity_summary(history_rows: list[dict[str, Any]]) -> dict
                 bucket['arm_count'] += 1
             elif action == 'enter':
                 bucket['enter_count'] += 1
-            regime_key = str(final_regime or 'unknown')
             regime_bucket = bucket['by_regime'].setdefault(regime_key, {'watch': 0, 'arm': 0, 'enter': 0})
+            matrix_bucket = matrix.setdefault(str(strategy_name), {}).setdefault(regime_key, {'watch': 0, 'arm': 0, 'enter': 0})
             if action in {'watch', 'hold'}:
                 regime_bucket['watch'] += 1
+                matrix_bucket['watch'] += 1
             elif action == 'arm':
                 regime_bucket['arm'] += 1
+                matrix_bucket['arm'] += 1
             elif action == 'enter':
                 regime_bucket['enter'] += 1
+                matrix_bucket['enter'] += 1
     rows = []
     for strategy_name, bucket in buckets.items():
         rows.append({
@@ -337,6 +342,7 @@ def _build_strategy_activity_summary(history_rows: list[dict[str, Any]]) -> dict
     rows.sort(key=lambda item: (-int(item['enter_count']), -int(item['arm_count']), item['strategy_name']))
     return {
         'rows': rows,
+        'matrix': matrix,
         'status': 'ready' if rows else 'placeholder',
     }
 
