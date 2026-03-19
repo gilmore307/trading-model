@@ -1,24 +1,37 @@
 # SESSION_HANDOFF_2026-03-19
 
-_Last updated: 2026-03-19 14:24 Asia/Shanghai_
+_Last updated: 2026-03-20 02:22 Asia/Shanghai_
 
 ## Session summary
 
-This session converted the crypto-trading line into a clean fresh-start observation run.
+The project has now moved beyond a pure fresh-start observation run and gained a first usable research/backtest layer.
 
-Main outcomes:
+Main outcomes across the latest work:
 - full `reset` completed successfully
 - bucket state and analysis history were reset cleanly
 - trade daemon was restarted from the new baseline
 - review reporting gained `strategy_activity.matrix` (`strategy × regime × action`)
-- the project deliberately stopped short of more broad code expansion and moved into sample-accumulation mode
+- a first offline research stack was landed under `src/research/`
+- a snapshot-based offline backtest runner was landed via `src/runners/backtest_research.py`
+- research outputs now cover regime quality, strategy × regime matrix, strategy ranking, separability, and parameter-search preview
+- the project now has a real offline path for `historical snapshot jsonl -> dataset -> report`, but not yet a raw-market replay engine
 
 ## Current project status
 - `reset` path is operational and returned cleanly to `develop`
 - `test` path is operational
 - trade daemon has been launched from the fresh baseline
 - review stack now includes regime / mapping / overlap / activity / shadow perspectives, plus the new activity matrix
-- the correct next step is to gather enough fresh runtime data before deciding on the next tuning pass
+- the repo now also contains a first research stack with:
+  - dataset/replay builders
+  - forward-label generation
+  - regime quality + separability summaries
+  - strategy × regime matrix + ranking
+  - parameter-search skeleton / preview
+  - markdown research report export
+- the correct next step is no longer only “wait for more runtime data”; it is now split into:
+  1. continue accumulating fresh runtime data
+  2. use the new offline research path on historical snapshot data
+  3. design the next upgrade from snapshot-based replay to raw historical market replay
 
 ## Why this session matters
 The important question is no longer only “can the system run?”
@@ -33,13 +46,20 @@ The newly added matrix gives a direct structure for answering that later.
 ## Recommended next actions
 1. Keep the daemon running long enough to accumulate meaningful fresh artifacts.
 2. Run a new review snapshot after the sample window is non-trivial.
-3. Focus the next diagnosis on:
+3. In parallel, use the landed offline runner on historical snapshot jsonl to inspect:
+   - `regime_quality`
+   - `strategy_regime_matrix`
+   - `strategy_ranking`
+   - `regime_separability`
+   - `parameter_search_preview`
+4. Focus the next diagnosis on:
    - `strategy_activity`
    - `strategy_activity.matrix`
    - `mapping_validity`
    - `overlap`
    - `shadow_decision`
-4. Only then decide which thresholds or mapping logic deserve another code pass.
+5. The highest-value next engineering step is to design and build a **raw historical market replay builder** so research no longer depends on prebuilt snapshot rows.
+6. Only then decide which thresholds or mapping logic deserve another code pass.
 
 ## Boundaries
 - do not over-claim the project as unattended real-money ready

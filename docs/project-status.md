@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-03-12_
+_Last updated: 2026-03-20_
 
 ## Goal
 
@@ -15,7 +15,8 @@ The project is now materially beyond the earlier demo scaffold and has several r
 3. **Execution artifact persistence**
 4. **Review/report pipeline**
 5. **Review runner / export / indexing layer**
-6. **Growing documentation and handoff spine**
+6. **Research / replay / offline backtest layer**
+7. **Growing documentation and handoff spine**
 
 ## Major milestones already completed
 
@@ -34,6 +35,17 @@ The project is now materially beyond the earlier demo scaffold and has several r
 - Weekly, monthly, and quarterly review runners now exist and export JSON + Markdown artifacts.
 - Review export now maintains latest-cadence pointers and a rolling `index.json` for operator convenience.
 
+### Research / replay layer
+- A first `src/research/` stack now exists with dataset building, replay helpers, runtime adapters, forward-label generation, evaluators, reporting, markdown export, parameter-space definitions, grid-search scaffolding, and reevaluation hooks.
+- Research outputs now include:
+  - regime quality summaries
+  - regime separability / closest-pairs summaries
+  - strategy × regime matrix
+  - strategy ranking summary
+  - parameter-search preview
+- A snapshot-based offline backtest runner now exists via `src/runners/backtest_research.py`, providing a real path for `historical snapshot jsonl -> dataset -> report` without depending on live daemon runtime.
+- The research layer is real and usable, but it is still snapshot-based rather than a full raw historical market replay engine.
+
 ### Meta-work / documentation
 - Documentation now covers execution artifacts, review architecture, router-composite ownership, regime/decision flow, automation notes, and explicit known gaps/boundaries.
 - A project map and fast-resume `CURRENT_STATE.md` now exist to make future session recovery easier.
@@ -49,6 +61,9 @@ The project is now materially beyond the earlier demo scaffold and has several r
 2. stronger equity start/end/change semantics over longer review windows
 3. deeper report-side regime explanation and integration
 4. optional notifier/deployment wiring beyond current runner/export structure
+5. fix and harden the reevaluation / parameter-preview path so generated reports reflect only verified passing behavior
+6. upgrade from snapshot-based offline research to a **raw historical market replay builder** that can ingest original market data and regenerate classifier/router/shadow-plan rows from scratch
+7. accumulate enough real forward-labeled runtime history to validate research outputs on non-synthetic samples
 
 ## Current guidance
 
