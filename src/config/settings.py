@@ -69,8 +69,8 @@ class Settings(BaseModel):
     strategy_account_aliases: dict[str, str] = DEFAULT_STRATEGY_ACCOUNT_ALIASES.copy()
     strategy_accounts: dict[str, StrategyAccountConfig] = {}
     timeframe: str = "5m"
-    breakout_lookback: int = 20
-    pullback_lookback: int = 20
+    trend_lookback: int = 20
+    crowded_lookback: int = 20
     meanrev_lookback: int = 20
     meanrev_threshold: float = 0.015
     signal_cooldown_bars: int = 12
@@ -213,9 +213,9 @@ class Settings(BaseModel):
             "strategy_account_aliases": strategy_account_aliases,
             "strategy_accounts": strategy_accounts,
             "timeframe": os.getenv("TIMEFRAME", "5m"),
-            "breakout_lookback": int(os.getenv("BREAKOUT_LOOKBACK", "20")),
-            "pullback_lookback": int(os.getenv("PULLBACK_LOOKBACK", os.getenv("BREAKOUT_LOOKBACK", "20"))),
-            "meanrev_lookback": int(os.getenv("MEANREV_LOOKBACK", os.getenv("BREAKOUT_LOOKBACK", "20"))),
+            "trend_lookback": int(os.getenv("TREND_LOOKBACK", os.getenv("BREAKOUT_LOOKBACK", "20"))),
+            "crowded_lookback": int(os.getenv("CROWDED_LOOKBACK", os.getenv("PULLBACK_LOOKBACK", os.getenv("TREND_LOOKBACK", os.getenv("BREAKOUT_LOOKBACK", "20"))))),
+            "meanrev_lookback": int(os.getenv("MEANREV_LOOKBACK", os.getenv("TREND_LOOKBACK", os.getenv("BREAKOUT_LOOKBACK", "20")))),
             "meanrev_threshold": float(os.getenv("MEANREV_THRESHOLD", "0.015")),
             "signal_cooldown_bars": int(os.getenv("SIGNAL_COOLDOWN_BARS", "12")),
             "risk_per_trade_fraction": float(os.getenv("RISK_PER_TRADE_FRACTION", "0.01")),
