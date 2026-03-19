@@ -30,7 +30,7 @@ class ExecutionAdapter:
     def submit_entry(self, *, account: str, symbol: str, side: str, size: float, reason: str) -> ExecutionReceipt:
         raise NotImplementedError
 
-    def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
+    def submit_exit(self, *, account: str, symbol: str, reason: str, requested_size: float | None = None) -> ExecutionReceipt:
         raise NotImplementedError
 
 
@@ -55,7 +55,7 @@ class DryRunExecutionAdapter(ExecutionAdapter):
             trade_ids=[],
         )
 
-    def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
+    def submit_exit(self, *, account: str, symbol: str, reason: str, requested_size: float | None = None) -> ExecutionReceipt:
         execution_id = generate_execution_id(account=account, symbol=symbol, action='exit')
         client_order_id = build_okx_cl_ord_id(execution_id=execution_id, account=account, symbol=symbol, action='exit')
         return ExecutionReceipt(
@@ -114,12 +114,13 @@ class OkxExecutionAdapter(ExecutionAdapter):
             trade_ids=result.get('trade_ids'),
         )
 
-    def submit_exit(self, *, account: str, symbol: str, reason: str) -> ExecutionReceipt:
+    def submit_exit(self, *, account: str, symbol: str, reason: str, requested_size: float | None = None) -> ExecutionReceipt:
         strategy_name = self.settings.strategy_for_account_alias(account) or account
         client = self._client(account)
         execution_id = generate_execution_id(account=account, symbol=symbol, action='exit')
         client_order_id = build_okx_cl_ord_id(execution_id=execution_id, account=account, symbol=symbol, action='exit')
         current = client.current_live_position(self.settings.execution_symbol(strategy_name, symbol))
+        target_contracts = float(requested_size) if requested_size is not None else None
         if current is None:
             return ExecutionReceipt(
                 accepted=False,
@@ -140,7 +141,7 @@ class OkxExecutionAdapter(ExecutionAdapter):
         result = client.create_exit_order(
             self.settings.execution_symbol(strategy_name, symbol),
             current.get('side'),
-            float(current.get('contracts') or 0.0),
+            target_contracts if target_contracts is not None else float(current.get('contracts') or 0.0),
             client_order_id=client_order_id,
             execution_id=execution_id,
         )

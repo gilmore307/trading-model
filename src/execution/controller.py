@@ -180,6 +180,7 @@ class RouteController:
         exit_execution_id: str | None = None,
         exit_client_order_id: str | None = None,
         exit_trade_ids: list[str] | None = None,
+        requested_size: float | None = None,
     ) -> LivePosition | None:
         with self.locks.hold(account, symbol):
             current = self.store.get(account, symbol)
@@ -203,7 +204,7 @@ class RouteController:
             current.exit_execution_id = exit_execution_id
             current.exit_client_order_id = exit_client_order_id
             current.exit_trade_ids = list(exit_trade_ids or [])
-            requested_exit_size = float((current.meta or {}).get('requested_exit_size') or current.ledger_open_size or current.size or 0.0)
+            requested_exit_size = float(requested_size if requested_size is not None else (current.ledger_open_size or current.size or 0.0))
             remaining_to_allocate = requested_exit_size
             allocations: list[ExitAllocation] = []
             for leg in current.open_legs:

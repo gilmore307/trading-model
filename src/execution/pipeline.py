@@ -223,7 +223,8 @@ class ExecutionPipeline:
             reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
         elif plan.account is not None and not pending_verification_priority and plan.action == 'exit':
             trace.submission_attempted = True
-            receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason=plan.reason or 'exit')
+            requested_exit_size = None if current_position is None else float(current_position.ledger_open_size or current_position.size or 0.0)
+            receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason=plan.reason or 'exit', requested_size=requested_exit_size)
             local_position = self.controller.submit_exit(
                 plan.account,
                 regime_output.symbol,
@@ -231,6 +232,7 @@ class ExecutionPipeline:
                 exit_execution_id=receipt.execution_id,
                 exit_client_order_id=receipt.client_order_id,
                 exit_trade_ids=receipt.trade_ids,
+                requested_size=requested_exit_size,
             )
             exchange_snapshot = refresh_snapshot()
             local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or local_position
@@ -253,7 +255,8 @@ class ExecutionPipeline:
                 if current.status.value == 'exit_verifying' and current_snapshot is not None and float(current_snapshot.size or 0.0) > 0.0 and plan.reason != f'pending_verification:{current.status.value}':
                     self.controller.mark_forced_exit_recovery(plan.account, regime_output.symbol, detail='forced_exit_recovery_submitted')
                     trace.submission_attempted = True
-                    receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason='forced_exit_recovery')
+                    requested_exit_size = float(current.ledger_open_size or current.size or 0.0)
+                    receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason='forced_exit_recovery', requested_size=requested_exit_size)
                     current = self.controller.submit_exit(
                         plan.account,
                         regime_output.symbol,
@@ -261,6 +264,7 @@ class ExecutionPipeline:
                         exit_execution_id=receipt.execution_id,
                         exit_client_order_id=receipt.client_order_id,
                         exit_trade_ids=receipt.trade_ids,
+                        requested_size=requested_exit_size,
                     ) or current
                     exchange_snapshot = refresh_snapshot()
                     local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or current
