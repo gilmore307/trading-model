@@ -74,6 +74,7 @@ def _feature_snapshot(result: ExecutionCycleResult) -> dict[str, Any]:
         'background_4h': {
             'regime': result.regime_output.background_4h.get('primary'),
             'confidence': result.regime_output.background_4h.get('confidence'),
+            'scores': result.regime_output.background_4h.get('scores'),
             'tradable': result.regime_output.background_4h.get('tradable'),
             'adx': result.regime_output.background_features.get('adx'),
             'ema20_slope': result.regime_output.background_features.get('ema20_slope'),
@@ -82,6 +83,7 @@ def _feature_snapshot(result: ExecutionCycleResult) -> dict[str, Any]:
         'primary_15m': {
             'regime': result.regime_output.primary_15m.get('primary'),
             'confidence': result.regime_output.primary_15m.get('confidence'),
+            'scores': result.regime_output.primary_15m.get('scores'),
             'tradable': result.regime_output.primary_15m.get('tradable'),
             'adx': result.regime_output.primary_features.get('adx'),
             'vwap_deviation_z': result.regime_output.primary_features.get('vwap_deviation_z'),
@@ -94,6 +96,7 @@ def _feature_snapshot(result: ExecutionCycleResult) -> dict[str, Any]:
         'override_1m': {
             'regime': None if result.regime_output.override_1m is None else result.regime_output.override_1m.get('primary'),
             'confidence': None if result.regime_output.override_1m is None else result.regime_output.override_1m.get('confidence'),
+            'scores': None if result.regime_output.override_1m is None else result.regime_output.override_1m.get('scores'),
             'tradable': None if result.regime_output.override_1m is None else result.regime_output.override_1m.get('tradable'),
             'vwap_deviation_z': result.regime_output.override_features.get('vwap_deviation_z'),
             'trade_burst_score': result.regime_output.override_features.get('trade_burst_score'),

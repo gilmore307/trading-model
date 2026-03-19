@@ -51,6 +51,7 @@ class BtcRegimeRunner:
             'confidence': decision.confidence,
             'reasons': decision.reasons,
             'secondary': [x.value for x in decision.secondary],
+            'scores': decision.scores,
             'tradable': decision.tradable,
         }
 

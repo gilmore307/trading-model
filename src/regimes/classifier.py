@@ -132,16 +132,22 @@ class RuleBasedRegimeClassifier:
 
     def classify(self, snapshot: FeatureSnapshot) -> RegimeDecision:
         shock_score, shock_reasons = self._score_shock(snapshot)
-        if shock_score >= 0.50:
-            return RegimeDecision(primary=Regime.SHOCK, confidence=shock_score, reasons=shock_reasons)
-
         crowded_score, crowded_reasons = self._score_crowded(snapshot)
-        if crowded_score >= 0.65:
-            return RegimeDecision(primary=Regime.CROWDED, confidence=crowded_score, reasons=crowded_reasons)
-
         trend_score, trend_reasons = self._score_trend(snapshot)
         range_score, range_reasons = self._score_range(snapshot)
         compression_score, compression_reasons = self._score_compression(snapshot)
+        scores = {
+            Regime.TREND.value: trend_score,
+            Regime.RANGE.value: range_score,
+            Regime.COMPRESSION.value: compression_score,
+            Regime.CROWDED.value: crowded_score,
+            Regime.SHOCK.value: shock_score,
+        }
+        if shock_score >= 0.50:
+            return RegimeDecision(primary=Regime.SHOCK, confidence=shock_score, reasons=shock_reasons, scores=scores)
+
+        if crowded_score >= 0.65:
+            return RegimeDecision(primary=Regime.CROWDED, confidence=crowded_score, reasons=crowded_reasons, scores=scores)
 
         ranked = sorted(
             [
@@ -161,6 +167,7 @@ class RuleBasedRegimeClassifier:
                 confidence=max(0.35, top_score),
                 reasons=["top_score_below_activation_threshold"],
                 secondary=[top_regime, second_regime],
+                scores=scores,
             )
 
         if (top_score - second_score) < 0.08:
@@ -169,6 +176,7 @@ class RuleBasedRegimeClassifier:
                 confidence=top_score,
                 reasons=["top_scores_too_close"],
                 secondary=[top_regime, second_regime],
+                scores=scores,
             )
 
         return RegimeDecision(
@@ -176,4 +184,5 @@ class RuleBasedRegimeClassifier:
             confidence=top_score,
             reasons=top_reasons,
             secondary=[r[0] for r in ranked[1:]],
+            scores=scores,
         )

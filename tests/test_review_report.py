@@ -285,3 +285,38 @@ def test_report_scaffold_surfaces_execution_quality_dual_ledger(tmp_path: Path):
     assert mapping_rows['crowded']['expected_account'] == 'crowded'
     assert mapping_rows['crowded']['dominant_route'] == 'meanrev'
     assert mapping_rows['crowded']['matched_cycles'] == 0
+
+
+def test_report_scaffold_surfaces_overlap_review_from_score_vectors(tmp_path: Path):
+    history = tmp_path / 'execution-cycles.jsonl'
+    rows = [
+        {
+            'final_regime': 'trend',
+            'feature_snapshot': {
+                'primary_15m': {
+                    'scores': {
+                        'trend': 0.71,
+                        'range': 0.24,
+                        'compression': 0.12,
+                        'crowded': 0.64,
+                        'shock': 0.10,
+                    }
+                }
+            },
+            'summary': {
+                'regime': 'trend',
+                'route_strategy_family': 'trend',
+                'plan_account': 'trend',
+                'strategy_stats_eligible': True,
+                'account_metrics': {'trend': {'pnl_usdt': 1.0}},
+            },
+        }
+    ]
+    history.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+    window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
+    report = build_report_scaffold(window, history_path=str(history))
+    overlap_rows = report['metrics']['overlap']['rows']
+    assert len(overlap_rows) == 1
+    assert overlap_rows[0]['top_regime'] == 'trend'
+    assert overlap_rows[0]['runner_up_regime'] == 'crowded'
+    assert overlap_rows[0]['score_gap'] == 0.07

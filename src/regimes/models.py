@@ -28,6 +28,7 @@ class RegimeDecision:
     confidence: float
     reasons: list[str] = field(default_factory=list)
     secondary: list[Regime] = field(default_factory=list)
+    scores: dict[str, float] = field(default_factory=dict)
 
     @property
     def tradable(self) -> bool:

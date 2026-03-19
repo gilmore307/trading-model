@@ -213,6 +213,36 @@ def _build_regime_local_summary(history_rows: list[dict[str, Any]]) -> dict[str,
     }
 
 
+def _build_overlap_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    rows = []
+    for row in history_rows:
+        feature_snapshot = row.get('feature_snapshot') if isinstance(row.get('feature_snapshot'), dict) else {}
+        final_regime = row.get('final_regime') or ((row.get('summary') or {}).get('regime') if isinstance(row.get('summary'), dict) else None)
+        primary = feature_snapshot.get('primary_15m') if isinstance(feature_snapshot.get('primary_15m'), dict) else {}
+        scores = primary.get('scores') if isinstance(primary.get('scores'), dict) else {}
+        if not scores:
+            continue
+        ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        top_name, top_score = ranked[0]
+        second_name, second_score = ranked[1] if len(ranked) > 1 else (None, 0.0)
+        gap = round(float(top_score) - float(second_score), 10)
+        if gap > 0.15:
+            continue
+        rows.append({
+            'final_regime': final_regime or top_name,
+            'top_regime': top_name,
+            'top_score': top_score,
+            'runner_up_regime': second_name,
+            'runner_up_score': second_score,
+            'score_gap': gap,
+        })
+    rows.sort(key=lambda item: (item['score_gap'], str(item['final_regime'])))
+    return {
+        'rows': rows[:50],
+        'status': 'ready' if rows else 'placeholder',
+    }
+
+
 def _build_mapping_validity_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
     expected_map = {str(regime.value): account for regime, account in REGIME_ACCOUNT_MAP.items()}
     buckets: dict[str, dict[str, Any]] = {}
@@ -318,6 +348,21 @@ def _build_regime_local_section(regime_local: dict[str, Any]) -> dict[str, Any]:
         'key': 'regime_local_review',
         'title': 'Regime-Local Review',
         'status': regime_local.get('status', 'placeholder'),
+        'items': items,
+        'highlights': highlights,
+    }
+
+
+def _build_overlap_section(overlap: dict[str, Any]) -> dict[str, Any]:
+    rows = overlap.get('rows', []) if isinstance(overlap, dict) else []
+    items = [{'kind': 'overlap_rows', 'rows': rows}] if rows else []
+    highlights = []
+    for row in rows[:6]:
+        highlights.append(f"{row.get('final_regime')}: top={row.get('top_regime')} runner_up={row.get('runner_up_regime')} gap={row.get('score_gap')}")
+    return {
+        'key': 'overlap_review',
+        'title': 'Regime Overlap Review',
+        'status': overlap.get('status', 'placeholder'),
         'items': items,
         'highlights': highlights,
     }
@@ -626,6 +671,15 @@ def _build_narrative_blocks(executive_summary: dict[str, Any], sections: list[di
                             f"mapping {row.get('regime')}: expected={row.get('expected_account')} dominant={row.get('dominant_route')} matched={row.get('matched_cycles')}/{row.get('total_cycles')} ({row.get('match_rate_pct')}%)"
                         )
             blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
+        elif key == 'overlap_review' and section.get('status') == 'ready':
+            lines = []
+            for item in section.get('items', []):
+                if item.get('kind') == 'overlap_rows':
+                    for row in item.get('rows', [])[:6]:
+                        lines.append(
+                            f"overlap {row.get('final_regime')}: top={row.get('top_regime')}({row.get('top_score')}) runner_up={row.get('runner_up_regime')}({row.get('runner_up_score')}) gap={row.get('score_gap')}"
+                        )
+            blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
     return blocks
 
 
@@ -647,6 +701,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
     performance_summary = _build_performance_summary(performance_snapshot)
     regime_local = _build_regime_local_summary(history_rows)
     mapping_validity = _build_mapping_validity_summary(history_rows)
+    overlap = _build_overlap_summary(history_rows)
     execution_quality = _build_execution_quality_summary(history_rows)
 
     auto_candidate_params = [{'name': name, 'status': 'pending_data'} for name in plan['adjustment_policy']['auto_candidate_params']]
@@ -665,6 +720,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         _build_router_composite_section(compare_snapshot, performance_summary),
         _build_regime_local_section(regime_local),
         _build_mapping_validity_section(mapping_validity),
+        _build_overlap_section(overlap),
         _build_execution_quality_section(execution_quality),
         parameter_section,
     ]
@@ -701,6 +757,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
             'performance_summary': performance_summary,
             'regime_local': regime_local,
             'mapping_validity': mapping_validity,
+            'overlap': overlap,
             'execution_quality': execution_quality,
             'risk': [],
             'fees': [],
