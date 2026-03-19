@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import time
 from dataclasses import asdict
@@ -21,6 +22,7 @@ OUT_DIR = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime')
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 DAEMON_LOG = OUT_DIR / 'trade-daemon.jsonl'
 PID_PATH = OUT_DIR / 'trade-daemon.pid'
+LOCK_PATH = OUT_DIR / 'trade-daemon.lock'
 
 
 def _json_default(value: Any):
@@ -41,6 +43,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def acquire_single_instance_lock():
+    LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    handle = LOCK_PATH.open('a+', encoding='utf-8')
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        handle.seek(0)
+        holder = handle.read().strip()
+        raise RuntimeError(f'trade_daemon_lock_held:{holder or "unknown"}') from exc
+    handle.seek(0)
+    handle.truncate()
+    handle.write(str(Path('/proc/self').resolve().name))
+    handle.flush()
+    return handle
+
+
 def ensure_trade_start_ready(*, settings: Settings, runtime_store: RuntimeStore, hooks: WorkflowHooks | None = None) -> WorkflowRunResult | None:
     if runtime_store.get().mode != RuntimeMode.TRADE:
         return None
@@ -55,6 +73,7 @@ def ensure_trade_start_ready(*, settings: Settings, runtime_store: RuntimeStore,
 
 def main() -> None:
     args = build_arg_parser().parse_args()
+    daemon_lock = acquire_single_instance_lock()
     settings = Settings.load()
     settings.ensure_demo_only()
 
@@ -126,6 +145,7 @@ def main() -> None:
         'observed_at': datetime.now(UTC),
         'cycles': cycles,
     })
+    daemon_lock.close()
 
 
 if __name__ == '__main__':
