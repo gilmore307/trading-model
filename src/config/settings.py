@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 
-DEFAULT_SYMBOLS = ["BTC-USDT-SWAP", "ETH-USDT-SWAP", "SOL-USDT-SWAP"]
+DEFAULT_SYMBOLS = ["BTC-USDT-SWAP"]
 DEFAULT_STRATEGIES = ["trend", "crowded", "meanrev", "compression", "realtime"]
 DEFAULT_STRATEGY_SYMBOLS = {
     "trend": {

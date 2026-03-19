@@ -10,7 +10,7 @@ Expected in `.env`:
 
 Optional:
 - `OPENCLAW_DISCORD_CHANNEL`
-- `SYMBOLS=BTC-USDT-SWAP,ETH-USDT-SWAP,SOL-USDT-SWAP`
+- `SYMBOLS=BTC-USDT-SWAP`  # current active trade path; add ETH/SOL only when intentionally expanding scope
 - `STRATEGIES=trend,crowded,meanrev,compression,realtime`
 - `TIMEFRAME=5m`
 - `BREAKOUT_LOOKBACK=20`

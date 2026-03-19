@@ -5,7 +5,7 @@
 ## Scope
 - Exchange: OKX perpetual swaps
 - Environment: demo / simulated trading only
-- Symbols: BTC-USDT-SWAP, ETH-USDT-SWAP, SOL-USDT-SWAP
+- Symbols: BTC-USDT-SWAP (current active trade path); ETH-USDT-SWAP / SOL-USDT-SWAP remain reserved in framework structure only
 - Strategy accounts / families: trend, crowded, meanrev, compression, realtime
 - Notifications: sent via OpenClaw's configured Discord channel
 
@@ -17,7 +17,7 @@
 
 ### Core capabilities already in place
 - config loading from `.env`
-- multi-strategy evaluation across BTC/ETH/SOL with current routed families `trend/crowded/meanrev/compression/realtime`
+- multi-strategy evaluation on the current BTC trade path, with routed families `trend/crowded/meanrev/compression/realtime`
 - per-strategy-per-symbol budget buckets
 - entry/exit state transitions
 - dry-run state persistence
@@ -57,7 +57,7 @@ Optional:
 - `DISCORD_BOT_TOKEN` (or inherited `CHANNELS_DISCORD_TOKEN`)
 - `DISCORD_WEBHOOK_URL` (preferred if you want repo-local direct push without bot token handling)
 - `NOTIFY_RUNTIME_WARNINGS=false` (default false; false still sends severe alignment/freeze alerts, true also sends ordinary hold/skip warnings)
-- `SYMBOLS=BTC-USDT-SWAP,ETH-USDT-SWAP,SOL-USDT-SWAP`
+- `SYMBOLS=BTC-USDT-SWAP`
 - `STRATEGIES=trend,crowded,meanrev,compression,realtime`
 - `TIMEFRAME=5m`
 - `BREAKOUT_LOOKBACK=20`

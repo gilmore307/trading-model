@@ -8,8 +8,9 @@ Build a regime-routed crypto trading system that:
 - supports both minute-level and real-time execution paths
 
 ## Scope for current implementation
-- Asset universe: `BTC-USDT-SWAP`, `ETH-USDT-SWAP`, `SOL-USDT-SWAP`
+- Active trade asset universe: `BTC-USDT-SWAP` only
 - Exchange: OKX demo first
+- Note: `ETH-USDT-SWAP` / `SOL-USDT-SWAP` remain framework-reserved symbols, not the current active trade path
 - Strategy accounts:
   - `trend`
   - `meanrev`
