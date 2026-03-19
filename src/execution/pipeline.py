@@ -192,13 +192,18 @@ class ExecutionPipeline:
                 entry_client_order_id=receipt.client_order_id,
                 entry_trade_ids=receipt.trade_ids,
             )
+            verification_hint = None if receipt.raw is None or not isinstance(receipt.raw, dict) else {
+                'verified_entry': bool(receipt.raw.get('verified_entry')),
+                'verification_attempts': receipt.raw.get('verification_attempts') or [],
+            }
+            if verification_hint is not None:
+                meta = dict(local_position.meta or {})
+                meta['last_verification_hint'] = verification_hint
+                local_position.meta = meta
+                local_position = self.controller.store.upsert(local_position)
             exchange_snapshot = refresh_snapshot()
             local_position = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or local_position
             verification_position = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot)
-            if verification_position is not None and verification_position.status.value == 'entry_verifying' and exchange_snapshot is None:
-                local_position = self.controller.mark_missed_entry(plan.account, regime_output.symbol, detail='missed_entry_not_opened_on_exchange') or verification_position
-                verification_position = local_position
-                self.controller.enable_route_if_flat(plan.account, regime_output.symbol)
             reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
         elif plan.account is not None and plan.action == 'exit':
             trace.submission_attempted = True
@@ -219,6 +224,9 @@ class ExecutionPipeline:
             current = self.controller.store.get(plan.account, regime_output.symbol)
             if current is not None:
                 exchange_snapshot = refresh_snapshot()
+                current = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or current
+                if current.status.value in {'entry_submitted', 'entry_verifying', 'exit_submitted', 'exit_verifying'}:
+                    current = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot) or current
                 reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
                 local_position = current
                 verification_position = current
@@ -245,6 +253,9 @@ class ExecutionPipeline:
                     reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
                 else:
                     exchange_snapshot = current_snapshot
+                    current = self.controller.refresh_local_position_from_exchange(plan.account, regime_output.symbol, exchange_snapshot) or current
+                    if current.status.value in {'entry_submitted', 'entry_verifying', 'exit_submitted', 'exit_verifying'}:
+                        current = self.controller.verify_position(plan.account, regime_output.symbol, exchange_snapshot) or current
                     reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
                     local_position = current
                     verification_position = current
