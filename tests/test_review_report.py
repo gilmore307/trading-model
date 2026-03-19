@@ -303,6 +303,13 @@ def test_report_scaffold_surfaces_overlap_review_from_score_vectors(tmp_path: Pa
                     }
                 }
             },
+            'shadow_plans': {
+                'trend': {'action': 'enter', 'account': 'trend', 'reason': 'trend_follow_through_confirmed'},
+                'range': {'action': 'watch', 'account': None, 'reason': 'range_requires_reversion_confirmation'},
+                'compression': {'action': 'watch', 'account': None, 'reason': 'compression_bias_insufficient'},
+                'crowded': {'action': 'arm', 'account': 'crowded', 'reason': 'crowded_reversal_setup_forming'},
+                'shock': {'action': 'watch', 'account': None, 'reason': 'shock_event_score_low'},
+            },
             'summary': {
                 'regime': 'trend',
                 'route_strategy_family': 'trend',
@@ -320,3 +327,11 @@ def test_report_scaffold_surfaces_overlap_review_from_score_vectors(tmp_path: Pa
     assert overlap_rows[0]['top_regime'] == 'trend'
     assert overlap_rows[0]['runner_up_regime'] == 'crowded'
     assert overlap_rows[0]['score_gap'] == 0.07
+    activity_rows = {row['strategy_name']: row for row in report['metrics']['strategy_activity']['rows']}
+    assert activity_rows['trend']['enter_count'] == 1
+    assert activity_rows['crowded']['arm_count'] == 1
+    assert activity_rows['range']['watch_count'] == 1
+    shadow_rows = {row['regime']: row for row in report['metrics']['shadow_decision']['rows']}
+    assert shadow_rows['trend']['selected_family'] == 'trend'
+    assert shadow_rows['trend']['enter_top'][0]['strategy_name'] == 'trend'
+    assert shadow_rows['trend']['arm_top'][0]['strategy_name'] == 'crowded'

@@ -289,6 +289,108 @@ def _build_mapping_validity_summary(history_rows: list[dict[str, Any]]) -> dict[
     }
 
 
+def _build_strategy_activity_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    buckets: dict[str, dict[str, Any]] = {}
+    for row in history_rows:
+        shadow_plans = row.get('shadow_plans') if isinstance(row.get('shadow_plans'), dict) else {}
+        if not shadow_plans:
+            continue
+        final_regime = row.get('final_regime') or ((row.get('summary') or {}).get('regime') if isinstance(row.get('summary'), dict) else None)
+        for strategy_name, plan in shadow_plans.items():
+            if not isinstance(plan, dict):
+                continue
+            bucket = buckets.setdefault(str(strategy_name), {
+                'strategy_name': str(strategy_name),
+                'total_cycles': 0,
+                'watch_count': 0,
+                'arm_count': 0,
+                'enter_count': 0,
+                'by_regime': {},
+            })
+            bucket['total_cycles'] += 1
+            action = str(plan.get('action') or 'hold')
+            if action in {'watch', 'hold'}:
+                bucket['watch_count'] += 1
+            elif action == 'arm':
+                bucket['arm_count'] += 1
+            elif action == 'enter':
+                bucket['enter_count'] += 1
+            regime_key = str(final_regime or 'unknown')
+            regime_bucket = bucket['by_regime'].setdefault(regime_key, {'watch': 0, 'arm': 0, 'enter': 0})
+            if action in {'watch', 'hold'}:
+                regime_bucket['watch'] += 1
+            elif action == 'arm':
+                regime_bucket['arm'] += 1
+            elif action == 'enter':
+                regime_bucket['enter'] += 1
+    rows = []
+    for strategy_name, bucket in buckets.items():
+        rows.append({
+            'strategy_name': strategy_name,
+            'total_cycles': bucket['total_cycles'],
+            'watch_count': bucket['watch_count'],
+            'arm_count': bucket['arm_count'],
+            'enter_count': bucket['enter_count'],
+            'activity_rate_pct': 0.0 if bucket['total_cycles'] <= 0 else round(((bucket['arm_count'] + bucket['enter_count']) / bucket['total_cycles']) * 100.0, 4),
+            'by_regime': bucket['by_regime'],
+        })
+    rows.sort(key=lambda item: (-int(item['enter_count']), -int(item['arm_count']), item['strategy_name']))
+    return {
+        'rows': rows,
+        'status': 'ready' if rows else 'placeholder',
+    }
+
+
+def _build_shadow_decision_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    buckets: dict[str, dict[str, Any]] = {}
+    for row in history_rows:
+        shadow_plans = row.get('shadow_plans') if isinstance(row.get('shadow_plans'), dict) else {}
+        if not shadow_plans:
+            continue
+        summary = row.get('summary') if isinstance(row.get('summary'), dict) else row
+        regime = str(summary.get('regime') or row.get('final_regime') or 'unknown')
+        selected_family = str(summary.get('route_strategy_family') or 'none')
+        bucket = buckets.setdefault(regime, {
+            'regime': regime,
+            'selected_family': selected_family,
+            'enter_counts': {},
+            'arm_counts': {},
+            'total_cycles': 0,
+        })
+        bucket['total_cycles'] += 1
+        for strategy_name, plan in shadow_plans.items():
+            if not isinstance(plan, dict):
+                continue
+            action = str(plan.get('action') or 'hold')
+            if action == 'enter':
+                bucket['enter_counts'][strategy_name] = bucket['enter_counts'].get(strategy_name, 0) + 1
+            elif action == 'arm':
+                bucket['arm_counts'][strategy_name] = bucket['arm_counts'].get(strategy_name, 0) + 1
+    rows = []
+    for regime, bucket in buckets.items():
+        def _top(counter: dict[str, int]) -> list[dict[str, Any]]:
+            return [
+                {'strategy_name': name, 'count': count}
+                for name, count in sorted(counter.items(), key=lambda item: (-item[1], item[0]))[:5]
+            ]
+        enter_top = _top(bucket['enter_counts'])
+        arm_top = _top(bucket['arm_counts'])
+        rows.append({
+            'regime': regime,
+            'selected_family': bucket['selected_family'],
+            'total_cycles': bucket['total_cycles'],
+            'enter_top': enter_top,
+            'arm_top': arm_top,
+            'selected_family_enter_count': bucket['enter_counts'].get(bucket['selected_family'], 0),
+            'selected_family_arm_count': bucket['arm_counts'].get(bucket['selected_family'], 0),
+        })
+    rows.sort(key=lambda item: (-int(item['total_cycles']), item['regime']))
+    return {
+        'rows': rows,
+        'status': 'ready' if rows else 'placeholder',
+    }
+
+
 def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
     clean = 0
     excluded = 0
@@ -378,6 +480,38 @@ def _build_mapping_validity_section(mapping_validity: dict[str, Any]) -> dict[st
         'key': 'mapping_validity_review',
         'title': 'Mapping Validity Review',
         'status': mapping_validity.get('status', 'placeholder'),
+        'items': items,
+        'highlights': highlights,
+    }
+
+
+def _build_strategy_activity_section(activity: dict[str, Any]) -> dict[str, Any]:
+    rows = activity.get('rows', []) if isinstance(activity, dict) else []
+    items = [{'kind': 'activity_rows', 'rows': rows}] if rows else []
+    highlights = []
+    for row in rows[:6]:
+        highlights.append(f"{row.get('strategy_name')}: enter={row.get('enter_count')} arm={row.get('arm_count')} watch={row.get('watch_count')} activity={row.get('activity_rate_pct')}%")
+    return {
+        'key': 'strategy_activity_review',
+        'title': 'Strategy Activity Review',
+        'status': activity.get('status', 'placeholder'),
+        'items': items,
+        'highlights': highlights,
+    }
+
+
+def _build_shadow_decision_section(shadow: dict[str, Any]) -> dict[str, Any]:
+    rows = shadow.get('rows', []) if isinstance(shadow, dict) else []
+    items = [{'kind': 'shadow_rows', 'rows': rows}] if rows else []
+    highlights = []
+    for row in rows[:6]:
+        enter_top = row.get('enter_top') or []
+        leader = enter_top[0]['strategy_name'] if enter_top else 'none'
+        highlights.append(f"{row.get('regime')}: selected={row.get('selected_family')} top_enter={leader}")
+    return {
+        'key': 'shadow_decision_review',
+        'title': 'Shadow Decision Review',
+        'status': shadow.get('status', 'placeholder'),
         'items': items,
         'highlights': highlights,
     }
@@ -680,6 +814,26 @@ def _build_narrative_blocks(executive_summary: dict[str, Any], sections: list[di
                             f"overlap {row.get('final_regime')}: top={row.get('top_regime')}({row.get('top_score')}) runner_up={row.get('runner_up_regime')}({row.get('runner_up_score')}) gap={row.get('score_gap')}"
                         )
             blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
+        elif key == 'strategy_activity_review' and section.get('status') == 'ready':
+            lines = []
+            for item in section.get('items', []):
+                if item.get('kind') == 'activity_rows':
+                    for row in item.get('rows', [])[:6]:
+                        lines.append(
+                            f"activity {row.get('strategy_name')}: enter={row.get('enter_count')} arm={row.get('arm_count')} watch={row.get('watch_count')} activity={row.get('activity_rate_pct')}%"
+                        )
+            blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
+        elif key == 'shadow_decision_review' and section.get('status') == 'ready':
+            lines = []
+            for item in section.get('items', []):
+                if item.get('kind') == 'shadow_rows':
+                    for row in item.get('rows', [])[:6]:
+                        enter_top = ','.join(f"{x.get('strategy_name')}:{x.get('count')}" for x in row.get('enter_top', []))
+                        arm_top = ','.join(f"{x.get('strategy_name')}:{x.get('count')}" for x in row.get('arm_top', []))
+                        lines.append(
+                            f"shadow {row.get('regime')}: selected={row.get('selected_family')} enter_top=[{enter_top}] arm_top=[{arm_top}]"
+                        )
+            blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
     return blocks
 
 
@@ -702,6 +856,8 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
     regime_local = _build_regime_local_summary(history_rows)
     mapping_validity = _build_mapping_validity_summary(history_rows)
     overlap = _build_overlap_summary(history_rows)
+    strategy_activity = _build_strategy_activity_summary(history_rows)
+    shadow_decision = _build_shadow_decision_summary(history_rows)
     execution_quality = _build_execution_quality_summary(history_rows)
 
     auto_candidate_params = [{'name': name, 'status': 'pending_data'} for name in plan['adjustment_policy']['auto_candidate_params']]
@@ -721,6 +877,8 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         _build_regime_local_section(regime_local),
         _build_mapping_validity_section(mapping_validity),
         _build_overlap_section(overlap),
+        _build_strategy_activity_section(strategy_activity),
+        _build_shadow_decision_section(shadow_decision),
         _build_execution_quality_section(execution_quality),
         parameter_section,
     ]
@@ -758,6 +916,8 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
             'regime_local': regime_local,
             'mapping_validity': mapping_validity,
             'overlap': overlap,
+            'strategy_activity': strategy_activity,
+            'shadow_decision': shadow_decision,
             'execution_quality': execution_quality,
             'risk': [],
             'fees': [],

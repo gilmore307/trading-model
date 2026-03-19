@@ -8,7 +8,7 @@ from src.execution.adapters import ExecutionReceipt
 from src.execution.controller import RouteControlResult
 from src.execution.policy import PolicyDecision
 from src.reconcile.alignment import AlignmentResult
-from src.runners.execution_cycle import build_execution_artifact, persist_execution_artifact, ANOMALY_HISTORY_PATH, REGIME_HISTORY_PATH
+from src.runners.execution_cycle import build_execution_artifact, persist_execution_artifact, ANOMALY_HISTORY_PATH, REGIME_HISTORY_PATH, STRATEGY_ACTIVITY_PATH
 from src.runners.regime_runner import RegimeRunnerOutput
 from src.strategies.executors import ExecutionPlan
 
@@ -136,6 +136,7 @@ def test_persist_execution_artifact_writes_anomaly_ledger_for_excluded_execution
     anomaly_path = tmp_path / 'execution-anomalies.jsonl'
     monkeypatch.setattr('src.runners.execution_cycle.ANOMALY_HISTORY_PATH', anomaly_path)
     monkeypatch.setattr('src.runners.execution_cycle.REGIME_HISTORY_PATH', tmp_path / 'regime-local-history.jsonl')
+    monkeypatch.setattr('src.runners.execution_cycle.STRATEGY_ACTIVITY_PATH', tmp_path / 'strategy-activity-history.jsonl')
     monkeypatch.setattr('src.runners.execution_cycle.LATEST_PATH', tmp_path / 'latest-execution-cycle.json')
     monkeypatch.setattr('src.runners.execution_cycle.HISTORY_PATH', tmp_path / 'execution-cycles.jsonl')
 
@@ -175,6 +176,11 @@ def test_persist_execution_artifact_writes_anomaly_ledger_for_excluded_execution
     assert regime_row['strategy_stats_eligible'] is False
     assert 'shadow_plans' in regime_row
     assert 'trend' in regime_row['shadow_plans']
+    activity_lines = (tmp_path / 'strategy-activity-history.jsonl').read_text(encoding='utf-8').splitlines()
+    assert len(activity_lines) == 5
+    activity_row = json.loads(activity_lines[0])
+    assert activity_row['artifact_type'] == 'strategy_activity'
+    assert activity_row['final_regime'] == 'trend'
     lines = anomaly_path.read_text(encoding='utf-8').splitlines()
     assert len(lines) == 1
     anomaly = json.loads(lines[0])

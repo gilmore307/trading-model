@@ -18,6 +18,7 @@ LATEST_PATH = OUT_DIR / 'latest-execution-cycle.json'
 HISTORY_PATH = OUT_DIR / 'execution-cycles.jsonl'
 ANOMALY_HISTORY_PATH = OUT_DIR / 'execution-anomalies.jsonl'
 REGIME_HISTORY_PATH = OUT_DIR / 'regime-local-history.jsonl'
+STRATEGY_ACTIVITY_PATH = OUT_DIR / 'strategy-activity-history.jsonl'
 
 
 def _json_default(value: Any):
@@ -150,6 +151,31 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     return payload
 
 
+def _build_strategy_activity_artifacts(artifact: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = []
+    summary = artifact.get('summary') if isinstance(artifact.get('summary'), dict) else {}
+    for strategy_name, plan in (artifact.get('shadow_plans') or {}).items():
+        if not isinstance(plan, dict):
+            continue
+        rows.append({
+            'artifact_type': 'strategy_activity',
+            'recorded_at': artifact.get('recorded_at'),
+            'symbol': summary.get('symbol'),
+            'runtime_mode': summary.get('runtime_mode'),
+            'final_regime': summary.get('regime'),
+            'strategy_name': strategy_name,
+            'action': plan.get('action'),
+            'side': plan.get('side'),
+            'account': plan.get('account'),
+            'reason': plan.get('reason'),
+            'size': plan.get('size'),
+            'selected_strategy_family': summary.get('route_strategy_family'),
+            'selected_plan_action': summary.get('plan_action'),
+            'strategy_stats_eligible': summary.get('strategy_stats_eligible'),
+        })
+    return rows
+
+
 def _build_regime_local_artifact(result: ExecutionCycleResult, artifact: dict[str, Any]) -> dict[str, Any]:
     summary = artifact.get('summary') if isinstance(artifact.get('summary'), dict) else {}
     return {
@@ -213,6 +239,11 @@ def persist_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     regime_local = _build_regime_local_artifact(result, artifact)
     with REGIME_HISTORY_PATH.open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(regime_local, default=_json_default, ensure_ascii=False) + '\n')
+    activity_rows = _build_strategy_activity_artifacts(artifact)
+    if activity_rows:
+        with STRATEGY_ACTIVITY_PATH.open('a', encoding='utf-8') as handle:
+            for row in activity_rows:
+                handle.write(json.dumps(row, default=_json_default, ensure_ascii=False) + '\n')
     anomaly = _build_anomaly_artifact(result, artifact)
     if anomaly is not None:
         with ANOMALY_HISTORY_PATH.open('a', encoding='utf-8') as handle:
