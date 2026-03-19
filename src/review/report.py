@@ -161,6 +161,57 @@ def _load_history_rows(path: str | None) -> list[dict[str, Any]]:
     return rows
 
 
+def _build_regime_local_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    buckets: dict[str, dict[str, Any]] = {}
+    for row in history_rows:
+        summary = row.get('summary') if isinstance(row.get('summary'), dict) else row
+        regime = str(summary.get('regime') or summary.get('final_regime') or 'unknown')
+        route_family = str(summary.get('route_strategy_family') or 'none')
+        eligible = bool(summary.get('strategy_stats_eligible', False))
+        account_metrics = summary.get('account_metrics') if isinstance(summary.get('account_metrics'), dict) else {}
+        plan_account = summary.get('plan_account') or summary.get('route_account') or (next(iter(account_metrics.keys())) if account_metrics else None)
+        pnl = 0.0
+        if plan_account in account_metrics and isinstance(account_metrics.get(plan_account), dict):
+            pnl = _row_pnl(account_metrics[plan_account])
+        bucket = buckets.setdefault(regime, {
+            'regime': regime,
+            'total_cycles': 0,
+            'clean_cycles': 0,
+            'excluded_cycles': 0,
+            'clean_pnl_usdt': 0.0,
+            'excluded_pnl_usdt': 0.0,
+            'route_families': {},
+        })
+        bucket['total_cycles'] += 1
+        bucket['route_families'][route_family] = bucket['route_families'].get(route_family, 0) + 1
+        if eligible:
+            bucket['clean_cycles'] += 1
+            bucket['clean_pnl_usdt'] = round(float(bucket['clean_pnl_usdt']) + pnl, 10)
+        else:
+            bucket['excluded_cycles'] += 1
+            bucket['excluded_pnl_usdt'] = round(float(bucket['excluded_pnl_usdt']) + pnl, 10)
+    rows = []
+    for regime, bucket in buckets.items():
+        dominant_route = None
+        if bucket['route_families']:
+            dominant_route = sorted(bucket['route_families'].items(), key=lambda item: (-item[1], item[0]))[0][0]
+        rows.append({
+            'regime': regime,
+            'total_cycles': bucket['total_cycles'],
+            'clean_cycles': bucket['clean_cycles'],
+            'excluded_cycles': bucket['excluded_cycles'],
+            'clean_pnl_usdt': bucket['clean_pnl_usdt'],
+            'excluded_pnl_usdt': bucket['excluded_pnl_usdt'],
+            'dominant_route_family': dominant_route,
+            'route_families': bucket['route_families'],
+        })
+    rows.sort(key=lambda item: (-int(item['total_cycles']), item['regime']))
+    return {
+        'rows': rows,
+        'status': 'ready' if rows else 'placeholder',
+    }
+
+
 def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict[str, Any]:
     clean = 0
     excluded = 0
@@ -205,6 +256,23 @@ def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict
         'excluded_samples': excluded_rows[:20],
         'anomaly_breakdown': anomaly_breakdown,
         'status': 'ready' if history_rows else 'placeholder',
+    }
+
+
+def _build_regime_local_section(regime_local: dict[str, Any]) -> dict[str, Any]:
+    items = []
+    rows = regime_local.get('rows', []) if isinstance(regime_local, dict) else []
+    if rows:
+        items.append({'kind': 'regime_rows', 'rows': rows})
+    highlights = []
+    for row in rows[:5]:
+        highlights.append(f"{row.get('regime')}:clean={row.get('clean_cycles')}/excluded={row.get('excluded_cycles')}")
+    return {
+        'key': 'regime_local_review',
+        'title': 'Regime-Local Review',
+        'status': regime_local.get('status', 'placeholder'),
+        'items': items,
+        'highlights': highlights,
     }
 
 
@@ -478,6 +546,15 @@ def _build_narrative_blocks(executive_summary: dict[str, Any], sections: list[di
                     for row in item.get('rows', [])[:3]:
                         lines.append(f"excluded_sample {row.get('account')}: reason={row.get('reason')} pnl={row.get('pnl_usdt')}")
             blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
+        elif key == 'regime_local_review' and section.get('status') == 'ready':
+            lines = []
+            for item in section.get('items', []):
+                if item.get('kind') == 'regime_rows':
+                    for row in item.get('rows', [])[:6]:
+                        lines.append(
+                            f"regime {row.get('regime')}: cycles={row.get('total_cycles')} clean={row.get('clean_cycles')} excluded={row.get('excluded_cycles')} clean_pnl={row.get('clean_pnl_usdt')} dominant_route={row.get('dominant_route_family')}"
+                        )
+            blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
     return blocks
 
 
@@ -497,6 +574,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         history_rows = _load_history_rows(history_path)
     performance_snapshot = build_performance_snapshot(aggregated_metrics)
     performance_summary = _build_performance_summary(performance_snapshot)
+    regime_local = _build_regime_local_summary(history_rows)
     execution_quality = _build_execution_quality_summary(history_rows)
 
     auto_candidate_params = [{'name': name, 'status': 'pending_data'} for name in plan['adjustment_policy']['auto_candidate_params']]
@@ -513,6 +591,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         },
         _build_account_comparison_section(compare_snapshot, performance_summary),
         _build_router_composite_section(compare_snapshot, performance_summary),
+        _build_regime_local_section(regime_local),
         _build_execution_quality_section(execution_quality),
         parameter_section,
     ]
@@ -547,6 +626,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         metrics={
             'performance': performance_snapshot,
             'performance_summary': performance_summary,
+            'regime_local': regime_local,
             'execution_quality': execution_quality,
             'risk': [],
             'fees': [],

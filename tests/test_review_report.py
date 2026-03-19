@@ -228,6 +228,8 @@ def test_report_scaffold_surfaces_execution_quality_dual_ledger(tmp_path: Path):
     rows = [
         {
             'summary': {
+                'regime': 'trend',
+                'route_strategy_family': 'trend',
                 'plan_account': 'trend', 'plan_action': 'enter', 'receipt_accepted': True,
                 'strategy_stats_eligible': True, 'strategy_stats_reason': 'clean_execution',
                 'account_metrics': {'trend': {'pnl_usdt': 5.0}},
@@ -236,6 +238,8 @@ def test_report_scaffold_surfaces_execution_quality_dual_ledger(tmp_path: Path):
         },
         {
             'summary': {
+                'regime': 'trend',
+                'route_strategy_family': 'trend',
                 'plan_account': 'trend', 'plan_action': 'exit', 'receipt_accepted': True,
                 'strategy_stats_eligible': False, 'strategy_stats_reason': 'forced_exit_recovery',
                 'account_metrics': {'trend': {'pnl_usdt': -2.5}},
@@ -244,6 +248,8 @@ def test_report_scaffold_surfaces_execution_quality_dual_ledger(tmp_path: Path):
         },
         {
             'summary': {
+                'regime': 'crowded',
+                'route_strategy_family': 'crowded',
                 'plan_account': 'meanrev', 'plan_action': 'enter', 'receipt_accepted': True,
                 'strategy_stats_eligible': False, 'strategy_stats_reason': 'missed_entry',
                 'account_metrics': {'meanrev': {'pnl_usdt': 0.0}},
@@ -267,3 +273,8 @@ def test_report_scaffold_surfaces_execution_quality_dual_ledger(tmp_path: Path):
     assert breakdown['forced_exit_recovery']['pnl_usdt'] == -2.5
     assert breakdown['missed_entry']['count'] == 1
     assert breakdown['missed_entry']['accounts'] == ['meanrev']
+    regime_rows = {row['regime']: row for row in report['metrics']['regime_local']['rows']}
+    assert regime_rows['trend']['clean_cycles'] == 1
+    assert regime_rows['trend']['excluded_cycles'] == 1
+    assert regime_rows['trend']['dominant_route_family'] == 'trend'
+    assert regime_rows['crowded']['excluded_cycles'] == 1
