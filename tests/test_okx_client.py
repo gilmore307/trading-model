@@ -64,6 +64,8 @@ class FakeAccount:
 
 class FakeSettings:
     okx_demo = True
+    verification_delays_seconds = [1.0, 2.0, 4.0]
+    verification_doublecheck_delay_seconds = 0.5
 
     def ccxt_symbol(self, raw_symbol: str) -> str:
         return raw_symbol
@@ -255,7 +257,8 @@ def test_create_entry_order_uses_windowed_verification_delays(monkeypatch):
     monkeypatch.setattr(okx_client_module, "live_position_snapshot", fake_snapshot)
     result = OkxClient.create_entry_order(client, "ETH/USDT:USDT", "long", 100.0)
 
-    assert [row["delay_seconds"] for row in result["verification_attempts"]] == [5.0, 10.0]
+    assert [row["attempt"] for row in result["verification_attempts"]] == ['initial', 1]
+    assert [row["delay_seconds"] for row in result["verification_attempts"]] == [0.0, 1.0]
     assert result["verified_entry"] is True
     assert result["live_side"] == "long"
     assert result["live_contracts"] == 0.05
@@ -277,8 +280,8 @@ def test_create_exit_order_adds_single_doublecheck_when_trade_was_confirmed(monk
     monkeypatch.setattr(okx_client_module, "live_position_snapshot", fake_snapshot)
     result = OkxClient.create_exit_order(client, "ETH/USDT:USDT", "long", 0.48)
 
-    assert [row["attempt"] for row in result["verification_attempts"]] == [1, "1-doublecheck"]
-    assert [row["delay_seconds"] for row in result["verification_attempts"]] == [5.0, 1.5]
+    assert [row["attempt"] for row in result["verification_attempts"]] == ['initial', 1, '1-doublecheck']
+    assert [row["delay_seconds"] for row in result["verification_attempts"]] == [0.0, 1.0, 0.5]
     assert all(row["trade_confirmed"] is True for row in result["verification_attempts"])
     assert result["verified_flat"] is True
     assert result["remaining_contracts"] == 0.0

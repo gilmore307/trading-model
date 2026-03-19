@@ -120,6 +120,8 @@ class Settings(BaseModel):
     test_reverse_signal: bool = True
     dry_run: bool = True
     confirm_real_trading: bool = False
+    verification_delays_seconds: list[float] = [1.0, 2.0, 4.0]
+    verification_doublecheck_delay_seconds: float = 0.5
 
     def ccxt_symbol(self, raw_symbol: str) -> str:
         if ":" in raw_symbol and "/" in raw_symbol:
@@ -192,6 +194,9 @@ class Settings(BaseModel):
                 "label": os.getenv(f"OKX_{prefix}_ACCOUNT_LABEL", alias),
             }
 
+        verification_delays_raw = [item.strip() for item in os.getenv("VERIFICATION_DELAYS_SECONDS", "1,2,4").split(",") if item.strip()]
+        verification_delays = [float(item) for item in verification_delays_raw] if verification_delays_raw else [1.0, 2.0, 4.0]
+
         data = {
             "OKX_API_KEY": os.getenv("OKX_API_KEY", ""),
             "OKX_API_SECRET": os.getenv("OKX_API_SECRET", ""),
@@ -258,6 +263,8 @@ class Settings(BaseModel):
             "test_reverse_signal": str(os.getenv("TEST_REVERSE_SIGNAL", "true")).strip().lower() in {"1", "true", "yes", "on"},
             "dry_run": str(os.getenv("DRY_RUN", "true")).strip().lower() in {"1", "true", "yes", "on"},
             "confirm_real_trading": str(os.getenv("CONFIRM_REAL_TRADING", "false")).strip().lower() in {"1", "true", "yes", "on"},
+            "verification_delays_seconds": verification_delays,
+            "verification_doublecheck_delay_seconds": float(os.getenv("VERIFICATION_DOUBLECHECK_DELAY_SECONDS", "0.5")),
         }
         return cls.model_validate(data)
 

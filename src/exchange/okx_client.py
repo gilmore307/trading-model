@@ -299,8 +299,8 @@ def account_balance_summary(balance: dict[str, Any] | None, *, account_alias: st
     }
 
 
-VERIFICATION_DELAYS_SECONDS = (5.0, 10.0, 20.0)
-DOUBLECHECK_DELAY_SECONDS = 1.5
+VERIFICATION_DELAYS_SECONDS = (1.0, 2.0, 4.0)
+DOUBLECHECK_DELAY_SECONDS = 0.5
 
 
 def verify_position_with_delays(
@@ -312,9 +312,22 @@ def verify_position_with_delays(
     include_doublecheck: bool = False,
     doublecheck_delay: float = DOUBLECHECK_DELAY_SECONDS,
     meta_factory=None,
+    initial_live: dict[str, Any] | None = None,
 ) -> tuple[bool, dict[str, Any] | None, list[dict[str, Any]]]:
     verification: list[dict[str, Any]] = []
-    last_live = None
+    last_live = initial_live
+    if initial_live is not None:
+        matched_initial = bool(predicate(initial_live))
+        initial_meta = {} if meta_factory is None else dict(meta_factory('initial', initial_live) or {})
+        verification.append({
+            'attempt': 'initial',
+            'delay_seconds': 0.0,
+            'live': initial_live,
+            'matched': matched_initial,
+            **initial_meta,
+        })
+        if matched_initial:
+            return True, initial_live, verification
     for attempt, delay in enumerate(delays, start=1):
         time.sleep(delay)
         live = live_position_snapshot(exchange, execution_symbol)
@@ -651,10 +664,18 @@ class OkxClient:
             realized_pnl_usdt = fee_meta.get('realized_pnl_usdt')
 
         target_amount = float(current_open_amount or 0.0) + float(amount)
+        delays = tuple(float(v) for v in (getattr(self.settings, 'verification_delays_seconds', None) or VERIFICATION_DELAYS_SECONDS))
+        doublecheck_delay = float(getattr(self.settings, 'verification_doublecheck_delay_seconds', DOUBLECHECK_DELAY_SECONDS) or DOUBLECHECK_DELAY_SECONDS)
+        initial_live = live_position_snapshot(self.exchange, execution_symbol)
         verified_entry, live, verification = verify_position_with_delays(
             self.exchange,
             execution_symbol,
+            delays=delays,
             predicate=lambda snapshot: snapshot is not None and snapshot.get('side') == signal_side and amount_close_enough(target_amount, float(snapshot.get('contracts') or 0.0)),
+            include_doublecheck=bool(fee_meta and fee_meta.get('fill_count')),
+            doublecheck_delay=doublecheck_delay,
+            initial_live=initial_live,
+            meta_factory=lambda verify_attempt, _live: {'trade_confirmed': bool(fee_meta and fee_meta.get('fill_count'))},
         )
         live_contracts = 0.0 if live is None else float(live.get('contracts') or 0.0)
         live_side = None if live is None else live.get('side')
@@ -762,11 +783,17 @@ class OkxClient:
             })
 
             trade_confirmed = bool(fee_meta and fee_meta.get('fill_count'))
+            delays = tuple(float(v) for v in (getattr(self.settings, 'verification_delays_seconds', None) or VERIFICATION_DELAYS_SECONDS))
+            doublecheck_delay = float(getattr(self.settings, 'verification_doublecheck_delay_seconds', DOUBLECHECK_DELAY_SECONDS) or DOUBLECHECK_DELAY_SECONDS)
+            initial_live = live_position_snapshot(self.exchange, execution_symbol)
             verified_flat, live, verification_attempts = verify_position_with_delays(
                 self.exchange,
                 execution_symbol,
+                delays=delays,
                 predicate=lambda snapshot: snapshot is None,
                 include_doublecheck=trade_confirmed,
+                doublecheck_delay=doublecheck_delay,
+                initial_live=initial_live,
                 meta_factory=lambda verify_attempt, _live: {'trade_confirmed': trade_confirmed, 'order_attempt': attempt},
             )
             verification.extend(verification_attempts)
