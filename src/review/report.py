@@ -56,6 +56,18 @@ def _score_row(row: dict[str, Any]) -> tuple[float, float, float, float]:
     return (pnl, equity_change, -fee, funding)
 
 
+def _attribution_confidence(row: dict[str, Any]) -> str:
+    fee = row.get('attribution_fee_source')
+    realized = row.get('attribution_realized_pnl_source')
+    equity = row.get('attribution_equity_source')
+    strong = {'fill_aggregation', 'balance_summary'}
+    if fee in strong and realized in strong and equity == 'balance_summary':
+        return 'high'
+    if fee or realized or equity:
+        return 'medium'
+    return 'low'
+
+
 def _build_performance_summary(performance_snapshot: dict[str, Any]) -> dict[str, Any]:
     accounts = performance_snapshot.get('accounts', []) if isinstance(performance_snapshot, dict) else []
     ranked = [
@@ -80,6 +92,10 @@ def _build_performance_summary(performance_snapshot: dict[str, Any]) -> dict[str
             'funding_total_usdt': row.get('funding_total_usdt'),
             'trade_count': row.get('trade_count'),
             'exposure_time_pct': row.get('exposure_time_pct'),
+            'attribution_fee_source': row.get('attribution_fee_source'),
+            'attribution_realized_pnl_source': row.get('attribution_realized_pnl_source'),
+            'attribution_equity_source': row.get('attribution_equity_source'),
+            'attribution_confidence': _attribution_confidence(row),
             'source': row.get('source'),
         }
 
@@ -116,6 +132,10 @@ def _build_performance_summary(performance_snapshot: dict[str, Any]) -> dict[str
         best_pnl = _row_pnl(best_strategy)
         relation = 'outperformed' if router_pnl > best_pnl else 'underperformed' if router_pnl < best_pnl else 'matched'
         insights.append(f"router_vs_best_strategy:{relation}:{best_strategy.get('account')}")
+    high_confidence_accounts = [row.get('account') for row in leaderboard if row.get('attribution_confidence') == 'high']
+    if high_confidence_accounts:
+        insights.append(f"high_confidence_attribution:{','.join(str(v) for v in high_confidence_accounts)}")
+
     if router_row is not None and flat_compare is not None:
         router_pnl = _row_pnl(router_row)
         flat_pnl = _row_pnl(flat_compare)

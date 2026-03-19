@@ -24,6 +24,12 @@ CANONICAL_NUMERIC_FIELDS = (
     'max_drawdown_pct',
 )
 
+ATTRIBUTION_FIELDS = (
+    'attribution_fee_source',
+    'attribution_realized_pnl_source',
+    'attribution_equity_source',
+)
+
 
 def _safe_float(value: Any) -> float | None:
     if value is None:
@@ -70,6 +76,13 @@ def _merge_metric_fields(target: dict[str, float], raw: dict[str, Any], *, overw
             end = _safe_float(raw.get('equity_usdt'))
         if start is not None and end is not None:
             target['equity_change_usdt'] = end - start
+
+    for key in ATTRIBUTION_FIELDS:
+        value = raw.get(key)
+        if value is None:
+            continue
+        if overwrite or key not in target:
+            target[key] = str(value)
 
 
 def canonicalize_history_row(row: dict[str, Any]) -> dict[str, dict[str, float]]:

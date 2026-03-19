@@ -7,6 +7,18 @@ from src.config.accounts import V2_ACCOUNTS
 from src.review.compare import FLAT_COMPARE_ALIAS
 
 
+def _attribution_confidence(raw: dict[str, Any]) -> str | None:
+    fee = raw.get('attribution_fee_source')
+    realized = raw.get('attribution_realized_pnl_source')
+    equity = raw.get('attribution_equity_source')
+    strong = {'fill_aggregation', 'balance_summary'}
+    if fee in strong and realized in strong and equity == 'balance_summary':
+        return 'high'
+    if fee is not None or realized is not None or equity is not None:
+        return 'medium'
+    return None
+
+
 @dataclass(slots=True)
 class AccountPerformance:
     account: str
@@ -25,6 +37,10 @@ class AccountPerformance:
     funding_total_usdt: float | None = None
     exposure_time_pct: float | None = None
     max_drawdown_pct: float | None = None
+    attribution_fee_source: str | None = None
+    attribution_realized_pnl_source: str | None = None
+    attribution_equity_source: str | None = None
+    attribution_confidence: str | None = None
     source: str = 'pending'
 
 
@@ -78,6 +94,10 @@ def build_performance_snapshot(metrics_by_account: dict[str, dict[str, Any]] | N
             funding_total_usdt=None if raw.get('funding_total_usdt') is None else float(raw.get('funding_total_usdt')),
             exposure_time_pct=None if raw.get('exposure_time_pct') is None else float(raw.get('exposure_time_pct')),
             max_drawdown_pct=None if raw.get('max_drawdown_pct') is None else float(raw.get('max_drawdown_pct')),
+            attribution_fee_source=None if raw.get('attribution_fee_source') is None else str(raw.get('attribution_fee_source')),
+            attribution_realized_pnl_source=None if raw.get('attribution_realized_pnl_source') is None else str(raw.get('attribution_realized_pnl_source')),
+            attribution_equity_source=None if raw.get('attribution_equity_source') is None else str(raw.get('attribution_equity_source')),
+            attribution_confidence=_attribution_confidence(raw),
             source=str(raw.get('source') or 'pending'),
         )
         accounts.append(asdict(row))

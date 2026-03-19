@@ -50,6 +50,17 @@ def render_report_markdown(report: dict[str, Any]) -> str:
             for line in block_lines:
                 lines.append(f"- {line}")
 
+    lines.extend(['', '## Attribution Confidence'])
+    perf_accounts = ((report.get('metrics') or {}).get('performance') or {}).get('accounts') or []
+    attribution_rows = [row for row in perf_accounts if isinstance(row, dict) and row.get('attribution_confidence') not in {None, 'low'}]
+    if not attribution_rows:
+        lines.append('- No high-confidence attribution rows')
+    else:
+        for row in attribution_rows:
+            lines.append(
+                f"- {row.get('account')}: confidence={row.get('attribution_confidence')} fee={row.get('attribution_fee_source')} realized={row.get('attribution_realized_pnl_source')} equity={row.get('attribution_equity_source')}"
+            )
+
     lines.extend(['', '## Section Status'])
     for section in report.get('sections', []):
         lines.append(f"- {section.get('title')}: {section.get('status')}")

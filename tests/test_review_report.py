@@ -7,6 +7,28 @@ from src.review.framework import build_monthly_window, build_quarterly_window, b
 from src.review.report import build_report_scaffold
 
 
+def test_report_scaffold_surfaces_attribution_confidence():
+    window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
+    report = build_report_scaffold(
+        window,
+        metrics_by_account={
+            'trend': {
+                'pnl_usdt': 12.5,
+                'fee_usdt': 0.2,
+                'trade_count': 2,
+                'attribution_fee_source': 'fill_aggregation',
+                'attribution_realized_pnl_source': 'fill_aggregation',
+                'attribution_equity_source': 'balance_summary',
+                'source': 'demo',
+            },
+        },
+    )
+    trend_row = next(row for row in report['metrics']['performance']['accounts'] if row['account'] == 'trend')
+    assert trend_row['attribution_confidence'] == 'high'
+    assert trend_row['attribution_fee_source'] == 'fill_aggregation'
+    assert 'high_confidence_attribution:trend' in report['metrics']['performance_summary']['insights']
+
+
 def test_weekly_report_scaffold_includes_compare_sections():
     window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
     compare_snapshot = {
