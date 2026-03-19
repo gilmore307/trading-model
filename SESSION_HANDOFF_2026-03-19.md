@@ -44,7 +44,7 @@ The newly added matrix gives a direct structure for answering that later.
 ## Boundaries
 - do not over-claim the project as unattended real-money ready
 - do not resume broad speculative refactors before looking at fresh sample evidence
-- semantic memory search was unavailable during closeout because the embedding side for that tool was not active; file-based closeout was used instead
+- closeout for later provider-routing discussion was split into a separate `codexrouting` continuity track rather than being mixed into this project handoff
 
 ## Transcript mapping
 - session key: `agent:main:discord:direct:338052158698291210`
