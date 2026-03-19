@@ -10,7 +10,7 @@ SAMPLE_ROW = {
     'primary_15m': {'primary': 'trend', 'confidence': 0.75, 'reasons': [], 'secondary': [], 'scores': {'trend': 3.0}, 'tradable': True},
     'override_1m': {'primary': 'shock', 'confidence': 0.4, 'reasons': [], 'secondary': [], 'scores': {'shock': 2.0}, 'tradable': True},
     'background_features': {'adx': 28.0, 'ema20_slope': 1.2, 'ema50_slope': 0.9},
-    'primary_features': {'adx': 24.0, 'vwap_deviation_z': 1.1},
+    'primary_features': {'adx': 24.0, 'last_price': 100.0, 'vwap_deviation_z': 1.1},
     'override_features': {'trade_burst_score': 0.7, 'vwap_deviation_z': 1.3},
     'final_decision': {'primary': 'trend', 'confidence': 0.8, 'reasons': [], 'secondary': [], 'scores': {'trend': 4.0}, 'tradable': True},
     'route_decision': {'regime': 'trend', 'account': 'trend', 'strategy_family': 'trend', 'trade_enabled': True, 'allow_reason': 'route_to_trend', 'block_reason': None},
@@ -29,3 +29,13 @@ def test_load_snapshot_jsonl_and_build_dataset(tmp_path: Path):
     assert len(dataset) == 1
     assert dataset[0]['final_regime'] == 'trend'
     assert dataset[0]['shadow_plans']['trend']['action'] in {'enter', 'arm', 'watch'}
+
+
+def test_build_dataset_from_snapshot_rows_infers_close_prices_from_primary_last_price():
+    rows = [
+        {**SAMPLE_ROW, 'timestamp': '2026-03-19T12:00:00+00:00', 'primary_features': {'adx': 24.0, 'last_price': 100.0, 'vwap_deviation_z': 1.1}},
+        {**SAMPLE_ROW, 'timestamp': '2026-03-19T12:05:00+00:00', 'primary_features': {'adx': 24.0, 'last_price': 102.0, 'vwap_deviation_z': 1.1}},
+    ]
+    dataset = build_dataset_from_snapshot_rows(rows, horizons={'fwd_ret_15m': 1})
+    assert dataset[0]['fwd_ret_15m'] == 0.02
+    assert dataset[1]['fwd_ret_15m'] is None

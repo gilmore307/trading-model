@@ -48,6 +48,16 @@ def load_snapshot_jsonl(path: str | Path) -> list[dict[str, Any]]:
 
 
 def build_dataset_from_snapshot_rows(rows: list[dict[str, Any]], *, close_prices: list[float] | None = None, horizons: dict[str, int] | None = None) -> list[dict[str, Any]]:
+    if close_prices is None:
+        inferred_prices = []
+        for row in rows:
+            if row.get('artifact_type') == 'regime_local_cycle':
+                row = regime_local_artifact_to_snapshot_row(row)
+            primary = row.get('primary_features') or {}
+            price = primary.get('last_price')
+            inferred_prices.append(None if price is None else float(price))
+        if inferred_prices and all(p is not None for p in inferred_prices):
+            close_prices = [float(p) for p in inferred_prices]
     dataset = []
     for idx, row in enumerate(rows):
         output = output_from_row(row)

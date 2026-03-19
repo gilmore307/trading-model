@@ -20,9 +20,9 @@ def test_build_execution_artifact_includes_summary_fields():
         background_4h={'primary': 'trend', 'confidence': 0.8, 'reasons': [], 'secondary': [], 'tradable': True},
         primary_15m={'primary': 'trend', 'confidence': 0.8, 'reasons': [], 'secondary': [], 'tradable': True},
         override_1m=None,
-        background_features={'adx': 30.0},
-        primary_features={'adx': 28.0},
-        override_features={'trade_burst_score': 0.7},
+        background_features={'adx': 30.0, 'last_price': 100000.0},
+        primary_features={'adx': 28.0, 'last_price': 100100.0},
+        override_features={'trade_burst_score': 0.7, 'last_price': 100120.0},
         final_decision={'primary': 'trend', 'confidence': 0.8, 'reasons': [], 'secondary': [], 'tradable': True},
         route_decision={'regime': 'trend', 'account': 'trend', 'strategy_family': 'trend', 'trade_enabled': True, 'allow_reason': 'route_to_trend', 'block_reason': None},
         decision_summary={'regime': 'trend', 'confidence': 0.8, 'tradable': True, 'account': 'trend', 'strategy_family': 'trend', 'trade_enabled': True, 'allow_reason': 'route_to_trend', 'block_reason': None, 'reasons': [], 'secondary': [], 'diagnostics': ['high_confidence']},
@@ -58,8 +58,11 @@ def test_build_execution_artifact_includes_summary_fields():
     assert artifact['artifact_type'] == 'execution_cycle'
     assert artifact['compare_snapshot']['selected_strategy'] == 'trend'
     assert artifact['feature_snapshot']['background_4h']['adx'] == 30.0
+    assert artifact['feature_snapshot']['background_4h']['last_price'] == 100000.0
     assert artifact['feature_snapshot']['primary_15m']['adx'] == 28.0
+    assert artifact['feature_snapshot']['primary_15m']['last_price'] == 100100.0
     assert artifact['feature_snapshot']['override_1m']['trade_burst_score'] == 0.7
+    assert artifact['feature_snapshot']['override_1m']['last_price'] == 100120.0
     assert 'trend' in artifact['shadow_plans']
     assert 'crowded' in artifact['shadow_plans']
     assert artifact['shadow_plans']['trend']['action'] in {'enter', 'arm', 'watch'}

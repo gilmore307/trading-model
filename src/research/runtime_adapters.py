@@ -49,6 +49,7 @@ def regime_local_artifact_to_snapshot_row(row: dict[str, Any]) -> dict[str, Any]
         },
         'primary_features': {
             'adx': primary.get('adx'),
+            'last_price': primary.get('last_price'),
             'vwap_deviation_z': primary.get('vwap_deviation_z'),
             'bollinger_bandwidth_pct': primary.get('bollinger_bandwidth_pct'),
             'realized_vol_pct': primary.get('realized_vol_pct'),
