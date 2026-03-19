@@ -203,7 +203,8 @@ class RouteController:
             current.exit_execution_id = exit_execution_id
             current.exit_client_order_id = exit_client_order_id
             current.exit_trade_ids = list(exit_trade_ids or [])
-            remaining_to_allocate = float(current.ledger_open_size or current.size or 0.0)
+            requested_exit_size = float((current.meta or {}).get('requested_exit_size') or current.ledger_open_size or current.size or 0.0)
+            remaining_to_allocate = requested_exit_size
             allocations: list[ExitAllocation] = []
             for leg in current.open_legs:
                 if remaining_to_allocate <= 0:
@@ -219,7 +220,7 @@ class RouteController:
                 client_order_id=exit_client_order_id,
                 order_id=exit_order_id,
                 trade_ids=list(exit_trade_ids or []),
-                requested_size=float(current.ledger_open_size or current.size or 0.0),
+                requested_size=requested_exit_size,
                 side=current.side,
                 status='submitted',
                 reason='exit_submitted',
@@ -277,7 +278,9 @@ class RouteController:
                     exchange_size = float(exchange_snapshot.size or 0.0)
                     total_before_exit = sum(float(leg.remaining_size or 0.0) for leg in current.open_legs)
                     closed_delta = max(0.0, total_before_exit - exchange_size)
-                    remaining_to_apply = closed_delta
+                    alloc_cap = float(current.pending_exit.requested_size or 0.0)
+                    already_closed = sum(float(a.closed_size or 0.0) for a in current.pending_exit.allocations)
+                    remaining_to_apply = min(closed_delta, max(0.0, alloc_cap - already_closed))
                     updated_open_legs = []
                     for leg in current.open_legs:
                         leg_remaining = float(leg.remaining_size or 0.0)
@@ -301,9 +304,10 @@ class RouteController:
                         else:
                             updated_open_legs.append(leg)
                     current.open_legs = updated_open_legs
-                    if exchange_size <= 1e-12:
+                    total_alloc_closed = sum(float(a.closed_size or 0.0) for a in current.pending_exit.allocations)
+                    if total_alloc_closed >= float(current.pending_exit.requested_size or 0.0) - 1e-12:
                         current.pending_exit.status = 'closed'
-                    elif closed_delta > 0:
+                    elif total_alloc_closed > 0:
                         current.pending_exit.status = 'partial'
 
             if current.status in {LivePositionStatus.ENTRY_SUBMITTED, LivePositionStatus.ENTRY_VERIFYING}:
