@@ -22,10 +22,11 @@ class RouteControlResult:
 
 
 class RouteController:
-    def __init__(self, store: LiveStateStore | None = None, locks: AccountSymbolLockRegistry | None = None, routes: RouteRegistry | None = None):
+    def __init__(self, store: LiveStateStore | None = None, locks: AccountSymbolLockRegistry | None = None, routes: RouteRegistry | None = None, verification_cycle_timeout: int = 3):
         self.store = store or LiveStateStore()
         self.locks = locks or AccountSymbolLockRegistry()
         self.routes = routes or RouteRegistry()
+        self.verification_cycle_timeout = max(1, int(verification_cycle_timeout or 1))
 
     def _append_event(self, position: LivePosition, event: dict) -> None:
         meta = dict(position.meta or {})
@@ -33,6 +34,21 @@ class RouteController:
         history.append({**event, 'observed_at': datetime.now(UTC).isoformat()})
         meta['event_history'] = history[-50:]
         position.meta = meta
+
+    def _bump_verification_cycles(self, current: LivePosition, *, phase: str) -> tuple[dict, int]:
+        meta = dict(current.meta or {})
+        cycles = int(meta.get(f'{phase}_verification_cycles') or 0) + 1
+        meta[f'{phase}_verification_cycles'] = cycles
+        meta[f'{phase}_verification_last_at'] = datetime.now(UTC).isoformat()
+        current.meta = meta
+        return meta, cycles
+
+    def _reset_verification_cycles(self, current: LivePosition, *, phase: str) -> dict:
+        meta = dict(current.meta or {})
+        meta.pop(f'{phase}_verification_cycles', None)
+        meta.pop(f'{phase}_verification_last_at', None)
+        current.meta = meta
+        return meta
 
     def mark_forced_exit_recovery(self, account: str, symbol: str, *, detail: str | None = None) -> LivePosition | None:
         with self.locks.hold(account, symbol):
@@ -132,6 +148,7 @@ class RouteController:
                 opened_at=datetime.now(UTC),
             ))
             current.pending_exit = None
+            self._reset_verification_cycles(current, phase='entry')
             self._append_event(current, {
                 'kind': 'entry_submitted',
                 'execution_id': entry_execution_id,
@@ -185,6 +202,7 @@ class RouteController:
                     continue
                 allocations.append(ExitAllocation(leg_id=leg.leg_id, requested_size=alloc_size, closed_size=0.0))
                 remaining_to_allocate -= alloc_size
+            self._reset_verification_cycles(current, phase='exit')
             current.pending_exit = ExitExecution(
                 execution_id=exit_execution_id,
                 client_order_id=exit_client_order_id,
@@ -278,28 +296,59 @@ class RouteController:
                         current.pending_exit.status = 'partial'
 
             if current.status in {LivePositionStatus.ENTRY_SUBMITTED, LivePositionStatus.ENTRY_VERIFYING}:
+                meta, cycles = self._bump_verification_cycles(current, phase='entry')
                 decision = verify_entry(current, exchange_snapshot)
+                if not decision.accepted and cycles >= self.verification_cycle_timeout:
+                    decision = type(decision)(
+                        next_status=LivePositionStatus.FLAT,
+                        accepted=False,
+                        reason='entry_verification_timeout',
+                    )
+                    meta['strategy_stats_eligible'] = 'false'
+                    meta['strategy_stats_reason'] = 'missed_entry'
+                    meta['execution_recovery'] = 'missed_entry'
+                    meta['execution_recovery_detail'] = 'entry_verification_timeout'
+                    current.meta = meta
+                    current.side = None
+                    current.size = 0.0
+                    current.open_legs = []
+                    current.entry_trade_ids = []
+                    self.routes.enable(account, symbol)
                 current.status = decision.next_status
                 current.reason = decision.reason
+                if decision.accepted:
+                    self._reset_verification_cycles(current, phase='entry')
                 self._append_event(current, {
                     'kind': 'entry_verification',
                     'accepted': decision.accepted,
                     'next_status': decision.next_status.value,
                     'reason': decision.reason,
                     'exchange_size': None if exchange_snapshot is None else float(exchange_snapshot.size or 0.0),
+                    'verification_cycles': cycles,
                 })
                 return self.store.upsert(current)
 
             if current.status in {LivePositionStatus.EXIT_SUBMITTED, LivePositionStatus.EXIT_VERIFYING}:
+                meta, cycles = self._bump_verification_cycles(current, phase='exit')
                 decision = verify_exit(current, exchange_snapshot)
+                if not decision.accepted and cycles >= self.verification_cycle_timeout:
+                    current.reason = 'exit_verification_timeout'
+                    self._append_event(current, {
+                        'kind': 'exit_verification_timeout',
+                        'verification_cycles': cycles,
+                        'exchange_size': None if exchange_snapshot is None else float(exchange_snapshot.size or 0.0),
+                    })
                 current.status = decision.next_status
-                current.reason = decision.reason
+                current.reason = decision.reason if decision.accepted or cycles < self.verification_cycle_timeout else 'exit_verification_timeout'
+                if decision.accepted:
+                    self._reset_verification_cycles(current, phase='exit')
                 self._append_event(current, {
                     'kind': 'exit_verification',
                     'accepted': decision.accepted,
                     'next_status': decision.next_status.value,
-                    'reason': decision.reason,
+                    'reason': current.reason,
                     'exchange_size': None if exchange_snapshot is None else float(exchange_snapshot.size or 0.0),
+                    'verification_cycles': cycles,
                 })
                 if decision.next_status == LivePositionStatus.FLAT:
                     current.side = None

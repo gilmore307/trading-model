@@ -122,6 +122,7 @@ class Settings(BaseModel):
     confirm_real_trading: bool = False
     verification_delays_seconds: list[float] = [1.0, 2.0, 4.0]
     verification_doublecheck_delay_seconds: float = 0.5
+    verification_cycle_timeout: int = 3
 
     def ccxt_symbol(self, raw_symbol: str) -> str:
         if ":" in raw_symbol and "/" in raw_symbol:
@@ -265,6 +266,7 @@ class Settings(BaseModel):
             "confirm_real_trading": str(os.getenv("CONFIRM_REAL_TRADING", "false")).strip().lower() in {"1", "true", "yes", "on"},
             "verification_delays_seconds": verification_delays,
             "verification_doublecheck_delay_seconds": float(os.getenv("VERIFICATION_DOUBLECHECK_DELAY_SECONDS", "0.5")),
+            "verification_cycle_timeout": int(os.getenv("VERIFICATION_CYCLE_TIMEOUT", "3")),
         }
         return cls.model_validate(data)
 
