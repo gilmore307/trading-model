@@ -83,6 +83,11 @@ def test_build_execution_artifact_includes_summary_fields():
     assert artifact['summary']['account_metrics']['trend']['equity_end_usdt'] == 1500.0
     assert artifact['summary']['account_metrics']['trend']['unrealized_pnl_usdt'] == 25.0
     assert artifact['summary']['account_metrics']['trend']['pnl_usdt'] == 28.0
+    assert artifact['attribution_snapshot']['execution_id'] is None
+    assert artifact['summary']['attribution_trade_count'] == 0
+    assert artifact['summary']['attribution_fee_source'] == 'order_payload'
+    assert artifact['summary']['attribution_realized_pnl_source'] == 'order_payload'
+    assert artifact['summary']['attribution_equity_source'] == 'balance_summary'
 
 
 def test_build_execution_artifact_captures_blocked_reason():

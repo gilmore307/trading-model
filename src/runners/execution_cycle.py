@@ -109,6 +109,29 @@ def _feature_snapshot(result: ExecutionCycleResult) -> dict[str, Any]:
     }
 
 
+def _build_attribution_snapshot(result: ExecutionCycleResult) -> dict[str, Any]:
+    receipt = result.receipt
+    local = result.local_position
+    ledger = None if local is None else {
+        'open_leg_ids': [leg.leg_id for leg in local.open_legs],
+        'closed_leg_ids': [leg.leg_id for leg in local.closed_legs],
+        'pending_exit_leg_ids': [] if local.pending_exit is None else [alloc.leg_id for alloc in local.pending_exit.allocations],
+    }
+    raw = {} if receipt is None or not isinstance(receipt.raw, dict) else receipt.raw
+    return {
+        'account': None if receipt is None else receipt.account,
+        'execution_id': None if receipt is None else receipt.execution_id,
+        'client_order_id': None if receipt is None else receipt.client_order_id,
+        'order_id': None if receipt is None else receipt.order_id,
+        'trade_ids': None if receipt is None else receipt.trade_ids,
+        'trade_count': 0 if receipt is None or receipt.trade_ids is None else len(receipt.trade_ids),
+        'fee_source': 'fill_aggregation' if raw.get('fill_count') else ('order_payload' if raw.get('fee_usdt') is not None else None),
+        'realized_pnl_source': 'fill_aggregation' if raw.get('fill_count') else ('order_payload' if raw.get('realized_pnl_usdt') is not None else None),
+        'equity_source': 'balance_summary' if raw.get('equity_end_usdt') is not None or raw.get('equity_usdt') is not None else None,
+        'ledger': ledger,
+    }
+
+
 def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     payload = asdict(result)
     payload['artifact_type'] = 'execution_cycle'
@@ -116,6 +139,7 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     payload['compare_snapshot'] = build_compare_snapshot(result)
     payload['feature_snapshot'] = _feature_snapshot(result)
     payload['shadow_plans'] = build_shadow_plans(result.regime_output)
+    payload['attribution_snapshot'] = _build_attribution_snapshot(result)
     payload['ledger_snapshot'] = None if result.local_position is None else {
         'open_legs': [
             {
@@ -215,7 +239,11 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         'alignment_ok': None if result.reconcile_result is None else result.reconcile_result.alignment.ok,
         'policy_action': None if result.reconcile_result is None else result.reconcile_result.policy.action,
         'policy_reason': None if result.reconcile_result is None else result.reconcile_result.policy.reason,
-        'account_metrics': build_account_metrics_from_cycle(receipt=result.receipt, reconcile_result=result.reconcile_result, balance_summary=balance_summary),
+        'account_metrics': build_account_metrics_from_cycle(receipt=result.receipt, reconcile_result=result.reconcile_result, balance_summary=balance_summary, local_position=result.local_position),
+        'attribution_trade_count': payload['attribution_snapshot'].get('trade_count'),
+        'attribution_fee_source': payload['attribution_snapshot'].get('fee_source'),
+        'attribution_realized_pnl_source': payload['attribution_snapshot'].get('realized_pnl_source'),
+        'attribution_equity_source': payload['attribution_snapshot'].get('equity_source'),
         **stats_summary,
     }
     return payload
@@ -290,6 +318,10 @@ def _build_anomaly_artifact(result: ExecutionCycleResult, artifact: dict[str, An
         'client_order_id': summary.get('client_order_id'),
         'order_id': summary.get('order_id'),
         'trade_ids': summary.get('trade_ids'),
+        'attribution_trade_count': summary.get('attribution_trade_count'),
+        'attribution_fee_source': summary.get('attribution_fee_source'),
+        'attribution_realized_pnl_source': summary.get('attribution_realized_pnl_source'),
+        'attribution_equity_source': summary.get('attribution_equity_source'),
         'strategy_stats_reason': summary.get('strategy_stats_reason'),
         'execution_recovery': recovery_type,
         'execution_recovery_detail': meta.get('execution_recovery_detail'),

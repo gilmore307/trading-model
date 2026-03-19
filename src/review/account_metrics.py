@@ -6,7 +6,7 @@ from src.review.ingestion import _merge_metric_fields, _safe_float
 from src.review.performance import DEFAULT_COMPARE_ACCOUNTS
 
 
-def build_account_metrics_from_cycle(*, receipt: Any = None, reconcile_result: Any = None, balance_summary: dict[str, Any] | None = None) -> dict[str, dict[str, float]]:
+def build_account_metrics_from_cycle(*, receipt: Any = None, reconcile_result: Any = None, balance_summary: dict[str, Any] | None = None, local_position: Any = None) -> dict[str, dict[str, float]]:
     """Build canonical per-account metrics from one execution cycle.
 
     Current scope:
@@ -26,6 +26,9 @@ def build_account_metrics_from_cycle(*, receipt: Any = None, reconcile_result: A
         if alias in DEFAULT_COMPARE_ACCOUNTS:
             target = metrics.setdefault(alias, {})
             _merge_metric_fields(target, raw, overwrite=False)
+            fill_count = _safe_float(raw.get('fill_count'))
+            if fill_count is not None and target.get('trade_count') is None:
+                target['trade_count'] = fill_count
 
     if isinstance(balance_summary, dict):
         alias = balance_summary.get('account_alias') or account
@@ -46,6 +49,12 @@ def build_account_metrics_from_cycle(*, receipt: Any = None, reconcile_result: A
                     target['pnl_usdt'] = float(target.get('realized_pnl_usdt') or 0.0) + unrealized_pnl_usdt
                 elif target.get('pnl_usdt') is None:
                     target['pnl_usdt'] = unrealized_pnl_usdt
+
+    if local_position is not None:
+        alias = getattr(local_position, 'account', None)
+        if alias in DEFAULT_COMPARE_ACCOUNTS:
+            target = metrics.setdefault(alias, {})
+            target.setdefault('trade_count', float(len(getattr(local_position, 'open_legs', []) or []) + len(getattr(local_position, 'closed_legs', []) or [])))
 
     if isinstance(balance_summary, dict):
         for alias, target in metrics.items():

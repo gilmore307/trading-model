@@ -61,7 +61,36 @@ Purpose:
 - preserve router-selected strategy vs actual composite owner
 - preserve flat baseline row for later review comparison
 
-### 3. Summary layer
+### 3. Attribution snapshot
+
+Added under:
+
+- `attribution_snapshot`
+
+This is the execution-to-review attribution bridge.
+
+Current fields include:
+
+- `account`
+- `execution_id`
+- `client_order_id`
+- `order_id`
+- `trade_ids`
+- `trade_count`
+- `fee_source`
+- `realized_pnl_source`
+- `equity_source`
+- `ledger.open_leg_ids`
+- `ledger.closed_leg_ids`
+- `ledger.pending_exit_leg_ids`
+
+Purpose:
+
+- preserve which execution identifiers produced the current accounting hints
+- preserve which ledger legs were active/closed when the artifact was recorded
+- make fee / pnl / equity provenance explicit for later review confidence checks
+
+### 4. Summary layer
 
 Added under:
 
@@ -95,6 +124,10 @@ Current fields include:
 - `policy_action`
 - `policy_reason`
 - `account_metrics`
+- `attribution_trade_count`
+- `attribution_fee_source`
+- `attribution_realized_pnl_source`
+- `attribution_equity_source`
 
 ## account_metrics semantics
 
