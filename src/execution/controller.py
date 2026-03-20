@@ -340,9 +340,29 @@ class RouteController:
                 meta, cycles = self._bump_verification_cycles(current, phase='entry')
                 decision = verify_entry(current, exchange_snapshot)
                 if not decision.accepted and cycles >= self.verification_cycle_timeout:
+                    meta['strategy_stats_eligible'] = 'false'
+                    meta['strategy_stats_reason'] = 'missed_entry'
+                    meta['execution_recovery'] = 'missed_entry'
+                    meta['execution_recovery_detail'] = 'entry_verification_timeout'
                     current.meta = meta
-                    current = self.store.upsert(current)
-                    current = self.mark_missed_entry(account, symbol, detail='entry_verification_timeout') or current
+                    current.status = LivePositionStatus.FLAT
+                    current.side = None
+                    current.size = 0.0
+                    current.entry_order_id = None
+                    current.entry_execution_id = None
+                    current.entry_client_order_id = None
+                    current.entry_trade_ids = []
+                    current.exit_order_id = None
+                    current.exit_execution_id = None
+                    current.exit_client_order_id = None
+                    current.exit_trade_ids = []
+                    current.open_legs = []
+                    current.pending_exit = None
+                    self.routes.enable(account, symbol)
+                    self._append_event(current, {
+                        'kind': 'missed_entry_cleared',
+                        'detail': 'entry_verification_timeout',
+                    })
                     decision = type(decision)(
                         next_status=LivePositionStatus.FLAT,
                         accepted=False,
