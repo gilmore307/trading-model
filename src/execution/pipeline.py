@@ -45,6 +45,15 @@ class ExecutionCycleResult:
     router_composite: dict
 
 
+@dataclass(slots=True)
+class ParallelExecutionCycleResult:
+    regime_output: RegimeRunnerOutput
+    results: dict[str, ExecutionCycleResult]
+    runtime_state: dict
+    live_positions: list[dict]
+    router_composite: dict
+
+
 class ExecutionPipeline:
     """Skeleton execution pipeline.
 
