@@ -4,81 +4,114 @@ _Last updated: 2026-03-20_
 
 ## Goal
 
-Maintain a resumable, auditable view of the crypto-trading rebuild so future sessions can recover project state quickly without depending on chat history.
+Build a crypto-trading system that:
+- runs all strategy accounts in parallel
+- keeps historical validation and live runtime operationally separate
+- lets historical parameter/research work feed live runtime through explicit publish/activate/rollback workflow
+- remains auditable through persisted artifacts, tests, and current docs under `docs/`
 
 ## Current state
 
-The project is now materially beyond the earlier demo scaffold and has several real layers in place:
+The project is now in a **transitional but materially real** state:
 
-1. **Runtime / mode system**
-2. **Execution / state control**
-3. **Execution artifact persistence**
-4. **Review/report pipeline**
-5. **Review runner / export / indexing layer**
-6. **Research / replay / offline backtest layer**
-7. **Growing documentation and handoff spine**
+1. **Runtime / mode system exists**
+2. **Execution / state / reconcile layer exists**
+3. **Execution artifacts and review pipeline exist**
+4. **Snapshot-based offline research exists**
+5. **Parallel multi-account execution has started landing**
+6. **Project docs have been consolidated under `docs/`**
 
-## Major milestones already completed
+## What is already real
 
-### Runtime and operations
-- Reconciliation before each cycle was integrated so local tracked state is checked against exchange state before normal actions.
-- Layered regime, routing, execution decision tracing, and runtime-mode-aware gating are all present as real code paths.
-- Execution artifacts are persisted under `logs/runtime/` for both latest-cycle inspection and append-only history review.
+### Runtime and execution
+- `trade_daemon` is a real running daemon path.
+- runtime modes and mode policy exist and matter.
+- execution submission / verify / reconcile / recovery paths exist as real code.
+- route freeze / re-enable mechanics exist.
+- execution anomaly handling has been tightened around:
+  - missed entry cleanup
+  - forced-exit recovery
+  - excluding bad execution paths from strategy stats
+- execution confirmation now distinguishes stronger evidence levels:
+  - trade-confirmed
+  - trade-ids-confirmed
+  - position-confirmed
 
-### Review stack
-- `src/review/performance.py` established a normalized per-account performance input layer.
-- `src/review/aggregator.py` added history-based aggregation from execution artifacts.
-- Review aggregation now respects weekly/monthly/quarterly window boundaries when artifact timestamps are available, instead of treating the entire history file as one undifferentiated interval.
-- Equity start/end/change inference is now tied more explicitly to earliest/latest snapshots inside the requested review window.
-- Artifact production now persists `summary.account_metrics`, making the runtime-to-review data path explicit.
-- The report stack now includes performance summaries, operator-facing sections, parameter candidates, executive summaries, recommended actions, and narrative blocks.
-- Weekly, monthly, and quarterly review runners now exist and export JSON + Markdown artifacts.
-- Review export now maintains latest-cadence pointers and a rolling `index.json` for operator convenience.
+### Parallel execution direction
+- the earlier single-route-only model is no longer the target.
+- all strategy accounts are intended to run simultaneously.
+- `build_parallel_plans(...)` exists.
+- `run_cycle_parallel()` now exists.
+- daemon/artifact flow has started moving onto the parallel-cycle path.
 
-### Research / replay layer
-- A first `src/research/` stack now exists with dataset building, replay helpers, runtime adapters, forward-label generation, evaluators, reporting, markdown export, parameter-space definitions, grid-search scaffolding, and reevaluation hooks.
-- Research outputs now include:
-  - regime quality summaries
-  - regime separability / closest-pairs summaries
+### Review and reporting
+- weekly/monthly/quarterly review runners exist.
+- execution artifacts are persisted under `logs/runtime/`.
+- review export/index plumbing exists.
+- execution-quality reporting now includes confirmation-quality distinctions and excluded-trade tracking.
+
+### Research / replay
+- `src/research/` exists and is substantial.
+- `src/runners/backtest_research.py` provides snapshot-based offline research from historical snapshot JSONL.
+- research outputs already cover:
+  - regime quality
+  - separability
   - strategy × regime matrix
-  - strategy ranking summary
+  - strategy ranking
   - parameter-search preview
-- A snapshot-based offline backtest runner now exists via `src/runners/backtest_research.py`, providing a real path for `historical snapshot jsonl -> dataset -> report` without depending on live daemon runtime.
-- The research layer is real and usable, but it is still snapshot-based rather than a full raw historical market replay engine.
 
-### Meta-work / documentation
-- Documentation now covers execution artifacts, review architecture, router-composite ownership, regime/decision flow, automation notes, and explicit known gaps/boundaries.
-- A project map and fast-resume `CURRENT_STATE.md` now exist to make future session recovery easier.
+### Documentation / structure
+- project Markdown now lives under `docs/` only.
+- root-level project handoff clutter was removed.
+- project-local session handoff is no longer part of the intended repo structure.
 
-### Verification history
-- Earlier full validation: `107 passed`
-- Intermediate milestones: `115`, `118`, `121`, `124`, `126` passed
-- Current full validation: `127 passed`
+## What changed recently
 
-## Open gaps
+### Cleanup / structure cleanup
+- removed root-level `SESSION_HANDOFF_*` files from the project
+- removed retired closeout clutter and old backup clutter from the repo
+- moved project Markdown into `docs/`
+- moved loose root scripts into `scripts/`
 
-1. stronger canonical realized/unrealized/funding semantics
-2. stronger equity start/end/change semantics over longer review windows
-3. deeper report-side regime explanation and integration
-4. optional notifier/deployment wiring beyond current runner/export structure
-5. fix and harden the reevaluation / parameter-preview path so generated reports reflect only verified passing behavior
-6. upgrade from snapshot-based offline research to a **raw historical market replay builder** that can ingest original market data and regenerate classifier/router/shadow-plan rows from scratch
-7. accumulate enough real forward-labeled runtime history to validate research outputs on non-synthetic samples
+### Runtime / execution hardening
+- `reconcile_mismatch` now still participates in alignment
+- entry ledger records real executed size rather than only abstract plan size
+- exit verification timeout marks `forced_exit_recovery` and excludes the trade from strategy stats
+- missed-entry cleanup now fully clears local execution state and reenables the route
+- execution artifacts expose verification quality details
 
-## Current guidance
+### Live operations
+- runtime is under systemd via `crypto-trading.service`
+- a real demo-account anomaly on `trend / BTC-USDT-SWAP` was investigated and manually cleaned up
+- that anomaly pointed to execution-environment contamination risk between dry-run style state and live trade state
 
-Use the system today for:
-- architecture validation
-- operator review
-- artifact-driven debugging
-- strategy/account comparison
-- workflow hardening toward future production readiness
+## Current boundaries
 
-Do not treat the current state as:
-- unattended real-money trading ready
-- final accounting-grade review semantics
-- fully OpenClaw-independent in operator experience
+### True today
+- this is a real development/demo trading system, not just a scaffold
+- review and research are real enough to guide engineering work
+- parallel execution is now partially implemented in runtime code
 
-## Next best step
+### Not finished yet
+- full multi-account productionized live cycle is not fully hardened yet
+- review/reporting still contains older single-route assumptions in places
+- historical replay is still snapshot-based, not raw-market replay
+- parameter promotion workflow is documented but not fully productionized end-to-end
+- execution environment isolation still needs tightening to prevent dry-run-style state contamination
 
-Continue hardening canonical performance semantics, especially realized/unrealized/funding/equity meaning, while preserving the now-established runner/export/docs spine.
+## Most important next steps
+
+1. harden multi-account parallel live execution
+2. isolate dry-run/test/live state and artifact paths more strictly
+3. finish review/report migration to true multi-account parallel semantics
+4. build raw historical market replay builder
+5. complete parameter candidate -> active live parameter promotion path
+
+## Validation snapshot
+
+Recent focused validation for new execution/recovery/parallel changes passed in targeted suites during this work session.
+Use `./.venv/bin/python -m pytest -q` for a fresh full-project verification pass after the current reorganization settles.
+
+## Canonical working TODO
+
+Use `docs/TODO.md` as the current task list.

@@ -1,5 +1,7 @@
 # Environment and Operations
 
+_Last updated: 2026-03-20_
+
 ## Environment
 
 Expected in `.env`:
@@ -8,48 +10,69 @@ Expected in `.env`:
 - `OKX_API_PASSPHRASE`
 - `OKX_DEMO=true`
 
-Optional:
-- `OPENCLAW_DISCORD_CHANNEL`
-- `SYMBOLS=BTC-USDT-SWAP`  # current active trade path; add ETH/SOL only when intentionally expanding scope
+Important runtime controls:
+- `DRY_RUN=true|false`
+- `SYMBOLS=BTC-USDT-SWAP`
 - `STRATEGIES=trend,crowded,meanrev,compression,realtime`
+- `DEFAULT_ORDER_SIZE_USDT=...`
+- `BUFFER_CAPITAL_USDT=...`
+
+Other common tunables:
 - `TIMEFRAME=5m`
-- `TREND_LOOKBACK=20`  # naming cleanup target; code still accepts legacy BREAKOUT_LOOKBACK today
-- `CROWDED_LOOKBACK=20`  # naming cleanup target; code still accepts legacy PULLBACK_LOOKBACK today
+- `TREND_LOOKBACK=20`
+- `CROWDED_LOOKBACK=20`
 - `MEANREV_LOOKBACK=20`
 - `MEANREV_THRESHOLD=0.015`
 - `MAX_OPEN_POSITIONS=2`
 - `SIGNAL_COOLDOWN_BARS=12`
 - `BUCKET_INITIAL_CAPITAL_USDT=500`
-- `DEFAULT_ORDER_SIZE_USDT=100`
-- `DRY_RUN=true`
 
-## Run
+Optional notifications/config:
+- `OPENCLAW_DISCORD_CHANNEL`
+- `NOTIFY_RUNTIME_WARNINGS=false`
 
+## Main run paths
+
+### One bounded cycle
 ```bash
-source .venv/bin/activate
 ./.venv/bin/python -m src.runners.trade_daemon --max-cycles 1
+```
+
+### Normal daemon startup
+```bash
 ./run_daemon.sh
 ```
 
-## Demo submit
+### systemd-managed runtime
+```bash
+systemctl status crypto-trading.service --no-pager -n 40
+systemctl restart crypto-trading.service
+```
+
+## Review scripts
 
 ```bash
-# keep OKX_DEMO=true
-# set DRY_RUN=false in .env
-./run_daemon.sh
+./.venv/bin/python scripts/scripts_weekly_review.py --now 2026-03-15T12:00:00+00:00
+./.venv/bin/python scripts/scripts_monthly_review.py --now 2026-03-15T12:00:00+00:00
+./.venv/bin/python scripts/scripts_quarterly_review.py --now 2026-05-15T12:00:00+00:00
 ```
 
 ## Tests
 
 ```bash
-pytest -q
+./.venv/bin/python -m pytest -q
 ```
+
+## Operating notes
+
+- project scripts now live under `scripts/`
+- project docs now live under `docs/`
+- runtime/research artifacts should live under `logs/` or `reports/`, not as loose Markdown in the repo root
 
 ## Safety
 
-- Designed for OKX demo trading first.
-- Refuses to run if `OKX_DEMO` is not truthy unless code is explicitly changed.
-- Default mode is `DRY_RUN=true`.
-- `--arm-demo-submit` alone does not arm execution; config must also set `DRY_RUN=false`.
-- Current execution path is still a controlled demo scaffold, not a full production OMS.
-- No real trading path was added.
+- designed for OKX demo trading first
+- no real-money path should be implied by current docs
+- current execution path is still under active hardening
+- dry-run vs live-trade state isolation still needs tightening
+- when investigating execution anomalies, prefer stopping the daemon first, then repairing exchange/local state, then restarting cleanly

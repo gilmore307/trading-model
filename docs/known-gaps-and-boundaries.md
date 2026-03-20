@@ -1,31 +1,37 @@
 # Known Gaps and Boundaries
 
-This document backfills the meta-work for realism boundaries and currently known gaps.
+_Last updated: 2026-03-20_
 
-## Purpose
+This document makes the current project limits explicit so the system is not over-trusted while it is still being rebuilt.
 
-The system now has meaningful runtime, review, and reporting structure.
+## Safe assumptions today
 
-That does **not** mean every metric or automation path should be treated as final truth.
-
-This document makes those boundaries explicit so operators do not over-trust parts of the system that are still transitional.
-
-## Current safe assumptions
-
-These parts are stable enough to treat as real project structure:
-
-- runtime mode model exists and matters
-- regime -> route -> execute flow is the intended architecture
+These are real enough to rely on as current structure:
+- runtime modes matter
+- execution submission / verify / reconcile / recovery code exists
 - execution artifacts are the persistence boundary between runtime and review
-- weekly/monthly/quarterly review runners are real callable entrypoints
-- review artifacts are intentionally portable and not tied to OpenClaw internals
+- weekly/monthly/quarterly review runners are real entrypoints
+- snapshot-based offline research is real and usable
+- multi-account parallel execution is now the intended live model
 
-## Current transitional areas
+## Transitional areas
 
-### 1. Canonical performance semantics are still improving
+### 1. Parallel execution rollout is not fully hardened yet
+The project has moved away from single-route-only execution and now has a parallel-cycle path, but the full downstream stack is still catching up.
 
+Meaning:
+- runtime direction is correct
+- some artifact/report/notifier layers still need cleanup
+
+### 2. Execution-environment isolation still needs work
+A recent anomaly showed that dry-run-style local state contamination is still possible.
+
+Meaning:
+- dry-run / test / live-trade state and artifacts are not isolated strongly enough yet
+- this is an execution-integrity risk, not just a cosmetic issue
+
+### 3. Canonical performance semantics are still improving
 Current review fields are useful, but some semantics are still maturing:
-
 - realized pnl
 - unrealized pnl
 - funding
@@ -33,96 +39,55 @@ Current review fields are useful, but some semantics are still maturing:
 - drawdown metrics
 
 Meaning:
+- valid for engineering review and comparative debugging
+- not yet audited production accounting
 
-- they are valid as a development/review interface
-- they should not yet be treated as audited production accounting
-
-### 2. Review recommendation logic is still heuristic
-
-Current parameter candidates are generated from rule-based signals such as:
-
-- fee drag
-- negative pnl
-- high exposure
-- router underperformance
+### 4. Review recommendation logic is still heuristic
+Current parameter candidates are useful operator hints, not auto-trust outputs.
 
 Meaning:
+- useful for supervised tuning
+- not safe for blind auto-adoption
 
-- useful for operator review
-- not yet sufficient for blind auto-adoption
-
-### 3. Market regime report depth is uneven
-
-The regime pipeline itself is architected, but report-level regime explanation is not yet as rich as the performance/report path.
+### 5. Historical replay is still snapshot-based
+The research path is real, but it still starts from historical snapshot JSONL instead of rebuilding from raw market history.
 
 Meaning:
-
-- regime logic exists
-- regime reporting/explanation still has room to catch up
-
-### 4. Portability is a goal, not a fully completed state
-
-The project is being built so the trading/review core can later run outside OpenClaw.
-
-Meaning:
-
-- code entrypoints and report runners are increasingly portable
-- orchestration, notification, and operator convenience still benefit from OpenClaw today
+- offline research exists
+- the raw historical replay builder is still a major missing piece
 
 ## What should not be over-claimed yet
 
 The project should **not** currently be described as:
-
 - unattended real-money trading ready
 - fully production-accounting accurate in every review field
-- fully independent from OpenClaw in operator workflow
+- fully hardened against execution-environment contamination
+- final in its parallel live execution rollout
 - final in its review semantics
 
-## What is already true enough to rely on
+## What is already true enough to say
 
-It **is** fair to say that the project already has:
-
+It **is** fair to say the repo already has:
+- a real runtime daemon path
 - a real execution artifact chain
 - a real review pipeline
-- real weekly/monthly/quarterly runners
-- real exported report artifacts
-- growing documentation/runbook coverage
-
-## Operator rule of thumb
-
-Use the system today for:
-
-- architecture validation
-- operator review
-- strategy/account comparison
-- debugging and auditability
-- workflow shaping for later production hardening
-
-Do **not** use the current state as justification for:
-
-- blind live deployment
-- automatic parameter mutation without supervision
-- claiming final accounting-grade pnl semantics
+- a real offline research path
+- a partially landed multi-account parallel execution path
+- current docs consolidated under `docs/`
 
 ## Near-term hardening priorities
 
-Most important realism upgrades still to come:
-
-1. stronger canonical realized/unrealized/funding semantics
-2. richer regime narrative and explanation in reports
-3. report pointer/index conveniences for easier operations
-4. clearer scheduler wiring for routine review generation
-
-## Why this document matters
-
-Without an explicit boundaries document, a fast-moving system can look more complete than it really is.
-
-This file exists to prevent that failure mode.
+1. harden dry-run/test/live isolation
+2. finish multi-account parallel rollout in reporting/review layers
+3. strengthen canonical realized/unrealized/funding/equity semantics
+4. build raw historical replay
+5. complete explicit parameter promotion / rollback workflow
 
 ## Related docs
 
-- `docs/review-architecture.md`
-- `docs/review-operations.md`
-- `docs/review-automation.md`
-- `docs/execution-artifacts.md`
-- `docs/regime-and-decision-flow.md`
+- `README.md`
+- `project-status.md`
+- `multi-account-parallel-execution.md`
+- `research-runtime-separation.md`
+- `parameter-promotion-workflow.md`
+- `review-architecture.md`

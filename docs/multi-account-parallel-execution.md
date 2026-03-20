@@ -12,55 +12,61 @@ Run all strategy accounts in parallel:
 - `compression`
 - `realtime`
 
-The market-state / regime-detection layer may remain shared, but execution should no longer be limited to a single routed account per cycle.
+The market-state / regime-detection layer may remain shared, but real execution should no longer be limited to one routed account per cycle.
 
-## Current reality
+## Why this changed
 
-The current daemon/execution pipeline is still primarily **single-plan / single-account**:
+The old single-route model was wrong for the intended operating model.
+The desired system is:
+- all accounts always online
+- all accounts independently evaluate the shared market state
+- all accounts may act in the same cycle if their own executor conditions are met
+- weekly/monthly/quarterly review then compares and stitches market-style periods across all accounts
 
-- one `regime_output`
-- one routed `plan.account`
-- one real execution path per cycle
-- other strategy plans exist only as `shadow_plans`
+## Current status
 
-This does **not** match the desired always-on parallel-account model.
+### Already landed
+- `src.strategies.executors.build_parallel_plans(output)` exists
+- `ExecutionPipeline.build_parallel_plans(output)` exists
+- `ExecutionPipeline.run_cycle_parallel()` exists
+- daemon has started moving onto the parallel-cycle path
+- parallel execution artifacts are now being written
 
-## First implemented step
-
-A new parallel-plan layer now exists conceptually and in code:
-
-- `src.strategies.executors.build_parallel_plans(output)`
-- `ExecutionPipeline.build_parallel_plans(output)`
-
-This produces one real `ExecutionPlan` per strategy/account pair using fixed always-on account mapping:
-
+### Current account mapping
 - `trend -> trend`
 - `range -> meanrev`
 - `compression -> compression`
 - `crowded -> crowded`
 - `shock -> realtime`
 
-At this stage, this is a **planning skeleton**, not yet full parallel real execution.
+### What this means right now
+The codebase is no longer conceptually locked to a single real account per cycle.
+However, the downstream layers are still catching up.
 
-## Next implementation steps
+## Still transitional
+
+1. review/report layers still contain older single-route assumptions in places
+2. notifier/output summarization is only partially parallel-aware
+3. state contamination guards between dry-run/test/live need hardening
+4. per-account artifact consumers still need a cleaner canonical parallel shape
+
+## Immediate hardening priorities
 
 ### P1
-- add a multi-result cycle structure
-- execute each strategy/account plan independently in the same cycle
-- keep per-account verification / reconcile isolated
+- tighten state isolation between dry-run/test/live execution paths
+- make per-account parallel artifacts the primary review input
+- remove remaining single-route assumptions from daemon/reporting glue
 
 ### P2
-- persist per-account execution artifacts in one shared cycle artifact
-- update notifier / daemon logging to summarize all accounts
+- revise weekly/monthly/quarterly review to compare parallel live accounts directly
+- reduce dependence on router-composite assumptions in operator reporting
 
 ### P3
-- revise review layer so weekly/monthly review compares parallel live accounts directly
-- reduce dependence on router-composite assumptions in reporting
+- support cleaner per-account execution/recovery summaries and account-level operational dashboards
 
 ## Architectural rule
 
 Going forward:
-
 - shared market-state detection is allowed
 - shared single-account routing as the only real execution path is not
-- every strategy account should be able to trade in the same cycle if its own executor conditions are met
+- every strategy account must be able to trade in the same cycle if its own executor conditions are met

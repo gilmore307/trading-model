@@ -1,36 +1,31 @@
-# TRACEABILITY.md
+# Documentation Policy
 
 Project rule going forward:
-
-- Every meaningful implementation step should leave a Markdown trail.
-- Each node/layer should be documented clearly enough for later audit and resume.
-- Prefer small task-scoped MD updates over one giant retrospective dump.
+- project Markdown belongs under `docs/`
+- repo-local session handoff files do not belong in the project root
+- topic/session continuity belongs in the workspace memory system, not scattered through this repo
+- every meaningful implementation step should still leave a durable documentation trail
 
 ## Minimum standard
 
 For each significant workstream, keep at least one Markdown file that records:
-
-1. **Goal**
-2. **Current state**
-3. **Inputs / dependencies**
-4. **Outputs / artifacts**
-5. **Open risks / assumptions**
-6. **Next step**
-
-## For review/performance ingestion work
-
-Track:
-
-- canonical source fields
-- where each metric is produced
-- where each metric is persisted
-- where each metric is aggregated
-- where each metric is surfaced in reports
+1. goal
+2. current state
+3. inputs / dependencies
+4. outputs / artifacts
+5. open risks / assumptions
+6. next step
 
 ## Preferred style
 
 - short, explicit, timestamp-friendly
-- no vague "done some refactor" notes
-- name files, modules, and commits concretely
+- no vague “did some refactor” notes
+- name files, modules, and behaviors concretely
+- when a doc becomes obsolete, either update it or delete it; do not let root-level doc clutter accumulate again
 
-This file is a standing constraint for future work in this repo.
+## Working rule
+
+Use:
+- `docs/project-status.md` for current state
+- `docs/TODO.md` for current tasks
+- topic-specific docs under `docs/` for architecture/runbooks

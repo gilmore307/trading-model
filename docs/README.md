@@ -11,7 +11,8 @@ Rules:
 ## Reading order
 
 1. `project-status.md` — current project state and what changed recently
-2. `project-map.md` — code/module orientation
+2. `TODO.md` — canonical current task list
+3. `project-map.md` — code/module orientation
 3. `multi-account-parallel-execution.md` — current execution model direction
 4. `research-runtime-separation.md` — offline research vs live runtime boundary
 5. `parameter-promotion-workflow.md` — historical tuning -> live activation workflow
@@ -21,6 +22,7 @@ Rules:
 ## Core docs
 
 - `project-status.md`
+- `TODO.md`
 - `project-map.md`
 - `runtime-and-modes.md`
 - `environment-and-operations.md`
