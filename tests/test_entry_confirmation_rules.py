@@ -6,7 +6,7 @@ from src.state.live_position import LivePosition, LivePositionStatus
 from src.reconcile.alignment import ExchangePositionSnapshot
 
 
-def _local_position(*, size: float, trade_confirmed: bool = False) -> LivePosition:
+def _local_position(*, size: float, trade_confirmed: bool = False, has_trade_ids: bool | None = None) -> LivePosition:
     pos = LivePosition(
         account='trend',
         symbol='BTC-USDT-SWAP',
@@ -20,7 +20,7 @@ def _local_position(*, size: float, trade_confirmed: bool = False) -> LivePositi
                 execution_id='exec-1',
                 client_order_id='cl-1',
                 order_id='ord-1',
-                trade_ids=['t1'] if trade_confirmed else [],
+                trade_ids=['t1'] if (trade_confirmed or has_trade_ids) else [],
                 action='entry',
                 side='short',
                 requested_size=size,
@@ -39,6 +39,8 @@ def _local_position(*, size: float, trade_confirmed: bool = False) -> LivePositi
             }
         },
     )
+    if trade_confirmed or has_trade_ids:
+        pos.entry_trade_ids = ['t1']
     return pos
 
 
@@ -49,6 +51,15 @@ def test_verify_entry_accepts_trade_confirmed_matching_size():
     assert decision.accepted is True
     assert decision.next_status == LivePositionStatus.OPEN
     assert decision.reason == 'exchange_position_trade_confirmed'
+
+
+def test_verify_entry_accepts_trade_ids_matching_size_even_without_verified_flag():
+    local = _local_position(size=12.74, trade_confirmed=False, has_trade_ids=True)
+    exchange = ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='short', size=12.74)
+    decision = verify_entry(local, exchange)
+    assert decision.accepted is True
+    assert decision.next_status == LivePositionStatus.OPEN
+    assert decision.reason == 'exchange_position_trade_ids_confirmed'
 
 
 def test_verify_entry_rejects_size_mismatch_even_if_position_exists():

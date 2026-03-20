@@ -20,6 +20,15 @@ def _hint_trade_confirmed(local: LivePosition) -> bool:
     return any(bool(row.get('trade_confirmed')) for row in attempts if isinstance(row, dict))
 
 
+def _has_trade_ids(local: LivePosition) -> bool:
+    if list(local.entry_trade_ids or []):
+        return True
+    for leg in local.open_legs:
+        if list(leg.trade_ids or []):
+            return True
+    return False
+
+
 @dataclass(slots=True)
 class VerificationDecision:
     next_status: LivePositionStatus
@@ -45,12 +54,19 @@ def verify_entry(local: LivePosition, exchange: ExchangePositionSnapshot | None)
     exchange_size = float(exchange.size or 0.0)
     size_close = abs(exchange_size - target_size) <= max(1e-9, abs(target_size) * 0.05)
     trade_confirmed = _hint_trade_confirmed(local)
+    has_trade_ids = _has_trade_ids(local)
 
     if trade_confirmed and size_close:
         return VerificationDecision(
             next_status=LivePositionStatus.OPEN,
             accepted=True,
             reason='exchange_position_trade_confirmed',
+        )
+    if has_trade_ids and size_close:
+        return VerificationDecision(
+            next_status=LivePositionStatus.OPEN,
+            accepted=True,
+            reason='exchange_position_trade_ids_confirmed',
         )
     if size_close:
         return VerificationDecision(

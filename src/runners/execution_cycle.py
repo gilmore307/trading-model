@@ -112,6 +112,23 @@ def _feature_snapshot(result: ExecutionCycleResult) -> dict[str, Any]:
     }
 
 
+def _verification_snapshot(result: ExecutionCycleResult) -> dict[str, Any]:
+    local = result.local_position
+    meta = ((local.meta if local is not None else None) or {})
+    hint = meta.get('last_verification_hint') if isinstance(meta.get('last_verification_hint'), dict) else {}
+    attempts = hint.get('verification_attempts') or []
+    trade_confirmed_attempts = [row for row in attempts if isinstance(row, dict) and bool(row.get('trade_confirmed'))]
+    return {
+        'entry_verified_hint': bool(hint.get('verified_entry')),
+        'entry_trade_confirmed': bool(trade_confirmed_attempts),
+        'entry_verification_attempt_count': len(attempts),
+        'entry_trade_confirmed_attempt_count': len(trade_confirmed_attempts),
+        'entry_verification_attempts': attempts,
+        'local_position_reason': None if local is None else local.reason,
+        'local_position_status': None if local is None else local.status.value,
+    }
+
+
 def _build_attribution_snapshot(result: ExecutionCycleResult) -> dict[str, Any]:
     receipt = result.receipt
     local = result.local_position
@@ -153,6 +170,7 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     payload['compare_snapshot'] = build_compare_snapshot(result)
     payload['feature_snapshot'] = _feature_snapshot(result)
     payload['shadow_plans'] = build_shadow_plans(result.regime_output)
+    payload['verification_snapshot'] = _verification_snapshot(result)
     payload['attribution_snapshot'] = _build_attribution_snapshot(result)
     payload['ledger_snapshot'] = None if result.local_position is None else {
         'open_legs': [
@@ -222,6 +240,9 @@ def build_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
         'client_order_id': None if result.receipt is None else result.receipt.client_order_id,
         'order_id': None if result.receipt is None else result.receipt.order_id,
         'trade_ids': None if result.receipt is None else result.receipt.trade_ids,
+        'entry_verified_hint': payload['verification_snapshot'].get('entry_verified_hint'),
+        'entry_trade_confirmed': payload['verification_snapshot'].get('entry_trade_confirmed'),
+        'entry_verification_attempt_count': payload['verification_snapshot'].get('entry_verification_attempt_count'),
         'open_leg_count': 0 if result.local_position is None else len(result.local_position.open_legs),
         'closed_leg_count': 0 if result.local_position is None else len(result.local_position.closed_legs),
         'pending_exit_leg_count': 0 if result.local_position is None or result.local_position.pending_exit is None else len(result.local_position.pending_exit.allocations),
@@ -340,6 +361,9 @@ def _build_anomaly_artifact(result: ExecutionCycleResult, artifact: dict[str, An
         'attribution_realized_pnl_source': summary.get('attribution_realized_pnl_source'),
         'attribution_equity_source': summary.get('attribution_equity_source'),
         'strategy_stats_reason': summary.get('strategy_stats_reason'),
+        'entry_verified_hint': summary.get('entry_verified_hint'),
+        'entry_trade_confirmed': summary.get('entry_trade_confirmed'),
+        'entry_verification_attempt_count': summary.get('entry_verification_attempt_count'),
         'execution_recovery': recovery_type,
         'execution_recovery_detail': meta.get('execution_recovery_detail'),
         'route_enabled': summary.get('route_enabled'),
