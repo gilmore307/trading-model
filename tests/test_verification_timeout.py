@@ -89,3 +89,9 @@ def test_entry_verification_times_out_after_configured_cycles(tmp_path: Path):
     assert result2.verification_position.status.value == 'flat'
     assert result2.verification_position.reason == 'entry_verification_timeout'
     assert result2.verification_position.meta.get('execution_recovery') == 'missed_entry'
+    assert result2.verification_position.open_legs == []
+    assert result2.verification_position.pending_exit is None
+    assert result2.verification_position.entry_trade_ids == []
+    assert controller.routes.is_enabled('trend', 'BTC-USDT-SWAP') is True
+    history = result2.verification_position.meta.get('event_history') or []
+    assert any(evt.get('kind') == 'missed_entry_cleared' for evt in history)

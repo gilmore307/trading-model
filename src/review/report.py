@@ -421,6 +421,12 @@ def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict
     clean = 0
     excluded = 0
     reasons: dict[str, int] = {}
+    confirmation_modes = {
+        'trade_confirmed': 0,
+        'trade_ids_confirmed': 0,
+        'position_confirmed': 0,
+        'other_clean': 0,
+    }
     excluded_pnl_usdt = 0.0
     excluded_rows: list[dict[str, Any]] = []
     anomaly_groups: dict[str, dict[str, Any]] = {}
@@ -430,6 +436,15 @@ def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict
         reason = str(summary.get('strategy_stats_reason') or ('clean_execution' if eligible else 'unknown'))
         if eligible:
             clean += 1
+            local_reason = str((row.get('verification_snapshot') or {}).get('local_position_reason') or '')
+            if local_reason == 'exchange_position_trade_confirmed':
+                confirmation_modes['trade_confirmed'] += 1
+            elif local_reason == 'exchange_position_trade_ids_confirmed':
+                confirmation_modes['trade_ids_confirmed'] += 1
+            elif local_reason == 'exchange_position_confirmed':
+                confirmation_modes['position_confirmed'] += 1
+            else:
+                confirmation_modes['other_clean'] += 1
             continue
         excluded += 1
         reasons[reason] = reasons.get(reason, 0) + 1
@@ -439,7 +454,13 @@ def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict
         if account in metrics and isinstance(metrics.get(account), dict):
             pnl = _row_pnl(metrics[account])
         excluded_pnl_usdt += pnl
-        sample = {'account': account, 'reason': reason, 'pnl_usdt': pnl}
+        sample = {
+            'account': account,
+            'reason': reason,
+            'pnl_usdt': pnl,
+            'entry_verified_hint': summary.get('entry_verified_hint'),
+            'entry_trade_confirmed': summary.get('entry_trade_confirmed'),
+        }
         excluded_rows.append(sample)
         group = anomaly_groups.setdefault(reason, {'reason': reason, 'count': 0, 'pnl_usdt': 0.0, 'accounts': [], 'samples': []})
         group['count'] += 1
@@ -453,6 +474,11 @@ def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict
         for key, value in sorted(reasons.items(), key=lambda item: (-item[1], item[0]))
     ]
     anomaly_breakdown = sorted(anomaly_groups.values(), key=lambda item: (-int(item['count']), str(item['reason'])))
+    confirmation_breakdown = [
+        {'mode': key, 'count': value}
+        for key, value in confirmation_modes.items()
+        if value > 0
+    ]
     return {
         'clean_trade_count': clean,
         'excluded_trade_count': excluded,
@@ -460,6 +486,7 @@ def _build_execution_quality_summary(history_rows: list[dict[str, Any]]) -> dict
         'top_excluded_reasons': top_excluded_reasons,
         'excluded_samples': excluded_rows[:20],
         'anomaly_breakdown': anomaly_breakdown,
+        'confirmation_breakdown': confirmation_breakdown,
         'status': 'ready' if history_rows else 'placeholder',
     }
 
