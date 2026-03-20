@@ -1,269 +1,139 @@
 # Execution Artifacts
 
-This document backfills the meta-work for the execution artifact path.
+_Last updated: 2026-03-20_
 
 ## Purpose
 
-Execution artifacts are the bridge between:
-
-- runtime execution decisions
+Execution artifacts are the persistence boundary between:
+- runtime execution
 - later review/report generation
 - operator debugging
-- future portability outside OpenClaw orchestration
-
-The goal is to preserve one canonical per-cycle record that can be:
-
-- inspected directly by an operator
-- replayed into review aggregation
-- extended without repeatedly redesigning downstream review code
+- historical analysis of execution integrity
 
 ## Current artifact files
 
-Runtime artifacts are written under:
-
+### Per-account cycle artifacts
+Written under:
 - `logs/runtime/latest-execution-cycle.json`
 - `logs/runtime/execution-cycles.jsonl`
 
-## Writer entrypoint
+### Parallel-cycle artifacts
+Written under:
+- `logs/runtime/latest-parallel-execution-cycle.json`
+- `logs/runtime/parallel-execution-cycles.jsonl`
 
-Primary writer:
+## Writer entrypoints
 
+Primary writer module:
 - `src/runners/execution_cycle.py`
 
 Key functions:
-
 - `build_execution_artifact(result)`
 - `persist_execution_artifact(result)`
+- `build_parallel_execution_artifact(result)`
+- `persist_parallel_execution_artifact(result)`
 
-## Artifact model
+## Per-account artifact model
 
-Each execution cycle artifact currently contains three important layers.
+Each per-account artifact contains several important layers.
 
 ### 1. Raw execution-cycle payload
+Built from `ExecutionCycleResult`.
 
-The artifact starts from `asdict(result)` on `ExecutionCycleResult`.
-
-This preserves the detailed runtime output from the execution pipeline.
-
-### 2. Compare snapshot
-
-Added under:
-
+### 2. Compare/debug snapshot
+Stored under:
 - `compare_snapshot`
 
-Produced by:
+This is still useful transitional metadata, but it is no longer the sole organizing model for live execution.
 
-- `src/review/compare.py`
+### 3. Verification snapshot
+Stored under:
+- `verification_snapshot`
 
-Purpose:
+This now records entry verification quality, including fields such as:
+- `entry_verified_hint`
+- `entry_trade_confirmed`
+- `entry_verification_attempt_count`
+- `local_position_reason`
+- `local_position_status`
 
-- preserve account state comparison for the cycle
-- preserve router-selected strategy vs actual composite owner
-- preserve flat baseline row for later review comparison
-
-### 3. Attribution snapshot
-
-Added under:
-
+### 4. Attribution snapshot
+Stored under:
 - `attribution_snapshot`
 
-This is the execution-to-review attribution bridge.
-
-Current fields include:
-
-- `account`
+This bridges execution into review/accounting with fields such as:
 - `execution_id`
 - `client_order_id`
 - `order_id`
 - `trade_ids`
-- `trade_count`
-- `fee_source`
-- `realized_pnl_source`
-- `equity_source`
-- `ledger.open_leg_ids`
-- `ledger.closed_leg_ids`
-- `ledger.pending_exit_leg_ids`
+- ledger leg identifiers
+- fee / realized / equity provenance hints
 
-Purpose:
-
-- preserve which execution identifiers produced the current accounting hints
-- preserve which ledger legs were active/closed when the artifact was recorded
-- make fee / pnl / equity provenance explicit for later review confidence checks
-
-### 4. Summary layer
-
-Added under:
-
+### 5. Summary layer
+Stored under:
 - `summary`
 
-This is the operator/review-oriented compact layer.
+This is the compact operator/review-facing layer.
 
-Current fields include:
+It includes things such as:
+- runtime mode
+- regime
+- plan action / account / reason
+- route/policy status
+- receipt acceptance
+- diagnostics
+- account metrics
+- strategy stats eligibility
+- execution recovery markers
+- verification quality highlights
 
-- `symbol`
-- `runtime_mode`
-- `regime`
-- `confidence`
-- `plan_action`
-- `plan_account`
-- `plan_reason`
-- `trade_enabled`
-- `allow_reason`
-- `block_reason`
-- `diagnostics`
-- `route_enabled`
-- `route_frozen_reason`
-- `live_position_count`
-- `composite_selected_strategy`
-- `composite_position_owner`
-- `composite_plan_action`
-- `composite_position_side`
-- `receipt_mode`
-- `receipt_accepted`
-- `alignment_ok`
-- `policy_action`
-- `policy_reason`
-- `account_metrics`
-- `attribution_trade_count`
-- `attribution_fee_source`
-- `attribution_realized_pnl_source`
-- `attribution_equity_source`
+## Parallel artifact model
 
-## account_metrics semantics
+The parallel-cycle artifact records:
+- shared regime context
+- one nested per-strategy result per account
+- entered / accepted / blocked account summaries
+- multi-account cycle summary
 
-`summary.account_metrics` is the current canonical handoff point from runtime into review.
+This is the direction the project is moving toward as the canonical live-cycle structure.
 
-Builder:
-
-- `src/review/account_metrics.py`
-
-Current input sources:
-
-- receipt raw payload performance hints
-- optional balance/equity summary pulled from receipt context
-
-Current realized pnl sourcing priority:
-
-1. realized pnl extracted directly from order payloads when available (for example `fillPnl` / `closedPnl` / similar exchange-native fields)
-2. realized pnl aggregated from fetched fill/trade payloads for the submitted order when available
-3. downstream review compatibility via canonical artifact fields
-
-This is materially better than the earlier placeholder-only path, but it is still not equivalent to audited production accounting.
-
-Current compatibility mirror fields:
-
-- `pnl_usdt`
-- `equity_usdt`
-- `fee_usdt`
-
-These remain available for older consumers, but new code should prefer the more explicit canonical fields below.
-
-Extended canonical review fields already supported:
-
-- `realized_pnl_usdt`
-- `unrealized_pnl_usdt`
-- `unrealized_pnl_start_usdt`
-- `unrealized_pnl_change_usdt`
-- `equity_start_usdt`
-- `equity_end_usdt`
-- `equity_change_usdt`
-- `funding_usdt`
-- `funding_total_usdt`
-- `max_drawdown_pct`
-
-Current drawdown semantics:
-
-- `max_drawdown_pct` in review aggregation is treated as review-window drawdown, not lifetime account drawdown
-- when enough equity points are available inside the review window, drawdown is computed from the observed equity path (peak-to-trough percentage decline)
-- if an artifact also provides explicit `max_drawdown_pct`, aggregation keeps the more conservative value
-
-Funding semantics should be interpreted as:
-
-- `funding_usdt` = per-artifact funding delta / event contribution
-- `funding_total_usdt` = cumulative funding snapshot at that point in time
-
-During review aggregation, window funding should prefer cumulative snapshot differencing (`end - start`) when `funding_total_usdt` is available; otherwise it falls back to summing per-artifact `funding_usdt` deltas.
-
-Window pnl semantics in the current review layer should be interpreted as:
-
-- `unrealized_pnl_start_usdt` = earliest unrealized pnl snapshot observed inside the review window
-- `unrealized_pnl_usdt` = latest unrealized pnl snapshot observed inside the review window
-- `unrealized_pnl_change_usdt` = window-bounded unrealized movement (`end - start`)
-- if explicit window-level `realized_pnl_usdt` is absent, review aggregation may infer it as `equity_change_usdt - unrealized_pnl_change_usdt - funding_usdt`
-- if explicit window-level `pnl_usdt` is absent or only reflects a compatibility snapshot, review aggregation falls back to a window-consistent total via `realized_pnl_usdt + unrealized_pnl_usdt`
-
-## Current downstream consumers
-
-Primary downstream consumer chain:
-
-1. `src/review/ingestion.py`
-2. `src/review/aggregator.py`
-3. `src/review/performance.py`
-4. `src/review/report.py`
-5. `src/review/export.py`
-
-That means the execution artifact is now the main persistence boundary between runtime and review.
-
-## Canonical vs transitional fields
+## Canonical direction
 
 ### Canonical enough today
+- execution artifact file locations
+- per-account summary and account metrics fields
+- verification snapshot fields
+- execution recovery / excluded-trade semantics
+- parallel-cycle artifact existence and shape
 
-These are stable enough to depend on operationally:
-
-- artifact file locations
-- `summary.plan_*` decision trace summary
-- `summary.composite_*` router ownership summary
-- `compare_snapshot`
-- `summary.account_metrics.fee_usdt`
-- `summary.account_metrics.realized_pnl_usdt`
-- `summary.account_metrics.unrealized_pnl_usdt`
-- `summary.account_metrics.equity_end_usdt`
-- compatibility mirrors `summary.account_metrics.pnl_usdt` / `summary.account_metrics.equity_usdt`
-
-### Still transitional / improving
-
-These should be treated as evolving semantics rather than final truth:
-
-- realized vs unrealized pnl split accuracy
-- funding source completeness
-- equity start/end semantics across long review windows
-- max drawdown semantics
-
-## Why this path exists
-
-The artifact design intentionally favors:
-
-- append-only JSONL history
-- compact review-facing summaries
-- forward-compatible extension of performance fields
-
-Instead of coupling review directly to runtime internals every time a new metric is added, the artifact acts as the durable translation layer.
+### Still transitional
+- compare/debug/router-composite semantics
+- some older field names built around the previous single-route model
+- long-window accounting semantics
 
 ## Operator usage
 
-Use `latest-execution-cycle.json` when:
+Use per-account latest artifacts when:
+- diagnosing one account
+- checking one account’s latest execution path
+- inspecting one account’s verification / reconcile details
 
-- diagnosing the most recent cycle
-- checking current routing or block reason
-- checking the latest account_metrics payload
-
-Use `execution-cycles.jsonl` when:
-
-- generating weekly/monthly/quarterly reviews
-- debugging a time series of router or account behavior
-- auditing repeated failures or shifts in routing logic
+Use parallel-cycle artifacts when:
+- understanding what all accounts did in the same shared cycle
+- debugging multi-account live execution behavior
+- preparing future multi-account review/report migration
 
 ## Current gaps
 
-The biggest remaining gaps in this layer are:
-
-- more explicit canonical performance semantics for realized/unrealized pnl
-- stronger funding ingestion
-- optional convenience indexes/pointers for latest review-compatible spans
+The biggest remaining gaps are:
+- making parallel artifacts the primary downstream review input
+- tightening dry-run/test/live execution-environment isolation
+- deeper ID-based attribution and recovery tooling
+- stronger canonical realized/unrealized/funding/equity semantics
 
 ## Related docs
 
-- `docs/state-and-artifacts.md`
-- `docs/review-architecture.md`
-- `docs/router-composite.md`
-- `docs/review-operations.md`
+- `review-architecture.md`
+- `multi-account-parallel-execution.md`
+- `state-and-artifacts.md`
+- `router-composite.md`

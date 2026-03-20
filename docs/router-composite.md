@@ -1,131 +1,52 @@
-# Router Composite and Ownership Model
+# Router Composite (Legacy / Transitional)
 
-This document backfills the meta-work for router-composite, compare snapshot, and ownership attribution.
+_Last updated: 2026-03-20_
 
-## Why this exists
+## Status
 
-The project does not just ask:
+This document is now **legacy / transitional context**, not the primary execution model.
 
-- which strategy is selected right now?
+The project previously emphasized a router/composite ownership model where one account was effectively treated as the main routed execution path while other strategies were compared around it.
 
-It also needs to answer:
+That is **no longer the target architecture**.
 
-- which account currently owns the live composite position?
-- does router selection match current ownership?
-- when should switching be visible in review artifacts?
+## Current interpretation
 
-That is why router-composite and compare snapshot are separate but linked concepts.
+Router/composite data is still useful as a comparison/debug layer, but it should now be treated as:
+- historical context
+- review/debug metadata
+- transitional comparison output
 
-## Core distinction
+and **not** as the canonical live execution model.
 
-### Router-selected strategy
+## What changed
 
-This is the strategy/account the router says should currently be active.
+The intended live model is now:
+- all strategy accounts online simultaneously
+- shared market/regime state
+- parallel per-account execution
+- review across all live accounts rather than only one routed account
 
-Stored as:
+Because of that change:
+- `router_composite.selected_strategy` is no longer the only execution story that matters
+- `position_owner` is no longer the core organizing principle for the whole runtime design
+- review/reporting should gradually move away from router-centric semantics
 
-- `router_composite.selected_strategy`
-- `compare_snapshot.selected_strategy`
-- summary highlight `router_selected:<account>`
+## Still useful for now
 
-### Composite position owner
+While cleanup is still in progress, router/composite fields can still help answer:
+- what the old router would have selected
+- whether compare/debug output matches newer parallel execution results
+- whether older reports are still reading transitional metadata correctly
 
-This is the account that actually owns the currently active composite position.
+## Going forward
 
-Stored as:
-
-- `router_composite.position_owner`
-- `compare_snapshot.composite_owner`
-- summary highlight `composite_owner:<account>`
-
-These two values can differ during transitions or staged switching.
-
-## Compare snapshot role
-
-Primary builder:
-
-- `src/review/compare.py`
-
-The compare snapshot records, for each known account:
-
-- whether it has a position
-- position status
-- side
-- size
-- whether it was selected by the router
-- whether it owns the composite position
-
-It also adds a `flat_compare` row so review can compare active routing against a flat baseline.
-
-## Current snapshot highlights
-
-Current highlight vocabulary includes:
-
-- `router_selected:<account>`
-- `composite_owner:<account>`
-- `router_selection_differs_from_position_owner`
-- `composite_switch:<action>`
-
-These strings are intentionally compact because they are used both in artifacts and later review summaries.
-
-## Why ownership attribution matters
-
-Without ownership attribution, a later review can easily misread the system.
-
-Example failure mode without ownership:
-
-- router now selects `trend`
-- but live position still belongs to `meanrev`
-- review incorrectly assumes current pnl or exposure belongs to the selected strategy
-
-Ownership attribution prevents that class of confusion.
-
-## How review uses it today
-
-Current review usage includes:
-
-- carrying `compare_snapshot` into report generation
-- exposing router composite review sections
-- generating router-vs-best-strategy and router-vs-flat summaries
-- preserving router/composite highlights in exported report artifacts
-
-## What is implemented vs not yet implemented
-
-### Already implemented
-
-- compare snapshot row generation
-- flat baseline row
-- router-selected vs owner distinction
-- switch-action visibility in highlights
-- exported use in review reports
-
-### Not fully implemented yet
-
-- deeper attribution-aware pnl semantics for composite ownership over long windows
-- explicit ownership transition journaling beyond current highlights
-- richer switch diagnostics in narrative/report sections
-
-## Operational interpretation
-
-When debugging or reviewing a cycle:
-
-- check `selected_strategy` to see what the router wants now
-- check `position_owner` to see who actually owns the composite position now
-- if they differ, treat the system as being in transition or mismatch analysis mode
-
-That difference is a feature, not automatically a bug.
-
-## Why this matters for portability
-
-This model is useful both inside and outside OpenClaw because it is persisted into the project’s own artifacts.
-
-That means:
-
-- review exports do not need live session memory to understand router state
-- later schedulers or offline tooling can still inspect the relationship between selection and ownership
+Treat router-composite fields as:
+- auxiliary comparison/debug context
+- not the primary live-account execution truth
 
 ## Related docs
 
-- `docs/execution-artifacts.md`
-- `docs/review-architecture.md`
-- `docs/runtime-and-modes.md`
+- `multi-account-parallel-execution.md`
+- `execution-artifacts.md`
+- `review-architecture.md`
