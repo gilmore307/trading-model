@@ -15,9 +15,17 @@ This is the canonical current task list for the project.
 
 - [ ] acquire long-span **1-minute** historical data from OKX for the target study range
 - [ ] build a canonical historical data storage layout under the project
-- [ ] add scripts/data-style structure for historical data fetch/maintenance work
+- [x] add scripts/data-style structure for historical data fetch/maintenance work
 - [ ] verify exact earliest practical 1-minute history coverage and chunking strategy
 - [ ] define local retention/update workflow for minute-level history
+
+## P1 — market-state description (top priority inside research)
+
+- [x] define market-state description as prior to dynamic-parameter selection
+- [ ] define the first market-state feature inventory
+- [ ] implement feature extraction on 1-minute historical data
+- [ ] create state slices / descriptive buckets suitable for weekly review
+- [ ] map family performance against these market-state descriptions
 
 ## P1 — strategy family research system
 

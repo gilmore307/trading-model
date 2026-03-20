@@ -21,6 +21,7 @@ The project is no longer centered on keeping the older 5 predefined strategy/reg
 The new research direction is:
 - build a large candidate pool of strategy families
 - test them one by one on long-span 1-minute market history
+- build a strong market-state description layer
 - optimize each strategy family toward **dynamic parameters** rather than only fixed parameters
 - compare the best dynamic version from each family against other families
 - identify which families are actually useful, which are fully covered by others, and which deserve promotion later
@@ -66,6 +67,18 @@ After a family champion exists for each major family, compare:
 - stability
 - time-segment performance
 - whether a family is dominated/covered by another family
+
+## Market-state priority
+
+Before dynamic parameters can be trusted, the project must be able to describe the current market state correctly and comprehensively enough.
+
+That means:
+- market-state description comes before dynamic parameter selection
+- dynamic parameters should be chosen as a function of market state
+- market-state features should be developed in parallel with family backtests
+
+See also:
+- `market-state-description-framework.md`
 
 ## Dynamic-parameter target
 
@@ -132,7 +145,8 @@ The goal is to keep only strategy families that earn their place.
 
 The next historical buildout should focus on:
 1. long-span 1-minute data acquisition
-2. candidate-family registry
-3. family-batched backtest execution
-4. dynamic-parameter exploration inside each family
-5. weekly review that compares family champions and time-segment strength
+2. market-state description feature buildout
+3. candidate-family registry
+4. family-batched backtest execution
+5. dynamic-parameter exploration inside each family
+6. weekly review that compares family champions and time-segment strength

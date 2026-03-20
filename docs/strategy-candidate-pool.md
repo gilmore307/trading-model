@@ -24,7 +24,7 @@ Use these labels as the pool grows:
 ## Current first-wave family pool
 
 ### 1. Moving Average family
-Goal: not just best fixed windows, but best dynamic MA logic.
+Goal: not just best fixed windows, but best dynamic MA logic selected from market-state context.
 
 Candidates:
 - MA crossover baseline variants (e.g. 5/20, 10/30, 20/60, 30/90, 50/200)
@@ -32,7 +32,7 @@ Candidates:
 - MA family with trend-strength-adaptive windows
 - MA family with time/session-sensitive windows
 
-Status: `idea`
+Status: `implemented` (baseline registry + baseline runner present; dynamic/state-aware versions pending)
 
 ### 2. Donchian / breakout family
 Candidates:

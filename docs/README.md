@@ -13,10 +13,11 @@ Rules:
 1. `project-status.md` — current project state and current phase
 2. `TODO.md` — canonical current task list
 3. `strategy-research-framework.md` — current research operating model
-4. `strategy-candidate-pool.md` — open-ended candidate family pool
-5. `project-map.md` — code/module orientation
-6. `known-gaps-and-boundaries.md` — current limits and non-goals
-7. topic docs as needed
+4. `market-state-description-framework.md` — market-state description priority
+5. `strategy-candidate-pool.md` — open-ended candidate family pool
+6. `project-map.md` — code/module orientation
+7. `known-gaps-and-boundaries.md` — current limits and non-goals
+8. topic docs as needed
 
 ## Core docs
 
