@@ -12,7 +12,7 @@ from src.runners.regime_runner import BtcRegimeRunner, RegimeRunnerOutput
 from src.runtime.mode_policy import policy_for_mode
 from src.runtime.store import RuntimeStore
 from src.state.live_position import LivePosition
-from src.strategies.executors import ExecutionPlan, executor_for
+from src.strategies.executors import ExecutionPlan, build_parallel_plans, executor_for
 
 
 @dataclass(slots=True)
@@ -68,6 +68,9 @@ class ExecutionPipeline:
 
     def build_plan(self, output: RegimeRunnerOutput) -> ExecutionPlan:
         return executor_for(output).build_plan(output)
+
+    def build_parallel_plans(self, output: RegimeRunnerOutput) -> dict[str, ExecutionPlan]:
+        return build_parallel_plans(output)
 
     def _initial_trace(self, mode, mode_policy, regime_output: RegimeRunnerOutput) -> ExecutionDecisionTrace:
         summary = regime_output.decision_summary or {}

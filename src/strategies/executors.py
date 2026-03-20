@@ -371,22 +371,72 @@ EXECUTORS = {
 }
 
 
+ALWAYS_ON_STRATEGY_ACCOUNT_MAP = {
+    'trend': 'trend',
+    'range': 'meanrev',
+    'compression': 'compression',
+    'crowded': 'crowded',
+    'shock': 'realtime',
+}
+
+
+def _plan_to_dict(plan: ExecutionPlan) -> dict:
+    return {
+        'regime': plan.regime,
+        'account': plan.account,
+        'action': plan.action,
+        'side': plan.side,
+        'size': plan.size,
+        'reason': plan.reason,
+        'score': plan.score,
+        'blockers': plan.blockers,
+        'signals': plan.signals,
+        'subscores': plan.subscores,
+    }
+
+
 def build_shadow_plans(output: RegimeRunnerOutput) -> dict[str, dict]:
     plans: dict[str, dict] = {}
     for name, executor in EXECUTORS.items():
         plan = executor.build_plan(output)
-        plans[name] = {
-            'regime': plan.regime,
-            'account': plan.account,
-            'action': plan.action,
-            'side': plan.side,
-            'size': plan.size,
-            'reason': plan.reason,
-            'score': plan.score,
-            'blockers': plan.blockers,
-            'signals': plan.signals,
-            'subscores': plan.subscores,
-        }
+        plans[name] = _plan_to_dict(plan)
+    return plans
+
+
+def build_parallel_plans(output: RegimeRunnerOutput) -> dict[str, ExecutionPlan]:
+    plans: dict[str, ExecutionPlan] = {}
+    for name, executor in EXECUTORS.items():
+        routed_output = RegimeRunnerOutput(
+            observed_at=output.observed_at,
+            symbol=output.symbol,
+            background_4h=output.background_4h,
+            primary_15m=output.primary_15m,
+            override_1m=output.override_1m,
+            background_features=output.background_features,
+            primary_features=output.primary_features,
+            override_features=output.override_features,
+            final_decision={**output.final_decision, 'primary': name},
+            route_decision={
+                'regime': output.route_decision.get('regime'),
+                'account': ALWAYS_ON_STRATEGY_ACCOUNT_MAP.get(name),
+                'strategy_family': name,
+                'trade_enabled': True,
+                'allow_reason': f'always_on_{name}',
+                'block_reason': None,
+            },
+            decision_summary={
+                **output.decision_summary,
+                'account': ALWAYS_ON_STRATEGY_ACCOUNT_MAP.get(name),
+                'strategy_family': name,
+                'trade_enabled': True,
+                'allow_reason': f'always_on_{name}',
+                'block_reason': None,
+            },
+            settings=output.settings,
+        )
+        plan = executor.build_plan(routed_output)
+        plan.account = ALWAYS_ON_STRATEGY_ACCOUNT_MAP.get(name)
+        plans[name] = plan
     return plans
 
 

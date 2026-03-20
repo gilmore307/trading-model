@@ -1,9 +1,16 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from pathlib import Path
+
+from src.execution.controller import RouteController
 from src.execution.pipeline import ExecutionPipeline
 from src.reconcile.alignment import ExchangePositionSnapshot
 from src.runners.regime_runner import RegimeRunnerOutput
+from src.runtime.mode import RuntimeMode
+from src.runtime.store import RuntimeStore
+from src.state.route_registry import RouteRegistry
+from src.state.store import LiveStateStore
 
 
 class DummyRunnerLowConfidence:
@@ -41,7 +48,9 @@ class DummyRunnerTrend:
 
 
 def test_pipeline_holds_when_decision_summary_blocks_trade():
-    pipe = ExecutionPipeline(regime_runner=DummyRunnerLowConfidence(), snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: None})())
+    store = RuntimeStore()
+    store.set_mode(RuntimeMode.TRADE, 'test')
+    pipe = ExecutionPipeline(regime_runner=DummyRunnerLowConfidence(), snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: None})(), runtime_store=store)
     result = pipe.run_cycle(None)
     assert result.plan.action == 'hold'
     assert result.plan.reason == 'confidence_too_low'
@@ -49,13 +58,23 @@ def test_pipeline_holds_when_decision_summary_blocks_trade():
     assert 'decision_gate_blocked' in result.decision_trace.diagnostics
 
 
-def test_pipeline_trace_captures_alignment_freeze_reason():
+def test_pipeline_trace_captures_alignment_freeze_reason(tmp_path: Path):
+    store = RuntimeStore()
+    store.set_mode(RuntimeMode.TRADE, 'test')
+    controller = RouteController(
+        store=LiveStateStore(path=tmp_path / 'live.json'),
+        routes=RouteRegistry(path=tmp_path / 'routes.json'),
+        verification_cycle_timeout=2,
+    )
     pipe = ExecutionPipeline(
         regime_runner=DummyRunnerTrend(),
         snapshot_provider=type('SP', (), {'fetch_position': lambda self, a, s: ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='short', size=3.0)})(),
+        runtime_store=store,
+        controller=controller,
     )
     result = pipe.run_cycle(None)
     assert result.reconcile_result is not None
-    assert result.reconcile_result.policy.trade_enabled is False
-    assert result.decision_trace.block_reason == 'severe_alignment_issue'
-    assert 'freeze_route' in result.decision_trace.diagnostics
+    assert result.reconcile_result.policy.trade_enabled is True
+    assert result.reconcile_result.policy.reason == 'alignment_ok'
+    assert result.decision_trace.block_reason is None
+    assert 'freeze_route' not in result.decision_trace.diagnostics
