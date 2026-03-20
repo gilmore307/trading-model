@@ -202,7 +202,7 @@ class ExecutionPipeline:
                 regime_output.symbol,
                 plan.regime,
                 plan.side,
-                float(plan.size),
+                float(receipt.size if receipt.size is not None else plan.size),
                 entry_order_id=receipt.order_id,
                 entry_execution_id=receipt.execution_id,
                 entry_client_order_id=receipt.client_order_id,

@@ -263,7 +263,7 @@ class RouteController:
                 current.size = float(exchange_snapshot.size or 0.0)
                 current.last_exchange_observed_at = datetime.now(UTC)
 
-            if current.open_legs and current.status in {LivePositionStatus.ENTRY_SUBMITTED, LivePositionStatus.ENTRY_VERIFYING, LivePositionStatus.OPEN} and exchange_snapshot is not None:
+            if current.open_legs and current.status in {LivePositionStatus.ENTRY_SUBMITTED, LivePositionStatus.ENTRY_VERIFYING} and exchange_snapshot is not None:
                 exchange_size = float(exchange_snapshot.size or 0.0)
                 baseline = max(0.0, previous_ledger_size - float(current.open_legs[-1].remaining_size or 0.0))
                 delta = max(0.0, exchange_size - baseline)
@@ -357,6 +357,11 @@ class RouteController:
                 meta, cycles = self._bump_verification_cycles(current, phase='exit')
                 decision = verify_exit(current, exchange_snapshot)
                 if not decision.accepted and cycles >= self.verification_cycle_timeout:
+                    meta['strategy_stats_eligible'] = 'false'
+                    meta['strategy_stats_reason'] = 'forced_exit_recovery'
+                    meta['execution_recovery'] = 'forced_exit'
+                    meta['execution_recovery_detail'] = 'exit_verification_timeout'
+                    current.meta = meta
                     current.reason = 'exit_verification_timeout'
                     self._append_event(current, {
                         'kind': 'exit_verification_timeout',

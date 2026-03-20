@@ -31,40 +31,40 @@ class DummyRunner:
         )
 
 
-class ExitPipeline(ExecutionPipeline):
+class EntryPipeline(ExecutionPipeline):
     def build_plan(self, output):
-        return ExecutionPlan(regime='trend', account='trend', action='exit', reason='test_exit')
+        return ExecutionPlan(regime='trend', account='trend', action='enter', side='short', size=1.0, reason='test_entry')
 
 
-class FakeAdapter(ExecutionAdapter):
+class EntryAdapter(ExecutionAdapter):
     def submit_entry(self, *, account: str, symbol: str, side: str, size: float, reason: str) -> ExecutionReceipt:
-        raise NotImplementedError
-
-    def submit_exit(self, *, account: str, symbol: str, reason: str, requested_size: float | None = None) -> ExecutionReceipt:
         return ExecutionReceipt(
             accepted=True,
             mode='okx_demo',
             account=account,
             symbol=symbol,
-            action='exit',
-            side=None,
-            size=None,
-            order_id='x1',
+            action='entry',
+            side=side,
+            size=12.74,
+            order_id='ord-1',
             reason=reason,
             observed_at=datetime.now(UTC),
-            raw={'verified_flat': False, 'verification_attempts': [{'attempt': 'initial', 'delay_seconds': 0.0, 'matched': False}]},
-            execution_id='exec-x',
-            client_order_id='cl-x',
-            trade_ids=[],
+            raw={'verified_entry': False, 'verification_attempts': []},
+            execution_id='exec-1',
+            client_order_id='cl-1',
+            trade_ids=['t1'],
         )
 
+    def submit_exit(self, *, account: str, symbol: str, reason: str, requested_size: float | None = None) -> ExecutionReceipt:
+        raise NotImplementedError
 
-class StickySnapshotProvider:
+
+class EntrySnapshotProvider:
     def fetch_position(self, account: str, symbol: str):
-        return ExchangePositionSnapshot(account=account, symbol=symbol, side='short', size=1.0)
+        return ExchangePositionSnapshot(account=account, symbol=symbol, side='short', size=12.74)
 
 
-def test_exit_verification_times_out_but_does_not_duplicate_submit(tmp_path: Path):
+def test_entry_ledger_uses_receipt_size_not_plan_unit(tmp_path: Path):
     store = RuntimeStore()
     store.set_mode(RuntimeMode.TRADE, 'test')
     controller = RouteController(
@@ -72,34 +72,38 @@ def test_exit_verification_times_out_but_does_not_duplicate_submit(tmp_path: Pat
         routes=RouteRegistry(path=tmp_path / 'routes.json'),
         verification_cycle_timeout=2,
     )
-    controller.submit_entry(
-        'trend', 'BTC-USDT-SWAP', 'trend', 'short', 1.0,
-        entry_order_id='e1', entry_execution_id='exec-1', entry_client_order_id='cl-1', entry_trade_ids=['t1'],
-    )
-    current = controller.store.get('trend', 'BTC-USDT-SWAP')
-    assert current is not None
-    current.status = current.status.OPEN
-    controller.store.upsert(current)
-
-    pipe = ExitPipeline(
+    pipe = EntryPipeline(
         regime_runner=DummyRunner(),
         controller=controller,
-        snapshot_provider=StickySnapshotProvider(),
-        adapter=FakeAdapter(),
+        snapshot_provider=EntrySnapshotProvider(),
+        adapter=EntryAdapter(),
         runtime_store=store,
         composite_simulator=RouterCompositeSimulator(controller.store),
     )
 
-    result1 = pipe.run_cycle(None)
-    assert result1.verification_position is not None
-    assert result1.verification_position.status.value == 'exit_verifying'
+    result = pipe.run_cycle(None)
+    assert result.local_position is not None
+    assert result.local_position.open_legs
+    leg = result.local_position.open_legs[0]
+    assert leg.requested_size == 12.74
+    assert leg.filled_size == 12.74
+    assert result.local_position.size == 12.74
 
-    result2 = pipe.run_cycle(None)
-    assert result2.verification_position is not None
-    assert result2.verification_position.status.value == 'exit_verifying'
-    assert result2.verification_position.reason == 'exit_verification_timeout'
-    assert result2.verification_position.meta.get('execution_recovery') == 'forced_exit'
-    assert result2.verification_position.meta.get('strategy_stats_eligible') == 'false'
-    assert result2.verification_position.meta.get('strategy_stats_reason') == 'forced_exit_recovery'
-    history = result2.verification_position.meta.get('event_history') or []
-    assert any(evt.get('kind') == 'exit_verification_timeout' for evt in history)
+
+def test_reconcile_mismatch_still_participates_in_alignment(tmp_path: Path):
+    controller = RouteController(
+        store=LiveStateStore(path=tmp_path / 'live.json'),
+        routes=RouteRegistry(path=tmp_path / 'routes.json'),
+        verification_cycle_timeout=2,
+    )
+    pos = controller.submit_entry(
+        'trend', 'BTC-USDT-SWAP', 'trend', 'short', 12.88,
+        entry_order_id='e1', entry_execution_id='exec-1', entry_client_order_id='cl-1', entry_trade_ids=['t1'],
+    )
+    pos.status = pos.status.RECONCILE_MISMATCH
+    controller.store.upsert(pos)
+
+    snap = ExchangePositionSnapshot(account='trend', symbol='BTC-USDT-SWAP', side='short', size=12.88)
+    result = controller.reconcile_account_symbol('trend', 'BTC-USDT-SWAP', snap)
+    assert result.alignment.ok is True
+    assert result.policy.trade_enabled is True

@@ -24,6 +24,7 @@ LIVE_ALIGNMENT_STATUSES = {
     LivePositionStatus.OPEN,
     LivePositionStatus.EXIT_SUBMITTED,
     LivePositionStatus.EXIT_VERIFYING,
+    LivePositionStatus.RECONCILE_MISMATCH,
 }
 
 
