@@ -130,41 +130,15 @@ class ExecutionPipeline:
             return False, f'preflight_insufficient_usdt_margin:{account}:{execution_symbol}:available={usdt_available}:required={threshold}'
         return True, None
 
-    def run_cycle(self, exchange_snapshot: ExchangePositionSnapshot | None = None) -> ExecutionCycleResult:
-        mode = self.runtime_store.get().mode
-        mode_policy = policy_for_mode(mode)
-        regime_output = self.regime_runner.run_once() if mode_policy.allow_strategy_execution else self._idle_regime_output()
-        trace = self._initial_trace(mode, mode_policy, regime_output)
-
-        if not mode_policy.allow_strategy_execution:
-            trace.block_reason = f'mode_no_strategy:{mode.value}'
-            trace.allow_reason = None
-            if 'strategy_execution_disabled' not in trace.diagnostics:
-                trace.diagnostics.append('strategy_execution_disabled')
-            plan = ExecutionPlan(regime='idle', account=None, action='hold', reason=trace.block_reason)
-        elif not mode_policy.allow_normal_routing:
-            trace.block_reason = f'mode_blocked:{mode.value}'
-            trace.allow_reason = None
-            trace.diagnostics.append('mode_blocked')
-            plan = ExecutionPlan(regime=regime_output.final_decision['primary'], account=None, action='hold', reason=trace.block_reason)
-        elif not trace.decision_trade_enabled:
-            if trace.block_reason is None:
-                trace.block_reason = 'decision_trade_disabled'
-            trace.allow_reason = None
-            trace.diagnostics.append('decision_gate_blocked')
-            plan = ExecutionPlan(regime=regime_output.final_decision['primary'], account=None, action='hold', reason=trace.block_reason)
-        else:
-            plan = self.build_plan(regime_output)
-
+    def _run_single_account_plan(self, regime_output: RegimeRunnerOutput, plan: ExecutionPlan, trace: ExecutionDecisionTrace, exchange_snapshot: ExchangePositionSnapshot | None = None) -> ExecutionCycleResult:
+        current_position = None
+        pending_verification_priority = False
         if plan.account is not None and not self.controller.routes.is_enabled(plan.account, regime_output.symbol):
             frozen_reason = self.controller.routes.get(plan.account, regime_output.symbol).frozen_reason or 'route_frozen'
             trace.block_reason = frozen_reason
             trace.allow_reason = None
             trace.diagnostics.append('route_frozen')
             plan = ExecutionPlan(regime=plan.regime, account=plan.account, action='hold', reason=frozen_reason)
-
-        current_position = None
-        pending_verification_priority = False
         if plan.account is not None:
             current_position = self.controller.store.get(plan.account, regime_output.symbol)
             if current_position is not None and current_position.status.value in {'entry_submitted', 'entry_verifying', 'exit_submitted', 'exit_verifying'}:
@@ -172,13 +146,7 @@ class ExecutionPipeline:
                 trace.allow_reason = 'pending_verification_priority'
                 if 'pending_verification_priority' not in trace.diagnostics:
                     trace.diagnostics.append('pending_verification_priority')
-                plan = ExecutionPlan(
-                    regime=plan.regime,
-                    account=plan.account,
-                    action='hold',
-                    reason=f'pending_verification:{current_position.status.value}',
-                )
-
+                plan = ExecutionPlan(regime=plan.regime, account=plan.account, action='hold', reason=f'pending_verification:{current_position.status.value}')
         if plan.account is not None and plan.action == 'enter':
             preflight_ok, preflight_reason = self._entry_preflight(plan.account, regime_output.symbol, plan.size)
             if not preflight_ok:
@@ -186,44 +154,25 @@ class ExecutionPipeline:
                 trace.allow_reason = None
                 trace.diagnostics.append('preflight_blocked')
                 plan = ExecutionPlan(regime=plan.regime, account=plan.account, action='hold', reason=preflight_reason)
-
         trace.pipeline_entered = plan.account is not None
         trace.submission_allowed = plan.account is not None and plan.action in {'enter', 'exit'}
         trace.submission_attempted = False
         trace.pipeline_trade_enabled = trace.submission_allowed
-
         if exchange_snapshot is None and plan.account is not None:
             exchange_snapshot = self.snapshot_provider.fetch_position(plan.account, regime_output.symbol)
-        if mode_policy.force_dry_run:
-            self.adapter = DryRunExecutionAdapter()
         receipt = None
         local_position = None
         verification_position = None
         reconcile_result = None
-
         def refresh_snapshot() -> ExchangePositionSnapshot | None:
             if plan.account is None:
                 return exchange_snapshot
             return self.snapshot_provider.fetch_position(plan.account, regime_output.symbol)
-
         if plan.account is not None and not pending_verification_priority and plan.action == 'enter' and plan.side is not None and plan.size is not None:
             trace.submission_attempted = True
             receipt = self.adapter.submit_entry(account=plan.account, symbol=regime_output.symbol, side=plan.side, size=plan.size, reason=plan.reason or 'entry')
-            local_position = self.controller.submit_entry(
-                plan.account,
-                regime_output.symbol,
-                plan.regime,
-                plan.side,
-                float(receipt.size if receipt.size is not None else plan.size),
-                entry_order_id=receipt.order_id,
-                entry_execution_id=receipt.execution_id,
-                entry_client_order_id=receipt.client_order_id,
-                entry_trade_ids=receipt.trade_ids,
-            )
-            verification_hint = None if receipt.raw is None or not isinstance(receipt.raw, dict) else {
-                'verified_entry': bool(receipt.raw.get('verified_entry')),
-                'verification_attempts': receipt.raw.get('verification_attempts') or [],
-            }
+            local_position = self.controller.submit_entry(plan.account, regime_output.symbol, plan.regime, plan.side, float(receipt.size if receipt.size is not None else plan.size), entry_order_id=receipt.order_id, entry_execution_id=receipt.execution_id, entry_client_order_id=receipt.client_order_id, entry_trade_ids=receipt.trade_ids)
+            verification_hint = None if receipt.raw is None or not isinstance(receipt.raw, dict) else {'verified_entry': bool(receipt.raw.get('verified_entry')), 'verification_attempts': receipt.raw.get('verification_attempts') or []}
             if verification_hint is not None:
                 meta = dict(local_position.meta or {})
                 meta['last_verification_hint'] = verification_hint
@@ -237,15 +186,7 @@ class ExecutionPipeline:
             trace.submission_attempted = True
             requested_exit_size = None if current_position is None else float(current_position.ledger_open_size or current_position.size or 0.0)
             receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason=plan.reason or 'exit', requested_size=requested_exit_size)
-            local_position = self.controller.submit_exit(
-                plan.account,
-                regime_output.symbol,
-                exit_order_id=receipt.order_id,
-                exit_execution_id=receipt.execution_id,
-                exit_client_order_id=receipt.client_order_id,
-                exit_trade_ids=receipt.trade_ids,
-                requested_size=requested_exit_size,
-            )
+            local_position = self.controller.submit_exit(plan.account, regime_output.symbol, exit_order_id=receipt.order_id, exit_execution_id=receipt.execution_id, exit_client_order_id=receipt.client_order_id, exit_trade_ids=receipt.trade_ids, requested_size=requested_exit_size)
             if local_position is not None and isinstance(receipt.raw, dict):
                 meta = dict(local_position.meta or {})
                 meta['last_exit_fee_usdt'] = receipt.raw.get('fee_usdt')
@@ -275,15 +216,7 @@ class ExecutionPipeline:
                     trace.submission_attempted = True
                     requested_exit_size = float(current.ledger_open_size or current.size or 0.0)
                     receipt = self.adapter.submit_exit(account=plan.account, symbol=regime_output.symbol, reason='forced_exit_recovery', requested_size=requested_exit_size)
-                    current = self.controller.submit_exit(
-                        plan.account,
-                        regime_output.symbol,
-                        exit_order_id=receipt.order_id,
-                        exit_execution_id=receipt.execution_id,
-                        exit_client_order_id=receipt.client_order_id,
-                        exit_trade_ids=receipt.trade_ids,
-                        requested_size=requested_exit_size,
-                    ) or current
+                    current = self.controller.submit_exit(plan.account, regime_output.symbol, exit_order_id=receipt.order_id, exit_execution_id=receipt.execution_id, exit_client_order_id=receipt.client_order_id, exit_trade_ids=receipt.trade_ids, requested_size=requested_exit_size) or current
                     if current is not None and isinstance(receipt.raw, dict):
                         meta = dict(current.meta or {})
                         meta['last_exit_fee_usdt'] = receipt.raw.get('fee_usdt')
@@ -303,27 +236,57 @@ class ExecutionPipeline:
                     reconcile_result = self.controller.reconcile_account_symbol(plan.account, regime_output.symbol, exchange_snapshot)
                     local_position = current
                     verification_position = current
-
         if reconcile_result is not None and not reconcile_result.policy.trade_enabled:
             trace.block_reason = reconcile_result.policy.reason
             trace.allow_reason = None
             if reconcile_result.policy.action not in trace.diagnostics:
                 trace.diagnostics.append(reconcile_result.policy.action)
+        route_state = None if plan.account is None else asdict(self.controller.routes.get(plan.account, regime_output.symbol))
+        return ExecutionCycleResult(regime_output=regime_output, plan=plan, receipt=receipt, local_position=local_position, verification_position=verification_position, reconcile_result=reconcile_result, decision_trace=trace, runtime_state=asdict(self.runtime_store.get()), route_state=route_state, live_positions=[asdict(position) for position in self.controller.store.list_positions()], router_composite=self.composite_simulator.snapshot(regime_output))
 
-        route_state = None
-        if plan.account is not None:
-            route_state = asdict(self.controller.routes.get(plan.account, regime_output.symbol))
+    def run_cycle(self, exchange_snapshot: ExchangePositionSnapshot | None = None) -> ExecutionCycleResult:
+        mode = self.runtime_store.get().mode
+        mode_policy = policy_for_mode(mode)
+        regime_output = self.regime_runner.run_once() if mode_policy.allow_strategy_execution else self._idle_regime_output()
+        trace = self._initial_trace(mode, mode_policy, regime_output)
+        if not mode_policy.allow_strategy_execution:
+            trace.block_reason = f'mode_no_strategy:{mode.value}'
+            trace.allow_reason = None
+            if 'strategy_execution_disabled' not in trace.diagnostics:
+                trace.diagnostics.append('strategy_execution_disabled')
+            plan = ExecutionPlan(regime='idle', account=None, action='hold', reason=trace.block_reason)
+        elif not mode_policy.allow_normal_routing:
+            trace.block_reason = f'mode_blocked:{mode.value}'
+            trace.allow_reason = None
+            trace.diagnostics.append('mode_blocked')
+            plan = ExecutionPlan(regime=regime_output.final_decision['primary'], account=None, action='hold', reason=trace.block_reason)
+        elif not trace.decision_trade_enabled:
+            if trace.block_reason is None:
+                trace.block_reason = 'decision_trade_disabled'
+            trace.allow_reason = None
+            trace.diagnostics.append('decision_gate_blocked')
+            plan = ExecutionPlan(regime=regime_output.final_decision['primary'], account=None, action='hold', reason=trace.block_reason)
+        else:
+            plan = self.build_plan(regime_output)
+        if mode_policy.force_dry_run:
+            self.adapter = DryRunExecutionAdapter()
+        return self._run_single_account_plan(regime_output, plan, trace, exchange_snapshot)
 
-        return ExecutionCycleResult(
-            regime_output=regime_output,
-            plan=plan,
-            receipt=receipt,
-            local_position=local_position,
-            verification_position=verification_position,
-            reconcile_result=reconcile_result,
-            decision_trace=trace,
-            runtime_state=asdict(self.runtime_store.get()),
-            route_state=route_state,
-            live_positions=[asdict(position) for position in self.controller.store.list_positions()],
-            router_composite=self.composite_simulator.snapshot(regime_output),
-        )
+    def run_cycle_parallel(self) -> ParallelExecutionCycleResult:
+        mode = self.runtime_store.get().mode
+        mode_policy = policy_for_mode(mode)
+        regime_output = self.regime_runner.run_once() if mode_policy.allow_strategy_execution else self._idle_regime_output()
+        if mode_policy.force_dry_run:
+            self.adapter = DryRunExecutionAdapter()
+        results: dict[str, ExecutionCycleResult] = {}
+        if not mode_policy.allow_strategy_execution or not mode_policy.allow_normal_routing:
+            trace = self._initial_trace(mode, mode_policy, regime_output)
+            trace.block_reason = f'mode_no_strategy:{mode.value}' if not mode_policy.allow_strategy_execution else f'mode_blocked:{mode.value}'
+            trace.allow_reason = None
+            plan = ExecutionPlan(regime=regime_output.final_decision['primary'], account=None, action='hold', reason=trace.block_reason)
+            results['idle'] = self._run_single_account_plan(regime_output, plan, trace, None)
+        else:
+            for strategy_name, plan in self.build_parallel_plans(regime_output).items():
+                trace = ExecutionDecisionTrace(mode=mode.value, mode_allows_routing=mode_policy.allow_normal_routing, decision_trade_enabled=True, route_trade_enabled=True, pipeline_trade_enabled=False, allow_reason=f'always_on_{strategy_name}', block_reason=None, diagnostics=['parallel_execution'])
+                results[strategy_name] = self._run_single_account_plan(regime_output, plan, trace, None)
+        return ParallelExecutionCycleResult(regime_output=regime_output, results=results, runtime_state=asdict(self.runtime_store.get()), live_positions=[asdict(position) for position in self.controller.store.list_positions()], router_composite=self.composite_simulator.snapshot(regime_output))
