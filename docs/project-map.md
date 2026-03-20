@@ -58,13 +58,14 @@ This document is the high-level orientation map for the current crypto-trading c
 
 ## Recommended reading order for work on this repo
 
-1. `README.md`
+1. `docs/README.md`
 2. `project-status.md`
-3. `multi-account-parallel-execution.md`
-4. `research-runtime-separation.md`
-5. `parameter-promotion-workflow.md`
-6. `known-gaps-and-boundaries.md`
-7. relevant code modules
+3. `TODO.md`
+4. `multi-account-parallel-execution.md`
+5. `research-runtime-separation.md`
+6. `parameter-promotion-workflow.md`
+7. `known-gaps-and-boundaries.md`
+8. relevant code modules
 
 ## Project continuity rule
 

@@ -85,7 +85,7 @@ It **is** fair to say the repo already has:
 
 ## Related docs
 
-- `README.md`
+- `docs/README.md`
 - `project-status.md`
 - `multi-account-parallel-execution.md`
 - `research-runtime-separation.md`
