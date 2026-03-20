@@ -2,6 +2,18 @@
 
 _Last updated: 2026-03-20_
 
+## Current phase
+
+The project is currently in a **historical-only research phase**.
+
+That means:
+- do not optimize around live-runtime rollout right now
+- do not constrain the work around a fixed number of live lanes
+- focus on historical strategy research only
+- use long-span 1-minute historical data as the main research driver
+
+The older "10-line model" is not the active model for this phase and should be treated as paused/deferred.
+
 ## Core direction
 
 The project is no longer centered on keeping the older 5 predefined strategy/regime pairings as the main research path.
@@ -11,32 +23,19 @@ The new research direction is:
 - test them one by one on long-span 1-minute market history
 - optimize each strategy family toward **dynamic parameters** rather than only fixed parameters
 - compare the best dynamic version from each family against other families
-- identify which families are actually useful, which are fully covered by others, and which deserve promotion into live runtime
+- identify which families are actually useful, which are fully covered by others, and which deserve promotion later
 
-## Two independent planes
+## Research scope for this phase
 
-There should be **10 independent lines** overall.
+### Historical strategy lines
+- not limited to 5
+- not capped at a fixed number
+- candidate pool is open-ended
+- actual concurrent batch size should still respect server load
 
-### Historical-dev plane (5 lines)
-- 5 strategy-development lanes
-- no exchange accounts required
-- simulated execution only
-- driven by historical 1-minute market data
-- used to discover and improve strategies before live deployment
-
-### Live-runtime plane (5 lines)
-- 5 live strategy lanes
-- each strategy/account runs in its own account
-- exchange execution path
-- used for actual live/demo operation
-
-These two planes must not contaminate each other:
-- separate state
-- separate artifacts
-- separate statistics
-- separate execution paths
-
-Cross-plane stitching should happen mainly in **weekly review**, not constantly during normal runtime.
+### Live strategy lines
+- not the current focus
+- should be treated as deferred until historical research yields stronger candidate families and dynamic-parameter logic
 
 ## Research unit
 
@@ -91,7 +90,7 @@ The candidate pool is **not capped**.
 However:
 - concurrent experiments should be batched carefully for server load reasons
 - batches should usually contain strategies from the same family
-- a first meaningful milestone is around **20 seriously tested candidates/family variants**, after which the framework should already become usable enough to start combining historical and live work more actively
+- a first meaningful milestone is around **20 seriously tested candidates/family variants**, after which the framework should already become usable enough to support later live work with much stronger priors
 
 That milestone is **not** a ceiling.
 
@@ -114,13 +113,9 @@ These should come later, on top of a strong baseline research and replay framewo
 
 ## Data rule
 
-Historical-dev should use the same main market granularity as live runtime.
-
 Current rule:
-- live runtime uses **1-minute candles**
-- historical-dev must also use **1-minute candles** as the main driver
-
-Higher timeframes such as 1H / 1D may still be useful as auxiliary context or review summaries, but not as the main replay driver.
+- historical research uses **1-minute candles** as the main driver
+- higher timeframes such as 1H / 1D may still be useful as auxiliary context or review summaries, but not as the main replay driver
 
 ## Selection and elimination rule
 
@@ -135,7 +130,7 @@ The goal is to keep only strategy families that earn their place.
 
 ## Near-term implementation meaning
 
-The next historical-dev buildout should focus on:
+The next historical buildout should focus on:
 1. long-span 1-minute data acquisition
 2. candidate-family registry
 3. family-batched backtest execution

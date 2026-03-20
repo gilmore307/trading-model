@@ -10,12 +10,11 @@ Rules:
 
 ## Reading order
 
-1. `project-status.md` — current project state and what changed recently
+1. `project-status.md` — current project state and current phase
 2. `TODO.md` — canonical current task list
-3. `project-map.md` — code/module orientation
-3. `multi-account-parallel-execution.md` — current execution model direction
-4. `research-runtime-separation.md` — offline research vs live runtime boundary
-5. `parameter-promotion-workflow.md` — historical tuning -> live activation workflow
+3. `strategy-research-framework.md` — current research operating model
+4. `strategy-candidate-pool.md` — open-ended candidate family pool
+5. `project-map.md` — code/module orientation
 6. `known-gaps-and-boundaries.md` — current limits and non-goals
 7. topic docs as needed
 
@@ -50,7 +49,7 @@ Rules:
 
 - `src/` — application code
 - `tests/` — tests
-- `scripts/` — CLI/script entrypoints
+- `scripts/` — CLI/script entrypoints (`data/`, `review/`, `runtime/`, `research/`)
 - `logs/` — runtime/research artifacts
 - `reports/` — exported review outputs
 - `docs/` — all project Markdown

@@ -52,9 +52,15 @@ systemctl restart crypto-trading.service
 ## Review scripts
 
 ```bash
-./.venv/bin/python scripts/scripts_weekly_review.py --now 2026-03-15T12:00:00+00:00
-./.venv/bin/python scripts/scripts_monthly_review.py --now 2026-03-15T12:00:00+00:00
-./.venv/bin/python scripts/scripts_quarterly_review.py --now 2026-05-15T12:00:00+00:00
+./.venv/bin/python scripts/review/weekly_review.py --now 2026-03-15T12:00:00+00:00
+./.venv/bin/python scripts/review/monthly_review.py --now 2026-03-15T12:00:00+00:00
+./.venv/bin/python scripts/review/quarterly_review.py --now 2026-05-15T12:00:00+00:00
+```
+
+## Historical data fetch
+
+```bash
+./.venv/bin/python scripts/data/fetch_okx_history_candles.py --inst-id BTC-USDT --bar 1m --pages 10
 ```
 
 ## Tests

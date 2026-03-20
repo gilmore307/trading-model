@@ -4,57 +4,38 @@ _Last updated: 2026-03-20_
 
 ## Goal
 
-Build a crypto-trading system that:
-- runs 5 live strategy accounts in parallel
-- runs 5 historical-dev research lanes independently from live runtime
-- uses long-span 1-minute historical data to develop strategy families before live promotion
+Build a crypto-trading research system that:
+- uses long-span 1-minute historical data as the main driver
+- evaluates strategy families in a historical-only phase first
 - optimizes each strategy family toward dynamic parameters
-- compares family champions before promoting anything into live runtime
+- compares family champions before considering later live promotion
 - remains auditable through persisted artifacts, tests, and current docs under `docs/`
 
 ## Current state
 
-The project is now in a **transitional but materially real** state:
+The project is now in a **historical-first transition phase**:
 
-1. **Runtime / mode system exists**
-2. **Execution / state / reconcile layer exists**
-3. **Execution artifacts and review pipeline exist**
-4. **Snapshot-based offline research exists**
-5. **Parallel multi-account execution has started landing**
-6. **Project docs have been consolidated under `docs/`**
+1. runtime / execution code exists
+2. review/report machinery exists
+3. snapshot-based offline research exists
+4. project docs have been consolidated under `docs/`
+5. strategy-family research has become the current top-level direction
 
 ## What is already real
 
-### Runtime and execution
-- `trade_daemon` is a real running daemon path.
-- runtime modes and mode policy exist and matter.
-- execution submission / verify / reconcile / recovery paths exist as real code.
-- route freeze / re-enable mechanics exist.
-- execution anomaly handling has been tightened around:
-  - missed entry cleanup
-  - forced-exit recovery
-  - excluding bad execution paths from strategy stats
+### Runtime and execution foundation
+- `trade_daemon` exists as a real daemon path
+- runtime modes and mode policy exist
+- execution submission / verify / reconcile / recovery paths exist as real code
+- execution anomaly handling was materially improved during this work session
 - execution confirmation now distinguishes stronger evidence levels:
   - trade-confirmed
   - trade-ids-confirmed
   - position-confirmed
 
-### Parallel execution direction
-- the earlier single-route-only model is no longer the target.
-- all strategy accounts are intended to run simultaneously.
-- `build_parallel_plans(...)` exists.
-- `run_cycle_parallel()` now exists.
-- daemon/artifact flow has started moving onto the parallel-cycle path.
-
-### Review and reporting
-- weekly/monthly/quarterly review runners exist.
-- execution artifacts are persisted under `logs/runtime/`.
-- review export/index plumbing exists.
-- execution-quality reporting now includes confirmation-quality distinctions and excluded-trade tracking.
-
-### Research / replay
-- `src/research/` exists and is substantial.
-- `src/runners/backtest_research.py` provides snapshot-based offline research from historical snapshot JSONL.
+### Research / replay foundation
+- `src/research/` exists and is substantial
+- `src/runners/backtest_research.py` provides snapshot-based offline research from historical snapshot JSONL
 - research outputs already cover:
   - regime quality
   - separability
@@ -63,9 +44,10 @@ The project is now in a **transitional but materially real** state:
   - parameter-search preview
 
 ### Documentation / structure
-- project Markdown now lives under `docs/` only.
-- root-level project handoff clutter was removed.
-- project-local session handoff is no longer part of the intended repo structure.
+- project Markdown now lives under `docs/` only
+- root-level project handoff clutter was removed
+- project-local session handoff is no longer part of the intended repo structure
+- canonical strategy research docs now exist under `docs/`
 
 ## What changed recently
 
@@ -74,6 +56,7 @@ The project is now in a **transitional but materially real** state:
 - removed retired closeout clutter and old backup clutter from the repo
 - moved project Markdown into `docs/`
 - moved loose root scripts into `scripts/`
+- rewrote core docs to reflect current structure and current research direction
 
 ### Runtime / execution hardening
 - `reconcile_mismatch` now still participates in alignment
@@ -82,37 +65,43 @@ The project is now in a **transitional but materially real** state:
 - missed-entry cleanup now fully clears local execution state and reenables the route
 - execution artifacts expose verification quality details
 
-### Live operations
-- runtime is under systemd via `crypto-trading.service`
-- a real demo-account anomaly on `trend / BTC-USDT-SWAP` was investigated and manually cleaned up
-- that anomaly pointed to execution-environment contamination risk between dry-run style state and live trade state
+### Strategy research direction reset
+- the older predefined 5-strategy / predefined-state framing is no longer the main research path
+- the project is now centered on family-based historical strategy research
+- candidate pool is open-ended, not capped
+- dynamic-parameter optimization is now the target for every strategy family
 
 ## Current boundaries
 
 ### True today
-- this is a real development/demo trading system, not just a scaffold
+- this is a real trading/research codebase, not just a scaffold
 - review and research are real enough to guide engineering work
-- parallel execution is now partially implemented in runtime code
+- the repo contains runtime and execution machinery that can be reused later
+
+### Not the current focus
+- live-runtime rollout is not the main phase right now
+- live-lane count is not the current organizing model
+- the historical-only phase takes priority over further live orchestration work
 
 ### Not finished yet
-- full multi-account productionized live cycle is not fully hardened yet
-- review/reporting still contains older single-route assumptions in places
 - historical replay is still snapshot-based, not raw-market replay
-- parameter promotion workflow is documented but not fully productionized end-to-end
-- execution environment isolation still needs tightening to prevent dry-run-style state contamination
+- long-span historical 1-minute data acquisition/buildout is not finished
+- family-batched research execution framework is not built yet
+- dynamic-parameter family optimization is not implemented yet
+- execution environment isolation still needs tightening before later live re-expansion
 
 ## Most important next steps
 
-1. harden multi-account parallel live execution
-2. isolate dry-run/test/live state and artifact paths more strictly
-3. finish review/report migration to true multi-account parallel semantics
-4. build raw historical market replay builder
-5. complete parameter candidate -> active live parameter promotion path
+1. acquire long-span 1-minute historical data
+2. build family-batched historical research execution
+3. define and test candidate strategy families
+4. optimize each family toward dynamic parameters
+5. compare family champions in weekly review
 
 ## Validation snapshot
 
-Recent focused validation for new execution/recovery/parallel changes passed in targeted suites during this work session.
-Use `./.venv/bin/python -m pytest -q` for a fresh full-project verification pass after the current reorganization settles.
+Recent focused validation for execution/recovery/parallel changes passed in targeted suites during this work session.
+Use `./.venv/bin/python -m pytest -q` for fresh validation after the next major implementation step.
 
 ## Canonical working TODO
 

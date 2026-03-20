@@ -4,24 +4,33 @@ _Last updated: 2026-03-20_
 
 This is the canonical current task list for the project.
 
-## P0 — immediate architecture correction
+## P0 — historical-only phase reset
 
-- [ ] harden **dry-run / test / live** state isolation
-  - split state/artifact paths or otherwise make contamination impossible
-  - ensure dry-run adapters cannot write misleading live-trade state
-- [ ] separate the project clearly into:
-  - historical-dev plane (5 research lanes, no accounts)
-  - live-runtime plane (5 live lanes, own accounts)
-- [ ] make sure the two planes do not contaminate each other in state, artifacts, statistics, or execution paths
+- [ ] treat the project as **historical-only** for the current phase
+- [ ] stop using the older “10-line model” as the active organizing model
+- [ ] keep live-runtime rollout work deferred unless it directly supports later historical-to-live promotion
+- [ ] tighten dry-run / test / live isolation anyway so later live work does not inherit bad state assumptions
 
-## P1 — historical-dev rebuild (now the main priority)
+## P1 — historical data foundation (main priority)
 
 - [ ] acquire long-span **1-minute** historical data from OKX for the target study range
-- [ ] build a canonical historical data storage layout under the project for replay/research
-- [ ] define the batch-experiment framework:
-  - run candidates by family
-  - keep batch sizes limited for server load
-  - compare candidates within a family first
+- [ ] build a canonical historical data storage layout under the project
+- [ ] add scripts/data-style structure for historical data fetch/maintenance work
+- [ ] verify exact earliest practical 1-minute history coverage and chunking strategy
+- [ ] define local retention/update workflow for minute-level history
+
+## P1 — strategy family research system
+
+- [x] define the candidate pool as **not capped**
+- [x] define the “~20 serious candidates reviewed” milestone as a usability threshold, not a hard cap
+- [x] define research by family first, then across family champions
+- [x] define dynamic-parameter optimization as the target for every family
+- [ ] add implementation status tracking to each candidate/family in the pool
+- [ ] build candidate execution status flow:
+  - idea -> specified -> implemented -> backtested -> reviewed -> promoted/rejected
+
+## P1 — first-wave family buildout
+
 - [ ] build the first historical strategy family registry
 - [ ] implement first-wave families:
   - moving average family
@@ -33,51 +42,31 @@ This is the canonical current task list for the project.
   - range/opening breakout family
   - volatility-breakout family
   - grid family
-- [ ] for every family, move from fixed-parameter baseline toward **dynamic-parameter** versions
+- [ ] for every family, start with fixed-parameter baselines, then move toward dynamic-parameter versions
 - [ ] define elimination/dominance rules so weak/covered candidates can be dropped early
-- [ ] make weekly review the place where time segments / market-style stitching is performed
+- [ ] define batch sizing rules based on server load
 
-## P1 — strategy family research framework
+## P1 — historical review workflow
 
-- [x] define the candidate pool as **not capped**
-- [x] define the “~20 serious candidates reviewed” milestone as a usability threshold, not a hard cap
-- [x] define research by family first, then across family champions
-- [ ] add implementation status tracking to each candidate/family in the pool
-- [ ] build candidate execution status flow:
-  - idea -> specified -> implemented -> backtested -> reviewed -> promoted/rejected
+- [ ] make weekly review the canonical place where time-segment / market-style stitching happens
+- [ ] compare family champions in weekly review
+- [ ] avoid unnecessary continuous market-style stitching in normal non-review workflows
+- [ ] prepare monthly/quarterly historical summary extensions after weekly review stabilizes
 
-## P1 — live runtime hardening
+## P2 — execution/research infrastructure reuse
 
-- [x] generate parallel plans for all strategy accounts
-- [x] add `run_cycle_parallel()`
-- [x] switch daemon/artifact flow onto parallel-cycle path
-- [ ] make parallel artifacts the canonical downstream review input
-- [ ] remove remaining single-route assumptions from notifier/report glue
-- [ ] verify the new parallel daemon path for several cycles after state-isolation cleanup
+- [ ] reuse useful runtime/review machinery where it helps historical research
+- [ ] keep snapshot-based offline research working as a transitional tool
+- [ ] build raw historical market replay runner
+- [ ] move historical strategy testing away from dependence on runtime-generated artifacts
 
-## P1 — execution integrity
-
-- [x] exclude missed-entry and forced-exit recovery trades from strategy stats
-- [x] record stronger verification evidence in execution artifacts
-- [ ] push trade IDs / fill IDs deeper into canonical attribution
-- [ ] add better automated repair/rebuild tools for bad local ledger state
-- [ ] improve anomaly recovery scripts for real runtime handling
-
-## P2 — review/report migration
-
-- [ ] make weekly review compare family champions and parallel live accounts cleanly
-- [ ] keep market-style stitching primarily in weekly review, not in normal runtime
-- [ ] make monthly review support family-vs-family and live-vs-historical comparison
-- [ ] make quarterly review focus on structural pruning and family retention decisions
-- [ ] reduce router-composite assumptions where they no longer match the actual model
-
-## P2 — parameter workflow
+## P2 — parameter workflow (later-stage bridge)
 
 - [x] document candidate -> publish -> activate -> rollback workflow
-- [ ] implement active live parameter override loading in runtime settings
-- [ ] emit parameter candidate artifacts from research/replay runs
-- [ ] add promotion script for candidate -> active live parameters
-- [ ] add rollback script and activation history
+- [ ] keep this workflow documented but secondary until historical family research yields strong candidates
+- [ ] later implement active live parameter override loading in runtime settings
+- [ ] later emit parameter candidate artifacts from research/replay runs
+- [ ] later add promotion script / rollback script / activation history
 
 ## P2 — future strategic targets
 
@@ -90,5 +79,5 @@ This is the canonical current task list for the project.
 - [x] remove project-local session handoff clutter
 - [x] move loose root scripts under `scripts/`
 - [x] add canonical strategy research docs
-- [ ] do one more repo-wide doc pass after the historical-dev rebuild starts landing
+- [ ] do one more repo-wide doc pass after the historical-data / family-research buildout starts landing
 - [ ] run a fresh broader test pass after the next major implementation step
