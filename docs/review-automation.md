@@ -18,9 +18,9 @@ Avoid making report generation itself depend on OpenClaw-only internals.
 
 Current runner scripts:
 
-- `scripts_weekly_review.py`
-- `scripts_monthly_review.py`
-- `scripts_quarterly_review.py`
+- `scripts/scripts_weekly_review.py`
+- `scripts/scripts_monthly_review.py`
+- `scripts/scripts_quarterly_review.py`
 
 Each script can be called directly with `.venv/bin/python` and supports `--history-path` / `--out-dir`.
 
@@ -65,19 +65,19 @@ If later moving away from OpenClaw orchestration, the same scripts can be schedu
 Example weekly cron:
 
 ```cron
-5 0 * * 6 cd /root/.openclaw/workspace/projects/crypto-trading && ./.venv/bin/python scripts_weekly_review.py >> logs/weekly-review.log 2>&1
+5 0 * * 6 cd /root/.openclaw/workspace/projects/crypto-trading && ./.venv/bin/python scripts/scripts_weekly_review.py >> logs/weekly-review.log 2>&1
 ```
 
 Example monthly cron:
 
 ```cron
-10 0 1 * * cd /root/.openclaw/workspace/projects/crypto-trading && ./.venv/bin/python scripts_monthly_review.py >> logs/monthly-review.log 2>&1
+10 0 1 * * cd /root/.openclaw/workspace/projects/crypto-trading && ./.venv/bin/python scripts/scripts_monthly_review.py >> logs/monthly-review.log 2>&1
 ```
 
 Example quarterly cron:
 
 ```cron
-15 0 1 1,4,7,10 * cd /root/.openclaw/workspace/projects/crypto-trading && ./.venv/bin/python scripts_quarterly_review.py >> logs/quarterly-review.log 2>&1
+15 0 1 1,4,7,10 * cd /root/.openclaw/workspace/projects/crypto-trading && ./.venv/bin/python scripts/scripts_quarterly_review.py >> logs/quarterly-review.log 2>&1
 ```
 
 ## Suggested operator workflow

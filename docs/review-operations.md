@@ -33,13 +33,13 @@ Convenience files maintained automatically:
 Generate a weekly review anchored to a UTC timestamp:
 
 ```bash
-./.venv/bin/python scripts_weekly_review.py --now 2026-03-15T12:00:00+00:00
+./.venv/bin/python scripts/scripts_weekly_review.py --now 2026-03-15T12:00:00+00:00
 ```
 
 Optional flags:
 
 ```bash
-./.venv/bin/python scripts_weekly_review.py \
+./.venv/bin/python scripts/scripts_weekly_review.py \
   --now 2026-03-15T12:00:00+00:00 \
   --history-path /root/.openclaw/workspace/projects/crypto-trading/logs/runtime/execution-cycles.jsonl \
   --out-dir /root/.openclaw/workspace/projects/crypto-trading/reports/trade-review
@@ -55,13 +55,13 @@ Window rule:
 Generate a monthly review anchored to a UTC timestamp:
 
 ```bash
-./.venv/bin/python scripts_monthly_review.py --now 2026-03-15T12:00:00+00:00
+./.venv/bin/python scripts/scripts_monthly_review.py --now 2026-03-15T12:00:00+00:00
 ```
 
 Optional explicit previous boundary:
 
 ```bash
-./.venv/bin/python scripts_monthly_review.py \
+./.venv/bin/python scripts/scripts_monthly_review.py \
   --now 2026-03-15T12:00:00+00:00 \
   --previous-review-end 2026-02-01T00:00:00+00:00
 ```
@@ -76,13 +76,13 @@ Window rule:
 Generate a quarterly review anchored to a UTC timestamp:
 
 ```bash
-./.venv/bin/python scripts_quarterly_review.py --now 2026-05-15T12:00:00+00:00
+./.venv/bin/python scripts/scripts_quarterly_review.py --now 2026-05-15T12:00:00+00:00
 ```
 
 Optional explicit previous boundary:
 
 ```bash
-./.venv/bin/python scripts_quarterly_review.py \
+./.venv/bin/python scripts/scripts_quarterly_review.py \
   --now 2026-05-15T12:00:00+00:00 \
   --previous-review-end 2026-01-01T00:00:00+00:00
 ```
