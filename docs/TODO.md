@@ -31,9 +31,9 @@ This is the canonical current task list for the project.
 
 ## P1 — first-wave family buildout
 
-- [ ] build the first historical strategy family registry
+- [x] build the first historical strategy family registry
 - [ ] implement first-wave families:
-  - moving average family
+  - moving average family (baseline runner started)
   - Donchian / breakout family
   - MACD family
   - Bollinger family

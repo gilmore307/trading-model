@@ -38,11 +38,13 @@ def main() -> None:
     config = family_config('moving_average')
     if config is None:
         raise RuntimeError('missing moving_average family config')
+    baseline_variants = summarize_ma_family(rows, config['baseline_variants'])
     summary = {
         'family': 'moving_average',
         'phase_goal': config['phase_goal'],
         'row_count': len(rows),
-        'baseline_variants': summarize_ma_family(rows, config['baseline_variants']),
+        'baseline_variants': baseline_variants,
+        'family_champion': baseline_variants[0] if baseline_variants else None,
         'dynamic_parameter_targets': config['dynamic_parameter_targets'],
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

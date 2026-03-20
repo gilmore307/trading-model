@@ -15,6 +15,8 @@ This first step is intentionally modest:
 
 ### Moving Average family
 
+Status: baseline registry + baseline runner implemented; full backtest and dynamic-parameter logic still pending.
+
 Current baseline variants:
 - MA 5 / 20
 - MA 8 / 24
