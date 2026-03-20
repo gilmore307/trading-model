@@ -13,7 +13,7 @@ from src.config.settings import Settings
 from src.execution.adapters import DryRunExecutionAdapter, OkxExecutionAdapter
 from src.execution.pipeline import ExecutionPipeline
 from src.runners.discord_notifier import DiscordNotifier
-from src.runners.execution_cycle import persist_execution_artifact
+from src.runners.execution_cycle import persist_parallel_execution_artifact
 from src.runtime.mode import RuntimeMode
 from src.runtime.store import RuntimeStore
 from src.runtime.workflows import OkxWorkflowHooks, RuntimeWorkflowRunner, WorkflowHooks, WorkflowRunResult, WorkflowStepResult
@@ -105,27 +105,27 @@ def main() -> None:
     while True:
         cycle_started_at = datetime.now(UTC)
         try:
-            result = pipeline.run_cycle(exchange_snapshot=None)
-            artifact = persist_execution_artifact(result)
+            result = pipeline.run_cycle_parallel()
+            artifact = persist_parallel_execution_artifact(result)
             summary = artifact.get('summary', {}) if isinstance(artifact, dict) else {}
+            primary_summary = summary.get('primary_summary') or {}
             cycle_event = {
                 'event': 'cycle_ok',
                 'observed_at': cycle_started_at,
                 'runtime_mode': summary.get('runtime_mode'),
                 'symbol': summary.get('symbol'),
                 'regime': summary.get('regime'),
-                'plan_action': summary.get('plan_action'),
-                'plan_account': summary.get('plan_account'),
-                'receipt_mode': summary.get('receipt_mode'),
-                'receipt_accepted': summary.get('receipt_accepted'),
-                'block_reason': summary.get('block_reason'),
-                'policy_reason': summary.get('policy_reason'),
-                'diagnostics': summary.get('diagnostics'),
+                'entered_accounts': summary.get('entered_accounts'),
+                'accepted_accounts': summary.get('accepted_accounts'),
+                'blocked_accounts': summary.get('blocked_accounts'),
+                'strategy_results': summary.get('strategy_results'),
             }
             _log_event(cycle_event)
 
-            notifier.notify_trade(summary, artifact)
-            notifier.notify_warning(summary)
+            for row in (artifact.get('results') or {}).values():
+                row_summary = row.get('summary', {}) if isinstance(row, dict) else {}
+                notifier.notify_trade(row_summary, row)
+                notifier.notify_warning(row_summary)
         except Exception as exc:
             error_event = {
                 'event': 'cycle_error',
