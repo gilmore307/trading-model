@@ -24,6 +24,8 @@ Rules:
 - `project-status.md`
 - `TODO.md`
 - `project-map.md`
+- `strategy-research-framework.md`
+- `strategy-candidate-pool.md`
 - `runtime-and-modes.md`
 - `environment-and-operations.md`
 - `state-and-artifacts.md`

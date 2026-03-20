@@ -5,9 +5,11 @@ _Last updated: 2026-03-20_
 ## Goal
 
 Build a crypto-trading system that:
-- runs all strategy accounts in parallel
-- keeps historical validation and live runtime operationally separate
-- lets historical parameter/research work feed live runtime through explicit publish/activate/rollback workflow
+- runs 5 live strategy accounts in parallel
+- runs 5 historical-dev research lanes independently from live runtime
+- uses long-span 1-minute historical data to develop strategy families before live promotion
+- optimizes each strategy family toward dynamic parameters
+- compares family champions before promoting anything into live runtime
 - remains auditable through persisted artifacts, tests, and current docs under `docs/`
 
 ## Current state
