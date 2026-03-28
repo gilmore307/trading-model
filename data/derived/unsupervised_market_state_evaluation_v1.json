@@ -1,0 +1,165 @@
+{
+  "labels": "data/intermediate/market_state/unsupervised_market_state_labels_v1.jsonl",
+  "utility_dataset": "data/intermediate/parameter_utility/ma_parameter_utility_dataset_v1.jsonl",
+  "symbol": "BTC-USDT-SWAP",
+  "summary": {
+    "matched_utility_rows": 8862840,
+    "cube_cell_count": 15,
+    "cluster_count": 5,
+    "weighted_avg_cluster_spread": 3.6971288467172216e-05
+  },
+  "cluster_parameter_region_cube": [
+    {
+      "cluster_id": 0,
+      "parameter_region": "fast_windows__mid_threshold",
+      "sample_count": 337280,
+      "avg_utility_1h": 0.00014325143976820612,
+      "positive_rate": 0.3652958965844402
+    },
+    {
+      "cluster_id": 0,
+      "parameter_region": "fast_windows__tight_threshold",
+      "sample_count": 337280,
+      "avg_utility_1h": 0.0001361899653677613,
+      "positive_rate": 0.42822877134724857
+    },
+    {
+      "cluster_id": 0,
+      "parameter_region": "fast_windows__wide_threshold",
+      "sample_count": 337280,
+      "avg_utility_1h": 0.00017331438987517488,
+      "positive_rate": 0.2612517789373814
+    },
+    {
+      "cluster_id": 1,
+      "parameter_region": "fast_windows__mid_threshold",
+      "sample_count": 92040,
+      "avg_utility_1h": -0.00013549431250366837,
+      "positive_rate": 0.41732942199043893
+    },
+    {
+      "cluster_id": 1,
+      "parameter_region": "fast_windows__tight_threshold",
+      "sample_count": 92040,
+      "avg_utility_1h": -0.00014297237471745032,
+      "positive_rate": 0.4518470230334637
+    },
+    {
+      "cluster_id": 1,
+      "parameter_region": "fast_windows__wide_threshold",
+      "sample_count": 92040,
+      "avg_utility_1h": 3.4659363254814223e-06,
+      "positive_rate": 0.34647979139504564
+    },
+    {
+      "cluster_id": 2,
+      "parameter_region": "fast_windows__mid_threshold",
+      "sample_count": 195820,
+      "avg_utility_1h": -0.0003324157927201544,
+      "positive_rate": 0.4501480951894597
+    },
+    {
+      "cluster_id": 2,
+      "parameter_region": "fast_windows__tight_threshold",
+      "sample_count": 195820,
+      "avg_utility_1h": -0.00038540308259785855,
+      "positive_rate": 0.4608313757532428
+    },
+    {
+      "cluster_id": 2,
+      "parameter_region": "fast_windows__wide_threshold",
+      "sample_count": 195820,
+      "avg_utility_1h": -0.0003074740109721584,
+      "positive_rate": 0.42295475436625474
+    },
+    {
+      "cluster_id": 3,
+      "parameter_region": "fast_windows__mid_threshold",
+      "sample_count": 2126280,
+      "avg_utility_1h": 0.000221892754055385,
+      "positive_rate": 0.37708345090956974
+    },
+    {
+      "cluster_id": 3,
+      "parameter_region": "fast_windows__tight_threshold",
+      "sample_count": 2126280,
+      "avg_utility_1h": 0.00021290317900926438,
+      "positive_rate": 0.4350240796132212
+    },
+    {
+      "cluster_id": 3,
+      "parameter_region": "fast_windows__wide_threshold",
+      "sample_count": 2126280,
+      "avg_utility_1h": 0.00024254354559614512,
+      "positive_rate": 0.27585172225671123
+    },
+    {
+      "cluster_id": 4,
+      "parameter_region": "fast_windows__mid_threshold",
+      "sample_count": 202860,
+      "avg_utility_1h": 0.0007361098640881728,
+      "positive_rate": 0.46952578132702355
+    },
+    {
+      "cluster_id": 4,
+      "parameter_region": "fast_windows__tight_threshold",
+      "sample_count": 202860,
+      "avg_utility_1h": 0.0007604628196952331,
+      "positive_rate": 0.48253968253968255
+    },
+    {
+      "cluster_id": 4,
+      "parameter_region": "fast_windows__wide_threshold",
+      "sample_count": 202860,
+      "avg_utility_1h": 0.0007373543473281849,
+      "positive_rate": 0.4406684412895593
+    }
+  ],
+  "cluster_separation_summary": [
+    {
+      "cluster_id": 0,
+      "cluster_sample_count": 1011840,
+      "best_region": "fast_windows__wide_threshold",
+      "best_avg_utility_1h": 0.00017331438987517488,
+      "worst_region": "fast_windows__tight_threshold",
+      "worst_avg_utility_1h": 0.0001361899653677613,
+      "spread_best_minus_worst": 3.7124424507413575e-05
+    },
+    {
+      "cluster_id": 1,
+      "cluster_sample_count": 276120,
+      "best_region": "fast_windows__wide_threshold",
+      "best_avg_utility_1h": 3.4659363254814223e-06,
+      "worst_region": "fast_windows__tight_threshold",
+      "worst_avg_utility_1h": -0.00014297237471745032,
+      "spread_best_minus_worst": 0.00014643831104293174
+    },
+    {
+      "cluster_id": 2,
+      "cluster_sample_count": 587460,
+      "best_region": "fast_windows__wide_threshold",
+      "best_avg_utility_1h": -0.0003074740109721584,
+      "worst_region": "fast_windows__tight_threshold",
+      "worst_avg_utility_1h": -0.00038540308259785855,
+      "spread_best_minus_worst": 7.792907162570013e-05
+    },
+    {
+      "cluster_id": 3,
+      "cluster_sample_count": 6378840,
+      "best_region": "fast_windows__wide_threshold",
+      "best_avg_utility_1h": 0.00024254354559614512,
+      "worst_region": "fast_windows__tight_threshold",
+      "worst_avg_utility_1h": 0.00021290317900926438,
+      "spread_best_minus_worst": 2.9640366586880745e-05
+    },
+    {
+      "cluster_id": 4,
+      "cluster_sample_count": 608580,
+      "best_region": "fast_windows__tight_threshold",
+      "best_avg_utility_1h": 0.0007604628196952331,
+      "worst_region": "fast_windows__mid_threshold",
+      "worst_avg_utility_1h": 0.0007361098640881728,
+      "spread_best_minus_worst": 2.4352955607060225e-05
+    }
+  ]
+}
