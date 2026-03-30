@@ -104,3 +104,4 @@ This is the canonical current task list for the project.
 - [x] add canonical strategy research docs
 - [ ] do one more repo-wide doc pass after the historical-data / family-research buildout starts landing
 - [ ] run a fresh broader test pass after the next major implementation step
+- [ ] finish validating the family-variant artifact builder after switching retention policy to `all tested summary + top 5 per cluster full artifact`

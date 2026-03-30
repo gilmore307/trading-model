@@ -36,6 +36,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument('--initial-equity', type=float, default=1.0)
     parser.add_argument('--limit-variants', type=int, default=0)
     parser.add_argument('--resume', action='store_true', help='Resume from already-split variant files if present.')
+    parser.add_argument('--retain-top-per-cluster', type=int, default=5)
     return parser
 
 
@@ -153,6 +154,18 @@ def _composite_variant_curve(curves_by_variant: dict[str, list[dict[str, Any]]],
     return out
 
 
+def _cluster_metrics_for_summary(summary_row: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    for state, row in sorted((summary_row.get('state_breakdown') or {}).items()):
+        out.append({
+            'cluster_id': state,
+            'trade_count': row.get('trade_count'),
+            'avg_trade_return': row.get('avg_trade_return'),
+            'positive_rate': row.get('positive_rate'),
+        })
+    return out
+
+
 def main() -> None:
     args = build_arg_parser().parse_args()
     cfg = family_config(args.family)
@@ -248,6 +261,8 @@ def main() -> None:
 
     variant_state_rank: dict[str, list[str]] = {}
     all_states = sorted({state for row in summaries for state in (row.get('state_breakdown') or {})})
+    retained_full_variant_ids: set[str] = set()
+    cluster_rankings = []
     for state in all_states:
         ranked = sorted(
             summaries,
@@ -255,6 +270,22 @@ def main() -> None:
             reverse=True,
         )
         variant_state_rank[state] = [row['variant_id'] for row in ranked]
+        top_rows = ranked[: max(0, int(args.retain_top_per_cluster))]
+        cluster_rankings.append({
+            'cluster_id': state,
+            'top_variants': [
+                {
+                    'variant_id': row['variant_id'],
+                    'rank_in_cluster': idx + 1,
+                    'avg_trade_return': (row.get('state_breakdown') or {}).get(state, {}).get('avg_trade_return'),
+                    'trade_count': (row.get('state_breakdown') or {}).get(state, {}).get('trade_count'),
+                    'positive_rate': (row.get('state_breakdown') or {}).get(state, {}).get('positive_rate'),
+                }
+                for idx, row in enumerate(top_rows)
+            ],
+        })
+        for row in top_rows:
+            retained_full_variant_ids.add(row['variant_id'])
 
     composite_curve = _composite_variant_curve(curves_by_variant, state_by_ts, variant_state_rank, cluster_by_ts)
     composite_summary = {
@@ -269,10 +300,43 @@ def main() -> None:
     variants_dir = family_dir / 'variants'
     variants_dir.mkdir(parents=True, exist_ok=True)
 
+    variant_summaries = []
+    cluster_rank_map = {
+        item['cluster_id']: {row['variant_id']: row['rank_in_cluster'] for row in item['top_variants']}
+        for item in cluster_rankings
+    }
+    for row in summaries:
+        variant_id = row['variant_id']
+        variant_summaries.append({
+            'family': args.family,
+            'variant_id': variant_id,
+            'variant': row.get('variant'),
+            'tested': True,
+            'retained_full': variant_id in retained_full_variant_ids,
+            'total_return': row.get('total_return'),
+            'max_drawdown': row.get('max_drawdown'),
+            'trade_count': row.get('trade_count') or row.get('ledger_trade_count'),
+            'win_rate': row.get('win_rate'),
+            'signal_count': row.get('signal_count'),
+            'turnover_count': row.get('turnover_count'),
+            'cluster_metrics': [
+                {
+                    **metric,
+                    'rank_in_cluster': cluster_rank_map.get(metric['cluster_id'], {}).get(variant_id),
+                }
+                for metric in _cluster_metrics_for_summary(row)
+            ],
+        })
+
     summary_payload = {
         'family': args.family,
-        'variant_count': len(summaries),
-        'summary': summaries,
+        'variant_count_total': len(variants),
+        'variant_count_evaluated': len(summaries),
+        'variant_count_retained_full': len(retained_full_variant_ids),
+        'retained_full_variant_ids': sorted(retained_full_variant_ids),
+        'cluster_rankings': cluster_rankings,
+        'composite_summary': composite_summary,
+        'summary': variant_summaries,
     }
     composite_payload = {
         'family': args.family,
@@ -284,15 +348,27 @@ def main() -> None:
     (family_dir / 'composite.json').write_text(json.dumps(composite_payload, ensure_ascii=False), encoding='utf-8')
     for variant_id, payload in variant_payloads.items():
         safe_variant = ''.join(ch for ch in variant_id if ch.isalnum() or ch in {'_', '-'})
-        (variants_dir / f'{safe_variant}.json').write_text(json.dumps(payload, ensure_ascii=False), encoding='utf-8')
+        variant_file = variants_dir / f'{safe_variant}.json'
+        if variant_id in retained_full_variant_ids:
+            retained_payload = {
+                'family': payload['family'],
+                'variant_id': payload['variant_id'],
+                'summary': payload['summary'],
+                'curve': payload.get('curve') or [],
+                'ledger': payload.get('ledger') or [],
+                'retained_full': True,
+            }
+            variant_file.write_text(json.dumps(retained_payload, ensure_ascii=False), encoding='utf-8')
+        elif variant_file.exists():
+            variant_file.unlink()
 
     # compatibility monolith for current consumers during migration
     compat_path = out_dir / f'{args.family}.json'
     compat_path.write_text(json.dumps({
         'family': args.family,
-        'summary': summaries,
-        'curves': [row for payload in variant_payloads.values() for row in payload['curve']],
-        'ledger': [row for payload in variant_payloads.values() for row in payload['ledger']],
+        'summary': variant_summaries,
+        'curves': [row for variant_id, payload in variant_payloads.items() if variant_id in retained_full_variant_ids for row in payload['curve']],
+        'ledger': [row for variant_id, payload in variant_payloads.items() if variant_id in retained_full_variant_ids for row in payload['ledger']],
         'composite': {
             'summary': composite_summary,
             'curve': composite_curve,
