@@ -35,6 +35,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument('--existing-composite', default=DEFAULT_EXISTING_COMPOSITE)
     parser.add_argument('--initial-equity', type=float, default=1.0)
     parser.add_argument('--limit-variants', type=int, default=0)
+    parser.add_argument('--resume', action='store_true', help='Resume from already-split variant files if present.')
     return parser
 
 
@@ -175,6 +176,11 @@ def main() -> None:
     if args.limit_variants and args.limit_variants > 0:
         variants = variants[: args.limit_variants]
 
+    out_dir = Path(args.out_dir)
+    family_dir = out_dir / args.family
+    variants_dir = family_dir / 'variants'
+    variants_dir.mkdir(parents=True, exist_ok=True)
+
     summaries = []
     curves_by_variant: dict[str, list[dict[str, Any]]] = {}
     variant_payloads: dict[str, dict[str, Any]] = {}
@@ -182,53 +188,70 @@ def main() -> None:
 
     for idx, variant in enumerate(variants, start=1):
         variant_id = str(variant['variant_id'])
+        safe_variant = ''.join(ch for ch in variant_id if ch.isalnum() or ch in {'_', '-'})
+        variant_path = variants_dir / f'{safe_variant}.json'
         print(json.dumps({'stage': 'variant_start', 'idx': idx, 'total': len(variants), 'variant_id': variant_id}, ensure_ascii=False), flush=True)
-        signals, metrics = _family_signals_and_metrics(args.family, candles, variant)
-        ledger = _trade_ledger_from_signals(signals, state_by_ts, family=args.family, variant_id=variant_id)
-        curve = _curve_from_signals(signals, family=args.family, variant_id=variant_id, initial_equity=args.initial_equity)
+
+        payload = None
+        if args.resume and variant_path.exists():
+            try:
+                payload = json.loads(variant_path.read_text(encoding='utf-8'))
+            except Exception:
+                payload = None
+            if payload is not None:
+                print(json.dumps({'stage': 'variant_resume_skip', 'idx': idx, 'total': len(variants), 'variant_id': variant_id, 'path': str(variant_path)}, ensure_ascii=False), flush=True)
+
+        if payload is None:
+            signals, metrics = _family_signals_and_metrics(args.family, candles, variant)
+            ledger = _trade_ledger_from_signals(signals, state_by_ts, family=args.family, variant_id=variant_id)
+            curve = _curve_from_signals(signals, family=args.family, variant_id=variant_id, initial_equity=args.initial_equity)
+
+            state_bucket: dict[str, list[float]] = {}
+            for trade in ledger:
+                state = str(trade.get('entry_state') or 'unknown')
+                pnl_pct = trade.get('pnl_pct')
+                if pnl_pct is None:
+                    continue
+                state_bucket.setdefault(state, []).append(float(pnl_pct))
+
+            summary_row = {
+                'family': args.family,
+                'variant_id': variant_id,
+                'variant': variant,
+                **metrics,
+                'ledger_trade_count': len(ledger),
+                'equity_curve_points': len(curve),
+                'state_breakdown': {
+                    state: {
+                        'trade_count': len(values),
+                        'avg_trade_return': sum(values) / len(values),
+                        'positive_rate': sum(1 for x in values if x > 0) / len(values),
+                    }
+                    for state, values in sorted(state_bucket.items()) if values
+                },
+            }
+            payload = {
+                'family': args.family,
+                'variant_id': variant_id,
+                'summary': summary_row,
+                'curve': curve,
+                'ledger': ledger,
+            }
+            variant_path.write_text(json.dumps(payload, ensure_ascii=False), encoding='utf-8')
+            print(json.dumps({'stage': 'variant_done', 'idx': idx, 'total': len(variants), 'variant_id': variant_id, 'trades': len(ledger), 'curve_points': len(curve)}, ensure_ascii=False), flush=True)
+
+        summary_row = payload['summary']
+        curve = payload.get('curve') or []
         curves_by_variant[variant_id] = curve
-
-        state_bucket: dict[str, list[float]] = {}
-        for trade in ledger:
-            state = str(trade.get('entry_state') or 'unknown')
-            pnl_pct = trade.get('pnl_pct')
-            if pnl_pct is None:
-                continue
-            state_bucket.setdefault(state, []).append(float(pnl_pct))
-        variant_state_perf[variant_id] = state_bucket
-
-        summary_row = {
-            'family': args.family,
-            'variant_id': variant_id,
-            'variant': variant,
-            **metrics,
-            'ledger_trade_count': len(ledger),
-            'equity_curve_points': len(curve),
-            'state_breakdown': {
-                state: {
-                    'trade_count': len(values),
-                    'avg_trade_return': sum(values) / len(values),
-                    'positive_rate': sum(1 for x in values if x > 0) / len(values),
-                }
-                for state, values in sorted(state_bucket.items()) if values
-            },
-        }
         summaries.append(summary_row)
-        variant_payloads[variant_id] = {
-            'family': args.family,
-            'variant_id': variant_id,
-            'summary': summary_row,
-            'curve': curve,
-            'ledger': ledger,
-        }
-        print(json.dumps({'stage': 'variant_done', 'idx': idx, 'total': len(variants), 'variant_id': variant_id, 'trades': len(ledger), 'curve_points': len(curve)}, ensure_ascii=False), flush=True)
+        variant_payloads[variant_id] = payload
 
     variant_state_rank: dict[str, list[str]] = {}
-    all_states = sorted({state for bucket in variant_state_perf.values() for state in bucket})
+    all_states = sorted({state for row in summaries for state in (row.get('state_breakdown') or {})})
     for state in all_states:
         ranked = sorted(
             summaries,
-            key=lambda row: row['state_breakdown'].get(state, {}).get('avg_trade_return', float('-inf')),
+            key=lambda row: (row.get('state_breakdown') or {}).get(state, {}).get('avg_trade_return', float('-inf')),
             reverse=True,
         )
         variant_state_rank[state] = [row['variant_id'] for row in ranked]
