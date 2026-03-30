@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT="/root/.openclaw/workspace/projects/crypto-trading"
 RUNNER="$ROOT/src/runners/build_family_variant_dashboard_artifacts.py"
 OUT_DIR="$ROOT/data/intermediate/dashboard_payloads/family_variant_dashboard"
+LOG_DIR="$ROOT/logs"
+mkdir -p "$LOG_DIR"
 
 families=("$@")
 if [ ${#families[@]} -eq 0 ]; then
@@ -41,8 +43,18 @@ is_complete() {
 for family in "${families[@]}"; do
   echo "=== ensure split artifacts: $family ==="
   until is_complete "$family"; do
-    python3 "$RUNNER" --family "$family" --resume
-    sleep 1
+    ts=$(date +%Y%m%d-%H%M%S)
+    log="$LOG_DIR/rebuild-${family}-${ts}.log"
+    echo "[$(date '+%F %T')] running family=$family log=$log"
+    if python3 "$RUNNER" --family "$family" --resume >"$log" 2>&1; then
+      echo "[$(date '+%F %T')] runner finished family=$family"
+    else
+      code=$?
+      echo "[$(date '+%F %T')] runner failed family=$family code=$code; retrying after 5s"
+      sleep 5
+    fi
   done
   echo "=== complete: $family ==="
 done
+
+echo "All requested families complete."
