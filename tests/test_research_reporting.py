@@ -1,4 +1,4 @@
-from src.research.reporting import build_research_report
+from src.research.reporting import build_market_state_report, build_research_report
 
 
 def test_build_research_report_combines_regime_quality_and_strategy_matrix():
@@ -34,3 +34,31 @@ def test_build_research_report_combines_regime_quality_and_strategy_matrix():
     assert report['strategy_ranking']['trend'][0]['strategy'] == 'trend'
     assert 'trend' in report['parameter_search_preview']
     assert len(report['parameter_search_preview']['trend']) > 0
+
+
+def test_build_market_state_report_produces_cube_summary():
+    candles = []
+    base_ts = 1700000000000
+    for i in range(140):
+        close = 100 + i * 0.3
+        candles.append({
+            'ts': base_ts + i * 60_000,
+            'timestamp': f'2024-01-01T00:{i:02d}:00+00:00',
+            'open': close - 0.5,
+            'high': close + 1.0,
+            'low': close - 1.0,
+            'close': close,
+            'vol': 100 + i,
+            'volCcyQuote': 100000 + i * 500,
+        })
+    report = build_market_state_report(
+        candles,
+        [
+            {'fast_window': 5, 'slow_window': 20, 'threshold_enter_pct': 0.0005, 'threshold_exit_pct': 0.0, 'ma_type': 'EMA', 'price_source': 'close'},
+            {'fast_window': 20, 'slow_window': 60, 'threshold_enter_pct': 0.001, 'threshold_exit_pct': 0.0005, 'ma_type': 'SMA', 'price_source': 'close'},
+        ],
+        horizon_bars=5,
+    )
+    assert report['summary']['state_row_count'] > 0
+    assert report['summary']['candidate_row_count'] > 0
+    assert report['performance_cube']['summary']['cell_count'] > 0

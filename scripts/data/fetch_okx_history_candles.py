@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 import time
 from datetime import UTC, datetime
@@ -13,6 +14,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import requests
+from requests import HTTPError
 
 OKX_HISTORY_CANDLES_URL = "https://www.okx.com/api/v5/market/history-candles"
 DEFAULT_SLEEP_SECONDS = 0.12
@@ -31,7 +33,7 @@ def parse_time_to_ms(value: str) -> int:
     return int(dt.timestamp() * 1000)
 
 
-def fetch_page(*, inst_id: str, bar: str, limit: int, after: int | None = None) -> list[list[str]]:
+def fetch_page(*, inst_id: str, bar: str, limit: int, after: int | None = None, timeout: int = 20) -> list[list[str]]:
     params = {
         "instId": inst_id,
         "bar": bar,
@@ -39,7 +41,7 @@ def fetch_page(*, inst_id: str, bar: str, limit: int, after: int | None = None) 
     }
     if after is not None:
         params["after"] = str(after)
-    resp = requests.get(OKX_HISTORY_CANDLES_URL, params=params, timeout=20)
+    resp = requests.get(OKX_HISTORY_CANDLES_URL, params=params, timeout=timeout)
     resp.raise_for_status()
     data = resp.json()
     if data.get("code") != "0":
@@ -48,6 +50,45 @@ def fetch_page(*, inst_id: str, bar: str, limit: int, after: int | None = None) 
     if not isinstance(rows, list):
         raise RuntimeError(f"unexpected OKX payload: {data}")
     return rows
+
+
+def fetch_page_with_retry(*, inst_id: str, bar: str, limit: int, after: int | None = None, max_retries: int = 12) -> list[list[str]]:
+    backoff = 2.0
+    for attempt in range(1, max_retries + 1):
+        try:
+            return fetch_page(inst_id=inst_id, bar=bar, limit=limit, after=after)
+        except HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            if status != 429 or attempt == max_retries:
+                raise
+            sleep_for = backoff + random.uniform(0, 0.8)
+            print(json.dumps({
+                "event": "retry",
+                "reason": "http_429",
+                "attempt": attempt,
+                "sleep_seconds": round(sleep_for, 2),
+                "instId": inst_id,
+                "bar": bar,
+                "after": after,
+            }, ensure_ascii=False))
+            time.sleep(sleep_for)
+            backoff = min(backoff * 1.8, 60.0)
+        except requests.RequestException:
+            if attempt == max_retries:
+                raise
+            sleep_for = backoff + random.uniform(0, 0.8)
+            print(json.dumps({
+                "event": "retry",
+                "reason": "request_exception",
+                "attempt": attempt,
+                "sleep_seconds": round(sleep_for, 2),
+                "instId": inst_id,
+                "bar": bar,
+                "after": after,
+            }, ensure_ascii=False))
+            time.sleep(sleep_for)
+            backoff = min(backoff * 1.8, 60.0)
+    raise RuntimeError("unreachable")
 
 
 def normalize_row(row: list[str], *, inst_id: str, bar: str) -> dict[str, Any]:
@@ -110,13 +151,17 @@ def fetch_history_range(
     max_pages: int | None,
     rows_by_ts: dict[int, dict[str, Any]],
     progress_every: int,
+    checkpoint_every: int,
+    output_path: Path,
 ) -> tuple[dict[int, dict[str, Any]], int]:
     after: int | None = end_ms
     pages = 0
+    if rows_by_ts:
+        after = min(rows_by_ts.keys())
     while True:
         if max_pages is not None and pages >= max_pages:
             break
-        rows = fetch_page(inst_id=inst_id, bar=bar, limit=limit, after=after)
+        rows = fetch_page_with_retry(inst_id=inst_id, bar=bar, limit=limit, after=after)
         if not rows:
             break
         pages += 1
@@ -132,6 +177,8 @@ def fetch_history_range(
                 continue
             rows_by_ts[ts] = normalized
             kept += 1
+        if pages % checkpoint_every == 0:
+            write_jsonl(rows_by_ts, output_path, only_confirmed=True)
         if pages % progress_every == 0:
             oldest = min(rows_by_ts.keys()) if rows_by_ts else None
             newest = max(rows_by_ts.keys()) if rows_by_ts else None
@@ -165,6 +212,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--end", type=str, default=None, help="Inclusive end time (ISO8601 or ms). Defaults to latest available.")
     parser.add_argument("--resume", action="store_true", help="Load and extend an existing output file.")
     parser.add_argument("--progress-every", type=int, default=100)
+    parser.add_argument("--checkpoint-every", type=int, default=25, help="Write partial progress every N pages.")
     return parser
 
 
@@ -185,6 +233,8 @@ def main() -> None:
         max_pages=args.pages,
         rows_by_ts=rows_by_ts,
         progress_every=max(1, args.progress_every),
+        checkpoint_every=max(1, args.checkpoint_every),
+        output_path=output,
     )
     write_jsonl(rows_by_ts, output, only_confirmed=not args.include_unconfirmed)
     ordered = [rows_by_ts[k] for k in sorted(rows_by_ts.keys())]

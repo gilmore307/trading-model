@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 DEFAULT_LABELS = 'data/intermediate/market_state/unsupervised_market_state_labels_v1.jsonl'
-DEFAULT_UTILITY = 'data/intermediate/parameter_utility/ma_parameter_utility_dataset_v1.jsonl'
+DEFAULT_UTILITY = 'data/intermediate/parameter_utility/strategy_parameter_utility_dataset_v1.jsonl'
 DEFAULT_OUT = 'data/derived/unsupervised_market_state_evaluation_v1.json'
 
 
@@ -42,8 +42,10 @@ def _load_cluster_by_ts(path: Path, symbol: str | None) -> dict[int, int]:
     return out
 
 
-def _evaluate(cluster_by_ts: dict[int, int], utility_path: Path) -> tuple[list[dict], list[dict], dict]:
-    agg: dict[tuple[int, str], dict] = defaultdict(lambda: {'count': 0, 'sum_utility': 0.0, 'positive': 0})
+def _evaluate(cluster_by_ts: dict[int, int], utility_path: Path) -> tuple[list[dict], list[dict], list[dict], list[dict], dict]:
+    region_agg: dict[tuple[int, str], dict] = defaultdict(lambda: {'count': 0, 'sum_utility': 0.0, 'positive': 0})
+    family_agg: dict[tuple[int, str], dict] = defaultdict(lambda: {'count': 0, 'sum_utility': 0.0, 'positive': 0})
+    variant_agg: dict[tuple[int, str, str], dict] = defaultdict(lambda: {'count': 0, 'sum_utility': 0.0, 'positive': 0})
     matched_rows = 0
     with utility_path.open('r', encoding='utf-8') as handle:
         for line in handle:
@@ -53,6 +55,8 @@ def _evaluate(cluster_by_ts: dict[int, int], utility_path: Path) -> tuple[list[d
             row = json.loads(line)
             ts = row.get('ts')
             parameter_region = row.get('parameter_region')
+            family = row.get('family')
+            variant_id = row.get('variant_id')
             utility = row.get('utility_1h')
             if ts is None or parameter_region is None or utility is None:
                 continue
@@ -60,15 +64,27 @@ def _evaluate(cluster_by_ts: dict[int, int], utility_path: Path) -> tuple[list[d
             if cluster_id is None:
                 continue
             matched_rows += 1
-            key = (cluster_id, parameter_region)
-            agg[key]['count'] += 1
-            agg[key]['sum_utility'] += float(utility)
+            region_key = (cluster_id, str(parameter_region))
+            region_agg[region_key]['count'] += 1
+            region_agg[region_key]['sum_utility'] += float(utility)
             if float(utility) > 0:
-                agg[key]['positive'] += 1
+                region_agg[region_key]['positive'] += 1
+            if family is not None:
+                family_key = (cluster_id, str(family))
+                family_agg[family_key]['count'] += 1
+                family_agg[family_key]['sum_utility'] += float(utility)
+                if float(utility) > 0:
+                    family_agg[family_key]['positive'] += 1
+            if family is not None and variant_id is not None:
+                variant_key = (cluster_id, str(family), str(variant_id))
+                variant_agg[variant_key]['count'] += 1
+                variant_agg[variant_key]['sum_utility'] += float(utility)
+                if float(utility) > 0:
+                    variant_agg[variant_key]['positive'] += 1
 
     cube_rows = []
     by_cluster: dict[int, list[dict]] = defaultdict(list)
-    for (cluster_id, parameter_region), bucket in sorted(agg.items()):
+    for (cluster_id, parameter_region), bucket in sorted(region_agg.items()):
         row = {
             'cluster_id': cluster_id,
             'parameter_region': parameter_region,
@@ -78,6 +94,27 @@ def _evaluate(cluster_by_ts: dict[int, int], utility_path: Path) -> tuple[list[d
         }
         cube_rows.append(row)
         by_cluster[cluster_id].append(row)
+
+    family_cube_rows = []
+    for (cluster_id, family), bucket in sorted(family_agg.items()):
+        family_cube_rows.append({
+            'cluster_id': cluster_id,
+            'family': family,
+            'sample_count': bucket['count'],
+            'avg_utility_1h': bucket['sum_utility'] / bucket['count'],
+            'positive_rate': bucket['positive'] / bucket['count'],
+        })
+
+    variant_cube_rows = []
+    for (cluster_id, family, variant_id), bucket in sorted(variant_agg.items()):
+        variant_cube_rows.append({
+            'cluster_id': cluster_id,
+            'family': family,
+            'variant_id': variant_id,
+            'sample_count': bucket['count'],
+            'avg_utility_1h': bucket['sum_utility'] / bucket['count'],
+            'positive_rate': bucket['positive'] / bucket['count'],
+        })
 
     separation_summary = []
     weighted_spread_sum = 0.0
@@ -90,6 +127,10 @@ def _evaluate(cluster_by_ts: dict[int, int], utility_path: Path) -> tuple[list[d
         spread = float(best['avg_utility_1h']) - float(worst['avg_utility_1h'])
         weighted_spread_sum += spread * cluster_sample_count
         weighted_count_sum += cluster_sample_count
+        family_rows = [row for row in family_cube_rows if int(row['cluster_id']) == cluster_id]
+        variant_rows = [row for row in variant_cube_rows if int(row['cluster_id']) == cluster_id]
+        best_family = sorted(family_rows, key=lambda row: row['avg_utility_1h'], reverse=True)[0] if family_rows else None
+        best_variant = sorted(variant_rows, key=lambda row: row['avg_utility_1h'], reverse=True)[0] if variant_rows else None
         separation_summary.append({
             'cluster_id': cluster_id,
             'cluster_sample_count': cluster_sample_count,
@@ -98,27 +139,36 @@ def _evaluate(cluster_by_ts: dict[int, int], utility_path: Path) -> tuple[list[d
             'worst_region': worst['parameter_region'],
             'worst_avg_utility_1h': worst['avg_utility_1h'],
             'spread_best_minus_worst': spread,
+            'best_family': None if best_family is None else best_family['family'],
+            'best_family_avg_utility_1h': None if best_family is None else best_family['avg_utility_1h'],
+            'best_variant': None if best_variant is None else best_variant['variant_id'],
+            'best_variant_family': None if best_variant is None else best_variant['family'],
+            'best_variant_avg_utility_1h': None if best_variant is None else best_variant['avg_utility_1h'],
         })
 
     summary = {
         'matched_utility_rows': matched_rows,
         'cube_cell_count': len(cube_rows),
         'cluster_count': len(by_cluster),
+        'family_cube_cell_count': len(family_cube_rows),
+        'variant_cube_cell_count': len(variant_cube_rows),
         'weighted_avg_cluster_spread': (weighted_spread_sum / weighted_count_sum) if weighted_count_sum else 0.0,
     }
-    return cube_rows, separation_summary, summary
+    return cube_rows, family_cube_rows, variant_cube_rows, separation_summary, summary
 
 
 def main() -> None:
     args = build_arg_parser().parse_args()
     cluster_by_ts = _load_cluster_by_ts(Path(args.labels), args.symbol)
-    cube_rows, separation_summary, summary = _evaluate(cluster_by_ts, Path(args.utility_dataset))
+    cube_rows, family_cube_rows, variant_cube_rows, separation_summary, summary = _evaluate(cluster_by_ts, Path(args.utility_dataset))
     output = {
         'labels': args.labels,
         'utility_dataset': args.utility_dataset,
         'symbol': args.symbol,
         'summary': summary,
         'cluster_parameter_region_cube': cube_rows,
+        'cluster_family_cube': family_cube_rows,
+        'cluster_variant_cube': variant_cube_rows,
         'cluster_separation_summary': separation_summary,
     }
     out = Path(args.out)

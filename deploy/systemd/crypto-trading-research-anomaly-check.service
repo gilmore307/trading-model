@@ -1,0 +1,13 @@
+[Unit]
+Description=crypto-trading research anomaly check
+After=crypto-trading-research-pipeline.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/.openclaw/workspace/projects/crypto-trading
+ExecStart=/root/.openclaw/workspace/projects/crypto-trading/scripts/pipeline/check_research_anomalies.sh
+User=root
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

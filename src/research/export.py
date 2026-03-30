@@ -101,3 +101,58 @@ def render_research_report_markdown(report: dict[str, Any]) -> str:
                     lines.append(f"- {key}: {row.get(key)}")
 
     return '\n'.join(lines).strip() + '\n'
+
+
+def render_market_state_report_markdown(report: dict[str, Any]) -> str:
+    summary = report.get('summary') or {}
+    state_counts = report.get('state_counts') or {}
+    cube = report.get('performance_cube') or {}
+    rows = cube.get('rows') or []
+    family_state_summary = report.get('family_state_summary') or {}
+
+    lines: list[str] = []
+    lines.append('# Market-State Report')
+    lines.append('')
+    lines.append('## Summary')
+    lines.append('')
+    if 'candidate_row_count' in summary:
+        lines.append(f"- state_row_count: {summary.get('state_row_count')}")
+        lines.append(f"- candidate_row_count: {summary.get('candidate_row_count')}")
+        lines.append(f"- horizon_bars: {summary.get('horizon_bars')}")
+    else:
+        lines.append(f"- state_row_count: {summary.get('state_row_count')}")
+        lines.append(f"- utility_row_count: {summary.get('utility_row_count')}")
+    lines.append('')
+    lines.append('## State Counts')
+    if not state_counts:
+        lines.append('')
+        lines.append('- No state rows')
+    else:
+        for key, value in sorted(state_counts.items()):
+            lines.append(f'- {key}: {value}')
+    if family_state_summary:
+        lines.append('')
+        lines.append('## Family Summary by State')
+        for state, family_rows in family_state_summary.items():
+            lines.append('')
+            lines.append(f'### {state}')
+            for row in family_rows:
+                lines.append(f"- {row.get('family')}: sample_count={row.get('sample_count')} avg_utility_1h={row.get('avg_utility_1h')} positive_rate={row.get('positive_rate')}")
+
+    lines.append('')
+    lines.append('## Performance Cube')
+    if not rows:
+        lines.append('')
+        lines.append('- No cube rows')
+    else:
+        current_state = None
+        for row in rows:
+            state = row.get('market_state')
+            if state != current_state:
+                current_state = state
+                lines.append('')
+                lines.append(f'### {state}')
+            lines.append(
+                f"- {row.get('family')} / {row.get('parameter_region')}: sample_count={row.get('sample_count')} avg_utility_1h={row.get('avg_utility_1h')} positive_rate={row.get('positive_rate')}"
+            )
+    return '\n'.join(lines).strip() + '\n'

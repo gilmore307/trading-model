@@ -177,8 +177,7 @@ def main() -> None:
 
     summaries = []
     curves_by_variant: dict[str, list[dict[str, Any]]] = {}
-    all_curves = []
-    all_ledger = []
+    variant_payloads: dict[str, dict[str, Any]] = {}
     variant_state_perf: dict[str, dict[str, list[float]]] = {}
 
     for idx, variant in enumerate(variants, start=1):
@@ -188,8 +187,6 @@ def main() -> None:
         ledger = _trade_ledger_from_signals(signals, state_by_ts, family=args.family, variant_id=variant_id)
         curve = _curve_from_signals(signals, family=args.family, variant_id=variant_id, initial_equity=args.initial_equity)
         curves_by_variant[variant_id] = curve
-        all_curves.extend(curve)
-        all_ledger.extend(ledger)
 
         state_bucket: dict[str, list[float]] = {}
         for trade in ledger:
@@ -200,7 +197,7 @@ def main() -> None:
             state_bucket.setdefault(state, []).append(float(pnl_pct))
         variant_state_perf[variant_id] = state_bucket
 
-        summaries.append({
+        summary_row = {
             'family': args.family,
             'variant_id': variant_id,
             'variant': variant,
@@ -215,7 +212,15 @@ def main() -> None:
                 }
                 for state, values in sorted(state_bucket.items()) if values
             },
-        })
+        }
+        summaries.append(summary_row)
+        variant_payloads[variant_id] = {
+            'family': args.family,
+            'variant_id': variant_id,
+            'summary': summary_row,
+            'curve': curve,
+            'ledger': ledger,
+        }
         print(json.dumps({'stage': 'variant_done', 'idx': idx, 'total': len(variants), 'variant_id': variant_id, 'trades': len(ledger), 'curve_points': len(curve)}, ensure_ascii=False), flush=True)
 
     variant_state_rank: dict[str, list[str]] = {}
@@ -230,26 +235,47 @@ def main() -> None:
 
     composite_curve = _composite_variant_curve(curves_by_variant, state_by_ts, variant_state_rank, cluster_by_ts)
     composite_summary = {
-        'selected_variant_by_state': {state: variants[0] for state, variants in variant_state_rank.items() if variants},
+        'selected_variant_by_state': {state: ranked_variants[0] for state, ranked_variants in variant_state_rank.items() if ranked_variants},
         'curve_points': len(composite_curve),
         'final_equity': None if not composite_curve else composite_curve[-1]['equity'],
         'max_drawdown': None if not composite_curve else min(float(row['drawdown']) for row in composite_curve),
     }
 
     out_dir = Path(args.out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f'{args.family}.json'
-    out_path.write_text(json.dumps({
+    family_dir = out_dir / args.family
+    variants_dir = family_dir / 'variants'
+    variants_dir.mkdir(parents=True, exist_ok=True)
+
+    summary_payload = {
+        'family': args.family,
+        'variant_count': len(summaries),
+        'summary': summaries,
+    }
+    composite_payload = {
+        'family': args.family,
+        'summary': composite_summary,
+        'curve': composite_curve,
+    }
+
+    (family_dir / 'summary.json').write_text(json.dumps(summary_payload, ensure_ascii=False), encoding='utf-8')
+    (family_dir / 'composite.json').write_text(json.dumps(composite_payload, ensure_ascii=False), encoding='utf-8')
+    for variant_id, payload in variant_payloads.items():
+        safe_variant = ''.join(ch for ch in variant_id if ch.isalnum() or ch in {'_', '-'})
+        (variants_dir / f'{safe_variant}.json').write_text(json.dumps(payload, ensure_ascii=False), encoding='utf-8')
+
+    # compatibility monolith for current consumers during migration
+    compat_path = out_dir / f'{args.family}.json'
+    compat_path.write_text(json.dumps({
         'family': args.family,
         'summary': summaries,
-        'curves': all_curves,
-        'ledger': all_ledger,
+        'curves': [row for payload in variant_payloads.values() for row in payload['curve']],
+        'ledger': [row for payload in variant_payloads.values() for row in payload['ledger']],
         'composite': {
             'summary': composite_summary,
             'curve': composite_curve,
         },
     }, ensure_ascii=False), encoding='utf-8')
-    print(json.dumps({'family': args.family, 'variants': len(summaries), 'out': str(out_path)}, ensure_ascii=False))
+    print(json.dumps({'family': args.family, 'variants': len(summaries), 'out_dir': str(family_dir), 'compat_out': str(compat_path)}, ensure_ascii=False))
 
 
 if __name__ == '__main__':

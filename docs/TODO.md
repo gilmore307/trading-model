@@ -4,7 +4,18 @@ _Last updated: 2026-03-20_
 
 This is the canonical current task list for the project.
 
-## P0 — historical-only phase reset
+## P0 — automation / continuous research pipeline
+
+- [x] add a unified research pipeline orchestrator for the BTC research chain
+- [x] add pipeline manifest/log/state output under `logs/pipeline/`
+- [x] add rule-based anomaly checks so machine-only runs can self-screen before any agent review
+- [x] add scheduler units/timers for unattended 24x7 execution
+- [x] add a first-pass dependency-aware incremental rebuild rule set to skip fresh downstream artifacts
+- [ ] add agent-escalation hooks only for repeated failures, anomalies, or major result changes
+- [x] start building first-pass trading overview artifacts (family summary / equity curves / trade ledger / composite summary)
+- [x] extend the automated pipeline from MA-only into first-pass multi-family research datasets (MA + Donchian + Bollinger)
+
+## P1 — historical-only phase reset
 
 - [ ] treat the project as **historical-only** for the current phase
 - [ ] stop using the older “10-line model” as the active organizing model
@@ -22,10 +33,13 @@ This is the canonical current task list for the project.
 ## P1 — market-state description (top priority inside research)
 
 - [x] define market-state description as prior to dynamic-parameter selection
-- [ ] define the first market-state feature inventory
-- [ ] implement feature extraction on 1-minute historical data
-- [ ] create state slices / descriptive buckets suitable for weekly review
-- [ ] map family performance against these market-state descriptions
+- [x] define the first market-state feature inventory
+- [x] define the first market-state architecture / dataset-spec layer
+- [ ] finish Bitget `mark/index` history and generate `basis_proxy`
+- [ ] implement `crypto_market_state_dataset_v1` using OKX bars + Bitget funding + Bitget basis proxy
+- [ ] run unsupervised market-state discovery baselines
+- [ ] evaluate state usefulness by MA parameter-performance separation
+- [ ] build the first `State × Family × Parameter Region` performance cube from the crypto-only dataset
 
 ## P1 — strategy family research system
 
@@ -42,7 +56,8 @@ This is the canonical current task list for the project.
 - [x] build the first historical strategy family registry
 - [ ] implement first-wave families:
   - moving average family (baseline runner started)
-  - Donchian / breakout family
+  - Donchian / breakout family (baseline runner started)
+  - Bollinger mean-reversion family (baseline runner started)
   - MACD family
   - Bollinger family
   - RSI family

@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-03-20_
+_Last updated: 2026-03-30_
 
 ## Goal
 
@@ -51,6 +51,41 @@ The project is now in a **historical-first transition phase**:
 
 ## What changed recently
 
+### Project meta-work rule
+- `docs/` should now be treated as a continuously updated meta-work layer during active development, not as a closeout-only afterthought
+- `projects/ops-dashboard/docs/` was explicitly backfilled because it had fallen behind the detailed standard already present in `projects/crypto-trading/docs/`
+
+
+### Dashboard / evaluation integration updates
+- `unsupervised_market_state_evaluation_v1.json` was expanded so it now formally carries:
+  - `cluster_parameter_region_cube`
+  - `cluster_family_cube`
+  - `cluster_variant_cube`
+  - enriched `cluster_separation_summary` rows with best-family / best-variant fields
+- the default utility dataset for `src/runners/evaluate_unsupervised_labels.py` was moved to the cross-family dataset `strategy_parameter_utility_dataset_v1.jsonl` instead of an MA-only utility file
+- this was done to support dashboard questions like “what is the best trading family / best variant in each cluster?” as first-class payloads rather than front-end approximations
+- `projects/ops-dashboard` was restructured into clearer modules:
+  - Welcome
+  - Historical Backtest
+  - Trading Performance
+  - Market State Analysis
+- Historical Backtest is being turned into the control center for instrument selection, strategy selection, artifact checklist, downloads, and load progress
+- current dashboard loading work now includes first-pass incremental reuse behavior for same-instrument family dashboards, while explicitly clearing cache for deselected families
+- Trading Performance is being narrowed back to trading/return/routing questions
+- cluster/state explanation content is being migrated toward Market State Analysis instead of remaining inside Trading Performance
+- Market State Analysis is being treated as anonymized at the module level, while State Explanation is allowed to use a controlled real-market projection instrument
+
+
+### Research pipeline automation skeleton
+- a unified research-pipeline orchestrator now exists for the BTC research chain
+- pipeline runs now write manifest/log/state artifacts under `logs/pipeline/`
+- rule-based anomaly checking now exists so routine unattended runs can remain machine-only unless escalation is actually needed
+- current automation scope covers fetch/build/label/evaluate/export for the current BTC + MA + Donchian + Bollinger + unsupervised path
+- scheduler/timer templates now exist under `deploy/systemd/`
+- the orchestrator now supports first-pass mtime-based freshness skipping for heavy downstream steps
+- richer content-aware dependency handling is still unfinished
+
+
 ### Cleanup / structure cleanup
 - removed root-level `SESSION_HANDOFF_*` files from the project
 - removed retired closeout clutter and old backup clutter from the repo
@@ -92,11 +127,11 @@ The project is now in a **historical-first transition phase**:
 
 ## Most important next steps
 
-1. acquire long-span 1-minute historical data
-2. build family-batched historical research execution
-3. define and test candidate strategy families
-4. optimize each family toward dynamic parameters
-5. compare family champions in weekly review
+1. finish Bitget `mark/index` history and generate `basis_proxy` as the long-history derivatives-context backbone alongside OKX candles
+2. implement `crypto_market_state_dataset_v1` from OKX bars + Bitget funding + Bitget basis proxy
+3. build `ma_parameter_utility_dataset_v1` for offline adaptive-parameter modeling
+4. run unsupervised market-state discovery baselines (clustering / HMM)
+5. evaluate whether discovered states separate MA family parameter performance well enough to justify dynamic adaptation
 
 ## Validation snapshot
 

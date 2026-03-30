@@ -49,6 +49,12 @@ The real research unit is a full strategy system composed of:
 3. **position sizing / capital management**
 4. **exit logic**
 
+UI / research presentation rule:
+- do **not** treat every tiny parameterized variant as its own first-class page
+- a family page should aggregate the whole family
+- the next navigation layer should usually be **parameter dimensions / parameter regions**, not one page per miniature strategy variant
+- for MA specifically, MA is a family summary layer; fast/slow windows, threshold-enter, threshold-exit, MA type, and price source are the next-level drill-down dimensions
+
 ## Family-first workflow
 
 Research should be done **by strategy family**, not by mixing all strategies together in one noisy batch.
@@ -79,6 +85,9 @@ That means:
 
 See also:
 - `market-state-description-framework.md`
+- `market-state-architecture.md`
+- `market-state-feature-inventory-v1.md`
+- `market-state-dataset-spec.md`
 
 ## Dynamic-parameter target
 
@@ -150,3 +159,4 @@ The next historical buildout should focus on:
 4. family-batched backtest execution
 5. dynamic-parameter exploration inside each family
 6. weekly review that compares family champions and time-segment strength
+amily champions and time-segment strength

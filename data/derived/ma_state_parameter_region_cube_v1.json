@@ -1,0 +1,109 @@
+{
+  "rows": [
+    {
+      "market_state": "compression",
+      "parameter_region": "fast_windows__mid_threshold",
+      "sample_count": 2667120,
+      "avg_utility_1h": 0.00021400571000835397,
+      "positive_rate": 0.3802843516602178
+    },
+    {
+      "market_state": "compression",
+      "parameter_region": "fast_windows__tight_threshold",
+      "sample_count": 2667120,
+      "avg_utility_1h": 0.0002029657085141475,
+      "positive_rate": 0.4361329823929932
+    },
+    {
+      "market_state": "compression",
+      "parameter_region": "fast_windows__wide_threshold",
+      "sample_count": 2667120,
+      "avg_utility_1h": 0.00024230791384599067,
+      "positive_rate": 0.2826734455142626
+    },
+    {
+      "market_state": "range",
+      "parameter_region": "fast_windows__mid_threshold",
+      "sample_count": 241360,
+      "avg_utility_1h": 0.00039439329406089937,
+      "positive_rate": 0.4598483592973152
+    },
+    {
+      "market_state": "range",
+      "parameter_region": "fast_windows__tight_threshold",
+      "sample_count": 241360,
+      "avg_utility_1h": 0.00040736734831670486,
+      "positive_rate": 0.4728248259860789
+    },
+    {
+      "market_state": "range",
+      "parameter_region": "fast_windows__wide_threshold",
+      "sample_count": 241360,
+      "avg_utility_1h": 0.0003752139785211303,
+      "positive_rate": 0.4305104408352668
+    },
+    {
+      "market_state": "shock",
+      "parameter_region": "fast_windows__mid_threshold",
+      "sample_count": 260,
+      "avg_utility_1h": -0.01872145181717295,
+      "positive_rate": 0.3269230769230769
+    },
+    {
+      "market_state": "shock",
+      "parameter_region": "fast_windows__tight_threshold",
+      "sample_count": 260,
+      "avg_utility_1h": -0.01907423895305088,
+      "positive_rate": 0.3269230769230769
+    },
+    {
+      "market_state": "shock",
+      "parameter_region": "fast_windows__wide_threshold",
+      "sample_count": 260,
+      "avg_utility_1h": -0.017837877533094848,
+      "positive_rate": 0.31153846153846154
+    },
+    {
+      "market_state": "transition",
+      "parameter_region": "fast_windows__mid_threshold",
+      "sample_count": 36080,
+      "avg_utility_1h": -0.0010095475502917134,
+      "positive_rate": 0.4776053215077605
+    },
+    {
+      "market_state": "transition",
+      "parameter_region": "fast_windows__tight_threshold",
+      "sample_count": 36080,
+      "avg_utility_1h": -0.0010338411306904265,
+      "positive_rate": 0.48398004434589803
+    },
+    {
+      "market_state": "transition",
+      "parameter_region": "fast_windows__wide_threshold",
+      "sample_count": 36080,
+      "avg_utility_1h": -0.0009761544421436327,
+      "positive_rate": 0.4611973392461197
+    },
+    {
+      "market_state": "trend",
+      "parameter_region": "fast_windows__mid_threshold",
+      "sample_count": 9460,
+      "avg_utility_1h": -0.00346648636062345,
+      "positive_rate": 0.4470401691331924
+    },
+    {
+      "market_state": "trend",
+      "parameter_region": "fast_windows__tight_threshold",
+      "sample_count": 9460,
+      "avg_utility_1h": -0.0035022401665726665,
+      "positive_rate": 0.4487315010570824
+    },
+    {
+      "market_state": "trend",
+      "parameter_region": "fast_windows__wide_threshold",
+      "sample_count": 9460,
+      "avg_utility_1h": -0.0034998217975198615,
+      "positive_rate": 0.44471458773784356
+    }
+  ]
+}

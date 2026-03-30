@@ -41,7 +41,7 @@ Candidates:
 - breakout with volatility filter
 - breakout with adaptive window length
 
-Status: `idea`
+Status: `implemented` (baseline family module + utility-dataset builder now present; state-aware/dynamic versions pending)
 
 ### 3. MACD family
 Candidates:
@@ -60,7 +60,7 @@ Candidates:
 - Bollinger with trend filter
 - Bollinger with volatility-conditioned width
 
-Status: `idea`
+Status: `implemented` (baseline family module + utility-dataset builder now present; state-aware/dynamic versions pending)
 
 ### 5. RSI reversal family
 Candidates:

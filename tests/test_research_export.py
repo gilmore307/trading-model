@@ -1,4 +1,4 @@
-from src.research.export import render_research_report_markdown
+from src.research.export import render_market_state_report_markdown, render_research_report_markdown
 
 
 def test_render_research_report_markdown_contains_quality_and_matrix_sections():
@@ -40,3 +40,21 @@ def test_render_research_report_markdown_contains_quality_and_matrix_sections():
     assert 'trend_bg_adx_min' in md
     assert '## Strategy × Regime Matrix' in md
     assert '#### Strategy: trend' in md
+
+
+def test_render_market_state_report_markdown_contains_cube_section():
+    report = {
+        'summary': {'state_row_count': 20, 'candidate_row_count': 40, 'horizon_bars': 60},
+        'state_counts': {'trend': 12, 'range': 8},
+        'performance_cube': {
+            'rows': [
+                {'market_state': 'trend', 'family': 'moving_average', 'parameter_region': 'fast_windows__tight_threshold', 'sample_count': 11, 'avg_utility_1h': 0.01, 'positive_rate': 0.6},
+            ],
+        },
+    }
+    md = render_market_state_report_markdown(report)
+    assert '# Market-State Report' in md
+    assert '## State Counts' in md
+    assert 'trend: 12' in md
+    assert '## Performance Cube' in md
+    assert 'moving_average / fast_windows__tight_threshold' in md

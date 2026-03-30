@@ -10,18 +10,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.research.family_registry import family_config
+from src.research.jsonl_utils import load_jsonl_rows
 from src.research.ma_family import summarize_ma_family
-
-
-def load_rows(path: Path) -> list[dict]:
-    rows = []
-    with path.open('r', encoding='utf-8') as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            rows.append(json.loads(line))
-    return rows
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -34,7 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
-    rows = load_rows(args.input)
+    rows = load_jsonl_rows(args.input, skip_invalid=True)
     config = family_config('moving_average')
     if config is None:
         raise RuntimeError('missing moving_average family config')
@@ -46,6 +36,14 @@ def main() -> None:
         'baseline_variants': baseline_variants,
         'family_champion': baseline_variants[0] if baseline_variants else None,
         'dynamic_parameter_targets': config['dynamic_parameter_targets'],
+        'parameter_schema': {
+            'fast_window': 'int',
+            'slow_window': 'int',
+            'threshold_enter_pct': 'float',
+            'threshold_exit_pct': 'float',
+            'ma_type': 'enum',
+            'price_source': 'enum',
+        },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(summary, ensure_ascii=False, indent=2))
