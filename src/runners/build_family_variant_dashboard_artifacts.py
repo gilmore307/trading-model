@@ -36,7 +36,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument('--initial-equity', type=float, default=1.0)
     parser.add_argument('--limit-variants', type=int, default=0)
     parser.add_argument('--resume', action='store_true', help='Resume from already-split variant files if present.')
-    parser.add_argument('--retain-top-per-cluster', type=int, default=5)
+    parser.add_argument('--retain-top-per-cluster', type=int, default=3)
     return parser
 
 

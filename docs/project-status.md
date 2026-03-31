@@ -20,6 +20,10 @@ The project is now in a **historical-first transition phase**:
 3. snapshot-based offline research exists
 4. project docs have been consolidated under `docs/`
 5. strategy-family research has become the current top-level direction
+6. storage/retention direction is now explicitly tightening around:
+   - aligned UTC monthly partitions for time-series datasets
+   - three-tier variant retention (`active` / `reserve` / `archived`)
+   - detailed summary retention for all tested variants even when heavy artifacts are deleted
 
 ## What is already real
 
@@ -74,6 +78,17 @@ The project is now in a **historical-first transition phase**:
 - Trading Performance is being narrowed back to trading/return/routing questions
 - cluster/state explanation content is being migrated toward Market State Analysis instead of remaining inside Trading Performance
 - Market State Analysis is being treated as anonymized at the module level, while State Explanation is allowed to use a controlled real-market projection instrument
+- current artifact direction for dashboard-facing data is now explicitly:
+  - all tested variants retain lightweight summary records
+  - active variants are the current top 1 per cluster with full heavy artifacts kept locally + in cloud
+  - reserve variants are the current top 10 per cluster (excluding the active top 1), intended for cloud-retained summary/history and later reranking under changed cluster models
+  - archived variants keep summary/history only, with heavy artifacts deleted
+  - families themselves follow the same lifecycle idea with smaller counts:
+    - top 1 per cluster = `active`
+    - top 5 per cluster = `reserve`
+    - the rest = `archived`
+  - local hot storage should only keep active heavy artifacts, while reserve/history stays in summary layers
+- family-variant summaries are also expected to retain cluster-version ranking history so the same variant can be compared across evolving cluster models
 
 
 ### Research pipeline automation skeleton

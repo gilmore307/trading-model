@@ -39,6 +39,9 @@ Rules:
 - `multi-account-parallel-execution.md`
 - `known-gaps-and-boundaries.md`
 - `documentation-policy.md`
+- `TIME_SERIES_PARTITION_POLICY.md`
+- `FAMILY_VARIANT_ARTIFACT_POLICY.md`
+- `PIPELINE_AND_ARTIFACT_OVERVIEW.md`
 
 ## Supporting docs
 
