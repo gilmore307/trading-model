@@ -36,7 +36,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument('--initial-equity', type=float, default=1.0)
     parser.add_argument('--limit-variants', type=int, default=0)
     parser.add_argument('--resume', action='store_true', help='Resume from already-split variant files if present.')
-    parser.add_argument('--retain-top-per-cluster', type=int, default=3)
+    parser.add_argument('--retain-top-per-cluster', type=int, default=1)
+    parser.add_argument('--reserve-top-per-cluster', type=int, default=10)
+    parser.add_argument('--cluster-model-version', default='v1')
+    parser.add_argument('--ranking-run-id', default='default')
     return parser
 
 
@@ -262,6 +265,7 @@ def main() -> None:
     variant_state_rank: dict[str, list[str]] = {}
     all_states = sorted({state for row in summaries for state in (row.get('state_breakdown') or {})})
     retained_full_variant_ids: set[str] = set()
+    reserve_variant_ids: set[str] = set()
     cluster_rankings = []
     for state in all_states:
         ranked = sorted(
@@ -270,10 +274,11 @@ def main() -> None:
             reverse=True,
         )
         variant_state_rank[state] = [row['variant_id'] for row in ranked]
-        top_rows = ranked[: max(0, int(args.retain_top_per_cluster))]
+        active_rows = ranked[: max(0, int(args.retain_top_per_cluster))]
+        reserve_rows = ranked[max(0, int(args.retain_top_per_cluster)): max(0, int(args.reserve_top_per_cluster))]
         cluster_rankings.append({
             'cluster_id': state,
-            'top_variants': [
+            'active_variants': [
                 {
                     'variant_id': row['variant_id'],
                     'rank_in_cluster': idx + 1,
@@ -281,11 +286,23 @@ def main() -> None:
                     'trade_count': (row.get('state_breakdown') or {}).get(state, {}).get('trade_count'),
                     'positive_rate': (row.get('state_breakdown') or {}).get(state, {}).get('positive_rate'),
                 }
-                for idx, row in enumerate(top_rows)
+                for idx, row in enumerate(active_rows)
+            ],
+            'reserve_variants': [
+                {
+                    'variant_id': row['variant_id'],
+                    'rank_in_cluster': idx + 1 + max(0, int(args.retain_top_per_cluster)),
+                    'avg_trade_return': (row.get('state_breakdown') or {}).get(state, {}).get('avg_trade_return'),
+                    'trade_count': (row.get('state_breakdown') or {}).get(state, {}).get('trade_count'),
+                    'positive_rate': (row.get('state_breakdown') or {}).get(state, {}).get('positive_rate'),
+                }
+                for idx, row in enumerate(reserve_rows)
             ],
         })
-        for row in top_rows:
+        for row in active_rows:
             retained_full_variant_ids.add(row['variant_id'])
+        for row in reserve_rows:
+            reserve_variant_ids.add(row['variant_id'])
 
     composite_curve = _composite_variant_curve(curves_by_variant, state_by_ts, variant_state_rank, cluster_by_ts)
     composite_summary = {
@@ -302,17 +319,54 @@ def main() -> None:
 
     variant_summaries = []
     cluster_rank_map = {
-        item['cluster_id']: {row['variant_id']: row['rank_in_cluster'] for row in item['top_variants']}
+        item['cluster_id']: {
+            **{row['variant_id']: row['rank_in_cluster'] for row in item['active_variants']},
+            **{row['variant_id']: row['rank_in_cluster'] for row in item['reserve_variants']},
+        }
         for item in cluster_rankings
     }
     for row in summaries:
         variant_id = row['variant_id']
+        if variant_id in retained_full_variant_ids:
+            tier = 'active'
+            active = True
+            deprecated = False
+            deprecated_reason = None
+        elif variant_id in reserve_variant_ids:
+            tier = 'reserve'
+            active = False
+            deprecated = False
+            deprecated_reason = None
+        else:
+            tier = 'archived'
+            active = False
+            deprecated = True
+            deprecated_reason = 'outside current reserve threshold under latest cluster ranking'
         variant_summaries.append({
             'family': args.family,
             'variant_id': variant_id,
             'variant': row.get('variant'),
             'tested': True,
+            'tier': tier,
             'retained_full': variant_id in retained_full_variant_ids,
+            'active': active,
+            'deprecated': deprecated,
+            'deprecated_reason': deprecated_reason,
+            'instrument': 'BTC-USDT-SWAP',
+            'bar_interval': '1m',
+            'data_start': candles[0].get('timestamp') if candles else None,
+            'data_end': candles[-1].get('timestamp') if candles else None,
+            'row_count': len(candles),
+            'partitions_used': [],
+            'cluster_rank_history': [
+                {
+                    'cluster_model_version': args.cluster_model_version,
+                    'ranking_run_id': args.ranking_run_id,
+                    'cluster_id': metric['cluster_id'],
+                    'rank_in_cluster': cluster_rank_map.get(metric['cluster_id'], {}).get(variant_id),
+                }
+                for metric in _cluster_metrics_for_summary(row)
+            ],
             'total_return': row.get('total_return'),
             'max_drawdown': row.get('max_drawdown'),
             'trade_count': row.get('trade_count') or row.get('ledger_trade_count'),
@@ -334,6 +388,9 @@ def main() -> None:
         'variant_count_evaluated': len(summaries),
         'variant_count_retained_full': len(retained_full_variant_ids),
         'retained_full_variant_ids': sorted(retained_full_variant_ids),
+        'reserve_variant_ids': sorted(reserve_variant_ids),
+        'cluster_model_version': args.cluster_model_version,
+        'ranking_run_id': args.ranking_run_id,
         'cluster_rankings': cluster_rankings,
         'composite_summary': composite_summary,
         'summary': variant_summaries,
