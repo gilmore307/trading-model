@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from src.review.compare import FLAT_COMPARE_ALIAS
+from src.review.history_loader import load_jsonl_rows
 from src.review.ingestion import canonicalize_history_row
 from src.review.performance import DEFAULT_COMPARE_ACCOUNTS
 from src.runtime.business_time import business_midnight

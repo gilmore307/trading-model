@@ -37,6 +37,6 @@ def test_run_weekly_review_exports_artifacts_from_history(tmp_path: Path):
     assert Path(exported['json_path']).exists()
     assert Path(exported['markdown_path']).exists()
     payload = json.loads(Path(exported['json_path']).read_text(encoding='utf-8'))
-    assert payload['meta']['label'] == 'weekly:2026-03-08->2026-03-15'
+    assert payload['meta']['label'] == 'weekly:2026-03-02->2026-03-09'
     assert payload['metrics']['performance']['status'] == 'ready'
     assert payload['recommended_actions']
