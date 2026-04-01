@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 RUNTIME_DIR = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime')
 RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+BUSINESS_TZ = ZoneInfo('America/New_York')
 
 
-def utc_day_stamp(now: datetime | None = None) -> str:
+def business_day_stamp(now: datetime | None = None) -> str:
     now = now or datetime.now(UTC)
-    return now.astimezone(UTC).strftime('%Y-%m-%d')
+    return now.astimezone(BUSINESS_TZ).strftime('%Y-%m-%d')
 
 
 def dated_runtime_dir(kind: str, now: datetime | None = None) -> Path:
@@ -19,4 +21,4 @@ def dated_runtime_dir(kind: str, now: datetime | None = None) -> Path:
 
 
 def dated_jsonl_path(kind: str, now: datetime | None = None) -> Path:
-    return dated_runtime_dir(kind, now) / f'{utc_day_stamp(now)}.jsonl'
+    return dated_runtime_dir(kind, now) / f'{business_day_stamp(now)}.jsonl'

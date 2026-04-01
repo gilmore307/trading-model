@@ -15,7 +15,7 @@ Tracked state includes:
 
 Primary runtime artifacts:
 - `logs/runtime/latest-execution-cycle.json`
-- `logs/runtime/execution-cycles/YYYY-MM-DD.jsonl` (UTC daily partitions)
+- `logs/runtime/execution-cycles/YYYY-MM-DD.jsonl` (business-timezone daily partitions in `America/New_York`)
 
 ## Current artifact fields of interest
 

@@ -21,7 +21,7 @@ The project is now in a **hybrid phase**:
 4. snapshot-based offline research exists
 5. project docs have been consolidated under `docs/`
 6. storage/retention direction is now explicitly tightening around:
-   - aligned UTC monthly partitions for time-series datasets
+   - aligned business-timezone monthly partitions (`America/New_York`) for time-series datasets
    - three-tier variant retention (`active` / `reserve` / `archived`)
    - detailed summary retention for all tested variants even when heavy artifacts are deleted
 

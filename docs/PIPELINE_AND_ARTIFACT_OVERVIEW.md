@@ -10,7 +10,7 @@ This overview describes the current intended pipeline for:
 - ~360 variants
 
 It reflects the latest agreed direction:
-- aligned UTC monthly partitions for time-series datasets
+- aligned business-timezone monthly partitions (`America/New_York`) for time-series datasets
 - three-tier variant retention (`active` / `reserve` / `archived`)
 - detailed family-variant summary records retained even when heavy artifacts are deleted
 
@@ -26,7 +26,7 @@ Examples:
 - basis / funding / related market data
 
 ### Retention rule
-- all time-series datasets should follow aligned UTC month partitions when practical
+- all time-series datasets should follow aligned business-timezone month partitions (`America/New_York`) when practical
 - default file unit: `YYYY-MM.jsonl`
 - target file size: 20–30 MB
 - current month can stay open/rewriteable; closed historical months should be sealed
@@ -44,7 +44,7 @@ Examples:
 - label / cluster summaries
 
 ### Retention rule
-- feature rows and labels should also move toward aligned UTC month partitions
+- feature rows and labels should also move toward aligned business-timezone month partitions (`America/New_York`)
 - small derived state summaries should be retained as long-lived lightweight artifacts
 
 ---
@@ -63,7 +63,7 @@ Examples:
 - but canonical storage must still be GitHub-friendly at the per-file level
 - monolithic whole-history files are transitional/build-time convenience artifacts only, not canonical storage
 - large research tables must use a fixed partition standard:
-  - first axis: UTC calendar month
+  - first axis: business-calendar month in `America/New_York`
   - second axis: family
   - third axis depends on table type:
     - parameter utility datasets -> `parameter-region`

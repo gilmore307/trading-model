@@ -23,7 +23,7 @@ Current operating assumption:
 
 Execution history is read from:
 
-- `logs/runtime/execution-cycles/YYYY-MM-DD.jsonl` UTC daily partitions
+- `logs/runtime/execution-cycles/YYYY-MM-DD.jsonl` business-timezone daily partitions in `America/New_York`
 
 Review reports are written to:
 

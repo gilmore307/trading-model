@@ -6,12 +6,14 @@ _Last updated: 2026-03-31_
 
 Keep all time-series data aligned across datasets while preventing single-file growth from becoming unmanageable for GitHub, dashboard loading, and incremental updates.
 
+Business timezone for partition boundaries: `America/New_York`.
+
 ## Core rule
 
 All time-series datasets should share the same partition boundaries.
 
 - Use the highest-density / fastest-growing time-series dataset as the partitioning benchmark.
-- Default partition boundary: **UTC calendar month**.
+- Default partition boundary: **business-calendar month in `America/New_York`**.
 - All aligned time-series layers should follow the same monthly cut points.
 
 ## Default partition unit
@@ -39,8 +41,8 @@ A too-large monthly monolith may exist temporarily as a build convenience, but i
 
 ## Time-zone rule
 
-All partition boundaries should use **UTC**.
-Do not mix local-time partitions with UTC partitions.
+All partition boundaries should use the project business timezone: **America/New_York**.
+Do not mix local-time partitions with different business-boundary rules.
 
 ## Open vs sealed partitions
 
