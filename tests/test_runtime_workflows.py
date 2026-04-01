@@ -48,16 +48,6 @@ class DummyHooks(WorkflowHooks):
         return super().clear_analysis_history()
 
 
-def test_review_workflow_runs_review_without_auto_transition():
-    store = RuntimeStore()
-    hooks = DummyHooks()
-    runner = RuntimeWorkflowRunner(runtime_store=store, hooks=hooks)
-    result = runner.run(RuntimeMode.REVIEW)
-    assert hooks.calls == ['run_review']
-    assert result.ended_mode == 'review'
-    assert store.get().mode == RuntimeMode.REVIEW
-
-
 def test_test_workflow_runs_dedicated_test_actions_and_returns_to_develop():
     store = RuntimeStore()
     hooks = DummyHooks()
@@ -66,16 +56,6 @@ def test_test_workflow_runs_dedicated_test_actions_and_returns_to_develop():
     assert hooks.calls == ['run_test_workflow']
     assert result.ended_mode == 'develop'
     assert store.get().mode == RuntimeMode.DEVELOP
-
-
-def test_calibrate_workflow_includes_flatten_margin_convert_verify_reset_without_auto_transition():
-    store = RuntimeStore()
-    hooks = DummyHooks()
-    runner = RuntimeWorkflowRunner(runtime_store=store, hooks=hooks)
-    result = runner.run(RuntimeMode.CALIBRATE)
-    assert hooks.calls == ['flatten', 'verify_flat', 'flatten_all_margin_positions', 'verify_margin_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:False']
-    assert result.ended_mode == 'calibrate'
-    assert store.get().mode == RuntimeMode.CALIBRATE
 
 
 def test_reset_workflow_includes_flatten_margin_convert_verify_reset_clear_history_and_returns_to_develop():

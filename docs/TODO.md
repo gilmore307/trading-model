@@ -71,10 +71,18 @@ This is the canonical current task list for the project.
 
 ## P1 — live review / historical review split
 
-- [ ] redesign live weekly review around single-account realized pnl + execution diagnostics instead of strategy comparison
-- [ ] move calibrate from weekly follow-up flow to strategy-upgrade-triggered baseline refresh
+- [x] redesign live weekly review around single-account realized pnl + execution diagnostics instead of strategy comparison
+- [x] move calibrate from weekly follow-up flow to strategy-upgrade-triggered baseline refresh
 - [ ] avoid unnecessary continuous market-style stitching in normal live-review workflows
 - [ ] decide whether monthly/quarterly live review remain first-class or become lighter aggregate summaries
+
+## P1 — runtime model cleanup / upgrade-event closure
+
+- [x] remove `review` / `calibrate` from first-class runtime mode docs and treat them as event/job concepts
+- [x] remove `review` / `calibrate` from the runtime mode enum / policy layer
+- [ ] audit runtime store / workflow callers for assumptions that `review` / `calibrate` are still valid stored modes
+- [ ] verify end-to-end strategy-upgrade flow: daemon pointer change -> request artifact -> out-of-band consumer -> upgrade review + handover marker
+- [ ] document the final operator workflow for strategy promotion, daemon hot-swap, and upgrade validation
 
 ## P2 — execution/research infrastructure reuse
 
