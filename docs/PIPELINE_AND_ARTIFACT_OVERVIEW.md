@@ -60,8 +60,16 @@ Examples:
 
 ### Retention rule
 - these can remain heavier than dashboard artifacts
-- but should not continue as uncontrolled monoliths forever
-- time should remain a partition axis, though some datasets may also need family / cluster / parameter-region partitioning
+- but canonical storage must still be GitHub-friendly at the per-file level
+- monolithic whole-history files are transitional/build-time convenience artifacts only, not canonical storage
+- large research tables must use a fixed partition standard:
+  - first axis: UTC calendar month
+  - second axis: family
+  - third axis depends on table type:
+    - parameter utility datasets -> `parameter-region`
+    - cluster/state evaluation tables -> `cluster`
+    - variant evaluation/detail tables -> `variant`
+- every such dataset must publish a lightweight summary layer in addition to the partitioned detail layer
 
 ---
 

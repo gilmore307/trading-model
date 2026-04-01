@@ -8,7 +8,8 @@ Keep family-variant dashboard artifacts useful for ranking and UI selection with
 
 This policy now sits under the broader time-series partition rule in `docs/TIME_SERIES_PARTITION_POLICY.md`:
 - time-series-heavy artifacts should be partitioned on aligned UTC month boundaries where practical
-- dashboard-facing retained heavy files should stay small and selective rather than growing as monoliths
+- retained heavy files should stay GitHub-friendly at the per-file level rather than growing as monoliths
+- a monolithic full-family payload may exist temporarily for build/debug convenience, but the canonical retained form should be summary-first plus selective retained detail files
 
 ## Retention model
 

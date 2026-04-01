@@ -28,7 +28,7 @@ This is the canonical current task list for the project.
 - [ ] build a canonical historical data storage layout under the project
 - [x] add scripts/data-style structure for historical data fetch/maintenance work
 - [ ] verify exact earliest practical 1-minute history coverage and chunking strategy
-- [ ] define local retention/update workflow for minute-level history
+- [ ] define local retention/update workflow for minute-level history using UTC-month canonical partitions with GitHub-friendly per-file size limits
 
 ## P1 — market-state description (top priority inside research)
 
@@ -116,5 +116,7 @@ This is the canonical current task list for the project.
 - [ ] continue expanding summary schema until it fully carries lifecycle state, data-range metadata, cluster-version ranking history, and family-level active/reserve/archived outputs
 - [ ] replace the current single-family placeholder `family_cluster_ranking` output with true cross-family ranking after the multi-family aggregation step is wired
 - [ ] begin migrating canonical time-series datasets toward aligned UTC monthly partitions (`docs/TIME_SERIES_PARTITION_POLICY.md`)
+- [ ] convert large research tables into fixed canonical partitions: `month / family / parameter-region`, `month / family / cluster`, or `month / family / variant` depending on table type
+- [ ] enforce the GitHub-friendly canonical-file rule so no oversized monolithic research/data artifact remains the long-term source of truth
 
 # repo-autosync smoke 2026-04-01T10:52:50+08:00

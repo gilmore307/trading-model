@@ -25,14 +25,17 @@ Examples:
 - `2024-02.jsonl`
 - `2024-03.jsonl`
 
-## File size target
+## Canonical GitHub-friendly file rule
+
+Every canonical partition file should be small enough to live in GitHub as an ordinary tracked file.
 
 Target size per file:
 - ideal: **20 MB – 30 MB**
 - acceptable: **10 MB – 30 MB**
 - hard warning threshold: **50 MB**
 
-If a monthly file still exceeds the threshold, it should be further subdivided inside the month.
+If a monthly file still exceeds the threshold, it must be further subdivided inside the month.
+A too-large monthly monolith may exist temporarily as a build convenience, but it is not a canonical storage artifact.
 
 ## Time-zone rule
 

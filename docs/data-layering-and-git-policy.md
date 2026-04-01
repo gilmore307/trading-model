@@ -61,7 +61,7 @@ Policy:
 
 ## Current practical rule
 
-For now, the following categories should remain local and untracked:
+For now, the following categories should remain local and untracked unless/until they are converted into canonical GitHub-friendly partitions/summaries:
 
 - all `data/raw/`
 - large parameter utility datasets
