@@ -480,3 +480,63 @@ class RuntimeWorkflowRunner:
         )
         self._log(result)
         return result
+
+
+def run_review_event(*, hooks: WorkflowHooks | None = None) -> WorkflowRunResult:
+    hooks = hooks or WorkflowHooks()
+    step = hooks.run_review()
+    result = WorkflowRunResult(
+        workflow='review_event',
+        started_mode=RuntimeMode.TRADE.value,
+        ended_mode=RuntimeMode.TRADE.value,
+        destructive=False,
+        steps=[step],
+        observed_at=datetime.now(UTC),
+    )
+    with WORKFLOW_LOG.open('a', encoding='utf-8') as f:
+        f.write(json.dumps(asdict(result), default=str, ensure_ascii=False) + '\n')
+    return result
+
+
+def run_calibrate_event(*, hooks: WorkflowHooks | None = None, destructive: bool = False) -> WorkflowRunResult:
+    hooks = hooks or WorkflowHooks()
+    steps = [
+        hooks.flatten_all_positions(),
+        hooks.verify_flat(),
+        hooks.flatten_all_margin_positions(),
+        hooks.verify_margin_flat(),
+        hooks.convert_non_usdt_assets(),
+        hooks.verify_startup_capital(),
+        hooks.reset_bucket_state(destructive=destructive),
+    ]
+    if destructive:
+        steps.append(hooks.clear_analysis_history())
+    result = WorkflowRunResult(
+        workflow='calibrate_event',
+        started_mode=RuntimeMode.TRADE.value,
+        ended_mode=RuntimeMode.TRADE.value,
+        destructive=destructive,
+        steps=steps,
+        observed_at=datetime.now(UTC),
+    )
+    with WORKFLOW_LOG.open('a', encoding='utf-8') as f:
+        f.write(json.dumps(asdict(result), default=str, ensure_ascii=False) + '\n')
+    return result
+
+
+def run_strategy_upgrade_event(*, hooks: WorkflowHooks | None = None, destructive: bool = False) -> dict[str, object]:
+    hooks = hooks or WorkflowHooks()
+    calibrate_result = run_calibrate_event(hooks=hooks, destructive=destructive)
+    review_result = run_review_event(hooks=hooks)
+    payload = {
+        'event': 'strategy_upgrade_event',
+        'destructive': destructive,
+        'calibrate_result': asdict(calibrate_result),
+        'review_result': asdict(review_result),
+        'started_mode': RuntimeMode.TRADE.value,
+        'ended_mode': RuntimeMode.TRADE.value,
+        'observed_at': datetime.now(UTC).isoformat(),
+    }
+    with WORKFLOW_LOG.open('a', encoding='utf-8') as f:
+        f.write(json.dumps(payload, default=str, ensure_ascii=False) + '\n')
+    return payload

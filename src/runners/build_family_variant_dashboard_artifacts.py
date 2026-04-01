@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 import sys
 from pathlib import Path
@@ -40,6 +41,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument('--reserve-top-per-cluster', type=int, default=10)
     parser.add_argument('--cluster-model-version', default='v1')
     parser.add_argument('--ranking-run-id', default='default')
+    parser.add_argument('--summary-only', action='store_true', help='Only write summary/composite outputs; skip heavy per-variant files.')
     return parser
 
 
@@ -209,7 +211,7 @@ def main() -> None:
         print(json.dumps({'stage': 'variant_start', 'idx': idx, 'total': len(variants), 'variant_id': variant_id}, ensure_ascii=False), flush=True)
 
         payload = None
-        if args.resume and variant_path.exists():
+        if (args.resume and not args.summary_only) and variant_path.exists():
             try:
                 payload = json.loads(variant_path.read_text(encoding='utf-8'))
             except Exception:
@@ -253,8 +255,9 @@ def main() -> None:
                 'curve': curve,
                 'ledger': ledger,
             }
-            variant_path.write_text(json.dumps(payload, ensure_ascii=False), encoding='utf-8')
-            print(json.dumps({'stage': 'variant_done', 'idx': idx, 'total': len(variants), 'variant_id': variant_id, 'trades': len(ledger), 'curve_points': len(curve)}, ensure_ascii=False), flush=True)
+            if not args.summary_only:
+                variant_path.write_text(json.dumps(payload, ensure_ascii=False), encoding='utf-8')
+            print(json.dumps({'stage': 'variant_done', 'idx': idx, 'total': len(variants), 'variant_id': variant_id, 'trades': len(ledger), 'curve_points': len(curve), 'summary_only': bool(args.summary_only)}, ensure_ascii=False), flush=True)
 
         summary_row = payload['summary']
         curve = payload.get('curve') or []
@@ -352,6 +355,9 @@ def main() -> None:
             'active': active,
             'deprecated': deprecated,
             'deprecated_reason': deprecated_reason,
+            'cluster_model_version': args.cluster_model_version,
+            'ranking_run_id': args.ranking_run_id,
+            'ranking_timestamp': datetime.now(timezone.utc).isoformat(),
             'instrument': 'BTC-USDT-SWAP',
             'bar_interval': '1m',
             'data_start': candles[0].get('timestamp') if candles else None,
@@ -380,17 +386,59 @@ def main() -> None:
                 }
                 for metric in _cluster_metrics_for_summary(row)
             ],
+            'notes': None,
         })
 
     summary_payload = {
         'family': args.family,
+        'tier': 'active',
+        'active': True,
+        'deprecated': False,
+        'deprecated_reason': None,
+        'family_rank_policy': {
+            'active_top_per_cluster': 1,
+            'reserve_top_per_cluster': 5,
+        },
+        'variant_rank_policy': {
+            'active_top_per_cluster': int(args.retain_top_per_cluster),
+            'reserve_top_per_cluster': int(args.reserve_top_per_cluster),
+        },
         'variant_count_total': len(variants),
         'variant_count_evaluated': len(summaries),
         'variant_count_retained_full': len(retained_full_variant_ids),
         'retained_full_variant_ids': sorted(retained_full_variant_ids),
         'reserve_variant_ids': sorted(reserve_variant_ids),
+        'archived_variant_count': max(0, len(summaries) - len(retained_full_variant_ids) - len(reserve_variant_ids)),
         'cluster_model_version': args.cluster_model_version,
         'ranking_run_id': args.ranking_run_id,
+        'ranking_timestamp': datetime.now(timezone.utc).isoformat(),
+        'family_rank_history': [],
+        'family_cluster_ranking': [
+            {
+                'cluster_id': item['cluster_id'],
+                'family_rank_in_cluster': 1,
+                'family_tier_in_cluster': 'active',
+                'family_active': True,
+                'family_deprecated': False,
+            }
+            for item in cluster_rankings
+        ],
+        'active_variant_ids_by_cluster': {
+            item['cluster_id']: [row['variant_id'] for row in item['active_variants']]
+            for item in cluster_rankings
+        },
+        'reserve_variant_ids_by_cluster': {
+            item['cluster_id']: [row['variant_id'] for row in item['reserve_variants']]
+            for item in cluster_rankings
+        },
+        'archived_variant_ids_by_cluster': {
+            item['cluster_id']: [
+                row['variant_id'] for row in variant_summaries
+                if any(cm.get('cluster_id') == item['cluster_id'] for cm in (row.get('cluster_metrics') or []))
+                and row.get('tier') == 'archived'
+            ]
+            for item in cluster_rankings
+        },
         'cluster_rankings': cluster_rankings,
         'composite_summary': composite_summary,
         'summary': variant_summaries,
@@ -403,21 +451,26 @@ def main() -> None:
 
     (family_dir / 'summary.json').write_text(json.dumps(summary_payload, ensure_ascii=False), encoding='utf-8')
     (family_dir / 'composite.json').write_text(json.dumps(composite_payload, ensure_ascii=False), encoding='utf-8')
-    for variant_id, payload in variant_payloads.items():
-        safe_variant = ''.join(ch for ch in variant_id if ch.isalnum() or ch in {'_', '-'})
-        variant_file = variants_dir / f'{safe_variant}.json'
-        if variant_id in retained_full_variant_ids:
-            retained_payload = {
-                'family': payload['family'],
-                'variant_id': payload['variant_id'],
-                'summary': payload['summary'],
-                'curve': payload.get('curve') or [],
-                'ledger': payload.get('ledger') or [],
-                'retained_full': True,
-            }
-            variant_file.write_text(json.dumps(retained_payload, ensure_ascii=False), encoding='utf-8')
-        elif variant_file.exists():
-            variant_file.unlink()
+    if args.summary_only:
+        if variants_dir.exists():
+            for path in variants_dir.glob('*.json'):
+                path.unlink()
+    else:
+        for variant_id, payload in variant_payloads.items():
+            safe_variant = ''.join(ch for ch in variant_id if ch.isalnum() or ch in {'_', '-'})
+            variant_file = variants_dir / f'{safe_variant}.json'
+            if variant_id in retained_full_variant_ids:
+                retained_payload = {
+                    'family': payload['family'],
+                    'variant_id': payload['variant_id'],
+                    'summary': payload['summary'],
+                    'curve': payload.get('curve') or [],
+                    'ledger': payload.get('ledger') or [],
+                    'retained_full': True,
+                }
+                variant_file.write_text(json.dumps(retained_payload, ensure_ascii=False), encoding='utf-8')
+            elif variant_file.exists():
+                variant_file.unlink()
 
     # compatibility monolith for current consumers during migration
     compat_path = out_dir / f'{args.family}.json'

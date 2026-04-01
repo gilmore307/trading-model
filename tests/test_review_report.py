@@ -29,7 +29,7 @@ def test_report_scaffold_surfaces_attribution_confidence():
     assert 'high_confidence_attribution:trend' in report['metrics']['performance_summary']['insights']
 
 
-def test_weekly_report_scaffold_includes_compare_sections():
+def test_weekly_report_scaffold_includes_live_review_sections():
     window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
     compare_snapshot = {
         'accounts': [{'account': 'trend', 'label': 'Trend'}],
@@ -40,13 +40,13 @@ def test_weekly_report_scaffold_includes_compare_sections():
     }
     report = build_report_scaffold(window, compare_snapshot, metrics_by_account)
     section_keys = [section['key'] for section in report['sections']]
-    assert 'account_comparison' in section_keys
-    assert 'router_composite_review' in section_keys
+    assert 'live_performance_summary' in section_keys
+    assert 'execution_deviation_review' in section_keys
     assert report['compare_snapshot']['highlights'] == ['router_selected:trend']
     assert report['metrics']['performance']['status'] == 'ready'
     trend_row = next(row for row in report['metrics']['performance']['accounts'] if row['account'] == 'trend')
     assert trend_row['pnl_usdt'] == 12.5
-    assert report['parameter_candidates']['auto_candidate_params']
+    assert report['parameter_candidates']['auto_candidate_params'] == []
 
 
 def test_report_scaffold_can_aggregate_from_history(tmp_path: Path):
@@ -126,7 +126,7 @@ def test_quarterly_report_scaffold_includes_structural_review_section():
     report = build_report_scaffold(window)
     section_keys = [section['key'] for section in report['sections']]
     assert 'structural_review' in section_keys
-    assert report['parameter_candidates']['structural_params']
+    assert report['parameter_candidates']['structural_params'] == []
 
 
 def test_report_scaffold_builds_readable_performance_summary():
@@ -164,14 +164,14 @@ def test_report_scaffold_populates_operator_facing_sections():
         },
     )
     sections = {section['key']: section for section in report['sections']}
-    assert sections['account_comparison']['status'] == 'ready'
-    assert sections['account_comparison']['items'][0]['kind'] == 'leaderboard'
-    assert sections['router_composite_review']['status'] == 'ready'
-    assert sections['router_composite_review']['items'][0]['kind'] == 'router_vs_best_strategy'
-    assert 'router_selected:trend' in sections['router_composite_review']['highlights']
+    assert sections['live_performance_summary']['status'] == 'ready'
+    assert sections['live_performance_summary']['items'][0]['kind'] == 'leaderboard'
+    assert sections['execution_deviation_review']['status'] == 'ready'
+    assert sections['execution_deviation_review']['items'][0]['kind'] == 'router_vs_best_strategy'
+    assert 'router_selected:trend' in sections['execution_deviation_review']['highlights']
 
 
-def test_report_scaffold_populates_parameter_candidates_from_performance_signals():
+def test_report_scaffold_populates_execution_improvement_items_from_performance_signals():
     window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
     report = build_report_scaffold(
         window,
@@ -182,14 +182,14 @@ def test_report_scaffold_populates_parameter_candidates_from_performance_signals
             'flat_compare': {'pnl_usdt': 3.0, 'fee_usdt': 0.0, 'equity_change_usdt': 3.0, 'source': 'baseline'},
         },
     )
-    parameter_section = next(section for section in report['sections'] if section['key'] == 'parameter_review')
-    candidate_names = [item['name'] for item in parameter_section['items'] if item.get('kind') == 'candidate']
-    assert 'fee_burden_frequency_gate' in candidate_names
-    assert 'cooldown_seconds' in candidate_names
-    assert 'entry_threshold' in candidate_names
+    section = next(section for section in report['sections'] if section['key'] == 'execution_improvement_review')
+    item_names = [item['name'] for item in section['items'] if item.get('kind') == 'improvement']
+    assert 'trade_frequency_review' in item_names
+    assert 'order_timing_and_cooldown_review' in item_names
+    assert 'negative_live_pnl_review' in item_names
 
 
-def test_report_scaffold_adds_high_exposure_candidate_signal():
+def test_report_scaffold_adds_high_exposure_execution_signal():
     window = build_weekly_window(datetime(2026, 3, 15, 12, 0, tzinfo=UTC))
     report = build_report_scaffold(
         window,
@@ -199,13 +199,13 @@ def test_report_scaffold_adds_high_exposure_candidate_signal():
             'flat_compare': {'pnl_usdt': 1.0, 'fee_usdt': 0.0, 'equity_change_usdt': 1.0, 'source': 'baseline'},
         },
     )
-    parameter_section = next(section for section in report['sections'] if section['key'] == 'parameter_review')
-    confidence_rows = [item for item in parameter_section['items'] if item.get('name') == 'confidence_gate']
-    assert confidence_rows
-    assert confidence_rows[0]['target_account'] == 'trend'
+    section = next(section for section in report['sections'] if section['key'] == 'execution_improvement_review')
+    rows = [item for item in section['items'] if item.get('name') == 'position_drift_review']
+    assert rows
+    assert rows[0]['target_account'] == 'trend'
 
 
-def test_monthly_report_marks_router_switch_gating_discuss_first_when_router_underperforms():
+def test_monthly_report_marks_strategy_upgrade_calibrate_check_when_router_underperforms():
     window = build_monthly_window(
         datetime(2026, 2, 1, 0, 0, tzinfo=UTC),
         datetime(2026, 3, 1, 0, 0, tzinfo=UTC),
@@ -218,12 +218,10 @@ def test_monthly_report_marks_router_switch_gating_discuss_first_when_router_und
             'flat_compare': {'pnl_usdt': 1.0, 'fee_usdt': 0.0, 'equity_change_usdt': 1.0, 'source': 'baseline'},
         },
     )
-    parameter_section = next(section for section in report['sections'] if section['key'] == 'parameter_review')
-    router_rows = [item for item in parameter_section['items'] if item.get('name') == 'router_switch_gating']
+    section = next(section for section in report['sections'] if section['key'] == 'execution_improvement_review')
+    router_rows = [item for item in section['items'] if item.get('name') == 'strategy_upgrade_calibrate_check']
     assert router_rows
-    assert router_rows[0]['status'] == 'discuss_first'
-    seeded_discuss = {row['name']: row['status'] for row in parameter_section['seeded_discuss_first']}
-    assert seeded_discuss['router_switch_gating'] == 'discuss_first'
+    assert router_rows[0]['status'] == 'upgrade_event_only'
 
 
 def test_report_scaffold_builds_executive_summary_and_actions():
@@ -240,7 +238,7 @@ def test_report_scaffold_builds_executive_summary_and_actions():
     assert report['executive_summary']['status'] == 'ready'
     assert any('Top account:' in line for line in report['executive_summary']['bullets'])
     assert report['recommended_actions']
-    assert any(action['title'] == 'Review fee_burden_frequency_gate' for action in report['recommended_actions'])
+    assert any(action['title'] == 'Review trade_frequency_review' for action in report['recommended_actions'])
     assert report['narrative_blocks']
     assert report['narrative_blocks'][0]['key'] == 'executive_summary'
 

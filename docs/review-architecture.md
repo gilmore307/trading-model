@@ -7,7 +7,7 @@ _Last updated: 2026-03-20_
 The review system turns runtime execution history into:
 - weekly/monthly/quarterly assessments
 - operator-readable execution diagnostics
-- parameter discussion inputs
+- realized live-performance summaries for the promoted live strategy
 - portable JSON/Markdown report artifacts
 
 ## High-level pipeline
@@ -24,19 +24,13 @@ Current review flow:
 
 ## Runtime artifact reality
 
-There are now two runtime artifact layers:
+The review path should now assume a single promoted live strategy running in one real account.
 
 ### Single-cycle account artifacts
 - `logs/runtime/latest-execution-cycle.json`
 - `logs/runtime/execution-cycles.jsonl`
 
-These still exist and remain useful as per-account rows.
-
-### Parallel-cycle artifacts
-- `logs/runtime/latest-parallel-execution-cycle.json`
-- `logs/runtime/parallel-execution-cycles.jsonl`
-
-These reflect the newer intended model where all strategy accounts run in the same shared market cycle.
+These are the primary review inputs for live operations.
 
 ## Module responsibilities
 
@@ -47,17 +41,17 @@ These reflect the newer intended model where all strategy accounts run in the sa
 ### `src/review/aggregator.py`
 - load JSONL execution history
 - derive cross-cycle metrics such as trade counts, fees, funding, pnl/equity snapshots
-- provide per-account aggregated metrics for reports
+- provide live-account aggregated metrics for reports
 
 ### `src/review/performance.py`
-- guarantee a stable row schema across known accounts
-- keep known-account expansion deterministic
+- guarantee a stable row schema for the active live-account review path
+- keep exported performance summaries deterministic
 
 ### `src/review/report.py`
 - build operator-facing report structure
 - build performance summaries
 - build execution-quality summaries
-- build parameter/recommendation sections
+- build live-operations recommendations and deviation summaries
 
 ### `src/review/export.py`
 - export structured review reports to JSON and Markdown
@@ -70,38 +64,28 @@ A review report currently contains combinations of:
 - `sections`
 - `metrics.performance`
 - `metrics.performance_summary`
-- `parameter_candidates`
 - `executive_summary`
 - `recommended_actions`
 - `narrative_blocks`
 - execution-quality / anomaly summaries
 
-## Important transition note
-
-Older review/report layers still contain router-composite assumptions in places.
-Those should now be treated as transitional.
-
-The intended direction is:
-- compare all live strategy accounts directly
-- review weekly/monthly/quarterly windows using parallel live-account evidence
-- reduce dependence on “single routed winner” framing
-
 ## Review cadences
 
 ### Weekly
-- operational calibration
-- execution quality checks
-- account comparison for the completed week
+- canonical live-operations review cadence
+- realized live-pnl / equity summary for the completed week
+- theoretical-signal vs actual-execution deviation review
+- execution quality checks while trading can continue
 
 ### Monthly
-- multi-week stability review
-- strategy/account comparison
-- parameter discussion
+- multi-week realized live-performance summary
+- execution deviation trend review
+- operational stability review
 
 ### Quarterly
-- structural review
-- regime coverage / pruning discussion
-- long-horizon system fitness
+- structural execution-system review
+- long-horizon live-operations stability review
+- broker / exchange / runtime integration review
 
 ## Current strengths
 
@@ -110,20 +94,18 @@ The review stack already has:
 - portable file export
 - execution-quality reporting
 - excluded-trade tracking
-- parameter discussion scaffolding
+- a usable cadence structure for weekly/monthly/quarterly live reporting
 
 ## Current limitations
 
 Still improving:
-- full migration to multi-account parallel semantics
-- deeper market-regime narrative sections
+- full simplification away from multi-account / router-composite legacy framing
+- clearer theoretical-signal vs actual-execution reporting
 - canonical realized/unrealized/funding semantics
-- less dependence on legacy router-composite framing
+- cleaner separation between live review and historical model optimization
 
 ## Related docs
 
 - `execution-artifacts.md`
-- `multi-account-parallel-execution.md`
 - `review-operations.md`
 - `review-automation.md`
-- `router-composite.md`

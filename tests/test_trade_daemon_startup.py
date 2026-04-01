@@ -58,20 +58,14 @@ def test_ensure_trade_start_ready_returns_none_when_startup_ready():
     assert store.get().mode == RuntimeMode.TRADE
 
 
-def test_ensure_trade_start_ready_runs_calibrate_when_startup_not_ready():
+def test_ensure_trade_start_ready_returns_readiness_event_without_calibrate_mode_switch():
     store = RuntimeStore()
     store.set_mode(RuntimeMode.TRADE, reason='daemon_start_trade_mode')
     hooks = NeedsCalibrateHooks()
     result = ensure_trade_start_ready(settings=object(), runtime_store=store, hooks=hooks)
     assert result is not None
-    assert result.workflow == 'calibrate'
+    assert result.workflow == 'startup_readiness_check'
+    assert result.started_mode == 'trade'
     assert result.ended_mode == 'trade'
-    assert hooks.calls == [
-        'verify_startup_capital',
-        'flatten_all_positions',
-        'verify_flat',
-        'convert_non_usdt_assets',
-        'verify_startup_capital',
-        'reset_bucket_state:False',
-    ]
+    assert hooks.calls == ['verify_startup_capital']
     assert store.get().mode == RuntimeMode.TRADE

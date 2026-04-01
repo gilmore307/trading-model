@@ -1,6 +1,6 @@
 from src.runtime.mode import RuntimeMode
 from src.runtime.store import RuntimeStore
-from src.runtime.workflows import RuntimeWorkflowRunner, WorkflowHooks
+from src.runtime.workflows import RuntimeWorkflowRunner, WorkflowHooks, run_calibrate_event, run_review_event, run_strategy_upgrade_event
 
 
 class DummyHooks(WorkflowHooks):
@@ -48,14 +48,14 @@ class DummyHooks(WorkflowHooks):
         return super().clear_analysis_history()
 
 
-def test_review_workflow_runs_review_and_returns_to_calibrate():
+def test_review_workflow_runs_review_without_auto_transition():
     store = RuntimeStore()
     hooks = DummyHooks()
     runner = RuntimeWorkflowRunner(runtime_store=store, hooks=hooks)
     result = runner.run(RuntimeMode.REVIEW)
     assert hooks.calls == ['run_review']
-    assert result.ended_mode == 'calibrate'
-    assert store.get().mode == RuntimeMode.CALIBRATE
+    assert result.ended_mode == 'review'
+    assert store.get().mode == RuntimeMode.REVIEW
 
 
 def test_test_workflow_runs_dedicated_test_actions_and_returns_to_develop():
@@ -68,14 +68,14 @@ def test_test_workflow_runs_dedicated_test_actions_and_returns_to_develop():
     assert store.get().mode == RuntimeMode.DEVELOP
 
 
-def test_calibrate_workflow_includes_flatten_margin_convert_verify_reset_and_returns_to_trade():
+def test_calibrate_workflow_includes_flatten_margin_convert_verify_reset_without_auto_transition():
     store = RuntimeStore()
     hooks = DummyHooks()
     runner = RuntimeWorkflowRunner(runtime_store=store, hooks=hooks)
     result = runner.run(RuntimeMode.CALIBRATE)
     assert hooks.calls == ['flatten', 'verify_flat', 'flatten_all_margin_positions', 'verify_margin_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:False']
-    assert result.ended_mode == 'trade'
-    assert store.get().mode == RuntimeMode.TRADE
+    assert result.ended_mode == 'calibrate'
+    assert store.get().mode == RuntimeMode.CALIBRATE
 
 
 def test_reset_workflow_includes_flatten_margin_convert_verify_reset_clear_history_and_returns_to_develop():
@@ -86,3 +86,38 @@ def test_reset_workflow_includes_flatten_margin_convert_verify_reset_clear_histo
     assert hooks.calls == ['flatten', 'verify_flat', 'flatten_all_margin_positions', 'verify_margin_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:True', 'clear_analysis_history']
     assert result.ended_mode == 'develop'
     assert store.get().mode == RuntimeMode.DEVELOP
+
+
+def test_review_event_runs_without_mode_switching():
+    hooks = DummyHooks()
+    result = run_review_event(hooks=hooks)
+    assert hooks.calls == ['run_review']
+    assert result.workflow == 'review_event'
+    assert result.started_mode == 'trade'
+    assert result.ended_mode == 'trade'
+
+
+def test_calibrate_event_runs_without_mode_switching():
+    hooks = DummyHooks()
+    result = run_calibrate_event(hooks=hooks)
+    assert hooks.calls == ['flatten', 'verify_flat', 'flatten_all_margin_positions', 'verify_margin_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:False']
+    assert result.workflow == 'calibrate_event'
+    assert result.started_mode == 'trade'
+    assert result.ended_mode == 'trade'
+
+
+def test_calibrate_event_supports_destructive_cleanup_variant():
+    hooks = DummyHooks()
+    result = run_calibrate_event(hooks=hooks, destructive=True)
+    assert hooks.calls == ['flatten', 'verify_flat', 'flatten_all_margin_positions', 'verify_margin_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:True', 'clear_analysis_history']
+    assert result.workflow == 'calibrate_event'
+    assert result.destructive is True
+
+
+def test_strategy_upgrade_event_runs_calibrate_and_review_without_mode_switching():
+    hooks = DummyHooks()
+    payload = run_strategy_upgrade_event(hooks=hooks)
+    assert hooks.calls == ['flatten', 'verify_flat', 'flatten_all_margin_positions', 'verify_margin_flat', 'convert_non_usdt_assets', 'verify_startup_capital', 'reset_bucket_state:False', 'run_review']
+    assert payload['event'] == 'strategy_upgrade_event'
+    assert payload['started_mode'] == 'trade'
+    assert payload['ended_mode'] == 'trade'

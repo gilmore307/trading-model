@@ -30,6 +30,11 @@ Primary runtime artifacts:
 - If a bucket has an open position and the strategy flips to the opposite side, the runner first closes the existing tracked position.
 - In demo-submit mode, exit orders are sent as reduce-only market orders using the tracked contract amount from the entry.
 
+## Strategy-upgrade position rule
+
+- If the active strategy version changes while a live position is open, the system should treat that as a strategy-switch/ownership-transition case rather than a mandatory upgrade-time flatten.
+- Upgrade handling should reuse normal switching semantics (keep current position, close-and-wait, or hand over ownership) instead of inventing a separate stop-trading path just for upgrades.
+
 ## Current state
 
 Artifacts are now part of the traceable review data path, not just debugging leftovers.

@@ -592,7 +592,7 @@ def _build_execution_quality_section(execution_quality: dict[str, Any]) -> dict[
     }
 
 
-def _build_account_comparison_section(compare_snapshot: dict[str, Any] | None, performance_summary: dict[str, Any]) -> dict[str, Any]:
+def _build_live_performance_section(compare_snapshot: dict[str, Any] | None, performance_summary: dict[str, Any]) -> dict[str, Any]:
     leaderboard = performance_summary.get('leaderboard', []) if isinstance(performance_summary, dict) else []
     compare_rows = [] if compare_snapshot is None else compare_snapshot.get('accounts', []) or []
     items: list[dict[str, Any]] = []
@@ -609,15 +609,15 @@ def _build_account_comparison_section(compare_snapshot: dict[str, Any] | None, p
         highlights.append(f"bottom_account:{bottom.get('account')}")
     status = 'ready' if items else 'placeholder'
     return {
-        'key': 'account_comparison',
-        'title': 'Account Comparison',
+        'key': 'live_performance_summary',
+        'title': 'Live Performance Summary',
         'status': status,
         'items': items,
         'highlights': highlights,
     }
 
 
-def _build_router_composite_section(compare_snapshot: dict[str, Any] | None, performance_summary: dict[str, Any]) -> dict[str, Any]:
+def _build_execution_deviation_section(compare_snapshot: dict[str, Any] | None, performance_summary: dict[str, Any]) -> dict[str, Any]:
     items: list[dict[str, Any]] = []
     highlights = list((compare_snapshot or {}).get('highlights', []))
     vs_best = performance_summary.get('router_vs_best_strategy') if isinstance(performance_summary, dict) else None
@@ -628,18 +628,16 @@ def _build_router_composite_section(compare_snapshot: dict[str, Any] | None, per
         items.append({'kind': 'router_vs_flat_compare', 'row': vs_flat})
     status = 'ready' if items or highlights else 'placeholder'
     return {
-        'key': 'router_composite_review',
-        'title': 'Router Composite Review',
+        'key': 'execution_deviation_review',
+        'title': 'Execution Deviation Review',
         'status': status,
         'items': items,
         'highlights': highlights,
     }
 
 
-def _build_parameter_review_section(
+def _build_execution_improvement_section(
     performance_summary: dict[str, Any],
-    auto_candidate_params: list[dict[str, Any]],
-    discuss_first_params: list[dict[str, Any]],
 ) -> dict[str, Any]:
     items: list[dict[str, Any]] = []
     highest_fee = performance_summary.get('highest_fee_drag_account') if isinstance(performance_summary, dict) else None
@@ -649,30 +647,30 @@ def _build_parameter_review_section(
 
     if highest_fee is not None:
         items.append({
-            'kind': 'candidate',
-            'name': 'fee_burden_frequency_gate',
-            'status': 'candidate',
-            'reason': f"highest fee drag observed on {highest_fee.get('account')}",
+            'kind': 'improvement',
+            'name': 'trade_frequency_review',
+            'status': 'review',
+            'reason': f"highest fee drag observed on {highest_fee.get('account')}; check whether live execution frequency is too high for the promoted strategy",
             'target_account': highest_fee.get('account'),
             'evidence': highest_fee,
         })
         trade_count = float(highest_fee.get('trade_count') or 0.0)
         if trade_count >= 5:
             items.append({
-                'kind': 'candidate',
-                'name': 'cooldown_seconds',
-                'status': 'candidate',
-                'reason': f"high fee drag with elevated trade count on {highest_fee.get('account')}",
+                'kind': 'improvement',
+                'name': 'order_timing_and_cooldown_review',
+                'status': 'review',
+                'reason': f"high fee drag with elevated trade count on {highest_fee.get('account')}; inspect timing/cooldown behavior in live execution",
                 'target_account': highest_fee.get('account'),
                 'evidence': highest_fee,
             })
 
     if highest_exposure is not None and float(highest_exposure.get('exposure_time_pct') or 0.0) >= 80.0:
         items.append({
-            'kind': 'candidate',
-            'name': 'confidence_gate',
-            'status': 'candidate',
-            'reason': f"exposure stayed elevated on {highest_exposure.get('account')}",
+            'kind': 'improvement',
+            'name': 'position_drift_review',
+            'status': 'review',
+            'reason': f"exposure stayed elevated on {highest_exposure.get('account')}; verify theoretical vs actual position drift",
             'target_account': highest_exposure.get('account'),
             'evidence': highest_exposure,
         })
@@ -681,19 +679,19 @@ def _build_parameter_review_section(
         pnl = _row_pnl(bottom)
         if pnl < 0.0:
             items.append({
-                'kind': 'candidate',
-                'name': 'entry_threshold',
-                'status': 'candidate',
-                'reason': f"negative pnl on lowest ranked account {bottom.get('account')}",
+                'kind': 'improvement',
+                'name': 'negative_live_pnl_review',
+                'status': 'review',
+                'reason': f"negative pnl on reviewed live account {bottom.get('account')}; inspect whether the issue is execution drift or expected strategy drawdown",
                 'target_account': bottom.get('account'),
                 'evidence': bottom,
             })
         elif float(bottom.get('trade_count') or 0.0) >= 5:
             items.append({
-                'kind': 'candidate',
-                'name': 'add_position_threshold',
-                'status': 'candidate',
-                'reason': f"weak ranking with repeated trading on {bottom.get('account')}",
+                'kind': 'improvement',
+                'name': 'repeated_trade_path_review',
+                'status': 'review',
+                'reason': f"repeated trading on {bottom.get('account')}; review live order path and execution behavior",
                 'target_account': bottom.get('account'),
                 'evidence': bottom,
             })
@@ -701,46 +699,27 @@ def _build_parameter_review_section(
     for insight in insights:
         if insight.startswith('router_vs_best_strategy:underperformed:'):
             items.append({
-                'kind': 'candidate',
-                'name': 'router_switch_gating',
-                'status': 'discuss_first',
+                'kind': 'improvement',
+                'name': 'strategy_upgrade_calibrate_check',
+                'status': 'upgrade_event_only',
                 'reason': insight,
             })
             break
 
-    auto_status_map = {item['name']: item['status'] for item in items if item.get('kind') == 'candidate' and item.get('status') == 'candidate'}
-    discuss_status_map = {item['name']: item['status'] for item in items if item.get('kind') == 'candidate' and item.get('status') == 'discuss_first'}
-
-    seeded_auto = []
-    for row in auto_candidate_params:
-        seeded_auto.append({
-            'name': row['name'],
-            'status': auto_status_map.get(row['name'], row.get('status', 'pending_data')),
-        })
-
-    seeded_discuss = []
-    for row in discuss_first_params:
-        seeded_discuss.append({
-            'name': row['name'],
-            'status': discuss_status_map.get(row['name'], row.get('status', 'pending_data')),
-        })
-
     return {
-        'key': 'parameter_review',
-        'title': 'Parameter Review',
+        'key': 'execution_improvement_review',
+        'title': 'Execution Improvement Review',
         'status': 'ready' if items else 'placeholder',
         'items': items,
-        'seeded_candidates': seeded_auto,
-        'seeded_discuss_first': seeded_discuss,
     }
 
 
-def _build_executive_summary(meta: dict[str, Any], performance_summary: dict[str, Any], parameter_section: dict[str, Any], execution_quality: dict[str, Any]) -> dict[str, Any]:
+def _build_executive_summary(meta: dict[str, Any], performance_summary: dict[str, Any], execution_improvement_section: dict[str, Any], execution_quality: dict[str, Any]) -> dict[str, Any]:
     top = performance_summary.get('top_account') if isinstance(performance_summary, dict) else None
     bottom = performance_summary.get('bottom_account') if isinstance(performance_summary, dict) else None
     router_vs_best = performance_summary.get('router_vs_best_strategy') if isinstance(performance_summary, dict) else None
     router_vs_flat = performance_summary.get('router_vs_flat_compare') if isinstance(performance_summary, dict) else None
-    candidate_count = len(parameter_section.get('items', [])) if isinstance(parameter_section, dict) else 0
+    candidate_count = len(execution_improvement_section.get('items', [])) if isinstance(execution_improvement_section, dict) else 0
 
     bullets: list[str] = []
     if top is not None:
@@ -756,7 +735,7 @@ def _build_executive_summary(meta: dict[str, Any], performance_summary: dict[str
             f"Router composite vs flat compare: {router_vs_flat.get('router_pnl_usdt')} vs {router_vs_flat.get('flat_compare_pnl_usdt')} USDT"
         )
     if candidate_count:
-        bullets.append(f"Parameter candidates flagged: {candidate_count}")
+        bullets.append(f"Execution improvement items flagged: {candidate_count}")
     if execution_quality.get('status') == 'ready':
         bullets.append(
             f"Clean vs excluded trades: {execution_quality.get('clean_trade_count', 0)} clean / {execution_quality.get('excluded_trade_count', 0)} excluded"
@@ -774,14 +753,14 @@ def _build_executive_summary(meta: dict[str, Any], performance_summary: dict[str
     }
 
 
-def _build_recommended_actions(parameter_section: dict[str, Any]) -> list[dict[str, Any]]:
+def _build_recommended_actions(execution_improvement_section: dict[str, Any]) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = []
-    for item in parameter_section.get('items', []) if isinstance(parameter_section, dict) else []:
-        if item.get('kind') != 'candidate':
+    for item in execution_improvement_section.get('items', []) if isinstance(execution_improvement_section, dict) else []:
+        if item.get('kind') != 'improvement':
             continue
         actions.append({
             'title': f"Review {item.get('name')}",
-            'priority': 'discuss_first' if item.get('status') == 'discuss_first' else 'candidate',
+            'priority': item.get('status') or 'review',
             'target_account': item.get('target_account'),
             'reason': item.get('reason'),
         })
@@ -798,14 +777,14 @@ def _build_narrative_blocks(executive_summary: dict[str, Any], sections: list[di
         })
     for section in sections:
         key = section.get('key')
-        if key == 'account_comparison' and section.get('status') == 'ready':
+        if key == 'live_performance_summary' and section.get('status') == 'ready':
             leaderboard = next((item.get('rows') for item in section.get('items', []) if item.get('kind') == 'leaderboard'), [])
             lines = [
                 f"{idx + 1}. {row.get('account')} pnl={row.get('pnl_usdt')} fee={row.get('fee_usdt')} exposure={row.get('exposure_time_pct')}"
                 for idx, row in enumerate(leaderboard[:3])
             ]
             blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
-        elif key == 'router_composite_review' and section.get('status') == 'ready':
+        elif key == 'execution_deviation_review' and section.get('status') == 'ready':
             lines = []
             for item in section.get('items', []):
                 row = item.get('row') or {}
@@ -818,11 +797,11 @@ def _build_narrative_blocks(executive_summary: dict[str, Any], sections: list[di
                         f"Router composite vs flat compare: {row.get('router_pnl_usdt')} vs {row.get('flat_compare_pnl_usdt')} USDT"
                     )
             blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
-        elif key == 'parameter_review' and section.get('status') == 'ready':
+        elif key == 'execution_improvement_review' and section.get('status') == 'ready':
             lines = [
                 f"{item.get('name')} [{item.get('status')}]: {item.get('reason')}"
                 for item in section.get('items', [])
-                if item.get('kind') == 'candidate'
+                if item.get('kind') == 'improvement'
             ]
             blocks.append({'key': key, 'title': section.get('title'), 'lines': lines})
         elif key == 'execution_quality' and section.get('status') == 'ready':
@@ -913,11 +892,7 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
     shadow_decision = _build_shadow_decision_summary(history_rows)
     execution_quality = _build_execution_quality_summary(history_rows)
 
-    auto_candidate_params = [{'name': name, 'status': 'pending_data'} for name in plan['adjustment_policy']['auto_candidate_params']]
-    discuss_first_params = [{'name': name, 'status': 'pending_data'} for name in plan['adjustment_policy']['discuss_first_params']]
-    structural_params = [{'name': name, 'status': 'pending_discussion'} for name in plan['adjustment_policy']['structural_params']]
-
-    parameter_section = _build_parameter_review_section(performance_summary, auto_candidate_params, discuss_first_params)
+    execution_improvement_section = _build_execution_improvement_section(performance_summary)
     sections = [
         {
             'key': 'market_regime_summary',
@@ -925,15 +900,15 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
             'status': 'placeholder',
             'items': [],
         },
-        _build_account_comparison_section(compare_snapshot, performance_summary),
-        _build_router_composite_section(compare_snapshot, performance_summary),
+        _build_live_performance_section(compare_snapshot, performance_summary),
+        _build_execution_deviation_section(compare_snapshot, performance_summary),
         _build_regime_local_section(regime_local),
         _build_mapping_validity_section(mapping_validity),
         _build_overlap_section(overlap),
         _build_strategy_activity_section(strategy_activity),
         _build_shadow_decision_section(shadow_decision),
         _build_execution_quality_section(execution_quality),
-        parameter_section,
+        execution_improvement_section,
     ]
 
     if cadence == 'quarterly':
@@ -955,8 +930,8 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
         'focus_areas': plan['focus_areas'],
         'adjustment_policy': plan['adjustment_policy'],
     }
-    executive_summary = _build_executive_summary(meta, performance_summary, parameter_section, execution_quality)
-    recommended_actions = _build_recommended_actions(parameter_section)
+    executive_summary = _build_executive_summary(meta, performance_summary, execution_improvement_section, execution_quality)
+    recommended_actions = _build_recommended_actions(execution_improvement_section)
     narrative_blocks = _build_narrative_blocks(executive_summary, sections)
 
     report = ReviewReport(
@@ -977,9 +952,9 @@ def build_report_scaffold(window: ReviewWindow, compare_snapshot: dict[str, Any]
             'regime_quality': [],
         },
         parameter_candidates={
-            'auto_candidate_params': auto_candidate_params,
-            'discuss_first_params': discuss_first_params,
-            'structural_params': structural_params,
+            'auto_candidate_params': [],
+            'discuss_first_params': [],
+            'structural_params': [],
         },
         decisions=[],
         notes=plan['notes'],

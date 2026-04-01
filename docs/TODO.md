@@ -69,12 +69,12 @@ This is the canonical current task list for the project.
 - [ ] define elimination/dominance rules so weak/covered candidates can be dropped early
 - [ ] define batch sizing rules based on server load
 
-## P1 — historical review workflow
+## P1 — live review / historical review split
 
-- [ ] make weekly review the canonical place where time-segment / market-style stitching happens
-- [ ] compare family champions in weekly review
-- [ ] avoid unnecessary continuous market-style stitching in normal non-review workflows
-- [ ] prepare monthly/quarterly historical summary extensions after weekly review stabilizes
+- [ ] redesign live weekly review around single-account realized pnl + execution diagnostics instead of strategy comparison
+- [ ] move calibrate from weekly follow-up flow to strategy-upgrade-triggered baseline refresh
+- [ ] avoid unnecessary continuous market-style stitching in normal live-review workflows
+- [ ] decide whether monthly/quarterly live review remain first-class or become lighter aggregate summaries
 
 ## P2 — execution/research infrastructure reuse
 
@@ -104,5 +104,9 @@ This is the canonical current task list for the project.
 - [x] add canonical strategy research docs
 - [ ] do one more repo-wide doc pass after the historical-data / family-research buildout starts landing
 - [ ] run a fresh broader test pass after the next major implementation step
-- [ ] finish validating the family-variant artifact builder after switching retention policy to `local top1 active heavy + top10 reserve summary + archived summary`
+- [ ] finish validating the family-variant artifact builder after switching retention policy to `summary-first ranking + local top1 active heavy + top10 reserve summary + archived summary`
+- [ ] continue expanding summary schema until it fully carries lifecycle state, data-range metadata, cluster-version ranking history, and family-level active/reserve/archived outputs
+- [ ] replace the current single-family placeholder `family_cluster_ranking` output with true cross-family ranking after the multi-family aggregation step is wired
 - [ ] begin migrating canonical time-series datasets toward aligned UTC monthly partitions (`docs/TIME_SERIES_PARTITION_POLICY.md`)
+
+# repo-autosync smoke 2026-04-01T10:52:50+08:00

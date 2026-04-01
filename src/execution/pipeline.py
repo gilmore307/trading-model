@@ -10,6 +10,7 @@ from src.reconcile.alignment import ExchangePositionSnapshot
 from src.routing.composite import RouterCompositeSimulator
 from src.runners.regime_runner import BtcRegimeRunner, RegimeRunnerOutput
 from src.runtime.mode_policy import policy_for_mode
+from src.runtime.strategy_pointer import ActiveStrategySnapshot, load_active_strategy_snapshot
 from src.runtime.store import RuntimeStore
 from src.state.live_position import LivePosition
 from src.strategies.executors import ExecutionPlan, build_parallel_plans, executor_for
@@ -40,6 +41,7 @@ class ExecutionCycleResult:
     reconcile_result: RouteControlResult | None
     decision_trace: ExecutionDecisionTrace
     runtime_state: dict
+    active_strategy: dict
     route_state: dict | None
     live_positions: list[dict]
     router_composite: dict
@@ -50,6 +52,7 @@ class ParallelExecutionCycleResult:
     regime_output: RegimeRunnerOutput
     results: dict[str, ExecutionCycleResult]
     runtime_state: dict
+    active_strategy: dict
     live_positions: list[dict]
     router_composite: dict
 
@@ -74,6 +77,9 @@ class ExecutionPipeline:
         self.adapter = adapter or DryRunExecutionAdapter()
         self.runtime_store = runtime_store or RuntimeStore()
         self.composite_simulator = composite_simulator or RouterCompositeSimulator(self.controller.store)
+
+    def _active_strategy_snapshot(self) -> ActiveStrategySnapshot:
+        return load_active_strategy_snapshot()
 
     def build_plan(self, output: RegimeRunnerOutput) -> ExecutionPlan:
         return executor_for(output).build_plan(output)
@@ -242,7 +248,7 @@ class ExecutionPipeline:
             if reconcile_result.policy.action not in trace.diagnostics:
                 trace.diagnostics.append(reconcile_result.policy.action)
         route_state = None if plan.account is None else asdict(self.controller.routes.get(plan.account, regime_output.symbol))
-        return ExecutionCycleResult(regime_output=regime_output, plan=plan, receipt=receipt, local_position=local_position, verification_position=verification_position, reconcile_result=reconcile_result, decision_trace=trace, runtime_state=asdict(self.runtime_store.get()), route_state=route_state, live_positions=[asdict(position) for position in self.controller.store.list_positions()], router_composite=self.composite_simulator.snapshot(regime_output))
+        return ExecutionCycleResult(regime_output=regime_output, plan=plan, receipt=receipt, local_position=local_position, verification_position=verification_position, reconcile_result=reconcile_result, decision_trace=trace, runtime_state=asdict(self.runtime_store.get()), active_strategy=asdict(self._active_strategy_snapshot()), route_state=route_state, live_positions=[asdict(position) for position in self.controller.store.list_positions()], router_composite=self.composite_simulator.snapshot(regime_output))
 
     def run_cycle(self, exchange_snapshot: ExchangePositionSnapshot | None = None) -> ExecutionCycleResult:
         mode = self.runtime_store.get().mode
@@ -289,4 +295,4 @@ class ExecutionPipeline:
             for strategy_name, plan in self.build_parallel_plans(regime_output).items():
                 trace = ExecutionDecisionTrace(mode=mode.value, mode_allows_routing=mode_policy.allow_normal_routing, decision_trade_enabled=True, route_trade_enabled=True, pipeline_trade_enabled=False, allow_reason=f'always_on_{strategy_name}', block_reason=None, diagnostics=['parallel_execution'])
                 results[strategy_name] = self._run_single_account_plan(regime_output, plan, trace, None)
-        return ParallelExecutionCycleResult(regime_output=regime_output, results=results, runtime_state=asdict(self.runtime_store.get()), live_positions=[asdict(position) for position in self.controller.store.list_positions()], router_composite=self.composite_simulator.snapshot(regime_output))
+        return ParallelExecutionCycleResult(regime_output=regime_output, results=results, runtime_state=asdict(self.runtime_store.get()), active_strategy=asdict(self._active_strategy_snapshot()), live_positions=[asdict(position) for position in self.controller.store.list_positions()], router_composite=self.composite_simulator.snapshot(regime_output))

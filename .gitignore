@@ -7,20 +7,6 @@ logs/
 reports/
 .DS_Store
 
-# Raw market downloads should stay local.
-data/raw/
-
-# Future local-only research working sets.
-data/intermediate/
-
-# Oversized derived datasets should stay local; keep lightweight summaries/reports in git.
-data/derived/strategy_parameter_utility_dataset_v1.jsonl
-data/derived/ma_parameter_utility_dataset_v1.jsonl
-data/derived/bollinger_parameter_utility_dataset_v1.jsonl
-data/derived/donchian_parameter_utility_dataset_v1.jsonl
-data/derived/crypto_market_state_dataset_v1.jsonl
-data/derived/unsupervised_market_state_labels_v1.jsonl
-data/derived/family_equity_curves_v1.jsonl
-
-# Family-variant dashboard payloads are currently too large for GitHub and should be split before syncing.
-data/derived/family_variant_dashboard/*.json
+# external data repo
+data/
+data.pre-migration-backup/

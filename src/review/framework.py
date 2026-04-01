@@ -128,28 +128,28 @@ def build_review_plan(window: ReviewWindow) -> dict[str, Any]:
     policy = adjustment_policy_for(window.cadence)
     if window.cadence == ReviewCadence.WEEKLY:
         focus = [
-            'account comparison for the completed trading week',
-            'router/composite vs single-strategy state and attribution review',
-            'small threshold/cooldown/frequency calibration candidates',
-            'fee burden and trading frequency adjustment suggestions',
+            'single live-account weekly realized-pnl and equity summary',
+            'theoretical-signal vs actual-execution deviation review',
+            'execution quality, order health, and position-drift diagnostics',
+            'execution-layer improvement items that do not directly retune the model',
         ]
-        notes = ['weekly review should prefer small safe adjustments, not structural changes']
+        notes = ['weekly review is the canonical live-operations review cadence; trading may continue during review because this path does not directly optimize model parameters']
     elif window.cadence == ReviewCadence.MONTHLY:
         focus = [
-            'multi-week strategy stability review',
-            'regime recognition quality review',
-            'strategy-internal parameter discussion',
-            'router/composite ownership-aware comparison over the monthly interval',
+            'multi-week realized live-performance summary for the active strategy version',
+            'execution deviation trend review over the monthly interval',
+            'operational reliability and intervention pattern review',
+            'single-account live execution narrative and audit trail summary',
         ]
-        notes = ['monthly review is the primary parameter-discussion layer; recommendations should usually require confirmation before live adoption']
+        notes = ['monthly review is an aggregated live-operations summary, not the primary parameter-discussion layer; model optimization remains on the historical backtest line']
     else:
         focus = [
-            'quarter-scale regime taxonomy and strategy fitness review',
-            'review framework and risk model review',
-            'ML/RL roadmap and training objective review',
-            'structural system changes and deprecation candidates',
+            'quarter-scale live execution stability and realized-performance review',
+            'runtime / broker / exchange integration health review',
+            'operational process and execution-architecture review',
+            'structural execution-system changes and deprecation candidates',
         ]
-        notes = ['quarterly review may discuss structural changes, but should preserve auditability and comparability across periods']
+        notes = ['quarterly review may discuss structural execution changes, but model-selection and parameter optimization still belong to the historical backtest line']
 
     plan = ReviewPlan(
         cadence=window.cadence.value,

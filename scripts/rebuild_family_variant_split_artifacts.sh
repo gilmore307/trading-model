@@ -29,14 +29,8 @@ PY
 is_complete() {
   local family="$1"
   local dir="$OUT_DIR/$family"
-  local variants_dir="$dir/variants"
   [ -f "$dir/summary.json" ] || return 1
   [ -f "$dir/composite.json" ] || return 1
-  [ -d "$variants_dir" ] || return 1
-  local have expected
-  have=$(find "$variants_dir" -maxdepth 1 -type f -name '*.json' | wc -l)
-  expected=$(expected_variant_count "$family")
-  [ "$have" -ge "$expected" ] || return 1
   return 0
 }
 
@@ -46,7 +40,7 @@ for family in "${families[@]}"; do
     ts=$(date +%Y%m%d-%H%M%S)
     log="$LOG_DIR/rebuild-${family}-${ts}.log"
     echo "[$(date '+%F %T')] running family=$family log=$log"
-    if python3 "$RUNNER" --family "$family" --resume --retain-top-per-cluster 3 >"$log" 2>&1; then
+    if python3 "$RUNNER" --family "$family" --summary-only --retain-top-per-cluster 1 --reserve-top-per-cluster 10 >"$log" 2>&1; then
       echo "[$(date '+%F %T')] runner finished family=$family"
     else
       code=$?
