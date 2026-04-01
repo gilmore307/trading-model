@@ -10,9 +10,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.research.family_registry import family_config
-from src.research.market_state import build_ma_candidate_dataset, load_jsonl_rows, write_jsonl_rows
+from src.research.market_state import build_ma_candidate_dataset, write_jsonl_rows
+from src.research.monthly_jsonl import load_monthly_jsonl_rows
 
-DEFAULT_OKX_CANDLES = 'data/raw/BTC-USDT-SWAP/candles/BTC-USDT-SWAP.jsonl'
+DEFAULT_OKX_CANDLES = 'data/raw/BTC-USDT-SWAP/candles'
 DEFAULT_OUT = 'data/intermediate/parameter_utility/ma_parameter_utility_dataset_v1.jsonl'
 
 
@@ -28,7 +29,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_arg_parser().parse_args()
-    candles = load_jsonl_rows(args.candles)
+    candles = load_monthly_jsonl_rows(args.candles)
     if args.sample_every > 1:
         candles = [row for idx, row in enumerate(candles) if idx % args.sample_every == 0]
 

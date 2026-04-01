@@ -12,11 +12,12 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.research.market_state import classify_market_state, load_jsonl_rows
+from src.research.market_state import classify_market_state
+from src.research.monthly_jsonl import load_monthly_jsonl_rows
 
-DEFAULT_OKX_CANDLES = 'data/raw/BTC-USDT-SWAP/candles/BTC-USDT-SWAP.jsonl'
-DEFAULT_BITGET_FUNDING = 'data/raw/BTC-USDT-SWAP/funding/BTCUSDT_funding.jsonl'
-DEFAULT_BITGET_BASIS = 'data/raw/BTC-USDT-SWAP/basis_proxy/BTCUSDT_basis_proxy.jsonl'
+DEFAULT_OKX_CANDLES = 'data/raw/BTC-USDT-SWAP/candles'
+DEFAULT_BITGET_FUNDING = 'data/raw/BTCUSDT/funding'
+DEFAULT_BITGET_BASIS = 'data/raw/BTCUSDT/basis_proxy'
 DEFAULT_OUT = 'data/intermediate/market_state/crypto_market_state_dataset_v1.jsonl'
 
 VOL_WINDOW = 30
@@ -61,8 +62,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = build_arg_parser().parse_args()
 
-    funding_rows = sorted(load_jsonl_rows(args.bitget_funding), key=lambda row: int(row['ts']))
-    basis_rows = sorted(load_jsonl_rows(args.bitget_basis), key=lambda row: int(row['ts']))
+    funding_rows = load_monthly_jsonl_rows(args.bitget_funding)
+    basis_rows = load_monthly_jsonl_rows(args.bitget_basis)
+    candle_rows = load_monthly_jsonl_rows(args.okx_candles)
     funding_idx = -1
     basis_idx = -1
 
@@ -132,12 +134,8 @@ def main() -> None:
 
     output_mode = 'a' if args.resume and out_path.exists() else 'w'
 
-    with Path(args.okx_candles).open('r', encoding='utf-8') as src, out_path.open(output_mode, encoding='utf-8') as out:
-        for raw in src:
-            raw = raw.strip()
-            if not raw:
-                continue
-            candle = json.loads(raw)
+    with out_path.open(output_mode, encoding='utf-8') as out:
+        for candle in candle_rows:
             ts = int(candle['ts'])
             if resume_after_ts is not None and ts <= resume_after_ts:
                 continue
@@ -262,7 +260,7 @@ def main() -> None:
         'end_ts': end_ts,
         'funding_non_null_rows': funding_non_null_rows,
         'basis_non_null_rows': basis_non_null_rows,
-    }, ensure_ascii=False, indent=2), flush=True)
+    }, ensure_ascii=False, indent=2))
 
 
 if __name__ == '__main__':
