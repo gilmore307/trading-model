@@ -113,7 +113,7 @@ def normalize_row(row: list[str], *, inst_id: str, bar: str) -> dict[str, Any]:
 
 def default_output_path(*, inst_id: str, bar: str) -> Path:
     safe_inst = inst_id.replace("/", "-")
-    return Path("data/raw/okx/candles") / safe_inst / bar / f"{safe_inst}_{bar}.jsonl"
+    return Path("data/raw") / safe_inst / "candles" / f"{safe_inst}.jsonl"
 
 
 def load_existing_rows(path: Path) -> dict[int, dict[str, Any]]:

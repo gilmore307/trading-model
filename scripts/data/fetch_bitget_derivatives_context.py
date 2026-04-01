@@ -44,9 +44,8 @@ def ts_to_iso(ts: int) -> str:
 
 
 def jsonl_path(dataset: str, *, symbol: str, timeframe: str | None = None) -> Path:
-    if timeframe:
-        return Path('data/raw/bitget/derivatives') / symbol / dataset / timeframe / f'{symbol}_{dataset}_{timeframe}.jsonl'
-    return Path('data/raw/bitget/derivatives') / symbol / dataset / f'{symbol}_{dataset}.jsonl'
+    del timeframe  # current canonical raw layout does not encode timeframe in the path
+    return Path('data/raw') / symbol / dataset / f'{symbol}_{dataset}.jsonl'
 
 
 def load_existing_rows(path: Path) -> dict[int, dict[str, Any]]:
