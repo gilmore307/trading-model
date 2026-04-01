@@ -3,7 +3,8 @@
 ## Repo split: trading-model vs quantitative-trading
 
 - [x] define repo split direction and document the new boundary
-- [ ] classify modules into keep / move / split buckets
+- [x] create first-pass keep / move / split classification sheet
+- [ ] review and refine the first-pass classification module by module
 - [ ] migrate realtime/runtime/execution code to `quantitative-trading`
 - [ ] remove hybrid-repo docs once split is complete
 - [ ] delete truly obsolete leftovers only after migration stabilizes
