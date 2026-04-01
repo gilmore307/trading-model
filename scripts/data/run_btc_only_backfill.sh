@@ -42,8 +42,8 @@ run_deriv() {
   echo "[$(date -Is)] done derivatives ${inst_id}" | tee -a "$log_path"
 }
 
-run_candle "BTC-USDT-SWAP" "data/raw/okx/candles/BTC-USDT-SWAP/1m/BTC-USDT-SWAP_1m_20220101_now.jsonl" "logs/data-fetch/btc_usdt_swap_1m_20220101_now.log"
+run_candle "BTC-USDT-SWAP" "data/raw/BTC-USDT-SWAP/candles/BTC-USDT-SWAP.jsonl" "logs/data-fetch/btc_usdt_swap_1m_20220101_now.log"
 run_deriv "BTC-USDT-SWAP" "logs/data-fetch/btc_usdt_swap_derivatives.log"
-run_candle "BTC-USDT" "data/raw/okx/candles/BTC-USDT/1m/BTC-USDT_1m_20220101_now.jsonl" "logs/data-fetch/btc_usdt_1m_20220101_now.log"
+run_candle "BTC-USDT" "data/raw/BTC-USDT/candles/BTC-USDT.jsonl" "logs/data-fetch/btc_usdt_1m_20220101_now.log"
 
 echo "[$(date -Is)] btc-only history backfill finished" | tee -a logs/data-fetch/backfill-btc-only.log

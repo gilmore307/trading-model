@@ -43,19 +43,19 @@ run_deriv() {
   sleep 5
 }
 
-run_candle "BTC-USDT-SWAP" "data/raw/okx/candles/BTC-USDT-SWAP/1m/BTC-USDT-SWAP_1m_20220101_now.jsonl" "logs/data-fetch/btc_usdt_swap_1m_20220101_now.log"
+run_candle "BTC-USDT-SWAP" "data/raw/BTC-USDT-SWAP/candles/BTC-USDT-SWAP.jsonl" "logs/data-fetch/btc_usdt_swap_1m_20220101_now.log"
 run_deriv "BTC-USDT-SWAP" "logs/data-fetch/btc_usdt_swap_derivatives.log"
 
-run_candle "BTC-USDT" "data/raw/okx/candles/BTC-USDT/1m/BTC-USDT_1m_20220101_now.jsonl" "logs/data-fetch/btc_usdt_1m_20220101_now.log"
+run_candle "BTC-USDT" "data/raw/BTC-USDT/candles/BTC-USDT.jsonl" "logs/data-fetch/btc_usdt_1m_20220101_now.log"
 
-run_candle "ETH-USDT-SWAP" "data/raw/okx/candles/ETH-USDT-SWAP/1m/ETH-USDT-SWAP_1m_20220101_now.jsonl" "logs/data-fetch/eth_usdt_swap_1m_20220101_now.log"
+run_candle "ETH-USDT-SWAP" "data/raw/ETH-USDT-SWAP/candles/ETH-USDT-SWAP.jsonl" "logs/data-fetch/eth_usdt_swap_1m_20220101_now.log"
 run_deriv "ETH-USDT-SWAP" "logs/data-fetch/eth_usdt_swap_derivatives.log"
 
-run_candle "ETH-USDT" "data/raw/okx/candles/ETH-USDT/1m/ETH-USDT_1m_20220101_now.jsonl" "logs/data-fetch/eth_usdt_1m_20220101_now.log"
+run_candle "ETH-USDT" "data/raw/ETH-USDT/candles/ETH-USDT.jsonl" "logs/data-fetch/eth_usdt_1m_20220101_now.log"
 
-run_candle "SOL-USDT-SWAP" "data/raw/okx/candles/SOL-USDT-SWAP/1m/SOL-USDT-SWAP_1m_20220101_now.jsonl" "logs/data-fetch/sol_usdt_swap_1m_20220101_now.log"
+run_candle "SOL-USDT-SWAP" "data/raw/SOL-USDT-SWAP/candles/SOL-USDT-SWAP.jsonl" "logs/data-fetch/sol_usdt_swap_1m_20220101_now.log"
 run_deriv "SOL-USDT-SWAP" "logs/data-fetch/sol_usdt_swap_derivatives.log"
 
-run_candle "SOL-USDT" "data/raw/okx/candles/SOL-USDT/1m/SOL-USDT_1m_20220101_now.jsonl" "logs/data-fetch/sol_usdt_1m_20220101_now.log"
+run_candle "SOL-USDT" "data/raw/SOL-USDT/candles/SOL-USDT.jsonl" "logs/data-fetch/sol_usdt_1m_20220101_now.log"
 
 echo "[$(date -Is)] initial history backfill finished" | tee -a logs/data-fetch/backfill-master.log

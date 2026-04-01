@@ -13,7 +13,7 @@ from src.research.donchian_family import build_donchian_breakout_signals
 from src.research.family_registry import family_config
 from src.research.market_state import load_jsonl_rows, write_jsonl_rows
 
-DEFAULT_OKX_CANDLES = 'data/raw/okx/candles/BTC-USDT-SWAP/1m/BTC-USDT-SWAP_1m.jsonl'
+DEFAULT_OKX_CANDLES = 'data/raw/BTC-USDT-SWAP/candles/BTC-USDT-SWAP.jsonl'
 DEFAULT_OUT = 'data/intermediate/parameter_utility/donchian_parameter_utility_dataset_v1.jsonl'
 
 

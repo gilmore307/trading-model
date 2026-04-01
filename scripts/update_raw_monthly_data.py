@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 
 import ccxt
@@ -16,14 +16,14 @@ SPECS = [
         'symbol': 'BTC/USDT:USDT',
         'kind': 'ohlcv',
         'timeframe': '1m',
-        'out_dir': ROOT / 'data/raw/okx/candles/BTC-USDT-SWAP/1m/monthly',
+        'out_dir': ROOT / 'data/raw/BTC-USDT-SWAP/candles',
     },
     {
         'name': 'bitget_funding',
         'exchange': 'bitget',
         'symbol': 'BTC/USDT:USDT',
         'kind': 'funding',
-        'out_dir': ROOT / 'data/raw/bitget/derivatives/BTCUSDT/funding/monthly',
+        'out_dir': ROOT / 'data/raw/BTC-USDT-SWAP/funding',
     },
     {
         'name': 'bitget_basis_proxy_5m',
@@ -31,7 +31,7 @@ SPECS = [
         'symbol': 'BTC/USDT:USDT',
         'kind': 'ticker_snapshot_series',
         'field': 'basisProxy',
-        'out_dir': ROOT / 'data/raw/bitget/derivatives/BTCUSDT/basis_proxy/5m/monthly',
+        'out_dir': ROOT / 'data/raw/BTC-USDT-SWAP/basis_proxy',
     },
     {
         'name': 'bitget_index_price_5m',
@@ -39,7 +39,7 @@ SPECS = [
         'symbol': 'BTC/USDT:USDT',
         'kind': 'ticker_snapshot_series',
         'field': 'indexPrice',
-        'out_dir': ROOT / 'data/raw/bitget/derivatives/BTCUSDT/index_price/5m/monthly',
+        'out_dir': ROOT / 'data/raw/BTC-USDT-SWAP/index_price',
     },
     {
         'name': 'bitget_mark_price_5m',
@@ -47,7 +47,7 @@ SPECS = [
         'symbol': 'BTC/USDT:USDT',
         'kind': 'ticker_snapshot_series',
         'field': 'markPrice',
-        'out_dir': ROOT / 'data/raw/bitget/derivatives/BTCUSDT/mark_price/5m/monthly',
+        'out_dir': ROOT / 'data/raw/BTC-USDT-SWAP/mark_price',
     },
 ]
 
@@ -107,7 +107,7 @@ def fetch_ohlcv_month(ex, symbol: str, timeframe: str, start: datetime, end: dat
                 'dataset': 'candles',
                 'symbol': symbol,
                 'ts': ts,
-                'timestamp': datetime.fromtimestamp(ts/1000, tz=UTC).isoformat(),
+                'timestamp': datetime.fromtimestamp(ts / 1000, tz=UTC).isoformat(),
                 'open': item[1],
                 'high': item[2],
                 'low': item[3],

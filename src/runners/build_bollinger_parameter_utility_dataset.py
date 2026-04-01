@@ -14,7 +14,7 @@ from src.research.family_registry import family_config
 from src.research.jsonl_utils import load_jsonl_rows
 from src.research.market_state import write_jsonl_rows
 
-DEFAULT_OKX_CANDLES = 'data/raw/okx/candles/BTC-USDT-SWAP/1m/BTC-USDT-SWAP_1m.jsonl'
+DEFAULT_OKX_CANDLES = 'data/raw/BTC-USDT-SWAP/candles/BTC-USDT-SWAP.jsonl'
 DEFAULT_OUT = 'data/intermediate/parameter_utility/bollinger_parameter_utility_dataset_v1.jsonl'
 
 

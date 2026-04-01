@@ -14,9 +14,9 @@ if str(ROOT) not in sys.path:
 
 from src.research.market_state import classify_market_state, load_jsonl_rows
 
-DEFAULT_OKX_CANDLES = 'data/raw/okx/candles/BTC-USDT-SWAP/1m/BTC-USDT-SWAP_1m_20220101_now.jsonl'
-DEFAULT_BITGET_FUNDING = 'data/raw/bitget/derivatives/BTCUSDT/funding/BTCUSDT_funding.jsonl'
-DEFAULT_BITGET_BASIS = 'data/raw/bitget/derivatives/BTCUSDT/basis_proxy/5m/BTCUSDT_basis_proxy_5m.jsonl'
+DEFAULT_OKX_CANDLES = 'data/raw/BTC-USDT-SWAP/candles/BTC-USDT-SWAP.jsonl'
+DEFAULT_BITGET_FUNDING = 'data/raw/BTC-USDT-SWAP/funding/BTCUSDT_funding.jsonl'
+DEFAULT_BITGET_BASIS = 'data/raw/BTC-USDT-SWAP/basis_proxy/BTCUSDT_basis_proxy.jsonl'
 DEFAULT_OUT = 'data/intermediate/market_state/crypto_market_state_dataset_v1.jsonl'
 
 VOL_WINDOW = 30
