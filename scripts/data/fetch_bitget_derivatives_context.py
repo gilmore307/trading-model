@@ -8,6 +8,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -19,6 +20,7 @@ BASE_URL = 'https://api.bitget.com'
 DEFAULT_SYMBOL = 'BTCUSDT'
 DEFAULT_PRODUCT_TYPE = 'USDT-FUTURES'
 DEFAULT_START = '2022-09-01T00:00:00Z'
+BUSINESS_TZ = ZoneInfo('America/New_York')
 TIMEFRAME_MS = {
     '1m': 60_000,
     '5m': 300_000,
@@ -43,9 +45,17 @@ def ts_to_iso(ts: int) -> str:
     return datetime.fromtimestamp(ts / 1000, tz=UTC).isoformat()
 
 
-def jsonl_path(dataset: str, *, symbol: str, timeframe: str | None = None) -> Path:
-    del timeframe  # current canonical raw layout does not encode timeframe in the path
-    return Path('data/raw') / symbol / dataset / f'{symbol}_{dataset}.jsonl'
+def ts_to_month_key(ts: int) -> str:
+    dt = datetime.fromtimestamp(ts / 1000, tz=UTC).astimezone(BUSINESS_TZ)
+    return dt.strftime('%Y-%m')
+
+
+def dataset_dir(dataset: str, *, symbol: str) -> Path:
+    return Path('data/raw') / symbol / dataset
+
+
+def month_file_path(base_dir: Path, ts: int) -> Path:
+    return base_dir / f'{ts_to_month_key(ts)}.jsonl'
 
 
 def load_existing_rows(path: Path) -> dict[int, dict[str, Any]]:
@@ -69,6 +79,30 @@ def write_jsonl(rows_by_ts: dict[int, dict[str, Any]], path: Path) -> None:
     with path.open('w', encoding='utf-8') as f:
         for ts in sorted(rows_by_ts.keys()):
             f.write(json.dumps(rows_by_ts[ts], ensure_ascii=False) + '\n')
+
+
+def load_month_store(base_dir: Path, *, resume: bool) -> tuple[dict[str, dict[int, dict[str, Any]]], int | None, int | None]:
+    store: dict[str, dict[int, dict[str, Any]]] = {}
+    oldest = None
+    newest = None
+    if not resume or not base_dir.exists():
+        return store, oldest, newest
+    for path in sorted(base_dir.glob('*.jsonl')):
+        rows = load_existing_rows(path)
+        if not rows:
+            continue
+        month = path.stem
+        store[month] = rows
+        month_oldest = min(rows)
+        month_newest = max(rows)
+        oldest = month_oldest if oldest is None else min(oldest, month_oldest)
+        newest = month_newest if newest is None else max(newest, month_newest)
+    return store, oldest, newest
+
+
+def flush_month_store(base_dir: Path, store: dict[str, dict[int, dict[str, Any]]]) -> None:
+    for month, rows in store.items():
+        write_jsonl(rows, base_dir / f'{month}.jsonl')
 
 
 def get_json(path: str, params: dict[str, Any], *, timeout: int = 30, max_retries: int = 10) -> dict[str, Any]:
@@ -110,7 +144,7 @@ def normalize_candle_row(row: list[str], *, dataset: str, symbol: str, product_t
     return ts, payload
 
 
-def fetch_candles_range(*, symbol: str, product_type: str, dataset: str, endpoint: str, timeframe: str, range_start_ms: int, range_end_ms: int | None, limit: int, sleep_seconds: float, rows_by_ts: dict[int, dict[str, Any]], flush_every: int = 20, output_path: Path | None = None, progress_label: str | None = None) -> int:
+def fetch_candles_range(*, symbol: str, product_type: str, dataset: str, endpoint: str, timeframe: str, range_start_ms: int, range_end_ms: int | None, limit: int, sleep_seconds: float, store: dict[str, dict[int, dict[str, Any]]], flush_every: int = 20, output_dir: Path | None = None, progress_label: str | None = None) -> int:
     window_ms = TIMEFRAME_MS[timeframe] * limit
     cursor = range_start_ms
     rounds = 0
@@ -140,11 +174,14 @@ def fetch_candles_range(*, symbol: str, product_type: str, dataset: str, endpoin
                 continue
             if range_end_ms is not None and ts > range_end_ms:
                 continue
-            rows_by_ts[ts] = payload
+            month = ts_to_month_key(ts)
+            store.setdefault(month, {})[ts] = payload
             max_seen = ts if max_seen is None else max(max_seen, ts)
-        if output_path and rounds % flush_every == 0:
-            write_jsonl(rows_by_ts, output_path)
-            print(json.dumps({'event': progress_label or f'{dataset}_progress', 'rounds': rounds, 'stored_rows': len(rows_by_ts), 'stored_oldest': ts_to_iso(min(rows_by_ts)) if rows_by_ts else None, 'stored_newest': ts_to_iso(max(rows_by_ts)) if rows_by_ts else None}, ensure_ascii=False))
+        if output_dir and rounds % flush_every == 0:
+            flush_month_store(output_dir, store)
+            total_rows = sum(len(x) for x in store.values())
+            all_ts = [ts for month_rows in store.values() for ts in month_rows.keys()]
+            print(json.dumps({'event': progress_label or f'{dataset}_progress', 'rounds': rounds, 'stored_rows': total_rows, 'stored_oldest': ts_to_iso(min(all_ts)) if all_ts else None, 'stored_newest': ts_to_iso(max(all_ts)) if all_ts else None}, ensure_ascii=False))
         if max_seen is None:
             cursor += window_ms
         else:
@@ -154,31 +191,30 @@ def fetch_candles_range(*, symbol: str, product_type: str, dataset: str, endpoin
 
 
 def fetch_candles(*, symbol: str, product_type: str, dataset: str, endpoint: str, timeframe: str, start_ms: int, end_ms: int | None, limit: int, sleep_seconds: float, resume: bool, backfill: bool) -> dict[str, Any]:
-    path = jsonl_path(dataset, symbol=symbol, timeframe=timeframe)
-    rows_by_ts = load_existing_rows(path) if resume else {}
+    out_dir = dataset_dir(dataset, symbol=symbol)
+    store, oldest_ts, newest_ts = load_month_store(out_dir, resume=resume)
     rounds = 0
 
-    if rows_by_ts:
-        newest_ts = max(rows_by_ts)
+    if newest_ts is not None:
         latest_start = max(start_ms, newest_ts + TIMEFRAME_MS[timeframe])
         if latest_start <= (end_ms or 2**63 - 1):
-            rounds += fetch_candles_range(symbol=symbol, product_type=product_type, dataset=dataset, endpoint=endpoint, timeframe=timeframe, range_start_ms=latest_start, range_end_ms=end_ms, limit=limit, sleep_seconds=sleep_seconds, rows_by_ts=rows_by_ts, output_path=path, progress_label=f'{dataset}_forward_progress')
+            rounds += fetch_candles_range(symbol=symbol, product_type=product_type, dataset=dataset, endpoint=endpoint, timeframe=timeframe, range_start_ms=latest_start, range_end_ms=end_ms, limit=limit, sleep_seconds=sleep_seconds, store=store, output_dir=out_dir, progress_label=f'{dataset}_forward_progress')
 
-        if backfill:
-            oldest_ts = min(rows_by_ts)
+        if backfill and oldest_ts is not None:
             earliest_end = min((end_ms if end_ms is not None else oldest_ts - TIMEFRAME_MS[timeframe]), oldest_ts - TIMEFRAME_MS[timeframe])
             if start_ms <= earliest_end:
-                rounds += fetch_candles_range(symbol=symbol, product_type=product_type, dataset=dataset, endpoint=endpoint, timeframe=timeframe, range_start_ms=start_ms, range_end_ms=earliest_end, limit=limit, sleep_seconds=sleep_seconds, rows_by_ts=rows_by_ts, output_path=path, progress_label=f'{dataset}_backfill_progress')
+                rounds += fetch_candles_range(symbol=symbol, product_type=product_type, dataset=dataset, endpoint=endpoint, timeframe=timeframe, range_start_ms=start_ms, range_end_ms=earliest_end, limit=limit, sleep_seconds=sleep_seconds, store=store, output_dir=out_dir, progress_label=f'{dataset}_backfill_progress')
     else:
-        rounds += fetch_candles_range(symbol=symbol, product_type=product_type, dataset=dataset, endpoint=endpoint, timeframe=timeframe, range_start_ms=start_ms, range_end_ms=end_ms, limit=limit, sleep_seconds=sleep_seconds, rows_by_ts=rows_by_ts, output_path=path, progress_label=f'{dataset}_progress')
+        rounds += fetch_candles_range(symbol=symbol, product_type=product_type, dataset=dataset, endpoint=endpoint, timeframe=timeframe, range_start_ms=start_ms, range_end_ms=end_ms, limit=limit, sleep_seconds=sleep_seconds, store=store, output_dir=out_dir, progress_label=f'{dataset}_progress')
 
-    write_jsonl(rows_by_ts, path)
-    return {'output': str(path), 'rows': len(rows_by_ts), 'rounds': rounds}
+    flush_month_store(out_dir, store)
+    total_rows = sum(len(x) for x in store.values())
+    return {'output_dir': str(out_dir), 'rows': total_rows, 'months': len(store), 'rounds': rounds}
 
 
 def fetch_funding(*, symbol: str, product_type: str, start_ms: int, sleep_seconds: float, resume: bool) -> dict[str, Any]:
-    path = jsonl_path('funding', symbol=symbol)
-    rows_by_ts = load_existing_rows(path) if resume else {}
+    out_dir = dataset_dir('funding', symbol=symbol)
+    store, _, _ = load_month_store(out_dir, resume=resume)
     page = 1
     rounds = 0
     while True:
@@ -192,12 +228,11 @@ def fetch_funding(*, symbol: str, product_type: str, start_ms: int, sleep_second
         if not rows:
             break
         rounds += 1
-        kept = 0
         for row in rows:
             ts = int(row['fundingTime'])
             if ts < start_ms:
                 continue
-            rows_by_ts[ts] = {
+            payload = {
                 'exchange': 'bitget',
                 'dataset': 'funding_rate_history',
                 'symbol': symbol,
@@ -206,26 +241,33 @@ def fetch_funding(*, symbol: str, product_type: str, start_ms: int, sleep_second
                 'timestamp': ts_to_iso(ts),
                 'fundingRate': float(row['fundingRate']),
             }
-            kept += 1
+            month = ts_to_month_key(ts)
+            store.setdefault(month, {})[ts] = payload
         if rounds % 10 == 0:
-            write_jsonl(rows_by_ts, path)
-            print(json.dumps({'event': 'funding_progress', 'rounds': rounds, 'stored_rows': len(rows_by_ts), 'stored_oldest': ts_to_iso(min(rows_by_ts)) if rows_by_ts else None, 'stored_newest': ts_to_iso(max(rows_by_ts)) if rows_by_ts else None}, ensure_ascii=False))
+            flush_month_store(out_dir, store)
         oldest_in_page = min(int(r['fundingTime']) for r in rows)
         if oldest_in_page < start_ms:
             break
         page += 1
         time.sleep(sleep_seconds)
-    write_jsonl(rows_by_ts, path)
-    return {'output': str(path), 'rows': len(rows_by_ts), 'rounds': rounds}
+    flush_month_store(out_dir, store)
+    total_rows = sum(len(x) for x in store.values())
+    return {'output_dir': str(out_dir), 'rows': total_rows, 'months': len(store), 'rounds': rounds}
+
+
+def load_all_month_rows(base_dir: Path) -> dict[int, dict[str, Any]]:
+    store, _, _ = load_month_store(base_dir, resume=True)
+    merged: dict[int, dict[str, Any]] = {}
+    for month_rows in store.values():
+        merged.update(month_rows)
+    return merged
 
 
 def build_basis_proxy(*, symbol: str, product_type: str, timeframe: str) -> dict[str, Any]:
-    mark_path = jsonl_path('mark_price', symbol=symbol, timeframe=timeframe)
-    index_path = jsonl_path('index_price', symbol=symbol, timeframe=timeframe)
-    out_path = jsonl_path('basis_proxy', symbol=symbol, timeframe=timeframe)
-    mark_rows = load_existing_rows(mark_path)
-    index_rows = load_existing_rows(index_path)
-    rows_by_ts: dict[int, dict[str, Any]] = {}
+    mark_rows = load_all_month_rows(dataset_dir('mark_price', symbol=symbol))
+    index_rows = load_all_month_rows(dataset_dir('index_price', symbol=symbol))
+    out_dir = dataset_dir('basis_proxy', symbol=symbol)
+    store: dict[str, dict[int, dict[str, Any]]] = {}
     for ts, mark in mark_rows.items():
         idx = index_rows.get(ts)
         if not idx:
@@ -233,7 +275,7 @@ def build_basis_proxy(*, symbol: str, product_type: str, timeframe: str) -> dict
         index_close = idx['close']
         mark_close = mark['close']
         basis_pct = None if not index_close else (mark_close - index_close) / index_close
-        rows_by_ts[ts] = {
+        payload = {
             'exchange': 'bitget',
             'dataset': 'basis_proxy',
             'symbol': symbol,
@@ -245,12 +287,15 @@ def build_basis_proxy(*, symbol: str, product_type: str, timeframe: str) -> dict
             'indexClose': index_close,
             'basisPct': basis_pct,
         }
-    write_jsonl(rows_by_ts, out_path)
-    return {'output': str(out_path), 'rows': len(rows_by_ts)}
+        month = ts_to_month_key(ts)
+        store.setdefault(month, {})[ts] = payload
+    flush_month_store(out_dir, store)
+    total_rows = sum(len(x) for x in store.values())
+    return {'output_dir': str(out_dir), 'rows': total_rows, 'months': len(store)}
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description='Fetch Bitget derivatives context for crypto market-state research.')
+    parser = argparse.ArgumentParser(description='Fetch Bitget derivatives context directly into monthly JSONL partitions.')
     parser.add_argument('--symbol', default=DEFAULT_SYMBOL)
     parser.add_argument('--product-type', default=DEFAULT_PRODUCT_TYPE)
     parser.add_argument('--kind', choices=['candles', 'funding', 'mark', 'index', 'basis-proxy', 'all'], default='all')

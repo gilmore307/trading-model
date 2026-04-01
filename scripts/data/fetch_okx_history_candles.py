@@ -8,6 +8,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -21,6 +22,7 @@ DEFAULT_SLEEP_SECONDS = 0.12
 DEFAULT_LIMIT = 100
 DEFAULT_INST_ID = "BTC-USDT"
 DEFAULT_BAR = "1m"
+BUSINESS_TZ = ZoneInfo("America/New_York")
 
 
 def parse_time_to_ms(value: str) -> int:
@@ -31,6 +33,20 @@ def parse_time_to_ms(value: str) -> int:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=UTC)
     return int(dt.timestamp() * 1000)
+
+
+def ts_to_month_key(ts: int) -> str:
+    dt = datetime.fromtimestamp(ts / 1000, tz=UTC).astimezone(BUSINESS_TZ)
+    return dt.strftime("%Y-%m")
+
+
+def default_output_dir(*, inst_id: str, dataset: str) -> Path:
+    safe_inst = inst_id.replace("/", "-")
+    return Path("data/raw") / safe_inst / dataset
+
+
+def month_file_path(base_dir: Path, ts: int) -> Path:
+    return base_dir / f"{ts_to_month_key(ts)}.jsonl"
 
 
 def fetch_page(*, inst_id: str, bar: str, limit: int, after: int | None = None, timeout: int = 20) -> list[list[str]]:
@@ -111,11 +127,6 @@ def normalize_row(row: list[str], *, inst_id: str, bar: str) -> dict[str, Any]:
     }
 
 
-def default_output_path(*, inst_id: str, bar: str) -> Path:
-    safe_inst = inst_id.replace("/", "-")
-    return Path("data/raw") / safe_inst / "candles" / f"{safe_inst}.jsonl"
-
-
 def load_existing_rows(path: Path) -> dict[int, dict[str, Any]]:
     existing: dict[int, dict[str, Any]] = {}
     if not path.exists():
@@ -140,6 +151,30 @@ def write_jsonl(rows_by_ts: dict[int, dict[str, Any]], path: Path, *, only_confi
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def load_month_store(base_dir: Path, *, resume: bool) -> tuple[dict[str, dict[int, dict[str, Any]]], int | None, int | None]:
+    store: dict[str, dict[int, dict[str, Any]]] = {}
+    oldest = None
+    newest = None
+    if not resume or not base_dir.exists():
+        return store, oldest, newest
+    for path in sorted(base_dir.glob("*.jsonl")):
+        rows = load_existing_rows(path)
+        if not rows:
+            continue
+        month = path.stem
+        store[month] = rows
+        month_oldest = min(rows)
+        month_newest = max(rows)
+        oldest = month_oldest if oldest is None else min(oldest, month_oldest)
+        newest = month_newest if newest is None else max(newest, month_newest)
+    return store, oldest, newest
+
+
+def flush_month_store(base_dir: Path, store: dict[str, dict[int, dict[str, Any]]], *, only_confirmed: bool) -> None:
+    for month, rows in store.items():
+        write_jsonl(rows, base_dir / f"{month}.jsonl", only_confirmed=only_confirmed)
+
+
 def fetch_history_range(
     *,
     inst_id: str,
@@ -149,15 +184,16 @@ def fetch_history_range(
     start_ms: int | None,
     end_ms: int | None,
     max_pages: int | None,
-    rows_by_ts: dict[int, dict[str, Any]],
+    store: dict[str, dict[int, dict[str, Any]]],
+    existing_oldest_ts: int | None,
     progress_every: int,
     checkpoint_every: int,
-    output_path: Path,
-) -> tuple[dict[int, dict[str, Any]], int]:
+    output_dir: Path,
+) -> tuple[dict[str, dict[int, dict[str, Any]]], int]:
     after: int | None = end_ms
     pages = 0
-    if rows_by_ts:
-        after = min(rows_by_ts.keys())
+    if existing_oldest_ts is not None:
+        after = existing_oldest_ts
     while True:
         if max_pages is not None and pages >= max_pages:
             break
@@ -175,20 +211,22 @@ def fetch_history_range(
                 continue
             if start_ms is not None and ts < start_ms:
                 continue
-            rows_by_ts[ts] = normalized
+            month = ts_to_month_key(ts)
+            store.setdefault(month, {})[ts] = normalized
             kept += 1
         if pages % checkpoint_every == 0:
-            write_jsonl(rows_by_ts, output_path, only_confirmed=True)
+            flush_month_store(output_dir, store, only_confirmed=True)
         if pages % progress_every == 0:
-            oldest = min(rows_by_ts.keys()) if rows_by_ts else None
-            newest = max(rows_by_ts.keys()) if rows_by_ts else None
+            all_ts = [ts for month_rows in store.values() for ts in month_rows.keys()]
+            oldest = min(all_ts) if all_ts else None
+            newest = max(all_ts) if all_ts else None
             print(json.dumps({
                 "event": "progress",
                 "pages": pages,
                 "page_oldest": min_ts,
                 "page_newest": max_ts,
                 "kept_in_page": kept,
-                "stored_rows": len(rows_by_ts),
+                "stored_rows": len(all_ts),
                 "stored_oldest": None if oldest is None else datetime.fromtimestamp(oldest / 1000, tz=UTC).isoformat(),
                 "stored_newest": None if newest is None else datetime.fromtimestamp(newest / 1000, tz=UTC).isoformat(),
             }, ensure_ascii=False))
@@ -196,21 +234,21 @@ def fetch_history_range(
             break
         after = min_ts
         time.sleep(sleep_seconds)
-    return rows_by_ts, pages
+    return store, pages
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Fetch OKX historical candles into normalized JSONL.")
+    parser = argparse.ArgumentParser(description="Fetch OKX historical candles directly into monthly JSONL partitions.")
     parser.add_argument("--inst-id", default=DEFAULT_INST_ID)
     parser.add_argument("--bar", default=DEFAULT_BAR)
     parser.add_argument("--pages", type=int, default=None, help="Optional page cap. Omit for unbounded until start is reached.")
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT)
     parser.add_argument("--sleep-seconds", type=float, default=DEFAULT_SLEEP_SECONDS)
-    parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--include-unconfirmed", action="store_true")
     parser.add_argument("--start", type=str, default=None, help="Inclusive start time (ISO8601 or ms).")
     parser.add_argument("--end", type=str, default=None, help="Inclusive end time (ISO8601 or ms). Defaults to latest available.")
-    parser.add_argument("--resume", action="store_true", help="Load and extend an existing output file.")
+    parser.add_argument("--resume", action="store_true", help="Load and extend existing monthly output files.")
     parser.add_argument("--progress-every", type=int, default=100)
     parser.add_argument("--checkpoint-every", type=int, default=25, help="Write partial progress every N pages.")
     return parser
@@ -219,11 +257,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
-    output = args.output or default_output_path(inst_id=args.inst_id, bar=args.bar)
+    output_dir = args.output_dir or default_output_dir(inst_id=args.inst_id, dataset="candles")
     start_ms = None if args.start is None else parse_time_to_ms(args.start)
     end_ms = None if args.end is None else parse_time_to_ms(args.end)
-    rows_by_ts = load_existing_rows(output) if args.resume else {}
-    rows_by_ts, pages = fetch_history_range(
+    store, existing_oldest_ts, _ = load_month_store(output_dir, resume=args.resume)
+    store, pages = fetch_history_range(
         inst_id=args.inst_id,
         bar=args.bar,
         limit=args.limit,
@@ -231,35 +269,27 @@ def main() -> None:
         start_ms=start_ms,
         end_ms=end_ms,
         max_pages=args.pages,
-        rows_by_ts=rows_by_ts,
+        store=store,
+        existing_oldest_ts=existing_oldest_ts,
         progress_every=max(1, args.progress_every),
         checkpoint_every=max(1, args.checkpoint_every),
-        output_path=output,
+        output_dir=output_dir,
     )
-    write_jsonl(rows_by_ts, output, only_confirmed=not args.include_unconfirmed)
-    ordered = [rows_by_ts[k] for k in sorted(rows_by_ts.keys())]
-    if ordered:
-        print(json.dumps({
-            "output": str(output),
-            "row_count": len(ordered),
-            "first": ordered[0]["timestamp"],
-            "last": ordered[-1]["timestamp"],
-            "instId": args.inst_id,
-            "bar": args.bar,
-            "pages": pages,
-            "start": args.start,
-            "end": args.end,
-        }, ensure_ascii=False, indent=2))
-    else:
-        print(json.dumps({
-            "output": str(output),
-            "row_count": 0,
-            "instId": args.inst_id,
-            "bar": args.bar,
-            "pages": pages,
-            "start": args.start,
-            "end": args.end,
-        }, ensure_ascii=False, indent=2))
+    flush_month_store(output_dir, store, only_confirmed=not args.include_unconfirmed)
+    all_rows = [row for month_rows in store.values() for row in month_rows.values()]
+    all_rows.sort(key=lambda row: int(row["ts"]))
+    print(json.dumps({
+        "output_dir": str(output_dir),
+        "row_count": len(all_rows),
+        "month_count": len(store),
+        "first": None if not all_rows else all_rows[0]["timestamp"],
+        "last": None if not all_rows else all_rows[-1]["timestamp"],
+        "instId": args.inst_id,
+        "bar": args.bar,
+        "pages": pages,
+        "start": args.start,
+        "end": args.end,
+    }, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
