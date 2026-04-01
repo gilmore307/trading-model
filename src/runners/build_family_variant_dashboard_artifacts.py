@@ -42,6 +42,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument('--cluster-model-version', default='v1')
     parser.add_argument('--ranking-run-id', default='default')
     parser.add_argument('--summary-only', action='store_true', help='Only write summary/composite outputs; skip heavy per-variant files.')
+    parser.add_argument('--two-pass', action='store_true', help='Compute full rankings but only persist heavy files for active/reserve tiers.')
     return parser
 
 
@@ -258,7 +259,7 @@ def main() -> None:
             }
             if not args.summary_only and not args.two_pass:
                 variant_path.write_text(json.dumps(payload, ensure_ascii=False), encoding='utf-8')
-            print(json.dumps({'stage': 'variant_done', 'idx': idx, 'total': len(variants), 'variant_id': variant_id, 'trades': len(ledger), 'curve_points': len(curve), 'summary_only': bool(args.summary_only), 'two_pass': bool(args.two_pass)}, ensure_ascii=False), flush=True)
+            print(json.dumps({'stage': 'variant_done', 'idx': idx, 'total': len(variants), 'variant_id': variant_id, 'trades': len(ledger), 'curve_points': len(curve), 'summary_only': bool(args.summary_only), 'two_pass': bool(getattr(args, 'two_pass', False))}, ensure_ascii=False), flush=True)
 
         summary_row = payload['summary']
         curve = payload.get('curve') or []
