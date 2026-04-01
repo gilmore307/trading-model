@@ -40,7 +40,7 @@ for family in "${families[@]}"; do
     ts=$(date +%Y%m%d-%H%M%S)
     log="$LOG_DIR/rebuild-${family}-${ts}.log"
     echo "[$(date '+%F %T')] running family=$family log=$log"
-    if python3 "$RUNNER" --family "$family" --summary-only --retain-top-per-cluster 1 --reserve-top-per-cluster 10 >"$log" 2>&1; then
+    if python3 "$RUNNER" --family "$family" --two-pass --retain-top-per-cluster 1 --reserve-top-per-cluster 10 >"$log" 2>&1; then
       echo "[$(date '+%F %T')] runner finished family=$family"
     else
       code=$?

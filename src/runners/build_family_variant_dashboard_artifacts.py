@@ -211,7 +211,8 @@ def main() -> None:
         print(json.dumps({'stage': 'variant_start', 'idx': idx, 'total': len(variants), 'variant_id': variant_id}, ensure_ascii=False), flush=True)
 
         payload = None
-        if (args.resume and not args.summary_only) and variant_path.exists():
+        allow_resume_payload = (args.resume and not args.summary_only and not args.two_pass)
+        if allow_resume_payload and variant_path.exists():
             try:
                 payload = json.loads(variant_path.read_text(encoding='utf-8'))
             except Exception:
@@ -255,9 +256,9 @@ def main() -> None:
                 'curve': curve,
                 'ledger': ledger,
             }
-            if not args.summary_only:
+            if not args.summary_only and not args.two_pass:
                 variant_path.write_text(json.dumps(payload, ensure_ascii=False), encoding='utf-8')
-            print(json.dumps({'stage': 'variant_done', 'idx': idx, 'total': len(variants), 'variant_id': variant_id, 'trades': len(ledger), 'curve_points': len(curve), 'summary_only': bool(args.summary_only)}, ensure_ascii=False), flush=True)
+            print(json.dumps({'stage': 'variant_done', 'idx': idx, 'total': len(variants), 'variant_id': variant_id, 'trades': len(ledger), 'curve_points': len(curve), 'summary_only': bool(args.summary_only), 'two_pass': bool(args.two_pass)}, ensure_ascii=False), flush=True)
 
         summary_row = payload['summary']
         curve = payload.get('curve') or []
