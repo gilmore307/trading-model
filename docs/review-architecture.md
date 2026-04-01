@@ -102,7 +102,7 @@ Still improving:
 - full simplification away from multi-account / router-composite legacy framing
 - clearer theoretical-signal vs actual-execution reporting
 - canonical realized/unrealized/funding semantics
-- cleaner separation between live review and historical model optimization
+- tighter attachment of upgrade validation artifacts to the promotion-triggered strategy-upgrade event flow
 
 ## Related docs
 

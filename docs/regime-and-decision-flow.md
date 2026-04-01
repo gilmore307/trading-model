@@ -154,7 +154,7 @@ Examples:
 
 - `develop` may block normal routing workflows
 - `trade` permits normal routing
-- `review` / `calibrate` / `reset` / `test` are operational states with different policy implications
+- `test` and `reset` are exceptional operational states with different policy implications from normal trading
 
 See also:
 

@@ -160,9 +160,9 @@ The report currently contains:
 - execution-quality / deviation sections
 - section status summary
 
-## Legacy compatibility note
+## Operator note
 
-`review` and `calibrate` remain available as compatibility labels / helper runners, but they are no longer the primary top-level operator concept.
+`review` and `calibrate` should be understood as event/helper concepts, not daemon runtime modes.
 
 Use the unified `strategy_upgrade_event` as the primary operator entry when a new promoted strategy version is adopted in live trading.
 

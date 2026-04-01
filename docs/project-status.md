@@ -13,13 +13,13 @@ Build a crypto-trading research system that:
 
 ## Current state
 
-The project is now in a **historical-first transition phase**:
+The project is now in a **hybrid phase**:
 
-1. runtime / execution code exists
-2. review/report machinery exists
-3. snapshot-based offline research exists
-4. project docs have been consolidated under `docs/`
-5. strategy-family research has become the current top-level direction
+1. historical-first strategy-family research remains the top-level research direction
+2. a live runtime path also exists and is being reshaped around a long-running `trade` daemon plus promotion-triggered strategy-upgrade events
+3. review/report machinery exists as a live-operations diagnostics layer rather than as a standalone runtime mode system
+4. snapshot-based offline research exists
+5. project docs have been consolidated under `docs/`
 6. storage/retention direction is now explicitly tightening around:
    - aligned UTC monthly partitions for time-series datasets
    - three-tier variant retention (`active` / `reserve` / `archived`)
@@ -29,7 +29,8 @@ The project is now in a **historical-first transition phase**:
 
 ### Runtime and execution foundation
 - `trade_daemon` exists as a real daemon path
-- runtime modes and mode policy exist
+- runtime modes now center on `develop` / `trade` / `test` / `reset`; `review` and `calibrate` have been demoted to event/job concepts
+- promotion-triggered `strategy_upgrade_event` handling now exists as the canonical live-upgrade path
 - execution submission / verify / reconcile / recovery paths exist as real code
 - execution anomaly handling was materially improved during this work session
 - execution confirmation now distinguishes stronger evidence levels:
@@ -129,9 +130,9 @@ The project is now in a **historical-first transition phase**:
 - the repo contains runtime and execution machinery that can be reused later
 
 ### Not the current focus
-- live-runtime rollout is not the main phase right now
+- multi-account live rollout is not the main phase right now
 - live-lane count is not the current organizing model
-- the historical-only phase takes priority over further live orchestration work
+- stop-the-world review/calibrate/trade mode choreography is no longer the intended runtime model
 
 ### Not finished yet
 - historical replay is still snapshot-based, not raw-market replay
