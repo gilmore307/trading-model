@@ -2,12 +2,17 @@
 
 This document inventories Markdown files that still contain realtime trading / live runtime / execution-system content.
 
-Use this file as the first step before classifying code and scripts.
+## Status update
+
+A first realtime-doc seed set has now been created in:
+- `projects/quantitative-trading/docs/`
+
+That new docs tree is the target home for complete realtime trading documentation.
 
 ## A. Core realtime / execution docs
 
 These are primarily about live trading, runtime workflows, execution, reconciliation, or operational review.
-They are strong candidates to move with the realtime system into `quantitative-trading`.
+They should now be treated as belonging conceptually to `quantitative-trading`.
 
 - `docs/runtime-and-modes.md`
 - `docs/execution-artifacts.md`
@@ -45,27 +50,10 @@ These should stay in `trading-model` for now because they describe the split its
 - `docs/project-map.md`
 - `docs/TODO.md`
 
-## D. Historical / research docs with only minor incidental realtime mentions
-
-These can usually stay in `trading-model` and only need light cleanup later.
-
-- `docs/strategy-research-framework.md`
-- `docs/strategy-family-implementation-plan.md`
-- `docs/strategy-candidate-pool.md`
-- `docs/market-state-dataset-spec.md`
-- `docs/market-state-description-framework.md`
-- `docs/market-state-feature-inventory-v1.md`
-- `docs/data-layering-and-git-policy.md`
-- `docs/data-sparse-checkout-policy.md`
-- `docs/TIME_SERIES_PARTITION_POLICY.md`
-- `docs/data-ingestion-architecture.md`
-
 ## Immediate follow-up use
 
 When tracing code/script migration from docs, start in this order:
 
-1. Core realtime / execution docs (section A)
-2. Hybrid docs with live/runtime coupling (section B)
-3. Map referenced modules / runners / scripts from those docs into a code inventory
-
-This keeps the migration grounded in documented responsibilities rather than filename intuition.
+1. core realtime docs now seeded under `quantitative-trading/docs/`
+2. hybrid docs in `trading-model/docs/` that still need splitting
+3. map referenced modules / runners / scripts from those docs into a code inventory
