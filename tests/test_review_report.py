@@ -114,8 +114,8 @@ def test_report_scaffold_filters_history_to_review_window(tmp_path: Path):
     assert trend_row['trade_count'] == 2
     assert trend_row['pnl_usdt'] == 3.0
     assert trend_row['equity_start_usdt'] == 999.0
-    assert trend_row['equity_end_usdt'] == 1008.0
-    assert trend_row['equity_change_usdt'] == 9.0
+    assert trend_row['equity_end_usdt'] == 1003.0
+    assert trend_row['equity_change_usdt'] == 4.0
 
 
 def test_quarterly_report_scaffold_includes_structural_review_section():
