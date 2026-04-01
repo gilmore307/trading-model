@@ -436,18 +436,14 @@ class RuntimeWorkflowRunner:
             f.write(json.dumps(asdict(result), default=str, ensure_ascii=False) + '\n')
 
     def run(self, mode: RuntimeMode) -> WorkflowRunResult:
-        if mode not in {RuntimeMode.REVIEW, RuntimeMode.TEST, RuntimeMode.CALIBRATE, RuntimeMode.RESET}:
+        if mode not in {RuntimeMode.TEST, RuntimeMode.RESET}:
             raise ValueError(f'workflow mode not supported: {mode}')
 
         started_mode = self.runtime_store.get().mode
         destructive = mode == RuntimeMode.RESET
         self.runtime_store.set_mode(mode, reason='workflow_start')
 
-        if mode == RuntimeMode.REVIEW:
-            steps = [
-                self.hooks.run_review(),
-            ]
-        elif mode == RuntimeMode.TEST:
+        if mode == RuntimeMode.TEST:
             steps = [
                 self.hooks.run_test_workflow(),
             ]

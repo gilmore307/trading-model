@@ -48,7 +48,7 @@ Document the runtime mode model and operational meaning of each mode.
 ## Current state
 
 - Mode system is active and durable.
-- `review` / `calibrate` may still appear in some compatibility code paths, but they should be treated as legacy transitional concepts rather than first-class runtime modes.
+- `review` / `calibrate` should be treated as event/job concepts only; they are no longer valid runtime modes in the enum / policy layer.
 - This is a core project concept and should stay synchronized with runtime implementation.
 
 ## Next step

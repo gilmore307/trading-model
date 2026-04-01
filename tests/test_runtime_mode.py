@@ -20,7 +20,5 @@ def test_runtime_store_changes_mode():
 
 
 def test_workflow_auto_transitions():
-    assert next_mode_after(RuntimeMode.REVIEW) is None
-    assert next_mode_after(RuntimeMode.CALIBRATE) is None
     assert next_mode_after(RuntimeMode.RESET).to_mode == RuntimeMode.DEVELOP
     assert next_mode_after(RuntimeMode.TEST).to_mode == RuntimeMode.DEVELOP

@@ -80,7 +80,7 @@ This is the canonical current task list for the project.
 
 - [x] remove `review` / `calibrate` from first-class runtime mode docs and treat them as event/job concepts
 - [x] remove `review` / `calibrate` from the runtime mode enum / policy layer
-- [ ] audit runtime store / workflow callers for assumptions that `review` / `calibrate` are still valid stored modes
+- [x] audit runtime store / workflow callers for assumptions that `review` / `calibrate` are still valid stored modes
 - [ ] verify end-to-end strategy-upgrade flow: daemon pointer change -> request artifact -> out-of-band consumer -> upgrade review + handover marker
 - [ ] document the final operator workflow for strategy promotion, daemon hot-swap, and upgrade validation
 
