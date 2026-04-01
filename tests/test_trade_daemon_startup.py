@@ -58,7 +58,7 @@ def test_ensure_trade_start_ready_returns_none_when_startup_ready():
     assert store.get().mode == RuntimeMode.TRADE
 
 
-def test_ensure_trade_start_ready_returns_readiness_event_without_calibrate_mode_switch():
+def test_ensure_trade_start_ready_returns_readiness_event_without_strategy_upgrade_side_effects():
     store = RuntimeStore()
     store.set_mode(RuntimeMode.TRADE, reason='daemon_start_trade_mode')
     hooks = NeedsCalibrateHooks()

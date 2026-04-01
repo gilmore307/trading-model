@@ -7,12 +7,12 @@ This document makes the current project limits explicit so the system is not ove
 ## Safe assumptions today
 
 These are real enough to rely on as current structure:
-- runtime modes matter
+- runtime modes matter, but the active daemon/runtime layer now centers on `develop` / `trade` / `test` / `reset`
 - execution submission / verify / reconcile / recovery code exists
 - execution artifacts are the persistence boundary between runtime and review
 - weekly/monthly/quarterly review runners are real entrypoints
 - snapshot-based offline research is real and usable
-- multi-account parallel execution is now the intended live model
+- multi-account parallel execution research/runtime machinery exists, but the current live-operations interpretation is a single promoted strategy on one real account
 
 ## Transitional areas
 
