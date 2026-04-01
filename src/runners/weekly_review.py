@@ -8,8 +8,9 @@ from typing import Any
 
 from src.review.export import export_report_artifacts
 from src.review.framework import build_weekly_window
+from src.runtime.business_time import to_business
 
-DEFAULT_HISTORY_PATH = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime/execution-cycles.jsonl')
+DEFAULT_HISTORY_PATH = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime/execution-cycles')
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -18,7 +19,7 @@ def _parse_dt(value: str | None) -> datetime | None:
     parsed = datetime.fromisoformat(value)
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
-    return parsed.astimezone(UTC)
+    return to_business(parsed)
 
 
 def run_weekly_review(
@@ -27,7 +28,7 @@ def run_weekly_review(
     history_path: str | Path | None = None,
     out_dir: str | Path | None = None,
 ) -> dict[str, Any]:
-    now = (now or datetime.now(UTC)).astimezone(UTC)
+    now = to_business(now or datetime.now(UTC))
     history = Path(history_path) if history_path is not None else DEFAULT_HISTORY_PATH
     window = build_weekly_window(now)
     exported = export_report_artifacts(window, history_path=str(history), out_dir=out_dir, generated_at=now)

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from enum import StrEnum
 from typing import Any
+
+from src.runtime.business_time import business_month_start, business_quarter_start, previous_business_month_start, previous_business_quarter_start, previous_business_week_start, to_business
 
 
 class ReviewCadence(StrEnum):
@@ -66,17 +68,13 @@ STRUCTURAL_PARAMS = [
 ]
 
 
-def _sunday_midnight(dt: datetime) -> datetime:
-    dt = dt.astimezone(UTC)
-    weekday = dt.weekday()  # Mon=0 ... Sun=6
-    days_since_sunday = (weekday - 6) % 7
-    sunday = datetime(dt.year, dt.month, dt.day, tzinfo=UTC) - timedelta(days=days_since_sunday)
-    return sunday
+def _business_week_start(dt: datetime) -> datetime:
+    return previous_business_week_start(dt)
 
 
 def build_weekly_window(now: datetime) -> ReviewWindow:
-    now = now.astimezone(UTC)
-    end = _sunday_midnight(now)
+    now = to_business(now)
+    end = _business_week_start(now)
     start = end - timedelta(days=7)
     return ReviewWindow(
         cadence=ReviewCadence.WEEKLY,
@@ -87,20 +85,24 @@ def build_weekly_window(now: datetime) -> ReviewWindow:
 
 
 def build_monthly_window(previous_review_end: datetime, current_review_end: datetime) -> ReviewWindow:
+    start = to_business(previous_review_end)
+    end = to_business(current_review_end)
     return ReviewWindow(
         cadence=ReviewCadence.MONTHLY,
-        window_start=previous_review_end.astimezone(UTC),
-        window_end=current_review_end.astimezone(UTC),
-        label=f'monthly:{previous_review_end.date()}->{current_review_end.date()}',
+        window_start=start,
+        window_end=end,
+        label=f'monthly:{start.date()}->{end.date()}',
     )
 
 
 def build_quarterly_window(previous_review_end: datetime, current_review_end: datetime) -> ReviewWindow:
+    start = to_business(previous_review_end)
+    end = to_business(current_review_end)
     return ReviewWindow(
         cadence=ReviewCadence.QUARTERLY,
-        window_start=previous_review_end.astimezone(UTC),
-        window_end=current_review_end.astimezone(UTC),
-        label=f'quarterly:{previous_review_end.date()}->{current_review_end.date()}',
+        window_start=start,
+        window_end=end,
+        label=f'quarterly:{start.date()}->{end.date()}',
     )
 
 
