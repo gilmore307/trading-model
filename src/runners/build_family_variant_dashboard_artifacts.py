@@ -346,13 +346,17 @@ def main() -> None:
             active = False
             deprecated = True
             deprecated_reason = 'outside current reserve threshold under latest cluster ranking'
+        retained_remote = variant_id in retained_full_variant_ids or variant_id in reserve_variant_ids
+        retained_local = variant_id in retained_full_variant_ids
         variant_summaries.append({
             'family': args.family,
             'variant_id': variant_id,
             'variant': row.get('variant'),
             'tested': True,
             'tier': tier,
-            'retained_full': variant_id in retained_full_variant_ids,
+            'retained_full': retained_remote,
+            'retained_full_local': retained_local,
+            'retained_full_remote': retained_remote,
             'active': active,
             'deprecated': deprecated,
             'deprecated_reason': deprecated_reason,
@@ -406,8 +410,10 @@ def main() -> None:
         },
         'variant_count_total': len(variants),
         'variant_count_evaluated': len(summaries),
-        'variant_count_retained_full': len(retained_full_variant_ids),
-        'retained_full_variant_ids': sorted(retained_full_variant_ids),
+        'variant_count_retained_full': len(retained_full_variant_ids) + len(reserve_variant_ids),
+        'retained_full_variant_ids': sorted(retained_full_variant_ids | reserve_variant_ids),
+        'retained_full_local_variant_ids': sorted(retained_full_variant_ids),
+        'retained_full_remote_variant_ids': sorted(retained_full_variant_ids | reserve_variant_ids),
         'reserve_variant_ids': sorted(reserve_variant_ids),
         'archived_variant_count': max(0, len(summaries) - len(retained_full_variant_ids) - len(reserve_variant_ids)),
         'cluster_model_version': args.cluster_model_version,
@@ -460,7 +466,7 @@ def main() -> None:
         for variant_id, payload in variant_payloads.items():
             safe_variant = ''.join(ch for ch in variant_id if ch.isalnum() or ch in {'_', '-'})
             variant_file = variants_dir / f'{safe_variant}.json'
-            if variant_id in retained_full_variant_ids:
+            if variant_id in retained_full_variant_ids or variant_id in reserve_variant_ids:
                 retained_payload = {
                     'family': payload['family'],
                     'variant_id': payload['variant_id'],
@@ -468,6 +474,8 @@ def main() -> None:
                     'curve': payload.get('curve') or [],
                     'ledger': payload.get('ledger') or [],
                     'retained_full': True,
+                    'retained_full_local': variant_id in retained_full_variant_ids,
+                    'retained_full_remote': True,
                 }
                 variant_file.write_text(json.dumps(retained_payload, ensure_ascii=False), encoding='utf-8')
             elif variant_file.exists():
