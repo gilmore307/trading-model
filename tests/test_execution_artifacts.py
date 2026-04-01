@@ -13,6 +13,9 @@ from src.runners.regime_runner import RegimeRunnerOutput
 from src.strategies.executors import ExecutionPlan
 
 
+ACTIVE_STRATEGY = {'version': 'test-v1', 'family': 'trend', 'config_path': 'config/active.json'}
+
+
 def test_build_execution_artifact_includes_summary_fields():
     regime_output = RegimeRunnerOutput(
         observed_at=datetime.now(UTC),
@@ -50,6 +53,7 @@ def test_build_execution_artifact_includes_summary_fields():
         ),
         runtime_state={'mode': 'develop', 'reason': 'dev', 'updated_at': datetime.now(UTC)},
         route_state={'account': 'trend', 'symbol': 'BTC-USDT-SWAP', 'enabled': True, 'frozen_reason': None, 'updated_at': datetime.now(UTC)},
+        active_strategy=ACTIVE_STRATEGY,
         live_positions=[],
         router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': 'trend', 'source_regime': 'trend', 'source_confidence': 0.8, 'switch_action': 'adopt_target_plan', 'position_owner': 'trend', 'plan': {'action': 'enter'}, 'notes': ['selected_strategy:trend'], 'position': {'side': 'long'}},
     )
@@ -126,6 +130,7 @@ def test_build_execution_artifact_captures_blocked_reason():
         ),
         runtime_state={'mode': 'trade', 'reason': 'manual', 'updated_at': datetime.now(UTC)},
         route_state=None,
+        active_strategy=ACTIVE_STRATEGY,
         live_positions=[],
         router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': None, 'source_regime': 'chaotic', 'source_confidence': 0.2, 'switch_action': 'hold', 'position_owner': None, 'plan': {'action': 'hold'}, 'notes': ['router_not_actionable'], 'position': None},
     )
@@ -171,6 +176,7 @@ def test_persist_execution_artifact_writes_anomaly_ledger_for_excluded_execution
         decision_trace=ExecutionDecisionTrace(mode='trade', mode_allows_routing=True, decision_trade_enabled=True, route_trade_enabled=True, pipeline_trade_enabled=True, allow_reason='route_to_trend', block_reason=None, diagnostics=[]),
         runtime_state={'mode': 'trade', 'reason': 'auto', 'updated_at': datetime.now(UTC)},
         route_state={'account': 'trend', 'symbol': 'BTC-USDT-SWAP', 'enabled': True, 'frozen_reason': None, 'updated_at': datetime.now(UTC)},
+        active_strategy=ACTIVE_STRATEGY,
         live_positions=[],
         router_composite={'account': 'router_composite', 'symbol': 'BTC-USDT-SWAP', 'selected_strategy': 'trend', 'source_regime': 'trend', 'source_confidence': 0.8, 'switch_action': 'hold', 'position_owner': None, 'plan': {'action': 'hold'}, 'notes': [], 'position': None},
     )

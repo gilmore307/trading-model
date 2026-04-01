@@ -23,6 +23,10 @@ REGIME_HISTORY_PATH = lambda: dated_jsonl_path('regime-local-history')
 STRATEGY_ACTIVITY_PATH = lambda: dated_jsonl_path('strategy-activity-history')
 
 
+def _resolve_path(path_or_factory):
+    return path_or_factory() if callable(path_or_factory) else path_or_factory
+
+
 def _json_default(value: Any):
     if isinstance(value, datetime):
         return value.astimezone(UTC).isoformat()
@@ -400,19 +404,19 @@ def _build_anomaly_artifact(result: ExecutionCycleResult, artifact: dict[str, An
 def persist_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     artifact = build_execution_artifact(result)
     LATEST_PATH.write_text(json.dumps(artifact, indent=2, default=_json_default, ensure_ascii=False))
-    with HISTORY_PATH().open('a', encoding='utf-8') as handle:
+    with _resolve_path(HISTORY_PATH).open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(artifact, default=_json_default, ensure_ascii=False) + '\n')
     regime_local = _build_regime_local_artifact(result, artifact)
-    with REGIME_HISTORY_PATH().open('a', encoding='utf-8') as handle:
+    with _resolve_path(REGIME_HISTORY_PATH).open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(regime_local, default=_json_default, ensure_ascii=False) + '\n')
     activity_rows = _build_strategy_activity_artifacts(artifact)
     if activity_rows:
-        with STRATEGY_ACTIVITY_PATH().open('a', encoding='utf-8') as handle:
+        with _resolve_path(STRATEGY_ACTIVITY_PATH).open('a', encoding='utf-8') as handle:
             for row in activity_rows:
                 handle.write(json.dumps(row, default=_json_default, ensure_ascii=False) + '\n')
     anomaly = _build_anomaly_artifact(result, artifact)
     if anomaly is not None:
-        with ANOMALY_HISTORY_PATH().open('a', encoding='utf-8') as handle:
+        with _resolve_path(ANOMALY_HISTORY_PATH).open('a', encoding='utf-8') as handle:
             handle.write(json.dumps(anomaly, default=_json_default, ensure_ascii=False) + '\n')
     return artifact
 
@@ -465,7 +469,7 @@ def build_parallel_execution_artifact(result: ParallelExecutionCycleResult) -> d
 def persist_parallel_execution_artifact(result: ParallelExecutionCycleResult) -> dict[str, Any]:
     artifact = build_parallel_execution_artifact(result)
     LATEST_PARALLEL_PATH.write_text(json.dumps(artifact, indent=2, default=_json_default, ensure_ascii=False))
-    with PARALLEL_HISTORY_PATH().open('a', encoding='utf-8') as handle:
+    with PARALLEL__resolve_path(HISTORY_PATH).open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(artifact, default=_json_default, ensure_ascii=False) + '\n')
     for row in result.results.values():
         persist_execution_artifact(row)
