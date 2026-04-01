@@ -9,18 +9,18 @@ from typing import Any
 from src.execution.pipeline import ExecutionCycleResult, ExecutionPipeline, ParallelExecutionCycleResult
 from src.review.account_metrics import build_account_metrics_from_cycle
 from src.review.compare import build_compare_snapshot
+from src.runtime.log_paths import RUNTIME_DIR, dated_jsonl_path
 from src.strategies.executors import build_shadow_plans
 
 
-OUT_DIR = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime')
-OUT_DIR.mkdir(parents=True, exist_ok=True)
+OUT_DIR = RUNTIME_DIR
 LATEST_PATH = OUT_DIR / 'latest-execution-cycle.json'
 LATEST_PARALLEL_PATH = OUT_DIR / 'latest-parallel-execution-cycle.json'
-HISTORY_PATH = OUT_DIR / 'execution-cycles.jsonl'
-PARALLEL_HISTORY_PATH = OUT_DIR / 'parallel-execution-cycles.jsonl'
-ANOMALY_HISTORY_PATH = OUT_DIR / 'execution-anomalies.jsonl'
-REGIME_HISTORY_PATH = OUT_DIR / 'regime-local-history.jsonl'
-STRATEGY_ACTIVITY_PATH = OUT_DIR / 'strategy-activity-history.jsonl'
+HISTORY_PATH = lambda: dated_jsonl_path('execution-cycles')
+PARALLEL_HISTORY_PATH = lambda: dated_jsonl_path('parallel-execution-cycles')
+ANOMALY_HISTORY_PATH = lambda: dated_jsonl_path('execution-anomalies')
+REGIME_HISTORY_PATH = lambda: dated_jsonl_path('regime-local-history')
+STRATEGY_ACTIVITY_PATH = lambda: dated_jsonl_path('strategy-activity-history')
 
 
 def _json_default(value: Any):
@@ -400,19 +400,19 @@ def _build_anomaly_artifact(result: ExecutionCycleResult, artifact: dict[str, An
 def persist_execution_artifact(result: ExecutionCycleResult) -> dict[str, Any]:
     artifact = build_execution_artifact(result)
     LATEST_PATH.write_text(json.dumps(artifact, indent=2, default=_json_default, ensure_ascii=False))
-    with HISTORY_PATH.open('a', encoding='utf-8') as handle:
+    with HISTORY_PATH().open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(artifact, default=_json_default, ensure_ascii=False) + '\n')
     regime_local = _build_regime_local_artifact(result, artifact)
-    with REGIME_HISTORY_PATH.open('a', encoding='utf-8') as handle:
+    with REGIME_HISTORY_PATH().open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(regime_local, default=_json_default, ensure_ascii=False) + '\n')
     activity_rows = _build_strategy_activity_artifacts(artifact)
     if activity_rows:
-        with STRATEGY_ACTIVITY_PATH.open('a', encoding='utf-8') as handle:
+        with STRATEGY_ACTIVITY_PATH().open('a', encoding='utf-8') as handle:
             for row in activity_rows:
                 handle.write(json.dumps(row, default=_json_default, ensure_ascii=False) + '\n')
     anomaly = _build_anomaly_artifact(result, artifact)
     if anomaly is not None:
-        with ANOMALY_HISTORY_PATH.open('a', encoding='utf-8') as handle:
+        with ANOMALY_HISTORY_PATH().open('a', encoding='utf-8') as handle:
             handle.write(json.dumps(anomaly, default=_json_default, ensure_ascii=False) + '\n')
     return artifact
 
@@ -465,7 +465,7 @@ def build_parallel_execution_artifact(result: ParallelExecutionCycleResult) -> d
 def persist_parallel_execution_artifact(result: ParallelExecutionCycleResult) -> dict[str, Any]:
     artifact = build_parallel_execution_artifact(result)
     LATEST_PARALLEL_PATH.write_text(json.dumps(artifact, indent=2, default=_json_default, ensure_ascii=False))
-    with PARALLEL_HISTORY_PATH.open('a', encoding='utf-8') as handle:
+    with PARALLEL_HISTORY_PATH().open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(artifact, default=_json_default, ensure_ascii=False) + '\n')
     for row in result.results.values():
         persist_execution_artifact(row)

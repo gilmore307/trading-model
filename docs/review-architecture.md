@@ -28,7 +28,7 @@ The review path should now assume a single promoted live strategy running in one
 
 ### Single-cycle account artifacts
 - `logs/runtime/latest-execution-cycle.json`
-- `logs/runtime/execution-cycles.jsonl`
+- `logs/runtime/execution-cycles/YYYY-MM-DD.jsonl`
 
 These are the primary review inputs for live operations.
 

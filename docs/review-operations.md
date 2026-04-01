@@ -23,7 +23,7 @@ Current operating assumption:
 
 Execution history is read from:
 
-- `logs/runtime/execution-cycles.jsonl`
+- `logs/runtime/execution-cycles/YYYY-MM-DD.jsonl` UTC daily partitions
 
 Review reports are written to:
 

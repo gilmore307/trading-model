@@ -14,14 +14,14 @@ from src.execution.adapters import DryRunExecutionAdapter, OkxExecutionAdapter
 from src.execution.pipeline import ExecutionPipeline
 from src.runners.discord_notifier import DiscordNotifier
 from src.runners.execution_cycle import persist_parallel_execution_artifact
+from src.runtime.log_paths import RUNTIME_DIR, dated_jsonl_path
 from src.runtime.mode import RuntimeMode
 from src.runtime.store import RuntimeStore
 from src.runtime.strategy_pointer import load_active_strategy_snapshot
 from src.runtime.workflows import OkxWorkflowHooks, WorkflowHooks, WorkflowRunResult
 
-OUT_DIR = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime')
-OUT_DIR.mkdir(parents=True, exist_ok=True)
-DAEMON_LOG = OUT_DIR / 'trade-daemon.jsonl'
+OUT_DIR = RUNTIME_DIR
+DAEMON_LOG = lambda: dated_jsonl_path('trade-daemon')
 PID_PATH = OUT_DIR / 'trade-daemon.pid'
 LOCK_PATH = OUT_DIR / 'trade-daemon.lock'
 UPGRADE_REQUEST_PATH = OUT_DIR / 'latest-strategy-upgrade-request.json'
@@ -34,7 +34,7 @@ def _json_default(value: Any):
 
 
 def _log_event(event: dict[str, Any]) -> None:
-    with DAEMON_LOG.open('a', encoding='utf-8') as handle:
+    with DAEMON_LOG().open('a', encoding='utf-8') as handle:
         handle.write(json.dumps(event, default=_json_default, ensure_ascii=False) + '\n')
 
 
