@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from src.review.compare import FLAT_COMPARE_ALIAS
 from src.review.ingestion import canonicalize_history_row
 from src.review.performance import DEFAULT_COMPARE_ACCOUNTS
+from src.runtime.business_time import business_midnight
 
 
 ROUND_DIGITS = 10
@@ -32,15 +33,42 @@ def _update_drawdown_state(
         max_drawdown_by_alias[alias] = drawdown_pct
 
 
-def _load_jsonl(path: Path) -> list[dict[str, Any]]:
+def _iter_history_files(path: Path, *, window_start: datetime | None = None, window_end: datetime | None = None) -> Iterable[Path]:
     if not path.exists():
         return []
-    rows: list[dict[str, Any]] = []
-    for line in path.read_text(encoding='utf-8').splitlines():
-        line = line.strip()
-        if not line:
+    if path.is_file():
+        return [path]
+
+    if window_start is None and window_end is None:
+        return sorted(child for child in path.glob('*.jsonl') if child.is_file())
+
+    local_start = None if window_start is None else business_midnight(window_start).date()
+    local_end = None if window_end is None else business_midnight(window_end).date()
+    selected: list[Path] = []
+    for child in sorted(path.glob('*.jsonl')):
+        if not child.is_file():
             continue
-        rows.append(json.loads(line))
+        try:
+            day = date.fromisoformat(child.stem)
+        except ValueError:
+            selected.append(child)
+            continue
+        if local_start is not None and day < local_start:
+            continue
+        if local_end is not None and day >= local_end:
+            continue
+        selected.append(child)
+    return selected
+
+
+def _load_jsonl(path: Path, *, window_start: datetime | None = None, window_end: datetime | None = None) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for file_path in _iter_history_files(path, window_start=window_start, window_end=window_end):
+        for line in file_path.read_text(encoding='utf-8').splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            rows.append(json.loads(line))
     return rows
 
 
@@ -99,7 +127,7 @@ def aggregate_from_execution_history(
     window_end: datetime | None = None,
 ) -> dict[str, dict[str, Any]]:
     base_metrics = {k: dict(v) for k, v in (base_metrics or {}).items()}
-    rows = _load_jsonl(Path(history_path))
+    rows = _load_jsonl(Path(history_path), window_start=window_start, window_end=window_end)
     if window_start is not None:
         window_start = window_start.astimezone(UTC)
     if window_end is not None:

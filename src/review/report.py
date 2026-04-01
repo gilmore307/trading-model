@@ -171,14 +171,16 @@ def _load_history_rows(path: str | None) -> list[dict[str, Any]]:
     if not p.exists():
         return []
     rows: list[dict[str, Any]] = []
-    for line in p.read_text(encoding='utf-8').splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            rows.append(json.loads(line))
-        except Exception:
-            continue
+    files = [p] if p.is_file() else sorted(child for child in p.glob('*.jsonl') if child.is_file())
+    for file_path in files:
+        for line in file_path.read_text(encoding='utf-8').splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except Exception:
+                continue
     return rows
 
 

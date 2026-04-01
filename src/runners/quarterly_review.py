@@ -8,8 +8,9 @@ from typing import Any
 
 from src.review.export import export_report_artifacts
 from src.review.framework import build_quarterly_window
+from src.runtime.business_time import business_quarter_start, previous_business_quarter_start, to_business
 
-DEFAULT_HISTORY_PATH = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime/execution-cycles.jsonl')
+DEFAULT_HISTORY_PATH = Path('/root/.openclaw/workspace/projects/crypto-trading/logs/runtime/execution-cycles')
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -18,20 +19,7 @@ def _parse_dt(value: str | None) -> datetime | None:
     parsed = datetime.fromisoformat(value)
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
-    return parsed.astimezone(UTC)
-
-
-def _start_of_quarter(dt: datetime) -> datetime:
-    dt = dt.astimezone(UTC)
-    month = ((dt.month - 1) // 3) * 3 + 1
-    return datetime(dt.year, month, 1, tzinfo=UTC)
-
-
-def _previous_quarter_start(dt: datetime) -> datetime:
-    current = _start_of_quarter(dt)
-    if current.month == 1:
-        return datetime(current.year - 1, 10, 1, tzinfo=UTC)
-    return datetime(current.year, current.month - 3, 1, tzinfo=UTC)
+    return to_business(parsed)
 
 
 def run_quarterly_review(
@@ -41,9 +29,9 @@ def run_quarterly_review(
     history_path: str | Path | None = None,
     out_dir: str | Path | None = None,
 ) -> dict[str, Any]:
-    now = (now or datetime.now(UTC)).astimezone(UTC)
-    current_review_end = _start_of_quarter(now)
-    previous_end = previous_review_end.astimezone(UTC) if previous_review_end is not None else _previous_quarter_start(now)
+    now = to_business(now or datetime.now(UTC))
+    current_review_end = business_quarter_start(now)
+    previous_end = to_business(previous_review_end) if previous_review_end is not None else previous_business_quarter_start(now)
     history = Path(history_path) if history_path is not None else DEFAULT_HISTORY_PATH
     window = build_quarterly_window(previous_end, current_review_end)
     exported = export_report_artifacts(window, history_path=str(history), out_dir=out_dir, generated_at=now)
@@ -52,9 +40,9 @@ def run_quarterly_review(
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Generate quarterly trade review artifacts.')
-    parser.add_argument('--now', help='ISO-8601 timestamp used to derive the current quarter review boundary (default: current UTC time).')
-    parser.add_argument('--previous-review-end', help='ISO-8601 timestamp for the previous quarterly review boundary (default: start of previous UTC quarter).')
-    parser.add_argument('--history-path', default=str(DEFAULT_HISTORY_PATH), help='Execution history jsonl path.')
+    parser.add_argument('--now', help='ISO-8601 timestamp used to derive the current business-quarter review boundary in America/New_York (default: current UTC time).')
+    parser.add_argument('--previous-review-end', help='ISO-8601 timestamp for the previous quarterly review boundary (default: start of previous America/New_York business quarter).')
+    parser.add_argument('--history-path', default=str(DEFAULT_HISTORY_PATH), help='Execution history jsonl path or daily-partitioned directory.')
     parser.add_argument('--out-dir', help='Output directory for report artifacts.')
     return parser
 
