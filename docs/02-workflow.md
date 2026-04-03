@@ -4,33 +4,58 @@ This repository should follow the workflow below.
 
 ## End-to-end flow
 
-1. receive partitioned market/context artifacts from `trading-data`
-2. receive partitioned strategy-result artifacts from `trading-strategy`
-3. align both upstream streams into modeling-ready learning tables
-4. build unsupervised market-state representations
-5. train or refresh the state model
-6. evaluate whether discovered states separate strategy behavior meaningfully
-7. update the model as new upstream data arrives
-8. publish model artifacts and conclusions for downstream use
+1. identify the research-object type
+2. load the correct layered input stack from `trading-data`
+3. load strategy-result artifacts from `trading-strategy`
+4. align both upstream streams into modeling-ready learning tables
+5. build unsupervised market-state representations
+6. train or refresh the state model
+7. evaluate whether discovered states separate strategy behavior meaningfully
+8. update the model as new upstream data arrives
+9. publish model artifacts and conclusions for downstream use
 
-## Step 1 — Receive data from `trading-data`
+## Step 1 — Identify the research-object type
 
-Required principle:
-`trading-model` must use upstream-produced artifacts from `trading-data`.
+The repository must first know which type of object is being modeled:
+- stock
+- ETF
+- crypto
 
-From the real upstream code, this means the repo should expect partitioned artifacts such as:
+This matters because each object class has a different valid context stack.
+
+## Step 2 — Load the correct layered input stack from `trading-data`
+
+Inputs should be loaded in layers rather than as one all-or-nothing dependency bundle.
+
+### Base layer
+This is the minimum required layer.
+Examples:
 - bars / candles
 - quotes
-- trades
-- derivatives context
-- optional context layers such as news or options snapshots where explicitly needed
+- trades where available
+- direct market-state descriptive inputs
 
-## Step 2 — Receive strategy outputs from `trading-strategy`
+### Enrichment layer
+Examples:
+- derivatives context
+- funding / basis-like context
+- options context
+- news
+
+### Cross-object / structural context layer
+Examples:
+- ETF holdings context
+- constituent ETF deltas
+- cross-asset context
+
+The exact active layers depend on the research-object type.
+
+## Step 3 — Load strategy outputs from `trading-strategy`
 
 Required principle:
 `trading-model` must use upstream-produced artifacts from `trading-strategy`.
 
-From the real upstream code, this means the repo should expect structured strategy outputs such as:
+These should include structured strategy outputs such as:
 - variant outputs
 - trades
 - equity series
@@ -41,29 +66,30 @@ From the real upstream code, this means the repo should expect structured strate
 - global oracle outputs
 - run manifests
 
-## Step 3 — Build modeling-ready learning tables
+## Step 4 — Build modeling-ready learning tables
 
-The two upstream streams must be aligned into a common modeling table keyed by time, instrument, and strategy identifiers where needed.
+The market/context side and strategy side must be aligned into a common learning table.
 
-The result should support:
-- state discovery
-- cluster explanation
-- strategy-separation analysis
-- incremental model refresh
+This learning table must preserve which layers were actually available for each row or run.
+That way the model can distinguish between:
+- base-only rows
+- base + enrichment rows
+- base + enrichment + cross-object-context rows
 
-## Step 4 — Build unsupervised market-state representations
+## Step 5 — Build unsupervised market-state representations
 
 This stage converts the aligned learning table into a feature/state representation suitable for unsupervised learning.
 
-The output of this stage should be a state vector per timestamp or decision point.
+The representation should be robust to missing optional layers.
+Missing higher-layer context should not break the model.
 
-## Step 5 — Train or refresh the state model
+## Step 6 — Train or refresh the state model
 
 The state model should be trained or updated using unsupervised methods.
 
 The repository should support repeated refresh as new upstream data accumulates.
 
-## Step 6 — Evaluate usefulness against strategy outputs
+## Step 7 — Evaluate usefulness against strategy outputs
 
 Discovered states are only useful if they help explain or separate strategy behavior.
 
@@ -73,7 +99,7 @@ The model should therefore be evaluated against real `trading-strategy` outputs 
 - parameter-region utility
 - oracle gaps and ranking differences across states
 
-## Step 7 — Improvement loop
+## Step 8 — Improvement loop
 
 As new data arrives from `trading-data` and `trading-strategy`, the model should be re-evaluated and improved.
 
@@ -82,9 +108,9 @@ This includes:
 - retraining or refreshing clustering/state definitions
 - checking state stability over time
 - checking whether strategy separation remains meaningful
-- refining feature construction where needed
+- checking whether optional context layers actually add value
 
-## Step 8 — Publish model-side outputs
+## Step 9 — Publish model-side outputs
 
 This repository should publish:
 - state-model artifacts

@@ -11,6 +11,40 @@ Canonical inputs for this repository must come from upstream repositories:
 Do not treat sample files under `data/` or ad-hoc example payloads as the source of truth.
 The source of truth is the upstream implementation and its produced artifact formats.
 
+## Core dependency rule
+
+Inputs must be modeled in layers.
+
+That means:
+- some layers are required
+- some layers are optional enrichments
+- some layers are conditional on research-object type or market hours
+- missing optional layers must not make the model unusable
+
+## Research-object scenarios
+
+### Stock research objects
+Potential upstream layers:
+- direct stock market data
+- stock news and options context
+- ETF holdings base snapshots
+- per-symbol ETF context records
+
+### ETF research objects
+Potential upstream layers:
+- direct ETF market/news/options data
+- optional non-ETF macro or cross-asset context
+
+ETF -> ETF self-context should not be treated as the primary self-context path.
+
+### Crypto research objects
+Potential upstream layers:
+- direct crypto market data
+- direct crypto derivatives context
+- optional ETF / ETF-options context during stock-market trading hours only
+
+Outside stock-market trading hours, crypto modeling must be able to run without stock/ETF context.
+
 ## Upstream A — `trading-data`
 
 ### What the code shows
@@ -40,15 +74,6 @@ The real pattern in `trading-data` is:
 - JSONL row files for market tape datasets
 - companion meta/manifest files in some paths
 - context outputs under `context/`
-
-### Canonical input classes from `trading-data`
-
-`trading-model` should be designed to consume these classes when relevant:
-- bars / candles
-- quotes
-- trades
-- derivatives context such as funding / basis-like context
-- optional context layers such as news / options / ETF context when those are explicitly part of the modeling design
 
 ## Upstream B — `trading-strategy`
 
@@ -83,18 +108,6 @@ The real pattern in `trading-strategy` is that it writes structured run outputs 
 - global oracles
 - run manifests
 
-## Required modeling join
-
-The model must be built from a join between:
-- market/context state from `trading-data`
-- strategy behavior from `trading-strategy`
-
-At minimum, the alignment contract should support joins by:
-- instrument / symbol
-- timestamp or bar-aligned time key
-- partition / month window where needed
-- run / family / variant identifiers on the strategy side
-
 ## First concrete learning-table contract
 
 The first implementation target in this repository should be a canonical aligned learning table.
@@ -104,31 +117,37 @@ The first implementation target in this repository should be a canonical aligned
 One row should represent:
 - a market/context snapshot at time `ts`
 - plus the strategy-behavior observations attached to that same point or aligned decision window
+- plus explicit information about which data layers were available
 
 ### Primary key
 
 Minimum key:
 - `symbol`
 - `ts`
-
-Optional extensions later:
-- `dataset_month`
-- `timeframe`
-- `run_id`
 - `family_id`
 - `variant_id`
 
 ## Required field groups
 
 ### A. Identity fields
-From alignment logic:
+- `research_object_type` (`stock` | `etf` | `crypto`)
 - `symbol`
 - `ts`
 - `timestamp`
 - `dataset_month`
 
-### B. Market-state descriptive fields
-From `trading-data` bars / quotes / trades / derivatives context:
+### B. Layer-presence fields
+These fields make graceful degradation explicit:
+- `has_base_market_layer`
+- `has_derivatives_layer`
+- `has_news_layer`
+- `has_options_layer`
+- `has_etf_context_layer`
+- `has_cross_asset_context_layer`
+- `market_hours_context_active`
+
+### C. Base market layer fields
+Minimum required descriptive layer, from `trading-data`:
 - `open`
 - `high`
 - `low`
@@ -141,22 +160,29 @@ From `trading-data` bars / quotes / trades / derivatives context:
 - `return_1h`
 - `realized_vol_*`
 - `range_width_*`
-- `quote_spread_*` where available
-- `trade_imbalance_*` where available
-- `funding_rate` where available
-- `basis_pct` where available
 
-The exact suffix windows may evolve, but the field family should stay explicit.
+This is the minimum layer that must exist for the model to run.
 
-### C. Optional context fields
-From `trading-data` optional context layers when intentionally enabled:
+### D. Optional enrichment layer fields
+From `trading-data` where available:
+- `quote_spread_*`
+- `trade_imbalance_*`
+- `funding_rate`
+- `basis_pct`
 - `news_count_*`
 - `options_*`
-- `context_*`
 
-These must be clearly marked optional so the base model does not silently depend on them.
+These should enrich the model, not define whether the model is runnable.
 
-### D. Strategy behavior fields
+### E. Optional structural / cross-object context fields
+From `trading-data` where available and relevant:
+- `etf_context_*`
+- `constituent_etf_delta_*`
+- `cross_asset_context_*`
+
+These are optional and scenario-dependent.
+
+### F. Strategy behavior fields
 From `trading-strategy` outputs:
 - `family_id`
 - `variant_id`
@@ -168,17 +194,14 @@ From `trading-strategy` outputs:
 - `trade_pnl` where alignable
 - `summary_score` where emitted
 
-### E. Oracle / benchmark fields
+### G. Oracle / benchmark fields
 From `trading-strategy` composite/oracle outputs:
 - `family_oracle_selected_variant_id`
 - `global_oracle_selected_family_id`
 - `global_oracle_selected_variant_id`
 - `oracle_forward_return_*`
 
-These are needed to evaluate whether discovered states capture meaningful switching value.
-
-### F. Lineage fields
-From upstream metadata / manifests:
+### H. Lineage fields
 - `strategy_run_id`
 - `strategy_partition_month`
 - `data_partition_month`
@@ -186,31 +209,46 @@ From upstream metadata / manifests:
 
 ## Join rules
 
-### Base time alignment
-
+### Base rule
 The base alignment should be bar-close aligned by `symbol + ts`.
 
-If exact timestamp equality is not available, the fallback rule should be:
+### Fallback rule
+If exact timestamp equality is not available:
 - align strategy row to the most recent market/context row at or before the strategy timestamp within a documented tolerance window
 
-### Multi-output strategy alignment
+### Layer rule
+If optional context is missing:
+- the row is still valid if the base market layer and strategy layer exist
+- missing optional layers must be represented explicitly through the layer-presence fields
 
-If multiple strategy outputs exist for the same `symbol + ts`, the repository should support either:
-- one row per `(symbol, ts, family_id, variant_id)`
-- or a base state row plus nested strategy payloads
+## Scenario-specific dependency rules
 
-For the first implementation, the cleaner choice is usually:
-- **one row per `(symbol, ts, family_id, variant_id)`**
+### Stock
+Stocks may use:
+- base market layer
+- enrichment layer
+- ETF context layer
 
-because it simplifies downstream evaluation.
+### ETF
+ETFs should primarily rely on:
+- their own base market layer
+- their own enrichment layer
+- optional macro/cross-asset context
+
+ETF self-context recursion should not be a required dependency.
+
+### Crypto
+Crypto should primarily rely on:
+- its own base market layer
+- its own derivatives/enrichment layer
+
+ETF/stock context may be used only as a conditional additional layer during relevant market hours.
 
 ## First implementation scope
 
-The first concrete implementation should stay narrow.
-
 ### Required from `trading-data`
-- bars/candles
-- derivatives context when available
+- base market layer
+- direct derivatives/enrichment where available
 
 ### Required from `trading-strategy`
 - variant outputs
@@ -219,9 +257,9 @@ The first concrete implementation should stay narrow.
 - run manifests
 
 ### Deferred until later
-- news
-- options snapshots
-- ETF/context layers not directly tied to the first state model
+- richer news usage
+- richer options usage
+- more complex structural context usage
 
 ## Contract discipline
 
@@ -229,5 +267,6 @@ When rebuilding code in this repo, every field in the learning table should be t
 - a specific upstream repo
 - a specific upstream artifact type
 - a specific alignment rule
+- a specific dependency layer
 
 If a field cannot be traced upstream, it should not enter the canonical table yet.

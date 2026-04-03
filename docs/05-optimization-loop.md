@@ -20,6 +20,7 @@ The goal is to produce clusters that are:
 - interpretable enough to analyze
 - different enough to separate strategy behavior
 - refreshable as new upstream data accumulates
+- robust under missing optional context layers
 
 ## Evaluation questions
 
@@ -28,9 +29,10 @@ Each refresh cycle should ask:
 - do they still separate family/variant behavior?
 - do they still separate parameter-region utility?
 - do they help explain the gap between oracle and executable selection?
-- are some features no longer useful?
-- do we need to revise the representation before clustering again?
+- which optional layers add real value?
+- can the base-layer-only model still run and remain useful?
+- do different research-object types need different context-layer policies?
 
 ## Success condition
 
-The model is improving if, over time, it gets better at producing state definitions that explain meaningful differences in upstream strategy behavior.
+The model is improving if, over time, it gets better at producing state definitions that explain meaningful differences in upstream strategy behavior while remaining usable under partial data availability.
