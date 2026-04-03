@@ -6,11 +6,13 @@ This document defines what `trading-model` should publish.
 
 This repository should publish outputs such as:
 - aligned modeling datasets
+- layer-availability-aware learning tables
 - unsupervised state-model artifacts
 - cluster/state labels
 - state summaries and explanations
 - strategy-separation analysis
-- conclusions about which states appear useful or not useful
+- comparisons across layer policies
+- conclusions about which states and which layer stacks appear useful or not useful
 
 ## What it should not publish
 

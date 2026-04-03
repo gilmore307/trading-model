@@ -22,6 +22,22 @@ The goal is to produce clusters that are:
 - refreshable as new upstream data accumulates
 - robust under missing optional context layers
 
+## Layer-policy optimization
+
+The repository should not assume that every optional layer is always helpful.
+It should explicitly test:
+- base-only model
+- base + direct enrichment
+- base + direct enrichment + cross-object context
+
+for each research-object type.
+
+That means the optimization loop should answer:
+- which layers actually improve state quality?
+- which layers only add noise?
+- which layers help stock objects but not crypto objects?
+- which layers are only useful during certain market regimes or time windows?
+
 ## Evaluation questions
 
 Each refresh cycle should ask:

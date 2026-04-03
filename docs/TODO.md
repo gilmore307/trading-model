@@ -10,14 +10,17 @@
 - [x] define the first concrete learning-table contract
 - [x] define layered dependency / graceful degradation as a core design rule
 - [x] document stock / ETF / crypto as separate research-object scenarios
+- [x] define the first layer policy matrix
 
 ## Next implementation phase
 
-- [ ] write the first exact field-level mapping from `trading-data` artifacts into the learning table
+- [ ] write the first exact field-level mapping from `trading-data` artifacts into the learning table by dependency layer
 - [ ] write the first exact field-level mapping from `trading-strategy` artifacts into the learning table
 - [ ] define the first bar-alignment and tolerance rules for joining the two upstreams
 - [ ] define the first base-layer-only model path
-- [ ] define which optional layers are enabled for stock / ETF / crypto respectively
+- [ ] define the first stock layer stack
+- [ ] define the first ETF layer stack
+- [ ] define the first crypto layer stack, including market-hours-conditional context rules
 - [ ] define the first concrete unsupervised state representation
 - [ ] define the first clustering / state-refresh workflow
 - [ ] define the first usefulness-evaluation workflow against strategy outputs and oracle outputs

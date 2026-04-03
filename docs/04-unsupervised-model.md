@@ -17,6 +17,73 @@ That means:
 - optional enrichment/context layers should improve the model when available
 - missing optional layers should reduce richness, not break the entire model
 
+## Layer policy matrix
+
+### Layer definitions
+
+- **Base market layer**
+  - direct market data required to describe the object itself
+- **Direct enrichment layer**
+  - object-native enrichments such as derivatives/news/options where relevant
+- **Cross-object context layer**
+  - context imported from related objects such as ETF context for a stock or crypto object
+- **Strategy behavior layer**
+  - outputs from `trading-strategy`, required for usefulness evaluation
+
+### Policy by research-object type
+
+#### 1. Stock objects
+
+**Required**
+- base market layer
+- strategy behavior layer
+
+**Default enabled**
+- direct enrichment layer
+- ETF context layer
+
+**Optional**
+- broader cross-asset context
+
+Interpretation:
+Stocks can use the richest layered stack, but the model should still be runnable if some enrichment or ETF-context layers are absent.
+
+#### 2. ETF objects
+
+**Required**
+- base market layer
+- strategy behavior layer
+
+**Default enabled**
+- direct enrichment layer
+
+**Optional**
+- macro / cross-asset context
+
+**Not primary**
+- ETF -> ETF self-context recursion
+
+Interpretation:
+ETF objects should primarily be modeled from their own direct data, not from an ETF-self-context dependency chain.
+
+#### 3. Crypto objects
+
+**Required**
+- base market layer
+- strategy behavior layer
+
+**Default enabled**
+- direct enrichment layer
+
+**Conditionally enabled**
+- ETF / ETF-options context during relevant stock-market hours
+
+**Must remain runnable without**
+- stock / ETF context outside stock-market hours
+
+Interpretation:
+Crypto modeling must always remain valid on crypto-native layers alone. Cross-market context is allowed as an enrichment, not as a required dependency.
+
 ## Model layers
 
 ### 1. Base market layer
@@ -57,17 +124,6 @@ This layer tests whether discovered states meaningfully separate:
 - utility surfaces
 - oracle gap versus achievable state-aware selection
 
-## Scenario behavior
-
-### Stock objects
-May use the full layered stack.
-
-### ETF objects
-Should primarily rely on direct ETF data, with optional external context.
-
-### Crypto objects
-Must remain runnable on crypto-native base/enrichment layers even when stock/ETF context is unavailable.
-
 ## First implementation target
 
 The first model should be built on top of the canonical aligned learning table defined in `03-inputs-and-data-contracts.md`.
@@ -75,6 +131,7 @@ The first model should be built on top of the canonical aligned learning table d
 The first version should explicitly record which layers were present so later evaluation can answer:
 - did optional layers actually improve separation?
 - which layers matter for which object types?
+- does the base-layer-only model remain usable?
 
 ## What “unsupervised” means here
 
