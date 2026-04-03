@@ -1,40 +1,27 @@
 # trading-model
 
-Historical research, feature/model development, selector/model research, and promotion-candidate generation upstream for the trading system.
+`trading-model` is the repository for building and improving an **unsupervised market-state model**.
 
-This repository should retain:
-- upstream data consumption from `trading-data`
-- upstream strategy-output consumption from `trading-strategy`
-- research-side dataset construction and curation
-- market-state / regime research
-- feature engineering and parameter utility modeling
-- offline evaluation, selector/model building, and Oracle-gap analysis
-- research reports, candidate outputs, and model artifacts
+This repository must be built on two upstream inputs:
+- `trading-data` supplies market and context data
+- `trading-strategy` supplies strategy outputs and evaluation surfaces
 
-This repository should not be the canonical home for:
-- upstream market-data acquisition
-- source-adapter ownership
-- ETF holdings extraction / refresh workflows
-- live runtime execution
-- exchange-connected execution/reconcile/state management
+`trading-model` uses those two upstream data sources to:
+- build aligned modeling tables
+- discover recurring market-state structure with unsupervised methods
+- evaluate whether discovered states meaningfully separate strategy behavior
+- improve the model continuously as new upstream data arrives
 
-This repository is the upstream to:
-- <https://github.com/gilmore307/quantitative-trading>
+This repository does **not** own:
+- raw data acquisition
+- source adapters
+- strategy execution ownership
+- live runtime operations
 
-Role split:
-- `trading-data` owns upstream market-data acquisition and context refresh
-- `trading-strategy` owns strategy execution-layer outputs for research consumption
-- `trading-model` owns historical research, modeling, and promotion-candidate generation
-- `quantitative-trading` owns live runtime execution
-
-Project documentation lives under `docs/`.
-Core implementation lives under `src/`.
-
-Start here:
+Start with:
 - `docs/README.md`
 - `docs/01-overview.md`
 - `docs/02-workflow.md`
 - `docs/03-inputs-and-data-contracts.md`
-- `docs/06-strategy-research.md`
-- `docs/07-promotion-and-output-boundary.md`
-- `TODO.md`
+- `docs/04-unsupervised-model.md`
+- `docs/05-optimization-loop.md`

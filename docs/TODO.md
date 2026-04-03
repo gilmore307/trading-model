@@ -1,25 +1,16 @@
 # TODO
 
-## Repo split: trading-model vs quantitative-trading
+## Documentation
 
-- [x] define repo split direction and document the new boundary
-- [x] create first-pass keep / move / split classification sheet
-- [ ] review and refine the first-pass classification module by module
-- [ ] migrate realtime/runtime/execution code to `quantitative-trading`
-- [ ] remove hybrid-repo docs once split is complete
-- [ ] delete truly obsolete leftovers only after migration stabilizes
+- [x] rewrite the docs around the new repository mission
+- [x] make `trading-data` and `trading-strategy` the explicit required upstreams
+- [x] define the repository as an unsupervised market-state modeling repo
+- [x] remove old hybrid docs assumptions
 
-## Data ingestion isolation / completion
+## Next implementation phase
 
-- [x] switch primary raw fetch scripts to direct monthly partition writes
-- [ ] define ingestion layer only in terms of its own responsibilities (no downstream rewrites mixed in)
-- [ ] add explicit bootstrap-new-symbol workflow and docs
-- [ ] add earliest-available discovery for new symbols
-- [ ] add month-level progress / resume metadata for long bootstrap jobs
-- [ ] add incomplete-month safeguards / markers
-- [ ] validate ingestion layer end-to-end on its own terms
-
-## Historical modeling / research
-
-- [ ] keep `trading-model` focused on historical data, research, parameter modeling, and backtests
-- [ ] review `src/review/`, `src/market/`, and `src/routing/` for keep-vs-move decisions under the repo split
+- [ ] define the first concrete aligned learning table built from `trading-data` + `trading-strategy`
+- [ ] define the first concrete unsupervised state representation
+- [ ] define the first clustering / state-refresh workflow
+- [ ] define the first usefulness-evaluation workflow against strategy outputs
+- [ ] rebuild code only after the data contracts and model shape are explicit
