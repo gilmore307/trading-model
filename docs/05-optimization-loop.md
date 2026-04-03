@@ -33,9 +33,22 @@ Inputs:
 5. measure model composite versus oracle composite
 6. improve features and clustering if the oracle gap remains too large
 
-## Primary optimization target
+## First optimization target for stage 1
 
-The main optimization target is:
+Before anything else, the repository should optimize for:
+- stable recurring states from market data alone
+
+That means the first iteration should focus on:
+- compact feature quality
+- sensible cluster count
+- state stability diagnostics
+- transition sanity
+
+Only after that should strategy usefulness become the next loop.
+
+## Primary optimization target for stage 2
+
+The main stage-2 optimization target is:
 - maximize how much of the oracle composite is captured by the model composite
 
 But that optimization must happen **after** a clean state-discovery step, not by leaking strategy outcomes into clustering.

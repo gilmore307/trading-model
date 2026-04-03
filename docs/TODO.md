@@ -17,12 +17,14 @@
 - [x] define the first base-only model path
 - [x] define model composite vs oracle composite as the main evaluation rule
 - [x] split the system into state discovery first, strategy-state mapping second
+- [x] define the first state-discovery spec
 
 ## Next implementation phase
 
-- [ ] define the first exact base-only feature set for state discovery
-- [ ] define the first clustering choice and refresh policy
-- [ ] define the first state-stability diagnostics
+- [ ] define the exact formulas for the first base-only feature set
+- [ ] define the exact standardization policy for discovery features
+- [ ] define the first cluster-count selection rule
+- [ ] define the first state-stability report
 - [ ] define the first state-evaluation table shape
 - [ ] define the first state -> preferred-variant mapping rule
 - [ ] define the first model-composite construction rule

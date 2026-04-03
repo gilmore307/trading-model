@@ -14,6 +14,14 @@ This repository will be rebuilt around one clear line:
 - build an unsupervised market-state model first
 - build strategy-state mapping second
 
+## Current discovery commitment
+
+The first discovery model is now defined as:
+- market-only input
+- compact past-window feature set
+- baseline KMeans clustering
+- explicit state-stability diagnostics
+
 ## Current evaluation commitment
 
 The primary evaluation logic is now explicit:
@@ -24,9 +32,8 @@ The primary evaluation logic is now explicit:
 
 ## What comes next
 
-Next design work should make this two-stage system more concrete by defining:
-- the exact base-only feature set for state discovery
-- the first clustering choice
-- the first state-stability diagnostics
+Next design work should make stage 2 more concrete by defining:
+- the first state-evaluation table shape
 - the first state -> preferred-variant mapping rule
+- the first model-composite construction rule
 - the first oracle-gap report shape

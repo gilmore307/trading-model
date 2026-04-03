@@ -16,46 +16,145 @@ Use only market-side information to define states.
 ### Stage 2 — Strategy-state mapping
 After states are fixed, attach strategy/oracle outcomes to evaluate whether the states are useful.
 
-## First base-only model spec
+## Stage 1: state discovery spec
 
-This is the minimum viable model path.
+This is the first real model-definition step for the repository.
 
 ### Purpose
 
-The base-only model should answer:
-- can the repository discover recurring unsupervised market states using only market behavior?
-- are those discovered states stable enough to be meaningful?
+The state-discovery step should answer:
+- can recurring market shapes be discovered from market behavior alone?
+- are those shapes stable enough to be treated as reusable states?
 
-### Required inputs for state discovery
-From `trading-data` only:
-- OHLCV or equivalent direct market rows
-- enough continuous history to compute past-window market features
+### Inputs
+From `trading-data` only.
 
-### Canonical feature family for base-only v1
-The first base-only state-discovery model should start with compact features derived only from market behavior:
-- short-horizon returns
-- medium-horizon returns
-- short realized volatility
-- medium realized volatility
-- short range width
-- medium range width
-- volume burst / relative activity
-- simple trend slope / directionality from price only
+First implementation input scope:
+- direct OHLCV or equivalent market bars
+- enough continuous history to compute trailing-window market features
 
-The key design rule is:
-- no strategy returns
-- no oracle labels
-- no variant success statistics
-- no downstream policy information
+No strategy-side fields may enter this step.
 
-## Output of stage 1
-The first discovery stage should produce:
-- a state vector per canonical timestamp
-- an unsupervised cluster/state assignment
-- a state summary for each discovered cluster
-- stability diagnostics for the discovered states
+## First base-only feature set
+
+The first state-discovery model should use a compact feature set derived only from past-window market behavior.
+
+### A. Return features
+- `ret_1`
+- `ret_5`
+- `ret_15`
+- `ret_60`
+
+Meaning:
+- trailing return over 1, 5, 15, and 60 base bars
+
+### B. Volatility features
+- `rv_5`
+- `rv_15`
+- `rv_60`
+
+Meaning:
+- realized volatility over the trailing 5, 15, and 60 base bars
+
+### C. Range / compression features
+- `range_5`
+- `range_15`
+- `range_60`
+
+Meaning:
+- trailing high-low range width normalized by price over the trailing 5, 15, and 60 base bars
+
+### D. Volume / activity features
+- `vol_z_5`
+- `vol_z_15`
+- `vol_z_60`
+
+Meaning:
+- relative volume burst / activity z-score over the corresponding trailing windows
+
+### E. Simple directionality features
+- `slope_15`
+- `slope_60`
+
+Meaning:
+- simple price-slope or trend-strength proxy derived only from price over trailing windows
+
+## First feature-set discipline
+
+The first discovery model should stay intentionally small.
+
+Do not include yet:
+- derivatives context
+- news
+- options context
+- ETF context
+- cross-asset context
+- strategy returns
+- oracle labels
+- variant success statistics
+
+The goal is to test whether the market itself already contains recurring state structure.
+
+## First clustering choice
+
+The first implementation should start with a simple baseline clustering method.
+
+### Recommended first choice
+- standardized feature vectors
+- KMeans as the first baseline clustering method
+
+Why:
+- simple to inspect
+- easy to reproduce
+- easy to compare across refresh cycles
+- good enough as a first falsifiable baseline
+
+### First cluster-count policy
+
+The first pass should not chase an "optimal" cluster count too aggressively.
+
+Instead:
+- test a small fixed candidate set such as `k in {4, 6, 8, 10}`
+- compare stability and separability diagnostics
+- prefer the smallest `k` that yields recurring and interpretable states
+
+## First state-stability diagnostics
+
+The first discovery stage should evaluate stability before any strategy-based usefulness analysis.
+
+### Required diagnostics
+
+#### 1. Cluster size sanity
+Check that clusters are not degenerate.
+Examples:
+- no cluster should dominate nearly everything
+- no cluster should have only trivial sample count
+
+#### 2. Reoccurrence over time
+Check whether clusters recur across different time segments rather than appearing only in one isolated regime window.
+
+#### 3. Centroid / assignment stability across refreshes
+When rerunning on adjacent or rolling datasets, check whether the discovered states remain reasonably similar.
+
+#### 4. Distance / separability sanity
+Check whether cluster centers are meaningfully separated in feature space.
+
+#### 5. Transition sanity
+Check whether state transitions over time are plausible rather than pure noise flicker.
+
+## Stage-1 output
+
+The state-discovery step should produce:
+- a market-only state table keyed by `symbol + ts`
+- feature columns used for discovery
+- cluster/state assignment
+- cluster summary statistics
+- stability diagnostics
+
+This is the output that becomes the input to stage 2.
 
 ## Stage 2: strategy-state mapping
+
 Once states are fixed, the repository should attach:
 - strategy outputs
 - oracle outputs
