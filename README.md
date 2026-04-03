@@ -7,10 +7,11 @@ This repository must be built on two upstream inputs:
 - `trading-strategy` supplies strategy outputs and evaluation surfaces
 
 `trading-model` uses those two upstream data sources to:
-- build aligned modeling tables
-- discover recurring market-state structure with unsupervised methods
-- evaluate whether discovered states meaningfully separate strategy behavior
-- improve the model continuously as new upstream data arrives
+- discover recurring market states from market-side data
+- attach strategy/oracle outcomes only after state discovery
+- build state-conditional policy mappings
+- construct model composites
+- evaluate how closely the model composite approaches the oracle composite
 
 This repository does **not** own:
 - raw data acquisition
@@ -24,4 +25,5 @@ Start with:
 - `docs/02-workflow.md`
 - `docs/03-inputs-and-data-contracts.md`
 - `docs/04-unsupervised-model.md`
-- `docs/05-optimization-loop.md`
+- `docs/05-state-evaluation-and-policy-mapping.md`
+- `docs/06-model-composite-and-reporting.md`
