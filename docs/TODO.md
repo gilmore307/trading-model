@@ -11,11 +11,11 @@
 - [x] define layered dependency / graceful degradation as a core design rule
 - [x] document stock / ETF / crypto as separate research-object scenarios
 - [x] define the first layer policy matrix
+- [x] define the first field mapping by dependency layer
 
 ## Next implementation phase
 
-- [ ] write the first exact field-level mapping from `trading-data` artifacts into the learning table by dependency layer
-- [ ] write the first exact field-level mapping from `trading-strategy` artifacts into the learning table
+- [ ] map exact upstream artifact filenames/partitions to each first-implementation field
 - [ ] define the first bar-alignment and tolerance rules for joining the two upstreams
 - [ ] define the first base-layer-only model path
 - [ ] define the first stock layer stack

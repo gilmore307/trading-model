@@ -146,66 +146,149 @@ These fields make graceful degradation explicit:
 - `has_cross_asset_context_layer`
 - `market_hours_context_active`
 
-### C. Base market layer fields
-Minimum required descriptive layer, from `trading-data`:
+## Field mapping by layer
+
+### 1. Base market layer
+Source repo:
+- `trading-data`
+
+Primary upstream artifact classes:
+- bars / candles
+- quotes
+- trades where available
+
+First implementation fields:
 - `open`
 - `high`
 - `low`
 - `close`
 - `volume`
 - `quote_volume`
+- `trade_count` where available
+- `vwap` where derivable or available
 - `return_1m`
 - `return_5m`
 - `return_15m`
 - `return_1h`
-- `realized_vol_*`
-- `range_width_*`
+- `realized_vol_5m`
+- `realized_vol_15m`
+- `realized_vol_1h`
+- `range_width_5m`
+- `range_width_15m`
+- `range_width_1h`
 
-This is the minimum layer that must exist for the model to run.
+Rule:
+This is the minimum layer required for the model to run.
 
-### D. Optional enrichment layer fields
-From `trading-data` where available:
-- `quote_spread_*`
-- `trade_imbalance_*`
+### 2. Direct enrichment layer
+Source repo:
+- `trading-data`
+
+Primary upstream artifact classes:
+- derivatives context
+- quotes/trades derived microstructure context
+- object-native news
+- object-native options snapshots
+
+First implementation fields:
+- `quote_spread_bps`
+- `bid_ask_imbalance`
+- `trade_imbalance`
 - `funding_rate`
 - `basis_pct`
-- `news_count_*`
-- `options_*`
+- `open_interest` where available
+- `news_count_1h`
+- `news_count_1d`
+- `options_iv_atm` where available
+- `options_skew_*` where available
+- `options_put_call_*` where available
 
-These should enrich the model, not define whether the model is runnable.
+Rule:
+This layer is optional, but enabled by default where the object type naturally supports it.
 
-### E. Optional structural / cross-object context fields
-From `trading-data` where available and relevant:
-- `etf_context_*`
-- `constituent_etf_delta_*`
-- `cross_asset_context_*`
+### 3. Cross-object / structural context layer
+Source repo:
+- `trading-data`
 
-These are optional and scenario-dependent.
+Primary upstream artifact classes:
+- ETF holdings base snapshots
+- per-symbol ETF context records
+- cross-asset context outputs
 
-### F. Strategy behavior fields
-From `trading-strategy` outputs:
+First implementation fields:
+- `etf_exposure_count`
+- `etf_weight_top1`
+- `etf_weight_top3_sum`
+- `etf_context_direction_score`
+- `etf_context_concentration_score`
+- `cross_asset_context_score` where available
+- `market_hours_context_active`
+
+Rule:
+This layer is conditional by object type and time window.
+It must not become a hidden required dependency for all objects.
+
+### 4. Strategy behavior layer
+Source repo:
+- `trading-strategy`
+
+Primary upstream artifact classes:
+- variant outputs
+- returns series
+- equity series
+- summaries
+- meta
+
+First implementation fields:
 - `family_id`
 - `variant_id`
 - `position`
 - `signal_state` if exposed
-- `forward_return_*`
+- `forward_return_1bar`
+- `forward_return_5bar`
+- `forward_return_15bar`
+- `forward_return_1h`
 - `equity`
 - `return_since_prev`
 - `trade_pnl` where alignable
 - `summary_score` where emitted
 
-### G. Oracle / benchmark fields
-From `trading-strategy` composite/oracle outputs:
+Rule:
+This layer is required for usefulness evaluation, even though the unsupervised state discovery itself is driven by the market/context side.
+
+### 5. Oracle / benchmark layer
+Source repo:
+- `trading-strategy`
+
+Primary upstream artifact classes:
+- family oracle outputs
+- global oracle outputs
+
+First implementation fields:
 - `family_oracle_selected_variant_id`
 - `global_oracle_selected_family_id`
 - `global_oracle_selected_variant_id`
-- `oracle_forward_return_*`
+- `oracle_forward_return_1h`
+- `oracle_forward_return_session` where available
 
-### H. Lineage fields
+Rule:
+This layer is required for measuring whether discovered states capture real switching value versus upper bounds.
+
+### 6. Lineage layer
+Source repos:
+- `trading-data`
+- `trading-strategy`
+
+First implementation fields:
 - `strategy_run_id`
 - `strategy_partition_month`
 - `data_partition_month`
-- `source_manifest_id` or equivalent upstream lineage reference
+- `source_manifest_id`
+- `data_source_kind`
+- `strategy_source_kind`
+
+Rule:
+Every canonical row should be traceable back to upstream artifacts.
 
 ## Join rules
 
@@ -226,7 +309,7 @@ If optional context is missing:
 ### Stock
 Stocks may use:
 - base market layer
-- enrichment layer
+- direct enrichment layer
 - ETF context layer
 
 ### ETF
