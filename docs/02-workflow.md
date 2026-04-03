@@ -2,125 +2,47 @@
 
 This repository should follow the workflow below.
 
-## End-to-end flow
+## Two-stage workflow
 
+### Stage 1 — Market state discovery
 1. identify the research-object type
-2. load the correct layered input stack from `trading-data`
-3. load strategy-result artifacts from `trading-strategy`
-4. align both upstream streams into modeling-ready learning tables
-5. build unsupervised market-state representations
-6. train or refresh the state model
-7. evaluate whether discovered states separate strategy behavior meaningfully
-8. update the model as new upstream data arrives
-9. publish model artifacts and conclusions for downstream use
+2. load the appropriate market-data layers from `trading-data`
+3. build market-only state vectors from past-window market behavior
+4. run unsupervised clustering on those state vectors
+5. test whether the resulting states are recurring and statistically stable
 
-## Step 1 — Identify the research-object type
+### Stage 2 — Strategy-state mapping
+6. load strategy-result artifacts from `trading-strategy`
+7. attach strategy and oracle outcomes onto already-discovered states
+8. estimate which variants / parameter regions work best conditional on state
+9. build a model composite from the state -> policy mapping
+10. compare the model composite against oracle composite and fixed baselines
 
-The repository must first know which type of object is being modeled:
-- stock
-- ETF
-- crypto
+## Stage 1 rule
 
-This matters because each object class has a different valid context stack.
+State discovery must use market-side information only.
 
-## Step 2 — Load the correct layered input stack from `trading-data`
+That means the clustering step should not directly use:
+- strategy returns
+- variant performance
+- oracle choices
+- any label derived from downstream strategy success
 
-Inputs should be loaded in layers rather than as one all-or-nothing dependency bundle.
+## Stage 2 rule
 
-### Base layer
-This is the minimum required layer.
-Examples:
-- bars / candles
-- quotes
-- trades where available
-- direct market-state descriptive inputs
+Only after states are discovered may the repository ask:
+- which strategies behave well in this state?
+- which parameter regions are favored in this state?
+- how much oracle value is captured by state-conditioned policy selection?
 
-### Enrichment layer
-Examples:
-- derivatives context
-- funding / basis-like context
-- options context
-- news
+## Interpretation
 
-### Cross-object / structural context layer
-Examples:
-- ETF holdings context
-- constituent ETF deltas
-- cross-asset context
+This separates two different scientific questions:
 
-The exact active layers depend on the research-object type.
+### A. Is there recurring unsupervised market structure?
+This is a market-state discovery question.
 
-## Step 3 — Load strategy outputs from `trading-strategy`
+### B. Is the discovered structure useful for choosing strategies?
+This is a strategy-state mapping question.
 
-Required principle:
-`trading-model` must use upstream-produced artifacts from `trading-strategy`.
-
-These should include structured strategy outputs such as:
-- variant outputs
-- trades
-- equity series
-- returns series
-- monthly summaries
-- meta files
-- family oracle outputs
-- global oracle outputs
-- run manifests
-
-## Step 4 — Align both upstream streams into the canonical learning table
-
-The market/context side and strategy side must be aligned into a common learning table.
-
-Alignment rules must be explicit:
-- base market bar close timestamps define the canonical time axis
-- strategy rows align onto that axis
-- optional context layers align by exact match, as-of rule, window aggregation, or monthly-context attach depending on the layer
-- missing optional layers do not invalidate the row
-
-This learning table must preserve which layers were actually available for each row or run.
-That way the model can distinguish between:
-- base-only rows
-- base + enrichment rows
-- base + enrichment + cross-object-context rows
-
-## Step 5 — Build unsupervised market-state representations
-
-This stage converts the aligned learning table into a feature/state representation suitable for unsupervised learning.
-
-The representation should be robust to missing optional layers.
-Missing higher-layer context should not break the model.
-
-## Step 6 — Train or refresh the state model
-
-The state model should be trained or updated using unsupervised methods.
-
-The repository should support repeated refresh as new upstream data accumulates.
-
-## Step 7 — Evaluate usefulness against strategy outputs
-
-Discovered states are only useful if they help explain or separate strategy behavior.
-
-The model should therefore be evaluated against real `trading-strategy` outputs such as:
-- family-level behavior
-- variant-level behavior
-- parameter-region utility
-- oracle gaps and ranking differences across states
-
-## Step 8 — Improvement loop
-
-As new data arrives from `trading-data` and `trading-strategy`, the model should be re-evaluated and improved.
-
-This includes:
-- refreshing the aligned learning table
-- retraining or refreshing clustering/state definitions
-- checking state stability over time
-- checking whether strategy separation remains meaningful
-- checking whether optional context layers actually add value
-
-## Step 9 — Publish model-side outputs
-
-This repository should publish:
-- state-model artifacts
-- state labels or cluster mappings
-- state usefulness evaluations
-- strategy-separation analysis
-- conclusions about what should be promoted or studied next
+The second question is only valid if the first step remains clean.

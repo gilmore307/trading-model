@@ -16,16 +16,16 @@
 - [x] define the first hard alignment / tolerance policy
 - [x] define the first base-only model path
 - [x] define model composite vs oracle composite as the main evaluation rule
+- [x] split the system into state discovery first, strategy-state mapping second
 
 ## Next implementation phase
 
-- [ ] map exact upstream artifact filenames/partitions to each first-implementation field at the per-file level
-- [ ] define the per-field aggregation rules for many-to-one joins
-- [ ] define the first compact base-only feature set precisely
+- [ ] define the first exact base-only feature set for state discovery
 - [ ] define the first clustering choice and refresh policy
+- [ ] define the first state-stability diagnostics
+- [ ] define the first state-evaluation table shape
+- [ ] define the first state -> preferred-variant mapping rule
 - [ ] define the first model-composite construction rule
 - [ ] define the first oracle-gap report for base-only v1
-- [ ] define the first stock layer stack after base-only v1
-- [ ] define the first ETF layer stack after base-only v1
-- [ ] define the first crypto layer stack after base-only v1, including market-hours-conditional context rules
+- [ ] only after that, define optional context-layer expansions
 - [ ] rebuild code only after the upstream contracts and model shape are explicit

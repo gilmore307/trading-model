@@ -2,7 +2,10 @@
 
 `trading-model` is the repository for building and improving the **unsupervised market-state recognition model**.
 
-Its job is to consume upstream datasets and strategy outputs, learn recurring market-state structure, and produce model outputs that help explain which strategy behavior is suitable under which market conditions.
+Its job is to:
+- discover recurring market states from market data itself
+- test whether those discovered states are useful for strategy selection
+- build a clean bridge from state recognition to policy selection without contaminating state definition with strategy outcomes
 
 ## Hard role boundary
 
@@ -20,56 +23,37 @@ Owns:
 
 ### `trading-model`
 Owns:
-- consuming upstream data from the two repositories above
-- building layered market-state learning tables
-- training / refreshing unsupervised market-state models
+- consuming upstream market data from `trading-data`
+- discovering recurring market states from market behavior
+- consuming strategy outputs from `trading-strategy` only after state discovery
 - evaluating whether discovered states are useful for strategy selection
-- improving the model as new data arrives
+- improving the state model as new data arrives
 
-## Core design principle: layered dependency, not brittle dependency
+## Core separation principle
 
-The model must be designed so that data dependencies are layered.
-That means:
-- the model should keep working when some optional context layers are missing
-- not every research object depends on the exact same upstream context stack
-- optional context should enrich the model, not become a hidden single point of failure
+This repository must keep two different questions separate.
 
-In other words, the repository should support **graceful degradation**.
-If a higher layer is missing, the model should still run on the lower layers that remain available.
+### Question 1 — state discovery
+Using only market data:
+- what does the market currently look like?
+- do these market shapes recur?
+- do they form stable unsupervised clusters?
 
-## Three research-object scenarios
+### Question 2 — strategy-state mapping
+After states are discovered:
+- which strategies perform better in which states?
+- which parameter regions are favored in which states?
+- where is the oracle gap especially large?
 
-### 1. Stock research objects
-For stock research/trading candidates, upstream data may include:
-- full Alpaca stock market data for the researched symbol
-- stock news and options context
-- ETF holdings base snapshots
-- per-symbol ETF context records under `context/constituent_etf_deltas/<SYMBOL>.md`
+The second question must be built on top of the first.
+It must not leak backward into the state-definition step.
 
-Stocks therefore may use the richest context stack.
+## Why this separation matters
 
-### 2. ETF research objects
-For ETF research/trading candidates:
-- the ETF itself may use its own Alpaca market/news/options data
-- ETF -> ETF context layering should not be treated as the primary self-context path
-- non-ETF macro/cross-asset context may still be used where relevant
+If strategy outcomes are allowed to influence clustering directly, then the state definition becomes contaminated by the result.
+That creates two problems:
+- it becomes unclear whether the model discovered a real market state or merely a strategy-success partition
+- later claims that the state can guide strategy selection become less convincing because the state was already shaped by strategy outcomes
 
-So ETF research objects should primarily rely on their own direct market/context data, not an ETF-self-context recursion.
-
-### 3. Crypto research objects
-Crypto trades 24 hours.
-That means:
-- during stock-market trading hours, crypto research may also use corresponding ETF and ETF-options context where relevant
-- outside stock-market trading hours, crypto research should rely on its own base market data path rather than stock/ETF market context
-
-So crypto context is time-conditional and must not become dependent on stock-market layers being always present.
-
-## Modeling consequence
-
-This repository should model inputs in layers such as:
-- base market layer
-- optional derivatives/context layer
-- optional cross-asset / ETF-context layer
-- strategy-behavior evaluation layer
-
-The model must still be runnable when only the base layer and strategy-output layer are present.
+So the clean pipeline is:
+- market data -> state clusters -> attach strategy/oracle outcomes -> estimate conditional utility -> use state for policy selection

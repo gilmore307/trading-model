@@ -9,31 +9,24 @@ At this stage, the docs are the source of truth.
 ## Current design commitment
 
 This repository will be rebuilt around one clear line:
-- consume upstream data from `trading-data`
-- consume upstream strategy outputs from `trading-strategy`
-- build an unsupervised market-state model
-- support layered dependency rather than brittle dependency
-- continuously improve that model as new upstream data arrives
-
-## Current policy commitment
-
-The repository now treats stock, ETF, and crypto as different research-object classes with different valid layer policies.
-That policy distinction is part of the design, not an implementation afterthought.
+- use `trading-data` to discover market states
+- use `trading-strategy` only after state discovery to evaluate and map policies
+- build an unsupervised market-state model first
+- build strategy-state mapping second
 
 ## Current evaluation commitment
 
 The primary evaluation logic is now explicit:
-- build a model composite from the discovered states
+- first discover states from market data alone
+- then build a model composite from state-conditioned policy selection
 - compare the model composite against the oracle composite
 - treat the oracle gap as the main model-quality signal
 
-If grouping were perfect, the model composite could in theory equal the oracle composite.
-That is the north-star interpretation for the repository.
-
 ## What comes next
 
-Next design work should make the base-only path more concrete by defining:
-- exact per-field aggregation rules
-- the first compact base-only feature set
+Next design work should make this two-stage system more concrete by defining:
+- the exact base-only feature set for state discovery
 - the first clustering choice
-- the first composite-evaluation report shape
+- the first state-stability diagnostics
+- the first state -> preferred-variant mapping rule
+- the first oracle-gap report shape
