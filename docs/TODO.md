@@ -18,6 +18,7 @@
 - [x] define model composite vs oracle composite as the main evaluation rule
 - [x] split the system into state discovery first, strategy-state mapping second
 - [x] define the first state-discovery spec
+- [x] clarify that discovery may fully use market-descriptive data from `trading-data`
 
 ## Next implementation phase
 
@@ -25,9 +26,9 @@
 - [ ] define the exact standardization policy for discovery features
 - [ ] define the first cluster-count selection rule
 - [ ] define the first state-stability report
+- [ ] define the first market-rich discovery expansion order after base-only v1
 - [ ] define the first state-evaluation table shape
 - [ ] define the first state -> preferred-variant mapping rule
 - [ ] define the first model-composite construction rule
 - [ ] define the first oracle-gap report for base-only v1
-- [ ] only after that, define optional context-layer expansions
-- [ ] rebuild code only after the upstream contracts and model shape are explicit
+- [ ] only after that, define implementation details

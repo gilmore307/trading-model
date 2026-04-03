@@ -25,19 +25,36 @@ This is the first real model-definition step for the repository.
 The state-discovery step should answer:
 - can recurring market shapes be discovered from market behavior alone?
 - are those shapes stable enough to be treated as reusable states?
+- can we use the full descriptive richness of `trading-data` market-side inputs without leaking strategy outcomes into the clustering step?
 
 ### Inputs
 From `trading-data` only.
 
-First implementation input scope:
-- direct OHLCV or equivalent market bars
-- enough continuous history to compute trailing-window market features
+This stage may fully use market-side and context-side data from `trading-data`, as long as the information is still purely descriptive of the market and not contaminated by downstream strategy outcomes.
 
-No strategy-side fields may enter this step.
+## Stage-1 input hierarchy
+
+### Base market inputs
+Always allowed:
+- OHLCV / direct market bars
+- quotes
+- trades
+
+### Market-native enrichment inputs
+Allowed in later state-discovery expansions once base-only is established:
+- derivatives context
+- options context
+- news context
+- ETF / structural context where the object policy allows it
+
+The rule is not "use as little market data as possible".
+The rule is:
+- use as much **market-side descriptive information** as is genuinely available from `trading-data`
+- but do not use strategy-side performance information during clustering
 
 ## First base-only feature set
 
-The first state-discovery model should use a compact feature set derived only from past-window market behavior.
+The first state-discovery model should start with a compact feature set derived only from base market behavior.
 
 ### A. Return features
 - `ret_1`
@@ -79,21 +96,50 @@ Meaning:
 Meaning:
 - simple price-slope or trend-strength proxy derived only from price over trailing windows
 
-## First feature-set discipline
+## Future market-rich discovery expansions
 
-The first discovery model should stay intentionally small.
+After base-only v1 is stable, state discovery may expand to richer market-side descriptive features from `trading-data`.
 
-Do not include yet:
-- derivatives context
-- news
-- options context
-- ETF context
-- cross-asset context
+### 1. Microstructure expansion
+Potential features:
+- spread statistics
+- quote imbalance
+- trade imbalance
+- short-horizon trade intensity
+- microstructure volatility proxies
+
+### 2. Derivatives-context expansion
+Potential features:
+- funding-rate level and change
+- basis level and change
+- open-interest level and change
+- term-structure proxies where available
+
+### 3. News/options expansion
+Potential features:
+- recent news intensity
+- options implied-vol level
+- options skew / put-call structure
+- context stress proxies derived from options surface summaries
+
+### 4. Structural-context expansion
+Potential features:
+- ETF exposure concentration
+- constituent ETF context scores
+- context-activity indicators gated by valid market hours
+
+## Discovery-stage purity rule
+
+All of the above expansions are allowed only if they remain market-descriptive.
+
+Still forbidden during clustering:
 - strategy returns
 - oracle labels
 - variant success statistics
+- family winner labels
+- any downstream policy information
 
-The goal is to test whether the market itself already contains recurring state structure.
+So the discovery stage can become market-rich, but it must remain strategy-blind.
 
 ## First clustering choice
 

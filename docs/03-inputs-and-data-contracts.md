@@ -23,33 +23,18 @@ Canonical inputs for this repository must come from upstream repositories:
 Do not treat sample files under `data/` or ad-hoc example payloads as the source of truth.
 The source of truth is the upstream implementation and its produced artifact formats.
 
-## Research-object scenarios
-
-### Stock research objects
-Potential market-side layers:
-- direct stock market data
-- stock news and options context
-- ETF holdings base snapshots
-- per-symbol ETF context records
-
-### ETF research objects
-Potential market-side layers:
-- direct ETF market/news/options data
-- optional non-ETF macro or cross-asset context
-
-### Crypto research objects
-Potential market-side layers:
-- direct crypto market data
-- direct crypto derivatives context
-- optional ETF / ETF-options context during stock-market trading hours only
-
 ## Stage 1 input rule: state discovery
 
-The state-discovery stage should use only market-side inputs.
+The state-discovery stage may use **all market-descriptive data** produced by `trading-data`.
 
-### First base-only state-discovery input set
-- OHLCV or equivalent direct market rows
-- market-derived features computed from past fixed windows
+That means it may use:
+- base market data
+- quotes/trades-derived microstructure information
+- derivatives context
+- news/options context
+- ETF / structural context when allowed by object policy
+
+As long as the information still describes the market itself and not downstream strategy success.
 
 This stage must not use:
 - strategy returns
@@ -68,7 +53,7 @@ After state clusters are fixed, attach:
 These inputs are for evaluation and policy mapping only.
 They must not flow backward into the discovery step.
 
-## First canonical join contract
+## Two-table split
 
 ### State table
 The first canonical state table should be keyed by:
@@ -76,7 +61,7 @@ The first canonical state table should be keyed by:
 - `ts`
 
 It contains:
-- market-only state features
+- market-only or market-descriptive state features
 - discovered cluster/state assignment
 - layer-presence fields for market-side context
 
@@ -87,9 +72,9 @@ After state discovery, attach strategy-side fields by:
 - `family_id`
 - `variant_id`
 
-This table contains:
+It contains:
 - the discovered state id
-- the strategy / oracle outcomes aligned to that state
+- strategy / oracle outcomes aligned to that state
 
 ## Why the two-table split matters
 
