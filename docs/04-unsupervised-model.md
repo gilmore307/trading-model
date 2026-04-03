@@ -25,7 +25,7 @@ This is the first real model-definition step for the repository.
 The state-discovery step should answer:
 - can recurring market shapes be discovered from market behavior alone?
 - are those shapes stable enough to be treated as reusable states?
-- can we use the full descriptive richness of `trading-data` market-side inputs without leaking strategy outcomes into the clustering step?
+- can we use the descriptive richness of `trading-data` market-side inputs without leaking strategy outcomes into the clustering step?
 
 ### Inputs
 From `trading-data` only.
@@ -62,71 +62,78 @@ The first state-discovery model should start with a compact feature set derived 
 - `ret_15`
 - `ret_60`
 
-Meaning:
-- trailing return over 1, 5, 15, and 60 base bars
-
 ### B. Volatility features
 - `rv_5`
 - `rv_15`
 - `rv_60`
-
-Meaning:
-- realized volatility over the trailing 5, 15, and 60 base bars
 
 ### C. Range / compression features
 - `range_5`
 - `range_15`
 - `range_60`
 
-Meaning:
-- trailing high-low range width normalized by price over the trailing 5, 15, and 60 base bars
-
 ### D. Volume / activity features
 - `vol_z_5`
 - `vol_z_15`
 - `vol_z_60`
 
-Meaning:
-- relative volume burst / activity z-score over the corresponding trailing windows
-
 ### E. Simple directionality features
 - `slope_15`
 - `slope_60`
 
-Meaning:
-- simple price-slope or trend-strength proxy derived only from price over trailing windows
+## Market-rich discovery expansion order
 
-## Future market-rich discovery expansions
+After base-only v1 is stable, the discovery stage should expand in a deliberate order rather than adding all context at once.
 
-After base-only v1 is stable, state discovery may expand to richer market-side descriptive features from `trading-data`.
+### Expansion 1 — microstructure layer
+Add features derived from quotes and trades.
 
-### 1. Microstructure expansion
-Potential features:
+Potential additions:
 - spread statistics
-- quote imbalance
+- bid/ask imbalance
 - trade imbalance
-- short-horizon trade intensity
-- microstructure volatility proxies
+- trade intensity
+- short-horizon microstructure volatility proxies
 
-### 2. Derivatives-context expansion
-Potential features:
-- funding-rate level and change
+Why first:
+These are still very close to direct market behavior and usually improve the model without changing the philosophical boundary.
+
+### Expansion 2 — derivatives-context layer
+Add market-descriptive derivatives features where relevant.
+
+Potential additions:
+- funding level and change
 - basis level and change
 - open-interest level and change
-- term-structure proxies where available
+- futures/spot pressure proxies
 
-### 3. News/options expansion
-Potential features:
+Why second:
+These remain market-native signals, but are one step more contextual than pure price/volume behavior.
+
+### Expansion 3 — news/options layer
+Add object-native context summaries.
+
+Potential additions:
 - recent news intensity
+- news surprise proxies
 - options implied-vol level
 - options skew / put-call structure
-- context stress proxies derived from options surface summaries
+- options stress proxies
 
-### 4. Structural-context expansion
-Potential features:
+Why third:
+These can be highly informative, but also more sparse, noisier, and more object-dependent.
+
+### Expansion 4 — structural / cross-object context layer
+Add ETF / structural context where the object policy allows it.
+
+Potential additions:
 - ETF exposure concentration
 - constituent ETF context scores
-- context-activity indicators gated by valid market hours
+- cross-object context stress indicators
+- market-hours-gated structural context fields
+
+Why last:
+This is the most policy-sensitive and object-sensitive layer, so it should only be added after the lower-level market-native layers are already understood.
 
 ## Discovery-stage purity rule
 
@@ -149,12 +156,6 @@ The first implementation should start with a simple baseline clustering method.
 - standardized feature vectors
 - KMeans as the first baseline clustering method
 
-Why:
-- simple to inspect
-- easy to reproduce
-- easy to compare across refresh cycles
-- good enough as a first falsifiable baseline
-
 ### First cluster-count policy
 
 The first pass should not chase an "optimal" cluster count too aggressively.
@@ -172,9 +173,6 @@ The first discovery stage should evaluate stability before any strategy-based us
 
 #### 1. Cluster size sanity
 Check that clusters are not degenerate.
-Examples:
-- no cluster should dominate nearly everything
-- no cluster should have only trivial sample count
 
 #### 2. Reoccurrence over time
 Check whether clusters recur across different time segments rather than appearing only in one isolated regime window.

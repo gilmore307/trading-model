@@ -19,6 +19,7 @@
 - [x] split the system into state discovery first, strategy-state mapping second
 - [x] define the first state-discovery spec
 - [x] clarify that discovery may fully use market-descriptive data from `trading-data`
+- [x] define the first market-rich discovery expansion order
 
 ## Next implementation phase
 
@@ -26,7 +27,10 @@
 - [ ] define the exact standardization policy for discovery features
 - [ ] define the first cluster-count selection rule
 - [ ] define the first state-stability report
-- [ ] define the first market-rich discovery expansion order after base-only v1
+- [ ] define the exact microstructure feature set for expansion 1
+- [ ] define the exact derivatives-context feature set for expansion 2
+- [ ] define the exact news/options feature set for expansion 3
+- [ ] define the exact structural-context feature set for expansion 4
 - [ ] define the first state-evaluation table shape
 - [ ] define the first state -> preferred-variant mapping rule
 - [ ] define the first model-composite construction rule

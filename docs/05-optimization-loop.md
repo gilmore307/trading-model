@@ -33,20 +33,18 @@ Inputs:
 5. measure model composite versus oracle composite
 6. improve features and clustering if the oracle gap remains too large
 
-## First optimization target for stage 1
+## Stage-1 expansion order
 
-Before anything else, the repository should optimize for:
-- stable recurring states from market data alone
+The discovery step should expand in this order:
+1. base-only price/volume features
+2. microstructure features
+3. derivatives-context features
+4. news/options features
+5. structural / cross-object context features
 
-That means the first iteration should focus on:
-- compact feature quality
-- sensible cluster count
-- state stability diagnostics
-- transition sanity
+Only move to the next layer after the previous layer's effect on state quality is understood.
 
-Only after that should strategy usefulness become the next loop.
-
-## Primary optimization target for stage 2
+## Stage-2 optimization target
 
 The main stage-2 optimization target is:
 - maximize how much of the oracle composite is captured by the model composite
