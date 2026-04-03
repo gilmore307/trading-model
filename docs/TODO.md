@@ -29,6 +29,8 @@
 - [x] define state -> policy mapping as a post-discovery step
 - [x] define model composite construction as a post-discovery step
 - [x] define partitioned output/report policy to avoid oversized files
+- [x] define the first state-evaluation table shape
+- [x] define the preferred-variant rule at the design level
 
 ## Next implementation phase
 
@@ -40,8 +42,7 @@
 - [ ] define the exact derivatives-context feature set for expansion 2
 - [ ] define the exact news/options feature set for expansion 3
 - [ ] define the exact structural-context feature set for expansion 4
-- [ ] define the first state-evaluation table shape
-- [ ] define the first state -> preferred-variant selection rule
+- [ ] define the first exact state-winner score
 - [ ] define the first model-composite stitching rule
 - [ ] define the first oracle-gap report for base-only v1
 - [ ] only after that, define implementation details

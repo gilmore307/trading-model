@@ -18,25 +18,15 @@ This repository will be rebuilt around one clear line:
 
 The primary evaluation logic is now explicit:
 - first discover states from market data alone
+- then build a long-format state-evaluation table
 - then estimate state -> preferred-variant mappings
 - then build a model composite from those mappings
 - compare the model composite against the oracle composite
 - treat the oracle gap as the main model-quality signal
 
-## Current output commitment
-
-Outputs and reports must be partitioned early rather than emitted as oversized single files.
-
-The canonical output dimensions are:
-- symbol
-- family
-- variant
-- month
-
 ## What comes next
 
 Next design work should make stage 2 fully concrete by defining:
-- the first state-evaluation table shape
-- the first state -> preferred-variant selection rule
+- the first exact state-winner score
 - the first model-composite stitching rule
 - the first oracle-gap report shape

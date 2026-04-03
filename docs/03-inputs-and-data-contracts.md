@@ -76,6 +76,61 @@ It contains:
 - the discovered state id
 - strategy / oracle outcomes aligned to that state
 
+## First state-evaluation table shape
+
+The first state-evaluation table should be a long-format table.
+
+### Key fields
+- `research_object_type`
+- `symbol`
+- `ts`
+- `timestamp`
+- `month`
+- `state_id`
+- `family_id`
+- `variant_id`
+
+### State-side fields copied from the state table
+- `state_id`
+- `state_confidence` if available
+- layer-presence flags
+- any minimal state-profile reference needed for downstream grouping
+
+### Strategy-side fields
+- `forward_return_1bar`
+- `forward_return_5bar`
+- `forward_return_15bar`
+- `forward_return_1h`
+- `equity`
+- `return_since_prev`
+- `trade_pnl` where alignable
+- `position`
+- `signal_state` if exposed
+
+### Oracle-side fields
+- `family_oracle_selected_variant_id`
+- `global_oracle_selected_family_id`
+- `global_oracle_selected_variant_id`
+- `oracle_forward_return_1h`
+- `oracle_gap_1h`
+
+Where:
+- `oracle_gap_1h = oracle_forward_return_1h - forward_return_1h`
+
+### Lineage fields
+- `strategy_run_id`
+- `strategy_partition_month`
+- `data_partition_month`
+- `source_manifest_id`
+
+## Why long format is preferred
+
+The first state-evaluation table should stay long-format because:
+- each row cleanly represents one `(symbol, ts, family_id, variant_id)` observation under a discovered state
+- state-conditional variant comparison is easier
+- downstream aggregation into per-state rankings is simpler
+- partitioning by `symbol + family + variant + month` is natural
+
 ## Output partition rule
 
 Downstream tables generated from these contracts should be partitioned to avoid oversized files.

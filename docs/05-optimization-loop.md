@@ -35,16 +35,41 @@ Inputs:
 7. measure model composite versus oracle composite
 8. improve features and clustering if the oracle gap remains too large
 
-## State -> policy mapping rule
+## State -> preferred-variant selection rule
 
-After states are fixed, the repository should estimate conditional strategy utility inside each state.
+After the state-evaluation table is built, estimate a preferred variant within each state.
 
-That means:
-- for each discovered state
-- compare candidate variants within that state
-- estimate which variant or parameter region is preferred under that state
+### Core rule
+The preferred variant for a state should not be chosen by a single lucky outcome.
+It should be chosen by a state-conditional score that balances:
+- average utility / return
+- robustness / stability
+- sufficient sample count
 
-This mapping must be learned **after** clustering, not during clustering.
+### First practical rule
+For each `(state_id, family_id, variant_id)` group, compute at least:
+- sample count
+- mean forward return / utility
+- positive-rate
+- dispersion / volatility of outcome
+- oracle-gap summary if available
+
+Then define a ranking score that rewards:
+- higher conditional utility
+- better consistency
+- enough observations to trust the estimate
+
+### Minimum sample rule
+A variant should not be eligible as the preferred winner of a state unless it has enough observations in that state.
+
+If no variant meets the minimum sample rule, fall back to:
+- family-level winner
+- or broader baseline policy
+- but never a thin-sample lucky winner
+
+### Overfitting rule
+The preferred-variant rule must be estimated on a training window and then evaluated out of sample.
+Do not choose the winner and score it on the exact same evaluation slice without reporting that it is in-sample.
 
 ## Model-composite construction rule
 
