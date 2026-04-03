@@ -28,6 +28,7 @@
 - [x] set GMM as the primary discovery model and KMeans as the baseline
 - [x] define state -> policy mapping as a post-discovery step
 - [x] define model composite construction as a post-discovery step
+- [x] define partitioned output/report policy to avoid oversized files
 
 ## Next implementation phase
 

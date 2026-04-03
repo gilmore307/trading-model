@@ -76,6 +76,20 @@ It contains:
 - the discovered state id
 - strategy / oracle outcomes aligned to that state
 
+## Output partition rule
+
+Downstream tables generated from these contracts should be partitioned to avoid oversized files.
+
+Default partition dimensions:
+- `symbol`
+- `family`
+- `variant`
+- `month`
+
+At minimum:
+- state tables should be partitioned by `symbol + month`
+- state-evaluation tables should be partitioned by `symbol + family + variant + month`
+
 ## Why the two-table split matters
 
 This split keeps the system honest.
