@@ -20,6 +20,21 @@ The main scorecard is the comparison between:
 - model composite
 - oracle composite
 
+## Required comparison baselines
+
+Do not compare only against:
+- default
+- state-routed composite
+- oracle
+
+Also include at least one simple baseline so the state model must beat something trivial.
+
+Recommended trivial baselines:
+- volatility quantile bucket baseline
+- return-vol 2D bucket baseline
+
+This helps answer whether the discovered states truly add value beyond simple handcrafted partitioning.
+
 ## Oracle-gap report shape
 
 The oracle-gap report should answer:
@@ -37,6 +52,7 @@ Include:
 
 Compare at least:
 - `global_default`
+- `trivial_baseline`
 - `state_routed_composite`
 - `oracle_composite`
 
@@ -44,11 +60,14 @@ Compare at least:
 One row per month:
 - `month`
 - `realized_metric_default`
+- `realized_metric_trivial_baseline`
 - `realized_metric_state_routed`
 - `oracle_metric`
 - `gap_abs_default`
+- `gap_abs_trivial_baseline`
 - `gap_abs_state_routed`
 - `gap_closure_pct_default`
+- `gap_closure_pct_trivial_baseline`
 - `gap_closure_pct_state_routed`
 - `delta_gap_closure_pct`
 
@@ -90,6 +109,24 @@ One row per family or parameter region:
 - `state_concentration_of_gap`
 
 Support `state x family` or `state x param_region` slicing as secondary views when support is sufficient.
+
+## Refresh / versioning contract
+
+Periodic refit makes versioning and identity continuity first-class concerns.
+
+Track at least:
+- `state_model_version`
+- `state_label_version`
+- `mapping_version`
+- `refit_window_id`
+
+Also maintain a matching artifact for:
+- `old_state_id -> new_state_id`
+
+This contract should support:
+- refresh audits
+- state continuity analysis
+- routing reproducibility
 
 ## Output sizing rule
 

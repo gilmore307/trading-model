@@ -14,6 +14,32 @@ These must come from `trading-data` and must not include strategy outcomes.
 Used only after states are already defined.
 These come from `trading-strategy` and are attached later in order to evaluate usefulness.
 
+## Active policy
+
+Separate:
+- what is allowed in theory
+- what is enabled in v1
+
+### Allowed in theory for discovery
+Discovery may eventually use all market-descriptive layers from `trading-data`, including:
+- base market data
+- microstructure
+- derivatives context
+- news/options context
+- ETF / structural context where object policy allows it
+
+### Enabled in v1
+- `discovery_policy = base_only_v1`
+- enabled layers:
+  - base market layer only
+- explicitly disabled in v1 discovery:
+  - microstructure layer
+  - derivatives-context layer
+  - news/options layer
+  - ETF / structural context layer
+
+This makes the current commitment explicit while preserving future capability.
+
 ## Non-negotiable rule
 
 Canonical inputs for this repository must come from upstream repositories:
@@ -25,16 +51,7 @@ The source of truth is the upstream implementation and its produced artifact for
 
 ## Stage 1 input rule: state discovery
 
-The state-discovery stage may use **all market-descriptive data** produced by `trading-data`.
-
-That means it may use:
-- base market data
-- quotes/trades-derived microstructure information
-- derivatives context
-- news/options context
-- ETF / structural context when allowed by object policy
-
-As long as the information still describes the market itself and not downstream strategy success.
+The state-discovery stage may use **all market-descriptive data** produced by `trading-data` in theory, but only the layers enabled by the current discovery policy in practice.
 
 This stage must not use:
 - strategy returns
@@ -97,26 +114,16 @@ The first state-evaluation table should be a long-format table.
 - any minimal state-profile reference needed for downstream grouping
 
 ### Strategy-side fields
-Use bar-based horizons as the canonical contract, not hard-coded clock-time horizons.
-
-Examples:
+Use bar-based horizons as the canonical contract:
 - `forward_return_1bar`
 - `forward_return_3bar`
 - `forward_return_12bar`
 - `forward_return_24bar`
 - `equity`
 - `return_since_prev`
-- `trade_pnl` where alignable
+- `trade_pnl`
 - `position`
 - `signal_state` if exposed
-
-If the base bar is 5 minutes, then these may be interpreted approximately as:
-- 1 bar = 5m
-- 3 bars = 15m
-- 12 bars = 1h
-- 24 bars = 2h
-
-But the canonical schema should stay bar-based.
 
 ### Oracle-side fields
 - `family_oracle_selected_variant_id`
@@ -140,13 +147,34 @@ Where:
 - `data_partition_month`
 - `source_manifest_id`
 
-## Why long format is preferred
+## Alignment and tolerance rules
 
-The first state-evaluation table should stay long-format because:
-- each row cleanly represents one `(symbol, ts, family_id, variant_id)` observation under a discovered state
-- state-conditional variant comparison is easier
-- downstream aggregation into per-state rankings is simpler
-- partitioning by `symbol + family + variant + month` is natural
+The attach step must use explicit rules rather than informal matching.
+
+### Default key
+- exact `symbol + ts` match when available
+
+### Allowed fallback
+If exact match is unavailable:
+- allow previous-bar attach only
+- do not allow future-bar attach
+- use the most recent row at or before `ts`
+
+### Tolerance rule
+The default tolerance for strategy/oracle attach is:
+- at most one base-bar interval backward
+
+If no eligible row exists inside tolerance:
+- do not fabricate values
+- keep strategy/oracle fields null
+- mark attach status explicitly
+
+### Attach-failure rule
+Attach failure should not silently drop the state row.
+Preferred behavior:
+- keep the state row
+- leave stage-2 fields null for the missing attachment
+- record attach status / attach source for auditability
 
 ## Output partition rule
 

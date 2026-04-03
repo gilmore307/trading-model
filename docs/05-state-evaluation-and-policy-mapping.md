@@ -11,6 +11,24 @@ Inputs to stage 2 are:
 
 Stage 2 does not redefine states. It only evaluates and uses them.
 
+## Evaluation protocol
+
+Use a three-window protocol.
+
+### Window A — state fit window
+Used only to fit the state model.
+
+### Window B — winner-selection window
+Used only to estimate `state -> preferred_variant` mappings.
+
+### Window C — out-of-window evaluation window
+Used only to evaluate the stitched composite against baselines and oracle.
+
+This prevents the same slice from being used simultaneously for:
+- fitting states
+- choosing winners
+- claiming out-of-sample effectiveness
+
 ## First state-evaluation table shape
 
 The first state-evaluation table should be long-format.
@@ -59,11 +77,15 @@ Use bar-based horizons as the canonical contract:
 Where:
 - `oracle_gap_Nbar = oracle_forward_return_Nbar - forward_return_Nbar`
 
-### Lineage fields
-- `strategy_run_id`
-- `strategy_partition_month`
-- `data_partition_month`
-- `source_manifest_id`
+### Primary winner metric
+
+To avoid ambiguity, the default v1 winner metric is explicitly:
+- `primary_winner_metric = forward_return_12bar`
+
+And the corresponding oracle comparison field is:
+- `primary_oracle_metric = oracle_forward_return_12bar`
+
+If a future experiment uses a different winner metric, it must declare that override explicitly.
 
 ## Why long format is preferred
 
@@ -75,6 +97,10 @@ Long format keeps state-conditional variant comparison simple and aligns well wi
 ### Step 1 — define monthly excess utility versus default
 For each observation `i` that falls in state `s` for variant `v`, define:
 - `d_i(s, v) = u_i(v) - u_i(default)`
+
+For v1, define:
+- `u_i(v) = forward_return_12bar(v)`
+- `u_i(default) = forward_return_12bar(default)`
 
 Then aggregate by month:
 - `dbar_{s,v,m} = mean_i d_i(s, v)` over all observations in `(state=s, variant=v, month=m)`
@@ -142,6 +168,27 @@ In v1, oracle gap is:
 - not part of the main winner score
 - used in reporting
 - allowed as a tie-breaker only
+
+## Preferred-variant mapping artifact schema
+
+The routing layer should consume a formal mapping artifact rather than only in-memory rules.
+
+Suggested v1 schema:
+- `state_id`
+- `winner_type`
+- `winner_id`
+- `runner_up_id`
+- `winner_score`
+- `score_margin`
+- `selection_confidence`
+- `fallback_policy`
+- `mapping_version`
+- `effective_window_start`
+- `effective_window_end`
+- `primary_winner_metric`
+- `state_model_version`
+- `state_label_version`
+- `refit_window_id`
 
 ## Model-composite stitching rule (v1 defaults)
 
