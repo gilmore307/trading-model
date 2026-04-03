@@ -35,39 +35,98 @@ Inputs:
 7. measure model composite versus oracle composite
 8. improve features and clustering if the oracle gap remains too large
 
-## State -> preferred-variant selection rule
+## State -> preferred-variant selection rule (v1 exact definition)
 
 After the state-evaluation table is built, estimate a preferred variant within each state.
 
-### Core rule
-The preferred variant for a state should not be chosen by a single lucky outcome.
-It should be chosen by a state-conditional score that balances:
-- average utility / return
-- robustness / stability
-- sufficient sample count
+### Step 1 — define monthly excess utility versus default
+For each observation `i` that falls in state `s` for variant `v`, define:
+- `d_i(s, v) = u_i(v) - u_i(default)`
 
-### First practical rule
-For each `(state_id, family_id, variant_id)` group, compute at least:
-- sample count
-- mean forward return / utility at the chosen bar-based horizons
-- positive-rate
-- dispersion / volatility of outcome
-- oracle-gap summary at the same bar-based horizons
+Where:
+- `u_i(v)` is the realized utility of variant `v` on that observation
+- `u_i(default)` is the realized utility of the default baseline policy on the same observation
 
-Then define a ranking score that rewards:
-- higher conditional utility
-- better consistency
-- enough observations to trust the estimate
+Then aggregate by month:
+- `dbar_{s,v,m} = mean_i d_i(s, v)` for all observations in `(state=s, variant=v, month=m)`
 
-### Minimum sample rule
-A variant should not be eligible as the preferred winner of a state unless it has enough observations in that state.
+### Step 2 — define monthly summary statistics
+For each `(state=s, variant=v)` compute:
+- `mu_{s,v}` = mean over months of `dbar_{s,v,m}`
+- `sigma_{s,v}` = std over months of `dbar_{s,v,m}`
+- `p_{s,v}` = fraction of months where `dbar_{s,v,m} > 0`
 
-If no variant meets the minimum sample rule, fall back to:
-- family-level winner
-- or broader baseline policy
-- but never a thin-sample lucky winner
+These are month-level stability statistics, not event-level statistics.
 
-### Overfitting rule
+### Step 3 — sample-coverage shrinkage
+Define:
+- `w_{s,v} = min(1, obs_n / N_ref) * min(1, active_months_n / M_ref)`
+
+Recommended v1 defaults:
+- `N_ref = 300`
+- `M_ref = 6`
+
+This penalizes variants that look good only because they have too few observations or too little month coverage.
+
+### Step 4 — within-state robust standardization
+Within the same state, for all eligible variants, define:
+- `z_mu_{s,v} = (mu_{s,v} - median_v'(mu_{s,v'})) / (MAD_v'(mu_{s,v'}) + eps)`
+- `z_sigma_{s,v} = (sigma_{s,v} - median_v'(sigma_{s,v'})) / (MAD_v'(sigma_{s,v'}) + eps)`
+
+Interpretation:
+- larger `z_mu` is better
+- larger `z_sigma` means worse instability, so it should be penalized
+
+### Step 5 — first exact winner score
+Define:
+- `winner_score_{s,v} = w_{s,v} * ( z_mu_{s,v} - 0.5 * z_sigma_{s,v} + 0.5 * (2 * p_{s,v} - 1) )`
+
+This score favors:
+- better monthly excess over default
+- more stable cross-month behavior
+- higher positive-month ratio
+- broader sample and month coverage
+
+## Eligibility gate
+
+A variant is eligible for state-winner competition only if:
+- `obs_n >= 100`
+- `active_months_n >= 3`
+- `episode_n >= 5`
+
+If a variant fails the gate, it is excluded from winner competition for that state.
+
+## Winner decision rule
+
+For each state:
+1. filter to eligible variants
+2. compute `winner_score`
+3. rank variants by score
+4. take top1 and top2
+
+Top1 is accepted as the state winner only if all of the following hold:
+- `winner_score_top1 > 0`
+- `winner_score_top1 - winner_score_top2 >= 0.25`
+- `p_top1 >= 0.55`
+
+Otherwise output:
+- `no_strong_preference`
+
+## Oracle-gap role in v1
+
+In v1, oracle gap should **not** enter the main winner score directly.
+
+Reason:
+The first exact score should first answer the simpler question:
+- which variant is the most robust state-conditional switch target relative to default?
+
+So in v1:
+- oracle gap is reported separately
+- oracle gap is allowed as a tie-breaker when top candidates are very close
+- oracle gap does not enter the main score formula yet
+
+## Overfitting rule
+
 The preferred-variant rule must be estimated on a training window and then evaluated out of sample.
 Do not choose the winner and score it on the exact same evaluation slice without reporting that it is in-sample.
 

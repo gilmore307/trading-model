@@ -32,6 +32,7 @@
 - [x] define the first state-evaluation table shape
 - [x] define the preferred-variant rule at the design level
 - [x] switch evaluation horizons from hard-coded hour labels to canonical bar-based horizons
+- [x] define the first exact state-winner score
 
 ## Next implementation phase
 
@@ -43,7 +44,7 @@
 - [ ] define the exact derivatives-context feature set for expansion 2
 - [ ] define the exact news/options feature set for expansion 3
 - [ ] define the exact structural-context feature set for expansion 4
-- [ ] define the first exact state-winner score
 - [ ] define the first model-composite stitching rule
 - [ ] define the first oracle-gap report for base-only v1
+- [ ] define exact tie-break rules when top state winners are close
 - [ ] only after that, define implementation details
