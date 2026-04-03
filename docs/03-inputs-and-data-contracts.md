@@ -41,11 +41,6 @@ The real pattern in `trading-data` is:
 - companion meta/manifest files in some paths
 - context outputs under `context/`
 
-This means `trading-model` should expect upstream inputs in terms of:
-- partitioned historical market rows
-- partitioned context/enrichment rows
-- month-level manifests or metadata where available
-
 ### Canonical input classes from `trading-data`
 
 `trading-model` should be designed to consume these classes when relevant:
@@ -54,11 +49,6 @@ This means `trading-model` should expect upstream inputs in terms of:
 - trades
 - derivatives context such as funding / basis-like context
 - optional context layers such as news / options / ETF context when those are explicitly part of the modeling design
-
-### Important design rule
-
-`trading-model` should consume these upstream outputs as delivered artifacts.
-It should not recreate fetch logic locally.
 
 ## Upstream B — `trading-strategy`
 
@@ -93,19 +83,6 @@ The real pattern in `trading-strategy` is that it writes structured run outputs 
 - global oracles
 - run manifests
 
-This means `trading-model` should not rely on toy examples under `examples/` as the contract.
-It should rely on the real emitted output classes from the strategy runner path.
-
-### Canonical input classes from `trading-strategy`
-
-`trading-model` should be designed to consume:
-- variant-level result rows
-- family-level summaries
-- returns/equity series
-- trade ledgers when needed for analysis
-- oracle outputs
-- run manifests / metadata for lineage
-
 ## Required modeling join
 
 The model must be built from a join between:
@@ -118,10 +95,139 @@ At minimum, the alignment contract should support joins by:
 - partition / month window where needed
 - run / family / variant identifiers on the strategy side
 
-## Practical implication for implementation
+## First concrete learning-table contract
 
-When rebuilding code in this repo, the first concrete implementation target should be an aligned learning table with fields that can be traced back to:
-- a specific upstream `trading-data` artifact class
-- a specific upstream `trading-strategy` artifact class
+The first implementation target in this repository should be a canonical aligned learning table.
 
-If a field cannot be traced upstream, it should be treated as non-canonical until documented.
+### Table purpose
+
+One row should represent:
+- a market/context snapshot at time `ts`
+- plus the strategy-behavior observations attached to that same point or aligned decision window
+
+### Primary key
+
+Minimum key:
+- `symbol`
+- `ts`
+
+Optional extensions later:
+- `dataset_month`
+- `timeframe`
+- `run_id`
+- `family_id`
+- `variant_id`
+
+## Required field groups
+
+### A. Identity fields
+From alignment logic:
+- `symbol`
+- `ts`
+- `timestamp`
+- `dataset_month`
+
+### B. Market-state descriptive fields
+From `trading-data` bars / quotes / trades / derivatives context:
+- `open`
+- `high`
+- `low`
+- `close`
+- `volume`
+- `quote_volume`
+- `return_1m`
+- `return_5m`
+- `return_15m`
+- `return_1h`
+- `realized_vol_*`
+- `range_width_*`
+- `quote_spread_*` where available
+- `trade_imbalance_*` where available
+- `funding_rate` where available
+- `basis_pct` where available
+
+The exact suffix windows may evolve, but the field family should stay explicit.
+
+### C. Optional context fields
+From `trading-data` optional context layers when intentionally enabled:
+- `news_count_*`
+- `options_*`
+- `context_*`
+
+These must be clearly marked optional so the base model does not silently depend on them.
+
+### D. Strategy behavior fields
+From `trading-strategy` outputs:
+- `family_id`
+- `variant_id`
+- `position`
+- `signal_state` if exposed
+- `forward_return_*`
+- `equity`
+- `return_since_prev`
+- `trade_pnl` where alignable
+- `summary_score` where emitted
+
+### E. Oracle / benchmark fields
+From `trading-strategy` composite/oracle outputs:
+- `family_oracle_selected_variant_id`
+- `global_oracle_selected_family_id`
+- `global_oracle_selected_variant_id`
+- `oracle_forward_return_*`
+
+These are needed to evaluate whether discovered states capture meaningful switching value.
+
+### F. Lineage fields
+From upstream metadata / manifests:
+- `strategy_run_id`
+- `strategy_partition_month`
+- `data_partition_month`
+- `source_manifest_id` or equivalent upstream lineage reference
+
+## Join rules
+
+### Base time alignment
+
+The base alignment should be bar-close aligned by `symbol + ts`.
+
+If exact timestamp equality is not available, the fallback rule should be:
+- align strategy row to the most recent market/context row at or before the strategy timestamp within a documented tolerance window
+
+### Multi-output strategy alignment
+
+If multiple strategy outputs exist for the same `symbol + ts`, the repository should support either:
+- one row per `(symbol, ts, family_id, variant_id)`
+- or a base state row plus nested strategy payloads
+
+For the first implementation, the cleaner choice is usually:
+- **one row per `(symbol, ts, family_id, variant_id)`**
+
+because it simplifies downstream evaluation.
+
+## First implementation scope
+
+The first concrete implementation should stay narrow.
+
+### Required from `trading-data`
+- bars/candles
+- derivatives context when available
+
+### Required from `trading-strategy`
+- variant outputs
+- returns/equity outputs
+- family/global oracle outputs
+- run manifests
+
+### Deferred until later
+- news
+- options snapshots
+- ETF/context layers not directly tied to the first state model
+
+## Contract discipline
+
+When rebuilding code in this repo, every field in the learning table should be traceable to:
+- a specific upstream repo
+- a specific upstream artifact type
+- a specific alignment rule
+
+If a field cannot be traced upstream, it should not enter the canonical table yet.

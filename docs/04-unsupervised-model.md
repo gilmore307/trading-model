@@ -38,6 +38,16 @@ This layer tests whether discovered states meaningfully separate:
 - variants
 - parameter regions
 - utility surfaces
+- oracle gap versus achievable state-aware selection
+
+## First implementation target
+
+The first model should be built on top of the first canonical aligned learning table defined in `03-inputs-and-data-contracts.md`.
+
+That means the first unsupervised model should consume:
+- descriptive state fields from `trading-data`
+- aligned strategy behavior fields from `trading-strategy`
+- oracle/benchmark fields for usefulness evaluation
 
 ## What “unsupervised” means here
 

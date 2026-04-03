@@ -6,9 +6,9 @@ This repository should improve the model continuously as new data arrives.
 
 1. new market/context data arrives from `trading-data`
 2. new strategy outputs arrive from `trading-strategy`
-3. the aligned modeling table is refreshed
+3. the aligned learning table is refreshed
 4. the unsupervised state model is retrained or updated
-5. discovered states are re-evaluated against strategy behavior
+5. discovered states are re-evaluated against strategy behavior and oracle benchmarks
 6. weak features / weak separations are identified
 7. the representation or clustering setup is improved
 
@@ -27,6 +27,7 @@ Each refresh cycle should ask:
 - are the discovered states stable over time?
 - do they still separate family/variant behavior?
 - do they still separate parameter-region utility?
+- do they help explain the gap between oracle and executable selection?
 - are some features no longer useful?
 - do we need to revise the representation before clustering again?
 
