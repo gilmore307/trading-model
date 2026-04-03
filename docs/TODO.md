@@ -31,6 +31,7 @@
 - [x] define partitioned output/report policy to avoid oversized files
 - [x] define the first state-evaluation table shape
 - [x] define the preferred-variant rule at the design level
+- [x] switch evaluation horizons from hard-coded hour labels to canonical bar-based horizons
 
 ## Next implementation phase
 

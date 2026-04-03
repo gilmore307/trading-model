@@ -24,6 +24,11 @@ The primary evaluation logic is now explicit:
 - compare the model composite against the oracle composite
 - treat the oracle gap as the main model-quality signal
 
+## Current horizon commitment
+
+The canonical evaluation horizons should be bar-based, not hard-coded hour-based labels.
+Clock-time interpretations can be derived from the base bar size, but the schema itself should stay in bar units.
+
 ## What comes next
 
 Next design work should make stage 2 fully concrete by defining:

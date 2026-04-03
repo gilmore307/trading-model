@@ -97,25 +97,42 @@ The first state-evaluation table should be a long-format table.
 - any minimal state-profile reference needed for downstream grouping
 
 ### Strategy-side fields
+Use bar-based horizons as the canonical contract, not hard-coded clock-time horizons.
+
+Examples:
 - `forward_return_1bar`
-- `forward_return_5bar`
-- `forward_return_15bar`
-- `forward_return_1h`
+- `forward_return_3bar`
+- `forward_return_12bar`
+- `forward_return_24bar`
 - `equity`
 - `return_since_prev`
 - `trade_pnl` where alignable
 - `position`
 - `signal_state` if exposed
 
+If the base bar is 5 minutes, then these may be interpreted approximately as:
+- 1 bar = 5m
+- 3 bars = 15m
+- 12 bars = 1h
+- 24 bars = 2h
+
+But the canonical schema should stay bar-based.
+
 ### Oracle-side fields
 - `family_oracle_selected_variant_id`
 - `global_oracle_selected_family_id`
 - `global_oracle_selected_variant_id`
-- `oracle_forward_return_1h`
-- `oracle_gap_1h`
+- `oracle_forward_return_1bar`
+- `oracle_forward_return_3bar`
+- `oracle_forward_return_12bar`
+- `oracle_forward_return_24bar`
+- `oracle_gap_1bar`
+- `oracle_gap_3bar`
+- `oracle_gap_12bar`
+- `oracle_gap_24bar`
 
 Where:
-- `oracle_gap_1h = oracle_forward_return_1h - forward_return_1h`
+- `oracle_gap_Nbar = oracle_forward_return_Nbar - forward_return_Nbar`
 
 ### Lineage fields
 - `strategy_run_id`

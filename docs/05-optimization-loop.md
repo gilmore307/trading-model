@@ -49,10 +49,10 @@ It should be chosen by a state-conditional score that balances:
 ### First practical rule
 For each `(state_id, family_id, variant_id)` group, compute at least:
 - sample count
-- mean forward return / utility
+- mean forward return / utility at the chosen bar-based horizons
 - positive-rate
 - dispersion / volatility of outcome
-- oracle-gap summary if available
+- oracle-gap summary at the same bar-based horizons
 
 Then define a ranking score that rewards:
 - higher conditional utility
