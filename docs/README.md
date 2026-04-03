@@ -1,63 +1,32 @@
-# crypto-trading docs
+# trading-model docs
 
-This directory is now the **single canonical home for all project Markdown**.
+This docs tree is the canonical home for `trading-model` repository documentation.
 
-Rules:
-- project docs live under `docs/`
-- project-local session handoff files do **not** live in the repo root
-- session/topic memory belongs in the workspace memory system, not inside this project tree
-- generated runtime/research artifacts may be JSON/JSONL under `logs/` and `reports/`, but Markdown docs stay under `docs/`
+`trading-model` is the historical research, feature/model development, and promotion-candidate upstream for the trading system.
+It consumes upstream market/context data and strategy outputs, builds research-side datasets and model layers, and publishes promotion-ready research outputs.
+It is not the canonical home for upstream raw acquisition or live runtime execution.
 
-## Reading order
+## Read in order
 
-1. `project-status.md` — current project state and current phase
-2. `TODO.md` — canonical current task list
-3. `strategy-research-framework.md` — current research operating model
-4. `market-state-description-framework.md` — market-state description priority
-5. `strategy-candidate-pool.md` — open-ended candidate family pool
-6. `project-map.md` — code/module orientation
-7. `known-gaps-and-boundaries.md` — current limits and non-goals
-8. topic docs as needed
+1. `01-overview.md`
+2. `02-workflow.md`
+3. `03-inputs-and-data-contracts.md`
+4. `04-research-data-and-artifacts.md`
+5. `05-market-state-and-features.md`
+6. `06-strategy-research.md`
+7. `07-promotion-and-output-boundary.md`
+8. `08-repo-structure.md`
+9. `09-project-status-and-next-steps.md`
 
-## Core docs
+## Archive
 
-- `project-status.md`
-- `TODO.md`
-- `project-map.md`
-- `strategy-research-framework.md`
-- `strategy-candidate-pool.md`
-- `runtime-and-modes.md`
-- `environment-and-operations.md`
-- `state-and-artifacts.md`
-- `execution-artifacts.md`
-- `regime-and-decision-flow.md`
-- `review-architecture.md`
-- `review-operations.md`
-- `review-automation.md`
-- `research-runtime-separation.md`
-- `parameter-promotion-workflow.md`
-- `multi-account-parallel-execution.md`
-- `known-gaps-and-boundaries.md`
-- `documentation-policy.md`
-- `TIME_SERIES_PARTITION_POLICY.md`
-- `FAMILY_VARIANT_ARTIFACT_POLICY.md`
-- `PIPELINE_AND_ARTIFACT_OVERVIEW.md`
+Older documents that are still useful for historical reasoning, migration context, or detailed reference now live under `docs/archive/`.
+They are no longer the primary reading path.
 
-## Supporting docs
+## Documentation rule
 
-- `components/features.md`
-- `components/market.md`
-- `checkpoints/2026-03-19-execution-ledger-hardening.md`
-
-## Repo layout summary
-
-- `src/` — application code
-- `tests/` — tests
-- `scripts/` — CLI/script entrypoints (`data/`, `review/`, `runtime/`, `research/`)
-- `logs/` — runtime/research artifacts
-- `reports/` — exported review outputs
-- `docs/` — all project Markdown
-
-## Cleanup note
-
-As of 2026-03-20, legacy root-level handoff Markdown, retired closeout remnants, and old backup clutter were removed from the repo so the project state is documented in one place instead of being scattered across the root.
+The active numbered docs should stay:
+- short
+- ordered by workflow
+- aligned with the current repository role
+- free of obsolete runtime or split-era clutter

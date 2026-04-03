@@ -3,10 +3,3 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .env
-logs/
-reports/
-.DS_Store
-
-# external data repo
-data/
-data.pre-migration-backup/
