@@ -13,11 +13,12 @@
 - [x] define the first layer policy matrix
 - [x] define the first field mapping by dependency layer
 - [x] define the first artifact-class to field-family mapping
+- [x] define the first hard alignment / tolerance policy
 
 ## Next implementation phase
 
 - [ ] map exact upstream artifact filenames/partitions to each first-implementation field at the per-file level
-- [ ] define the first bar-alignment and tolerance rules for joining the two upstreams
+- [ ] define the per-field aggregation rules for many-to-one joins
 - [ ] define the first base-layer-only model path
 - [ ] define the first stock layer stack
 - [ ] define the first ETF layer stack

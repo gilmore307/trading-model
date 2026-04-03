@@ -66,9 +66,15 @@ These should include structured strategy outputs such as:
 - global oracle outputs
 - run manifests
 
-## Step 4 — Build modeling-ready learning tables
+## Step 4 — Align both upstream streams into the canonical learning table
 
 The market/context side and strategy side must be aligned into a common learning table.
+
+Alignment rules must be explicit:
+- base market bar close timestamps define the canonical time axis
+- strategy rows align onto that axis
+- optional context layers align by exact match, as-of rule, window aggregation, or monthly-context attach depending on the layer
+- missing optional layers do not invalidate the row
 
 This learning table must preserve which layers were actually available for each row or run.
 That way the model can distinguish between:

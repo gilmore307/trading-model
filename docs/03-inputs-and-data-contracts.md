@@ -351,19 +351,133 @@ These fields make graceful degradation explicit:
 - every canonical row should be traceable back to upstream artifacts
 - if a row has no lineage, it should not be considered canonical
 
-## Join rules
+## Alignment policy
 
-### Base rule
-The base alignment should be bar-close aligned by `symbol + ts`.
+This section defines the first hard alignment rules for joining upstream artifacts into the canonical learning table.
 
-### Fallback rule
+### 1. Canonical time axis
+
+The canonical time axis should be the **base market bar close timestamp**.
+
+That means:
+- every aligned row is anchored to a market-state timestamp from the base market layer
+- strategy outputs and optional context are joined onto that timestamp
+
+### 2. Canonical join order
+
+The first implementation should join in this order:
+1. base market layer
+2. direct enrichment layer
+3. cross-object / structural context layer
+4. strategy behavior layer
+5. oracle / benchmark layer
+6. lineage layer
+
+Reason:
+The market-state row is the anchor. Everything else decorates or evaluates that state row.
+
+### 3. Base alignment rule
+
+Default join key:
+- `symbol + ts`
+
+If exact equality is available, use exact equality.
+
+### 4. Fallback alignment rule
+
 If exact timestamp equality is not available:
-- align strategy row to the most recent market/context row at or before the strategy timestamp within a documented tolerance window
+- align an upstream row to the most recent canonical market row with `row_ts <= ts`
+- only accept the match if it falls within the allowed tolerance window for that layer
 
-### Layer rule
-If optional context is missing:
-- the row is still valid if the base market layer and strategy layer exist
-- missing optional layers must be represented explicitly through the layer-presence fields
+If no valid row is found inside tolerance:
+- leave the layer missing
+- mark the corresponding `has_*_layer` field as false
+- do not fabricate a value
+
+### 5. First tolerance policy by layer
+
+#### Base market layer
+- exact timestamp match required within the chosen bar partition
+- no fallback because this layer defines the canonical row itself
+
+#### Direct derivatives/context layer
+- allow as-of joins
+- first default tolerance: **15 minutes** for short-lived market context fields
+- if beyond tolerance, mark missing
+
+#### News layer
+- do not nearest-neighbor a single article row
+- aggregate over explicit backward-looking windows such as:
+  - last 1 hour
+  - last 1 day
+- no nearest-row substitution beyond the aggregation window definition
+
+#### Options layer
+- allow as-of joins
+- first default tolerance: **same session / same market-hours block**
+- if outside the valid market-hours block, mark missing
+
+#### ETF context layer
+- treat as slow-moving structural context
+- align by active month / active published context period, not by minute-level equality
+- within the valid month/context window, the same context may attach to many rows
+
+#### Strategy behavior layer
+- prefer exact `symbol + ts` alignment where emitted strategy outputs are already bar-aligned
+- if not exact, use the most recent row at or before `ts`
+- first default tolerance: **one base-bar interval**
+
+#### Oracle / benchmark layer
+- use the same alignment policy as the strategy behavior layer
+- oracle rows should map to the same canonical decision timestamp as the corresponding strategy rows
+
+### 6. Window-direction rule
+
+For the first implementation, all non-structural fallback joins should be **backward-looking only**.
+
+That means:
+- no future leakage
+- no joining to a later row just because it is closer in time
+
+### 7. Aggregation rule
+
+If multiple rows from the same layer fall into one canonical window:
+- use an explicit deterministic aggregation rule per field family
+
+Examples:
+- counts → sum
+- rates / ratios → last valid or weighted mean, depending on field definition
+- context snapshots → most recent valid snapshot within tolerance
+
+The aggregation rule must be documented per field family before implementation.
+
+### 8. Missingness rule
+
+Missing optional data must be represented explicitly.
+
+That means:
+- keep the canonical row
+- keep the field as null where appropriate
+- set layer-presence flags correctly
+- never silently fill optional context with invented defaults that look like real observations
+
+### 9. Scenario rule
+
+Alignment policy must respect research-object type.
+
+Examples:
+- crypto rows outside stock-market hours should not try to force ETF/options context matches
+- ETF rows should not depend on ETF-self-context recursion
+- stock rows may use richer same-session context when available
+
+### 10. First implementation discipline
+
+Before rebuilding code, the implementation should explicitly define for each first-pass field:
+- source artifact class
+- join mode (`exact`, `asof`, `window_aggregate`, `monthly_context_attach`)
+- tolerance window
+- aggregation rule if many-to-one
+- missingness behavior
 
 ## Scenario-specific dependency rules
 
