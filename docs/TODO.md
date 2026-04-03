@@ -20,11 +20,11 @@
 - [x] define the first state-discovery spec
 - [x] clarify that discovery may fully use market-descriptive data from `trading-data`
 - [x] define the first market-rich discovery expansion order
+- [x] define the first base-only feature formulas
+- [x] define the first standardization policy
 
 ## Next implementation phase
 
-- [ ] define the exact formulas for the first base-only feature set
-- [ ] define the exact standardization policy for discovery features
 - [ ] define the first cluster-count selection rule
 - [ ] define the first state-stability report
 - [ ] define the exact microstructure feature set for expansion 1

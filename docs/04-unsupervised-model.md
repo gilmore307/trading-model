@@ -62,24 +62,83 @@ The first state-discovery model should start with a compact feature set derived 
 - `ret_15`
 - `ret_60`
 
+Formula:
+- `ret_n(t) = close_t / close_{t-n} - 1`
+
+Where:
+- `close_t` is the close of the canonical bar at time `t`
+- `n` is measured in base-bar intervals
+
 ### B. Volatility features
 - `rv_5`
 - `rv_15`
 - `rv_60`
+
+Formula:
+- compute bar log returns over the trailing window
+- `rv_n(t) = std(log(close_i / close_{i-1}))` over the last `n` bars ending at `t`
 
 ### C. Range / compression features
 - `range_5`
 - `range_15`
 - `range_60`
 
+Formula:
+- `range_n(t) = (max(high) - min(low)) / close_t` over the trailing `n` bars ending at `t`
+
 ### D. Volume / activity features
 - `vol_z_5`
 - `vol_z_15`
 - `vol_z_60`
 
+Formula:
+- let `v_t` be the current bar volume
+- compute trailing mean and std of volume over window `n`
+- `vol_z_n(t) = (v_t - mean(volume_{t-n+1:t})) / std(volume_{t-n+1:t})`
+- if the trailing std is zero, define the z-score as `0`
+
 ### E. Simple directionality features
 - `slope_15`
 - `slope_60`
+
+Formula:
+- fit a simple linear regression of log price on time index over the trailing window
+- use the fitted slope coefficient as the directionality feature
+
+## Standardization policy
+
+The discovery feature matrix should be standardized before clustering.
+
+### First policy
+- compute feature means and standard deviations on the training / fit window only
+- transform each feature as:
+  - `z = (x - mean_train) / std_train`
+- if `std_train == 0`, replace with `1` for scaling so the transformed feature becomes `0`
+
+### Important rule
+
+Do not fit normalization on future data when evaluating a historical period.
+
+That means:
+- fit scaling parameters on the chosen discovery fit window
+- apply those parameters to the evaluation / assignment window
+- refresh them only when the model is explicitly retrained
+
+## First feature-set discipline
+
+The first discovery model should stay intentionally small.
+
+Do not include yet:
+- derivatives context
+- news
+- options context
+- ETF context
+- cross-asset context
+- strategy returns
+- oracle labels
+- variant success statistics
+
+The goal is to test whether the market itself already contains recurring state structure.
 
 ## Market-rich discovery expansion order
 
@@ -95,9 +154,6 @@ Potential additions:
 - trade intensity
 - short-horizon microstructure volatility proxies
 
-Why first:
-These are still very close to direct market behavior and usually improve the model without changing the philosophical boundary.
-
 ### Expansion 2 — derivatives-context layer
 Add market-descriptive derivatives features where relevant.
 
@@ -106,9 +162,6 @@ Potential additions:
 - basis level and change
 - open-interest level and change
 - futures/spot pressure proxies
-
-Why second:
-These remain market-native signals, but are one step more contextual than pure price/volume behavior.
 
 ### Expansion 3 — news/options layer
 Add object-native context summaries.
@@ -120,9 +173,6 @@ Potential additions:
 - options skew / put-call structure
 - options stress proxies
 
-Why third:
-These can be highly informative, but also more sparse, noisier, and more object-dependent.
-
 ### Expansion 4 — structural / cross-object context layer
 Add ETF / structural context where the object policy allows it.
 
@@ -131,9 +181,6 @@ Potential additions:
 - constituent ETF context scores
 - cross-object context stress indicators
 - market-hours-gated structural context fields
-
-Why last:
-This is the most policy-sensitive and object-sensitive layer, so it should only be added after the lower-level market-native layers are already understood.
 
 ## Discovery-stage purity rule
 
