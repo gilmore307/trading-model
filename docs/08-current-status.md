@@ -20,13 +20,15 @@ This repository will be rebuilt around one clear line:
 The repository now treats stock, ETF, and crypto as different research-object classes with different valid layer policies.
 That policy distinction is part of the design, not an implementation afterthought.
 
-## Current modeling commitment
+## Current evaluation commitment
 
-The first actual model path should be:
-- base-market-layer only on the descriptive side
-- plus strategy outputs on the evaluation side
+The primary evaluation logic is now explicit:
+- build a model composite from the discovered states
+- compare the model composite against the oracle composite
+- treat the oracle gap as the main model-quality signal
 
-In other words, the first real model must be a **base-only model** before optional context layers are added.
+If grouping were perfect, the model composite could in theory equal the oracle composite.
+That is the north-star interpretation for the repository.
 
 ## What comes next
 
@@ -34,4 +36,4 @@ Next design work should make the base-only path more concrete by defining:
 - exact per-field aggregation rules
 - the first compact base-only feature set
 - the first clustering choice
-- the first usefulness-evaluation report shape
+- the first composite-evaluation report shape

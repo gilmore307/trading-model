@@ -84,7 +84,7 @@ It should work before any optional enrichment or context layers are added.
 
 The base-only model should answer:
 - can the repository discover useful state structure using only direct market behavior plus strategy outputs?
-- can the model still produce meaningful strategy separation without optional context?
+- can the model composite approach the oracle composite using only base-layer grouping?
 
 ### Required inputs
 
@@ -98,7 +98,7 @@ Required evaluation side:
 - variant-level outputs
 - forward-return or equivalent outcome fields
 - family/variant identifiers
-- oracle outputs for gap comparison where available
+- oracle outputs for comparison
 
 ### Canonical feature family for base-only v1
 
@@ -124,16 +124,40 @@ The key design rule is:
 The first model should produce:
 - a state vector per canonical timestamp
 - an unsupervised state assignment or cluster id
-- a state summary for each discovered cluster
-- a strategy-separation evaluation for each cluster
+- a cluster-conditioned strategy-selection rule
+- a **model composite** built from the model's state-conditioned variant selection
+- a comparison against the **oracle composite**
+
+## Primary evaluation principle
+
+The main way to judge model quality is:
+- compare the **model composite** against the **oracle composite**
+
+### Oracle composite
+The oracle composite is the theoretical upper bound.
+It chooses the best variant after the fact for each decision segment or evaluation unit.
+
+### Model composite
+The model composite is the executable state-conditioned composite.
+It chooses variants using the model's discovered states and the learned mapping from state to preferred strategy behavior.
+
+## Main interpretation rule
+
+If the grouping is perfect, then in theory:
+- the model composite can equal the oracle composite
+
+In practice, the central model question is:
+- how much of the oracle composite does the model composite capture?
+
+That gap is the main quality signal for the model.
 
 ### Evaluation criteria for base-only v1
 
 The first base-only model is successful if it can show at least some of the following:
 - discovered states are stable enough to recur
 - discovered states show different strategy behavior
-- discovered states show different parameter-region utility
-- discovered states explain some of the gap between fixed variants and oracle behavior
+- the model composite meaningfully improves over strong fixed baselines
+- the model composite closes a non-trivial share of the gap to the oracle composite
 
 ### Why base-only matters
 
@@ -163,7 +187,7 @@ Examples:
 
 ### 4. Strategy behavior layer
 Built from `trading-strategy`.
-This layer is used to evaluate whether discovered states are meaningful.
+This layer is used both for usefulness evaluation and for building the model composite mapping.
 
 ### 5. Alignment layer
 Built inside `trading-model`.
@@ -173,21 +197,19 @@ This joins the market/context side and strategy side into one modeling-ready tab
 Built inside `trading-model`.
 This is the actual clustering / representation / unsupervised state-discovery layer.
 
-### 7. Usefulness evaluation layer
+### 7. Composite evaluation layer
 Built inside `trading-model`.
-This layer tests whether discovered states meaningfully separate:
-- strategy families
-- variants
-- parameter regions
-- utility surfaces
-- oracle gap versus achievable state-aware selection
+This layer converts discovered states into state-conditioned strategy selection and compares:
+- model composite
+- oracle composite
+- strong fixed baselines
 
 ## First implementation target
 
 The first model should be built on top of the canonical aligned learning table defined in `03-inputs-and-data-contracts.md`.
 
 The first version should explicitly record which layers were present so later evaluation can answer:
-- did optional layers actually improve separation?
+- did optional layers actually improve composite quality?
 - which layers matter for which object types?
 - does the base-layer-only model remain usable?
 
@@ -196,4 +218,4 @@ The first version should explicitly record which layers were present so later ev
 It means:
 - we do not predefine the final state classes by hand
 - we first let the data reveal clusters / state structure
-- we then evaluate the usefulness of those discovered states against strategy behavior
+- we then evaluate the usefulness of those discovered states against strategy behavior and composite quality

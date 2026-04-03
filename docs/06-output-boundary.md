@@ -9,10 +9,18 @@ This repository should publish outputs such as:
 - layer-availability-aware learning tables
 - unsupervised state-model artifacts
 - cluster/state labels
-- state summaries and explanations
-- strategy-separation analysis
+- model composite outputs
+- oracle-comparison reports
 - comparisons across layer policies
 - conclusions about which states and which layer stacks appear useful or not useful
+
+## Primary evaluation output
+
+The most important output is the comparison between:
+- model composite
+- oracle composite
+
+This comparison is the main scorecard for the repository.
 
 ## What it should not publish
 
