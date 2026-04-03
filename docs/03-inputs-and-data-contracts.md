@@ -149,15 +149,16 @@ These fields make graceful degradation explicit:
 ## Field mapping by layer
 
 ### 1. Base market layer
-Source repo:
+
+**Source repo**
 - `trading-data`
 
-Primary upstream artifact classes:
+**Primary upstream artifact classes**
 - bars / candles
 - quotes
 - trades where available
 
-First implementation fields:
+**First implementation fields**
 - `open`
 - `high`
 - `low`
@@ -177,20 +178,33 @@ First implementation fields:
 - `range_width_15m`
 - `range_width_1h`
 
-Rule:
-This is the minimum layer required for the model to run.
+**Expected upstream artifact mapping**
+- bars/candles JSONL from:
+  - `src/data/alpaca/fetch_historical_bars.py`
+  - `src/data/okx/fetch_history_candles.py`
+- quotes JSONL from:
+  - `src/data/alpaca/fetch_historical_quotes.py`
+- trades JSONL from:
+  - `src/data/alpaca/fetch_historical_trades.py`
+
+**Mapping rule**
+- OHLCV fields come directly from bar/candle artifacts
+- `quote_volume` comes from upstream quote-volume / quote-notional fields when available
+- `trade_count` and `vwap` may come directly from upstream or be derived during alignment if raw trades/quotes are present
+- return / realized-vol / range-width fields are derived inside `trading-model` from the aligned base market rows, not fetched as upstream finished features
 
 ### 2. Direct enrichment layer
-Source repo:
+
+**Source repo**
 - `trading-data`
 
-Primary upstream artifact classes:
+**Primary upstream artifact classes**
 - derivatives context
 - quotes/trades derived microstructure context
 - object-native news
 - object-native options snapshots
 
-First implementation fields:
+**First implementation fields**
 - `quote_spread_bps`
 - `bid_ask_imbalance`
 - `trade_imbalance`
@@ -203,19 +217,33 @@ First implementation fields:
 - `options_skew_*` where available
 - `options_put_call_*` where available
 
-Rule:
-This layer is optional, but enabled by default where the object type naturally supports it.
+**Expected upstream artifact mapping**
+- derivatives context from:
+  - `src/data/bitget/fetch_derivatives_context.py`
+- news JSONL from:
+  - `src/data/alpaca/fetch_news.py`
+- options snapshots JSONL from:
+  - `src/data/alpaca/fetch_option_snapshots.py`
+- quotes/trades JSONL from:
+  - `src/data/alpaca/fetch_historical_quotes.py`
+  - `src/data/alpaca/fetch_historical_trades.py`
+
+**Mapping rule**
+- `funding_rate`, `basis_pct`, and `open_interest` come from direct derivatives-context artifacts where present
+- `quote_spread_bps`, `bid_ask_imbalance`, and `trade_imbalance` are derived inside `trading-model` from quotes/trades data
+- news and options fields are aggregated inside `trading-model` from the corresponding upstream raw context artifacts
 
 ### 3. Cross-object / structural context layer
-Source repo:
+
+**Source repo**
 - `trading-data`
 
-Primary upstream artifact classes:
+**Primary upstream artifact classes**
 - ETF holdings base snapshots
 - per-symbol ETF context records
 - cross-asset context outputs
 
-First implementation fields:
+**First implementation fields**
 - `etf_exposure_count`
 - `etf_weight_top1`
 - `etf_weight_top3_sum`
@@ -224,22 +252,33 @@ First implementation fields:
 - `cross_asset_context_score` where available
 - `market_hours_context_active`
 
-Rule:
-This layer is conditional by object type and time window.
-It must not become a hidden required dependency for all objects.
+**Expected upstream artifact mapping**
+- ETF holdings outputs from:
+  - `src/data/nport/build_monthly_etf_outputs.py`
+  - `src/data/nport/build_monthly_output_manifest.py`
+- per-symbol ETF context records from:
+  - `context/constituent_etf_deltas/<SYMBOL>.md`
+- supporting N-PORT lineage from:
+  - `src/data/nport/*`
+
+**Mapping rule**
+- the first implementation should not consume ETF markdown blobs directly as raw model inputs
+- instead, `trading-model` should extract structured context variables from the upstream ETF-context outputs and manifest-supported holdings artifacts
+- `market_hours_context_active` should be computed inside `trading-model` based on the object type and active time window policy
 
 ### 4. Strategy behavior layer
-Source repo:
+
+**Source repo**
 - `trading-strategy`
 
-Primary upstream artifact classes:
+**Primary upstream artifact classes**
 - variant outputs
 - returns series
 - equity series
 - summaries
 - meta
 
-First implementation fields:
+**First implementation fields**
 - `family_id`
 - `variant_id`
 - `position`
@@ -253,33 +292,50 @@ First implementation fields:
 - `trade_pnl` where alignable
 - `summary_score` where emitted
 
-Rule:
-This layer is required for usefulness evaluation, even though the unsupervised state discovery itself is driven by the market/context side.
+**Expected upstream artifact mapping**
+- partitioned outputs written by:
+  - `src/runners/run_partitioned_outputs.py`
+- output partition helpers under:
+  - `src/simulation/output_partitioning.py`
+- run manifests under:
+  - `src/simulation/run_manifest.py`
+
+**Mapping rule**
+- variant-level outputs are the primary strategy-side learning rows
+- `forward_return_*`, `equity`, and related fields should be taken from or derived from the emitted strategy outputs rather than recomputed from scratch in `trading-model`
+- `family_id` and `variant_id` must remain native upstream identifiers, not local aliases
 
 ### 5. Oracle / benchmark layer
-Source repo:
+
+**Source repo**
 - `trading-strategy`
 
-Primary upstream artifact classes:
+**Primary upstream artifact classes**
 - family oracle outputs
 - global oracle outputs
 
-First implementation fields:
+**First implementation fields**
 - `family_oracle_selected_variant_id`
 - `global_oracle_selected_family_id`
 - `global_oracle_selected_variant_id`
 - `oracle_forward_return_1h`
 - `oracle_forward_return_session` where available
 
-Rule:
-This layer is required for measuring whether discovered states capture real switching value versus upper bounds.
+**Expected upstream artifact mapping**
+- oracle builders and outputs from:
+  - `src/composites/oracle.py`
+  - `src/runners/run_partitioned_outputs.py`
+
+**Mapping rule**
+- oracle fields come from real emitted oracle outputs, not from locally reconstructed hindsight labels unless explicitly documented
 
 ### 6. Lineage layer
-Source repos:
+
+**Source repos**
 - `trading-data`
 - `trading-strategy`
 
-First implementation fields:
+**First implementation fields**
 - `strategy_run_id`
 - `strategy_partition_month`
 - `data_partition_month`
@@ -287,8 +343,13 @@ First implementation fields:
 - `data_source_kind`
 - `strategy_source_kind`
 
-Rule:
-Every canonical row should be traceable back to upstream artifacts.
+**Expected upstream artifact mapping**
+- data-side manifest/meta files from `trading-data`
+- run manifest/meta files from `trading-strategy`
+
+**Mapping rule**
+- every canonical row should be traceable back to upstream artifacts
+- if a row has no lineage, it should not be considered canonical
 
 ## Join rules
 
