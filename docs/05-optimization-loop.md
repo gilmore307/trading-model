@@ -12,6 +12,16 @@ This repository should improve the model continuously as new data arrives.
 6. weak features / weak separations are identified
 7. the representation or clustering setup is improved
 
+## First optimization rule
+
+Before comparing richer layer stacks, the repository should first stabilize the **base-only model path**.
+
+Order of work:
+1. make base-only work
+2. verify it produces useful state separation
+3. add one optional layer at a time
+4. measure whether the new layer actually improves the model
+
 ## What should be optimized
 
 The goal is not only to produce clusters.

@@ -45,9 +45,6 @@ That means:
 **Optional**
 - broader cross-asset context
 
-Interpretation:
-Stocks can use the richest layered stack, but the model should still be runnable if some enrichment or ETF-context layers are absent.
-
 #### 2. ETF objects
 
 **Required**
@@ -62,9 +59,6 @@ Stocks can use the richest layered stack, but the model should still be runnable
 
 **Not primary**
 - ETF -> ETF self-context recursion
-
-Interpretation:
-ETF objects should primarily be modeled from their own direct data, not from an ETF-self-context dependency chain.
 
 #### 3. Crypto objects
 
@@ -81,10 +75,74 @@ ETF objects should primarily be modeled from their own direct data, not from an 
 **Must remain runnable without**
 - stock / ETF context outside stock-market hours
 
-Interpretation:
-Crypto modeling must always remain valid on crypto-native layers alone. Cross-market context is allowed as an enrichment, not as a required dependency.
+## First base-only model spec
 
-## Model layers
+This is the minimum viable model path.
+It should work before any optional enrichment or context layers are added.
+
+### Purpose
+
+The base-only model should answer:
+- can the repository discover useful state structure using only direct market behavior plus strategy outputs?
+- can the model still produce meaningful strategy separation without optional context?
+
+### Required inputs
+
+#### From `trading-data`
+Base market layer only:
+- OHLCV or equivalent direct market rows
+- enough continuous history to compute derived base features
+
+#### From `trading-strategy`
+Required evaluation side:
+- variant-level outputs
+- forward-return or equivalent outcome fields
+- family/variant identifiers
+- oracle outputs for gap comparison where available
+
+### Canonical feature family for base-only v1
+
+The first base-only model should start with a compact feature family derived only from direct market behavior:
+- short-horizon returns
+- medium-horizon returns
+- short realized volatility
+- medium realized volatility
+- short range width
+- medium range width
+- volume burst / relative activity
+- simple trend slope / directionality from price only
+
+The key design rule is:
+- no derivatives context
+- no news
+- no options context
+- no ETF context
+- no cross-asset context
+
+### Canonical output of base-only v1
+
+The first model should produce:
+- a state vector per canonical timestamp
+- an unsupervised state assignment or cluster id
+- a state summary for each discovered cluster
+- a strategy-separation evaluation for each cluster
+
+### Evaluation criteria for base-only v1
+
+The first base-only model is successful if it can show at least some of the following:
+- discovered states are stable enough to recur
+- discovered states show different strategy behavior
+- discovered states show different parameter-region utility
+- discovered states explain some of the gap between fixed variants and oracle behavior
+
+### Why base-only matters
+
+The base-only model is the anchor.
+If it does not work, richer context layers will only hide the problem.
+
+Optional layers should be treated as improvements on top of a working base-only model, not as a substitute for one.
+
+## Full model layers
 
 ### 1. Base market layer
 Built from `trading-data`.

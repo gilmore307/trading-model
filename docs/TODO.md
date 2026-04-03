@@ -14,16 +14,16 @@
 - [x] define the first field mapping by dependency layer
 - [x] define the first artifact-class to field-family mapping
 - [x] define the first hard alignment / tolerance policy
+- [x] define the first base-only model path
 
 ## Next implementation phase
 
 - [ ] map exact upstream artifact filenames/partitions to each first-implementation field at the per-file level
 - [ ] define the per-field aggregation rules for many-to-one joins
-- [ ] define the first base-layer-only model path
-- [ ] define the first stock layer stack
-- [ ] define the first ETF layer stack
-- [ ] define the first crypto layer stack, including market-hours-conditional context rules
-- [ ] define the first concrete unsupervised state representation
-- [ ] define the first clustering / state-refresh workflow
-- [ ] define the first usefulness-evaluation workflow against strategy outputs and oracle outputs
+- [ ] define the first compact base-only feature set precisely
+- [ ] define the first clustering choice and refresh policy
+- [ ] define the first usefulness-evaluation report for base-only v1
+- [ ] define the first stock layer stack after base-only v1
+- [ ] define the first ETF layer stack after base-only v1
+- [ ] define the first crypto layer stack after base-only v1, including market-hours-conditional context rules
 - [ ] rebuild code only after the upstream contracts and model shape are explicit
