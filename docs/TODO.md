@@ -21,11 +21,12 @@
 - [x] clarify that discovery may fully use market-descriptive data from `trading-data`
 - [x] define the first market-rich discovery expansion order
 - [x] define the first base-only feature formulas
-- [x] define the first standardization policy
+- [x] replace mean/std scaling with robust preprocessing for clustering
+- [x] define the past-only causality rule for every discovery feature
 
 ## Next implementation phase
 
-- [ ] define the first cluster-count selection rule
+- [ ] define the exact cluster-count selection rule
 - [ ] define the first state-stability report
 - [ ] define the exact microstructure feature set for expansion 1
 - [ ] define the exact derivatives-context feature set for expansion 2

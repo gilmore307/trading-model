@@ -32,6 +32,20 @@ From `trading-data` only.
 
 This stage may fully use market-side and context-side data from `trading-data`, as long as the information is still purely descriptive of the market and not contaminated by downstream strategy outcomes.
 
+## Time-causality rule
+
+All discovery features must be computed using past and current market information only.
+
+At time `t`, a feature may use only data from:
+- `[t-w+1, t]`
+
+It must not use:
+- `t+1` or any later market data
+- any future strategy outcome
+- any future oracle choice
+
+This guarantees that the discovered state is a true market state, not a result-state.
+
 ## Stage-1 input hierarchy
 
 ### Base market inputs
@@ -56,73 +70,121 @@ The rule is:
 
 The first state-discovery model should start with a compact feature set derived only from base market behavior.
 
+Assume all windows are measured in bar counts.
+A practical first setup is:
+- short window: `w_s = 3`
+- medium window: `w_m = 12`
+
+If the base bar is 5 minutes, this corresponds roughly to:
+- short = 15 minutes
+- medium = 1 hour
+
+### 0. Single-bar primitives
+
+#### Single-bar log return
+- `r_t = log(C_t / C_{t-1})`
+
+#### Single-bar range
+- `range_bar_t = (H_t - L_t) / C_t`
+- using `C_{t-1}` is also acceptable, but the repository should pick one convention and keep it fixed
+
+#### Single-bar relative volume
+- `relvol_t = V_t / (median(V_{t-m:t-1}) + eps)`
+- where `m` is a longer baseline window such as `50` or `100`
+
+## Canonical base-only feature family
+
 ### A. Return features
-- `ret_1`
-- `ret_5`
-- `ret_15`
-- `ret_60`
+- `ret_s`
+- `ret_m`
 
 Formula:
-- `ret_n(t) = close_t / close_{t-n} - 1`
+- `ret_s(t) = log(C_t / C_{t-w_s})`
+- `ret_m(t) = log(C_t / C_{t-w_m})`
+
+### B. Realized volatility features
+- `rv_s`
+- `rv_m`
+
+Formula:
+- `rv_s(t) = sqrt(sum_{i=t-w_s+1}^{t} r_i^2)`
+- `rv_m(t) = sqrt(sum_{i=t-w_m+1}^{t} r_i^2)`
+
+Averaged variants are also possible, but the repository should keep one convention fixed.
+
+### C. Range-width features
+- `range_s`
+- `range_m`
+
+Formula:
+- `range_s(t) = (max(H_{t-w_s+1:t}) - min(L_{t-w_s+1:t})) / C_t`
+- `range_m(t) = (max(H_{t-w_m+1:t}) - min(L_{t-w_m+1:t})) / C_t`
+
+### D. Relative-activity features
+- `activity_s`
+- `activity_m`
+
+Formula:
+- `volmean_s(t) = mean(V_{t-w_s+1:t})`
+- `volmean_m(t) = mean(V_{t-w_m+1:t})`
+- choose a longer baseline window `b`, such as `50` or `100`
+- `activity_s(t) = volmean_s(t) / (median(V_{t-b:t-1}) + eps)`
+- `activity_m(t) = volmean_m(t) / (median(V_{t-b:t-1}) + eps)`
+
+### E. Trend-slope features
+- `slope_s`
+- `slope_m`
+
+Formula:
+- let `y_i = log(C_i)` for the trailing window
+- fit a simple OLS regression of `y_i` on time index `i`
+- use the slope coefficient as the feature
+
+### F. Directionality features
+- `directionality_s`
+- `directionality_m`
+
+Formula:
+- `directionality_w(t) = abs(log(C_t / C_{t-w})) / (sum_{i=t-w+1}^{t} abs(r_i) + eps)`
+
+Interpretation:
+- near `1`: movement is mostly one-directional
+- near `0`: there is motion, but it largely cancels out through back-and-forth noise
+
+This feature is especially useful for separating trend-like states from noisy oscillation states.
+
+## Pre-clustering preprocessing
+
+Raw features should not be sent directly into clustering.
+For fat-tail market data, first-pass preprocessing should be robust.
+
+### Step 1 — winsorize / clip
+Clip each feature using training-window quantiles.
+
+Recommended first policy:
+- lower bound = 1st percentile
+- upper bound = 99th percentile
+
+A stricter variant like 2nd / 98th percentile is also acceptable, but the choice should be fixed per experiment.
+
+### Step 2 — robust scaling
+After clipping, apply robust scaling per feature:
+
+- `z_i(t) = (f_i(t) - median(f_i)) / (IQR(f_i) + eps)`
 
 Where:
-- `close_t` is the close of the canonical bar at time `t`
-- `n` is measured in base-bar intervals
+- `median(f_i)` and `IQR(f_i)` are computed on the training / fit window only
+- `IQR = Q3 - Q1`
+- `eps` is a small stabilizer to avoid division by zero
 
-### B. Volatility features
-- `rv_5`
-- `rv_15`
-- `rv_60`
+### Why robust scaling
 
-Formula:
-- compute bar log returns over the trailing window
-- `rv_n(t) = std(log(close_i / close_{i-1}))` over the last `n` bars ending at `t`
+This is preferred over ordinary mean/std scaling for early market-state discovery because:
+- market features are often fat-tailed
+- extreme moves can distort mean/std normalization
+- median/IQR scaling is usually more stable for clustering
 
-### C. Range / compression features
-- `range_5`
-- `range_15`
-- `range_60`
-
-Formula:
-- `range_n(t) = (max(high) - min(low)) / close_t` over the trailing `n` bars ending at `t`
-
-### D. Volume / activity features
-- `vol_z_5`
-- `vol_z_15`
-- `vol_z_60`
-
-Formula:
-- let `v_t` be the current bar volume
-- compute trailing mean and std of volume over window `n`
-- `vol_z_n(t) = (v_t - mean(volume_{t-n+1:t})) / std(volume_{t-n+1:t})`
-- if the trailing std is zero, define the z-score as `0`
-
-### E. Simple directionality features
-- `slope_15`
-- `slope_60`
-
-Formula:
-- fit a simple linear regression of log price on time index over the trailing window
-- use the fitted slope coefficient as the directionality feature
-
-## Standardization policy
-
-The discovery feature matrix should be standardized before clustering.
-
-### First policy
-- compute feature means and standard deviations on the training / fit window only
-- transform each feature as:
-  - `z = (x - mean_train) / std_train`
-- if `std_train == 0`, replace with `1` for scaling so the transformed feature becomes `0`
-
-### Important rule
-
-Do not fit normalization on future data when evaluating a historical period.
-
-That means:
-- fit scaling parameters on the chosen discovery fit window
-- apply those parameters to the evaluation / assignment window
-- refresh them only when the model is explicitly retrained
+So the clustering input is not the raw `x_t`, but the processed feature vector `x_t_tilde` after clipping and robust scaling.
 
 ## First feature-set discipline
 
@@ -200,7 +262,7 @@ So the discovery stage can become market-rich, but it must remain strategy-blind
 The first implementation should start with a simple baseline clustering method.
 
 ### Recommended first choice
-- standardized feature vectors
+- robustly processed feature vectors
 - KMeans as the first baseline clustering method
 
 ### First cluster-count policy
@@ -238,6 +300,7 @@ Check whether state transitions over time are plausible rather than pure noise f
 The state-discovery step should produce:
 - a market-only state table keyed by `symbol + ts`
 - feature columns used for discovery
+- processed feature vectors used for clustering
 - cluster/state assignment
 - cluster summary statistics
 - stability diagnostics
