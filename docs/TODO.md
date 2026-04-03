@@ -26,6 +26,8 @@
 - [x] define multi-signal k-selection rather than silhouette-only selection
 - [x] define the first stability-report structure
 - [x] set GMM as the primary discovery model and KMeans as the baseline
+- [x] define state -> policy mapping as a post-discovery step
+- [x] define model composite construction as a post-discovery step
 
 ## Next implementation phase
 
@@ -38,7 +40,7 @@
 - [ ] define the exact news/options feature set for expansion 3
 - [ ] define the exact structural-context feature set for expansion 4
 - [ ] define the first state-evaluation table shape
-- [ ] define the first state -> preferred-variant mapping rule
-- [ ] define the first model-composite construction rule
+- [ ] define the first state -> preferred-variant selection rule
+- [ ] define the first model-composite stitching rule
 - [ ] define the first oracle-gap report for base-only v1
 - [ ] only after that, define implementation details

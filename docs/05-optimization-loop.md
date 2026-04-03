@@ -31,8 +31,30 @@ Inputs:
 3. verify the discovered states recur
 4. attach strategy/oracle outcomes
 5. build state-conditional policy mapping
-6. measure model composite versus oracle composite
-7. improve features and clustering if the oracle gap remains too large
+6. build the model composite
+7. measure model composite versus oracle composite
+8. improve features and clustering if the oracle gap remains too large
+
+## State -> policy mapping rule
+
+After states are fixed, the repository should estimate conditional strategy utility inside each state.
+
+That means:
+- for each discovered state
+- compare candidate variants within that state
+- estimate which variant or parameter region is preferred under that state
+
+This mapping must be learned **after** clustering, not during clustering.
+
+## Model-composite construction rule
+
+The model composite should be constructed in this order:
+1. assign each timestamp to a discovered state
+2. look up the preferred variant/policy for that state
+3. apply that state-conditioned choice through time
+4. stitch the resulting chosen-variant path into one executable composite series
+
+This is the canonical bridge from unsupervised state discovery to strategy use.
 
 ## Stage-1 expansion order
 
