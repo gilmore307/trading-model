@@ -24,18 +24,14 @@ The primary evaluation logic is now explicit:
 - compare the model composite against the oracle composite
 - treat the oracle gap as the main model-quality signal
 
-## Current winner-rule commitment
+## Current stage-2 commitment
 
-The first exact state-winner rule is now defined as:
-- monthly excess utility versus default
-- month-level mean / std / positive-month ratio
-- sample and month coverage shrinkage
-- within-state robust standardization
-- explicit no-strong-preference fallback
+The v1 defaults are now explicitly defined for:
+- state-winner score
+- state-winner tie-break cascade
+- posterior-gated stitching with hysteresis and dwell rules
+- four-layer oracle-gap reporting
 
 ## What comes next
 
-Next design work should make stage 2 fully concrete by defining:
-- the first model-composite stitching rule
-- the first oracle-gap report shape
-- the first tie-break rules when winners are close
+The next remaining design work is mostly threshold calibration and implementation detail, not basic conceptual structure.

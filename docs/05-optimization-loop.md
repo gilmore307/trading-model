@@ -112,6 +112,53 @@ Top1 is accepted as the state winner only if all of the following hold:
 Otherwise output:
 - `no_strong_preference`
 
+## State-winner tie-break rule
+
+If the score margin between top1 and top2 is below the tie threshold, resolve ties in the following order:
+1. larger shrunk monthly excess mean
+2. higher positive-month ratio
+3. lower monthly dispersion
+4. smaller relative oracle gap
+5. higher bootstrap winner frequency
+
+If no decisive edge remains after all tie-break steps, emit:
+- `no_strong_preference`
+
+### Tie threshold
+- treat candidates as close when `score_margin < 0.25`
+
+### Tie-break detail
+
+#### Tie-break 1
+Compare:
+- `shrunk_mu_{s,v} = w_{s,v} * mu_{s,v}`
+
+Higher wins.
+
+#### Tie-break 2
+If shrunk means remain too close, compare:
+- `p_{s,v}`
+
+Higher positive-month ratio wins.
+
+#### Tie-break 3
+If positive-month ratios are still close, compare:
+- `sigma_{s,v}`
+
+Lower monthly dispersion wins.
+
+#### Tie-break 4
+If still close, compare:
+- relative oracle gap
+
+Smaller oracle gap wins.
+
+#### Tie-break 5
+If still close, compare:
+- `bootstrap_win_freq`
+
+Higher bootstrap winner frequency wins.
+
 ## Oracle-gap role in v1
 
 In v1, oracle gap should **not** enter the main winner score directly.
@@ -130,15 +177,139 @@ So in v1:
 The preferred-variant rule must be estimated on a training window and then evaluated out of sample.
 Do not choose the winner and score it on the exact same evaluation slice without reporting that it is in-sample.
 
-## Model-composite construction rule
+## Model-composite stitching rule (v1 defaults)
 
-The model composite should be constructed in this order:
-1. assign each timestamp to a discovered state
-2. look up the preferred variant/policy for that state
-3. apply that state-conditioned choice through time
-4. stitch the resulting chosen-variant path into one executable composite series
+The goal is not to switch routing targets on every bar.
+The goal is to route stably using posterior-gated switching with hysteresis and minimum dwell.
 
-This is the canonical bridge from unsupervised state discovery to strategy use.
+### Inputs at each time `t`
+From the state model:
+- `state_top1 = s1(t)`
+- `state_top1_prob = q1(t)`
+- `state_top2 = s2(t)`
+- `state_top2_prob = q2(t)`
+- `state_margin = q1(t) - q2(t)`
+
+From the policy layer:
+- `preferred_target = a(s)`
+
+### Gate conditions
+A candidate new state must satisfy:
+- confidence gate: `q1(t) >= q_min`
+- separation gate: `state_margin >= Delta_q`
+
+Recommended v1 defaults:
+- `q_min = 0.60`
+- `Delta_q = 0.15`
+
+### Hysteresis rule
+Even after passing gates, do not switch immediately.
+Require the same candidate state to satisfy the gates for:
+- `H = 3` consecutive bars
+
+### Minimum dwell rule
+After switching, keep the current routing target for at least:
+- `D = 6` bars
+
+unless a strong-switch override is triggered.
+
+### Strong-switch override
+Allow early switching if:
+- `q1(t) >= q_strong`
+- `state_margin >= Delta_strong`
+
+Recommended v1 defaults:
+- `q_strong = 0.80`
+- `Delta_strong = 0.30`
+
+### Ambiguous-state fallback
+If:
+- `preferred_target = none`
+- or posterior separation is too weak
+- or the current state signal is ambiguous
+
+then do not switch aggressively.
+Fallback order:
+1. keep current target
+2. preferred family
+3. global default
+
+### State-level tie-break
+If the top two state posteriors are too close:
+- prefer keeping the current active state if it still meets minimum confidence
+- otherwise mark `ambiguous_state`
+- ambiguous state does not trigger routing switches
+
+## Oracle-gap report shape
+
+The oracle-gap report should answer:
+- where the gap is large
+- whether the gap is stable or episodic
+- whether routing is reducing the gap
+
+### Section A — overall gap summary
+Include:
+- `overall_realized_metric`
+- `overall_oracle_metric`
+- `overall_gap_abs`
+- `overall_gap_rel`
+- `overall_gap_closure_pct`
+
+Compare at least:
+- `global_default`
+- `state_routed_composite`
+- `oracle_composite`
+
+### Section B — by-month gap panel
+One row per month, including:
+- `month`
+- `realized_metric_default`
+- `realized_metric_state_routed`
+- `oracle_metric`
+- `gap_abs_default`
+- `gap_abs_state_routed`
+- `gap_closure_pct_default`
+- `gap_closure_pct_state_routed`
+- `delta_gap_closure_pct`
+
+### Section C — by-state gap table
+One row per state, including:
+- `state_id`
+- `state_support_n`
+- `state_support_pct`
+- `oracle_metric_mean`
+- `realized_metric_mean`
+- `gap_abs`
+- `gap_rel`
+- `gap_rank`
+- `gap_by_month_std`
+- `positive_gap_month_ratio`
+- `preferred_target`
+- `post_routing_realized_metric`
+- `post_routing_gap_abs`
+- `gap_reduction_abs`
+- `gap_reduction_pct`
+- `actionability_tag`
+
+Suggested tags:
+- `improvement_opportunity`
+- `already_well_captured`
+- `structurally_hard`
+- `uncertain`
+
+### Section D — by-family / by-parameter-region gap panel
+One row per family or parameter region, including:
+- `family_id` or `param_region`
+- `support_n`
+- `oracle_metric_mean`
+- `realized_metric_mean`
+- `gap_abs`
+- `gap_rel`
+- `best_states`
+- `worst_states`
+- `state_concentration_of_gap`
+
+Support `state x family` or `state x param_region` slicing as secondary views when support is sufficient.
 
 ## Stage-1 expansion order
 
