@@ -1,68 +1,127 @@
 # 03 Inputs and Data Contracts
 
-This document defines the required input boundary for `trading-model`.
+This document defines the required input boundary for `trading-model` based on the **actual upstream code paths** in `trading-data` and `trading-strategy`.
 
 ## Non-negotiable rule
 
-All canonical inputs for this repository must come from upstream repositories:
+Canonical inputs for this repository must come from upstream repositories:
 - `trading-data`
 - `trading-strategy`
 
-If data is not supplied through those upstream contracts, it should not become a hidden canonical dependency of this repository.
+Do not treat sample files under `data/` or ad-hoc example payloads as the source of truth.
+The source of truth is the upstream implementation and its produced artifact formats.
 
-## Input class A — market/context data from `trading-data`
+## Upstream A — `trading-data`
 
-Examples:
-- market bars / candles
-- quote/trade aggregates where available
-- market-context enrichments
-- other upstream-normalized market-state inputs
+### What the code shows
 
-`trading-model` consumes these as the raw descriptive side of the market-state model.
+`trading-data` currently owns scripts/modules for producing:
+- historical bars
+- historical quotes
+- historical trades
+- news
+- options snapshots
+- derivatives context from Bitget
+- ETF/context holdings outputs
 
-## Input class B — strategy outputs from `trading-strategy`
+Representative producer entrypoints include:
+- `src/data/alpaca/fetch_historical_bars.py`
+- `src/data/alpaca/fetch_historical_quotes.py`
+- `src/data/alpaca/fetch_historical_trades.py`
+- `src/data/alpaca/fetch_news.py`
+- `src/data/alpaca/fetch_option_snapshots.py`
+- `src/data/bitget/fetch_derivatives_context.py`
+- `src/data/okx/fetch_history_candles.py`
 
-Examples:
-- family outputs
-- variant outputs
-- return series
-- equity series
-- trade outputs
-- parameter-region utility surfaces
-- ranking or evaluation summaries
+### Output pattern
 
-`trading-model` consumes these as the explanatory/evaluation side of the model.
+The real pattern in `trading-data` is:
+- month-partitioned storage
+- JSONL row files for market tape datasets
+- companion meta/manifest files in some paths
+- context outputs under `context/`
 
-## Why both upstreams are required
+This means `trading-model` should expect upstream inputs in terms of:
+- partitioned historical market rows
+- partitioned context/enrichment rows
+- month-level manifests or metadata where available
 
-The unsupervised model should not be built from only one side.
+### Canonical input classes from `trading-data`
 
-- `trading-data` tells us what the market looked like
-- `trading-strategy` tells us how strategies behaved under those conditions
+`trading-model` should be designed to consume these classes when relevant:
+- bars / candles
+- quotes
+- trades
+- derivatives context such as funding / basis-like context
+- optional context layers such as news / options / ETF context when those are explicitly part of the modeling design
 
-The model is useful only if it can connect the two.
+### Important design rule
 
-## Required alignment layer
+`trading-model` should consume these upstream outputs as delivered artifacts.
+It should not recreate fetch logic locally.
 
-This repo must build a modeling-ready learning table that joins:
+## Upstream B — `trading-strategy`
+
+### What the code shows
+
+`trading-strategy` currently owns:
+- family definitions
+- variant generation
+- backtest/simulation execution
+- family and global oracle composites
+- partitioned output writing
+- run manifests
+
+Representative implementation paths include:
+- `src/families/ma.py`
+- `src/families/donchian.py`
+- `src/families/bollinger.py`
+- `src/composites/oracle.py`
+- `src/runners/run_partitioned_outputs.py`
+- `src/simulation/output_partitioning.py`
+- `src/simulation/run_manifest.py`
+
+### Output pattern
+
+The real pattern in `trading-strategy` is that it writes structured run outputs for:
+- trades
+- equity
+- returns
+- monthly summaries
+- meta
+- family oracles
+- global oracles
+- run manifests
+
+This means `trading-model` should not rely on toy examples under `examples/` as the contract.
+It should rely on the real emitted output classes from the strategy runner path.
+
+### Canonical input classes from `trading-strategy`
+
+`trading-model` should be designed to consume:
+- variant-level result rows
+- family-level summaries
+- returns/equity series
+- trade ledgers when needed for analysis
+- oracle outputs
+- run manifests / metadata for lineage
+
+## Required modeling join
+
+The model must be built from a join between:
 - market/context state from `trading-data`
 - strategy behavior from `trading-strategy`
 
-That aligned table is the true modeling foundation for this repository.
+At minimum, the alignment contract should support joins by:
+- instrument / symbol
+- timestamp or bar-aligned time key
+- partition / month window where needed
+- run / family / variant identifiers on the strategy side
 
-## Contract design rule
+## Practical implication for implementation
 
-Every important model input should be documented in terms of:
-- upstream source repo
-- upstream artifact class
-- alignment key
-- temporal granularity
-- whether it is required or optional
+When rebuilding code in this repo, the first concrete implementation target should be an aligned learning table with fields that can be traced back to:
+- a specific upstream `trading-data` artifact class
+- a specific upstream `trading-strategy` artifact class
 
-## Anti-patterns
-
-Do not let this repo quietly reintroduce:
-- local one-off fetch scripts as canonical inputs
-- direct raw acquisition ownership
-- strategy replay ownership
-- state definitions that depend on undocumented side data
+If a field cannot be traced upstream, it should be treated as non-canonical until documented.

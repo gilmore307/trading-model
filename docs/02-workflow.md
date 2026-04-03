@@ -4,9 +4,9 @@ This repository should follow the workflow below.
 
 ## End-to-end flow
 
-1. receive upstream datasets from `trading-data`
-2. receive upstream strategy outputs from `trading-strategy`
-3. align both sides into modeling-ready learning tables
+1. receive partitioned market/context artifacts from `trading-data`
+2. receive partitioned strategy-result artifacts from `trading-strategy`
+3. align both upstream streams into modeling-ready learning tables
 4. build unsupervised market-state representations
 5. train or refresh the state model
 6. evaluate whether discovered states separate strategy behavior meaningfully
@@ -16,20 +16,34 @@ This repository should follow the workflow below.
 ## Step 1 — Receive data from `trading-data`
 
 Required principle:
-`trading-model` must use market/context data that was produced upstream by `trading-data`.
+`trading-model` must use upstream-produced artifacts from `trading-data`.
 
-This repo should not treat local ad-hoc fetches as canonical inputs.
+From the real upstream code, this means the repo should expect partitioned artifacts such as:
+- bars / candles
+- quotes
+- trades
+- derivatives context
+- optional context layers such as news or options snapshots where explicitly needed
 
 ## Step 2 — Receive strategy outputs from `trading-strategy`
 
 Required principle:
-`trading-model` must use strategy outputs that were produced upstream by `trading-strategy`.
+`trading-model` must use upstream-produced artifacts from `trading-strategy`.
 
-This repo should not reclaim strategy execution ownership.
+From the real upstream code, this means the repo should expect structured strategy outputs such as:
+- variant outputs
+- trades
+- equity series
+- returns series
+- monthly summaries
+- meta files
+- family oracle outputs
+- global oracle outputs
+- run manifests
 
 ## Step 3 — Build modeling-ready learning tables
 
-The two upstream streams must be aligned into a common modeling table keyed by time, instrument, and any other necessary dimensions.
+The two upstream streams must be aligned into a common modeling table keyed by time, instrument, and strategy identifiers where needed.
 
 The result should support:
 - state discovery
@@ -53,17 +67,18 @@ The repository should support repeated refresh as new upstream data accumulates.
 
 Discovered states are only useful if they help explain or separate strategy behavior.
 
-The model should therefore be evaluated against `trading-strategy` outputs such as:
+The model should therefore be evaluated against real `trading-strategy` outputs such as:
 - family-level behavior
 - variant-level behavior
 - parameter-region utility
-- ranking differences across states
+- oracle gaps and ranking differences across states
 
 ## Step 7 — Improvement loop
 
 As new data arrives from `trading-data` and `trading-strategy`, the model should be re-evaluated and improved.
 
 This includes:
+- refreshing the aligned learning table
 - retraining or refreshing clustering/state definitions
 - checking state stability over time
 - checking whether strategy separation remains meaningful
