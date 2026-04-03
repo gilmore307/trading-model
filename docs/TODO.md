@@ -23,11 +23,16 @@
 - [x] define the first base-only feature formulas
 - [x] replace mean/std scaling with robust preprocessing for clustering
 - [x] define the past-only causality rule for every discovery feature
+- [x] define multi-signal k-selection rather than silhouette-only selection
+- [x] define the first stability-report structure
+- [x] set GMM as the primary discovery model and KMeans as the baseline
 
 ## Next implementation phase
 
-- [ ] define the exact cluster-count selection rule
-- [ ] define the first state-stability report
+- [ ] define exact geometry metrics used in model selection
+- [ ] define exact thresholds for cluster-size sanity and fragmentation
+- [ ] define exact recurrence metrics and thresholds
+- [ ] define exact refit-matching metric and threshold
 - [ ] define the exact microstructure feature set for expansion 1
 - [ ] define the exact derivatives-context feature set for expansion 2
 - [ ] define the exact news/options feature set for expansion 3

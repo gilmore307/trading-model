@@ -110,8 +110,6 @@ Formula:
 - `rv_s(t) = sqrt(sum_{i=t-w_s+1}^{t} r_i^2)`
 - `rv_m(t) = sqrt(sum_{i=t-w_m+1}^{t} r_i^2)`
 
-Averaged variants are also possible, but the repository should keep one convention fixed.
-
 ### C. Range-width features
 - `range_s`
 - `range_m`
@@ -151,8 +149,6 @@ Interpretation:
 - near `1`: movement is mostly one-directional
 - near `0`: there is motion, but it largely cancels out through back-and-forth noise
 
-This feature is especially useful for separating trend-like states from noisy oscillation states.
-
 ## Pre-clustering preprocessing
 
 Raw features should not be sent directly into clustering.
@@ -177,14 +173,7 @@ Where:
 - `IQR = Q3 - Q1`
 - `eps` is a small stabilizer to avoid division by zero
 
-### Why robust scaling
-
-This is preferred over ordinary mean/std scaling for early market-state discovery because:
-- market features are often fat-tailed
-- extreme moves can distort mean/std normalization
-- median/IQR scaling is usually more stable for clustering
-
-So the clustering input is not the raw `x_t`, but the processed feature vector `x_t_tilde` after clipping and robust scaling.
+So the clustering input is not the raw `x_t`, but the processed feature vector after clipping and robust scaling.
 
 ## First feature-set discipline
 
@@ -200,8 +189,6 @@ Do not include yet:
 - oracle labels
 - variant success statistics
 
-The goal is to test whether the market itself already contains recurring state structure.
-
 ## Market-rich discovery expansion order
 
 After base-only v1 is stable, the discovery stage should expand in a deliberate order rather than adding all context at once.
@@ -209,40 +196,14 @@ After base-only v1 is stable, the discovery stage should expand in a deliberate 
 ### Expansion 1 — microstructure layer
 Add features derived from quotes and trades.
 
-Potential additions:
-- spread statistics
-- bid/ask imbalance
-- trade imbalance
-- trade intensity
-- short-horizon microstructure volatility proxies
-
 ### Expansion 2 — derivatives-context layer
 Add market-descriptive derivatives features where relevant.
-
-Potential additions:
-- funding level and change
-- basis level and change
-- open-interest level and change
-- futures/spot pressure proxies
 
 ### Expansion 3 — news/options layer
 Add object-native context summaries.
 
-Potential additions:
-- recent news intensity
-- news surprise proxies
-- options implied-vol level
-- options skew / put-call structure
-- options stress proxies
-
 ### Expansion 4 — structural / cross-object context layer
 Add ETF / structural context where the object policy allows it.
-
-Potential additions:
-- ETF exposure concentration
-- constituent ETF context scores
-- cross-object context stress indicators
-- market-hours-gated structural context fields
 
 ## Discovery-stage purity rule
 
@@ -255,45 +216,131 @@ Still forbidden during clustering:
 - family winner labels
 - any downstream policy information
 
-So the discovery stage can become market-rich, but it must remain strategy-blind.
+## First clustering family
 
-## First clustering choice
+The first discovery stage should use two clustering tracks:
 
-The first implementation should start with a simple baseline clustering method.
+### Primary model
+- Gaussian Mixture Model (GMM)
 
-### Recommended first choice
-- robustly processed feature vectors
-- KMeans as the first baseline clustering method
+Why:
+- better matches the idea that market states may be overlapping or soft-edged
+- gives assignment confidence / posterior probabilities
+- often more natural than hard partitioning for regime-like structure
 
-### First cluster-count policy
+### Baseline model
+- KMeans
 
-The first pass should not chase an "optimal" cluster count too aggressively.
+Why:
+- simple and reproducible
+- good geometry baseline
+- useful for checking whether extra flexibility from GMM is really buying anything
 
-Instead:
-- test a small fixed candidate set such as `k in {4, 6, 8, 10}`
-- compare stability and separability diagnostics
-- prefer the smallest `k` that yields recurring and interpretable states
+## Cluster-count selection rule
 
-## First state-stability diagnostics
+Do **not** choose `k` using only silhouette.
 
-The first discovery stage should evaluate stability before any strategy-based usefulness analysis.
+For this task, `k` should be selected from multiple signals together.
 
-### Required diagnostics
+### First candidate set
+- `k in {4, 6, 8, 10, 12}`
 
-#### 1. Cluster size sanity
-Check that clusters are not degenerate.
+### Selection criteria
+For each candidate `k`, evaluate:
+1. geometry / separability
+2. cluster size sanity
+3. recurrence and temporal stability
+4. downstream separation of strategy behavior / parameter utility / oracle gap
 
-#### 2. Reoccurrence over time
-Check whether clusters recur across different time segments rather than appearing only in one isolated regime window.
+### Practical selection principle
+Choose:
+- the **smallest** `k` that already produces stable and useful state separation
 
-#### 3. Centroid / assignment stability across refreshes
-When rerunning on adjacent or rolling datasets, check whether the discovered states remain reasonably similar.
+This avoids:
+- excessive fragmentation
+- low sample count per state
+- unstable mapping after refresh
+- overfit state-conditioned policy rules
 
-#### 4. Distance / separability sanity
-Check whether cluster centers are meaningfully separated in feature space.
+### Working prior for base-only v1
+- `k = 4` may be too coarse
+- `k = 6` or `k = 8` is likely the sweet spot
+- `k = 10` may add useful detail
+- `k = 12` should be treated cautiously because of fragmentation risk
 
-#### 5. Transition sanity
-Check whether state transitions over time are plausible rather than pure noise flicker.
+### Recommended deployment pattern
+Keep both:
+- one **primary k** (likely 6 or 8)
+- one **coarser baseline k** (likely 4 or 6)
+
+This helps evaluate whether finer states actually add usable information.
+
+## First state-stability report
+
+The goal of the stability report is not to prove that clustering looks pretty.
+The goal is to prove that the discovered states are:
+- stable
+- recurring
+- not random artifacts
+- useful enough to support downstream policy selection
+
+### Report block A — global summary
+Include:
+- model version
+- feature set
+- preprocessing policy
+- clustering method
+- tested `k`
+- selected `k`
+- training window
+- refresh cadence
+- overall geometry metrics
+- overall stability metrics
+
+### Report block B — per-cluster stability card
+For each state, include:
+- cluster size percentage
+- centroid / profile summary
+- recurrence coverage
+- average dwell time
+- centroid drift across refits
+- assignment confidence
+- main transition neighbors
+- strategy/oracle separation summary
+
+### Report block C — temporal panels
+Include views such as:
+- state prevalence by month
+- dwell-time distribution by state
+- transition matrix
+- state recurrence heatmap
+- old-vs-new state matching matrix
+
+### Report block D — perturbation / resampling stability
+Measure:
+- bootstrap consistency
+- subsample consistency
+- centroid variance
+- assignment agreement
+- for GMM: posterior sharpness / uncertainty mass
+
+### Report block E — downstream robustness
+Measure whether downstream conclusions remain stable across windows:
+- strategy metric by state across windows
+- oracle gap by state across windows
+- parameter utility ranking by state across windows
+
+## Core stability metrics to watch
+
+If only a few metrics are tracked closely, prioritize these:
+1. cluster size distribution
+2. centroid separation
+3. recurrence coverage
+4. average dwell time
+5. transition concentration
+6. refit matching score
+7. assignment confidence / entropy
+8. downstream separation stability
 
 ## Stage-1 output
 
@@ -303,7 +350,8 @@ The state-discovery step should produce:
 - processed feature vectors used for clustering
 - cluster/state assignment
 - cluster summary statistics
-- stability diagnostics
+- model-selection summary across candidate `k`
+- stability report
 
 This is the output that becomes the input to stage 2.
 
@@ -339,12 +387,3 @@ If grouping were perfect, then in theory:
 
 So the main quality question is:
 - how much of the oracle composite does the model composite capture?
-
-## Why this is the cleanest design
-
-This design avoids a common failure mode:
-- defining states using information that already contains the strategy result
-
-By keeping discovery and evaluation separate, the repository can make a much stronger claim:
-- the states are real recurring market structures first
-- only afterward do we test whether they are useful for policy selection

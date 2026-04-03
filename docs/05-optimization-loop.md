@@ -27,11 +27,12 @@ Inputs:
 ## Order of work
 
 1. make the state-discovery step clean and stable
-2. verify the discovered states recur
-3. attach strategy/oracle outcomes
-4. build state-conditional policy mapping
-5. measure model composite versus oracle composite
-6. improve features and clustering if the oracle gap remains too large
+2. choose `k` using usability and stability rather than one geometric metric
+3. verify the discovered states recur
+4. attach strategy/oracle outcomes
+5. build state-conditional policy mapping
+6. measure model composite versus oracle composite
+7. improve features and clustering if the oracle gap remains too large
 
 ## Stage-1 expansion order
 
