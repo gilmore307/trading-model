@@ -18,6 +18,7 @@ This repository does **not** own:
 - source adapters
 - strategy execution ownership
 - live runtime operations
+- canonical final report assembly once `trading-report` is active
 
 Start with:
 - `docs/README.md`

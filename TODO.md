@@ -28,6 +28,12 @@ The new `trading-manager` repo will absorb part of the orchestration/storage-lif
 - [ ] move storage lifecycle decisions for historical model outputs (hot vs cold archive vs delete) into `trading-manager`
 - [ ] keep `trading-model` focused on offline modeling/evaluation logic, scoring/ranking outputs, and model-side artifact contracts
 
+## Reporting boundary
+
+- [ ] migrate canonical final report assembly out of `trading-model` and into `trading-report`
+- [ ] keep `trading-model` focused on machine-readable offline model/evaluation outputs and artifact contracts
+- [ ] treat any repo-local reporting layer as migration material for the unified report repo
+
 ## Structural rules
 
 - core docs use ordered workflow-oriented files under `docs/`
