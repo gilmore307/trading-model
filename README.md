@@ -28,3 +28,19 @@ Start with:
 - `docs/04-unsupervised-model.md`
 - `docs/05-state-evaluation-and-policy-mapping.md`
 - `docs/06-model-composite-and-reporting.md`
+
+## Current implementation status
+
+A fresh minimal code skeleton now exists under `src/trading_model/` and follows the current docs-first repo boundary:
+- stage 1 loads market bars from `trading-data`
+- computes base-only v1 features
+- applies winsorization + robust scaling
+- runs unsupervised clustering with GMM/KMeans selection over candidate `k`
+- writes state table / model-selection / stability artifacts
+- stage 2 loads variant returns + global oracle returns from `trading-strategy`
+- attaches strategy/oracle rows onto discovered states
+- computes a first winner-mapping artifact
+- writes an initial oracle-gap report
+
+Current entrypoint:
+- `python -m trading_model.cli --symbol AAPL --data-month 2603 --strategy-month 2603`

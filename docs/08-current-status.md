@@ -35,3 +35,26 @@ The v1 defaults are now explicitly defined for:
 ## What comes next
 
 The next remaining design work is mostly threshold calibration and implementation detail, not basic conceptual structure.
+
+## Implementation progress update
+
+A new minimal implementation skeleton now exists under `src/trading_model/`.
+
+What is already wired:
+- market bar loading from `trading-data/data/<symbol>/<month>/bars_1min.jsonl`
+- base-only v1 feature construction for stage 1
+- winsorization + robust scaling before clustering
+- candidate-`k` model selection for GMM/KMeans
+- state-table generation with confidence fields
+- first-pass stability report generation
+- variant return loading from `trading-strategy/data/<symbol>/<family>/<variant>/<month>/returns.jsonl`
+- global-oracle return loading from `trading-strategy/data/<symbol>/global_oracle/global_oracle/<month>/returns.jsonl`
+- state-evaluation table construction
+- first winner-mapping artifact generation
+- first oracle-gap report generation
+
+What is still intentionally rough:
+- attach-status logic currently distinguishes only basic missing/non-missing cases and should be tightened to exact-vs-previous-bar audit fidelity
+- strategy-side forward-horizon fields still need alignment with richer upstream strategy artifacts instead of only the current first-pass fields
+- oracle-gap reporting is still a compact v1 report, not the full four-layer report contract
+- the model-selection/stability logic is still heuristic and has not yet implemented the exact threshold/calibration policy promised in docs
