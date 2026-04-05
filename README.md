@@ -13,6 +13,10 @@ This repository must be built on two upstream inputs:
 - construct model composites
 - evaluate how closely the model composite approaches the oracle composite
 
+Reporting boundary:
+- `trading-model` owns model-side evaluation outputs and comparison semantics
+- `trading-report` owns unified downstream final report assembly built from those outputs
+
 This repository does **not** own:
 - raw data acquisition
 - source adapters

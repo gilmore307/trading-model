@@ -31,6 +31,8 @@ The new `trading-manager` repo will absorb part of the orchestration/storage-lif
 ## Reporting boundary
 
 - [ ] migrate canonical final report assembly out of `trading-model` and into `trading-report`
+- [ ] document the exact producer/output boundary between model-evaluation outputs in `trading-model` and final report bundles in `trading-report`
+- [ ] classify which current model-report concepts remain producer-side evaluation outputs versus unified downstream report sections
 - [ ] keep `trading-model` focused on machine-readable offline model/evaluation outputs and artifact contracts
 - [ ] treat any repo-local reporting layer as migration material for the unified report repo
 
