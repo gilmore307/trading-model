@@ -1,0 +1,5 @@
+symbol,status,shared_months,shared_month_count,state_model_beats_trivial_baseline,state_model_metric_12bar,trivial_baseline_metric_12bar,oracle_metric_12bar,accepted_winner_state_count,blocked_state_count
+AAPL,ok,"['2603', '2604']",2.0,False,-7.319864818880729e-05,0.00018140395651750538,0.0017730735429660723,0.0,8.0
+SPY,ok,['2603'],1.0,False,5.8871325705629235e-05,0.00012744404105031603,0.0032597555947060275,0.0,4.0
+QQQ,skipped_no_shared_months,[],,,,,,,
+BTC-USD,ok,['2603'],1.0,False,-0.00024408273410641808,0.0002099517661778446,0.0054868199963427665,0.0,4.0

@@ -1,46 +1,83 @@
 # trading-model
 
-`trading-model` is the repository for building and improving an **unsupervised market-state model**.
+`trading-model` is the offline unsupervised market-state modeling repository for the trading stack.
+It discovers recurring market states from upstream market data first, then attaches strategy/oracle outcomes to evaluate whether those states are useful for strategy selection.
 
-This repository must be built on two upstream inputs:
-- `trading-data` supplies market and context data
-- `trading-strategy` supplies strategy outputs and evaluation surfaces
+## Scope
 
-`trading-model` uses those two upstream data sources to:
-- discover recurring market states from market-side data
-- attach strategy/oracle outcomes only after state discovery
-- build state-conditional policy mappings
-- construct model composites
-- evaluate how closely the model composite approaches the oracle composite
+**Owns**
+- market-state discovery logic
+- state-evaluation / policy-mapping logic
+- model composite construction
+- oracle-gap and baseline comparison reporting
+- model-side research outputs and artifact contracts
 
-This repository does **not** own:
+**Does not own**
 - raw data acquisition
-- source adapters
 - strategy execution ownership
-- live runtime operations
-- canonical final report assembly once `trading-report` is active
+- cross-repo workflow sequencing
+- survivor-floor / rehydration / archive control-plane ownership
+- live execution
 
-Start with:
-- `docs/README.md`
-- `docs/01-overview.md`
-- `docs/02-workflow.md`
-- `docs/03-inputs-and-data-contracts.md`
-- `docs/04-unsupervised-model.md`
-- `docs/05-state-evaluation-and-policy-mapping.md`
-- `docs/06-model-composite-and-reporting.md`
+## Stack position
 
-## Current implementation status
+```mermaid
+flowchart LR
+    TD[trading-data] --> TM[trading-model]
+    TS[trading-strategy] --> TM
+    TM --> TE[trading-execution]
+    MG[trading-manager] -.owns sequencing / admission.-> TM
+```
 
-A fresh minimal code skeleton now exists under `src/trading_model/` and follows the current docs-first repo boundary:
-- stage 1 loads market bars from `trading-data`
-- computes base-only v1 features
-- applies winsorization + robust scaling
-- runs unsupervised clustering with GMM/KMeans selection over candidate `k`
-- writes state table / model-selection / stability artifacts
-- stage 2 loads variant returns + global oracle returns from `trading-strategy`
-- attaches strategy/oracle rows onto discovered states
-- computes a first winner-mapping artifact
-- writes an initial oracle-gap report
+## Required inputs
+- `trading-data/data/<symbol>/<YYMM>/bars_1min.jsonl`
+- `trading-data/data/<symbol>/<YYMM>/_meta.json`
+- `trading-strategy/data/<instrument>/<family>/<variant>/<YYMM>/equity.jsonl`
+- `trading-strategy/data/<instrument>/<family>/<variant>/<YYMM>/returns.jsonl`
 
-Current entrypoint:
-- `python -m trading_model.cli --symbol AAPL --data-month 2603 --strategy-month 2603`
+## Optional inputs
+- `trading-strategy/data/<instrument>/<family>/<variant>/<YYMM>/meta.json`
+- `trading-strategy/data/<instrument>/_runs/run_manifest_*.json`
+- global oracle artifacts under `trading-strategy/data/<instrument>/global_oracle/global_oracle/<YYMM>/...`
+- future richer market/context artifacts from `trading-data`
+
+## Primary outputs
+- state tables under `outputs/` or other configured output roots
+- state-evaluation tables under `outputs/`
+- winner-mapping artifacts under `outputs/`
+- oracle-gap / baseline comparison reports under `outputs/`
+- research verdict summaries under `outputs/`
+- future standardized downstream-facing judgment fields such as execution confidence / opportunity strength
+
+## Completion artifacts
+- final stdout JSON block from model CLI runs
+- manager-parsed task output captured in `trading-manager/state/tasks/*.json`
+
+## Research flow
+
+```mermaid
+flowchart TD
+    A[Load market data from trading-data] --> B[Discover market states]
+    B --> C[Load strategy / oracle outputs from trading-strategy]
+    C --> D[Attach outcomes to discovered states]
+    D --> E[Estimate state-to-policy mappings]
+    E --> F[Build model composite]
+    F --> G[Compare against oracle and baselines]
+```
+
+## Current design line
+
+- state discovery uses market-side inputs first
+- strategy outputs are attached only after discovery
+- model quality is judged mainly by how much model composite value is captured relative to oracle and simple baselines
+- cross-repo sequencing and lifecycle policy belong in `trading-manager`, not here
+
+## Documentation
+
+Read in order:
+1. `docs/README.md`
+2. `docs/01-overview.md`
+3. `docs/02-inputs-workflow-and-boundary.md`
+4. `docs/03-discovery-evaluation-and-reporting.md`
+5. `docs/04-repo-structure-and-implementation-status.md`
+6. `docs/05-current-boundary-and-next-phase.md`

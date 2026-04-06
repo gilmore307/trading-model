@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 class AttachStatus(str, Enum):
     EXACT = "exact"
     PREVIOUS_BAR = "previous_bar"
+    OUT_OF_TOLERANCE = "out_of_tolerance"
     MISSING = "missing"
 
 
@@ -50,6 +51,8 @@ class PipelineConfig(BaseModel):
     output_root: Path = Path("outputs")
     data_months: list[str]
     strategy_months: list[str]
+    attach_tolerance_ms: int = 60_000
+    variant_limit: int | None = 12
     feature: FeatureConfig = Field(default_factory=FeatureConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
@@ -68,7 +71,7 @@ class ModelSelectionRecord(BaseModel):
 
 
 class DiscoveryResult(BaseModel):
-    state_table_path: Path
+    state_table_partition_root: Path
     model_selection_path: Path
     stability_report_path: Path
     selected_method: str
@@ -77,7 +80,7 @@ class DiscoveryResult(BaseModel):
 
 
 class EvaluationResult(BaseModel):
-    state_evaluation_table_path: Path
+    state_evaluation_table_partition_root: Path
     mapping_path: Path
     oracle_gap_report_path: Path
     mapping_version: str

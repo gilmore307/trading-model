@@ -27,6 +27,8 @@ def build_stability_report(state_table: pd.DataFrame, model_selection: pd.DataFr
         "selected_k": int(state_table["state_id"].nunique()),
         "cluster_size_pct": {str(k): float(v) for k, v in state_counts.items()},
         "avg_state_confidence": float(state_table["state_confidence"].dropna().mean()) if state_table["state_confidence"].notna().any() else None,
+        "avg_state_margin": float(state_table["state_margin"].dropna().mean()) if "state_margin" in state_table.columns and state_table["state_margin"].notna().any() else None,
+        "low_margin_share_lt_0_05": float((state_table["state_margin"] < 0.05).mean()) if "state_margin" in state_table.columns and state_table["state_margin"].notna().any() else None,
         "dwell_summary": dwell,
         "transition_matrix": {
             str(idx): {str(col): float(val) for col, val in row.items()}

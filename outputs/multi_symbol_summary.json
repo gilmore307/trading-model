@@ -1,0 +1,157 @@
+{
+  "availability": [
+    {
+      "symbol": "AAPL",
+      "data_months": [
+        "2603",
+        "2604"
+      ],
+      "strategy_months": [
+        "2603",
+        "2604"
+      ],
+      "oracle_months": [
+        "2603",
+        "2604"
+      ],
+      "shared_months": [
+        "2603",
+        "2604"
+      ],
+      "shared_month_count": 2
+    },
+    {
+      "symbol": "SPY",
+      "data_months": [
+        "2603",
+        "2604"
+      ],
+      "strategy_months": [
+        "2603"
+      ],
+      "oracle_months": [
+        "2603"
+      ],
+      "shared_months": [
+        "2603"
+      ],
+      "shared_month_count": 1
+    },
+    {
+      "symbol": "QQQ",
+      "data_months": [
+        "2604"
+      ],
+      "strategy_months": [],
+      "oracle_months": [],
+      "shared_months": [],
+      "shared_month_count": 0
+    },
+    {
+      "symbol": "BTC-USD",
+      "data_months": [
+        "2603"
+      ],
+      "strategy_months": [
+        "2603",
+        "2604"
+      ],
+      "oracle_months": [
+        "2603",
+        "2604"
+      ],
+      "shared_months": [
+        "2603"
+      ],
+      "shared_month_count": 1
+    }
+  ],
+  "results": [
+    {
+      "symbol": "AAPL",
+      "status": "ok",
+      "shared_months": [
+        "2603",
+        "2604"
+      ],
+      "shared_month_count": 2,
+      "state_model_beats_trivial_baseline": false,
+      "state_model_metric_12bar": -7.319864818880729e-05,
+      "trivial_baseline_metric_12bar": 0.00018140395651750538,
+      "oracle_metric_12bar": 0.0017730735429660723,
+      "accepted_winner_state_count": 0,
+      "blocked_state_count": 8
+    },
+    {
+      "symbol": "SPY",
+      "status": "ok",
+      "shared_months": [
+        "2603"
+      ],
+      "shared_month_count": 1,
+      "state_model_beats_trivial_baseline": false,
+      "state_model_metric_12bar": 5.8871325705629235e-05,
+      "trivial_baseline_metric_12bar": 0.00012744404105031603,
+      "oracle_metric_12bar": 0.0032597555947060275,
+      "accepted_winner_state_count": 0,
+      "blocked_state_count": 4
+    },
+    {
+      "symbol": "QQQ",
+      "status": "skipped_no_shared_months",
+      "shared_months": []
+    },
+    {
+      "symbol": "BTC-USD",
+      "status": "ok",
+      "shared_months": [
+        "2603"
+      ],
+      "shared_month_count": 1,
+      "state_model_beats_trivial_baseline": false,
+      "state_model_metric_12bar": -0.00024408273410641808,
+      "trivial_baseline_metric_12bar": 0.0002099517661778446,
+      "oracle_metric_12bar": 0.0054868199963427665,
+      "accepted_winner_state_count": 0,
+      "blocked_state_count": 4
+    }
+  ],
+  "aggregate_verdict": {
+    "headline": {
+      "symbols_scanned": 4,
+      "symbols_with_shared_months": 3,
+      "symbols_beating_trivial_baseline": 0,
+      "symbols_fully_blocked_on_winner_mapping": 3
+    },
+    "research_conclusion": {
+      "overall_result": "no_cross_symbol_outperformance",
+      "main_constraint": "coverage_months_insufficient",
+      "recommended_next_action": "expand_shared_month_coverage_before_tuning_mapping"
+    },
+    "priority_symbols_for_data_expansion": [
+      {
+        "symbol": "AAPL",
+        "shared_month_count": 2.0,
+        "state_model_metric_12bar": -7.319864818880729e-05,
+        "trivial_baseline_metric_12bar": 0.00018140395651750538
+      },
+      {
+        "symbol": "BTC-USD",
+        "shared_month_count": 1.0,
+        "state_model_metric_12bar": -0.00024408273410641808,
+        "trivial_baseline_metric_12bar": 0.0002099517661778446
+      },
+      {
+        "symbol": "SPY",
+        "shared_month_count": 1.0,
+        "state_model_metric_12bar": 5.8871325705629235e-05,
+        "trivial_baseline_metric_12bar": 0.00012744404105031603
+      }
+    ],
+    "symbols_without_any_shared_months": [
+      {
+        "symbol": "QQQ"
+      }
+    ]
+  }
+}

@@ -14,6 +14,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--strategy-month", action="append", dest="strategy_months", required=True)
     parser.add_argument("--output-root", default="outputs")
     parser.add_argument("--method", choices=["gmm", "kmeans"], default="gmm")
+    parser.add_argument("--variant-limit", type=int, default=12)
+    parser.add_argument("--attach-tolerance-ms", type=int, default=60000)
     return parser
 
 
@@ -24,6 +26,8 @@ def main() -> None:
         data_months=args.data_months,
         strategy_months=args.strategy_months,
         output_root=args.output_root,
+        variant_limit=args.variant_limit,
+        attach_tolerance_ms=args.attach_tolerance_ms,
         discovery={"method": args.method},
     )
     discovery_result, evaluation_result = run_pipeline(config)

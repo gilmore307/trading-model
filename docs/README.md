@@ -1,6 +1,8 @@
 # trading-model docs
 
-This repository exists to build and improve an **unsupervised market-state model** using upstream data and strategy outputs.
+This docs tree is the canonical home for the `trading-model` repository documentation.
+
+`trading-model` exists to build and improve an unsupervised market-state model using upstream data and strategy outputs.
 
 Hard boundary:
 - `trading-data` provides market and context data
@@ -10,17 +12,7 @@ Hard boundary:
 ## Read in workflow order
 
 1. `01-overview.md`
-2. `02-workflow.md`
-3. `03-inputs-and-data-contracts.md`
-4. `04-unsupervised-model.md`
-5. `05-state-evaluation-and-policy-mapping.md`
-6. `06-model-composite-and-reporting.md`
-7. `07-repo-structure.md`
-8. `08-current-status.md`
-
-## Documentation rule
-
-These docs should stay aligned with one core reality:
-- market states are discovered from market-side data first
-- strategy outputs are attached only after state discovery
-- model quality is judged mainly by how much the model composite captures relative to the oracle composite
+2. `02-inputs-workflow-and-boundary.md`
+3. `03-discovery-evaluation-and-reporting.md`
+4. `04-repo-structure-and-implementation-status.md`
+5. `05-current-boundary-and-next-phase.md`

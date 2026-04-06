@@ -84,8 +84,11 @@ def attach_states(frame: pd.DataFrame, bundle: DiscoveryModelBundle, z_feature_c
     result = frame.copy()
     result["state_id"] = bundle.labels.astype(int)
     if bundle.probabilities is not None:
-        result["state_confidence"] = bundle.probabilities.max(axis=1)
-        result["state_margin"] = np.partition(bundle.probabilities, -1, axis=1)[:, -1]
+        sorted_probabilities = np.sort(bundle.probabilities, axis=1)
+        top1 = sorted_probabilities[:, -1]
+        top2 = sorted_probabilities[:, -2] if sorted_probabilities.shape[1] > 1 else np.zeros(len(sorted_probabilities))
+        result["state_confidence"] = top1
+        result["state_margin"] = top1 - top2
     else:
         result["state_confidence"] = np.nan
         result["state_margin"] = np.nan

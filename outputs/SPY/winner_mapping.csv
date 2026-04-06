@@ -1,0 +1,5 @@
+state_id,winner_type,winner_id,runner_up_id,winner_score,score_margin,selection_confidence,fallback_policy,mapping_version,primary_winner_metric,default_variant_id,eligible_variant_n
+0,no_strong_preference,no_strong_preference,,,,,keep_current_then_global_default,v1,forward_return_12bar,bollinger_both_close_w020_m20_e10,0
+1,no_strong_preference,no_strong_preference,,,,,keep_current_then_global_default,v1,forward_return_12bar,bollinger_both_close_w020_m20_e10,0
+2,no_strong_preference,no_strong_preference,,,,,keep_current_then_global_default,v1,forward_return_12bar,bollinger_both_close_w020_m20_e10,0
+3,no_strong_preference,no_strong_preference,,,,,keep_current_then_global_default,v1,forward_return_12bar,bollinger_both_close_w020_m20_e10,0

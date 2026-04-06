@@ -1,0 +1,56 @@
+{
+  "headline": {
+    "state_model_beats_trivial_baseline": false,
+    "state_model_metric_12bar": 5.8871325705629235e-05,
+    "trivial_baseline_metric_12bar": 0.00012744404105031603,
+    "oracle_metric_12bar": 0.0032597555947060275,
+    "state_gap_to_oracle_12bar": 0.003200884269000398,
+    "trivial_gap_to_oracle_12bar": 0.0031323115536557116
+  },
+  "mapping_summary": {
+    "state_count": 4,
+    "accepted_winner_state_count": 0,
+    "blocked_state_count": 4,
+    "eligible_variant_n_min": 0,
+    "eligible_variant_n_max": 0
+  },
+  "coverage_blockers_by_state": [
+    {
+      "state_id": 0,
+      "best_obs_n": 5154,
+      "best_active_months_n": 1,
+      "best_episode_n": 279,
+      "blockers": [
+        "months"
+      ]
+    },
+    {
+      "state_id": 1,
+      "best_obs_n": 2619,
+      "best_active_months_n": 1,
+      "best_episode_n": 155,
+      "blockers": [
+        "months"
+      ]
+    },
+    {
+      "state_id": 2,
+      "best_obs_n": 1563,
+      "best_active_months_n": 1,
+      "best_episode_n": 136,
+      "blockers": [
+        "months"
+      ]
+    },
+    {
+      "state_id": 3,
+      "best_obs_n": 644,
+      "best_active_months_n": 1,
+      "best_episode_n": 71,
+      "blockers": [
+        "months"
+      ]
+    }
+  ],
+  "trivial_policy_bucket_count": 16
+}
