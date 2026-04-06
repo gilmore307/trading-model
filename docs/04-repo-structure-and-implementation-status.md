@@ -64,7 +64,6 @@ Canonical partition pattern now includes:
 - research verdict: `symbol / month_scope`
 - multi-symbol summary per-symbol row slices: `symbol`
 - multi-symbol summary full object: `scope=all`
-- aggregate cross-symbol verdict: `scope=all`
 
 Canonical downstream expectation:
 - partitioned artifacts under `outputs/<symbol>/partitions/` (or the configured output root's equivalent partition tree) should be treated as the stable machine-facing contract when the artifact is naturally partition-shaped
@@ -80,7 +79,8 @@ Canonical downstream expectation:
 Artifact-specific conclusion at the current stage:
 - `state_table` and `state_evaluation_table` are the strongest cases for fine-grained semantic partitioning because they are the largest, most append-like, and most lifecycle-sensitive artifacts; they should be generated directly as partitioned outputs rather than as giant top-level exports
 - `model_selection`, `stability_report`, and `winner_mapping` are naturally version-scoped judgment artifacts and do not need forced row-level splitting beyond their current symbol/version boundary unless evidence later shows otherwise
-- `multi_symbol_summary` and `aggregate_cross_symbol_verdict` are primarily global summary objects; per-symbol slices are helpful for convenience/indexing, but the full-object view remains the natural canonical interpretation
+- `multi_symbol_summary` is the primary global summary object; per-symbol slices are helpful for convenience/indexing, but the full-object view remains the natural canonical interpretation
+- a separate top-level `aggregate_cross_symbol_verdict.json` is unnecessary when the same content already lives inside `multi_symbol_summary.json`
 
 This means the partition layout is now materially defined across both main tables and summary/report surfaces, while lifecycle/retention decisions over older partitions remain manager-owned.
 

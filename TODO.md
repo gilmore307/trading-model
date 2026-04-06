@@ -97,6 +97,10 @@ Current migration status:
   - single-file caps alone are not sufficient if total pushed artifact mass is still too large
   - decide which heavy derived partitions should stay rebuildable/local rather than tracked in GitHub
   - keep compact verdict/mapping/summary artifacts easy to push while avoiding repeated pack-object blowups
+- [x] simplify multi-symbol summary outputs
+  - `multi_symbol_summary.json` is the canonical whole-object summary
+  - per-symbol partitioned summary rows remain available as a convenience/index layer
+  - separate top-level `multi_symbol_summary.csv` and `aggregate_cross_symbol_verdict.json` are no longer necessary
 
 ## Structural rules
 

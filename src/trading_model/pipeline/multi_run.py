@@ -69,8 +69,6 @@ def run_multi_symbol_summary(
     summary_path = output_root / "multi_symbol_summary.json"
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     results_df = pd.DataFrame(results)
-    results_df.to_csv(output_root / "multi_symbol_summary.csv", index=False)
-    (output_root / "aggregate_cross_symbol_verdict.json").write_text(json.dumps(aggregate_verdict, ensure_ascii=False, indent=2), encoding="utf-8")
 
     if not results_df.empty:
         write_partitioned_csv(
@@ -84,11 +82,5 @@ def run_multi_symbol_summary(
         output_root / "partitions" / "multi_symbol_summary_full",
         partition_values={"scope": "all"},
         filename="multi_symbol_summary.json",
-    )
-    write_partitioned_json_object(
-        aggregate_verdict,
-        output_root / "partitions" / "aggregate_cross_symbol_verdict",
-        partition_values={"scope": "all"},
-        filename="aggregate_cross_symbol_verdict.json",
     )
     return summary
