@@ -93,6 +93,10 @@ Current migration status:
   - partitioned outputs are the canonical downstream contract
   - top-level monolithic outputs remain convenience/debug artifacts unless explicitly retired
   - keep model-side artifact layout aligned with manager-owned lifecycle control
+- [ ] refine Git-friendly artifact policy beyond single-file partitioning
+  - single-file caps alone are not sufficient if total pushed artifact mass is still too large
+  - decide which heavy derived partitions should stay rebuildable/local rather than tracked in GitHub
+  - keep compact verdict/mapping/summary artifacts easy to push while avoiding repeated pack-object blowups
 
 ## Structural rules
 

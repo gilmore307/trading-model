@@ -37,6 +37,10 @@ Already moved to `trading-manager`:
   - future changes should be artifact-specific rather than template-driven
   - large appendable tables should keep getting the most aggressive semantic partitioning
   - small versioned judgment objects and global summaries should only be further split when a real consumer/lifecycle need exists
+- add a Git-friendly artifact policy on top of partitioning
+  - partitioning solves single-file blowups but does not automatically solve total push/package mass
+  - decide which heavy derived partitions should remain rebuildable/local instead of tracked in GitHub
+  - keep compact research verdict / mapping / summary outputs easy to version and push
 - keep the raw-market-data boundary enforced
   - market acquisition and raw-market persistence belong in `trading-data`
   - current minimal pipeline does not write in-repo raw-market stores
