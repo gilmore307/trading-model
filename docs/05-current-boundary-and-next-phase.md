@@ -20,6 +20,10 @@ Already moved to `trading-manager`:
 - research reporting
 
 ## Remaining next-phase work
+- add an explicit model-side symbol-role boundary for the five core broad-market ETFs (`SPY`, `QQQ`, `DIA`, `IWM`, `RSP`)
+  - when one of these ETFs is itself the direct model target, the market-regime/context bundle for that run should exclude that same ETF from the context set
+  - this avoids letting a symbol act as both the target under study and part of its own market-state context definition in the same modeling pass
+  - keep this rule in the model input / feature-boundary layer rather than pushing it back into regime-universe metadata
 - richer survivor-floor policy in `trading-manager`
 - richer symbol-aware oscillation policy in `trading-manager`
 - deeper threshold calibration and reporting refinement here

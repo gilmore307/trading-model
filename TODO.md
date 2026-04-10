@@ -53,6 +53,14 @@ Current migration status:
   - [x] oracle-gap attach audit now reports status counts, direction counts, tolerance, and delta ranges
   - [ ] validate exact-vs-previous-bar semantics against richer upstream timestamp patterns
 
+## Symbol-role / market-context boundary follow-ups
+
+- [ ] when the five core broad-market ETFs (`SPY`, `QQQ`, `DIA`, `IWM`, `RSP`) are promoted into direct model research targets, exclude the target ETF itself from the market-regime/context feature bundle for that run
+  - these five can serve either as regime/context proxies or as direct research targets depending on workflow stage
+  - once one of them is the model target, it should no longer also appear inside the upstream "market state" evidence used to characterize that same target
+  - implement this as a model-side feature/boundary rule rather than as a regime-universe membership flag
+  - define the exact exclusion behavior in the model input contract before broadening direct research coverage for these symbols
+
 ## Model-output contract follow-ups
 
 - [x] add a first standardized execution-facing confidence field to model outputs
