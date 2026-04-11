@@ -24,6 +24,10 @@ Already moved to `trading-manager`:
   - when one of these ETFs is itself the direct model target, the market-regime/context bundle for that run should exclude that same ETF from the context set
   - this avoids letting a symbol act as both the target under study and part of its own market-state context definition in the same modeling pass
   - keep this rule in the model input / feature-boundary layer rather than pushing it back into regime-universe metadata
+- add a model-side crypto research path that can incorporate crypto-linked regime ETF proxies such as `IBIT`, `ETHA`, `FSOL`, and related symbols as optional explanatory context for crypto targets
+  - this belongs to the model/input layer because the question is how to use proxy context to improve crypto research, not how to redefine direct market-tape completion contracts
+  - these ETF/proxy series should be treated as context features, not as replacements for the target symbol's own required retained artifacts
+  - later work should define inclusion rules, anti-duplication guards, and temporal alignment rules for mixing direct crypto target data with proxy ETF context
 - richer survivor-floor policy in `trading-manager`
 - richer symbol-aware oscillation policy in `trading-manager`
 - deeper threshold calibration and reporting refinement here

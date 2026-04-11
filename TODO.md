@@ -60,6 +60,10 @@ Current migration status:
   - once one of them is the model target, it should no longer also appear inside the upstream "market state" evidence used to characterize that same target
   - implement this as a model-side feature/boundary rule rather than as a regime-universe membership flag
   - define the exact exclusion behavior in the model input contract before broadening direct research coverage for these symbols
+- [ ] add a crypto-research feature path that can use regime ETF proxies (`IBIT`, `ETHA`, `FSOL`, and similar crypto-linked ETF/context symbols) to help study crypto targets when direct crypto microstructure coverage is incomplete
+  - this is a model-side research/input question, not a market-tape completion-contract question
+  - treat these ETF series as optional explanatory context for crypto modeling rather than as a substitute for the direct target's own required market-tape artifacts
+  - define when crypto-linked ETF context should be included, how it should be aligned in time, and how to avoid leaking target-proxy duplication into feature construction
 
 ## Model-output contract follow-ups
 
