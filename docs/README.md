@@ -16,3 +16,4 @@ Hard boundary:
 3. `03-discovery-evaluation-and-reporting.md`
 4. `04-repo-structure-and-implementation-status.md`
 5. `05-current-boundary-and-next-phase.md`
+6. `06-model-layer-data-contract.md`

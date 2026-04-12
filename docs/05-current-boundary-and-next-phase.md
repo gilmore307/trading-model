@@ -28,6 +28,10 @@ Already moved to `trading-manager`:
   - this belongs to the model/input layer because the question is how to use proxy context to improve crypto research, not how to redefine direct market-tape completion contracts
   - these ETF/proxy series should be treated as context features, not as replacements for the target symbol's own required retained artifacts
   - later work should define inclusion rules, anti-duplication guards, and temporal alignment rules for mixing direct crypto target data with proxy ETF context
+- formalize and implement the three-layer model data contract described in `06-model-layer-data-contract.md`
+  - keep market-state and strategy-selection layers focused on underlying-level context
+  - keep dedicated option-selection logic as the consumer of the full option-chain layer
+  - derive a compressed option-chain context surface rather than forcing earlier model layers to consume the full raw chain directly
 - richer survivor-floor policy in `trading-manager`
 - richer symbol-aware oscillation policy in `trading-manager`
 - deeper threshold calibration and reporting refinement here
