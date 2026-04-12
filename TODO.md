@@ -64,6 +64,17 @@ Current migration status:
   - this is a model-side research/input question, not a market-tape completion-contract question
   - treat these ETF series as optional explanatory context for crypto modeling rather than as a substitute for the direct target's own required market-tape artifacts
   - define when crypto-linked ETF context should be included, how it should be aligned in time, and how to avoid leaking target-proxy duplication into feature construction
+- [ ] formalize the three-layer model stack and its data-consumption boundaries
+  - `market_state_model`: use regime/context data to identify market state and highlight unusually favorable sectors / symbols
+  - `strategy_selection_model`: take candidate targets plus market-state outputs and select entry/exit strategy style
+  - `option_selection_model`: once trade direction/timing is fixed, choose option parameters to maximize payoff / control risk
+- [ ] formalize option-chain data consumption as a two-surface model contract
+  - preserve a rich underlying option-chain raw layer for the dedicated `option_selection_model`
+  - separately derive an underlying-level compressed `option_chain_context` surface for `market_state_model` and `strategy_selection_model`
+  - do not force earlier model layers to ingest the full contract-by-contract chain directly
+- [ ] define the first compressed option-chain context feature set for underlying research
+  - likely first-wave groups: IV term structure, skew, open-interest/volume structure, and liquidity/spread context
+  - treat this as a model-input contract question rather than a storage minimization question
 
 ## Model-output contract follow-ups
 
