@@ -79,6 +79,8 @@ Current migration status:
     - organize by expiry cohort rather than observation month semantics
     - use expiry-month folder -> expiry-week/date folder -> one contract per file
     - use call/put ATM±5 strike ladders around an anchor underlying price for the selected expiry cohort
+    - first expiry policy direction: do not use the nearest/second-nearest Friday; prefer the farther weekly Friday bucket (for example, in the first week of a month, target the fourth-Friday expiry rather than the third-Friday expiry) to leave more error budget and time cushion
+    - internal implementation should likely be expressed as a farther-DTE Friday bucket rule rather than a hard-coded calendar ordinal when the contract is formalized
     - treat the first canonical intraday grain as `10m` rather than `1m`
 - [ ] define the first compressed option-chain context feature set for underlying research
   - likely first-wave groups: IV term structure, skew, open-interest/volume structure, and liquidity/spread context
