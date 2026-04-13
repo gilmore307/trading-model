@@ -68,13 +68,22 @@ Current migration status:
   - `market_state_model`: use regime/context data to identify market state and highlight unusually favorable sectors / symbols
   - `strategy_selection_model`: take candidate targets plus market-state outputs and select entry/exit strategy style
   - `option_selection_model`: once trade direction/timing is fixed, choose option parameters to maximize payoff / control risk
+  - boundary rule: treat upstream trade intent validity as a prerequisite; if the strategy itself is wrong, that is outside the option-selection model's research scope
+  - still allow the option-selection model to reject option expression for a valid trade intent when liquidity / spread / theta / IV structure makes options unattractive
 - [ ] formalize option-chain data consumption as a two-surface model contract
   - preserve a rich underlying option-chain raw layer for the dedicated `option_selection_model`
   - separately derive an underlying-level compressed `option_chain_context` surface for `market_state_model` and `strategy_selection_model`
   - do not force earlier model layers to ingest the full contract-by-contract chain directly
+  - current research direction for raw option collection to support this:
+    - Friday expiries only (ignore non-Friday expiries for the first mainline)
+    - organize by expiry cohort rather than observation month semantics
+    - use expiry-month folder -> expiry-week/date folder -> one contract per file
+    - use call/put ATM±5 strike ladders around an anchor underlying price for the selected expiry cohort
+    - treat the first canonical intraday grain as `10m` rather than `1m`
 - [ ] define the first compressed option-chain context feature set for underlying research
   - likely first-wave groups: IV term structure, skew, open-interest/volume structure, and liquidity/spread context
   - treat this as a model-input contract question rather than a storage minimization question
+  - align the compressed feature contract with the new raw-collection assumption that expiry cohorts are the primary option-domain sampling unit, not generic calendar months
 
 ## Model-output contract follow-ups
 
