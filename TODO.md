@@ -67,9 +67,10 @@ Current migration status:
 - [ ] formalize the three-layer model stack and its data-consumption boundaries
   - `market_state_model`: use regime/context data to identify market state and highlight unusually favorable sectors / symbols
   - `strategy_selection_model`: take candidate targets plus market-state outputs and select entry/exit strategy style
-  - `option_selection_model`: once trade direction/timing is fixed, choose option parameters to maximize payoff / control risk
+  - `option_selection_model`: once trade direction/timing is fixed, choose option parameters / expression templates to maximize payoff / control risk
   - boundary rule: treat upstream trade intent validity as a prerequisite; if the strategy itself is wrong, that is outside the option-selection model's research scope
   - still allow the option-selection model to reject option expression for a valid trade intent when liquidity / spread / theta / IV structure makes options unattractive
+  - first research direction: mirror the `trading-model` family-selection pattern by defining a small set of option execution strategy templates, backtesting them under valid trade intents, and ranking the templates by market-state/trade-intent context instead of jumping directly to unconstrained per-contract optimization
 - [ ] formalize option-chain data consumption as a two-surface model contract
   - preserve a rich underlying option-chain raw layer for the dedicated `option_selection_model`
   - separately derive an underlying-level compressed `option_chain_context` surface for `market_state_model` and `strategy_selection_model`
