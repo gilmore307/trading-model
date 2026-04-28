@@ -2,11 +2,11 @@
 
 ## Active Tasks
 
-- None.
+- Review `docs/07_system_model_architecture_rfc.md` and decide whether `trading-model` expands from market-state-only research to the full six-layer offline modeling repository, or whether Layers 2-6 get separate component owners.
 
 ## Queued Tasks
 
-- Define the first implementation slice for `trading-model`.
+- Define the first implementation slice for `trading-model`, likely Phase 1: point-in-time market-state/regime model.
 - Define package/source/test layout after the first implementation slice is accepted.
 - Define fixture policy and default test commands.
 - Identify any global fields, helper surfaces, templates, or type values that must be registered in `trading-main`.
@@ -14,6 +14,7 @@
 
 ## Open Gaps
 
+- Whether current repo scope should expand beyond market-state research.
 - Exact first implementation slice.
 - Exact source/package layout.
 - Exact fixture and test policy.
