@@ -6,12 +6,12 @@
 
 It owns point-in-time model research, training/evaluation workflows, model-local feature/label logic, model verdicts, and reproducibility evidence for:
 
-1. market state / regime modeling;
-2. dynamic strategy selection research;
-3. signal quality and trade-outcome prediction;
-4. option contract / expression selection research;
-5. event shock and abnormal-activity overlay modeling;
-6. portfolio risk, sizing, and execution-gate modeling.
+1. MarketRegimeModel (`market_regime_model`);
+2. StrategySelectionModel (`strategy_selection_model`);
+3. TradeQualityModel (`trade_quality_model`);
+4. OptionExpressionModel (`option_expression_model`);
+5. EventOverlayModel (`event_overlay_model`);
+6. PortfolioRiskModel (`portfolio_risk_model`).
 
 The repository does **not** place live orders. It produces offline research artifacts, model outputs, decision-record prototypes, validation evidence, and contract proposals for downstream systems.
 

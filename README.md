@@ -4,12 +4,12 @@
 
 It owns point-in-time model research, validation, decision-record prototypes, and model outputs for:
 
-1. market state / regime modeling;
-2. dynamic strategy selection;
-3. signal quality and trade-outcome prediction;
-4. option contract / expression selection;
-5. event shock and abnormal-activity overlays;
-6. portfolio risk, sizing, and execution-gate modeling.
+1. MarketRegimeModel (`market_regime_model`);
+2. StrategySelectionModel (`strategy_selection_model`);
+3. TradeQualityModel (`trade_quality_model`);
+4. OptionExpressionModel (`option_expression_model`);
+5. EventOverlayModel (`event_overlay_model`);
+6. PortfolioRiskModel (`portfolio_risk_model`).
 
 It does not own raw source acquisition, live/paper order placement, broker/account mutation, global registry authority, generated runtime artifacts committed to Git, or secrets.
 

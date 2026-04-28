@@ -81,12 +81,12 @@ The trading system data-source layer is now considered sufficiently complete for
 
 `trading-model` is the offline modeling home for the six-layer trading decision system:
 
-1. market state / regime model;
-2. dynamic strategy selection model;
-3. signal quality / trade outcome model;
-4. option contract / expression selection model;
-5. event shock / abnormal activity overlay;
-6. portfolio risk / sizing / execution-gate model.
+1. `MarketRegimeModel` (`market_regime_model`);
+2. `StrategySelectionModel` (`strategy_selection_model`);
+3. `TradeQualityModel` (`trade_quality_model`);
+4. `OptionExpressionModel` (`option_expression_model`);
+5. `EventOverlayModel` (`event_overlay_model`);
+6. `PortfolioRiskModel` (`portfolio_risk_model`).
 
 Layer 5 is an overlay that can affect all earlier layers and the risk gate. Layer 6 is the final offline risk/execution gate, but live order placement remains outside this repository.
 
@@ -101,3 +101,36 @@ The model requirements determine cleaning, feature shape, event projection, bund
 - Layers 2-6 may be implemented in phases inside `trading-model` unless a later decision splits ownership.
 - Raw acquisition remains in `trading-data`; global shared contracts still route through `trading-main`; live/paper order placement remains outside `trading-model`.
 - All layers must obey point-in-time validation and avoid event/news/label leakage.
+
+## D005 - Canonical six-layer model names
+
+Date: 2026-04-27
+
+### Context
+
+After accepting the six-layer architecture, the model layers need stable names before data organization, schemas, decision records, code packages, and registry proposals are finalized.
+
+### Decision
+
+Use the following canonical model names and stable ids:
+
+| Layer | Model class | Stable id | Chinese name |
+|---|---|---|---|
+| 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 |
+| 2 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 |
+| 3 | `TradeQualityModel` | `trade_quality_model` | 交易质量模型 |
+| 4 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 |
+| 5 | `EventOverlayModel` | `event_overlay_model` | 事件覆盖模型 |
+| 6 | `PortfolioRiskModel` | `portfolio_risk_model` | 组合风控模型 |
+
+Layer 5 remains an overlay. Layer 6 may model execution-gate logic, but it must not be called `ExecutionModel` because live/paper order placement is outside `trading-model`.
+
+### Rationale
+
+Stable names prevent schema drift and keep future data organization, decision records, artifacts, code modules, and registry rows aligned.
+
+### Consequences
+
+- Docs, code, artifact metadata, and registry proposals should use these names unless a later decision renames them.
+- Machine-facing paths/configs should prefer the stable ids.
+- The canonical naming table in `docs/07_system_model_architecture_rfc.md` is the working reference until promoted into `trading-main` registry/contracts.

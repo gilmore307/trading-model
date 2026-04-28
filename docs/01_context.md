@@ -4,12 +4,12 @@
 
 The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the full six-layer trading decision system:
 
-1. market state / regime model;
-2. dynamic strategy selection model;
-3. signal quality / trade outcome model;
-4. option contract / expression selection model;
-5. event shock / abnormal activity overlay;
-6. portfolio risk / sizing / execution gate.
+1. MarketRegimeModel (`market_regime_model`);
+2. StrategySelectionModel (`strategy_selection_model`);
+3. TradeQualityModel (`trade_quality_model`);
+4. OptionExpressionModel (`option_expression_model`);
+5. EventOverlayModel (`event_overlay_model`);
+6. PortfolioRiskModel (`portfolio_risk_model`).
 
 The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
 

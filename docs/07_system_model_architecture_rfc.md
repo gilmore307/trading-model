@@ -11,17 +11,17 @@ The trading system should be designed as a point-in-time, regime-aware decision 
 ```text
 data foundation
   ↓
-1. market state / regime model
+1. MarketRegimeModel (`market_regime_model`)
   ↓
-2. dynamic strategy selection model
+2. StrategySelectionModel (`strategy_selection_model`)
   ↓
-3. signal quality / trade outcome model
+3. TradeQualityModel (`trade_quality_model`)
   ↓
-4. option contract / expression selection model
+4. OptionExpressionModel (`option_expression_model`)
   ↓
-5. event shock / abnormal activity overlay
+5. EventOverlayModel (`event_overlay_model`)
   ↓
-6. portfolio risk / sizing / execution gate
+6. PortfolioRiskModel (`portfolio_risk_model`)
 ```
 
 Layer 5 and Layer 6 are not simple downstream stages:
@@ -39,6 +39,21 @@ The system should not answer only “buy or sell.” It should answer:
 - Is there event risk or event opportunity?
 - Does the current portfolio allow this trade?
 - What size, execution style, and exit plan should be used?
+
+## Canonical Layer Names
+
+These names are canonical for docs, code, artifact metadata, and future registry proposals. Use the `stable id` in machine-facing paths/configs and the `model class` name in code/docs where PascalCase is appropriate.
+
+| Layer | Model class | Stable id | Chinese name | Role |
+|---|---|---|---|---|
+| 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 | Detect point-in-time market regime, state probabilities, confidence, transition risk, and dominant drivers. |
+| 2 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Select strategy family/variant conditioned on regime, symbol, cost, and robustness evidence. |
+| 3 | `TradeQualityModel` | `trade_quality_model` | 交易质量模型 | Score candidate signals and predict trade outcome distribution, target/stop, MFE/MAE, and holding horizon. |
+| 4 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 | Choose stock/ETF/option/option-spread expression from signal forecast, option chain, liquidity, IV, and Greeks. |
+| 5 | `EventOverlayModel` | `event_overlay_model` | 事件覆盖模型 | Overlay scheduled/breaking event risk, abnormal activity, and event-memory adjustments across earlier layers and the risk gate. |
+| 6 | `PortfolioRiskModel` | `portfolio_risk_model` | 组合风控模型 | Final offline risk, sizing, exposure, execution-gate, exit-rule, and kill-switch model. |
+
+Naming rule: do not call Layer 6 simply `ExecutionModel`, because live/paper order placement is outside `trading-model`. `PortfolioRiskModel` may describe execution-gate logic but does not mutate brokerage state.
 
 ## Non-negotiable Point-in-Time Rule
 
@@ -66,7 +81,7 @@ Backtests must use `available_time`/`tradeable_time`, not hindsight event interp
 
 ## Repository Boundary Impact
 
-The current `trading-model` scope is market-state research first. This RFC expands the conceptual system architecture, but implementation should stay phased.
+The accepted `trading-model` scope is now the full six-layer offline modeling architecture. Implementation should still stay phased, with `MarketRegimeModel` as the likely first slice.
 
 Recommended ownership split:
 
@@ -78,9 +93,9 @@ Recommended ownership split:
 | Scheduling/routing/lifecycle | `trading-manager` / execution-side repos |
 | Live execution, order placement, broker integration | execution/risk repository, not `trading-model` |
 
-Before `trading-model` implements Layers 2-6, update `docs/00_scope.md` or create sub-repositories/components if the wider modeling scope should not live here.
+If a later decision splits one or more layers into separate component repositories, update `docs/00_scope.md`, this RFC, and `trading-main` registry/contracts together.
 
-## Layer 1: Market State / Regime Model
+## Layer 1: MarketRegimeModel
 
 ### Goal
 
@@ -177,7 +192,7 @@ Avoid using full-history clustering to label the past.
 - strategy-performance separation by regime
 - drawdown warning usefulness
 
-## Layer 2: Dynamic Strategy Selection Model
+## Layer 2: StrategySelectionModel
 
 ### Goal
 
@@ -224,7 +239,7 @@ variant_score =
 
 Required validation methods should include walk-forward validation, parameter-neighborhood stability, cost sensitivity, and later PBO/CSCV or Deflated Sharpe Ratio where practical.
 
-## Layer 3: Signal Quality / Trade Outcome Model
+## Layer 3: TradeQualityModel
 
 ### Goal
 
@@ -270,7 +285,7 @@ Tree-based models are a good first slice because they are practical and interpre
 - target/stop accuracy
 - holding-period error
 
-## Layer 4: Option Contract / Expression Selection Model
+## Layer 4: OptionExpressionModel
 
 ### Goal
 
@@ -320,7 +335,7 @@ option_score =
 
 Backtests must use real option-chain snapshots, bid/ask, conservative fill logic, slippage assumptions, and failure-to-fill handling.
 
-## Layer 5: Event Shock / Abnormal Activity Overlay
+## Layer 5: EventOverlayModel
 
 ### Goal
 
@@ -349,7 +364,7 @@ Layer 5 can:
 
 Never train pre-event models using post-event explanations. Every event row must preserve observable timing and source priority.
 
-## Layer 6: Portfolio Risk / Position Sizing / Execution Gate
+## Layer 6: PortfolioRiskModel
 
 ### Goal
 

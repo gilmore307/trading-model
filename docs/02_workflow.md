@@ -9,12 +9,12 @@ This file defines the intended offline modeling workflow for `trading-model`.
 ```text
 point-in-time data artifacts
   -> feature/label builders
-  -> Layer 1 market regime model
-  -> Layer 2 strategy selection research
-  -> Layer 3 signal-quality / trade-outcome model
-  -> Layer 4 option expression selector
-  -> Layer 5 event overlay adjustments
-  -> Layer 6 risk/sizing/execution-gate research
+  -> MarketRegimeModel
+  -> StrategySelectionModel
+  -> TradeQualityModel
+  -> OptionExpressionModel
+  -> EventOverlayModel adjustments
+  -> PortfolioRiskModel
   -> unified decision record + validation evidence
 ```
 
@@ -25,12 +25,12 @@ Layer 6 is the final offline execution-gate model. It may approve, reject, resiz
 ## Operating Principles
 
 - Every workflow must be point-in-time: no future data, no full-history fitting for historical predictions, no post-event explanation leakage.
-- Market-state discovery in Layer 1 must be market/data-feature based; strategy outcomes are attached after state construction for evaluation.
-- Strategy/variant selection in Layer 2 must use walk-forward or similarly time-safe evaluation, not historical champion-picking.
-- Signal-quality Layer 3 should model outcome distribution and risk, not only direction.
-- Option Layer 4 must use timestamped option-chain snapshots, bid/ask, liquidity, IV/Greeks, conservative fills, and failure-to-fill assumptions.
-- Event Layer 5 must preserve event/evidence timing and source priority.
-- Risk Layer 6 must account for portfolio exposure, correlation, drawdown state, liquidity, slippage, and kill-switch behavior.
+- `MarketRegimeModel` must be market/data-feature based; strategy outcomes are attached after state construction for evaluation.
+- `StrategySelectionModel` must use walk-forward or similarly time-safe evaluation, not historical champion-picking.
+- `TradeQualityModel` should model outcome distribution and risk, not only direction.
+- `OptionExpressionModel` must use timestamped option-chain snapshots, bid/ask, liquidity, IV/Greeks, conservative fills, and failure-to-fill assumptions.
+- `EventOverlayModel` must preserve event/evidence timing and source priority.
+- `PortfolioRiskModel` must account for portfolio exposure, correlation, drawdown state, liquidity, slippage, and kill-switch behavior.
 - Research outputs need manifests and ready signals before downstream promotion.
 - Shared fields, statuses, type values, helpers, and reusable templates must come from `trading-main`.
 - Runtime outputs must be written outside Git-tracked source paths.

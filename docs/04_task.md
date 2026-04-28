@@ -8,7 +8,7 @@
 
 - Define package/source/test layout after the first implementation slice is accepted.
 - Define fixture policy and default test commands.
-- Identify global fields, helper surfaces, templates, status values, decision-record fields, artifact types, or ready-signal shapes that must be registered in `trading-main`.
+- Identify global fields, helper surfaces, templates, status values, decision-record fields, model layer ids, artifact types, or ready-signal shapes that must be registered in `trading-main`.
 - Define model-facing timestamp semantics for `event_time`, `available_time`, and `tradeable_time`.
 - Define the first tradable research universe for Layer 1/2: ETF basket only, liquid equities, or both.
 - Define first label horizons and triple-barrier defaults for Layer 3.
@@ -25,6 +25,7 @@
 
 ## Recently Accepted
 
+- Accepted canonical model names: `MarketRegimeModel`, `StrategySelectionModel`, `TradeQualityModel`, `OptionExpressionModel`, `EventOverlayModel`, and `PortfolioRiskModel`.
 - User explicitly replaced the old market-state-only repo intent with the current six-layer model architecture.
 - Added `docs/07_system_model_architecture_rfc.md` as the architecture spine.
 - Updated scope/context/workflow/README to make `trading-model` the offline modeling home for all six layers.
