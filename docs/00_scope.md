@@ -2,43 +2,57 @@
 
 ## Purpose
 
-`trading-model` is the offline modeling and market-state research repository for the trading system.
+`trading-model` is the offline modeling repository for the six-layer trading decision system.
 
-It discovers market states from market-only features, evaluates state usefulness after attaching strategy results, and produces mappings, confidence, research verdicts, manifests, and ready signals.
+It owns point-in-time model research, training/evaluation workflows, model-local feature/label logic, model verdicts, and reproducibility evidence for:
 
-This repository exists to keep that responsibility explicit, testable, and separate from neighboring trading repositories.
+1. market state / regime modeling;
+2. dynamic strategy selection research;
+3. signal quality and trade-outcome prediction;
+4. option contract / expression selection research;
+5. event shock and abnormal-activity overlay modeling;
+6. portfolio risk, sizing, and execution-gate modeling.
+
+The repository does **not** place live orders. It produces offline research artifacts, model outputs, decision-record prototypes, validation evidence, and contract proposals for downstream systems.
 
 ## In Scope
 
-- market-state discovery from market/data-source features.
-- offline model research and evaluation workflows.
-- state tables, mappings, confidence outputs, and research verdicts.
-- post-discovery attachment of strategy results for evaluation.
-- model-local tests and reproducibility evidence.
+- Point-in-time model research and validation workflows.
+- Market-state/regime discovery from market-only features.
+- Regime-conditioned strategy family/variant selection research.
+- Signal-quality, meta-labeling, target/stop, MFE/MAE, and holding-period models.
+- Option expression selection research using option-chain snapshots, liquidity, IV, Greeks, and conservative fill assumptions.
+- Event overlay research for scheduled events, breaking news shocks, pre-event abnormal activity, and historical event-impact memory.
+- Portfolio risk, sizing, exposure, execution-gate, exit-rule, and kill-switch research logic.
+- Unified candidate-trade decision-record prototypes for audit, attribution, replay, and retraining.
+- Model-local tests, fixtures, reproducibility evidence, and acceptance gates.
+- Proposing shared names/contracts to `trading-main` when model outputs need cross-repository consumption.
 
 ## Out of Scope
 
-- market data fetching or normalization.
-- strategy implementation or backtest execution.
-- live/paper execution.
-- dashboard rendering.
-- shared storage policy.
-- global contract/type registration outside trading-main.
-- Defining global artifact, manifest, ready-signal, request, field, status, or type contracts outside `trading-main`.
+- Market/source data fetching or raw-source normalization.
+- Owning source-evidence bundles; those belong in `trading-data`.
+- Live/paper order placement, broker interaction, or account mutation.
+- Production scheduling, lifecycle routing, retries, or promotion orchestration.
+- Dashboard rendering.
+- Durable storage retention policy unless delegated by accepted contract.
+- Global contract/type/field/status registration outside `trading-main`.
 - Storing generated data, artifacts, logs, notebooks, credentials, or secrets in Git.
 
 ## Owner Intent
 
-`trading-model` should become a disciplined component repository with clear contracts, evidence-backed acceptance, and no hidden ownership drift.
+`trading-model` should become the disciplined offline modeling home for the full trading decision stack, not merely a market-state repository.
 
-The repository should prefer explicit interfaces, fixture-backed tests, and narrow responsibility boundaries over quick scripts that blur component roles.
+The repository should prefer explicit point-in-time interfaces, fixture-backed tests, walk-forward validation, and evidence-backed acceptance over quick scripts or hindsight analysis.
 
 ## Boundary Rules
 
-- Component-local implementation belongs here only when it matches this repository's role.
+- Component-local modeling code belongs here when it matches the six-layer offline modeling role.
+- Raw acquisition and source-specific cleaning belong in `trading-data`.
 - Global contracts, registry entries, shared helpers, and reusable templates belong in `trading-main`.
-- Durable storage layout and retention belong in `trading-storage` unless this repository is defining that storage contract.
+- Durable storage layout and retention belong in `trading-storage` unless this repository is defining a proposed contract for review.
 - Scheduling, retries, lifecycle routing, and promotion decisions belong in `trading-manager` unless explicitly delegated by contract.
+- Live execution and broker/account mutation stay outside this repository.
 - Generated artifacts and runtime outputs are not source files.
 - Secrets and credentials must stay outside the repository.
 - Shared helpers, templates, fields, statuses, and type values discovered here must be recorded through `trading-main` before cross-repository use.
@@ -47,8 +61,9 @@ The repository should prefer explicit interfaces, fixture-backed tests, and narr
 
 A request should be rejected or re-scoped if it asks `trading-model` to:
 
-- take over another component repository responsibility.
-- commit generated runtime outputs or secrets.
-- define global contracts without routing them through trading-main.
-- invent shared fields/statuses/types without registry review.
+- fetch or normalize raw provider data as an acquisition bundle;
+- place, cancel, or modify live/paper trades;
+- commit generated runtime outputs or secrets;
+- define global contracts without routing them through `trading-main`;
+- invent shared fields/statuses/types without registry review;
 - bypass accepted storage or manager lifecycle boundaries.

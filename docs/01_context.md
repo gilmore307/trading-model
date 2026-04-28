@@ -2,7 +2,16 @@
 
 ## Why This Repository Exists
 
-The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists because discovers market states from market-only features, evaluates state usefulness after attaching strategy results, and produces mappings, confidence, research verdicts, manifests, and ready signals.
+The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the full six-layer trading decision system:
+
+1. market state / regime model;
+2. dynamic strategy selection model;
+3. signal quality / trade outcome model;
+4. option contract / expression selection model;
+5. event shock / abnormal activity overlay;
+6. portfolio risk / sizing / execution gate.
+
+The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
 
 ## Related Systems
 
@@ -10,22 +19,40 @@ The trading platform is split across multiple repositories so each major respons
 |---|---|
 | `trading-main` | Owns global architecture, registry, templates, shared helpers, and cross-repository contracts. |
 | `trading-manager` | Owns orchestration, lifecycle, scheduling, retries, requests, and promotion routing. |
-| `trading-data` | Produces data artifacts, manifests, and ready signals. |
+| `trading-data` | Produces point-in-time data/source-evidence artifacts consumed by model research. |
 | `trading-storage` | Owns durable storage layout, retention, archive, backup, restore, and artifact placement rules. |
-| `trading-strategy` | Produces strategy research and backtest artifacts. |
-| `trading-model` | Produces offline model/state research outputs and verdicts. |
-| `trading-execution` | Consumes promoted decisions for paper/live execution. |
+| `trading-strategy` | May provide strategy-family definitions/backtest artifacts if kept separate; otherwise strategy-selection research can be model-local until boundaries are revisited. |
+| `trading-model` | Produces offline six-layer model research outputs, validation evidence, and decision-record prototypes. |
+| `trading-execution` | Consumes promoted decisions/risk-approved orders for paper/live execution; broker mutation is not owned here. |
 | `trading-dashboard` | Presents already-produced outputs and evidence. |
 
 ## Expected External Interfaces
 
 Potential external interfaces include:
 
-- trading-data artifacts.
-- trading-strategy artifacts after state discovery.
-- trading-storage layout contracts.
+- `trading-data` artifacts and manifests for market data, option-chain snapshots, macro/event evidence, ETF holdings, and source availability.
+- Strategy definitions/backtest outputs, either model-local during research or from `trading-strategy` if that repository remains the strategy owner.
+- Event evidence and event-cluster artifacts once accepted.
+- Storage artifact references from `trading-storage`.
+- Shared registry fields/contracts from `trading-main`.
 
 Specific providers, credentials, package choices, deployment targets, and runtime settings are not settled unless recorded in this repository's decisions or inherited from `trading-main` contracts.
+
+## Point-in-Time Constraint
+
+Every model must obey:
+
+```text
+At time t, the model may only use data genuinely available before or at t.
+```
+
+Model-facing data and labels should distinguish when relevant:
+
+- `event_time` — when something happened or was scheduled to happen;
+- `available_time` — when evidence became visible to the system;
+- `tradeable_time` — when the system could realistically trade on it.
+
+Using post-event explanations or full-history transformations to train/predict earlier timestamps is a rejection reason.
 
 ## Environment
 
@@ -58,6 +85,6 @@ This includes shared fields, artifact types, manifest types, ready-signal types,
 ## Important Constraints
 
 - Do not store generated artifacts, logs, notebooks, credentials, or secrets in Git.
-- Keep component-local implementation inside this repository's boundary.
+- Keep component-local implementation inside this repository's offline modeling boundary.
 - Use manifests, ready signals, artifact references, and requests for cross-repository handoffs once contracts are accepted.
 - Do not depend on another component's internal implementation details.
