@@ -37,7 +37,7 @@ The system should not answer only “buy or sell.” It should answer:
 - Which strategy family is appropriate in this state?
 - Is this signal worth trading?
 - What target, stop, holding time, and adverse/favorable excursion are expected?
-- Should the trade be expressed with stock, ETF, option, or an option spread?
+- Should the trade be expressed with stock, ETF, long call, or long put?
 - Is there event risk or event opportunity?
 - Does the current portfolio allow this trade?
 - What size, execution style, and exit plan should be used?
@@ -52,7 +52,7 @@ These names are canonical for docs, code, artifact metadata, and future registry
 | 2 | `SecuritySelectionModel` | `security_selection_model` | 标的选择模型 | Build candidate tradable universes from regime/sector style, ETF holdings exposure, stock relative strength, liquidity, optionability, and event exclusions. |
 | 3 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Select strategy family/variant conditioned on regime, candidate symbol, cost, and robustness evidence. |
 | 4 | `TradeQualityModel` | `trade_quality_model` | 交易质量模型 | Score candidate signals and predict trade outcome distribution, target/stop, MFE/MAE, and holding horizon. |
-| 5 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 | Choose stock/ETF/option/option-spread expression from signal forecast, option chain, liquidity, IV, and Greeks. |
+| 5 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 | Choose stock/ETF/long-call/long-put expression from signal forecast, option chain, liquidity, IV, and Greeks. V1 excludes multi-leg option structures. |
 | 6 | `EventOverlayModel` | `event_overlay_model` | 事件覆盖模型 | Overlay scheduled/breaking event risk, abnormal activity, and event-memory adjustments across earlier layers and the risk gate. |
 | 7 | `PortfolioRiskModel` | `portfolio_risk_model` | 组合风控模型 | Final offline risk, sizing, exposure, execution-gate, exit-rule, and kill-switch model. |
 
@@ -405,17 +405,19 @@ Tree-based models are a good first slice because they are practical and interpre
 
 ### Goal
 
-Choose the best trading expression after Layer 3 produces expected underlying move, target, stop, and holding horizon.
+Choose the best simple trading expression after `TradeQualityModel` produces expected underlying move, target, stop, and holding horizon.
 
-V1 allowed structures:
+V1 allowed option structures are single-leg only:
 
 - long call
 - long put
+
+Stock/ETF direct expression may be compared as a fallback, but V1 option expression must not use multi-leg spreads.
+
+Explicitly deferred until risk/margin, multi-leg execution, slippage, and exit realism are mature:
+
 - call debit spread
 - put debit spread
-
-Defer complex structures until risk/margin and backtest realism are mature:
-
 - calendar/diagonal
 - straddle/strangle
 - ratio spreads
@@ -545,8 +547,8 @@ Every candidate trade should produce a complete point-in-time decision record fo
     "expected_holding_days": 4
   },
   "layer_5_option_expression": {
-    "structure": "call_debit_spread",
-    "contracts": ["QQQ 2026-05-15 445C", "QQQ 2026-05-15 455C"],
+    "structure": "long_call",
+    "contracts": ["QQQ 2026-05-15 445C"],
     "expected_option_pnl": 1.35,
     "max_loss": 3.2,
     "liquidity_score": 0.88,
@@ -653,7 +655,7 @@ Deliver:
 Deliver:
 
 - option-chain snapshot feature contract
-- long call/put and debit-spread ranker
+- long call/put ranker only
 - liquidity/IV/crush filters
 - expected option PnL and fill/slippage assumptions
 

@@ -162,3 +162,30 @@ Different market regimes require different selection styles. Risk-on regimes may
 - A derived point-in-time `stock_etf_exposure` table should be designed, either model-local first or registered through `trading-main` if cross-repository use is needed.
 - `StrategySelectionModel` consumes selected candidate pools instead of scanning the whole universe directly.
 - Event and optionability exclusions can remove symbols before strategy evaluation.
+
+## D007 - OptionExpressionModel V1 is single-leg long options only
+
+Date: 2026-04-28
+
+### Context
+
+`OptionExpressionModel` selects the option contract or expression after signal quality and expected underlying move are known. Multi-leg structures introduce materially more complexity in pricing, margin, fill simulation, slippage, exit management, and risk controls.
+
+### Decision
+
+V1 `OptionExpressionModel` supports only simple single-leg option expressions:
+
+- long call;
+- long put.
+
+Stock/ETF direct expression may remain a comparison or fallback, but V1 option expression must not choose debit spreads, calendars, diagonals, straddles, strangles, condors, butterflies, ratio spreads, or naked short options.
+
+### Rationale
+
+Single-leg long options are sufficient for the first option-expression research slice and keep modeling, backtesting, and execution assumptions auditable. Multi-leg option structures should wait until option-chain snapshot quality, conservative fill logic, slippage modeling, and exit lifecycle handling are proven.
+
+### Consequences
+
+- `OptionExpressionModel` V1 scoring ranks eligible calls/puts, not combinations of legs.
+- Required inputs remain option chain snapshot, bid/ask, volume/open interest, DTE, IV, Greeks, liquidity, and previous model outputs.
+- Multi-leg structures are explicitly deferred and should not appear in V1 decision records except as rejected/deferred capabilities.

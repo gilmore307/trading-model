@@ -30,7 +30,7 @@ point-in-time data artifacts
 - `SecuritySelectionModel` builds tradable candidate pools from regime/style context, ETF holdings exposure, full-market scans, liquidity, optionability, and event exclusions; it does not choose entry timing.
 - `StrategySelectionModel` must use walk-forward or similarly time-safe evaluation, not historical champion-picking.
 - `TradeQualityModel` should model outcome distribution and risk, not only direction.
-- `OptionExpressionModel` must use timestamped option-chain snapshots, bid/ask, liquidity, IV/Greeks, conservative fills, and failure-to-fill assumptions.
+- `OptionExpressionModel` V1 is limited to single-leg long call / long put option expressions and must use timestamped option-chain snapshots, bid/ask, liquidity, IV/Greeks, conservative fills, and failure-to-fill assumptions.
 - `EventOverlayModel` must preserve event/evidence timing and source priority.
 - `PortfolioRiskModel` must account for portfolio exposure, correlation, drawdown state, liquidity, slippage, and kill-switch behavior.
 - Research outputs need manifests and ready signals before downstream promotion.
@@ -58,7 +58,7 @@ Deliver underlying-only trade labels, triple-barrier labeling, trade-quality sco
 
 ### Phase 5: OptionExpressionModel
 
-Deliver option-chain snapshot feature contract, long call/put and debit-spread ranker, liquidity/IV/crush filters, expected option PnL, and conservative fill/slippage assumptions.
+Deliver option-chain snapshot feature contract, long call/put ranker only, liquidity/IV/crush filters, expected option PnL, and conservative fill/slippage assumptions. Multi-leg spreads are deferred.
 
 ### Phase 6: EventOverlayModel
 
