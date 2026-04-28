@@ -1,15 +1,16 @@
 # trading-model
 
-`trading-model` is the offline modeling repository for the six-layer trading decision system.
+`trading-model` is the offline modeling repository for the seven-layer trading decision system.
 
 It owns point-in-time model research, validation, decision-record prototypes, and model outputs for:
 
 1. MarketRegimeModel (`market_regime_model`);
-2. StrategySelectionModel (`strategy_selection_model`);
-3. TradeQualityModel (`trade_quality_model`);
-4. OptionExpressionModel (`option_expression_model`);
-5. EventOverlayModel (`event_overlay_model`);
-6. PortfolioRiskModel (`portfolio_risk_model`).
+2. SecuritySelectionModel (`security_selection_model`);
+3. StrategySelectionModel (`strategy_selection_model`);
+4. TradeQualityModel (`trade_quality_model`);
+5. OptionExpressionModel (`option_expression_model`);
+6. EventOverlayModel (`event_overlay_model`);
+7. PortfolioRiskModel (`portfolio_risk_model`).
 
 It does not own raw source acquisition, live/paper order placement, broker/account mutation, global registry authority, generated runtime artifacts committed to Git, or secrets.
 

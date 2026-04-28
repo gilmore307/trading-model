@@ -2,14 +2,15 @@
 
 ## Why This Repository Exists
 
-The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the full six-layer trading decision system:
+The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the full seven-layer trading decision system:
 
 1. MarketRegimeModel (`market_regime_model`);
-2. StrategySelectionModel (`strategy_selection_model`);
-3. TradeQualityModel (`trade_quality_model`);
-4. OptionExpressionModel (`option_expression_model`);
-5. EventOverlayModel (`event_overlay_model`);
-6. PortfolioRiskModel (`portfolio_risk_model`).
+2. SecuritySelectionModel (`security_selection_model`);
+3. StrategySelectionModel (`strategy_selection_model`);
+4. TradeQualityModel (`trade_quality_model`);
+5. OptionExpressionModel (`option_expression_model`);
+6. EventOverlayModel (`event_overlay_model`);
+7. PortfolioRiskModel (`portfolio_risk_model`).
 
 The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
 
@@ -22,7 +23,7 @@ The repository turns point-in-time data artifacts and strategy/event evidence in
 | `trading-data` | Produces point-in-time data/source-evidence artifacts consumed by model research. |
 | `trading-storage` | Owns durable storage layout, retention, archive, backup, restore, and artifact placement rules. |
 | `trading-strategy` | May provide strategy-family definitions/backtest artifacts if kept separate; otherwise strategy-selection research can be model-local until boundaries are revisited. |
-| `trading-model` | Produces offline six-layer model research outputs, validation evidence, and decision-record prototypes. |
+| `trading-model` | Produces offline seven-layer model research outputs, validation evidence, and decision-record prototypes. |
 | `trading-execution` | Consumes promoted decisions/risk-approved orders for paper/live execution; broker mutation is not owned here. |
 | `trading-dashboard` | Presents already-produced outputs and evidence. |
 

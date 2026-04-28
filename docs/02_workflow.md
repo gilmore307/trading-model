@@ -10,6 +10,7 @@ This file defines the intended offline modeling workflow for `trading-model`.
 point-in-time data artifacts
   -> feature/label builders
   -> MarketRegimeModel
+  -> SecuritySelectionModel
   -> StrategySelectionModel
   -> TradeQualityModel
   -> OptionExpressionModel
@@ -18,14 +19,15 @@ point-in-time data artifacts
   -> unified decision record + validation evidence
 ```
 
-Layer 5 is an overlay, not merely a late stage. It can modify regime transition risk, disable strategies, change signal scores, alter option structure constraints, or force risk-gate reductions.
+`EventOverlayModel` is an overlay, not merely a late stage. It can modify regime transition risk, candidate selection, strategy availability, signal scores, option structure constraints, or risk-gate reductions.
 
-Layer 6 is the final offline execution-gate model. It may approve, reject, resize, delay, or alter candidate trades, but actual order placement remains outside this repository.
+`PortfolioRiskModel` is the final offline execution-gate model. It may approve, reject, resize, delay, or alter candidate trades, but actual order placement remains outside this repository.
 
 ## Operating Principles
 
 - Every workflow must be point-in-time: no future data, no full-history fitting for historical predictions, no post-event explanation leakage.
 - `MarketRegimeModel` must be market/data-feature based; strategy outcomes are attached after state construction for evaluation.
+- `SecuritySelectionModel` builds tradable candidate pools from regime/style context, ETF holdings exposure, full-market scans, liquidity, optionability, and event exclusions; it does not choose entry timing.
 - `StrategySelectionModel` must use walk-forward or similarly time-safe evaluation, not historical champion-picking.
 - `TradeQualityModel` should model outcome distribution and risk, not only direction.
 - `OptionExpressionModel` must use timestamped option-chain snapshots, bid/ask, liquidity, IV/Greeks, conservative fills, and failure-to-fill assumptions.
@@ -38,33 +40,37 @@ Layer 6 is the final offline execution-gate model. It may approve, reject, resiz
 
 ## Phased Build Order
 
-### Phase 1: Data foundation + Layer 1
+### Phase 1: MarketRegimeModel
 
 Deliver market-state feature contracts, rolling/expanding regime model prototype, regime probabilities, transition risk, and evidence that regimes are stable, interpretable, and useful.
 
-### Phase 2: Layer 2 strategy library
+### Phase 2: SecuritySelectionModel
 
-Deliver a small strategy-family library, limited variants, regime-conditioned performance tables, disabled-strategy rules, and parameter-neighborhood stability evidence.
+Deliver ETF holdings exposure matrix, `stock_etf_exposure` derived table proposal, full-market scan candidate logic, long/short/watch/excluded candidate pools, optionability/liquidity filters, and sector/style transmission evidence.
 
-### Phase 3: Layer 3 signal-quality model
+### Phase 3: StrategySelectionModel
+
+Deliver a small strategy-family library, limited variants, regime/security-conditioned performance tables, disabled-strategy rules, and parameter-neighborhood stability evidence.
+
+### Phase 4: TradeQualityModel
 
 Deliver underlying-only trade labels, triple-barrier labeling, trade-quality score, expected return/target/stop/holding-time outputs, and score-decile performance evidence.
 
-### Phase 4: Layer 4 option selector
+### Phase 5: OptionExpressionModel
 
 Deliver option-chain snapshot feature contract, long call/put and debit-spread ranker, liquidity/IV/crush filters, expected option PnL, and conservative fill/slippage assumptions.
 
-### Phase 5: Layer 5 event overlay
+### Phase 6: EventOverlayModel
 
-Deliver scheduled event risk score, earnings IV-crush model, macro event risk model, abnormal price/volume/option activity detector, and overlay adjustment rules for the other layers.
+Deliver scheduled event risk score, earnings IV-crush model, macro event risk model, abnormal option/price/volume activity detector, stock/equity abnormal activity detector, and overlay adjustment rules for the other layers.
 
-### Phase 6: Layer 6 risk/execution gate
+### Phase 7: PortfolioRiskModel
 
 Deliver position sizing research, exposure monitor, order/execution rules, exit lifecycle rules, kill-switch logic, and PnL/attribution dashboard contract.
 
 ## Unified Decision Record
 
-Every candidate trade should ultimately produce a point-in-time decision record containing all six layer outputs. The decision record is the audit/replay/retraining spine.
+Every candidate trade should ultimately produce a point-in-time decision record containing all seven layer outputs. The decision record is the audit/replay/retraining spine.
 
 The canonical draft shape lives in `docs/07_system_model_architecture_rfc.md` until promoted through `trading-main` registry/contracts.
 
@@ -76,7 +82,7 @@ Upstream inputs and downstream outputs should be described by artifact reference
 
 ## Open Gaps
 
-- Exact first implementation slice under the new six-layer scope.
+- Exact first implementation slice under the new seven-layer scope.
 - Exact request shape consumed or produced by this repository.
 - Exact artifact, manifest, and ready-signal schema interactions.
 - Exact shared storage paths and references.

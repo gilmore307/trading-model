@@ -1,4 +1,4 @@
-# RFC: Six-Layer Trading Model Architecture
+# RFC: Seven-Layer Trading Model Architecture
 
 Status: draft  
 Date: 2026-04-27  
@@ -13,21 +13,23 @@ data foundation
   ↓
 1. MarketRegimeModel (`market_regime_model`)
   ↓
-2. StrategySelectionModel (`strategy_selection_model`)
+2. SecuritySelectionModel (`security_selection_model`)
   ↓
-3. TradeQualityModel (`trade_quality_model`)
+3. StrategySelectionModel (`strategy_selection_model`)
   ↓
-4. OptionExpressionModel (`option_expression_model`)
+4. TradeQualityModel (`trade_quality_model`)
   ↓
-5. EventOverlayModel (`event_overlay_model`)
+5. OptionExpressionModel (`option_expression_model`)
   ↓
-6. PortfolioRiskModel (`portfolio_risk_model`)
+6. EventOverlayModel (`event_overlay_model`)
+  ↓
+7. PortfolioRiskModel (`portfolio_risk_model`)
 ```
 
-Layer 5 and Layer 6 are not simple downstream stages:
+Layer 6 and Layer 7 are not simple downstream stages:
 
-- **Layer 5 is an overlay** that can modify Layers 1-4 and the final risk gate.
-- **Layer 6 is the final execution gate** and can reject, resize, delay, or alter any candidate trade.
+- **Layer 6 is an overlay** that can modify Layers 1-5 and the final risk gate.
+- **Layer 7 is the final execution gate** and can reject, resize, delay, or alter any candidate trade.
 
 The system should not answer only “buy or sell.” It should answer:
 
@@ -46,14 +48,15 @@ These names are canonical for docs, code, artifact metadata, and future registry
 
 | Layer | Model class | Stable id | Chinese name | Role |
 |---|---|---|---|---|
-| 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 | Detect point-in-time market regime, state probabilities, confidence, transition risk, and dominant drivers. |
-| 2 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Select strategy family/variant conditioned on regime, symbol, cost, and robustness evidence. |
-| 3 | `TradeQualityModel` | `trade_quality_model` | 交易质量模型 | Score candidate signals and predict trade outcome distribution, target/stop, MFE/MAE, and holding horizon. |
-| 4 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 | Choose stock/ETF/option/option-spread expression from signal forecast, option chain, liquidity, IV, and Greeks. |
-| 5 | `EventOverlayModel` | `event_overlay_model` | 事件覆盖模型 | Overlay scheduled/breaking event risk, abnormal activity, and event-memory adjustments across earlier layers and the risk gate. |
-| 6 | `PortfolioRiskModel` | `portfolio_risk_model` | 组合风控模型 | Final offline risk, sizing, exposure, execution-gate, exit-rule, and kill-switch model. |
+| 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 | Detect point-in-time market regime, sector/style conditions, state probabilities, confidence, transition risk, and dominant drivers. |
+| 2 | `SecuritySelectionModel` | `security_selection_model` | 标的选择模型 | Build candidate tradable universes from regime/sector style, ETF holdings exposure, stock relative strength, liquidity, optionability, and event exclusions. |
+| 3 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Select strategy family/variant conditioned on regime, candidate symbol, cost, and robustness evidence. |
+| 4 | `TradeQualityModel` | `trade_quality_model` | 交易质量模型 | Score candidate signals and predict trade outcome distribution, target/stop, MFE/MAE, and holding horizon. |
+| 5 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 | Choose stock/ETF/option/option-spread expression from signal forecast, option chain, liquidity, IV, and Greeks. |
+| 6 | `EventOverlayModel` | `event_overlay_model` | 事件覆盖模型 | Overlay scheduled/breaking event risk, abnormal activity, and event-memory adjustments across earlier layers and the risk gate. |
+| 7 | `PortfolioRiskModel` | `portfolio_risk_model` | 组合风控模型 | Final offline risk, sizing, exposure, execution-gate, exit-rule, and kill-switch model. |
 
-Naming rule: do not call Layer 6 simply `ExecutionModel`, because live/paper order placement is outside `trading-model`. `PortfolioRiskModel` may describe execution-gate logic but does not mutate brokerage state.
+Naming rule: do not call Layer 7 simply `ExecutionModel`, because live/paper order placement is outside `trading-model`. `PortfolioRiskModel` may describe execution-gate logic but does not mutate brokerage state.
 
 ## Non-negotiable Point-in-Time Rule
 
@@ -81,7 +84,7 @@ Backtests must use `available_time`/`tradeable_time`, not hindsight event interp
 
 ## Repository Boundary Impact
 
-The accepted `trading-model` scope is now the full six-layer offline modeling architecture. Implementation should still stay phased, with `MarketRegimeModel` as the likely first slice.
+The accepted `trading-model` scope is now the full seven-layer offline modeling architecture. Implementation should still stay phased, with `MarketRegimeModel` as the likely first slice.
 
 Recommended ownership split:
 
@@ -192,7 +195,120 @@ Avoid using full-history clustering to label the past.
 - strategy-performance separation by regime
 - drawdown warning usefulness
 
-## Layer 2: StrategySelectionModel
+## Layer 2: SecuritySelectionModel
+
+### Goal
+
+Construct the current tradable symbol universe after `MarketRegimeModel` identifies market, sector, and style conditions.
+
+It answers:
+
+- Which stocks or ETFs deserve attention now?
+- Which symbols are long candidates, short candidates, watch-only, or excluded?
+- Should the system trade sector ETFs directly, core ETF holdings, high-relative-strength leaders, laggards/rotation candidates, defensive stocks, or only very liquid mega-caps?
+- Which candidates are excluded because of liquidity, event risk, or poor optionability?
+
+This layer does not choose entry timing, strategy parameters, option contracts, or final position size.
+
+### Inputs
+
+- `MarketRegimeModel` outputs: market regime, sector/style regime, risk-on/risk-off score, transition risk, dominant macro drivers, sector ETF scores.
+- ETF holdings snapshots: ETF constituent weights for broad, sector, industry, and thematic ETFs.
+- Stock bars/liquidity: relative strength vs sector ETF and SPY, trend quality, volatility, gap behavior, volume expansion, spread/liquidity.
+- Optionability summaries: option availability, spread, volume, open interest, DTE coverage.
+- Event exclusions: earnings proximity, known macro/event shock windows, SEC/news risk, abnormal activity flags.
+
+### ETF holdings exposure matrix
+
+`SecuritySelectionModel` should use ETF holdings as the bridge from sector/style regime to individual tradable symbols.
+
+A core derived representation is:
+
+```text
+rows: stocks
+columns: ETFs
+values: holding weight
+```
+
+Example:
+
+```json
+{
+  "symbol": "NVDA",
+  "etf_membership": ["QQQ", "XLK", "SMH", "SOXX", "AIQ"],
+  "holding_weights": {
+    "QQQ": 0.08,
+    "XLK": 0.12,
+    "SMH": 0.20
+  }
+}
+```
+
+Then sector/style scores from `MarketRegimeModel` can be transmitted to stocks:
+
+```text
+stock_sector_exposure_score = sum(etf_score * stock_weight_in_etf)
+```
+
+### Candidate sources
+
+Do not rely only on ETF holdings. Use two candidate sources:
+
+1. **ETF holdings-driven universe** — captures core holdings, style exposure, ETF overlap, and crowded/funded themes.
+2. **Full-market scan-driven universe** — captures emerging opportunities that are not yet core ETF weights.
+
+### Scoring sketch
+
+```text
+target_score =
+  w1 * sector_regime_fit
++ w2 * etf_holding_exposure
++ w3 * stock_relative_strength
++ w4 * stock_trend_quality
++ w5 * liquidity_score
++ w6 * optionability_score
++ w7 * historical_strategy_fit
+- w8 * event_risk_penalty
+- w9 * crowding_penalty
+- w10 * volatility_penalty
+```
+
+### Output sketch
+
+```json
+{
+  "timestamp": "2026-04-28T09:30:00-04:00",
+  "market_regime": "low_vol_risk_on",
+  "preferred_sector_etfs": ["SMH", "XLK", "IGV", "QQQ"],
+  "avoid_sector_etfs": ["XLU", "XLRE"],
+  "long_candidates": [
+    {
+      "symbol": "NVDA",
+      "target_score": 0.91,
+      "sector_regime_fit": 0.94,
+      "etf_holding_exposure": {"SMH": 0.20, "XLK": 0.12, "QQQ": 0.08},
+      "relative_strength_score": 0.88,
+      "optionability_score": 0.95,
+      "event_risk_score": 0.32,
+      "candidate_reason": ["core holding of strong semiconductor ETFs", "outperforming SMH and QQQ", "high option liquidity"]
+    }
+  ],
+  "short_candidates": [],
+  "excluded_candidates": [
+    {"symbol": "ABC", "reason": "earnings within 24 hours"},
+    {"symbol": "DEF", "reason": "option spread too wide"}
+  ]
+}
+```
+
+### Data organization implication
+
+This layer creates a direct need for two data products:
+
+- `etf_holding_snapshot` — issuer-published constituent holdings, already scaffolded in `trading-data`.
+- `stock_etf_exposure` — derived point-in-time stock-to-ETF exposure table for sector/theme/style transmission.
+
+## Layer 3: StrategySelectionModel
 
 ### Goal
 
@@ -239,7 +355,7 @@ variant_score =
 
 Required validation methods should include walk-forward validation, parameter-neighborhood stability, cost sensitivity, and later PBO/CSCV or Deflated Sharpe Ratio where practical.
 
-## Layer 3: TradeQualityModel
+## Layer 4: TradeQualityModel
 
 ### Goal
 
@@ -285,7 +401,7 @@ Tree-based models are a good first slice because they are practical and interpre
 - target/stop accuracy
 - holding-period error
 
-## Layer 4: OptionExpressionModel
+## Layer 5: OptionExpressionModel
 
 ### Goal
 
@@ -335,7 +451,7 @@ option_score =
 
 Backtests must use real option-chain snapshots, bid/ask, conservative fill logic, slippage assumptions, and failure-to-fill handling.
 
-## Layer 5: EventOverlayModel
+## Layer 6: EventOverlayModel
 
 ### Goal
 
@@ -352,19 +468,20 @@ Event submodels:
 
 ### Overlay effects
 
-Layer 5 can:
+Layer 6 can:
 
 - raise Layer 1 transition risk
-- disable Layer 2 strategy families
-- reduce Layer 3 signal quality
-- alter Layer 4 DTE/structure/vega constraints
-- force Layer 6 size reduction, no-trade, or kill-switch behavior
+- alter Layer 2 candidate selection or exclusions
+- disable Layer 3 strategy families
+- reduce Layer 4 signal quality
+- alter Layer 5 DTE/structure/vega constraints
+- force Layer 7 size reduction, no-trade, or kill-switch behavior
 
 ### Information-leakage risk
 
 Never train pre-event models using post-event explanations. Every event row must preserve observable timing and source priority.
 
-## Layer 6: PortfolioRiskModel
+## Layer 7: PortfolioRiskModel
 
 ### Goal
 
@@ -373,10 +490,11 @@ Decide whether a candidate trade may be placed, at what size, through what execu
 Inputs include:
 
 - Layer 1 regime/confidence
-- Layer 2 strategy recommendation
-- Layer 3 signal quality
-- Layer 4 option structure/liquidity
-- Layer 5 event risk/opportunity
+- Layer 2 selected symbol/candidate pool context
+- Layer 3 strategy recommendation
+- Layer 4 signal quality
+- Layer 5 option structure/liquidity
+- Layer 6 event risk/opportunity
 - current positions, cash, margin
 - delta/gamma/theta/vega exposure
 - sector/security/event correlation
@@ -408,12 +526,17 @@ Every candidate trade should produce a complete point-in-time decision record fo
     "confidence": 0.67,
     "transition_risk": 0.42
   },
-  "layer_2_strategy": {
+  "layer_2_security_selection": {
+    "target_score": 0.91,
+    "preferred_sector_etfs": ["SMH", "XLK", "QQQ"],
+    "candidate_reason": ["core holding of strong semiconductor ETFs", "high option liquidity"]
+  },
+  "layer_3_strategy": {
     "family": "breakdown_trend_following",
     "variant_id": "BT_12_3ATR_5D",
     "strategy_score": 0.74
   },
-  "layer_3_signal_quality": {
+  "layer_4_signal_quality": {
     "trade_quality_score": 0.72,
     "probability_of_profit": 0.58,
     "expected_return": 0.024,
@@ -421,7 +544,7 @@ Every candidate trade should produce a complete point-in-time decision record fo
     "stop_price": 435.0,
     "expected_holding_days": 4
   },
-  "layer_4_option_selection": {
+  "layer_5_option_expression": {
     "structure": "call_debit_spread",
     "contracts": ["QQQ 2026-05-15 445C", "QQQ 2026-05-15 455C"],
     "expected_option_pnl": 1.35,
@@ -429,12 +552,12 @@ Every candidate trade should produce a complete point-in-time decision record fo
     "liquidity_score": 0.88,
     "option_score": 0.76
   },
-  "layer_5_event_overlay": {
+  "layer_6_event_overlay": {
     "event_risk_score": 0.38,
     "event_type": "none_major",
     "action": "normal"
   },
-  "layer_6_risk_execution": {
+  "layer_7_portfolio_risk": {
     "decision": "approved",
     "size": 5,
     "order_type": "limit",
@@ -481,7 +604,7 @@ Rules:
 
 ## Phased Implementation Recommendation
 
-Do not build all six layers at once.
+Do not build all seven layers at once.
 
 ### Phase 1: Data foundation + Layer 1
 
@@ -494,17 +617,28 @@ Deliver:
 - per-regime market behavior statistics
 - first evidence that regimes are stable, interpretable, and useful
 
-### Phase 2: Layer 2 strategy library
+### Phase 2: Layer 2 security selection
+
+Deliver:
+
+- ETF holdings exposure matrix
+- `stock_etf_exposure` derived table proposal
+- full-market scan candidate logic
+- long/short/watch/excluded candidate pools
+- optionability and liquidity filters
+- sector/style transmission evidence from ETF regime scores to stocks
+
+### Phase 3: Layer 3 strategy library
 
 Deliver:
 
 - small strategy-family library
 - limited variants
-- regime-conditioned performance table
+- regime/security-conditioned performance table
 - disabled strategy list
 - parameter-neighborhood stability evidence
 
-### Phase 3: Layer 3 signal quality model
+### Phase 4: Layer 4 signal quality model
 
 Deliver:
 
@@ -514,7 +648,7 @@ Deliver:
 - expected return / target / stop / holding-time outputs
 - score-decile performance evidence
 
-### Phase 4: Layer 4 option selector
+### Phase 5: Layer 5 option selector
 
 Deliver:
 
@@ -523,7 +657,7 @@ Deliver:
 - liquidity/IV/crush filters
 - expected option PnL and fill/slippage assumptions
 
-### Phase 5: Layer 5 event overlay
+### Phase 6: Layer 6 event overlay
 
 Deliver:
 
@@ -531,9 +665,10 @@ Deliver:
 - earnings IV-crush model
 - macro event risk model
 - abnormal option/price/volume activity detector
-- overlay adjustment rules for Layers 1-4 and Layer 6
+- stock/equity abnormal activity detector
+- overlay adjustment rules for Layers 1-5 and Layer 7
 
-### Phase 6: Layer 6 risk/execution gate
+### Phase 7: Layer 7 risk/execution gate
 
 Deliver:
 
@@ -548,8 +683,9 @@ Deliver:
 
 Before implementation, decide:
 
-1. Does `trading-model` expand from market-state-only to the full six-layer offline modeling repository, or do Layers 2-6 get separate component owners?
+1. What exact ETF basket and base equity universe should `SecuritySelectionModel` use first?
 2. What is the first tradable universe for Phase 1 and Phase 2? ETF basket only, liquid mega-cap equities, or both?
 3. What timestamp fields should be globally registered for model-facing event/evidence rows: `event_time`, `available_time`, `tradeable_time`, and ET/UTC variants?
 4. What is the first label horizon for underlying trades: intraday, 1D, 5D, 10D, or multi-horizon?
-5. Should Phase 1 produce only offline research artifacts, or also a ready-signal contract for later execution systems?
+5. Should `stock_etf_exposure` be registered as a derived data kind in `trading-main`, or remain model-local until SecuritySelectionModel proves useful?
+6. Should Phase 1 produce only offline research artifacts, or also a ready-signal contract for later execution systems?

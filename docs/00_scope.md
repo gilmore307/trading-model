@@ -2,16 +2,17 @@
 
 ## Purpose
 
-`trading-model` is the offline modeling repository for the six-layer trading decision system.
+`trading-model` is the offline modeling repository for the seven-layer trading decision system.
 
 It owns point-in-time model research, training/evaluation workflows, model-local feature/label logic, model verdicts, and reproducibility evidence for:
 
 1. MarketRegimeModel (`market_regime_model`);
-2. StrategySelectionModel (`strategy_selection_model`);
-3. TradeQualityModel (`trade_quality_model`);
-4. OptionExpressionModel (`option_expression_model`);
-5. EventOverlayModel (`event_overlay_model`);
-6. PortfolioRiskModel (`portfolio_risk_model`).
+2. SecuritySelectionModel (`security_selection_model`);
+3. StrategySelectionModel (`strategy_selection_model`);
+4. TradeQualityModel (`trade_quality_model`);
+5. OptionExpressionModel (`option_expression_model`);
+6. EventOverlayModel (`event_overlay_model`);
+7. PortfolioRiskModel (`portfolio_risk_model`).
 
 The repository does **not** place live orders. It produces offline research artifacts, model outputs, decision-record prototypes, validation evidence, and contract proposals for downstream systems.
 
@@ -19,6 +20,7 @@ The repository does **not** place live orders. It produces offline research arti
 
 - Point-in-time model research and validation workflows.
 - Market-state/regime discovery from market-only features.
+- Security/target selection and candidate universe construction from regime/style context, ETF holdings exposure, full-market scans, liquidity, optionability, and event exclusions.
 - Regime-conditioned strategy family/variant selection research.
 - Signal-quality, meta-labeling, target/stop, MFE/MAE, and holding-period models.
 - Option expression selection research using option-chain snapshots, liquidity, IV, Greeks, and conservative fill assumptions.
@@ -47,7 +49,7 @@ The repository should prefer explicit point-in-time interfaces, fixture-backed t
 
 ## Boundary Rules
 
-- Component-local modeling code belongs here when it matches the six-layer offline modeling role.
+- Component-local modeling code belongs here when it matches the seven-layer offline modeling role.
 - Raw acquisition and source-specific cleaning belong in `trading-data`.
 - Global contracts, registry entries, shared helpers, and reusable templates belong in `trading-main`.
 - Durable storage layout and retention belong in `trading-storage` unless this repository is defining a proposed contract for review.
