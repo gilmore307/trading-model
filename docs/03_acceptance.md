@@ -45,7 +45,9 @@ python3 -m compileall -q src scripts tests
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 PYTHONPATH=src python3 scripts/generate_model_01_market_regime.py --help
 PYTHONPATH=src python3 scripts/ensure_model_governance_schema.py --help
-PYTHONPATH=src python3 scripts/ensure_model_governance_schema.py
+PYTHONPATH=src python3 scripts/ensure_model_governance_schema.py --dry-run
+PYTHONPATH=src python3 scripts/clear_model_development_database.py --help
+PYTHONPATH=src python3 scripts/clear_model_development_database.py --dry-run
 PYTHONPATH=src python3 scripts/evaluate_model_01_market_regime.py --help
 PYTHONPATH=src python3 scripts/evaluate_model_01_market_regime.py
 git diff --check

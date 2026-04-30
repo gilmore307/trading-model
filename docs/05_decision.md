@@ -429,8 +429,8 @@ JSONB payload columns are allowed as extension points, but stable shared fields 
 - The schema is reusable across model layers while production output tables remain model-specific.
 - `required_feature_key` supersedes older `required_derived_key` wording for active model data requests.
 - Concrete registry column registration remains deferred until the schema is exercised by the first `MarketRegimeModel` evaluation harness and proves stable.
-- Default tests use fake cursors and do not touch a durable database; runtime schema creation requires explicit `--apply`.
-- During development, temporary SQL files may be written under local gitignored `storage/`, such as `storage/sql/model_governance_schema.sql`.
+- Default tests use fake cursors and CLI dry-run modes, and do not touch a durable database.
+- Runtime schema creation may use the development database directly; clear the `trading_model` development schema at the end of development runs with `scripts/clear_model_development_database.py`.
 
 ## D015 - Keep first MarketRegimeModel evaluation harness dry-run only
 
@@ -470,29 +470,23 @@ The initial labels are future shifted feature-return labels for SPY (`spy_return
 - A future database-writing path must be a separate reviewed change with explicit non-default write controls.
 - The first harness is intentionally about plumbing and reproducibility, not yet about claiming model quality.
 
-## D016 - Write temporary development SQL under local storage
+## D016 - Use development database with explicit cleanup instead of temporary SQL files
 
 Date: 2026-04-30
 Status: Accepted
 
 ### Context
 
-Development work sometimes needs inspectable SQL output before a schema is promoted or applied. Chentong clarified that temporary SQL files are allowed under local storage, while development-stage data must not enter the real database by default.
+Development work initially used local temporary SQL files to avoid writing any rows or tables into the configured database. Chentong clarified that, because the trading database currently has no durable production data, development work may use the database directly as long as the database is cleared after development.
 
 ### Decision
 
-Use local gitignored `storage/` for temporary SQL files during development.
+Do not make temporary SQL files the default development path.
 
-For model governance DDL, `scripts/ensure_model_governance_schema.py` now defaults to writing:
-
-```text
-storage/sql/model_governance_schema.sql
-```
-
-It does not open a PostgreSQL connection unless explicitly run with `--apply`.
+`ensure_model_governance_schema.py` now creates the generic `trading_model` governance/evaluation tables by default and keeps `--dry-run` for stdout SQL inspection. `clear_model_development_database.py` clears the `trading_model` schema after development runs and requires an explicit confirmation token for destructive cleanup.
 
 ### Consequences
 
-- Developers can inspect generated SQL safely without mutating durable database state.
-- `storage/` is ignored by Git in `trading-model`; generated SQL must not be committed unless separately promoted to a reviewed contract artifact.
-- Any future script that emits temporary SQL should prefer `storage/sql/` and keep database writes behind explicit non-default flags.
+- Development can validate SQL paths against the configured database instead of only file output.
+- Cleanup is scoped to the `trading_model` schema; scripts must not drop OpenClaw/system tables or unrelated component schemas.
+- Default tests still use fake cursors and dry-run CLI paths so test runs do not mutate the database.

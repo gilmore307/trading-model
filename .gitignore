@@ -19,7 +19,6 @@ artifacts/
 outputs/
 runs/
 logs/
-storage/
 tmp/
 *.log
 
