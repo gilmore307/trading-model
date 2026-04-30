@@ -172,64 +172,71 @@ No supervised labels are assigned. No clustering is required for V1. Future-retu
 
 ### Goal
 
-Construct the current tradable ETF/security universe after `MarketRegimeModel` identifies market, sector, and style conditions.
+Build candidate-level selection parameters for the current tradable sector/industry ETF and stock universe after `MarketRegimeModel` identifies market, sector, and style conditions.
 
 It answers:
 
-- Which stocks or ETFs deserve attention now?
-- Which symbols are long candidates, short candidates, watch-only, or excluded?
-- Which sector/industry ETFs deserve attention directly, and which ETF holdings deserve stock-level evaluation?
-- Which candidates are excluded because of liquidity, event risk, or poor optionability?
+- What is the adjusted `candidate_selection_parameter` for each eligible sector/industry ETF or stock?
+- Which candidates are eligible, watch-only, or gated out because of liquidity, event risk, poor optionability, or unstable trend state?
+- Which sector/industry ETF market parameter should be transmitted into stock-level candidate vectors through ETF holdings exposure?
 
-This layer does not choose entry timing, strategy parameters, option contracts, final position size, or final portfolio weights.
+This layer does not output "the selected ETF", entry timing, strategy parameters, option contracts, final position size, or final portfolio weights. Sorting by `candidate_selection_parameter` and choosing the highest-parameter ETF is a downstream usage pattern, not the durable Model 2 output contract.
 
 ### Inputs
 
 - `MarketRegimeModel` outputs: continuous market-state vector, risk-on/risk-off context, transition pressure, dominant macro drivers, sector/style condition factors. It does not output ETF rankings or selected securities.
-- Model 2 market-context parameters derived from the Layer 1 vector: base tape trend certainty, transition/turning risk, and sector-weighted market context scores.
+- Model 2 market parameters derived from the Layer 1 vector: base tape trend certainty, transition/turning risk, and sector-weighted market parameters.
 - ETF holdings snapshots: constituent weights for eligible sector/industry equity ETFs. Broad index ETFs and non-equity macro ETFs may remain state inputs or filters, but they are not V1 tradable ETF candidates.
 - ETF and stock bars/liquidity: relative strength vs sector ETF and SPY, trend clarity, trend persistence, volatility fit, gap behavior, volume expansion, spread/liquidity.
 - Optionability summaries: option availability, spread, volume, open interest, DTE coverage.
 - Event exclusions: earnings proximity, known macro/event shock windows, SEC/news risk, abnormal activity flags.
 
-### Market-context parameter
+### Market and selection parameters
 
-`SecuritySelectionModel` should not feed the full Layer 1 vector directly into every candidate score without interpretation. It first compresses the market-state vector into a market-context parameter that can become part of each ETF/stock candidate vector.
+`SecuritySelectionModel` should not feed the full Layer 1 vector directly into every candidate parameter without interpretation. It also should not encode candidate choice as a hand-written additive formula. Instead, it owns a parameter adjustment step: convert the market-state vector into market parameters, attach the appropriate market parameter to each candidate vector, and adjust that candidate's final selection parameter.
 
-Core derived fields:
+Core conceptual parameters:
 
 ```text
-market_trend_certainty_score
-market_transition_risk_score
-base_market_context_score
-sector_weighted_market_context_score
-candidate_market_context_score
+market_trend_certainty_parameter
+market_transition_risk_parameter
+base_market_parameter
+sector_weighted_market_parameter
+candidate_market_parameter
+candidate_selection_parameter
 ```
 
 Interpretation:
 
-- `market_trend_certainty_score` measures whether the overall tape has a clear, coherent trend backdrop.
-- `market_transition_risk_score` measures broad-market turning/phase-change risk.
-- `base_market_context_score` is the unweighted market parameter used when a candidate has no reliable sector/industry ETF mapping.
-- `sector_weighted_market_context_score` is a sector/industry-specific version of the market parameter, produced by applying a sector factor-weight vector to the Layer 1 state vector.
-- `candidate_market_context_score` is the market parameter inserted into a specific ETF or stock candidate vector. For a sector/industry ETF it equals that ETF's sector-weighted value; for a stock with ETF exposure it is the exposure-weighted blend of its mapped sector/industry ETF values; for an unmapped stock it falls back to `base_market_context_score`.
+- `market_trend_certainty_parameter` captures whether the overall tape has a clear, coherent trend backdrop.
+- `market_transition_risk_parameter` captures broad-market turning/phase-change risk.
+- `base_market_parameter` is the unweighted market parameter used when a candidate has no reliable sector/industry ETF mapping.
+- `sector_weighted_market_parameter` is a sector/industry-specific version of the market parameter, produced by applying a sector factor-weight vector to the Layer 1 state vector.
+- `candidate_market_parameter` is the market parameter inserted into a specific ETF or stock candidate vector. For a sector/industry ETF it equals that ETF's sector-weighted value; for a stock with ETF exposure it is the exposure-weighted blend of its mapped sector/industry ETF values; for an unmapped stock it falls back to `base_market_parameter`.
+- `candidate_selection_parameter` is the final Model 2 parameter for that candidate. It is the output to persist; selecting the highest value is a consumer action.
 
 Sketch:
 
 ```text
-market_trend_certainty_score = f(trend_factor, breadth_factor, sector_rotation_factor, correlation_stress_factor)
-market_transition_risk_score = f(transition_pressure, volatility_stress_factor, credit_stress_factor)
-base_market_context_score = market_trend_certainty_score - market_transition_risk_score
+base_market_parameter = market_parameterizer(model_01_market_regime_vector)
 
-sector_weighted_market_context_score[sector_etf] =
-  dot(model_01_market_regime_vector, sector_etf_factor_weight_vector)
+sector_weighted_market_parameter[sector_etf] =
+  market_parameterizer(model_01_market_regime_vector, sector_etf_factor_weight_vector)
 
-candidate_market_context_score =
-  exposure_weighted_sum(sector_weighted_market_context_score, stock_etf_exposure)
-  or base_market_context_score when no sector/industry ETF mapping exists
+candidate_market_parameter =
+  sector_weighted_market_parameter[candidate_symbol]                         # sector/industry ETF
+  or exposure_weighted_blend(sector_weighted_market_parameter, stock_etf_exposure)
+  or base_market_parameter                                                   # unmapped stock fallback
+
+candidate_selection_parameter = parameter_adjuster(
+  candidate_market_parameter,
+  candidate_trend_state_vector,
+  candidate_certainty_state_vector,
+  tradability_and_risk_vector
+)
 ```
 
-This creates the bridge between market state and target state without moving selection into Layer 1. Model 1 describes the tape; Model 2 derives the market-context parameter and combines it with each candidate's own trend, certainty, liquidity, optionability, and event-risk vector.
+`parameter_adjuster` may start as a transparent calibrated rule, monotonic transform, or small learned model, but the contract should remain parameter-centric. The model's responsibility is to produce stable candidate-level parameters; top-N selection is an operational usage of those parameters.
 
 ### ETF holdings exposure matrix
 
@@ -257,83 +264,81 @@ Example:
 }
 ```
 
-Then Model 2 ETF trend-certainty scores can be transmitted to stocks:
+Then sector/industry ETF market parameters can be transmitted to stocks:
 
 ```text
-stock_etf_trend_exposure_score = sum(etf_trend_certainty_score * stock_weight_in_etf)
+stock_candidate_market_parameter = exposure_weighted_blend(sector_weighted_market_parameter, stock_etf_exposure)
 ```
 
 ### Tradable ETF universe
 
-V1 ETF selection is limited to sector/industry equity ETFs whose holdings can transmit into stock candidates. The selection universe excludes broad index/style ETFs such as `SPY`, `QQQ`, `IWM`, `DIA`, and `RSP`, and non-equity macro/cross-asset ETFs such as `TLT`, `IEF`, `SHY`, `GLD`, `SLV`, `DBC`, `USO`, `UUP`, `VIXY`, `HYG`, and `LQD`.
+V1 ETF parameter rows are limited to sector/industry equity ETFs whose holdings can transmit into stock candidates. The tradable ETF universe excludes broad index/style ETFs such as `SPY`, `QQQ`, `IWM`, `DIA`, and `RSP`, and non-equity macro/cross-asset ETFs such as `TLT`, `IEF`, `SHY`, `GLD`, `SLV`, `DBC`, `USO`, `UUP`, `VIXY`, `HYG`, and `LQD`.
 
-Excluded ETFs can still be useful as MarketRegimeModel state inputs, risk filters, benchmark relatives, or portfolio-risk references. They are not selected as Model 2 ETF trade candidates in V1.
+Excluded ETFs can still be useful as MarketRegimeModel state inputs, risk filters, benchmark relatives, or portfolio-risk references. They are not emitted as Model 2 tradable ETF parameter rows in V1.
 
-### Selection objective
+### Parameter objective
 
-`SecuritySelectionModel` does **not** select the sector/industry ETF or stock with the highest realized or expected return. The selection target is:
+`SecuritySelectionModel` does **not** output the sector/industry ETF or stock with the highest realized or expected return. It adjusts `candidate_selection_parameter` higher when the candidate has:
 
 ```text
 clear, persistent trend
-+ high certainty / low ambiguity
-+ enough liquidity and optionability
-+ acceptable event and volatility risk
+high certainty / low ambiguity
+enough liquidity and optionability
+acceptable event and volatility risk
+a market parameter that supports this candidate's sector/industry state
 ```
 
-Forward returns are labels for evaluation and calibration, not the production ranking target. Production ranking should prefer the ETF or stock whose trend is most legible, persistent, and tradable under the current market-state context.
+Forward returns are labels for evaluation and calibration, not direct production inputs. Ranking by `candidate_selection_parameter` is allowed as a downstream usage pattern, but the model output remains a candidate-parameter surface.
 
 ### Candidate sources
 
-Do not rely only on ETF holdings. Use two candidate sources:
+Do not rely only on ETF holdings. Build parameter rows from two candidate sources:
 
 1. **Sector/industry ETF holdings-driven universe** — captures core holdings, style exposure, ETF overlap, and crowded/funded themes.
 2. **Full-market scan-driven universe** — captures emerging opportunities that are not yet core ETF weights.
 
-### Scoring sketch
+### Parameter adjustment sketch
 
 ```text
-target_score =
-  w1 * candidate_market_context_score
-+ w2 * sector_regime_fit
-+ w3 * etf_holding_exposure
-+ w4 * relative_strength_score
-+ w5 * trend_clarity_score
-+ w6 * trend_persistence_score
-+ w7 * certainty_score
-+ w8 * liquidity_score
-+ w9 * optionability_score
-- w10 * event_risk_penalty
-- w11 * crowding_penalty
-- w12 * volatility_instability_penalty
-- w13 * market_transition_risk_penalty
+candidate_selection_parameter = parameter_adjuster(
+  candidate_market_parameter,
+  trend_clarity_score,
+  trend_persistence_score,
+  relative_strength_consistency_score,
+  signal_agreement_score,
+  liquidity_score,
+  optionability_score,
+  choppiness_state,
+  volatility_instability_state,
+  event_risk_state
+)
 ```
+
+The sketch deliberately avoids fixed `+ w` / `- w` arithmetic. Additive coefficients may be one implementation candidate, but they are not the model contract.
 
 ### Output sketch
 
 ```json
 {
-  "timestamp": "2026-04-28T09:30:00-04:00",
-  "market_regime": "low_vol_risk_on",
-  "preferred_industry_etfs": ["SMH", "XLK", "IGV", "XBI"],
-  "industry_etf_candidates": [
+  "available_time": "2026-04-28T09:30:00-04:00",
+  "parameter_rows": [
     {
-      "symbol": "SMH",
-      "target_score": 0.89,
-      "candidate_market_context_score": 0.78,
-      "market_transition_risk_score": 0.16,
+      "candidate_symbol": "SMH",
+      "candidate_type": "industry_etf",
+      "candidate_selection_parameter": 0.89,
+      "candidate_market_parameter": 0.78,
+      "market_transition_risk_parameter": 0.16,
       "trend_clarity_score": 0.92,
       "trend_persistence_score": 0.87,
       "certainty_score": 0.84,
+      "eligibility_state": "eligible",
       "candidate_reason": ["clear semiconductor leadership", "persistent relative strength", "acceptable volatility"]
-    }
-  ],
-  "avoid_industry_etfs": ["XLRE", "XRT"],
-  "long_candidates": [
+    },
     {
-      "symbol": "NVDA",
-      "target_score": 0.91,
-      "candidate_market_context_score": 0.76,
-      "sector_regime_fit": 0.94,
+      "candidate_symbol": "NVDA",
+      "candidate_type": "stock",
+      "candidate_selection_parameter": 0.91,
+      "candidate_market_parameter": 0.76,
       "etf_holding_exposure": {"SMH": 0.20, "XLK": 0.12, "SOXX": 0.09},
       "relative_strength_score": 0.88,
       "trend_clarity_score": 0.91,
@@ -341,13 +346,13 @@ target_score =
       "certainty_score": 0.84,
       "optionability_score": 0.95,
       "event_risk_score": 0.32,
+      "eligibility_state": "eligible",
       "candidate_reason": ["core holding of strong semiconductor ETFs", "persistent relative strength vs SMH and XLK", "clear trend with high option liquidity"]
     }
   ],
-  "short_candidates": [],
-  "excluded_candidates": [
-    {"symbol": "ABC", "reason": "earnings within 24 hours"},
-    {"symbol": "DEF", "reason": "option spread too wide"}
+  "gated_rows": [
+    {"candidate_symbol": "ABC", "eligibility_state": "gated", "reason": "earnings within 24 hours"},
+    {"candidate_symbol": "DEF", "eligibility_state": "gated", "reason": "option spread too wide"}
   ]
 }
 ```
@@ -580,10 +585,9 @@ Every candidate trade should produce a complete point-in-time decision record fo
     "transition_risk": 0.42
   },
   "layer_2_security_selection": {
-    "target_score": 0.91,
-    "candidate_market_context_score": 0.76,
-    "market_transition_risk_score": 0.16,
-    "preferred_industry_etfs": ["SMH", "XLK", "IGV"],
+    "candidate_selection_parameter": 0.91,
+    "candidate_market_parameter": 0.76,
+    "market_transition_risk_parameter": 0.16,
     "trend_clarity_score": 0.90,
     "certainty_score": 0.84,
     "candidate_reason": ["core holding of strong semiconductor ETFs", "clear persistent trend", "high option liquidity"]
@@ -741,7 +745,7 @@ Deliver:
 Before implementation, decide:
 
 1. What exact sector/industry ETF basket and base equity universe should `SecuritySelectionModel` use first?
-2. What initial sector factor-weight matrix should convert the Layer 1 vector into `sector_weighted_market_context_score`?
+2. What initial sector factor-weight matrix should convert the Layer 1 vector into `sector_weighted_market_parameter`?
 3. What is the first tradable universe for Phase 2? Sector/industry ETF basket only, liquid mega-cap equities, or both?
 4. What timestamp fields should be globally registered for model-facing event/evidence rows: `event_time`, `available_time`, `tradeable_time`, and ET/UTC variants?
 5. What is the first label horizon for underlying trades: intraday, 1D, 5D, 10D, or multi-horizon?

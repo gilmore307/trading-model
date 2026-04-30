@@ -585,16 +585,16 @@ The current market-state vector should help downstream selection, but it should 
 
 Remove per-ETF affinity/ranking from `MarketRegimeModel` V1. Layer 1 returns only the continuous point-in-time market-state vector keyed by `available_time`.
 
-`SecuritySelectionModel` owns sector/industry ETF and stock selection. It may consume the Layer 1 state vector, sector/industry ETF and stock trend features, relative strength, ETF holdings exposure, liquidity, optionability, and event exclusions to rank ETFs and securities.
+`SecuritySelectionModel` owns candidate-level selection-parameter construction for sector/industry ETFs and stocks. It may consume the Layer 1 state vector, sector/industry ETF and stock trend features, relative strength, ETF holdings exposure, liquidity, optionability, and event exclusions to adjust each candidate's selection parameter.
 
-The Layer 2 selection objective is not maximum realized or expected return. The primary target is the clearest and most certain tradable trend: trend clarity, trend persistence, relative strength consistency, signal agreement, adequate liquidity/optionability, and controlled event/volatility ambiguity. Future returns are evaluation labels for calibration, not direct production ranking inputs.
+The Layer 2 parameter objective is not maximum realized or expected return. The final `candidate_selection_parameter` should be higher for the clearest and most certain tradable trend: trend clarity, trend persistence, relative strength consistency, signal agreement, adequate liquidity/optionability, and controlled event/volatility ambiguity. Future returns are evaluation labels for calibration, not direct production ranking inputs.
 
 ### Consequences
 
 - `model_01_market_regime` remains a pure state-description output.
 - No `model_01_market_regime_etf_affinity` output is produced by Model 1.
-- Model 2 should define ETF/security scores such as `trend_clarity_score`, `trend_persistence_score`, `certainty_score`, and `target_score`.
-- Evaluation may still ask whether selected high-certainty trends later performed well, but that is downstream validation rather than Layer 1 construction.
+- Model 2 should define candidate state features such as `trend_clarity_score`, `trend_persistence_score`, and `certainty_score`, plus a final `candidate_selection_parameter`.
+- Evaluation may still ask whether high-parameter, high-certainty trends later performed well, but that is downstream validation rather than Layer 1 construction.
 
 
 ## D020 - SecuritySelectionModel ETF candidates are sector/industry ETFs only
@@ -614,39 +614,64 @@ Broad market/style ETFs such as `SPY`, `QQQ`, `IWM`, `DIA`, and `RSP`, and non-e
 
 ### Consequences
 
-- Layer 2 ETF candidate scoring should use names such as `industry_etf_candidates` / `preferred_industry_etfs` rather than implying broad ETF selection.
+- Layer 2 ETF output should be parameter rows such as `candidate_type = industry_etf` with `candidate_selection_parameter`, rather than names implying the model directly selects a preferred ETF list.
 - ETF holdings exposure work should prioritize sector/industry equity ETFs.
-- Model 2 still ranks candidates by trend clarity, persistence, certainty, and tradability, not by highest realized or expected return.
+- Model 2 still adjusts candidate parameters according to trend clarity, persistence, certainty, and tradability, not by highest realized or expected return.
 - Direct trading of broad/macro ETFs, if ever needed, should be modeled as a separate later scope rather than mixed into `SecuritySelectionModel` V1.
 
 
-## D021 - SecuritySelectionModel derives market-context parameters for candidate vectors
+## D021 - SecuritySelectionModel derives market parameters for candidate vectors
 
 Date: 2026-04-30
 Status: Accepted
 
 ### Context
 
-The bridge from market state to target selection should be explicit. Passing the full Layer 1 vector directly into every ETF/stock score is hard to interpret, while selecting ETFs inside Layer 1 would blur model boundaries and raise leakage risk. Chentong proposed compressing the broad market vector into a market parameter that becomes part of each target candidate vector.
+The bridge from market state to target selection should be explicit. Passing the full Layer 1 vector directly into every ETF/stock parameter is hard to interpret, while selecting ETFs inside Layer 1 would blur model boundaries and raise leakage risk. Chentong proposed compressing the broad market vector into a market parameter that becomes part of each target candidate vector.
 
 The parameter should focus on trend certainty and broad-market turning risk. Because sectors respond differently to the same broad tape, each sector/industry ETF should also have its own weighted market parameter. Stocks that do not map into the eligible sector/industry ETF universe should use the unweighted base market parameter.
 
 ### Decision
 
-`SecuritySelectionModel` owns the transformation from `model_01_market_regime` into candidate-level market-context fields. The initial conceptual fields are:
+`SecuritySelectionModel` owns the transformation from `model_01_market_regime` into candidate-level market-parameter fields. The initial conceptual fields are:
 
-- `market_trend_certainty_score`;
-- `market_transition_risk_score`;
-- `base_market_context_score`;
-- `sector_weighted_market_context_score`;
-- `candidate_market_context_score`.
+- `market_trend_certainty_parameter`;
+- `market_transition_risk_parameter`;
+- `base_market_parameter`;
+- `sector_weighted_market_parameter`;
+- `candidate_market_parameter`;
+- `candidate_selection_parameter`.
 
-For sector/industry ETF candidates, `candidate_market_context_score` equals that ETF's sector-weighted market context. For stock candidates with sector/industry ETF exposure, it is the exposure-weighted blend of the mapped ETF context scores. For unmapped stocks, it falls back to `base_market_context_score`.
+For sector/industry ETF candidates, `candidate_market_parameter` equals that ETF's sector-weighted market parameter. For stock candidates with sector/industry ETF exposure, it is the exposure-weighted blend of the mapped ETF market parameters. For unmapped stocks, it falls back to `base_market_parameter`.
+
+`candidate_selection_parameter` is the final Model 2 parameter for each candidate. It is adjusted using the candidate market parameter and the candidate's own trend/certainty/tradability/risk state. Ranking or choosing the highest value is a downstream usage pattern, not the persisted model-output contract.
 
 ### Consequences
 
-- Model 1 remains a pure market-state vector; Model 2 creates the selection-facing market parameter.
-- Model 2 candidate vectors include both market context and target-specific state: trend clarity, trend persistence, certainty, relative strength, liquidity, optionability, and event risk.
-- Sector/industry ETF selection can rank directly by sector-weighted market context plus the ETF's own trend/certainty state.
+- Model 1 remains a pure market-state vector; Model 2 creates the selection-facing parameters.
+- Model 2 candidate vectors include both market parameter and target-specific state: trend clarity, trend persistence, certainty, relative strength, liquidity, optionability, and event risk.
+- Sector/industry ETF parameter rows can be sorted by downstream users, but Model 2 itself should persist the parameter surface rather than a selected ETF list.
 - The first Model 2 implementation needs an explicit sector factor-weight matrix mapping Layer 1 factors to eligible sector/industry ETFs.
 - Field names remain model-local until implementation proves the shape and any shared registry registration is reviewed.
+
+
+## D022 - SecuritySelectionModel output is an adjusted parameter surface, not top-candidate selection
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+A previous sketch expressed Model 2 as an additive `target_score` formula and examples showed preferred ETF/candidate lists. Chentong clarified that this is the wrong contract: Model 2's main responsibility is to adjust a candidate-level parameter. Selecting the highest-parameter ETF is how a downstream consumer uses the parameter surface, not what Model 2 itself outputs.
+
+### Decision
+
+Define Model 2's core output as candidate-level parameter rows keyed by `available_time + candidate_symbol` with a final `candidate_selection_parameter` and supporting candidate state fields.
+
+Do not define the model contract as direct `+ w` / `- w` arithmetic, a top-ETF picker, or a preferred ETF list. A linear formula may be tested later as one implementation candidate, but the durable contract is a parameter-adjustment surface.
+
+### Consequences
+
+- Replace `target_score`/preferred-list language with `candidate_selection_parameter` and candidate parameter rows.
+- Ranking, top-N selection, and choosing the highest sector/industry ETF are downstream usage of Model 2 output.
+- Model 2 acceptance should test parameter stability, point-in-time correctness, monotonic sanity, and calibration against future labels, not whether the model directly emits one chosen ETF.

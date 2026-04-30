@@ -27,7 +27,7 @@ point-in-time data artifacts
 
 - Every workflow must be point-in-time: no future data, no full-history fitting for historical predictions, no post-event explanation leakage.
 - `MarketRegimeModel` must be market/data-feature based and limited to state description; strategy outcomes, ETF rankings, and security selection labels are attached only after state construction for downstream evaluation.
-- `SecuritySelectionModel` first derives base and sector-weighted market-context parameters from the Layer 1 vector, then builds tradable sector/industry ETF and stock candidate pools from those market parameters, sector/industry ETF holdings exposure, full-market scans, trend clarity, trend persistence, certainty, liquidity, optionability, and event exclusions; it does not choose entry timing or simply chase highest return.
+- `SecuritySelectionModel` first derives base and sector-weighted market parameters from the Layer 1 vector, then adjusts a `candidate_selection_parameter` for each tradable sector/industry ETF or stock using those market parameters, ETF holdings exposure, full-market scans, trend clarity, trend persistence, certainty, liquidity, optionability, and event exclusions. Ranking or choosing the highest parameter is downstream usage, not the Model 2 output contract.
 - `StrategySelectionModel` must use walk-forward or similarly time-safe evaluation, not historical champion-picking.
 - `TradeQualityModel` should model outcome distribution and risk, not only direction.
 - `OptionExpressionModel` V1 is limited to single-leg long call / long put option expressions and must use timestamped option-chain snapshots, bid/ask, liquidity, IV/Greeks, conservative fills, and failure-to-fill assumptions.
@@ -46,7 +46,7 @@ Deliver market-state feature contracts, rolling/expanding state-vector prototype
 
 ### Phase 2: SecuritySelectionModel
 
-Deliver base/sector-weighted market-context parameter design, sector/industry ETF holdings exposure matrix, `stock_etf_exposure` derived table proposal, sector/industry ETF and stock trend-clarity/certainty scoring, full-market scan candidate logic, long/short/watch/excluded candidate pools, optionability/liquidity filters, and sector/style transmission evidence.
+Deliver base/sector-weighted market-parameter design, sector/industry ETF holdings exposure matrix, `stock_etf_exposure` derived table proposal, sector/industry ETF and stock candidate-selection-parameter adjustment, full-market scan candidate sources, eligibility/gating rules, optionability/liquidity filters, and sector/style transmission evidence.
 
 ### Phase 3: StrategySelectionModel
 
