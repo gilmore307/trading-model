@@ -10,3 +10,17 @@ Boundary:
 - No clustering, hard state labels, supervised regime labels, provider calls, or durable writes in the pure generator.
 
 Runtime SQL reads/writes are isolated in `scripts/generate_model_01_market_regime.py`.
+
+## Config
+
+`config/factor_specs.toml` owns factor membership, signal directions, and reducer choices.
+
+Supported group forms:
+
+- explicit columns: `columns = ["hyg_lqd_30m", ...]`
+- symbol/suffix expansion: `symbols = ["spy", "qqq"]` plus `suffixes = ["return_20d"]`
+
+Supported reducers:
+
+- `bounded_mean` → `tanh(mean(zscores) / 2)`
+- `bounded_abs_mean` → `tanh(mean(abs(zscores)) / 2)`

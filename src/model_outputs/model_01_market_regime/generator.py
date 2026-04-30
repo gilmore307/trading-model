@@ -5,33 +5,24 @@ The generator converts point-in-time rows from
 ``trading_model.model_01_market_regime``. V1 intentionally avoids clustering,
 hard state ids, supervised labels, and human-readable regime labels. The primary
 output is a bounded continuous market-condition vector keyed by ``available_time``.
+
+Factor membership, signal direction, and reducer choice live in
+``config/factor_specs.toml`` so the model contract can evolve without editing
+execution code.
 """
 from __future__ import annotations
 
 import math
+import tomllib
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from statistics import mean, pstdev
 from typing import Any, Callable, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 ET = ZoneInfo("America/New_York")
-OUTPUT_COLUMNS = [
-    "available_time",
-    "trend_factor",
-    "volatility_stress_factor",
-    "correlation_stress_factor",
-    "credit_stress_factor",
-    "rate_pressure_factor",
-    "dollar_pressure_factor",
-    "commodity_pressure_factor",
-    "sector_rotation_factor",
-    "breadth_factor",
-    "risk_appetite_factor",
-    "transition_pressure",
-    "data_quality_score",
-]
-FACTOR_COLUMNS = [column for column in OUTPUT_COLUMNS if column not in {"available_time", "transition_pressure", "data_quality_score"}]
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config" / "factor_specs.toml"
 
 
 def _safe_float(value: Any) -> float | None:
@@ -72,6 +63,12 @@ def _bounded_abs(values: Sequence[float]) -> float | None:
     return math.tanh(mean(abs(value) for value in values) / 2.0)
 
 
+REDUCERS: dict[str, Callable[[Sequence[float]], float | None]] = {
+    "bounded_mean": _bounded,
+    "bounded_abs_mean": _bounded_abs,
+}
+
+
 @dataclass(frozen=True)
 class Signal:
     column: str
@@ -83,6 +80,64 @@ class FactorSpec:
     name: str
     signals: tuple[Signal, ...]
     reducer: Callable[[Sequence[float]], float | None] = _bounded
+
+
+def _signal_group_columns(group: Mapping[str, Any], *, factor_name: str) -> list[str]:
+    columns = group.get("columns")
+    symbols = group.get("symbols")
+    suffixes = group.get("suffixes")
+
+    if columns and (symbols or suffixes):
+        raise ValueError(f"factor {factor_name!r} group must use columns or symbols/suffixes, not both")
+    if columns:
+        if not isinstance(columns, list) or not all(isinstance(column, str) and column for column in columns):
+            raise ValueError(f"factor {factor_name!r} columns must be a non-empty string list")
+        return list(columns)
+    if symbols or suffixes:
+        if not isinstance(symbols, list) or not all(isinstance(symbol, str) and symbol for symbol in symbols):
+            raise ValueError(f"factor {factor_name!r} symbols must be a non-empty string list")
+        if not isinstance(suffixes, list) or not all(isinstance(suffix, str) and suffix for suffix in suffixes):
+            raise ValueError(f"factor {factor_name!r} suffixes must be a non-empty string list")
+        return [f"{symbol}_{suffix}" for symbol in symbols for suffix in suffixes]
+    raise ValueError(f"factor {factor_name!r} group must define columns or symbols/suffixes")
+
+
+def load_factor_specs(path: str | Path = DEFAULT_CONFIG_PATH) -> tuple[FactorSpec, ...]:
+    config_path = Path(path)
+    config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    factor_rows = config.get("factors")
+    if not isinstance(factor_rows, list) or not factor_rows:
+        raise ValueError(f"factor config {config_path} must define at least one [[factors]] entry")
+
+    specs: list[FactorSpec] = []
+    seen_names: set[str] = set()
+    for factor in factor_rows:
+        if not isinstance(factor, dict):
+            raise ValueError("factor config entries must be tables")
+        name = factor.get("name")
+        if not isinstance(name, str) or not name:
+            raise ValueError("factor config entry missing non-empty name")
+        if name in seen_names:
+            raise ValueError(f"duplicate factor name: {name}")
+        seen_names.add(name)
+
+        reducer_name = factor.get("reducer", "bounded_mean")
+        if reducer_name not in REDUCERS:
+            raise ValueError(f"factor {name!r} uses unknown reducer {reducer_name!r}")
+
+        groups = factor.get("groups")
+        if not isinstance(groups, list) or not groups:
+            raise ValueError(f"factor {name!r} must define at least one [[factors.groups]] entry")
+        signals: list[Signal] = []
+        for group in groups:
+            if not isinstance(group, dict):
+                raise ValueError(f"factor {name!r} groups must be tables")
+            direction = float(group.get("direction", 1.0))
+            if direction not in {-1.0, 1.0}:
+                raise ValueError(f"factor {name!r} direction must be 1 or -1")
+            signals.extend(Signal(column, direction) for column in _signal_group_columns(group, factor_name=name))
+        specs.append(FactorSpec(name=name, signals=tuple(signals), reducer=REDUCERS[str(reducer_name)]))
+    return tuple(specs)
 
 
 class RollingZScore:
@@ -117,114 +172,9 @@ class RollingZScore:
                 del values[:-self.lookback]
 
 
-def _signals(*columns: str, direction: float = 1.0) -> tuple[Signal, ...]:
-    return tuple(Signal(column, direction) for column in columns)
-
-
-def _symbol_signals(symbols: Sequence[str], suffixes: Sequence[str], *, direction: float = 1.0) -> tuple[Signal, ...]:
-    return tuple(Signal(f"{symbol}_{suffix}", direction) for symbol in symbols for suffix in suffixes)
-
-
-BROAD_RISK_SYMBOLS = ("spy", "qqq", "iwm", "dia", "rsp")
-COMMODITY_SYMBOLS = ("dbc", "gld", "slv", "uso", "dba", "cper")
-
-FACTOR_SPECS = [
-    FactorSpec(
-        "trend_factor",
-        _symbol_signals(
-            BROAD_RISK_SYMBOLS,
-            ("return_5d", "return_20d", "distance_to_ma20", "distance_to_ma50", "ma20_slope_5d", "ma_alignment_score"),
-        ),
-    ),
-    FactorSpec(
-        "volatility_stress_factor",
-        _symbol_signals(
-            BROAD_RISK_SYMBOLS + ("vixy",),
-            (
-                "realized_vol_20d",
-                "realized_vol_20d_percentile_252d",
-                "realized_vol_20d_zscore_252d",
-                "ewma_vol",
-                "atr_pct_14d",
-            ),
-        )
-        + _symbol_signals(("vixy",), ("return_5d", "return_20d", "distance_to_ma20", "ma_alignment_score")),
-    ),
-    FactorSpec(
-        "correlation_stress_factor",
-        _signals(
-            "market_state_avg_abs_return_corr_20d",
-            "market_state_avg_abs_return_corr_60d",
-            "market_state_avg_return_corr_20d",
-            "market_state_avg_return_corr_60d",
-        ),
-    ),
-    FactorSpec(
-        "credit_stress_factor",
-        _signals("hyg_lqd_30m", "hyg_lqd_distance_to_ma20", "hyg_lqd_ma_alignment_score", direction=-1.0)
-        + _signals("hyg_lqd_realized_vol_20d_ratio"),
-    ),
-    FactorSpec(
-        "rate_pressure_factor",
-        _signals(
-            "tlt_shy_30m",
-            "tlt_shy_distance_to_ma20",
-            "tlt_shy_ma_alignment_score",
-            "ief_shy_30m",
-            "ief_shy_distance_to_ma20",
-            "ief_shy_ma_alignment_score",
-            direction=-1.0,
-        ),
-    ),
-    FactorSpec(
-        "dollar_pressure_factor",
-        _signals("uup_spy_30m", "uup_spy_distance_to_ma20", "uup_spy_ma_alignment_score")
-        + _symbol_signals(("uup",), ("return_5d", "return_20d", "distance_to_ma20", "ma_alignment_score")),
-    ),
-    FactorSpec(
-        "commodity_pressure_factor",
-        _symbol_signals(COMMODITY_SYMBOLS, ("return_5d", "return_20d", "distance_to_ma20", "ma_alignment_score"))
-        + _signals("gld_spy_30m", "xle_spy_30m", "uso_dbc_30m", "cper_dbc_30m"),
-    ),
-    FactorSpec(
-        "sector_rotation_factor",
-        _signals("sector_observation_distance_to_ma20_dispersion", "sector_observation_return_20d_dispersion")
-        + _signals(
-            "xlk_spy_30m",
-            "xlf_spy_30m",
-            "xle_spy_30m",
-            "xlv_spy_30m",
-            "xly_xlp_30m",
-            "smh_xlk_30m",
-        ),
-        reducer=_bounded_abs,
-    ),
-    FactorSpec(
-        "breadth_factor",
-        _signals(
-            "sector_observation_positive_return_1d_pct",
-            "sector_observation_positive_return_5d_pct",
-            "sector_observation_above_ma20_pct",
-            "sector_observation_above_ma50_pct",
-            "sector_observation_above_ma200_pct",
-            "rsp_spy_30m",
-            "rsp_spy_distance_to_ma20",
-        ),
-    ),
-    FactorSpec(
-        "risk_appetite_factor",
-        _signals(
-            "qqq_spy_30m",
-            "iwm_spy_30m",
-            "rsp_spy_30m",
-            "hyg_lqd_30m",
-            "xly_xlp_30m",
-            "bitw_spy_30m",
-        )
-        + _signals("tlt_spy_30m", "gld_spy_30m", "uup_spy_30m", "vixy_spy_30m", direction=-1.0),
-    ),
-]
-
+FACTOR_SPECS = load_factor_specs()
+FACTOR_COLUMNS = [spec.name for spec in FACTOR_SPECS]
+OUTPUT_COLUMNS = ["available_time", *FACTOR_COLUMNS, "transition_pressure", "data_quality_score"]
 SPEC_BY_NAME = {spec.name: spec for spec in FACTOR_SPECS}
 SIGNAL_COLUMNS = sorted({signal.column for spec in FACTOR_SPECS for signal in spec.signals})
 

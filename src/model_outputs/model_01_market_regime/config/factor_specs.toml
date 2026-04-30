@@ -1,0 +1,121 @@
+# MarketRegimeModel V1 factor specification.
+#
+# This file owns factor membership, signal direction, and reducer choice.
+# The Python generator owns only point-in-time rolling standardization and
+# execution mechanics.
+#
+# Supported reducers:
+# - bounded_mean: tanh(mean(zscores) / 2)
+# - bounded_abs_mean: tanh(mean(abs(zscores)) / 2)
+#
+# Signal groups support either:
+# - columns = ["exact_column_name", ...]
+# - symbols = ["spy", ...] plus suffixes = ["return_20d", ...]
+#
+# direction = 1 means higher raw signal increases the factor.
+# direction = -1 means higher raw signal decreases the factor.
+
+[[factors]]
+name = "trend_factor"
+reducer = "bounded_mean"
+
+[[factors.groups]]
+symbols = ["spy", "qqq", "iwm", "dia", "rsp"]
+suffixes = ["return_5d", "return_20d", "distance_to_ma20", "distance_to_ma50", "ma20_slope_5d", "ma_alignment_score"]
+direction = 1
+
+[[factors]]
+name = "volatility_stress_factor"
+reducer = "bounded_mean"
+
+[[factors.groups]]
+symbols = ["spy", "qqq", "iwm", "dia", "rsp", "vixy"]
+suffixes = ["realized_vol_20d", "realized_vol_20d_percentile_252d", "realized_vol_20d_zscore_252d", "ewma_vol", "atr_pct_14d"]
+direction = 1
+
+[[factors.groups]]
+symbols = ["vixy"]
+suffixes = ["return_5d", "return_20d", "distance_to_ma20", "ma_alignment_score"]
+direction = 1
+
+[[factors]]
+name = "correlation_stress_factor"
+reducer = "bounded_mean"
+
+[[factors.groups]]
+columns = ["market_state_avg_abs_return_corr_20d", "market_state_avg_abs_return_corr_60d", "market_state_avg_return_corr_20d", "market_state_avg_return_corr_60d"]
+direction = 1
+
+[[factors]]
+name = "credit_stress_factor"
+reducer = "bounded_mean"
+
+[[factors.groups]]
+columns = ["hyg_lqd_30m", "hyg_lqd_distance_to_ma20", "hyg_lqd_ma_alignment_score"]
+direction = -1
+
+[[factors.groups]]
+columns = ["hyg_lqd_realized_vol_20d_ratio"]
+direction = 1
+
+[[factors]]
+name = "rate_pressure_factor"
+reducer = "bounded_mean"
+
+[[factors.groups]]
+columns = ["tlt_shy_30m", "tlt_shy_distance_to_ma20", "tlt_shy_ma_alignment_score", "ief_shy_30m", "ief_shy_distance_to_ma20", "ief_shy_ma_alignment_score"]
+direction = -1
+
+[[factors]]
+name = "dollar_pressure_factor"
+reducer = "bounded_mean"
+
+[[factors.groups]]
+columns = ["uup_spy_30m", "uup_spy_distance_to_ma20", "uup_spy_ma_alignment_score"]
+direction = 1
+
+[[factors.groups]]
+symbols = ["uup"]
+suffixes = ["return_5d", "return_20d", "distance_to_ma20", "ma_alignment_score"]
+direction = 1
+
+[[factors]]
+name = "commodity_pressure_factor"
+reducer = "bounded_mean"
+
+[[factors.groups]]
+symbols = ["dbc", "gld", "slv", "uso", "dba", "cper"]
+suffixes = ["return_5d", "return_20d", "distance_to_ma20", "ma_alignment_score"]
+direction = 1
+
+[[factors.groups]]
+columns = ["gld_spy_30m", "xle_spy_30m", "uso_dbc_30m", "cper_dbc_30m"]
+direction = 1
+
+[[factors]]
+name = "sector_rotation_factor"
+reducer = "bounded_abs_mean"
+
+[[factors.groups]]
+columns = ["sector_observation_distance_to_ma20_dispersion", "sector_observation_return_20d_dispersion", "xlk_spy_30m", "xlf_spy_30m", "xle_spy_30m", "xlv_spy_30m", "xly_xlp_30m", "smh_xlk_30m"]
+direction = 1
+
+[[factors]]
+name = "breadth_factor"
+reducer = "bounded_mean"
+
+[[factors.groups]]
+columns = ["sector_observation_positive_return_1d_pct", "sector_observation_positive_return_5d_pct", "sector_observation_above_ma20_pct", "sector_observation_above_ma50_pct", "sector_observation_above_ma200_pct", "rsp_spy_30m", "rsp_spy_distance_to_ma20"]
+direction = 1
+
+[[factors]]
+name = "risk_appetite_factor"
+reducer = "bounded_mean"
+
+[[factors.groups]]
+columns = ["qqq_spy_30m", "iwm_spy_30m", "rsp_spy_30m", "hyg_lqd_30m", "xly_xlp_30m", "bitw_spy_30m"]
+direction = 1
+
+[[factors.groups]]
+columns = ["tlt_spy_30m", "gld_spy_30m", "uup_spy_30m", "vixy_spy_30m"]
+direction = -1

@@ -86,6 +86,20 @@ class MarketRegimeModelTests(unittest.TestCase):
         self.assertIsNone(rows[1]["trend_factor"])
         self.assertGreater(rows[2]["trend_factor"], 0.9)
 
+    def test_factor_config_controls_membership_direction_and_reducer(self) -> None:
+        specs = {spec.name: spec for spec in generator.load_factor_specs()}
+
+        self.assertIn("trend_factor", specs)
+        self.assertIn("spy_return_20d", {signal.column for signal in specs["trend_factor"].signals})
+        credit_directions = {
+            signal.column: signal.direction
+            for signal in specs["credit_stress_factor"].signals
+            if signal.column in {"hyg_lqd_30m", "hyg_lqd_realized_vol_20d_ratio"}
+        }
+        self.assertEqual(credit_directions["hyg_lqd_30m"], -1)
+        self.assertEqual(credit_directions["hyg_lqd_realized_vol_20d_ratio"], 1)
+        self.assertEqual(specs["sector_rotation_factor"].reducer([2.0, -2.0]), generator.REDUCERS["bounded_abs_mean"]([2.0, -2.0]))
+
     def test_sql_writer_uses_model_table_and_columns(self) -> None:
         class FakeCursor:
             def __init__(self) -> None:

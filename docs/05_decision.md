@@ -256,3 +256,31 @@ Rows are keyed by `available_time`. If the upstream derived row has only `snapsh
 - Rolling standardization uses prior rows only; current/future rows do not fit the current score.
 - The factor formulas are V1 and intentionally reviewable; later evidence may revise exact signal membership or signs without changing the table role.
 - Manager completion receipts and ready-signal files remain deferred until `trading-manager` integration.
+
+## D010 - MarketRegimeModel factor specs live in config
+
+Date: 2026-04-29
+Status: Accepted
+
+### Context
+
+The first implementation placed factor membership, signal direction, and reducer choice in Python code. That made the V1 state-vector construction harder to review and harder to adjust as the derived feature surface changes.
+
+### Decision
+
+Move `MarketRegimeModel` V1 factor definitions into `src/model_outputs/model_01_market_regime/config/factor_specs.toml`.
+
+The TOML config owns:
+
+- factor names;
+- exact source columns or symbol/suffix expansions;
+- signal direction (`1` or `-1`);
+- reducer choice (`bounded_mean` or `bounded_abs_mean`).
+
+The Python generator owns only config validation, point-in-time rolling standardization, reducer execution, transition-pressure calculation, data-quality calculation, and row shaping.
+
+### Consequences
+
+- Changing factor membership/signs/reducers no longer requires editing generator execution code.
+- Config changes still require tests and review because they can change output semantics.
+- Adding a new factor column still requires checking the SQL output contract and registry/docs implications.
