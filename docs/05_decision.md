@@ -618,3 +618,35 @@ Broad market/style ETFs such as `SPY`, `QQQ`, `IWM`, `DIA`, and `RSP`, and non-e
 - ETF holdings exposure work should prioritize sector/industry equity ETFs.
 - Model 2 still ranks candidates by trend clarity, persistence, certainty, and tradability, not by highest realized or expected return.
 - Direct trading of broad/macro ETFs, if ever needed, should be modeled as a separate later scope rather than mixed into `SecuritySelectionModel` V1.
+
+
+## D021 - SecuritySelectionModel derives market-context parameters for candidate vectors
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+The bridge from market state to target selection should be explicit. Passing the full Layer 1 vector directly into every ETF/stock score is hard to interpret, while selecting ETFs inside Layer 1 would blur model boundaries and raise leakage risk. Chentong proposed compressing the broad market vector into a market parameter that becomes part of each target candidate vector.
+
+The parameter should focus on trend certainty and broad-market turning risk. Because sectors respond differently to the same broad tape, each sector/industry ETF should also have its own weighted market parameter. Stocks that do not map into the eligible sector/industry ETF universe should use the unweighted base market parameter.
+
+### Decision
+
+`SecuritySelectionModel` owns the transformation from `model_01_market_regime` into candidate-level market-context fields. The initial conceptual fields are:
+
+- `market_trend_certainty_score`;
+- `market_transition_risk_score`;
+- `base_market_context_score`;
+- `sector_weighted_market_context_score`;
+- `candidate_market_context_score`.
+
+For sector/industry ETF candidates, `candidate_market_context_score` equals that ETF's sector-weighted market context. For stock candidates with sector/industry ETF exposure, it is the exposure-weighted blend of the mapped ETF context scores. For unmapped stocks, it falls back to `base_market_context_score`.
+
+### Consequences
+
+- Model 1 remains a pure market-state vector; Model 2 creates the selection-facing market parameter.
+- Model 2 candidate vectors include both market context and target-specific state: trend clarity, trend persistence, certainty, relative strength, liquidity, optionability, and event risk.
+- Sector/industry ETF selection can rank directly by sector-weighted market context plus the ETF's own trend/certainty state.
+- The first Model 2 implementation needs an explicit sector factor-weight matrix mapping Layer 1 factors to eligible sector/industry ETFs.
+- Field names remain model-local until implementation proves the shape and any shared registry registration is reviewed.

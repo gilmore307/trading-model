@@ -186,10 +186,50 @@ This layer does not choose entry timing, strategy parameters, option contracts, 
 ### Inputs
 
 - `MarketRegimeModel` outputs: continuous market-state vector, risk-on/risk-off context, transition pressure, dominant macro drivers, sector/style condition factors. It does not output ETF rankings or selected securities.
+- Model 2 market-context parameters derived from the Layer 1 vector: base tape trend certainty, transition/turning risk, and sector-weighted market context scores.
 - ETF holdings snapshots: constituent weights for eligible sector/industry equity ETFs. Broad index ETFs and non-equity macro ETFs may remain state inputs or filters, but they are not V1 tradable ETF candidates.
 - ETF and stock bars/liquidity: relative strength vs sector ETF and SPY, trend clarity, trend persistence, volatility fit, gap behavior, volume expansion, spread/liquidity.
 - Optionability summaries: option availability, spread, volume, open interest, DTE coverage.
 - Event exclusions: earnings proximity, known macro/event shock windows, SEC/news risk, abnormal activity flags.
+
+### Market-context parameter
+
+`SecuritySelectionModel` should not feed the full Layer 1 vector directly into every candidate score without interpretation. It first compresses the market-state vector into a market-context parameter that can become part of each ETF/stock candidate vector.
+
+Core derived fields:
+
+```text
+market_trend_certainty_score
+market_transition_risk_score
+base_market_context_score
+sector_weighted_market_context_score
+candidate_market_context_score
+```
+
+Interpretation:
+
+- `market_trend_certainty_score` measures whether the overall tape has a clear, coherent trend backdrop.
+- `market_transition_risk_score` measures broad-market turning/phase-change risk.
+- `base_market_context_score` is the unweighted market parameter used when a candidate has no reliable sector/industry ETF mapping.
+- `sector_weighted_market_context_score` is a sector/industry-specific version of the market parameter, produced by applying a sector factor-weight vector to the Layer 1 state vector.
+- `candidate_market_context_score` is the market parameter inserted into a specific ETF or stock candidate vector. For a sector/industry ETF it equals that ETF's sector-weighted value; for a stock with ETF exposure it is the exposure-weighted blend of its mapped sector/industry ETF values; for an unmapped stock it falls back to `base_market_context_score`.
+
+Sketch:
+
+```text
+market_trend_certainty_score = f(trend_factor, breadth_factor, sector_rotation_factor, correlation_stress_factor)
+market_transition_risk_score = f(transition_pressure, volatility_stress_factor, credit_stress_factor)
+base_market_context_score = market_trend_certainty_score - market_transition_risk_score
+
+sector_weighted_market_context_score[sector_etf] =
+  dot(model_01_market_regime_vector, sector_etf_factor_weight_vector)
+
+candidate_market_context_score =
+  exposure_weighted_sum(sector_weighted_market_context_score, stock_etf_exposure)
+  or base_market_context_score when no sector/industry ETF mapping exists
+```
+
+This creates the bridge between market state and target state without moving selection into Layer 1. Model 1 describes the tape; Model 2 derives the market-context parameter and combines it with each candidate's own trend, certainty, liquidity, optionability, and event-risk vector.
 
 ### ETF holdings exposure matrix
 
@@ -253,17 +293,19 @@ Do not rely only on ETF holdings. Use two candidate sources:
 
 ```text
 target_score =
-  w1 * sector_regime_fit
-+ w2 * etf_holding_exposure
-+ w3 * relative_strength_score
-+ w4 * trend_clarity_score
-+ w5 * trend_persistence_score
-+ w6 * certainty_score
-+ w7 * liquidity_score
-+ w8 * optionability_score
-- w9 * event_risk_penalty
-- w10 * crowding_penalty
-- w11 * volatility_instability_penalty
+  w1 * candidate_market_context_score
++ w2 * sector_regime_fit
++ w3 * etf_holding_exposure
++ w4 * relative_strength_score
++ w5 * trend_clarity_score
++ w6 * trend_persistence_score
++ w7 * certainty_score
++ w8 * liquidity_score
++ w9 * optionability_score
+- w10 * event_risk_penalty
+- w11 * crowding_penalty
+- w12 * volatility_instability_penalty
+- w13 * market_transition_risk_penalty
 ```
 
 ### Output sketch
@@ -277,6 +319,8 @@ target_score =
     {
       "symbol": "SMH",
       "target_score": 0.89,
+      "candidate_market_context_score": 0.78,
+      "market_transition_risk_score": 0.16,
       "trend_clarity_score": 0.92,
       "trend_persistence_score": 0.87,
       "certainty_score": 0.84,
@@ -288,6 +332,7 @@ target_score =
     {
       "symbol": "NVDA",
       "target_score": 0.91,
+      "candidate_market_context_score": 0.76,
       "sector_regime_fit": 0.94,
       "etf_holding_exposure": {"SMH": 0.20, "XLK": 0.12, "SOXX": 0.09},
       "relative_strength_score": 0.88,
@@ -536,6 +581,8 @@ Every candidate trade should produce a complete point-in-time decision record fo
   },
   "layer_2_security_selection": {
     "target_score": 0.91,
+    "candidate_market_context_score": 0.76,
+    "market_transition_risk_score": 0.16,
     "preferred_industry_etfs": ["SMH", "XLK", "IGV"],
     "trend_clarity_score": 0.90,
     "certainty_score": 0.84,
@@ -694,8 +741,9 @@ Deliver:
 Before implementation, decide:
 
 1. What exact sector/industry ETF basket and base equity universe should `SecuritySelectionModel` use first?
-2. What is the first tradable universe for Phase 2? Sector/industry ETF basket only, liquid mega-cap equities, or both?
-3. What timestamp fields should be globally registered for model-facing event/evidence rows: `event_time`, `available_time`, `tradeable_time`, and ET/UTC variants?
-4. What is the first label horizon for underlying trades: intraday, 1D, 5D, 10D, or multi-horizon?
-5. Should `stock_etf_exposure` be registered as a derived data kind in `trading-manager`, or remain model-local until SecuritySelectionModel proves useful?
+2. What initial sector factor-weight matrix should convert the Layer 1 vector into `sector_weighted_market_context_score`?
+3. What is the first tradable universe for Phase 2? Sector/industry ETF basket only, liquid mega-cap equities, or both?
+4. What timestamp fields should be globally registered for model-facing event/evidence rows: `event_time`, `available_time`, `tradeable_time`, and ET/UTC variants?
+5. What is the first label horizon for underlying trades: intraday, 1D, 5D, 10D, or multi-horizon?
+6. Should `stock_etf_exposure` be registered as a derived data kind in `trading-manager`, or remain model-local until SecuritySelectionModel proves useful?
 6. Should Phase 1 produce only offline research artifacts, or also a ready-signal contract for later execution systems?

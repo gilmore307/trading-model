@@ -8,7 +8,7 @@
 
 - Identify global fields, helper surfaces, templates, status values, decision-record fields, model layer ids, artifact types, or ready-signal shapes that must be registered in `trading-manager`.
 - Define model-facing timestamp semantics for `event_time`, `available_time`, and `tradeable_time`.
-- Define the first sector/industry ETF basket and base equity universe for `SecuritySelectionModel`, with scoring based on trend clarity and certainty rather than highest return.
+- Define the first sector/industry ETF basket, base equity universe, and sector factor-weight matrix for `SecuritySelectionModel`, with scoring based on market context, trend clarity, and certainty rather than highest return.
 - Decide whether `stock_etf_exposure` is model-local first or registered as a derived data kind in `trading-manager`.
 - Define first label horizons and triple-barrier defaults for `TradeQualityModel`.
 - Define how model-generated event standards are identified and versioned for `option_activity_event_detail`, including whether `standard_id` is separate from or derived from a model/run id and how downstream artifacts record the current standard used at event time.
@@ -21,7 +21,8 @@
 - Exact storage path/reference requirements.
 - Whether `trading-strategy` remains separate or `StrategySelectionModel` research is model-local until a later split.
 - Whether `stock_etf_exposure` belongs in `trading-data` as a derived bundle output, in `trading-model` as a feature artifact, or in shared contracts after proof.
-- Exact `SecuritySelectionModel` ETF/security ranking formula for trend clarity, trend persistence, certainty, and liquidity/optionability constraints.
+- Exact `SecuritySelectionModel` ETF/security ranking formula for candidate market context, trend clarity, trend persistence, certainty, and liquidity/optionability constraints.
+- Exact derivation of `base_market_context_score`, `sector_weighted_market_context_score`, and unmapped-stock fallback behavior.
 
 ## Recently Accepted
 
