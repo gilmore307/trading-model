@@ -35,11 +35,16 @@ Standardization defaults are currently `lookback = 120`, `min_history = 20`, `st
 
 ## Factor ontology direction
 
-The current implementation is a first proxy-backed slice. Its observable inputs include ETF ratios, returns, volatility, trend, correlation, and breadth signals. The durable Model 1 direction is deeper: output factors should describe market properties such as price behavior, trend certainty, capital/funding flow, sentiment, valuation pressure, fundamentals, macro environment, market structure, and risk stress.
+The current implementation is a first proxy-backed slice. Its observable inputs include ETF ratios, returns, volatility, trend, correlation, and breadth signals. The durable Model 1 direction is deeper: output factors should describe market properties such as price behavior, trend certainty, capital/funding flow, sentiment, valuation pressure, fundamentals, macro environment, market-wide structure, and risk stress.
 
 Proxy signals are sensors; they are not the conceptual factor ontology. A later reviewed migration should update concrete output columns/config/tests only after the deeper factor definitions are settled.
 
 
 ## Evidence coverage gap
 
-The current feature payload has 1,477 logical feature keys, while the first factor specification uses 132 signal columns. That provisional ~8.9% utilization is intentionally not the final target. Future factor work should expand coverage through a reviewed feature-to-latent-factor evidence map rather than by blindly ingesting every generated column.
+The current feature payload has 1,477 logical feature keys, while the first factor specification uses 126 signal columns after removing `sector_rotation_factor`. That provisional ~8.5% utilization is intentionally not the final target. Future factor work should expand coverage through a reviewed feature-to-latent-factor evidence map rather than by blindly ingesting every generated column.
+
+
+## Sector rotation boundary
+
+Sector/industry rotation, sector leadership, and sector-vs-sector relative strength belong to `SecuritySelectionModel`. Model 1 may use market-wide breadth, concentration, crowding, correlation, and fragility evidence, but it should not output a sector rotation factor or candidate-facing sector leadership conclusion.

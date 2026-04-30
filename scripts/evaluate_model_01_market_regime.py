@@ -59,7 +59,6 @@ def _fixture_rows() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
                 "rate_pressure_factor": stress / 4,
                 "dollar_pressure_factor": stress / 5,
                 "commodity_pressure_factor": trend / 4,
-                "sector_rotation_factor": abs(trend) / 2,
                 "breadth_factor": trend / 2,
                 "risk_appetite_factor": trend,
                 "transition_pressure": abs(trend) / 10,

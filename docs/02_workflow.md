@@ -46,7 +46,7 @@ Deliver market-state feature contracts, rolling/expanding state-vector prototype
 
 ### Phase 2: SecuritySelectionModel
 
-Deliver base/sector-weighted market-parameter design, sector/industry ETF holdings exposure matrix, `stock_etf_exposure` derived table proposal, sector/industry ETF and stock candidate-selection-parameter adjustment, full-market scan candidate sources, eligibility/gating rules, optionability/liquidity filters, and sector/style transmission evidence.
+Deliver sector/industry rotation research, base/sector-weighted market-parameter design, sector/industry ETF holdings exposure matrix, `stock_etf_exposure` derived table proposal, sector/industry ETF and stock candidate-selection-parameter adjustment, full-market scan candidate sources, eligibility/gating rules, optionability/liquidity filters, and sector/industry transmission evidence.
 
 ### Phase 3: StrategySelectionModel
 

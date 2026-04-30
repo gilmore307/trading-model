@@ -48,7 +48,7 @@ These names are canonical for docs, code, artifact metadata, and future registry
 
 | Layer | Model class | Stable id | Chinese name | Role |
 |---|---|---|---|---|
-| 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 | Detect point-in-time market regime, sector/style conditions, state probabilities, confidence, transition risk, and dominant drivers. |
+| 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 | Describe point-in-time broad market state, market-property factors, confidence, transition risk, and dominant macro/risk drivers without sector/industry candidate conclusions. |
 | 2 | `SecuritySelectionModel` | `security_selection_model` | 标的选择模型 | Build candidate tradable universes from regime/sector style, sector/industry ETF holdings exposure, stock relative strength, liquidity, optionability, and event exclusions. |
 | 3 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Select strategy family/variant conditioned on regime, candidate symbol, cost, and robustness evidence. |
 | 4 | `TradeQualityModel` | `trade_quality_model` | 交易质量模型 | Score candidate signals and predict trade outcome distribution, target/stop, MFE/MAE, and holding horizon. |
@@ -113,10 +113,12 @@ The model should capture deeper market properties, not merely surface ETF-ratio 
 - valuation and discount-rate pressure / 估值
 - fundamental strength and growth quality / 基本面
 - macro and policy environment / 宏观
-- market structure, breadth, leadership, crowding, and correlation / 结构
+- market-wide structure, breadth, concentration, crowding, and correlation / 结构
 - risk stress, tail pressure, and transition risk / 风险
 
-V1 does **not** need discrete clustering, hard regime labels, HMM states, human-readable state names, ETF rankings, or security candidates. Those can be research diagnostics or downstream outputs later, but they are not the Layer 1 contract.
+V1 does **not** need discrete clustering, hard regime labels, HMM states, human-readable state names, ETF rankings, sector/industry rotation conclusions, sector leadership rankings, or security candidates. Those can be research diagnostics or downstream outputs later, but they are not the Layer 1 contract.
+
+Sector/industry rotation is a Layer 2 problem. Layer 1 may describe aggregate tape structure, breadth, crowding, correlation, and fragility, but it should not answer which sector or industry is currently the best candidate.
 
 ### Input table
 
@@ -176,7 +178,7 @@ Current implementation columns such as `trend_factor`, `credit_stress_factor`, a
 
 ### Goal
 
-Build candidate-level selection parameters for the current tradable sector/industry ETF and stock universe after `MarketRegimeModel` identifies market, sector, and style conditions.
+Study sector/industry rotation and build candidate-level selection parameters for the current tradable sector/industry ETF and stock universe after `MarketRegimeModel` identifies broad market conditions.
 
 It answers:
 
@@ -188,7 +190,7 @@ This layer does not output "the selected ETF", entry timing, strategy parameters
 
 ### Inputs
 
-- `MarketRegimeModel` outputs: continuous market-state vector, risk-on/risk-off context, transition pressure, dominant macro drivers, sector/style condition factors. It does not output ETF rankings or selected securities.
+- `MarketRegimeModel` outputs: continuous broad market-state vector, risk-on/risk-off context, transition pressure, and dominant macro/risk drivers. It does not output sector/style condition factors, sector rankings, ETF rankings, or selected securities.
 - Model 2 market parameters derived from the Layer 1 vector: base tape trend certainty, transition/turning risk, and sector-weighted market parameters.
 - ETF holdings snapshots: constituent weights for eligible sector/industry equity ETFs. Broad index ETFs and non-equity macro ETFs may remain state inputs or filters, but they are not V1 tradable ETF candidates.
 - ETF and stock bars/liquidity: relative strength vs sector ETF and SPY, trend clarity, trend persistence, volatility fit, gap behavior, volume expansion, spread/liquidity.
@@ -244,7 +246,7 @@ candidate_selection_parameter = parameter_adjuster(
 
 ### ETF holdings exposure matrix
 
-`SecuritySelectionModel` should use sector/industry ETF holdings as the bridge from sector/style regime to individual tradable symbols.
+`SecuritySelectionModel` should use sector/industry ETF holdings as the bridge from sector/industry rotation evidence to individual tradable symbols.
 
 A core derived representation is:
 
@@ -691,7 +693,7 @@ Deliver:
 - full-market scan candidate logic
 - long/short/watch/excluded candidate pools
 - optionability and liquidity filters
-- sector/style transmission evidence from ETF regime scores to stocks
+- sector/industry rotation transmission evidence from ETF candidate parameters to stocks
 
 ### Phase 3: Layer 3 strategy library
 

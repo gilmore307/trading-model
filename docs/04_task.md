@@ -15,14 +15,14 @@
 
 ## Open Gaps
 
-- Reviewed feature-to-latent-factor evidence map for `model_01_market_regime`, including used, diagnostic/quality, evaluation-only, and intentionally unused feature keys.
-- Exact first deep market-property factor formulas for `model_01_market_regime`, replacing provisional surface proxy groupings with price/trend/capital-flow/sentiment/valuation/fundamental/macro/structure/risk ontology and materially increasing reviewed evidence coverage beyond the current 132 of 1,477 generated feature keys.
+- Reviewed feature-to-latent-factor evidence map for `model_01_market_regime`, including used, diagnostic/quality, evaluation-only, intentionally unused feature keys, and sector/industry rotation keys that should be reassigned to Model 2.
+- Exact first deep market-property factor formulas for `model_01_market_regime`, replacing provisional surface proxy groupings with price/trend/capital-flow/sentiment/valuation/fundamental/macro/structure/risk ontology and materially increasing reviewed evidence coverage beyond the current 126 of 1,477 generated feature keys after removing Model 1 sector rotation.
 - Exact persistence path for agent-reviewed promotion decisions and future active production model pointers.
 - Exact artifact/manifest/ready-signal/request contract interactions for promoted/non-dry-run model evaluation artifacts.
 - Exact storage path/reference requirements.
 - Whether `trading-strategy` remains separate or `StrategySelectionModel` research is model-local until a later split.
 - Whether `stock_etf_exposure` belongs in `trading-data` as a derived bundle output, in `trading-model` as a feature artifact, or in shared contracts after proof.
-- Exact `SecuritySelectionModel` ETF/security `candidate_selection_parameter` adjustment function for candidate market parameter, trend clarity, trend persistence, certainty, and liquidity/optionability constraints.
+- Exact `SecuritySelectionModel` ETF/security `candidate_selection_parameter` adjustment function for sector/industry rotation, candidate market parameter, trend clarity, trend persistence, certainty, and liquidity/optionability constraints.
 - Exact derivation of `base_market_parameter`, `sector_weighted_market_parameter`, `candidate_market_parameter`, and unmapped-stock fallback behavior.
 
 ## Recently Accepted

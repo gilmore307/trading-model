@@ -76,7 +76,7 @@ class MarketRegimeModelTests(unittest.TestCase):
         }
         self.assertEqual(credit_directions["hyg_lqd_30m"], -1)
         self.assertEqual(credit_directions["hyg_lqd_realized_vol_20d_ratio"], 1)
-        self.assertEqual(specs["sector_rotation_factor"].reducer([2.0, -2.0]), generator.REDUCERS["bounded_abs_mean"]([2.0, -2.0]))
+        self.assertNotIn("sector_rotation_factor", specs)
         self.assertEqual(specs["trend_factor"].aggregation, "bucketed_mean")
         self.assertGreaterEqual(next(signal.min_history for signal in specs["correlation_stress_factor"].signals), 30)
 

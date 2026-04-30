@@ -157,15 +157,6 @@ columns = ["gld_spy_30m", "xle_spy_30m", "uso_dbc_30m", "cper_dbc_30m"]
 direction = 1
 min_history = 20
 
-[[factors]]
-name = "sector_rotation_factor"
-reducer = "bounded_abs_mean"
-aggregation = "flat"
-
-[[factors.groups]]
-columns = ["sector_observation_distance_to_ma20_dispersion", "sector_observation_return_20d_dispersion", "xlk_spy_30m", "xlf_spy_30m", "xle_spy_30m", "xlv_spy_30m", "xly_xlp_30m", "smh_xlk_30m"]
-direction = 1
-min_history = 20
 
 [[factors]]
 name = "breadth_factor"

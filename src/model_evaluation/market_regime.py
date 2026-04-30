@@ -31,7 +31,6 @@ FACTOR_COLUMNS = (
     "rate_pressure_factor",
     "dollar_pressure_factor",
     "commodity_pressure_factor",
-    "sector_rotation_factor",
     "breadth_factor",
     "risk_appetite_factor",
     "transition_pressure",

@@ -157,7 +157,7 @@ Different market regimes require different selection styles. Risk-on regimes may
 
 ### Consequences
 
-- `MarketRegimeModel` should output sector/style context factors useful for security selection, but should not output ETF rankings or security candidates.
+- `MarketRegimeModel` should output broad market-state context useful for security selection, but should not output sector/style condition factors, ETF rankings, or security candidates; sector/style rotation belongs to `SecuritySelectionModel`.
 - `etf_holding_snapshot` for eligible sector/industry equity ETFs becomes an important upstream data kind for Layer 2.
 - A derived point-in-time `stock_etf_exposure` table should be designed, either model-local first or registered through `trading-main` if cross-repository use is needed.
 - `StrategySelectionModel` consumes selected candidate pools instead of scanning the whole universe directly.
@@ -199,7 +199,7 @@ Status: Accepted
 
 Layer 1 initially discussed unsupervised clustering, state ids, state probabilities, and human-readable regime names. Chentong clarified that hard states are unlikely to directly help later security selection or strategy selection because they are coarse, unstable after refits, and require another lookup layer to recover the underlying market conditions.
 
-The useful downstream information is the concrete market-condition vector: trend, volatility stress, correlation stress, credit/rate/dollar/commodity pressure, sector rotation, breadth, risk appetite, and transition pressure.
+The useful downstream information is the concrete market-condition vector: trend, volatility stress, correlation stress, credit/rate/dollar/commodity pressure, broad market breadth, risk appetite, and transition pressure. Sector/industry rotation belongs to `SecuritySelectionModel`, not Model 1.
 
 ### Decision
 
@@ -242,7 +242,6 @@ The first factor set is:
 - `rate_pressure_factor`
 - `dollar_pressure_factor`
 - `commodity_pressure_factor`
-- `sector_rotation_factor`
 - `breadth_factor`
 - `risk_appetite_factor`
 - `transition_pressure`
@@ -697,7 +696,7 @@ Treat observable ratios, spreads, returns, relative-strength pairs, volatility m
 - valuation and discount-rate pressure;
 - fundamental strength and growth quality;
 - macro and policy environment;
-- market structure, breadth, leadership, crowding, and correlation;
+- market-wide structure, breadth, concentration, crowding, and correlation;
 - risk stress, tail pressure, and transition risk.
 
 ### Consequences
@@ -715,7 +714,7 @@ Status: Accepted
 
 ### Context
 
-The current `feature_01_market_regime` payload contains 1,477 logical feature keys, while the first `model_01_market_regime` factor specification uses only 132 signal columns across 10 provisional factors. That is roughly 8.9% feature utilization. Chentong flagged this as too low.
+The current `feature_01_market_regime` payload contains 1,477 logical feature keys, while the first `model_01_market_regime` factor specification now uses 126 signal columns across 9 provisional factors after removing `sector_rotation_factor` from Model 1. That is roughly 8.5% feature utilization. Chentong flagged this as too low.
 
 The issue is not that every generated feature must be forced into every factor. Some columns should remain quality controls, diagnostics, redundant checks, fallback evidence, or evaluation-only fields. But using only a small hand-selected proxy subset risks underusing the reviewed input surface and collapsing Model 1 back into a shallow ETF-ratio dashboard.
 
@@ -730,4 +729,27 @@ The target is broad, explainable coverage of the input evidence universe, not in
 - Add or maintain a reviewed evidence map for `model_01_market_regime` before major factor expansion.
 - Track evidence utilization as an acceptance metric: total generated feature keys, keys assigned to a latent market-property factor, keys used only for data quality/diagnostics/evaluation, and keys intentionally unused.
 - Keep factors interpretable by grouping evidence into the accepted market-property ontology instead of adding opaque high-dimensional raw features directly to the output vector.
-- Future implementation work should expand beyond the current 132-column provisional slice while preserving point-in-time correctness and no-leakage rules.
+- Future implementation work should expand beyond the current 126-column provisional slice while preserving point-in-time correctness and no-leakage rules.
+
+
+## D025 - Sector and industry rotation belongs to SecuritySelectionModel
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+Model 1 was drifting toward a mixed responsibility: a broad market-state vector plus a `sector_rotation_factor` derived from sector ETF dispersion and sector-vs-broad relative-strength proxies. Chentong clarified that sector rotation is not merely one broad market property. It is the core research problem for Model 2: compare sector/industry ETF and stock candidates under the same broad market state.
+
+### Decision
+
+Move sector/industry rotation, sector leadership, industry leadership, and sector-vs-sector relative-strength comparison out of `MarketRegimeModel` and into `SecuritySelectionModel`.
+
+`MarketRegimeModel` may retain market-wide structure fields such as breadth, concentration, crowding, correlation stress, dispersion, and transition pressure when they describe the overall tape. It must not produce candidate-facing sector rotation conclusions, sector rankings, preferred sector lists, or sector/industry leadership parameters.
+
+### Consequences
+
+- Remove `sector_rotation_factor` from the Model 1 output contract and current factor configuration.
+- Treat sector/industry ETF relative-strength evidence as Model 2 evidence unless it is aggregated into a market-wide structure/risk diagnostic without candidate identity.
+- `SecuritySelectionModel` owns sector/industry rotation research, sector-weighted candidate parameters, ETF holdings exposure propagation into stocks, and candidate-level certainty comparisons.
+- The apparent Model 1 input-utilization denominator should be revisited because some of the current `feature_01_market_regime` payload is really Model 2 sector-rotation evidence that should be split or reassigned.
