@@ -430,3 +430,41 @@ JSONB payload columns are allowed as extension points, but stable shared fields 
 - `required_feature_key` supersedes older `required_derived_key` wording for active model data requests.
 - Concrete registry column registration remains deferred until the schema is exercised by the first `MarketRegimeModel` evaluation harness and proves stable.
 - Default tests use fake cursors and do not touch a durable database; runtime schema creation requires an explicit PostgreSQL target.
+
+## D015 - Keep first MarketRegimeModel evaluation harness dry-run only
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+The first `MarketRegimeModel` evaluation harness needs to exercise the generic governance/evaluation chain without allowing development-stage data to leak into the durable PostgreSQL database. At this stage, the goal is to validate row shapes, deterministic identifiers, chronological splits, future-label alignment, and metric calculations before promoting any runtime write path.
+
+### Decision
+
+Implement the first evaluation harness as dry-run only:
+
+- reusable code lives in `src/model_evaluation/market_regime.py`;
+- the operational wrapper is `scripts/evaluate_model_01_market_regime.py`;
+- the wrapper accepts local JSONL feature/model rows or uses a deterministic built-in fixture;
+- the wrapper prints a summary or optional local JSON artifact;
+- it never imports `psycopg`, never accepts a database URL, and never opens a database connection.
+
+The harness builds rows for the generic governance/evaluation tables in memory:
+
+```text
+model_dataset_request
+model_dataset_snapshot
+model_dataset_split
+model_eval_label
+model_eval_run
+model_eval_metric
+```
+
+The initial labels are future shifted feature-return labels for SPY (`spy_return_1d` and `spy_return_5d`) and the initial metrics are basic counts, coverage, and Pearson correlations between model factors and labels.
+
+### Consequences
+
+- Development evaluation can be tested safely without mutating durable SQL state.
+- A future database-writing path must be a separate reviewed change with explicit non-default write controls.
+- The first harness is intentionally about plumbing and reproducibility, not yet about claiming model quality.

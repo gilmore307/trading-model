@@ -28,6 +28,7 @@ Current implementation packages:
 ```text
 src/model_outputs/model_01_market_regime/
 src/model_governance/
+src/model_evaluation/
 ```
 
 Current runtime wrappers:
@@ -35,6 +36,7 @@ Current runtime wrappers:
 ```text
 scripts/generate_model_01_market_regime.py
 scripts/ensure_model_governance_schema.py
+scripts/evaluate_model_01_market_regime.py
 ```
 
 `src/` owns reusable model logic. `scripts/` may import `src/`; `src/` must not import `scripts/`.
