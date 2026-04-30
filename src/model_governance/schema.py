@@ -2,8 +2,9 @@
 
 The tables in this module live in the ``trading_model`` schema by default and
 are shared by model layers. They govern model data requests, reproducible
-snapshots, time-series splits, evaluation labels, evaluation runs, and metrics.
-Production model output tables remain model-specific.
+snapshots, time-series splits, evaluation labels, evaluation runs, metrics,
+configuration versions, promotion candidates, promotion decisions, and
+rollbacks. Production model output tables remain model-specific.
 """
 from __future__ import annotations
 
@@ -18,6 +19,10 @@ TABLE_NAMES = (
     "model_eval_label",
     "model_eval_run",
     "model_eval_metric",
+    "model_config_version",
+    "model_promotion_candidate",
+    "model_promotion_decision",
+    "model_promotion_rollback",
 )
 
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -47,6 +52,10 @@ def create_governance_schema_sql(schema: str = DEFAULT_SCHEMA) -> list[str]:
     label = qualified(schema, "model_eval_label")
     run = qualified(schema, "model_eval_run")
     metric = qualified(schema, "model_eval_metric")
+    config_version = qualified(schema, "model_config_version")
+    promotion_candidate = qualified(schema, "model_promotion_candidate")
+    promotion_decision = qualified(schema, "model_promotion_decision")
+    promotion_rollback = qualified(schema, "model_promotion_rollback")
 
     return [
         f"CREATE SCHEMA IF NOT EXISTS {q_schema}",
@@ -152,6 +161,66 @@ def create_governance_schema_sql(schema: str = DEFAULT_SCHEMA) -> list[str]:
         """,
         f"CREATE INDEX IF NOT EXISTS \"idx_model_eval_metric_run\" ON {metric} (\"eval_run_id\")",
         f"CREATE INDEX IF NOT EXISTS \"idx_model_eval_metric_lookup\" ON {metric} (\"eval_run_id\", \"metric_name\", \"label_name\", \"horizon\", \"factor_name\")",
+        f"""
+        CREATE TABLE IF NOT EXISTS {config_version} (
+          "config_version_id" TEXT PRIMARY KEY,
+          "model_id" TEXT NOT NULL,
+          "model_version" TEXT,
+          "config_hash" TEXT NOT NULL,
+          "config_status" TEXT NOT NULL DEFAULT 'proposed',
+          "config_payload_json" JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+          "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          "retired_at" TIMESTAMPTZ,
+          "status_detail" TEXT,
+          UNIQUE ("model_id", "config_hash")
+        )
+        """,
+        f"CREATE INDEX IF NOT EXISTS \"idx_model_config_version_model_status\" ON {config_version} (\"model_id\", \"config_status\")",
+        f"""
+        CREATE TABLE IF NOT EXISTS {promotion_candidate} (
+          "promotion_candidate_id" TEXT PRIMARY KEY,
+          "model_id" TEXT NOT NULL,
+          "config_version_id" TEXT NOT NULL REFERENCES {config_version} ("config_version_id"),
+          "eval_run_id" TEXT NOT NULL REFERENCES {run} ("eval_run_id"),
+          "candidate_status" TEXT NOT NULL DEFAULT 'proposed',
+          "proposed_by" TEXT,
+          "proposed_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          "candidate_payload_json" JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+          "status_detail" TEXT,
+          UNIQUE ("model_id", "config_version_id", "eval_run_id")
+        )
+        """,
+        f"CREATE INDEX IF NOT EXISTS \"idx_model_promotion_candidate_model_status\" ON {promotion_candidate} (\"model_id\", \"candidate_status\")",
+        f"CREATE INDEX IF NOT EXISTS \"idx_model_promotion_candidate_eval_run\" ON {promotion_candidate} (\"eval_run_id\")",
+        f"""
+        CREATE TABLE IF NOT EXISTS {promotion_decision} (
+          "promotion_decision_id" TEXT PRIMARY KEY,
+          "promotion_candidate_id" TEXT NOT NULL REFERENCES {promotion_candidate} ("promotion_candidate_id"),
+          "decision_type" TEXT NOT NULL,
+          "decision_status" TEXT NOT NULL,
+          "decided_by" TEXT,
+          "decided_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          "decision_payload_json" JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+          "status_detail" TEXT
+        )
+        """,
+        f"CREATE INDEX IF NOT EXISTS \"idx_model_promotion_decision_candidate\" ON {promotion_decision} (\"promotion_candidate_id\")",
+        f"""
+        CREATE TABLE IF NOT EXISTS {promotion_rollback} (
+          "rollback_id" TEXT PRIMARY KEY,
+          "model_id" TEXT NOT NULL,
+          "from_config_version_id" TEXT NOT NULL REFERENCES {config_version} ("config_version_id"),
+          "to_config_version_id" TEXT REFERENCES {config_version} ("config_version_id"),
+          "promotion_decision_id" TEXT REFERENCES {promotion_decision} ("promotion_decision_id"),
+          "rollback_status" TEXT NOT NULL DEFAULT 'requested',
+          "requested_by" TEXT,
+          "requested_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          "completed_at" TIMESTAMPTZ,
+          "rollback_payload_json" JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+          "status_detail" TEXT
+        )
+        """,
+        f"CREATE INDEX IF NOT EXISTS \"idx_model_promotion_rollback_model_status\" ON {promotion_rollback} (\"model_id\", \"rollback_status\")",
     ]
 
 

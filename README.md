@@ -18,7 +18,7 @@ It does not own raw source acquisition, live/paper order placement, broker/accou
 
 ```text
 docs/        Repository scope, context, workflow, acceptance, task, decisions, memory, and architecture RFCs.
-src/         Importable model-output and model-governance implementation code.
+src/         Importable model-output, model-governance, promotion, and evaluation implementation code.
 scripts/     SQL generation wrappers and operational entrypoints.
 tests/       First-party unit tests using in-memory fixtures/fake cursors.
 ```

@@ -490,3 +490,34 @@ Do not make temporary SQL files the default development path.
 - Development can validate SQL paths against the configured database instead of only file output.
 - Cleanup is scoped to the `trading_model` schema; scripts must not drop OpenClaw/system tables or unrelated component schemas.
 - Default tests still use fake cursors and dry-run CLI paths so test runs do not mutate the database.
+
+## D017 - Promotion infrastructure requires evaluation-backed candidates
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+After the first `MarketRegimeModel` evaluation harness and generic governance schema, the next capability is promotion infrastructure. However, the system does not yet have real `feature_01_market_regime` or `model_01_market_regime` data, and no real evaluation metrics have been produced. Therefore the next step should add the durable promotion schema without claiming or executing any model promotion.
+
+### Decision
+
+Extend the generic `trading_model` governance schema with model configuration and promotion lifecycle tables:
+
+```text
+model_config_version
+model_promotion_candidate
+model_promotion_decision
+model_promotion_rollback
+```
+
+`model_promotion_candidate` must reference both a `model_config_version` and a `model_eval_run`, so a candidate cannot exist without evaluation evidence. `model_promotion_decision` records approve/reject/defer style decisions for a candidate. `model_promotion_rollback` records a request to move away from an already promoted config version, optionally toward a previous config version.
+
+This is promotion infrastructure only. It does not create an active production model pointer, does not mark any current model as promoted, and does not replace the need for real evaluation metrics.
+
+### Consequences
+
+- Promotion is evidence-backed by schema shape: candidates depend on evaluation runs.
+- Promotion/rollback tables are generic across model layers while production output tables remain model-specific.
+- Concrete column registration remains deferred; table-name registration lives in `trading-manager`.
+- Actual promotion action remains blocked until real data, real metrics, and explicit acceptance thresholds exist.
