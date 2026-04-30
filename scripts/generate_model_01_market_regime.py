@@ -123,6 +123,49 @@ def write_model_rows_sql(
         cursor.execute(insert_sql, [row.get(column) for column in columns])
 
 
+def write_etf_affinity_rows_sql(
+    cursor: Any,
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    target_schema: str,
+    target_table: str,
+) -> None:
+    if not rows:
+        return
+    generator = _load_generator()
+    columns = list(generator.ETF_AFFINITY_COLUMNS)
+    qualified_table = _qualified(target_schema, target_table)
+    cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {_quote_identifier(target_schema)}")
+    cursor.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS {qualified_table} (
+          "available_time" TIMESTAMPTZ NOT NULL,
+          "etf_symbol" TEXT NOT NULL,
+          PRIMARY KEY ("available_time", "etf_symbol")
+        )
+        """
+    )
+    for column in columns:
+        if column in {"available_time", "etf_symbol"}:
+            continue
+        cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS {_quote_identifier(column)} DOUBLE PRECISION")
+
+    quoted_columns = [_quote_identifier(column) for column in columns]
+    placeholders = ", ".join(["%s"] * len(columns))
+    update_sql = ", ".join(
+        f"{_quote_identifier(column)} = EXCLUDED.{_quote_identifier(column)}"
+        for column in columns
+        if column not in {"available_time", "etf_symbol"}
+    )
+    insert_sql = f"""
+        INSERT INTO {qualified_table} ({", ".join(quoted_columns)})
+        VALUES ({placeholders})
+        ON CONFLICT ("available_time", "etf_symbol") DO UPDATE SET {update_sql}
+    """
+    for row in rows:
+        cursor.execute(insert_sql, [row.get(column) for column in columns])
+
+
 def generate_sql(
     *,
     database_url: str,
@@ -130,6 +173,7 @@ def generate_sql(
     source_table: str,
     target_schema: str,
     target_table: str,
+    etf_affinity_table: str | None,
     source_start: str | None,
     source_end: str | None,
     lookback: int,
@@ -148,6 +192,9 @@ def generate_sql(
             )
             rows = generator.generate_rows(feature_rows, lookback=lookback, min_history=min_history)
             write_model_rows_sql(cursor, rows, target_schema=target_schema, target_table=target_table)
+            if etf_affinity_table:
+                affinity_rows = generator.generate_etf_affinity_rows(feature_rows, lookback=lookback, min_history=min_history)
+                write_etf_affinity_rows_sql(cursor, affinity_rows, target_schema=target_schema, target_table=etf_affinity_table)
             return len(rows)
 
 
@@ -158,6 +205,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-table", default="feature_01_market_regime")
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_01_market_regime")
+    parser.add_argument(
+        "--etf-affinity-table",
+        default="model_01_market_regime_etf_affinity",
+        help="Optional target table for per-ETF state affinity rows. Use an empty value to skip.",
+    )
     parser.add_argument("--source-start", help="Optional lower timestamp bound for derived rows. Include enough lookback for rolling factors.")
     parser.add_argument("--source-end", help="Optional upper timestamp bound for derived rows.")
     generator = _load_generator()
@@ -171,12 +223,14 @@ def main(argv: list[str] | None = None) -> int:
         source_table=args.source_table,
         target_schema=args.target_schema,
         target_table=args.target_table,
+        etf_affinity_table=args.etf_affinity_table or None,
         source_start=args.source_start,
         source_end=args.source_end,
         lookback=args.lookback,
         min_history=args.min_history,
     )
-    print(f"generated {row_count} rows into {args.target_schema}.{args.target_table}")
+    affinity_note = f" and ETF affinity rows into {args.target_schema}.{args.etf_affinity_table}" if args.etf_affinity_table else ""
+    print(f"generated {row_count} rows into {args.target_schema}.{args.target_table}{affinity_note}")
     return 0
 
 

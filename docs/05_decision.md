@@ -568,3 +568,27 @@ The reviewer prompt must reject/defer promotion if evidence is fixture-only, dry
 - Agent judgment becomes part of the promotion gate without giving the agent direct write authority over production state.
 - Promotion remains evidence-backed and reviewable: candidate -> agent review -> decision row proposal.
 - Actual persistence of the decision and any active production pointer remains a later explicit implementation step.
+
+
+## D019 - MarketRegimeModel outputs ETF affinity for downstream selection
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+The continuous market-state vector is not an abstract dashboard artifact. Its primary use is to help decide which ETFs, sectors, styles, and eventually securities deserve attention under the current tape. A state vector that does not expose ETF/asset implications leaves too much interpretation burden on Layer 2.
+
+### Decision
+
+`MarketRegimeModel` V1 owns a companion per-ETF affinity output, `model_01_market_regime_etf_affinity`, keyed by `available_time + etf_symbol`.
+
+The affinity row should combine point-in-time ETF trend evidence, relative strength evidence, and market-state tailwind alignment into `market_state_affinity_score`, with a separate `confidence_score` for signal coverage/data quality.
+
+Future returns may be used to evaluate whether the affinity scores predict ETF outperformance in similar tapes, but future returns must not be used as production inputs.
+
+### Consequences
+
+- Model 1 explicitly answers which ETFs fit the current market state.
+- `SecuritySelectionModel` consumes ETF affinity as sector/style/theme direction, then maps it through ETF holdings exposure and full-market scans into concrete security candidates.
+- Model 1 still does not own final stock selection, final portfolio weights, or risk-gated execution decisions.

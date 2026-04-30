@@ -92,6 +92,48 @@ class MarketRegimeModelTests(unittest.TestCase):
         scaler.update({"example": 1.0}, ["example"])
         self.assertEqual(scaler.zscore(signal, 100.0), 5.0)
 
+
+    def test_generates_etf_affinity_rows_for_current_market_state(self) -> None:
+        input_rows = [_row(index) for index in range(1, 66)]
+        affinity_rows = generator.generate_etf_affinity_rows(input_rows, etf_symbols=["QQQ", "TLT"], lookback=120)
+
+        self.assertEqual(len(affinity_rows), 130)
+        mature_rows = [row for row in affinity_rows if row["available_time"] == _row(65)["snapshot_time"]]
+        self.assertEqual({row["etf_symbol"] for row in mature_rows}, {"QQQ", "TLT"})
+        qqq = next(row for row in mature_rows if row["etf_symbol"] == "QQQ")
+        self.assertGreater(qqq["etf_trend_score"], 0)
+        self.assertGreater(qqq["market_state_affinity_score"], 0)
+        self.assertGreater(qqq["confidence_score"], 0)
+        self.assertLessEqual(qqq["confidence_score"], 1)
+
+    def test_sql_writer_uses_etf_affinity_table_shape(self) -> None:
+        class FakeCursor:
+            def __init__(self) -> None:
+                self.calls: list[tuple[str, list[object] | None]] = []
+
+            def execute(self, sql: str, params: list[object] | None = None) -> None:
+                self.calls.append((sql, params))
+
+        cursor = FakeCursor()
+        sql_runner.write_etf_affinity_rows_sql(
+            cursor,
+            [
+                {
+                    "available_time": "2026-01-02T10:00:00-05:00",
+                    "etf_symbol": "QQQ",
+                    "market_state_affinity_score": 0.5,
+                }
+            ],
+            target_schema="trading_model",
+            target_table="model_01_market_regime_etf_affinity",
+        )
+
+        joined_sql = "\n".join(sql for sql, _params in cursor.calls)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime_etf_affinity"', joined_sql)
+        self.assertIn('PRIMARY KEY ("available_time", "etf_symbol")', joined_sql)
+        self.assertIn('ADD COLUMN IF NOT EXISTS "market_state_affinity_score" DOUBLE PRECISION', joined_sql)
+        self.assertIn('ON CONFLICT ("available_time", "etf_symbol") DO UPDATE SET', joined_sql)
+
     def test_sql_reader_expands_feature_payload_json(self) -> None:
         class FakeCursor:
             def __init__(self) -> None:

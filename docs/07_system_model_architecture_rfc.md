@@ -102,7 +102,7 @@ If a later decision splits one or more layers into separate component repositori
 
 ### Goal
 
-Describe current market conditions as a continuous point-in-time state vector using market-only features.
+Describe current market conditions as a continuous point-in-time state vector using market-only features, then expose which ETFs are best aligned with that detected tape.
 
 The model should capture usable downstream context for:
 
@@ -138,7 +138,7 @@ rolling/expanding scaler
 + bounded continuous market-state vector
 ```
 
-No supervised labels are assigned. No clustering is required for V1. Future-return labels may be used only for evaluation, never as inputs to construct the market-state vector.
+No supervised regime labels are assigned. No clustering is required for V1. Future-return labels may be used only for evaluation, never as inputs to construct the market-state vector or production ETF affinity rows.
 
 ### Output contract sketch
 
@@ -159,6 +159,24 @@ No supervised labels are assigned. No clustering is required for V1. Future-retu
   "data_quality_score": 0.97
 }
 ```
+
+### ETF affinity output
+
+The state vector is useful only if it helps downstream ETF and security selection. Model 1 therefore also owns a companion per-ETF affinity surface:
+
+```json
+{
+  "available_time": "2026-04-28T10:00:00-04:00",
+  "etf_symbol": "SMH",
+  "etf_trend_score": 0.71,
+  "etf_relative_strength_score": 0.62,
+  "market_state_tailwind_score": 0.54,
+  "market_state_affinity_score": 0.61,
+  "confidence_score": 0.92
+}
+```
+
+This answers: under the current market-state vector, which broad/sector/industry/theme ETFs deserve attention? The output is a Layer 1 bridge into `SecuritySelectionModel`: Model 1 ranks ETF/style/sector alignment; Model 2 maps those ETF directions through holdings exposure and full-market scans into tradable stock or ETF candidates.
 
 ### Evaluation
 
