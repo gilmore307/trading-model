@@ -101,8 +101,10 @@ min_history = 30
 name = "rate_pressure_factor"
 reducer = "bounded_mean"
 aggregation = "flat"
-# High value means duration/rate pressure: long-duration bonds weakening versus short-duration bonds.
+# TLT/SHY and IEF/SHY are cross-asset macro sensors, not tradable-candidate conclusions.
+# High value means duration/discount-rate pressure: long-duration bonds weakening versus short-duration bonds.
 # TLT strength can also indicate risk-off safe-haven demand; that may become a separate factor later.
+# Target ontology should migrate this toward discount_rate_pressure_factor after schema review.
 
 [[factors.groups]]
 columns = ["tlt_shy_30m", "tlt_shy_distance_to_ma20", "tlt_shy_ma_alignment_score", "ief_shy_30m", "ief_shy_distance_to_ma20", "ief_shy_ma_alignment_score"]

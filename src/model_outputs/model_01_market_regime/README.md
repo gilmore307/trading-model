@@ -48,3 +48,8 @@ The current feature payload has 1,477 logical feature keys, while the first fact
 ## Sector rotation boundary
 
 Sector/industry rotation, sector leadership, and sector-vs-sector relative strength belong to `SecuritySelectionModel`. Model 1 may use market-wide breadth, concentration, crowding, correlation, and fragility evidence, but it should not output a sector rotation factor or candidate-facing sector leadership conclusion.
+
+
+## Cross-asset proxy boundary
+
+Long/short bond ratios such as `TLT/SHY` and `IEF/SHY` may remain Model 1 evidence because they describe broad discount-rate, duration, and term-structure pressure. They are sensors, not final factor names and not candidate choices. Sector/industry ETF comparisons are different: those answer rotation/leadership questions and belong to `SecuritySelectionModel`.

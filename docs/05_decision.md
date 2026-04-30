@@ -753,3 +753,32 @@ Move sector/industry rotation, sector leadership, industry leadership, and secto
 - Treat sector/industry ETF relative-strength evidence as Model 2 evidence unless it is aggregated into a market-wide structure/risk diagnostic without candidate identity.
 - `SecuritySelectionModel` owns sector/industry rotation research, sector-weighted candidate parameters, ETF holdings exposure propagation into stocks, and candidate-level certainty comparisons.
 - The apparent Model 1 input-utilization denominator should be revisited because some of the current `feature_01_market_regime` payload is really Model 2 sector-rotation evidence that should be split or reassigned.
+
+
+## D026 - Cross-asset macro proxies may remain Model 1 evidence
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+After moving sector/industry rotation to `SecuritySelectionModel`, Chentong pointed out that Model 1 still uses long/short bond ratios such as `TLT/SHY` or `IEF/SHY`. This is a valid boundary question: both sector rotation and rate proxies can be expressed as ETF ratios, but they answer different model questions.
+
+### Decision
+
+Do not classify all ETF ratios the same way.
+
+Cross-asset macro/risk proxies may remain Model 1 evidence when they describe broad market properties rather than candidate choice. Examples include:
+
+- `TLT/SHY` and `IEF/SHY` as evidence for discount-rate, duration, and term-structure pressure;
+- `HYG/LQD` as evidence for credit/funding stress;
+- dollar, commodity, volatility, and safe-haven ratios as evidence for liquidity pressure, inflation impulse, risk aversion, or macro driver dominance.
+
+Sector/industry ETF-vs-ETF or sector-vs-broad comparisons belong to Model 2 when they answer which sector, industry, ETF, or stock candidate has stronger leadership/certainty.
+
+### Consequences
+
+- Model 1 may use long/short bond ratios and other cross-asset macro sensors as input evidence.
+- Model 1 should not output durable ratio-named factors such as a literal `tlt_shy_factor`; the output should be latent market-property fields such as `discount_rate_pressure_factor`, `funding_credit_stress_factor`, `dollar_liquidity_pressure_factor`, `inflation_commodity_impulse_factor`, or `risk_stress_factor` after schema review.
+- Current `rate_pressure_factor` remains a provisional implementation name and should be migrated toward the deeper ontology, likely `discount_rate_pressure_factor`, when the Model 1 output schema is reviewed.
+- Model 2 V1 remains focused on sector/industry equity ETF and stock candidate parameterization; broad/macro ETFs are context/filter evidence, not V1 tradable candidates.
