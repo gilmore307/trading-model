@@ -16,7 +16,7 @@
 ## Open Gaps
 
 - Reviewed feature-to-latent-factor evidence map for the remaining `model_01_market_regime` Layer 1 keys, including used, diagnostic/quality, evaluation-only, and intentionally unused feature keys.
-- Exact first deep market-property factor formulas for `model_01_market_regime`, replacing provisional surface proxy groupings with price/trend/capital-flow/sentiment/valuation/fundamental/macro/structure/risk ontology and materially increasing reviewed evidence coverage beyond the current 124 of 967 Layer 1 generated feature keys after moving sector/industry rotation features to Model 2.
+- Exact first deep market-property factor formulas for `model_01_market_regime`, replacing provisional surface proxy groupings with price/trend/capital-flow/sentiment/valuation/fundamental/macro/structure/risk ontology and materially increasing reviewed evidence coverage beyond the current 125 of 967 Layer 1 generated feature keys after moving sector/industry rotation features to Model 2.
 - Exact persistence path for agent-reviewed promotion decisions and future active production model pointers.
 - Exact artifact/manifest/ready-signal/request contract interactions for promoted/non-dry-run model evaluation artifacts.
 - Exact storage path/reference requirements.

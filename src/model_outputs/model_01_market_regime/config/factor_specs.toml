@@ -155,7 +155,7 @@ direction = 1
 min_history = 60
 
 [[factors.groups]]
-columns = ["gld_spy_30m", "uso_dbc_30m", "cper_dbc_30m"]
+columns = ["gld_spy_30m", "dbc_spy_30m", "uso_spy_30m", "cper_dbc_30m"]
 direction = 1
 min_history = 20
 
