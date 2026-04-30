@@ -542,3 +542,29 @@ Read `trading_data.feature_01_market_regime` as a table keyed by `snapshot_time`
 - `model_01_market_regime` remains a normal typed model-output table keyed by `available_time`.
 - The feature generator can keep model-local generated feature keys without registering 1,477 physical columns.
 - If specific generated features become cross-repository contracts, promote them separately instead of treating every generated key as a database column contract.
+
+## D019 - Promotion gate uses agent review but not automatic promotion
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+After the development DB smoke and promotion infrastructure, the next step is to evaluate whether a model config can be promoted. Chentong wants this step to be performed by a script that calls an agent to judge whether promotion is allowed.
+
+### Decision
+
+Add an agent-backed promotion review gate for `MarketRegimeModel`:
+
+- `scripts/review_market_regime_promotion.py` builds a `model_config_version` row and an evaluation-backed `model_promotion_candidate` row from an evaluation summary.
+- The script builds a strict reviewer-agent prompt and can invoke `openclaw agent` to return a constrained JSON decision.
+- The script validates the agent output and converts it into a `model_promotion_decision` row.
+- The script does not write the decision to PostgreSQL and does not create or change a production active-model pointer.
+
+The reviewer prompt must reject/defer promotion if evidence is fixture-only, dry-run-only, missing real-data metrics, or missing explicit thresholds.
+
+### Consequences
+
+- Agent judgment becomes part of the promotion gate without giving the agent direct write authority over production state.
+- Promotion remains evidence-backed and reviewable: candidate -> agent review -> decision row proposal.
+- Actual persistence of the decision and any active production pointer remains a later explicit implementation step.

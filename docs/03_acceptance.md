@@ -51,8 +51,11 @@ PYTHONPATH=src python3 scripts/clear_model_development_database.py --dry-run
 PYTHONPATH=src python3 scripts/evaluate_model_01_market_regime.py --help
 PYTHONPATH=src python3 scripts/evaluate_model_01_market_regime.py
 PYTHONPATH=src python3 scripts/run_market_regime_development_smoke.py --help
+PYTHONPATH=src python3 scripts/review_market_regime_promotion.py --help
 # Optional runtime DB smoke, cleans development tables by default:
 PYTHONPATH=src python3 scripts/run_market_regime_development_smoke.py
+# Agent invocation is opt-in; use --dry-run or --local-fallback-review for tests:
+PYTHONPATH=src python3 scripts/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --dry-run
 git diff --check
 ```
 

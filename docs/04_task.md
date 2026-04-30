@@ -16,6 +16,7 @@
 ## Open Gaps
 
 - Exact first factor/score formulas for `model_01_market_regime`.
+- Exact persistence path for agent-reviewed promotion decisions and future active production model pointers.
 - Exact artifact/manifest/ready-signal/request contract interactions for promoted/non-dry-run model evaluation artifacts.
 - Exact storage path/reference requirements.
 - Whether `trading-strategy` remains separate or `StrategySelectionModel` research is model-local until a later split.
@@ -23,6 +24,7 @@
 
 ## Recently Accepted
 
+- Implemented agent-backed `MarketRegimeModel` promotion review gate in `src/model_governance/agent_review.py` and `scripts/review_market_regime_promotion.py`. The script builds config/candidate rows from evaluation evidence, can invoke `openclaw agent` for a strict JSON promotion review, validates the decision, and emits a promotion decision row proposal without writing it or changing a production pointer.
 - Implemented dry-run-only `MarketRegimeModel` evaluation harness in `src/model_evaluation/market_regime.py` and `scripts/evaluate_model_01_market_regime.py`. It builds in-memory governance/evaluation rows and metrics without opening a database connection, so development data cannot enter a durable SQL database by default.
 - Implemented generic model governance SQL schema helpers in `src/model_governance/schema.py` and the operational wrapper `scripts/ensure_model_governance_schema.py` for dataset request/snapshot/split, evaluation label/run/metric, config version, promotion candidate, promotion decision, and rollback tables. The wrapper has a `--dry-run` SQL preview mode; default execution can create the model governance tables in the development DB. `scripts/clear_model_development_database.py` clears the `trading_model` development schema at the end of a development run with explicit confirmation. Table names are registered in `trading-manager`; concrete column registration remains deferred until the schema has been exercised with real evaluation/promotion flows.
 - Accepted control-plane-facing data request boundary: use `required_data_start_time` / `required_data_end_time`; keep `label_horizons`, target symbols, train/validation/test splits, and label construction inside `trading-model` evaluation config/run tables.

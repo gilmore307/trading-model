@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+"""Ask an agent to review whether MarketRegimeModel can be promoted.
+
+The script prepares a promotion candidate from evaluation evidence, builds a
+strict reviewer-agent prompt, optionally invokes ``openclaw agent``, validates the
+returned JSON decision, and prints the resulting candidate/decision rows.
+
+It does not write promotion decisions to PostgreSQL and does not create an active
+production model pointer.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+from model_governance.agent_review import (
+    build_decision_row_from_review,
+    build_market_regime_promotion_prompt,
+    extract_json_object,
+    validate_promotion_review,
+)
+from model_governance.promotion import build_config_version_row, build_promotion_candidate_row
+
+DEFAULT_MODEL_ID = "model_01_market_regime"
+DEFAULT_MODEL_VERSION = "model_01_market_regime"
+DEFAULT_CONFIG_HASH = "development_smoke"
+
+
+def _load_summary(path: Path) -> dict[str, Any]:
+    parsed = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(parsed, dict):
+        raise ValueError("evaluation summary JSON must be an object")
+    return parsed
+
+
+def _extract_agent_text(stdout: str) -> str:
+    stripped = stdout.strip()
+    if not stripped:
+        raise ValueError("openclaw agent returned empty stdout")
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError:
+        return stripped
+    if isinstance(parsed, dict):
+        for key in ("message", "reply", "response", "content", "text", "output"):
+            value = parsed.get(key)
+            if isinstance(value, str) and value.strip():
+                return value
+        result = parsed.get("result")
+        if isinstance(result, dict):
+            payloads = result.get("payloads")
+            if isinstance(payloads, list):
+                for payload in payloads:
+                    if isinstance(payload, dict) and isinstance(payload.get("text"), str) and payload["text"].strip():
+                        return payload["text"]
+        # Some gateway responses wrap the final assistant message more deeply.
+        for value in parsed.values():
+            if isinstance(value, dict):
+                for key in ("message", "reply", "response", "content", "text"):
+                    nested = value.get(key)
+                    if isinstance(nested, str) and nested.strip():
+                        return nested
+    return stripped
+
+
+def _invoke_agent(
+    *,
+    prompt: str,
+    openclaw_bin: str,
+    agent: str | None,
+    model: str | None,
+    thinking: str,
+    timeout_seconds: int,
+) -> dict[str, Any]:
+    command = [openclaw_bin, "agent", "--message", prompt, "--json", "--thinking", thinking, "--timeout", str(timeout_seconds)]
+    if agent:
+        command.extend(["--agent", agent])
+    if model:
+        command.extend(["--model", model])
+    result = subprocess.run(command, text=True, capture_output=True, check=False)
+    if result.returncode != 0:
+        if result.stdout:
+            print(result.stdout, file=sys.stdout)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+        raise SystemExit(result.returncode)
+    return validate_promotion_review(extract_json_object(_extract_agent_text(result.stdout)))
+
+
+def _fallback_review(summary: dict[str, Any]) -> dict[str, Any]:
+    """Deterministic local reviewer for prompt tests and unavailable agents.
+
+    This is intentionally conservative: fixture/dev-smoke evidence can exercise
+    the gate, but cannot approve production promotion.
+    """
+    checks = {
+        "has_eval_run": bool(summary.get("eval_run_id")),
+        "has_metrics": bool(summary.get("tables", {}).get("model_eval_metric")),
+        "has_real_non_fixture_data": summary.get("database_write_policy") != "development_tables_written_then_cleaned",
+        "has_explicit_thresholds": False,
+        "cleanup_confirmed": summary.get("cleanup_policy") == "cleanup_after_run",
+    }
+    return validate_promotion_review(
+        {
+            "can_promote": False,
+            "decision_type": "defer",
+            "decision_status": "deferred",
+            "confidence": 0.9,
+            "reasons": ["Evaluation plumbing is present, but current evidence is development smoke evidence only."],
+            "blockers": ["Real non-fixture evaluation metrics and explicit acceptance thresholds are required before promotion."],
+            "required_next_steps": [
+                "Run evaluation on real feature/model data.",
+                "Define acceptance thresholds for MarketRegimeModel promotion.",
+                "Re-run the agent promotion review with real metrics.",
+            ],
+            "evidence_checks": checks,
+        }
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--evaluation-summary-json", type=Path, required=True, help="JSON summary from the evaluation or development smoke run.")
+    parser.add_argument("--model-id", default=DEFAULT_MODEL_ID)
+    parser.add_argument("--model-version", default=DEFAULT_MODEL_VERSION)
+    parser.add_argument("--config-hash", default=DEFAULT_CONFIG_HASH)
+    parser.add_argument("--proposed-by", default="promotion_gate_script")
+    parser.add_argument("--dry-run", action="store_true", help="Print prompt/candidate rows without invoking an agent.")
+    parser.add_argument("--local-fallback-review", action="store_true", help="Use deterministic local conservative review instead of invoking an agent.")
+    parser.add_argument("--agent", default="main", help="OpenClaw agent id for openclaw agent --agent. Defaults to main.")
+    parser.add_argument("--model", help="Optional model override for openclaw agent --model.")
+    parser.add_argument("--thinking", default="high")
+    parser.add_argument("--timeout-seconds", type=int, default=600)
+    parser.add_argument("--openclaw-bin", default="openclaw")
+    args = parser.parse_args(argv)
+
+    summary = _load_summary(args.evaluation_summary_json)
+    config_row = build_config_version_row(
+        model_id=args.model_id,
+        model_version=args.model_version,
+        config_hash=args.config_hash,
+        config_payload={"promotion_gate_source": str(args.evaluation_summary_json)},
+    )
+    eval_run_id = str(summary.get("eval_run_id") or "").strip()
+    if not eval_run_id:
+        raise SystemExit("evaluation summary must include eval_run_id")
+    candidate_row = build_promotion_candidate_row(
+        model_id=args.model_id,
+        config_version_id=config_row["config_version_id"],
+        eval_run_id=eval_run_id,
+        proposed_by=args.proposed_by,
+        candidate_payload={"evaluation_summary": summary},
+    )
+    prompt = build_market_regime_promotion_prompt(
+        evaluation_summary=summary,
+        config_version_row=config_row,
+        promotion_candidate_row=candidate_row,
+    )
+
+    if args.dry_run:
+        print(json.dumps({"config_version": config_row, "promotion_candidate": candidate_row, "agent_prompt": prompt}, indent=2, sort_keys=True, default=str))
+        print("DRY RUN ONLY: no agent was invoked and no promotion decision was written.")
+        return 0
+
+    review = _fallback_review(summary) if args.local_fallback_review else _invoke_agent(
+        prompt=prompt,
+        openclaw_bin=args.openclaw_bin,
+        agent=args.agent,
+        model=args.model,
+        thinking=args.thinking,
+        timeout_seconds=args.timeout_seconds,
+    )
+    decision_row = build_decision_row_from_review(
+        promotion_candidate_id=candidate_row["promotion_candidate_id"],
+        review=review,
+    )
+    print(json.dumps({"config_version": config_row, "promotion_candidate": candidate_row, "agent_review": review, "promotion_decision": decision_row}, indent=2, sort_keys=True, default=str))
+    print("REVIEW ONLY: no promotion decision was written and no production pointer was changed.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
