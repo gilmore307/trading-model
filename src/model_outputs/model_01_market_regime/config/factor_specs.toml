@@ -155,7 +155,7 @@ direction = 1
 min_history = 60
 
 [[factors.groups]]
-columns = ["gld_spy_30m", "xle_spy_30m", "uso_dbc_30m", "cper_dbc_30m"]
+columns = ["gld_spy_30m", "uso_dbc_30m", "cper_dbc_30m"]
 direction = 1
 min_history = 20
 
@@ -176,7 +176,7 @@ reducer = "bounded_mean"
 aggregation = "flat"
 
 [[factors.groups]]
-columns = ["qqq_spy_30m", "iwm_spy_30m", "rsp_spy_30m", "hyg_lqd_30m", "xly_xlp_30m", "bitw_spy_30m"]
+columns = ["qqq_spy_30m", "iwm_spy_30m", "rsp_spy_30m", "hyg_lqd_30m", "bitw_spy_30m"]
 direction = 1
 min_history = 20
 

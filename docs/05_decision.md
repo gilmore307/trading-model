@@ -539,7 +539,7 @@ Read `trading_data.feature_01_market_regime` as a table keyed by `snapshot_time`
 ### Consequences
 
 - `model_01_market_regime` remains a normal typed model-output table keyed by `available_time`.
-- The feature generator can keep model-local generated feature keys without registering 1,477 physical columns.
+- The feature generator can keep model-local generated feature keys without registering every generated feature as a physical column; after the sector-rotation feature split, the Layer 1 payload contains 967 logical keys.
 - If specific generated features become cross-repository contracts, promote them separately instead of treating every generated key as a database column contract.
 
 ## D019 - Promotion gate uses agent review but not automatic promotion
@@ -714,7 +714,7 @@ Status: Accepted
 
 ### Context
 
-The current `feature_01_market_regime` payload contains 1,477 logical feature keys, while the first `model_01_market_regime` factor specification now uses 126 signal columns across 9 provisional factors after removing `sector_rotation_factor` from Model 1. That is roughly 8.5% feature utilization. Chentong flagged this as too low.
+The current `feature_01_market_regime` payload contains 967 Layer 1 logical feature keys after the sector-rotation feature split, while the first `model_01_market_regime` factor specification now uses 124 signal columns across 9 provisional factors. That is roughly 12.8% feature utilization. Chentong flagged this as too low.
 
 The issue is not that every generated feature must be forced into every factor. Some columns should remain quality controls, diagnostics, redundant checks, fallback evidence, or evaluation-only fields. But using only a small hand-selected proxy subset risks underusing the reviewed input surface and collapsing Model 1 back into a shallow ETF-ratio dashboard.
 
@@ -729,7 +729,7 @@ The target is broad, explainable coverage of the input evidence universe, not in
 - Add or maintain a reviewed evidence map for `model_01_market_regime` before major factor expansion.
 - Track evidence utilization as an acceptance metric: total generated feature keys, keys assigned to a latent market-property factor, keys used only for data quality/diagnostics/evaluation, and keys intentionally unused.
 - Keep factors interpretable by grouping evidence into the accepted market-property ontology instead of adding opaque high-dimensional raw features directly to the output vector.
-- Future implementation work should expand beyond the current 126-column provisional slice while preserving point-in-time correctness and no-leakage rules.
+- Future implementation work should expand beyond the current 124-column provisional slice while preserving point-in-time correctness and no-leakage rules.
 
 
 ## D025 - Sector and industry rotation belongs to SecuritySelectionModel
