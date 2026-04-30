@@ -117,7 +117,7 @@ The model should capture usable downstream context for:
 - trend strength
 - transition pressure
 
-V1 does **not** need discrete clustering, hard regime labels, HMM states, or human-readable state names. Those can be research diagnostics later, but they are not the main contract for selecting securities or strategies.
+V1 does **not** need discrete clustering, hard regime labels, HMM states, human-readable state names, ETF rankings, or security candidates. Those can be research diagnostics or downstream outputs later, but they are not the Layer 1 contract.
 
 ### Input table
 
@@ -164,7 +164,7 @@ No supervised labels are assigned. No clustering is required for V1. Future-retu
 
 - point-in-time correctness and no leakage
 - vector stability under rolling/expanding fits
-- downstream usefulness for security selection and strategy selection
+- downstream usefulness for security selection and strategy selection without leaking downstream selection labels into Layer 1
 - interpretability of feature-block factors
 - drawdown warning usefulness
 
@@ -172,7 +172,7 @@ No supervised labels are assigned. No clustering is required for V1. Future-retu
 
 ### Goal
 
-Construct the current tradable symbol universe after `MarketRegimeModel` identifies market, sector, and style conditions.
+Construct the current tradable ETF/security universe after `MarketRegimeModel` identifies market, sector, and style conditions.
 
 It answers:
 
@@ -181,13 +181,13 @@ It answers:
 - Should the system trade sector ETFs directly, core ETF holdings, high-relative-strength leaders, laggards/rotation candidates, defensive stocks, or only very liquid mega-caps?
 - Which candidates are excluded because of liquidity, event risk, or poor optionability?
 
-This layer does not choose entry timing, strategy parameters, option contracts, or final position size.
+This layer does not choose entry timing, strategy parameters, option contracts, final position size, or final portfolio weights.
 
 ### Inputs
 
-- `MarketRegimeModel` outputs: market regime, sector/style regime, risk-on/risk-off score, transition risk, dominant macro drivers, sector ETF scores.
+- `MarketRegimeModel` outputs: continuous market-state vector, risk-on/risk-off context, transition pressure, dominant macro drivers, sector/style condition factors. It does not output ETF rankings or selected securities.
 - ETF holdings snapshots: ETF constituent weights for broad, sector, industry, and thematic ETFs.
-- Stock bars/liquidity: relative strength vs sector ETF and SPY, trend quality, volatility, gap behavior, volume expansion, spread/liquidity.
+- ETF and stock bars/liquidity: relative strength vs sector ETF and SPY, trend clarity, trend persistence, volatility fit, gap behavior, volume expansion, spread/liquidity.
 - Optionability summaries: option availability, spread, volume, open interest, DTE coverage.
 - Event exclusions: earnings proximity, known macro/event shock windows, SEC/news risk, abnormal activity flags.
 
@@ -217,11 +217,24 @@ Example:
 }
 ```
 
-Then sector/style scores from `MarketRegimeModel` can be transmitted to stocks:
+Then Model 2 ETF trend-certainty scores can be transmitted to stocks:
 
 ```text
-stock_sector_exposure_score = sum(etf_score * stock_weight_in_etf)
+stock_etf_trend_exposure_score = sum(etf_trend_certainty_score * stock_weight_in_etf)
 ```
+
+### Selection objective
+
+`SecuritySelectionModel` does **not** select the ETF or stock with the highest realized or expected return. The selection target is:
+
+```text
+clear, persistent trend
++ high certainty / low ambiguity
++ enough liquidity and optionability
++ acceptable event and volatility risk
+```
+
+Forward returns are labels for evaluation and calibration, not the production ranking target. Production ranking should prefer the ETF or stock whose trend is most legible, persistent, and tradable under the current market-state context.
 
 ### Candidate sources
 
@@ -236,14 +249,15 @@ Do not rely only on ETF holdings. Use two candidate sources:
 target_score =
   w1 * sector_regime_fit
 + w2 * etf_holding_exposure
-+ w3 * stock_relative_strength
-+ w4 * stock_trend_quality
-+ w5 * liquidity_score
-+ w6 * optionability_score
-+ w7 * historical_strategy_fit
-- w8 * event_risk_penalty
-- w9 * crowding_penalty
-- w10 * volatility_penalty
++ w3 * relative_strength_score
++ w4 * trend_clarity_score
++ w5 * trend_persistence_score
++ w6 * certainty_score
++ w7 * liquidity_score
++ w8 * optionability_score
+- w9 * event_risk_penalty
+- w10 * crowding_penalty
+- w11 * volatility_instability_penalty
 ```
 
 ### Output sketch
@@ -253,6 +267,16 @@ target_score =
   "timestamp": "2026-04-28T09:30:00-04:00",
   "market_regime": "low_vol_risk_on",
   "preferred_sector_etfs": ["SMH", "XLK", "IGV", "QQQ"],
+  "etf_candidates": [
+    {
+      "symbol": "SMH",
+      "target_score": 0.89,
+      "trend_clarity_score": 0.92,
+      "trend_persistence_score": 0.87,
+      "certainty_score": 0.84,
+      "candidate_reason": ["clear semiconductor leadership", "persistent relative strength", "acceptable volatility"]
+    }
+  ],
   "avoid_sector_etfs": ["XLU", "XLRE"],
   "long_candidates": [
     {
@@ -261,9 +285,12 @@ target_score =
       "sector_regime_fit": 0.94,
       "etf_holding_exposure": {"SMH": 0.20, "XLK": 0.12, "QQQ": 0.08},
       "relative_strength_score": 0.88,
+      "trend_clarity_score": 0.91,
+      "trend_persistence_score": 0.86,
+      "certainty_score": 0.84,
       "optionability_score": 0.95,
       "event_risk_score": 0.32,
-      "candidate_reason": ["core holding of strong semiconductor ETFs", "outperforming SMH and QQQ", "high option liquidity"]
+      "candidate_reason": ["core holding of strong semiconductor ETFs", "persistent relative strength vs SMH and QQQ", "clear trend with high option liquidity"]
     }
   ],
   "short_candidates": [],
@@ -504,7 +531,9 @@ Every candidate trade should produce a complete point-in-time decision record fo
   "layer_2_security_selection": {
     "target_score": 0.91,
     "preferred_sector_etfs": ["SMH", "XLK", "QQQ"],
-    "candidate_reason": ["core holding of strong semiconductor ETFs", "high option liquidity"]
+    "trend_clarity_score": 0.90,
+    "certainty_score": 0.84,
+    "candidate_reason": ["core holding of strong semiconductor ETFs", "clear persistent trend", "high option liquidity"]
   },
   "layer_3_strategy": {
     "family": "breakdown_trend_following",

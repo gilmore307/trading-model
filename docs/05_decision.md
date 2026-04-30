@@ -157,7 +157,7 @@ Different market regimes require different selection styles. Risk-on regimes may
 
 ### Consequences
 
-- `MarketRegimeModel` should output sector/style scores useful for security selection.
+- `MarketRegimeModel` should output sector/style context factors useful for security selection, but should not output ETF rankings or security candidates.
 - `etf_holding_snapshot` becomes an important upstream data kind for Layer 2.
 - A derived point-in-time `stock_etf_exposure` table should be designed, either model-local first or registered through `trading-main` if cross-repository use is needed.
 - `StrategySelectionModel` consumes selected candidate pools instead of scanning the whole universe directly.
@@ -568,3 +568,30 @@ The reviewer prompt must reject/defer promotion if evidence is fixture-only, dry
 - Agent judgment becomes part of the promotion gate without giving the agent direct write authority over production state.
 - Promotion remains evidence-backed and reviewable: candidate -> agent review -> decision row proposal.
 - Actual persistence of the decision and any active production pointer remains a later explicit implementation step.
+
+
+## D019 - ETF/security selection belongs to SecuritySelectionModel
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+A temporary design placed per-ETF market-state affinity inside `MarketRegimeModel`. Chentong identified the boundary risk: ETF/security ranking inside Layer 1 can blur the separation between state description and downstream selection, and increases the chance that evaluation labels such as future return leak into production state construction.
+
+The current market-state vector should help downstream selection, but it should not itself select ETFs or stocks.
+
+### Decision
+
+Remove per-ETF affinity/ranking from `MarketRegimeModel` V1. Layer 1 returns only the continuous point-in-time market-state vector keyed by `available_time`.
+
+`SecuritySelectionModel` owns ETF and stock selection. It may consume the Layer 1 state vector, ETF/stock trend features, relative strength, ETF holdings exposure, liquidity, optionability, and event exclusions to rank ETFs and securities.
+
+The Layer 2 selection objective is not maximum realized or expected return. The primary target is the clearest and most certain tradable trend: trend clarity, trend persistence, relative strength consistency, signal agreement, adequate liquidity/optionability, and controlled event/volatility ambiguity. Future returns are evaluation labels for calibration, not direct production ranking inputs.
+
+### Consequences
+
+- `model_01_market_regime` remains a pure state-description output.
+- No `model_01_market_regime_etf_affinity` output is produced by Model 1.
+- Model 2 should define ETF/security scores such as `trend_clarity_score`, `trend_persistence_score`, `certainty_score`, and `target_score`.
+- Evaluation may still ask whether selected high-certainty trends later performed well, but that is downstream validation rather than Layer 1 construction.
