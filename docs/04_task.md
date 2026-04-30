@@ -15,7 +15,7 @@
 
 ## Open Gaps
 
-- Exact first factor/score formulas for `model_01_market_regime`.
+- Exact first deep market-property factor formulas for `model_01_market_regime`, replacing provisional surface proxy groupings with price/trend/capital-flow/sentiment/valuation/fundamental/macro/structure/risk ontology.
 - Exact persistence path for agent-reviewed promotion decisions and future active production model pointers.
 - Exact artifact/manifest/ready-signal/request contract interactions for promoted/non-dry-run model evaluation artifacts.
 - Exact storage path/reference requirements.
@@ -34,7 +34,7 @@
 - Moved `model_01_market_regime` factor membership, signal directions, and reducer choices into `config/factor_specs.toml`; generator code now loads and validates config.
 - Implemented `src/model_outputs/model_01_market_regime/generator.py` and `scripts/generate_model_01_market_regime.py` for the V1 continuous state-vector contract.
 - Added first-party tests in `tests/test_market_regime_model.py`; default checks are compileall, unittest discovery, script `--help`, and `git diff --check`.
-- Accepted Layer 1 V1 model direction: no required clustering/state labels; primary output is a continuous market-state vector keyed by `available_time`.
+- Accepted Layer 1 V1 model direction: no required clustering/state labels; primary output is a continuous market-state vector keyed by `available_time`; target factor ontology should describe deep market properties rather than raw ETF-ratio proxies.
 
 - Added `SecuritySelectionModel` / `security_selection_model` / 标的选择模型 as Layer 2 between `MarketRegimeModel` and `StrategySelectionModel`.
 - Accepted canonical seven-layer names: `MarketRegimeModel`, `SecuritySelectionModel`, `StrategySelectionModel`, `TradeQualityModel`, `OptionExpressionModel`, `EventOverlayModel`, and `PortfolioRiskModel`.

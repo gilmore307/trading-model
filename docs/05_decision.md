@@ -675,3 +675,34 @@ Do not define the model contract as direct `+ w` / `- w` arithmetic, a top-ETF p
 - Replace `target_score`/preferred-list language with `candidate_selection_parameter` and candidate parameter rows.
 - Ranking, top-N selection, and choosing the highest sector/industry ETF are downstream usage of Model 2 output.
 - Model 2 acceptance should test parameter stability, point-in-time correctness, monotonic sanity, and calibration against future labels, not whether the model directly emits one chosen ETF.
+
+
+## D023 - MarketRegimeModel factors describe deep market properties
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+The initial `MarketRegimeModel` factor set used many observable proxy groupings and ETF-pair relationships. Those signals are useful evidence, but Chentong clarified that the desired Model 1 output is not an ETF-ratio dashboard. It should describe deeper market properties: price, trend, capital/flow/funding, sentiment, valuation, fundamentals, macro, structure, and risk.
+
+### Decision
+
+Treat observable ratios, spreads, returns, relative-strength pairs, volatility measures, breadth measures, and other market data as measurement signals. The canonical Model 1 factor ontology should describe latent market properties:
+
+- price behavior;
+- trend certainty;
+- capital flow and funding/liquidity;
+- sentiment and risk appetite;
+- valuation and discount-rate pressure;
+- fundamental strength and growth quality;
+- macro and policy environment;
+- market structure, breadth, leadership, crowding, and correlation;
+- risk stress, tail pressure, and transition risk.
+
+### Consequences
+
+- Model 1 should move from surface proxy labels toward market-property factor names such as `price_behavior_factor`, `trend_certainty_factor`, `capital_flow_factor`, `sentiment_factor`, `valuation_pressure_factor`, `fundamental_strength_factor`, `macro_environment_factor`, `market_structure_factor`, `risk_stress_factor`, and `transition_risk_factor`.
+- ETF ratios such as `HYG/LQD`, `TLT/SHY`, `QQQ/SPY`, or `GLD/SPY` may remain input evidence, but they should not be treated as the conceptual factor itself.
+- Existing V1 fields remain a provisional implementation slice until a reviewed migration updates the concrete output schema, config, tests, registry references, and downstream Model 2 parameterization.
+- Evaluation should inspect whether each latent market-property factor has stable, interpretable evidence support and downstream usefulness, not merely whether one proxy ratio correlates with a future label.

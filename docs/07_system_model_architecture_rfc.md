@@ -104,18 +104,17 @@ If a later decision splits one or more layers into separate component repositori
 
 Describe current market conditions as a continuous point-in-time state vector using market-only features.
 
-The model should capture usable downstream context for:
+The model should capture deeper market properties, not merely surface ETF-ratio proxies. The accepted conceptual ontology is:
 
-- risk appetite
-- volatility stress
-- rate pressure
-- dollar pressure
-- commodity pressure
-- sector rotation
-- market breadth
-- cross-asset correlation stress
-- trend strength
-- transition pressure
+- price behavior / 价格
+- trend certainty / 趋势
+- capital flow and funding/liquidity / 资金
+- sentiment and risk appetite / 情绪
+- valuation and discount-rate pressure / 估值
+- fundamental strength and growth quality / 基本面
+- macro and policy environment / 宏观
+- market structure, breadth, leadership, crowding, and correlation / 结构
+- risk stress, tail pressure, and transition risk / 风险
 
 V1 does **not** need discrete clustering, hard regime labels, HMM states, human-readable state names, ETF rankings, or security candidates. Those can be research diagnostics or downstream outputs later, but they are not the Layer 1 contract.
 
@@ -125,7 +124,7 @@ V1 does **not** need discrete clustering, hard regime labels, HMM states, human-
 trading_data.feature_01_market_regime
 ```
 
-This table is the deterministic Layer 1 feature surface. It contains the reviewed V1 feature families: returns, relative strength, volatility, trend/momentum, and correlation/breadth.
+This table is the deterministic Layer 1 feature surface. It contains observable evidence such as returns, relative strength, volatility, trend/momentum, correlation, breadth, credit/rate proxies, dollar/commodity proxies, and other measurement signals. Those signals are sensors; the Model 1 output should be the deeper market-property state vector inferred from them.
 
 ### First model method
 
@@ -133,39 +132,44 @@ Start simple, point-in-time, and interpretable:
 
 ```text
 rolling/expanding scaler
-+ feature-block standardization
-+ block-level factor/score extraction
-+ bounded continuous market-state vector
++ measurement/proxy standardization
++ evidence aggregation by market-property ontology
++ bounded continuous latent market-property vector
 ```
 
 No supervised labels are assigned. No clustering is required for V1. Future-return labels may be used only for evaluation, never as inputs to construct the market-state vector.
 
-### Output contract sketch
+### Conceptual output ontology
+
+The durable Model 1 contract should move toward market-property fields such as:
 
 ```json
 {
   "available_time": "2026-04-28T10:00:00-04:00",
-  "trend_factor": 0.63,
-  "volatility_stress_factor": 0.21,
-  "correlation_stress_factor": 0.34,
-  "credit_stress_factor": 0.18,
-  "rate_pressure_factor": -0.12,
-  "dollar_pressure_factor": 0.09,
-  "commodity_pressure_factor": 0.27,
-  "sector_rotation_factor": 0.41,
-  "breadth_factor": 0.58,
-  "risk_appetite_factor": 0.49,
-  "transition_pressure": 0.22,
+  "price_behavior_factor": 0.44,
+  "trend_certainty_factor": 0.63,
+  "capital_flow_factor": 0.31,
+  "sentiment_factor": 0.49,
+  "valuation_pressure_factor": -0.12,
+  "fundamental_strength_factor": 0.28,
+  "macro_environment_factor": 0.09,
+  "market_structure_factor": 0.41,
+  "risk_stress_factor": 0.21,
+  "transition_risk_factor": 0.22,
   "data_quality_score": 0.97
 }
 ```
+
+ETF ratios, spreads, relative strength pairs, and other observed signals remain valid input evidence, but they should not be mistaken for the final factor ontology. For example, `HYG/LQD`, `TLT/SHY`, `QQQ/SPY`, or `GLD/SPY` are measurement proxies used to infer credit/funding, valuation/discount pressure, sentiment, structure, or risk; they are not themselves the market property being modeled.
+
+Current implementation columns such as `trend_factor`, `credit_stress_factor`, and `risk_appetite_factor` are the first proxy-backed slice and should be migrated toward this deeper ontology as Model 1 matures.
 
 ### Evaluation
 
 - point-in-time correctness and no leakage
 - vector stability under rolling/expanding fits
 - downstream usefulness for security selection and strategy selection without leaking downstream selection labels into Layer 1
-- interpretability of feature-block factors
+- interpretability of market-property factors and their supporting evidence signals
 - drawdown warning usefulness
 
 ## Layer 2: SecuritySelectionModel
