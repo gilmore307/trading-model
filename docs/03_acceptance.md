@@ -50,6 +50,9 @@ PYTHONPATH=src python3 scripts/clear_model_development_database.py --help
 PYTHONPATH=src python3 scripts/clear_model_development_database.py --dry-run
 PYTHONPATH=src python3 scripts/evaluate_model_01_market_regime.py --help
 PYTHONPATH=src python3 scripts/evaluate_model_01_market_regime.py
+PYTHONPATH=src python3 scripts/run_market_regime_development_smoke.py --help
+# Optional runtime DB smoke, cleans development tables by default:
+PYTHONPATH=src python3 scripts/run_market_regime_development_smoke.py
 git diff --check
 ```
 

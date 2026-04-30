@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import json
 import os
 import re
 import sys
@@ -69,7 +70,16 @@ def fetch_derived_rows(
         f"SELECT * FROM {_qualified(source_schema, source_table)}{where_sql} ORDER BY snapshot_time ASC",
         params,
     )
-    return [dict(row) for row in cursor.fetchall()]
+    rows: list[dict[str, Any]] = []
+    for source_row in cursor.fetchall():
+        row = dict(source_row)
+        payload = row.pop("feature_payload_json", None)
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+        if isinstance(payload, Mapping):
+            row.update(payload)
+        rows.append(row)
+    return rows
 
 
 def write_model_rows_sql(

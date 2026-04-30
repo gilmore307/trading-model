@@ -521,3 +521,24 @@ This is promotion infrastructure only. It does not create an active production m
 - Promotion/rollback tables are generic across model layers while production output tables remain model-specific.
 - Concrete column registration remains deferred; table-name registration lives in `trading-manager`.
 - Actual promotion action remains blocked until real data, real metrics, and explicit acceptance thresholds exist.
+
+## D018 - MarketRegimeModel feature SQL uses JSONB payload storage
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+The development DB smoke test for the source → feature → model → evaluation chain found that the prior physical wide-column layout for `feature_01_market_regime` cannot safely materialize dense rows in PostgreSQL. PostgreSQL rejected a dense generated feature row with `row is too big: size 8768, maximum size 8160`.
+
+The logical Layer 1 feature contract remains one point-in-time row per `snapshot_time`, but the generated feature surface is too high-dimensional to store as fixed physical `DOUBLE PRECISION` columns.
+
+### Decision
+
+Read `trading_data.feature_01_market_regime` as a table keyed by `snapshot_time` with generated feature values stored in `feature_payload_json` JSONB. The model SQL reader expands that payload into the in-memory feature dictionary before factor generation.
+
+### Consequences
+
+- `model_01_market_regime` remains a normal typed model-output table keyed by `available_time`.
+- The feature generator can keep model-local generated feature keys without registering 1,477 physical columns.
+- If specific generated features become cross-repository contracts, promote them separately instead of treating every generated key as a database column contract.

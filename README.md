@@ -38,6 +38,7 @@ scripts/generate_model_01_market_regime.py
 scripts/ensure_model_governance_schema.py
 scripts/evaluate_model_01_market_regime.py
 scripts/clear_model_development_database.py
+scripts/run_market_regime_development_smoke.py
 ```
 
 `src/` owns reusable model logic. `scripts/` may import `src/`; `src/` must not import `scripts/`.

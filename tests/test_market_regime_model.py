@@ -92,6 +92,29 @@ class MarketRegimeModelTests(unittest.TestCase):
         scaler.update({"example": 1.0}, ["example"])
         self.assertEqual(scaler.zscore(signal, 100.0), 5.0)
 
+    def test_sql_reader_expands_feature_payload_json(self) -> None:
+        class FakeCursor:
+            def __init__(self) -> None:
+                self.executed: list[tuple[str, list[object]]] = []
+
+            def execute(self, sql: str, params: list[object]) -> None:
+                self.executed.append((sql, params))
+
+            def fetchall(self) -> list[dict[str, object]]:
+                return [
+                    {
+                        "snapshot_time": "2026-01-02T16:00:00-05:00",
+                        "feature_payload_json": '{"spy_return_1d": 0.01}',
+                    }
+                ]
+
+        cursor = FakeCursor()
+        rows = sql_runner.fetch_derived_rows(cursor, source_schema="trading_data", source_table="feature_01_market_regime")
+
+        self.assertEqual(rows[0]["snapshot_time"], "2026-01-02T16:00:00-05:00")
+        self.assertEqual(rows[0]["spy_return_1d"], 0.01)
+        self.assertNotIn("feature_payload_json", rows[0])
+
     def test_sql_writer_uses_model_table_and_columns(self) -> None:
         class FakeCursor:
             def __init__(self) -> None:
