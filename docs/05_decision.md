@@ -354,3 +354,35 @@ When future labels need data past the evaluation end time, the model planner sho
 - `trading-manager` only needs to prepare data coverage; it does not need model-label semantics.
 - `trading-model` remains responsible for interpreting prepared data into train/validation/test splits and labels.
 - Request field names should use `required_data_start_time` / `required_data_end_time`, not `dataset_start_time` / `dataset_end_time`, to avoid confusing manager data coverage with model dataset/evaluation windows.
+
+## D013 - Use generic model governance table names
+
+Date: 2026-04-29
+Status: Accepted
+
+### Context
+
+Dataset requests, dataset snapshots, train/validation/test splits, evaluation labels, evaluation runs, and evaluation metrics are not unique to `MarketRegimeModel`. The same governance concepts will be needed by later model layers such as `SecuritySelectionModel`, `StrategySelectionModel`, and `TradeQualityModel`.
+
+Registering layer-specific table names would duplicate the same schema shape across model layers. Registering every concrete column now would also prematurely freeze an evaluation schema before implementation validates it.
+
+### Decision
+
+Use generic `trading_model` governance table names for cross-layer model evaluation and dataset governance:
+
+- `model_dataset_request`
+- `model_dataset_snapshot`
+- `model_dataset_split`
+- `model_eval_label`
+- `model_eval_run`
+- `model_eval_metric`
+
+The production output tables remain model-specific, such as `model_01_market_regime`, because each model layer has a different business row shape.
+
+Register the generic governance table names in `trading-main` first, but do not register concrete column names yet. Column registration should wait until the SQL schema and first implementation slice are accepted.
+
+### Consequences
+
+- Evaluation/governance logic can be shared across all model layers.
+- Layer-specific outputs stay clean and purpose-built.
+- The registry has stable table-name vocabulary without prematurely locking column-level contracts.
