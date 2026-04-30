@@ -706,3 +706,28 @@ Treat observable ratios, spreads, returns, relative-strength pairs, volatility m
 - ETF ratios such as `HYG/LQD`, `TLT/SHY`, `QQQ/SPY`, or `GLD/SPY` may remain input evidence, but they should not be treated as the conceptual factor itself.
 - Existing V1 fields remain a provisional implementation slice until a reviewed migration updates the concrete output schema, config, tests, registry references, and downstream Model 2 parameterization.
 - Evaluation should inspect whether each latent market-property factor has stable, interpretable evidence support and downstream usefulness, not merely whether one proxy ratio correlates with a future label.
+
+
+## D024 - MarketRegimeModel must increase input evidence coverage deliberately
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+The current `feature_01_market_regime` payload contains 1,477 logical feature keys, while the first `model_01_market_regime` factor specification uses only 132 signal columns across 10 provisional factors. That is roughly 8.9% feature utilization. Chentong flagged this as too low.
+
+The issue is not that every generated feature must be forced into every factor. Some columns should remain quality controls, diagnostics, redundant checks, fallback evidence, or evaluation-only fields. But using only a small hand-selected proxy subset risks underusing the reviewed input surface and collapsing Model 1 back into a shallow ETF-ratio dashboard.
+
+### Decision
+
+Model 1 should deliberately increase evidence coverage through an explicit feature-to-latent-factor evidence map. The map should assign generated feature columns to market-property factors by measurement family, role, direction, history requirements, and rationale.
+
+The target is broad, explainable coverage of the input evidence universe, not indiscriminate all-column ingestion.
+
+### Consequences
+
+- Add or maintain a reviewed evidence map for `model_01_market_regime` before major factor expansion.
+- Track evidence utilization as an acceptance metric: total generated feature keys, keys assigned to a latent market-property factor, keys used only for data quality/diagnostics/evaluation, and keys intentionally unused.
+- Keep factors interpretable by grouping evidence into the accepted market-property ontology instead of adding opaque high-dimensional raw features directly to the output vector.
+- Future implementation work should expand beyond the current 132-column provisional slice while preserving point-in-time correctness and no-leakage rules.

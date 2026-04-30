@@ -38,3 +38,8 @@ Standardization defaults are currently `lookback = 120`, `min_history = 20`, `st
 The current implementation is a first proxy-backed slice. Its observable inputs include ETF ratios, returns, volatility, trend, correlation, and breadth signals. The durable Model 1 direction is deeper: output factors should describe market properties such as price behavior, trend certainty, capital/funding flow, sentiment, valuation pressure, fundamentals, macro environment, market structure, and risk stress.
 
 Proxy signals are sensors; they are not the conceptual factor ontology. A later reviewed migration should update concrete output columns/config/tests only after the deeper factor definitions are settled.
+
+
+## Evidence coverage gap
+
+The current feature payload has 1,477 logical feature keys, while the first factor specification uses 132 signal columns. That provisional ~8.9% utilization is intentionally not the final target. Future factor work should expand coverage through a reviewed feature-to-latent-factor evidence map rather than by blindly ingesting every generated column.
