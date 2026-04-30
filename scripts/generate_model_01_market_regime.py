@@ -150,8 +150,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--target-table", default="model_01_market_regime")
     parser.add_argument("--source-start", help="Optional lower timestamp bound for derived rows. Include enough lookback for rolling factors.")
     parser.add_argument("--source-end", help="Optional upper timestamp bound for derived rows.")
-    parser.add_argument("--lookback", type=int, default=120)
-    parser.add_argument("--min-history", type=int, default=3)
+    generator = _load_generator()
+    parser.add_argument("--lookback", type=int, default=generator.STANDARDIZATION.lookback)
+    parser.add_argument("--min-history", type=int, default=generator.STANDARDIZATION.min_history)
     args = parser.parse_args(argv)
 
     row_count = generate_sql(

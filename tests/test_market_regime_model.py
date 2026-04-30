@@ -19,46 +19,24 @@ SCRIPT_SPEC.loader.exec_module(sql_runner)
 def _row(index: int) -> dict[str, object]:
     base = datetime(2026, 1, 2, 10, 0, tzinfo=ET)
     value = float(index)
-    return {
-        "snapshot_time": (base + timedelta(minutes=30 * index)).isoformat(),
-        "spy_return_5d": value,
-        "spy_return_20d": value,
-        "spy_distance_to_ma20": value,
-        "spy_distance_to_ma50": value,
-        "spy_ma20_slope_5d": value,
-        "spy_ma_alignment_score": value,
-        "vixy_realized_vol_20d": value,
-        "vixy_realized_vol_20d_percentile_252d": value,
-        "market_state_avg_abs_return_corr_20d": value,
-        "hyg_lqd_30m": -value,
-        "hyg_lqd_distance_to_ma20": -value,
-        "hyg_lqd_realized_vol_20d_ratio": value,
-        "tlt_shy_30m": -value,
-        "ief_shy_30m": -value,
-        "uup_spy_30m": value,
-        "uup_return_5d": value,
-        "dbc_return_5d": value,
-        "gld_spy_30m": value,
-        "sector_observation_distance_to_ma20_dispersion": value,
-        "sector_observation_return_20d_dispersion": value,
-        "sector_observation_positive_return_1d_pct": value,
-        "sector_observation_above_ma20_pct": value,
-        "qqq_spy_30m": value,
-        "iwm_spy_30m": value,
-        "rsp_spy_30m": value,
-        "xly_xlp_30m": value,
-        "tlt_spy_30m": -value,
-        "vixy_spy_30m": -value,
-    }
+    row: dict[str, object] = {"snapshot_time": (base + timedelta(minutes=30 * index)).isoformat()}
+    column_direction: dict[str, float] = {}
+    for spec in generator.FACTOR_SPECS:
+        for signal in spec.signals:
+            column_direction.setdefault(signal.column, signal.direction)
+    for column, direction in column_direction.items():
+        row[column] = value * direction
+    return row
 
 
 class MarketRegimeModelTests(unittest.TestCase):
     def test_generates_continuous_state_vector_without_state_labels(self) -> None:
-        rows = generator.generate_rows([_row(1), _row(2), _row(3), _row(4)], lookback=10, min_history=2)
+        input_rows = [_row(index) for index in range(1, 66)]
+        rows = generator.generate_rows(input_rows, lookback=120)
 
-        self.assertEqual(len(rows), 4)
+        self.assertEqual(len(rows), 65)
         mature = rows[-1]
-        self.assertEqual(mature["available_time"], _row(4)["snapshot_time"])
+        self.assertEqual(mature["available_time"], _row(65)["snapshot_time"])
         self.assertGreater(mature["trend_factor"], 0)
         self.assertGreater(mature["volatility_stress_factor"], 0)
         self.assertGreater(mature["credit_stress_factor"], 0)
@@ -73,18 +51,18 @@ class MarketRegimeModelTests(unittest.TestCase):
     def test_uses_available_time_when_present(self) -> None:
         row = _row(1)
         row["available_time"] = "2026-01-02T12:00:00-05:00"
-        rows = generator.generate_rows([row], min_history=1)
+        rows = generator.generate_rows([row])
 
         self.assertEqual(rows[0]["available_time"], "2026-01-02T12:00:00-05:00")
 
     def test_rolling_standardization_does_not_use_current_or_future_rows(self) -> None:
-        rows = generator.generate_rows([_row(1), _row(2), _row(3)], lookback=10, min_history=2)
+        rows = generator.generate_rows([_row(index) for index in range(1, 22)], lookback=120)
 
-        # The first two rows cannot score themselves into the rolling fit; the third row
-        # is compared only to prior rows and becomes a positive trend observation.
+        # The first twenty rows cannot score themselves into the rolling fit; the
+        # twenty-first row is compared only to prior rows and becomes positive.
         self.assertIsNone(rows[0]["trend_factor"])
-        self.assertIsNone(rows[1]["trend_factor"])
-        self.assertGreater(rows[2]["trend_factor"], 0.9)
+        self.assertIsNone(rows[19]["trend_factor"])
+        self.assertGreater(rows[20]["trend_factor"], 0)
 
     def test_factor_config_controls_membership_direction_and_reducer(self) -> None:
         specs = {spec.name: spec for spec in generator.load_factor_specs()}
@@ -99,6 +77,20 @@ class MarketRegimeModelTests(unittest.TestCase):
         self.assertEqual(credit_directions["hyg_lqd_30m"], -1)
         self.assertEqual(credit_directions["hyg_lqd_realized_vol_20d_ratio"], 1)
         self.assertEqual(specs["sector_rotation_factor"].reducer([2.0, -2.0]), generator.REDUCERS["bounded_abs_mean"]([2.0, -2.0]))
+        self.assertEqual(specs["trend_factor"].aggregation, "bucketed_mean")
+        self.assertGreaterEqual(next(signal.min_history for signal in specs["correlation_stress_factor"].signals), 30)
+
+    def test_zscore_uses_std_floor_and_clip(self) -> None:
+        signal = generator.Signal("example", min_history=2, std_floor=1e-8, z_clip=5.0)
+        scaler = generator.RollingZScore(lookback=10, min_history=2, std_floor=1e-8, z_clip=5.0)
+        scaler.update({"example": 1.0}, ["example"])
+        scaler.update({"example": 1.0}, ["example"])
+        self.assertEqual(scaler.zscore(signal, 2.0), 0.0)
+
+        scaler = generator.RollingZScore(lookback=10, min_history=2, std_floor=1e-8, z_clip=5.0)
+        scaler.update({"example": 0.0}, ["example"])
+        scaler.update({"example": 1.0}, ["example"])
+        self.assertEqual(scaler.zscore(signal, 100.0), 5.0)
 
     def test_sql_writer_uses_model_table_and_columns(self) -> None:
         class FakeCursor:

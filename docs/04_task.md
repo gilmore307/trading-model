@@ -23,6 +23,7 @@
 
 ## Recently Accepted
 
+- Stabilized `model_01_market_regime` factor construction: default `min_history = 20`, per-group history overrides, `std_floor`, z-score clipping, minimum signal coverage, trend bucket aggregation, and clarified commodity/rate semantics.
 - Moved `model_01_market_regime` factor membership, signal directions, and reducer choices into `config/factor_specs.toml`; generator code now loads and validates config.
 - Implemented `src/model_outputs/model_01_market_regime/generator.py` and `scripts/generate_model_01_market_regime.py` for the V1 continuous state-vector contract.
 - Added first-party tests in `tests/test_market_regime_model.py`; default checks are compileall, unittest discovery, script `--help`, and `git diff --check`.

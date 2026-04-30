@@ -284,3 +284,37 @@ The Python generator owns only config validation, point-in-time rolling standard
 - Changing factor membership/signs/reducers no longer requires editing generator execution code.
 - Config changes still require tests and review because they can change output semantics.
 - Adding a new factor column still requires checking the SQL output contract and registry/docs implications.
+
+## D011 - Stabilize MarketRegimeModel rolling factor construction
+
+Date: 2026-04-29
+Status: Accepted
+
+### Context
+
+The first V1 state-vector generator used a very small default `min_history = 3`, no explicit standard-deviation floor, no pre-reducer z-score clipping, and flat aggregation for broad trend signals. Chentong flagged that this would make early z-scores unstable, allow near-zero standard deviations to explode signal values, and make factor weighting harder to reason about as signal groups evolve.
+
+### Decision
+
+Stabilize factor construction through `config/factor_specs.toml`:
+
+- default `min_history = 20`;
+- group-level minimum-history overrides for more fragile feature types, including longer histories for correlation, volatility, and low-frequency/daily-style features;
+- `std_floor = 1e-8` so near-constant signal history produces a neutral z-score instead of an explosive value;
+- `z_clip = 5.0` before direction adjustment and reducer aggregation;
+- `min_signal_coverage = 0.5` so factors remain `null` until enough configured signals have usable point-in-time z-scores;
+- `data_quality_score` is based on eligible signal coverage, not merely raw non-null column presence;
+- `trend_factor` uses `bucketed_mean`, first averaging trend signals by ETF/symbol bucket and then reducing across ETF buckets.
+
+Clarify semantics:
+
+- `commodity_pressure_factor` means commodity-related assets are becoming a dominant market driver; it is not automatically bearish.
+- `rate_pressure_factor` means long-duration bonds are weakening versus short-duration bonds; safe-haven bond strength may become a separate factor later.
+
+### Consequences
+
+- Early rows produce `null` factors rather than unstable pseudo-signals.
+- Low-variance feature histories no longer create extreme z-scores.
+- Single outlier z-scores are clipped before they can dominate group means.
+- Trend factor weighting is more robust if future ETF signal sets become uneven.
+- Future model review should consider splitting commodity and rate factors if downstream interpretation needs separate inflation, safe-haven, and duration-shock dimensions.
