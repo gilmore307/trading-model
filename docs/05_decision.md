@@ -429,7 +429,8 @@ JSONB payload columns are allowed as extension points, but stable shared fields 
 - The schema is reusable across model layers while production output tables remain model-specific.
 - `required_feature_key` supersedes older `required_derived_key` wording for active model data requests.
 - Concrete registry column registration remains deferred until the schema is exercised by the first `MarketRegimeModel` evaluation harness and proves stable.
-- Default tests use fake cursors and do not touch a durable database; runtime schema creation requires an explicit PostgreSQL target.
+- Default tests use fake cursors and do not touch a durable database; runtime schema creation requires explicit `--apply`.
+- During development, temporary SQL files may be written under local gitignored `storage/`, such as `storage/sql/model_governance_schema.sql`.
 
 ## D015 - Keep first MarketRegimeModel evaluation harness dry-run only
 
@@ -468,3 +469,30 @@ The initial labels are future shifted feature-return labels for SPY (`spy_return
 - Development evaluation can be tested safely without mutating durable SQL state.
 - A future database-writing path must be a separate reviewed change with explicit non-default write controls.
 - The first harness is intentionally about plumbing and reproducibility, not yet about claiming model quality.
+
+## D016 - Write temporary development SQL under local storage
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+Development work sometimes needs inspectable SQL output before a schema is promoted or applied. Chentong clarified that temporary SQL files are allowed under local storage, while development-stage data must not enter the real database by default.
+
+### Decision
+
+Use local gitignored `storage/` for temporary SQL files during development.
+
+For model governance DDL, `scripts/ensure_model_governance_schema.py` now defaults to writing:
+
+```text
+storage/sql/model_governance_schema.sql
+```
+
+It does not open a PostgreSQL connection unless explicitly run with `--apply`.
+
+### Consequences
+
+- Developers can inspect generated SQL safely without mutating durable database state.
+- `storage/` is ignored by Git in `trading-model`; generated SQL must not be committed unless separately promoted to a reviewed contract artifact.
+- Any future script that emits temporary SQL should prefer `storage/sql/` and keep database writes behind explicit non-default flags.
