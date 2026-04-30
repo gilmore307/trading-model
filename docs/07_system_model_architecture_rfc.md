@@ -49,7 +49,7 @@ These names are canonical for docs, code, artifact metadata, and future registry
 | Layer | Model class | Stable id | Chinese name | Role |
 |---|---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 | Detect point-in-time market regime, sector/style conditions, state probabilities, confidence, transition risk, and dominant drivers. |
-| 2 | `SecuritySelectionModel` | `security_selection_model` | 标的选择模型 | Build candidate tradable universes from regime/sector style, ETF holdings exposure, stock relative strength, liquidity, optionability, and event exclusions. |
+| 2 | `SecuritySelectionModel` | `security_selection_model` | 标的选择模型 | Build candidate tradable universes from regime/sector style, sector/industry ETF holdings exposure, stock relative strength, liquidity, optionability, and event exclusions. |
 | 3 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Select strategy family/variant conditioned on regime, candidate symbol, cost, and robustness evidence. |
 | 4 | `TradeQualityModel` | `trade_quality_model` | 交易质量模型 | Score candidate signals and predict trade outcome distribution, target/stop, MFE/MAE, and holding horizon. |
 | 5 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 | Choose stock/ETF/long-call/long-put expression from signal forecast, option chain, liquidity, IV, and Greeks. V1 excludes multi-leg option structures. |
@@ -178,7 +178,7 @@ It answers:
 
 - Which stocks or ETFs deserve attention now?
 - Which symbols are long candidates, short candidates, watch-only, or excluded?
-- Should the system trade sector ETFs directly, core ETF holdings, high-relative-strength leaders, laggards/rotation candidates, defensive stocks, or only very liquid mega-caps?
+- Which sector/industry ETFs deserve attention directly, and which ETF holdings deserve stock-level evaluation?
 - Which candidates are excluded because of liquidity, event risk, or poor optionability?
 
 This layer does not choose entry timing, strategy parameters, option contracts, final position size, or final portfolio weights.
@@ -186,20 +186,20 @@ This layer does not choose entry timing, strategy parameters, option contracts, 
 ### Inputs
 
 - `MarketRegimeModel` outputs: continuous market-state vector, risk-on/risk-off context, transition pressure, dominant macro drivers, sector/style condition factors. It does not output ETF rankings or selected securities.
-- ETF holdings snapshots: ETF constituent weights for broad, sector, industry, and thematic ETFs.
+- ETF holdings snapshots: constituent weights for eligible sector/industry equity ETFs. Broad index ETFs and non-equity macro ETFs may remain state inputs or filters, but they are not V1 tradable ETF candidates.
 - ETF and stock bars/liquidity: relative strength vs sector ETF and SPY, trend clarity, trend persistence, volatility fit, gap behavior, volume expansion, spread/liquidity.
 - Optionability summaries: option availability, spread, volume, open interest, DTE coverage.
 - Event exclusions: earnings proximity, known macro/event shock windows, SEC/news risk, abnormal activity flags.
 
 ### ETF holdings exposure matrix
 
-`SecuritySelectionModel` should use ETF holdings as the bridge from sector/style regime to individual tradable symbols.
+`SecuritySelectionModel` should use sector/industry ETF holdings as the bridge from sector/style regime to individual tradable symbols.
 
 A core derived representation is:
 
 ```text
 rows: stocks
-columns: ETFs
+columns: eligible sector/industry ETFs
 values: holding weight
 ```
 
@@ -208,11 +208,11 @@ Example:
 ```json
 {
   "symbol": "NVDA",
-  "etf_membership": ["QQQ", "XLK", "SMH", "SOXX", "AIQ"],
+  "etf_membership": ["XLK", "SMH", "SOXX", "IGV"],
   "holding_weights": {
-    "QQQ": 0.08,
     "XLK": 0.12,
-    "SMH": 0.20
+    "SMH": 0.20,
+    "SOXX": 0.09
   }
 }
 ```
@@ -223,9 +223,15 @@ Then Model 2 ETF trend-certainty scores can be transmitted to stocks:
 stock_etf_trend_exposure_score = sum(etf_trend_certainty_score * stock_weight_in_etf)
 ```
 
+### Tradable ETF universe
+
+V1 ETF selection is limited to sector/industry equity ETFs whose holdings can transmit into stock candidates. The selection universe excludes broad index/style ETFs such as `SPY`, `QQQ`, `IWM`, `DIA`, and `RSP`, and non-equity macro/cross-asset ETFs such as `TLT`, `IEF`, `SHY`, `GLD`, `SLV`, `DBC`, `USO`, `UUP`, `VIXY`, `HYG`, and `LQD`.
+
+Excluded ETFs can still be useful as MarketRegimeModel state inputs, risk filters, benchmark relatives, or portfolio-risk references. They are not selected as Model 2 ETF trade candidates in V1.
+
 ### Selection objective
 
-`SecuritySelectionModel` does **not** select the ETF or stock with the highest realized or expected return. The selection target is:
+`SecuritySelectionModel` does **not** select the sector/industry ETF or stock with the highest realized or expected return. The selection target is:
 
 ```text
 clear, persistent trend
@@ -240,7 +246,7 @@ Forward returns are labels for evaluation and calibration, not the production ra
 
 Do not rely only on ETF holdings. Use two candidate sources:
 
-1. **ETF holdings-driven universe** — captures core holdings, style exposure, ETF overlap, and crowded/funded themes.
+1. **Sector/industry ETF holdings-driven universe** — captures core holdings, style exposure, ETF overlap, and crowded/funded themes.
 2. **Full-market scan-driven universe** — captures emerging opportunities that are not yet core ETF weights.
 
 ### Scoring sketch
@@ -266,8 +272,8 @@ target_score =
 {
   "timestamp": "2026-04-28T09:30:00-04:00",
   "market_regime": "low_vol_risk_on",
-  "preferred_sector_etfs": ["SMH", "XLK", "IGV", "QQQ"],
-  "etf_candidates": [
+  "preferred_industry_etfs": ["SMH", "XLK", "IGV", "XBI"],
+  "industry_etf_candidates": [
     {
       "symbol": "SMH",
       "target_score": 0.89,
@@ -277,20 +283,20 @@ target_score =
       "candidate_reason": ["clear semiconductor leadership", "persistent relative strength", "acceptable volatility"]
     }
   ],
-  "avoid_sector_etfs": ["XLU", "XLRE"],
+  "avoid_industry_etfs": ["XLRE", "XRT"],
   "long_candidates": [
     {
       "symbol": "NVDA",
       "target_score": 0.91,
       "sector_regime_fit": 0.94,
-      "etf_holding_exposure": {"SMH": 0.20, "XLK": 0.12, "QQQ": 0.08},
+      "etf_holding_exposure": {"SMH": 0.20, "XLK": 0.12, "SOXX": 0.09},
       "relative_strength_score": 0.88,
       "trend_clarity_score": 0.91,
       "trend_persistence_score": 0.86,
       "certainty_score": 0.84,
       "optionability_score": 0.95,
       "event_risk_score": 0.32,
-      "candidate_reason": ["core holding of strong semiconductor ETFs", "persistent relative strength vs SMH and QQQ", "clear trend with high option liquidity"]
+      "candidate_reason": ["core holding of strong semiconductor ETFs", "persistent relative strength vs SMH and XLK", "clear trend with high option liquidity"]
     }
   ],
   "short_candidates": [],
@@ -303,7 +309,7 @@ target_score =
 
 ### Data organization implication
 
-This layer creates a direct need for two data products:
+This layer creates a direct need for two data products, scoped to eligible sector/industry equity ETFs first:
 
 - `etf_holding_snapshot` — issuer-published constituent holdings, already scaffolded in `trading-data`.
 - `stock_etf_exposure` — derived point-in-time stock-to-ETF exposure table for sector/theme/style transmission.
@@ -521,7 +527,7 @@ Every candidate trade should produce a complete point-in-time decision record fo
 ```json
 {
   "timestamp": "2026-04-28T09:30:00-04:00",
-  "symbol": "QQQ",
+  "symbol": "SMH",
   "direction": "long",
   "layer_1_regime": {
     "state_name": "high_vol_risk_off",
@@ -530,7 +536,7 @@ Every candidate trade should produce a complete point-in-time decision record fo
   },
   "layer_2_security_selection": {
     "target_score": 0.91,
-    "preferred_sector_etfs": ["SMH", "XLK", "QQQ"],
+    "preferred_industry_etfs": ["SMH", "XLK", "IGV"],
     "trend_clarity_score": 0.90,
     "certainty_score": 0.84,
     "candidate_reason": ["core holding of strong semiconductor ETFs", "clear persistent trend", "high option liquidity"]
@@ -544,13 +550,13 @@ Every candidate trade should produce a complete point-in-time decision record fo
     "trade_quality_score": 0.72,
     "probability_of_profit": 0.58,
     "expected_return": 0.024,
-    "target_price": 455.0,
-    "stop_price": 435.0,
+    "target_price": 255.0,
+    "stop_price": 238.0,
     "expected_holding_days": 4
   },
   "layer_5_option_expression": {
     "structure": "long_call",
-    "contracts": ["QQQ 2026-05-15 445C"],
+    "contracts": ["SMH 2026-05-15 250C"],
     "expected_option_pnl": 1.35,
     "max_loss": 3.2,
     "liquidity_score": 0.88,
@@ -625,7 +631,7 @@ Deliver:
 
 Deliver:
 
-- ETF holdings exposure matrix
+- Sector/industry ETF holdings exposure matrix
 - `stock_etf_exposure` derived table proposal
 - full-market scan candidate logic
 - long/short/watch/excluded candidate pools
@@ -687,8 +693,8 @@ Deliver:
 
 Before implementation, decide:
 
-1. What exact ETF basket and base equity universe should `SecuritySelectionModel` use first?
-2. What is the first tradable universe for Phase 1 and Phase 2? ETF basket only, liquid mega-cap equities, or both?
+1. What exact sector/industry ETF basket and base equity universe should `SecuritySelectionModel` use first?
+2. What is the first tradable universe for Phase 2? Sector/industry ETF basket only, liquid mega-cap equities, or both?
 3. What timestamp fields should be globally registered for model-facing event/evidence rows: `event_time`, `available_time`, `tradeable_time`, and ET/UTC variants?
 4. What is the first label horizon for underlying trades: intraday, 1D, 5D, 10D, or multi-horizon?
 5. Should `stock_etf_exposure` be registered as a derived data kind in `trading-manager`, or remain model-local until SecuritySelectionModel proves useful?

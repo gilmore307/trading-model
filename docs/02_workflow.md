@@ -27,7 +27,7 @@ point-in-time data artifacts
 
 - Every workflow must be point-in-time: no future data, no full-history fitting for historical predictions, no post-event explanation leakage.
 - `MarketRegimeModel` must be market/data-feature based and limited to state description; strategy outcomes, ETF rankings, and security selection labels are attached only after state construction for downstream evaluation.
-- `SecuritySelectionModel` builds tradable ETF/security candidate pools from regime/style context, ETF holdings exposure, full-market scans, trend clarity, trend persistence, certainty, liquidity, optionability, and event exclusions; it does not choose entry timing or simply chase highest return.
+- `SecuritySelectionModel` builds tradable sector/industry ETF and stock candidate pools from regime/style context, sector/industry ETF holdings exposure, full-market scans, trend clarity, trend persistence, certainty, liquidity, optionability, and event exclusions; it does not choose entry timing or simply chase highest return.
 - `StrategySelectionModel` must use walk-forward or similarly time-safe evaluation, not historical champion-picking.
 - `TradeQualityModel` should model outcome distribution and risk, not only direction.
 - `OptionExpressionModel` V1 is limited to single-leg long call / long put option expressions and must use timestamped option-chain snapshots, bid/ask, liquidity, IV/Greeks, conservative fills, and failure-to-fill assumptions.
@@ -46,7 +46,7 @@ Deliver market-state feature contracts, rolling/expanding state-vector prototype
 
 ### Phase 2: SecuritySelectionModel
 
-Deliver ETF holdings exposure matrix, `stock_etf_exposure` derived table proposal, ETF/security trend-clarity and certainty scoring, full-market scan candidate logic, long/short/watch/excluded candidate pools, optionability/liquidity filters, and sector/style transmission evidence.
+Deliver sector/industry ETF holdings exposure matrix, `stock_etf_exposure` derived table proposal, sector/industry ETF and stock trend-clarity/certainty scoring, full-market scan candidate logic, long/short/watch/excluded candidate pools, optionability/liquidity filters, and sector/style transmission evidence.
 
 ### Phase 3: StrategySelectionModel
 

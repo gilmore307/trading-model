@@ -20,7 +20,7 @@ The repository does **not** place live orders. It produces offline research arti
 
 - Point-in-time model research and validation workflows.
 - Market-state/regime discovery from market-only features.
-- Security/target selection and candidate universe construction from regime/style context, ETF holdings exposure, full-market scans, liquidity, optionability, and event exclusions.
+- Security/target selection and candidate universe construction from regime/style context, sector/industry ETF holdings exposure, full-market scans, liquidity, optionability, and event exclusions.
 - Regime-conditioned strategy family/variant selection research.
 - Signal-quality, meta-labeling, target/stop, MFE/MAE, and holding-period models.
 - Option expression selection research using option-chain snapshots, liquidity, IV, Greeks, and conservative fill assumptions.

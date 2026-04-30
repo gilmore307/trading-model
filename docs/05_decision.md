@@ -143,22 +143,22 @@ Date: 2026-04-28
 
 ### Context
 
-ETF holdings are not primarily a `MarketRegimeModel` input. Their key role is to transmit sector/style strength from ETF baskets into individual tradable stock candidates. The prior architecture jumped from market regime directly to strategy selection, which skipped the question of which symbols deserve strategy evaluation under the current regime.
+ETF holdings are not primarily a `MarketRegimeModel` input. Their key role is to transmit sector/style strength from sector/industry ETF baskets into individual tradable stock candidates. The prior architecture jumped from market regime directly to strategy selection, which skipped the question of which symbols deserve strategy evaluation under the current regime.
 
 ### Decision
 
 Add `SecuritySelectionModel` (`security_selection_model`) as Layer 2 between `MarketRegimeModel` and `StrategySelectionModel`.
 
-`SecuritySelectionModel` owns target/security selection and universe construction. It uses market/sector/style context, ETF holdings exposures, full-market scans, individual stock relative strength, liquidity, optionability, and event exclusions to produce long, short, watch, and excluded candidate pools.
+`SecuritySelectionModel` owns target/security selection and universe construction. It uses market/sector/style context, sector/industry ETF holdings exposures, full-market scans, individual stock relative strength, liquidity, optionability, and event exclusions to produce long, short, watch, and excluded candidate pools.
 
 ### Rationale
 
-Different market regimes require different selection styles. Risk-on regimes may prefer high-relative-strength core holdings of strong ETFs; risk-off regimes may prefer defensive/low-volatility names or ETFs; rotation regimes may prefer newly strengthening holdings or laggards catching up. This is a distinct modeling problem from choosing strategy family or signal entry quality.
+Different market regimes require different selection styles. Risk-on regimes may prefer high-relative-strength core holdings of strong sector/industry ETFs; risk-off regimes may prefer defensive/low-volatility sector ETFs or stocks; rotation regimes may prefer newly strengthening industry ETF holdings or laggards catching up. This is a distinct modeling problem from choosing strategy family or signal entry quality.
 
 ### Consequences
 
 - `MarketRegimeModel` should output sector/style context factors useful for security selection, but should not output ETF rankings or security candidates.
-- `etf_holding_snapshot` becomes an important upstream data kind for Layer 2.
+- `etf_holding_snapshot` for eligible sector/industry equity ETFs becomes an important upstream data kind for Layer 2.
 - A derived point-in-time `stock_etf_exposure` table should be designed, either model-local first or registered through `trading-main` if cross-repository use is needed.
 - `StrategySelectionModel` consumes selected candidate pools instead of scanning the whole universe directly.
 - Event and optionability exclusions can remove symbols before strategy evaluation.
@@ -585,7 +585,7 @@ The current market-state vector should help downstream selection, but it should 
 
 Remove per-ETF affinity/ranking from `MarketRegimeModel` V1. Layer 1 returns only the continuous point-in-time market-state vector keyed by `available_time`.
 
-`SecuritySelectionModel` owns ETF and stock selection. It may consume the Layer 1 state vector, ETF/stock trend features, relative strength, ETF holdings exposure, liquidity, optionability, and event exclusions to rank ETFs and securities.
+`SecuritySelectionModel` owns sector/industry ETF and stock selection. It may consume the Layer 1 state vector, sector/industry ETF and stock trend features, relative strength, ETF holdings exposure, liquidity, optionability, and event exclusions to rank ETFs and securities.
 
 The Layer 2 selection objective is not maximum realized or expected return. The primary target is the clearest and most certain tradable trend: trend clarity, trend persistence, relative strength consistency, signal agreement, adequate liquidity/optionability, and controlled event/volatility ambiguity. Future returns are evaluation labels for calibration, not direct production ranking inputs.
 
@@ -595,3 +595,26 @@ The Layer 2 selection objective is not maximum realized or expected return. The 
 - No `model_01_market_regime_etf_affinity` output is produced by Model 1.
 - Model 2 should define ETF/security scores such as `trend_clarity_score`, `trend_persistence_score`, `certainty_score`, and `target_score`.
 - Evaluation may still ask whether selected high-certainty trends later performed well, but that is downstream validation rather than Layer 1 construction.
+
+
+## D020 - SecuritySelectionModel ETF candidates are sector/industry ETFs only
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+Layer 2 needs to choose ETFs and stocks, but not every ETF used by the platform should be a tradable candidate. Broad index ETFs, style proxies, rates, credit, commodity, dollar, volatility, and other macro ETFs are useful for state detection, benchmarking, relative-strength context, and risk filtering. They do not provide the same sector/industry holdings bridge into stock selection.
+
+### Decision
+
+`SecuritySelectionModel` V1 selects ETFs only from eligible sector/industry equity ETFs. These ETFs must represent a sector, industry, or similarly stock-holdings-based business basket that can transmit into `stock_etf_exposure`.
+
+Broad market/style ETFs such as `SPY`, `QQQ`, `IWM`, `DIA`, and `RSP`, and non-equity macro/cross-asset ETFs such as `TLT`, `IEF`, `SHY`, `GLD`, `SLV`, `DBC`, `USO`, `UUP`, `VIXY`, `HYG`, and `LQD`, are excluded from the V1 ETF candidate universe. They may remain upstream features, benchmarks, filters, or risk context.
+
+### Consequences
+
+- Layer 2 ETF candidate scoring should use names such as `industry_etf_candidates` / `preferred_industry_etfs` rather than implying broad ETF selection.
+- ETF holdings exposure work should prioritize sector/industry equity ETFs.
+- Model 2 still ranks candidates by trend clarity, persistence, certainty, and tradability, not by highest realized or expected return.
+- Direct trading of broad/macro ETFs, if ever needed, should be modeled as a separate later scope rather than mixed into `SecuritySelectionModel` V1.
