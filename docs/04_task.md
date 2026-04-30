@@ -2,7 +2,7 @@
 
 ## Active Tasks
 
-- Review and refine the first `MarketRegimeModel` implementation slice: a point-in-time continuous market-state vector plus per-ETF market-state affinity rows from `trading_data.feature_01_market_regime`, designed to feed Phase 2 `SecuritySelectionModel` and Phase 3 `StrategySelectionModel`.
+- Review and refine the first `MarketRegimeModel` implementation slice: a point-in-time continuous market-state vector from `trading_data.feature_01_market_regime`, designed to feed Phase 2 `SecuritySelectionModel` and Phase 3 `StrategySelectionModel`.
 
 ## Queued Tasks
 
@@ -30,7 +30,7 @@
 - Accepted control-plane-facing data request boundary: use `required_data_start_time` / `required_data_end_time`; keep `label_horizons`, target symbols, train/validation/test splits, and label construction inside `trading-model` evaluation config/run tables.
 - Stabilized `model_01_market_regime` factor construction: default `min_history = 20`, per-group history overrides, `std_floor`, z-score clipping, minimum signal coverage, trend bucket aggregation, and clarified commodity/rate semantics.
 - Moved `model_01_market_regime` factor membership, signal directions, and reducer choices into `config/factor_specs.toml`; generator code now loads and validates config.
-- Implemented `src/model_outputs/model_01_market_regime/generator.py` and `scripts/generate_model_01_market_regime.py` for the V1 continuous state-vector contract; updated them to also emit `model_01_market_regime_etf_affinity` rows for ETF/sector/style direction.
+- Implemented `src/model_outputs/model_01_market_regime/generator.py` and `scripts/generate_model_01_market_regime.py` for the V1 continuous state-vector contract.
 - Added first-party tests in `tests/test_market_regime_model.py`; default checks are compileall, unittest discovery, script `--help`, and `git diff --check`.
 - Accepted Layer 1 V1 model direction: no required clustering/state labels; primary output is a continuous market-state vector keyed by `available_time`.
 

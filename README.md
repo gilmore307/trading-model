@@ -23,11 +23,6 @@ scripts/     SQL generation wrappers and operational entrypoints.
 tests/       First-party unit tests using in-memory fixtures/fake cursors.
 ```
 
-Current Model 1 outputs:
-
-- `trading_model.model_01_market_regime` — continuous market-state vector keyed by `available_time`.
-- `trading_model.model_01_market_regime_etf_affinity` — per-ETF tape affinity keyed by `available_time + etf_symbol`, used as direction for `SecuritySelectionModel`.
-
 Current implementation packages:
 
 ```text
