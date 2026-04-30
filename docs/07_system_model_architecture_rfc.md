@@ -102,97 +102,70 @@ If a later decision splits one or more layers into separate component repositori
 
 ### Goal
 
-Identify current market regime using market-only features.
+Describe current market conditions as a continuous point-in-time state vector using market-only features.
 
-The model should capture:
+The model should capture usable downstream context for:
 
 - risk appetite
-- volatility state
-- rate environment
+- volatility stress
+- rate pressure
 - dollar pressure
-- commodity rotation
+- commodity pressure
 - sector rotation
 - market breadth
-- cross-asset correlation
+- cross-asset correlation stress
 - trend strength
-- transition risk
+- transition pressure
 
-### Inputs
+V1 does **not** need discrete clustering, hard regime labels, HMM states, or human-readable state names. Those can be research diagnostics later, but they are not the main contract for selecting securities or strategies.
 
-Primary ETF/cross-asset basket:
-
-```text
-SPY, QQQ, IWM, DIA, RSP
-XLK, XLF, XLE, XLV, XLY, XLP, XLI, XLU, XLB
-TLT, IEF, SHY, HYG, LQD
-GLD, SLV, USO, DBC
-UUP
-VIX/VIX proxy/VIXY/SVXY as available
-EFA, EEM, FXI
-```
-
-Useful ratios:
+### Input table
 
 ```text
-SPY/TLT, QQQ/SPY, IWM/SPY, HYG/LQD, RSP/SPY,
-XLK/XLP, XLY/XLP, GLD/SPY, UUP/SPY
+trading_derived.derived_01_market_regime
 ```
 
-### Feature families
+This table is the deterministic Layer 1 feature surface. It contains the reviewed V1 feature families: returns, relative strength, volatility, trend/momentum, and correlation/breadth.
 
-- returns: 1D, 5D, 10D, 20D, 60D
-- realized volatility and volatility-of-volatility
-- ATR and range features
-- moving-average slope, ADX, momentum
-- ETF/cross-asset rolling correlations
-- market breadth proxies such as RSP/SPY and sector participation
-- credit risk: HYG/LQD, HYG/TLT
-- rate risk: TLT/SHY, IEF/SHY
-- safe-haven demand: GLD/SPY, TLT/SPY
-- dollar pressure: UUP and cross-relations
-- recent regime-probability changes
+### First model method
 
-### First model methods
-
-Start simple and interpretable:
+Start simple, point-in-time, and interpretable:
 
 ```text
 rolling/expanding scaler
-+ PCA/factor compression
-+ Gaussian Mixture Model or HMM
-+ human-readable regime naming
++ feature-block standardization
++ block-level factor/score extraction
++ bounded continuous market-state vector
 ```
 
-Avoid using full-history clustering to label the past.
+No supervised labels are assigned. No clustering is required for V1. Future-return labels may be used only for evaluation, never as inputs to construct the market-state vector.
 
 ### Output contract sketch
 
 ```json
 {
-  "timestamp": "2026-04-28T09:30:00-04:00",
-  "state_id": 2,
-  "state_name": "high_vol_risk_off",
-  "state_probabilities": {
-    "low_vol_risk_on": 0.08,
-    "range_bound": 0.14,
-    "high_vol_risk_off": 0.67,
-    "inflation_rotation": 0.07,
-    "rate_shock": 0.04
-  },
-  "confidence": 0.67,
-  "transition_risk": 0.42,
-  "dominant_drivers": ["VIX_up", "HYG_underperforming_LQD", "QQQ_underperforming_SPY"],
-  "expected_volatility_level": "high",
-  "expected_correlation_level": "high"
+  "available_time": "2026-04-28T10:00:00-04:00",
+  "trend_factor": 0.63,
+  "volatility_stress_factor": 0.21,
+  "correlation_stress_factor": 0.34,
+  "credit_stress_factor": 0.18,
+  "rate_pressure_factor": -0.12,
+  "dollar_pressure_factor": 0.09,
+  "commodity_pressure_factor": 0.27,
+  "sector_rotation_factor": 0.41,
+  "breadth_factor": 0.58,
+  "risk_appetite_factor": 0.49,
+  "transition_pressure": 0.22,
+  "data_quality_score": 0.97
 }
 ```
 
 ### Evaluation
 
-- regime stability
-- transition detection usefulness
-- interpretability
-- strategy-performance separation by regime
+- point-in-time correctness and no leakage
+- vector stability under rolling/expanding fits
+- downstream usefulness for security selection and strategy selection
+- interpretability of feature-block factors
 - drawdown warning usefulness
 
 ## Layer 2: SecuritySelectionModel

@@ -2,11 +2,11 @@
 
 ## Active Tasks
 
-- Define the first implementation slice under the accepted seven-layer `trading-model` scope. Recommended first slice remains Phase 1: point-in-time `MarketRegimeModel`, but it should be designed to feed Phase 2 `SecuritySelectionModel` sector/style and ETF-basket scores.
+- Define and implement the first `MarketRegimeModel` slice: a point-in-time continuous market-state vector from `trading_derived.derived_01_market_regime`, designed to feed Phase 2 `SecuritySelectionModel` and Phase 3 `StrategySelectionModel`.
 
 ## Queued Tasks
 
-- Define package/source/test layout after the first implementation slice is accepted.
+- Define `src/`, `scripts/`, and `tests/` layout for `model_01_market_regime`.
 - Define fixture policy and default test commands.
 - Identify global fields, helper surfaces, templates, status values, decision-record fields, model layer ids, artifact types, or ready-signal shapes that must be registered in `trading-main`.
 - Define model-facing timestamp semantics for `event_time`, `available_time`, and `tradeable_time`.
@@ -17,8 +17,8 @@
 
 ## Open Gaps
 
-- Exact first implementation slice.
-- Exact source/package layout.
+- Exact first factor/score formulas for `model_01_market_regime`.
+- Exact `src/`, `scripts/`, and `tests/` layout for `model_01_market_regime`.
 - Exact fixture and test policy.
 - Exact artifact/manifest/ready-signal/request contract interactions.
 - Exact storage path/reference requirements.
@@ -26,6 +26,8 @@
 - Whether `stock_etf_exposure` belongs in `trading-data` as a derived bundle output, in `trading-model` as a feature artifact, or in shared contracts after proof.
 
 ## Recently Accepted
+
+- Accepted Layer 1 V1 model direction: no required clustering/state labels; primary output is a continuous market-state vector keyed by `available_time`.
 
 - Added `SecuritySelectionModel` / `security_selection_model` / 标的选择模型 as Layer 2 between `MarketRegimeModel` and `StrategySelectionModel`.
 - Accepted canonical seven-layer names: `MarketRegimeModel`, `SecuritySelectionModel`, `StrategySelectionModel`, `TradeQualityModel`, `OptionExpressionModel`, `EventOverlayModel`, and `PortfolioRiskModel`.

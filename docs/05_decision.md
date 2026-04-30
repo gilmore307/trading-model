@@ -189,3 +189,29 @@ Single-leg long options are sufficient for the first option-expression research 
 - `OptionExpressionModel` V1 scoring ranks eligible calls/puts, not combinations of legs.
 - Required inputs remain option chain snapshot, bid/ask, volume/open interest, DTE, IV, Greeks, liquidity, and previous model outputs.
 - Multi-leg structures are explicitly deferred and should not appear in V1 decision records except as rejected/deferred capabilities.
+
+## D008 - MarketRegimeModel V1 outputs a continuous market-state vector
+
+Date: 2026-04-29
+Status: Accepted
+
+### Context
+
+Layer 1 initially discussed unsupervised clustering, state ids, state probabilities, and human-readable regime names. Chentong clarified that hard states are unlikely to directly help later security selection or strategy selection because they are coarse, unstable after refits, and require another lookup layer to recover the underlying market conditions.
+
+The useful downstream information is the concrete market-condition vector: trend, volatility stress, correlation stress, credit/rate/dollar/commodity pressure, sector rotation, breadth, risk appetite, and transition pressure.
+
+### Decision
+
+`MarketRegimeModel` V1 should not require clustering, HMM state assignment, hard `state_id`, `state_probability_*`, or pre-assigned human-readable labels.
+
+The primary V1 output is a continuous point-in-time market-state vector in `trading_model.model_01_market_regime`, keyed by `available_time`.
+
+The model should remain unsupervised in the sense that it does not train on pre-assigned market labels. It may use rolling/expanding standardization and feature-block factor/score extraction from `trading_derived.derived_01_market_regime`.
+
+### Consequences
+
+- Discrete state/cluster artifacts are deferred and optional research diagnostics, not the main downstream contract.
+- Layer 2/3 should consume continuous market-condition factors/scores rather than hard regime labels.
+- Future-return labels may be used for evaluation only, not for constructing Layer 1 model outputs.
+- The first implementation slice should focus on stable, interpretable, point-in-time factor/score generation before adding clustering or visualization branches.
