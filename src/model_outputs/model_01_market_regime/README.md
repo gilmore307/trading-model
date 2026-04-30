@@ -42,7 +42,7 @@ Proxy signals are sensors; they are not the conceptual factor ontology. A later 
 
 ## Evidence coverage gap
 
-The current Layer 1 feature payload has 967 logical feature keys after moving sector/industry rotation pairs to `feature_02_security_selection`, while the first factor specification uses 125 signal columns. That provisional ~12.9% utilization is intentionally not the final target. Future factor work should expand coverage through a reviewed feature-to-latent-factor evidence map rather than by blindly ingesting every generated column.
+The current Layer 1 feature payload has 959 logical feature keys after moving sector/industry rotation pairs and sector-observation aggregates to `feature_02_security_selection`, while the first factor specification uses 121 signal columns. That provisional ~12.6% utilization is intentionally not the final target. Future factor work should expand coverage through a reviewed feature-to-latent-factor evidence map rather than by blindly ingesting every generated column.
 
 
 ## Sector rotation boundary

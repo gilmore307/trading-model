@@ -166,7 +166,7 @@ reducer = "bounded_mean"
 aggregation = "flat"
 
 [[factors.groups]]
-columns = ["sector_observation_positive_return_1d_pct", "sector_observation_positive_return_5d_pct", "sector_observation_above_ma20_pct", "sector_observation_above_ma50_pct", "sector_observation_above_ma200_pct", "rsp_spy_30m", "rsp_spy_distance_to_ma20"]
+columns = ["rsp_spy_30m", "rsp_spy_distance_to_ma20", "rsp_spy_ma_alignment_score"]
 direction = 1
 min_history = 20
 

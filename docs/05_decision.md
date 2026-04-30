@@ -539,7 +539,7 @@ Read `trading_data.feature_01_market_regime` as a table keyed by `snapshot_time`
 ### Consequences
 
 - `model_01_market_regime` remains a normal typed model-output table keyed by `available_time`.
-- The feature generator can keep model-local generated feature keys without registering every generated feature as a physical column; after the sector-rotation feature split, the Layer 1 payload contains 967 logical keys.
+- The feature generator can keep model-local generated feature keys without registering every generated feature as a physical column; after moving sector/industry rotation pairs and sector-observation aggregates to Layer 2, the Layer 1 payload contains 959 logical keys.
 - If specific generated features become cross-repository contracts, promote them separately instead of treating every generated key as a database column contract.
 
 ## D019 - Promotion gate uses agent review but not automatic promotion
@@ -714,7 +714,7 @@ Status: Accepted
 
 ### Context
 
-The current `feature_01_market_regime` payload contains 967 Layer 1 logical feature keys after the sector-rotation feature split, while the first `model_01_market_regime` factor specification now uses 125 signal columns across 9 provisional factors. That is roughly 12.9% feature utilization. Chentong flagged this as too low.
+The current `feature_01_market_regime` payload contains 959 Layer 1 logical feature keys after the sector-rotation feature split, while the first `model_01_market_regime` factor specification now uses 121 signal columns across 9 provisional factors. That is roughly 12.6% feature utilization. Chentong flagged this as too low.
 
 The issue is not that every generated feature must be forced into every factor. Some columns should remain quality controls, diagnostics, redundant checks, fallback evidence, or evaluation-only fields. But using only a small hand-selected proxy subset risks underusing the reviewed input surface and collapsing Model 1 back into a shallow ETF-ratio dashboard.
 
@@ -729,7 +729,7 @@ The target is broad, explainable coverage of the input evidence universe, not in
 - Add or maintain a reviewed evidence map for `model_01_market_regime` before major factor expansion.
 - Track evidence utilization as an acceptance metric: total generated feature keys, keys assigned to a latent market-property factor, keys used only for data quality/diagnostics/evaluation, and keys intentionally unused.
 - Keep factors interpretable by grouping evidence into the accepted market-property ontology instead of adding opaque high-dimensional raw features directly to the output vector.
-- Future implementation work should expand beyond the current 125-column provisional slice while preserving point-in-time correctness and no-leakage rules.
+- Future implementation work should expand beyond the current 121-column provisional slice while preserving point-in-time correctness and no-leakage rules.
 
 
 ## D025 - Sector and industry rotation belongs to SecuritySelectionModel
@@ -739,20 +739,20 @@ Status: Accepted
 
 ### Context
 
-Model 1 was drifting toward a mixed responsibility: a broad market-state vector plus a `sector_rotation_factor` derived from sector ETF dispersion and sector-vs-broad relative-strength proxies. Chentong clarified that sector rotation is not merely one broad market property. It is the core research problem for Model 2: compare sector/industry ETF and stock candidates under the same broad market state.
+Model 1 was drifting toward a mixed responsibility: a broad market-state vector plus a `sector_rotation_factor` derived from sector ETF dispersion and sector-vs-broad relative-strength proxies. Chentong clarified that sector rotation is not merely one broad market property. It is the core research problem for Model 2: compare sector/industry ETF and stock candidates under the same broad market state. Chentong later accepted moving all sector/industry rotation-related evidence to Layer 2 so Layer 1 can stay clean.
 
 ### Decision
 
-Move sector/industry rotation, sector leadership, industry leadership, and sector-vs-sector relative-strength comparison out of `MarketRegimeModel` and into `SecuritySelectionModel`.
+Move sector/industry rotation, sector leadership, industry leadership, sector-vs-sector relative-strength comparison, and sector-observation breadth/dispersion aggregates out of `MarketRegimeModel` and into `SecuritySelectionModel`.
 
-`MarketRegimeModel` may retain market-wide structure fields such as breadth, concentration, crowding, correlation stress, dispersion, and transition pressure when they describe the overall tape. It must not produce candidate-facing sector rotation conclusions, sector rankings, preferred sector lists, or sector/industry leadership parameters.
+`MarketRegimeModel` may retain broad-market structure fields such as concentration, crowding, broad-asset correlation stress, dispersion, and transition pressure when they are derived from the market-state or cross-asset macro/risk universe and describe the overall tape. It must not consume or output sector/industry rotation evidence, sector-observation participation evidence, candidate-facing sector rotation conclusions, sector rankings, preferred sector lists, or sector/industry leadership parameters.
 
 ### Consequences
 
 - Remove `sector_rotation_factor` from the Model 1 output contract and current factor configuration.
-- Treat sector/industry ETF relative-strength evidence as Model 2 evidence unless it is aggregated into a market-wide structure/risk diagnostic without candidate identity.
+- Treat sector/industry ETF relative-strength and sector-observation breadth/dispersion evidence as Model 2 evidence, even when aggregated without a single candidate identity.
 - `SecuritySelectionModel` owns sector/industry rotation research, sector-weighted candidate parameters, ETF holdings exposure propagation into stocks, and candidate-level certainty comparisons.
-- The apparent Model 1 input-utilization denominator should be revisited because some of the current `feature_01_market_regime` payload is really Model 2 sector-rotation evidence that should be split or reassigned.
+- The apparent Model 1 input-utilization denominator is reduced after removing both sector/industry rotation pair features and `sector_observation_*` aggregate features from `feature_01_market_regime`.
 
 
 ## D026 - Cross-asset macro proxies may remain Model 1 evidence
