@@ -91,12 +91,12 @@ Recommended ownership split:
 | Area | Likely owner |
 |---|---|
 | Source acquisition, source-evidence bundles | `trading-data` |
-| Shared fields, identifiers, contracts, registry | `trading-main` |
+| Shared fields, identifiers, contracts, registry | `trading-manager` |
 | Offline model research and validation | `trading-model` |
-| Scheduling/routing/lifecycle | `trading-main` control plane / execution-side repos |
+| Scheduling/routing/lifecycle | `trading-manager` control plane / execution-side repos |
 | Live execution, order placement, broker integration | execution/risk repository, not `trading-model` |
 
-If a later decision splits one or more layers into separate component repositories, update `docs/00_scope.md`, this RFC, and `trading-main` registry/contracts together.
+If a later decision splits one or more layers into separate component repositories, update `docs/00_scope.md`, this RFC, and `trading-manager` registry/contracts together.
 
 ## Layer 1: MarketRegimeModel
 
@@ -662,5 +662,5 @@ Before implementation, decide:
 2. What is the first tradable universe for Phase 1 and Phase 2? ETF basket only, liquid mega-cap equities, or both?
 3. What timestamp fields should be globally registered for model-facing event/evidence rows: `event_time`, `available_time`, `tradeable_time`, and ET/UTC variants?
 4. What is the first label horizon for underlying trades: intraday, 1D, 5D, 10D, or multi-horizon?
-5. Should `stock_etf_exposure` be registered as a derived data kind in `trading-main`, or remain model-local until SecuritySelectionModel proves useful?
+5. Should `stock_etf_exposure` be registered as a derived data kind in `trading-manager`, or remain model-local until SecuritySelectionModel proves useful?
 6. Should Phase 1 produce only offline research artifacts, or also a ready-signal contract for later execution systems?

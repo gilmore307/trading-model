@@ -28,7 +28,7 @@ The repository does **not** place live orders. It produces offline research arti
 - Portfolio risk, sizing, exposure, execution-gate, exit-rule, and kill-switch research logic.
 - Unified candidate-trade decision-record prototypes for audit, attribution, replay, and retraining.
 - Model-local tests, fixtures, reproducibility evidence, and acceptance gates.
-- Proposing shared names/contracts to `trading-main` when model outputs need cross-repository consumption.
+- Proposing shared names/contracts to `trading-manager` when model outputs need cross-repository consumption.
 
 ## Out of Scope
 
@@ -38,7 +38,7 @@ The repository does **not** place live orders. It produces offline research arti
 - Production scheduling, lifecycle routing, retries, or promotion orchestration.
 - Dashboard rendering.
 - Durable storage retention policy unless delegated by accepted contract.
-- Global contract/type/field/status registration outside `trading-main`.
+- Global contract/type/field/status registration outside `trading-manager`.
 - Storing generated data, artifacts, logs, notebooks, credentials, or secrets in Git.
 
 ## Owner Intent
@@ -51,13 +51,13 @@ The repository should prefer explicit point-in-time interfaces, fixture-backed t
 
 - Component-local modeling code belongs here when it matches the seven-layer offline modeling role.
 - Raw acquisition and source-specific cleaning belong in `trading-data`.
-- Global contracts, registry entries, shared helpers, and reusable templates belong in `trading-main`.
+- Global contracts, registry entries, shared helpers, and reusable templates belong in `trading-manager`.
 - Durable storage layout and retention belong in `trading-storage` unless this repository is defining a proposed contract for review.
-- Scheduling, retries, lifecycle routing, and promotion decisions belong in the `trading-main` control plane unless explicitly delegated by contract.
+- Scheduling, retries, lifecycle routing, and promotion decisions belong in the `trading-manager` control plane unless explicitly delegated by contract.
 - Live execution and broker/account mutation stay outside this repository.
 - Generated artifacts and runtime outputs are not source files.
 - Secrets and credentials must stay outside the repository.
-- Shared helpers, templates, fields, statuses, and type values discovered here must be recorded through `trading-main` before cross-repository use.
+- Shared helpers, templates, fields, statuses, and type values discovered here must be recorded through `trading-manager` before cross-repository use.
 
 ## Out-of-Scope Signals
 
@@ -66,6 +66,6 @@ A request should be rejected or re-scoped if it asks `trading-model` to:
 - fetch or normalize raw provider data as an acquisition bundle;
 - place, cancel, or modify live/paper trades;
 - commit generated runtime outputs or secrets;
-- define global contracts without routing them through `trading-main`;
+- define global contracts without routing them through `trading-manager`;
 - invent shared fields/statuses/types without registry review;
 - bypass accepted storage or manager lifecycle boundaries.

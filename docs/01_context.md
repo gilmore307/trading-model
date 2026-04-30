@@ -18,8 +18,8 @@ The repository turns point-in-time data artifacts and strategy/event evidence in
 
 | System | Relationship |
 |---|---|
-| `trading-main` | Owns global architecture, registry, templates, shared helpers, and cross-repository contracts. |
-| `trading-main` control plane | Owns orchestration, lifecycle, scheduling, retries, requests, and promotion routing. |
+| `trading-manager` | Owns global architecture, registry, templates, shared helpers, and cross-repository contracts. |
+| `trading-manager` control plane | Owns orchestration, lifecycle, scheduling, retries, requests, and promotion routing. |
 | `trading-data` | Produces point-in-time data/source-evidence artifacts consumed by model research. |
 | `trading-storage` | Owns durable storage layout, retention, archive, backup, restore, and artifact placement rules. |
 | `trading-strategy` | May provide strategy-family definitions/backtest artifacts if kept separate; otherwise strategy-selection research can be model-local until boundaries are revisited. |
@@ -35,9 +35,9 @@ Potential external interfaces include:
 - Strategy definitions/backtest outputs, either model-local during research or from `trading-strategy` if that repository remains the strategy owner.
 - Event evidence and event-cluster artifacts once accepted.
 - Storage artifact references from `trading-storage`.
-- Shared registry fields/contracts from `trading-main`.
+- Shared registry fields/contracts from `trading-manager`.
 
-Specific providers, credentials, package choices, deployment targets, and runtime settings are not settled unless recorded in this repository's decisions or inherited from `trading-main` contracts.
+Specific providers, credentials, package choices, deployment targets, and runtime settings are not settled unless recorded in this repository's decisions or inherited from `trading-manager` contracts.
 
 ## Point-in-Time Constraint
 
@@ -59,10 +59,10 @@ Using post-event explanations or full-history transformations to train/predict e
 
 Development is server-hosted under `/root/projects/trading-model`.
 
-The shared Python environment is anchored by `trading-main` at:
+The shared Python environment is anchored by `trading-manager` at:
 
 ```text
-/root/projects/trading-main/.venv
+/root/projects/trading-manager/.venv
 ```
 
 `trading-model` should not create an independent virtual environment unless a documented exception is accepted.
@@ -71,15 +71,15 @@ The shared Python environment is anchored by `trading-main` at:
 
 Current system-level dependencies:
 
-- `trading-main/docs/07_helpers.md` for shared helper policy;
-- `trading-main/docs/08_registry.md` for registry operating rules;
-- `trading-main/docs/09_templates.md` and `trading-main/templates/` for reusable drafting surfaces;
-- `trading-main/requirements.txt` for reviewed shared Python dependencies;
+- `trading-manager/docs/07_helpers.md` for shared helper policy;
+- `trading-manager/docs/08_registry.md` for registry operating rules;
+- `trading-manager/docs/09_templates.md` and `trading-manager/templates/` for reusable drafting surfaces;
+- `trading-manager/requirements.txt` for reviewed shared Python dependencies;
 - related component repositories through accepted contracts, not internal implementation details.
 
 ## Global Registration Discipline
 
-If this repository introduces a name that other repositories may consume, route it back to `trading-main` before treating it as stable.
+If this repository introduces a name that other repositories may consume, route it back to `trading-manager` before treating it as stable.
 
 This includes shared fields, artifact types, manifest types, ready-signal types, request types, status values, global helper methods, reusable templates, config keys, and provider-independent terminology.
 

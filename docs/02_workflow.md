@@ -34,7 +34,7 @@ point-in-time data artifacts
 - `EventOverlayModel` must preserve event/evidence timing and source priority.
 - `PortfolioRiskModel` must account for portfolio exposure, correlation, drawdown state, liquidity, slippage, and kill-switch behavior.
 - Research outputs need manifests and ready signals before downstream promotion.
-- Shared fields, statuses, type values, helpers, and reusable templates must come from `trading-main`.
+- Shared fields, statuses, type values, helpers, and reusable templates must come from `trading-manager`.
 - Runtime outputs must be written outside Git-tracked source paths.
 - Cross-repository handoffs should use accepted request, artifact, manifest, and ready-signal contracts.
 
@@ -72,7 +72,7 @@ Deliver position sizing research, exposure monitor, order/execution rules, exit 
 
 Every candidate trade should ultimately produce a point-in-time decision record containing all seven layer outputs. The decision record is the audit/replay/retraining spine.
 
-The canonical draft shape lives in `docs/07_system_model_architecture_rfc.md` until promoted through `trading-main` registry/contracts.
+The canonical draft shape lives in `docs/07_system_model_architecture_rfc.md` until promoted through `trading-manager` registry/contracts.
 
 ## Collaboration Boundary
 

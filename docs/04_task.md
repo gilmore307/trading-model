@@ -6,10 +6,10 @@
 
 ## Queued Tasks
 
-- Identify global fields, helper surfaces, templates, status values, decision-record fields, model layer ids, artifact types, or ready-signal shapes that must be registered in `trading-main`.
+- Identify global fields, helper surfaces, templates, status values, decision-record fields, model layer ids, artifact types, or ready-signal shapes that must be registered in `trading-manager`.
 - Define model-facing timestamp semantics for `event_time`, `available_time`, and `tradeable_time`.
 - Define the first ETF basket and base equity universe for `SecuritySelectionModel`.
-- Decide whether `stock_etf_exposure` is model-local first or registered as a derived data kind in `trading-main`.
+- Decide whether `stock_etf_exposure` is model-local first or registered as a derived data kind in `trading-manager`.
 - Define first label horizons and triple-barrier defaults for `TradeQualityModel`.
 - Define how model-generated event standards are identified and versioned for `option_activity_event_detail`, including whether `standard_id` is separate from or derived from a model/run id and how downstream artifacts record the current standard used at event time.
 
@@ -24,7 +24,7 @@
 
 ## Recently Accepted
 
-- Accepted generic model governance table names: `model_dataset_request`, `model_dataset_snapshot`, `model_dataset_split`, `model_eval_label`, `model_eval_run`, and `model_eval_metric`. Table names are registered in `trading-main`; concrete columns remain unregistered until schema implementation is accepted.
+- Accepted generic model governance table names: `model_dataset_request`, `model_dataset_snapshot`, `model_dataset_split`, `model_eval_label`, `model_eval_run`, and `model_eval_metric`. Table names are registered in `trading-manager`; concrete columns remain unregistered until schema implementation is accepted.
 - Accepted control-plane-facing data request boundary: use `required_data_start_time` / `required_data_end_time`; keep `label_horizons`, target symbols, train/validation/test splits, and label construction inside `trading-model` evaluation config/run tables.
 - Stabilized `model_01_market_regime` factor construction: default `min_history = 20`, per-group history overrides, `std_floor`, z-score clipping, minimum signal coverage, trend bucket aggregation, and clarified commodity/rate semantics.
 - Moved `model_01_market_regime` factor membership, signal directions, and reducer choices into `config/factor_specs.toml`; generator code now loads and validates config.
