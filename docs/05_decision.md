@@ -215,3 +215,44 @@ The model should remain unsupervised in the sense that it does not train on pre-
 - Layer 2/3 should consume continuous market-condition factors/scores rather than hard regime labels.
 - Future-return labels may be used for evaluation only, not for constructing Layer 1 model outputs.
 - The first implementation slice should focus on stable, interpretable, point-in-time factor/score generation before adding clustering or visualization branches.
+
+## D009 - MarketRegimeModel V1 implementation slice
+
+Date: 2026-04-29
+Status: Accepted
+
+### Context
+
+After deciding that V1 should use a continuous market-state vector rather than clusters, the first implementation needs a small deterministic model-output slice that can be tested without provider calls, generated artifacts, or durable database mutation.
+
+### Decision
+
+Implement `model_01_market_regime` as an importable generator plus SQL runner:
+
+- `src/model_outputs/model_01_market_regime/generator.py` owns point-in-time rolling standardization and factor generation.
+- `scripts/generate_model_01_market_regime.py` reads `trading_derived.derived_01_market_regime` and upserts `trading_model.model_01_market_regime`.
+- Unit tests use in-memory fixture rows and fake cursors only.
+
+The first factor set is:
+
+- `trend_factor`
+- `volatility_stress_factor`
+- `correlation_stress_factor`
+- `credit_stress_factor`
+- `rate_pressure_factor`
+- `dollar_pressure_factor`
+- `commodity_pressure_factor`
+- `sector_rotation_factor`
+- `breadth_factor`
+- `risk_appetite_factor`
+- `transition_pressure`
+- `data_quality_score`
+
+Rows are keyed by `available_time`. If the upstream derived row has only `snapshot_time`, the model maps that timestamp to `available_time`.
+
+### Consequences
+
+- The implementation remains unsupervised and does not emit `state_id`, `state_probability_*`, or human-readable regime names.
+- Rolling standardization uses prior rows only; current/future rows do not fit the current score.
+- The factor formulas are V1 and intentionally reviewable; later evidence may revise exact signal membership or signs without changing the table role.
+- Manager completion receipts and ready-signal files remain deferred until `trading-manager` integration.

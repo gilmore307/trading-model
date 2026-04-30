@@ -18,9 +18,24 @@ It does not own raw source acquisition, live/paper order placement, broker/accou
 
 ```text
 docs/        Repository scope, context, workflow, acceptance, task, decisions, memory, and architecture RFCs.
+src/         Importable model-output implementation code.
+scripts/     SQL generation wrappers and operational entrypoints.
+tests/       First-party unit tests using in-memory fixtures/fake cursors.
 ```
 
-Source, scripts, tests, and package layout are intentionally not created yet. Add them only after the first implementation slice, storage expectations, fixture policy, and cross-repository contracts are explicit. When implementation begins, use `src/` for importable/reusable code, `scripts/` for executable maintenance or operational entrypoints, and `tests/` for first-party tests; `scripts/` may import `src/`, but `src/` must not import `scripts/`.
+Current implementation package:
+
+```text
+src/model_outputs/model_01_market_regime/
+```
+
+Current runtime wrapper:
+
+```text
+scripts/generate_model_01_market_regime.py
+```
+
+`src/` owns reusable model logic. `scripts/` may import `src/`; `src/` must not import `scripts/`.
 
 ## Docs Spine
 

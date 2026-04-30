@@ -38,15 +38,16 @@ Implementation changes are acceptable only when they:
 
 ## Verification Commands
 
-Current documentation-stage checks:
+Current implementation checks:
 
 ```bash
-git status --short
-find docs -maxdepth 1 -type f | sort
-find . -maxdepth 2 -type f | sort
+python3 -m compileall -q src scripts tests
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+PYTHONPATH=src python3 scripts/generate_model_01_market_regime.py --help
+git diff --check
 ```
 
-Once implementation exists, acceptance must add appropriate commands for unit tests, fixture tests, lint/type checks, schema validation, and artifact/manifest/ready-signal validation as applicable.
+Runtime SQL smoke tests require an explicitly configured PostgreSQL target and should not run as default unit tests.
 
 ## Required Review Evidence
 

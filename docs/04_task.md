@@ -2,12 +2,10 @@
 
 ## Active Tasks
 
-- Define and implement the first `MarketRegimeModel` slice: a point-in-time continuous market-state vector from `trading_derived.derived_01_market_regime`, designed to feed Phase 2 `SecuritySelectionModel` and Phase 3 `StrategySelectionModel`.
+- Review and refine the first `MarketRegimeModel` implementation slice: a point-in-time continuous market-state vector from `trading_derived.derived_01_market_regime`, designed to feed Phase 2 `SecuritySelectionModel` and Phase 3 `StrategySelectionModel`.
 
 ## Queued Tasks
 
-- Define `src/`, `scripts/`, and `tests/` layout for `model_01_market_regime`.
-- Define fixture policy and default test commands.
 - Identify global fields, helper surfaces, templates, status values, decision-record fields, model layer ids, artifact types, or ready-signal shapes that must be registered in `trading-main`.
 - Define model-facing timestamp semantics for `event_time`, `available_time`, and `tradeable_time`.
 - Define the first ETF basket and base equity universe for `SecuritySelectionModel`.
@@ -18,8 +16,6 @@
 ## Open Gaps
 
 - Exact first factor/score formulas for `model_01_market_regime`.
-- Exact `src/`, `scripts/`, and `tests/` layout for `model_01_market_regime`.
-- Exact fixture and test policy.
 - Exact artifact/manifest/ready-signal/request contract interactions.
 - Exact storage path/reference requirements.
 - Whether `trading-strategy` remains separate or `StrategySelectionModel` research is model-local until a later split.
@@ -27,6 +23,8 @@
 
 ## Recently Accepted
 
+- Implemented `src/model_outputs/model_01_market_regime/generator.py` and `scripts/generate_model_01_market_regime.py` for the V1 continuous state-vector contract.
+- Added first-party tests in `tests/test_market_regime_model.py`; default checks are compileall, unittest discovery, script `--help`, and `git diff --check`.
 - Accepted Layer 1 V1 model direction: no required clustering/state labels; primary output is a continuous market-state vector keyed by `available_time`.
 
 - Added `SecuritySelectionModel` / `security_selection_model` / 标的选择模型 as Layer 2 between `MarketRegimeModel` and `StrategySelectionModel`.
