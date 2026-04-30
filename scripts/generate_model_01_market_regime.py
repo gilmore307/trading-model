@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate model_01_market_regime rows from derived SQL features."""
+"""Generate model_01_market_regime rows from feature SQL rows."""
 from __future__ import annotations
 
 import argparse

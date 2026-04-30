@@ -18,21 +18,23 @@ It does not own raw source acquisition, live/paper order placement, broker/accou
 
 ```text
 docs/        Repository scope, context, workflow, acceptance, task, decisions, memory, and architecture RFCs.
-src/         Importable model-output implementation code.
+src/         Importable model-output and model-governance implementation code.
 scripts/     SQL generation wrappers and operational entrypoints.
 tests/       First-party unit tests using in-memory fixtures/fake cursors.
 ```
 
-Current implementation package:
+Current implementation packages:
 
 ```text
 src/model_outputs/model_01_market_regime/
+src/model_governance/
 ```
 
-Current runtime wrapper:
+Current runtime wrappers:
 
 ```text
 scripts/generate_model_01_market_regime.py
+scripts/ensure_model_governance_schema.py
 ```
 
 `src/` owns reusable model logic. `scripts/` may import `src/`; `src/` must not import `scripts/`.

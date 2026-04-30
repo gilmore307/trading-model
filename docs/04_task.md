@@ -16,7 +16,6 @@
 ## Open Gaps
 
 - Exact first factor/score formulas for `model_01_market_regime`.
-- Exact SQL schema for model-owned dataset request/snapshot/split/evaluation tables.
 - Exact artifact/manifest/ready-signal/request contract interactions.
 - Exact storage path/reference requirements.
 - Whether `trading-strategy` remains separate or `StrategySelectionModel` research is model-local until a later split.
@@ -24,7 +23,7 @@
 
 ## Recently Accepted
 
-- Accepted generic model governance table names: `model_dataset_request`, `model_dataset_snapshot`, `model_dataset_split`, `model_eval_label`, `model_eval_run`, and `model_eval_metric`. Table names are registered in `trading-manager`; concrete columns remain unregistered until schema implementation is accepted.
+- Implemented initial generic model governance SQL schema helpers in `src/model_governance/schema.py` and the operational wrapper `scripts/ensure_model_governance_schema.py` for `model_dataset_request`, `model_dataset_snapshot`, `model_dataset_split`, `model_eval_label`, `model_eval_run`, and `model_eval_metric`. Table names are registered in `trading-manager`; concrete column registration remains deferred until the schema has been exercised with the first evaluation harness.
 - Accepted control-plane-facing data request boundary: use `required_data_start_time` / `required_data_end_time`; keep `label_horizons`, target symbols, train/validation/test splits, and label construction inside `trading-model` evaluation config/run tables.
 - Stabilized `model_01_market_regime` factor construction: default `min_history = 20`, per-group history overrides, `std_floor`, z-score clipping, minimum signal coverage, trend bucket aggregation, and clarified commodity/rate semantics.
 - Moved `model_01_market_regime` factor membership, signal directions, and reducer choices into `config/factor_specs.toml`; generator code now loads and validates config.

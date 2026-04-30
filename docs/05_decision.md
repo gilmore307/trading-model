@@ -379,10 +379,54 @@ Use generic `trading_model` governance table names for cross-layer model evaluat
 
 The production output tables remain model-specific, such as `model_01_market_regime`, because each model layer has a different business row shape.
 
-Register the generic governance table names in `trading-main` first, but do not register concrete column names yet. Column registration should wait until the SQL schema and first implementation slice are accepted.
+Register the generic governance table names in `trading-manager` first, but do not register concrete column names yet. Column registration should wait until the SQL schema and first implementation slice are accepted.
 
 ### Consequences
 
 - Evaluation/governance logic can be shared across all model layers.
 - Layer-specific outputs stay clean and purpose-built.
 - The registry has stable table-name vocabulary without prematurely locking column-level contracts.
+
+## D014 - Implement initial generic model governance SQL schema
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+The generic governance table names from D013 need a first concrete SQL shape before `MarketRegimeModel` evaluation can become reproducible. The schema must support the full evaluation chain without turning production model-output tables into generic catch-all tables.
+
+The earlier data request boundary also needs to use current `feature` naming. Control-plane-facing requests should ask for source/feature data coverage only; label horizons, targets, split windows, and evaluation metrics remain model-local.
+
+### Decision
+
+Implement `src/model_governance/schema.py` as the first SQL helper for generic `trading_model` governance/evaluation tables, with `scripts/ensure_model_governance_schema.py` as the operational wrapper.
+
+The first schema slice uses this dependency chain:
+
+```text
+model_dataset_request
+-> model_dataset_snapshot
+-> model_dataset_split
+-> model_eval_label
+-> model_eval_run
+-> model_eval_metric
+```
+
+Table responsibilities:
+
+- `model_dataset_request` records model-originated data coverage requests using `required_data_start_time`, `required_data_end_time`, `required_source_key`, and `required_feature_key`.
+- `model_dataset_snapshot` freezes the feature table/version/time window/config metadata used for a reproducible experiment.
+- `model_dataset_split` records time-series train/validation/test/holdout windows for a snapshot.
+- `model_eval_label` records model-local labels by snapshot, target, horizon, available time, and label time.
+- `model_eval_run` records a model/config/snapshot evaluation execution.
+- `model_eval_metric` records metrics emitted by an evaluation run, optionally scoped by split, label, target, horizon, and factor.
+
+JSONB payload columns are allowed as extension points, but stable shared fields should be promoted to explicit columns before other repositories depend on them.
+
+### Consequences
+
+- The schema is reusable across model layers while production output tables remain model-specific.
+- `required_feature_key` supersedes older `required_derived_key` wording for active model data requests.
+- Concrete registry column registration remains deferred until the schema is exercised by the first `MarketRegimeModel` evaluation harness and proves stable.
+- Default tests use fake cursors and do not touch a durable database; runtime schema creation requires an explicit PostgreSQL target.
