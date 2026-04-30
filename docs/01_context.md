@@ -19,7 +19,7 @@ The repository turns point-in-time data artifacts and strategy/event evidence in
 | System | Relationship |
 |---|---|
 | `trading-main` | Owns global architecture, registry, templates, shared helpers, and cross-repository contracts. |
-| `trading-manager` | Owns orchestration, lifecycle, scheduling, retries, requests, and promotion routing. |
+| `trading-main` control plane | Owns orchestration, lifecycle, scheduling, retries, requests, and promotion routing. |
 | `trading-data` | Produces point-in-time data/source-evidence artifacts consumed by model research. |
 | `trading-storage` | Owns durable storage layout, retention, archive, backup, restore, and artifact placement rules. |
 | `trading-strategy` | May provide strategy-family definitions/backtest artifacts if kept separate; otherwise strategy-selection research can be model-local until boundaries are revisited. |

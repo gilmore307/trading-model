@@ -56,7 +56,7 @@ docs/
 - `trading-main` owns global contracts, registry, shared helpers, templates, and platform guidance.
 - `trading-data` owns raw acquisition and source-evidence bundles.
 - `trading-storage` owns durable storage layout and retention unless this repository is proposing a reviewed storage contract.
-- `trading-manager` owns orchestration and lifecycle routing.
+- `trading-main` owns control-plane orchestration and lifecycle routing.
 - Execution-side repositories own broker/account mutation.
 
 Any new global helper, reusable template, shared field, status, type, config key, or vocabulary discovered here must be routed back to `trading-main` before other repositories depend on it.

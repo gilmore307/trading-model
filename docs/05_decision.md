@@ -255,7 +255,7 @@ Rows are keyed by `available_time`. If the upstream derived row has only `snapsh
 - The implementation remains unsupervised and does not emit `state_id`, `state_probability_*`, or human-readable regime names.
 - Rolling standardization uses prior rows only; current/future rows do not fit the current score.
 - The factor formulas are V1 and intentionally reviewable; later evidence may revise exact signal membership or signs without changing the table role.
-- Manager completion receipts and ready-signal files remain deferred until `trading-manager` integration.
+- Control-plane completion receipts and ready-signal files remain deferred until `trading-main` control-plane integration.
 
 ## D010 - MarketRegimeModel factor specs live in config
 
@@ -326,13 +326,13 @@ Status: Accepted
 
 ### Context
 
-`MarketRegimeModel` evaluation needs train/validation/test windows and future-label horizons such as 1D, 5D, and 20D. Those details are model-evaluation semantics, not manager orchestration semantics. The manager should coordinate production of source/feature data, but it should not need to understand how the model will use that data to construct labels or splits.
+`MarketRegimeModel` evaluation needs train/validation/test windows and future-label horizons such as 1D, 5D, and 20D. Those details are model-evaluation semantics, not manager orchestration semantics. The control plane should coordinate production of source/feature data, but it should not need to understand how the model will use that data to construct labels or splits.
 
 ### Decision
 
-Use the simple data-window request shape for manager-facing model data requests.
+Use the simple data-window request shape for control-plane-facing model data requests.
 
-A manager-facing request should specify the raw data coverage needed:
+A control-plane-facing request should specify the raw data coverage needed:
 
 - `request_id`
 - `model_id`
@@ -345,13 +345,13 @@ A manager-facing request should specify the raw data coverage needed:
 - `request_status`
 - optional `request_payload_json` for model-local opaque details
 
-Do not put `label_horizons` into the manager-facing request contract. Label horizons, target symbols, split windows, and evaluation rules belong in model-owned evaluation config/run tables.
+Do not put `label_horizons` into the control-plane-facing request contract. Label horizons, target symbols, split windows, and evaluation rules belong in model-owned evaluation config/run tables.
 
-When future labels need data past the evaluation end time, the model planner should extend `required_data_end_time` before sending the request. For example, if the model wants to evaluate through 2025-12-31 with a 20D future label, the manager-facing request may ask for source/feature data through roughly late January 2026.
+When future labels need data past the evaluation end time, the model planner should extend `required_data_end_time` before sending the request. For example, if the model wants to evaluate through 2025-12-31 with a 20D future label, the control-plane-facing request may ask for source/feature data through roughly late January 2026.
 
 ### Consequences
 
-- `trading-manager` only needs to prepare data coverage; it does not need model-label semantics.
+- The `trading-main` control plane only needs to prepare data coverage; it does not need model-label semantics.
 - `trading-model` remains responsible for interpreting prepared data into train/validation/test splits and labels.
 - Request field names should use `required_data_start_time` / `required_data_end_time`, not `dataset_start_time` / `dataset_end_time`, to avoid confusing manager data coverage with model dataset/evaluation windows.
 

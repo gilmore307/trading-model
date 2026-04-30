@@ -53,7 +53,7 @@ The repository should prefer explicit point-in-time interfaces, fixture-backed t
 - Raw acquisition and source-specific cleaning belong in `trading-data`.
 - Global contracts, registry entries, shared helpers, and reusable templates belong in `trading-main`.
 - Durable storage layout and retention belong in `trading-storage` unless this repository is defining a proposed contract for review.
-- Scheduling, retries, lifecycle routing, and promotion decisions belong in `trading-manager` unless explicitly delegated by contract.
+- Scheduling, retries, lifecycle routing, and promotion decisions belong in the `trading-main` control plane unless explicitly delegated by contract.
 - Live execution and broker/account mutation stay outside this repository.
 - Generated artifacts and runtime outputs are not source files.
 - Secrets and credentials must stay outside the repository.

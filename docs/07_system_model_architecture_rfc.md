@@ -93,7 +93,7 @@ Recommended ownership split:
 | Source acquisition, source-evidence bundles | `trading-data` |
 | Shared fields, identifiers, contracts, registry | `trading-main` |
 | Offline model research and validation | `trading-model` |
-| Scheduling/routing/lifecycle | `trading-manager` / execution-side repos |
+| Scheduling/routing/lifecycle | `trading-main` control plane / execution-side repos |
 | Live execution, order placement, broker integration | execution/risk repository, not `trading-model` |
 
 If a later decision splits one or more layers into separate component repositories, update `docs/00_scope.md`, this RFC, and `trading-main` registry/contracts together.
