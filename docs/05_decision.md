@@ -318,3 +318,39 @@ Clarify semantics:
 - Single outlier z-scores are clipped before they can dominate group means.
 - Trend factor weighting is more robust if future ETF signal sets become uneven.
 - Future model review should consider splitting commodity and rate factors if downstream interpretation needs separate inflation, safe-haven, and duration-shock dimensions.
+
+## D012 - Manager-facing model data requests use required data windows only
+
+Date: 2026-04-29
+Status: Accepted
+
+### Context
+
+`MarketRegimeModel` evaluation needs train/validation/test windows and future-label horizons such as 1D, 5D, and 20D. Those details are model-evaluation semantics, not manager orchestration semantics. The manager should coordinate production of source/derived data, but it should not need to understand how the model will use that data to construct labels or splits.
+
+### Decision
+
+Use the simple data-window request shape for manager-facing model data requests.
+
+A manager-facing request should specify the raw data coverage needed:
+
+- `request_id`
+- `model_id`
+- `purpose`
+- `required_data_start_time`
+- `required_data_end_time`
+- `required_source_key`
+- `required_derived_key`
+- `requested_at`
+- `request_status`
+- optional `request_payload_json` for model-local opaque details
+
+Do not put `label_horizons` into the manager-facing request contract. Label horizons, target symbols, split windows, and evaluation rules belong in model-owned evaluation config/run tables.
+
+When future labels need data past the evaluation end time, the model planner should extend `required_data_end_time` before sending the request. For example, if the model wants to evaluate through 2025-12-31 with a 20D future label, the manager-facing request may ask for source/derived data through roughly late January 2026.
+
+### Consequences
+
+- `trading-manager` only needs to prepare data coverage; it does not need model-label semantics.
+- `trading-model` remains responsible for interpreting prepared data into train/validation/test splits and labels.
+- Request field names should use `required_data_start_time` / `required_data_end_time`, not `dataset_start_time` / `dataset_end_time`, to avoid confusing manager data coverage with model dataset/evaluation windows.

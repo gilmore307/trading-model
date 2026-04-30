@@ -16,6 +16,7 @@
 ## Open Gaps
 
 - Exact first factor/score formulas for `model_01_market_regime`.
+- Exact SQL schema for model-owned dataset request/snapshot/split/evaluation tables.
 - Exact artifact/manifest/ready-signal/request contract interactions.
 - Exact storage path/reference requirements.
 - Whether `trading-strategy` remains separate or `StrategySelectionModel` research is model-local until a later split.
@@ -23,6 +24,7 @@
 
 ## Recently Accepted
 
+- Accepted manager-facing data request boundary: use `required_data_start_time` / `required_data_end_time`; keep `label_horizons`, target symbols, train/validation/test splits, and label construction inside `trading-model` evaluation config/run tables.
 - Stabilized `model_01_market_regime` factor construction: default `min_history = 20`, per-group history overrides, `std_floor`, z-score clipping, minimum signal coverage, trend bucket aggregation, and clarified commodity/rate semantics.
 - Moved `model_01_market_regime` factor membership, signal directions, and reducer choices into `config/factor_specs.toml`; generator code now loads and validates config.
 - Implemented `src/model_outputs/model_01_market_regime/generator.py` and `scripts/generate_model_01_market_regime.py` for the V1 continuous state-vector contract.
