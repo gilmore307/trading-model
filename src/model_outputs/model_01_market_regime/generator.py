@@ -1,7 +1,7 @@
 """Continuous MarketRegimeModel V1 state-vector generator.
 
 The generator converts point-in-time rows from
-``trading_derived.derived_01_market_regime`` into the model output table
+``trading_data.feature_01_market_regime`` into the model output table
 ``trading_model.model_01_market_regime``. V1 intentionally avoids clustering,
 hard state ids, supervised labels, and human-readable regime labels. The primary
 output is a bounded continuous market-condition vector keyed by ``available_time``.

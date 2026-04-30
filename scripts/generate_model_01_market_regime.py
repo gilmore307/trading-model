@@ -144,8 +144,8 @@ def generate_sql(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", help="PostgreSQL URL. Defaults to OPENCLAW_DATABASE_URL or the local OpenClaw DB secret file.")
-    parser.add_argument("--source-schema", default="trading_derived")
-    parser.add_argument("--source-table", default="derived_01_market_regime")
+    parser.add_argument("--source-schema", default="trading_data")
+    parser.add_argument("--source-table", default="feature_01_market_regime")
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_01_market_regime")
     parser.add_argument("--source-start", help="Optional lower timestamp bound for derived rows. Include enough lookback for rolling factors.")

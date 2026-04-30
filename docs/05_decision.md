@@ -207,7 +207,7 @@ The useful downstream information is the concrete market-condition vector: trend
 
 The primary V1 output is a continuous point-in-time market-state vector in `trading_model.model_01_market_regime`, keyed by `available_time`.
 
-The model should remain unsupervised in the sense that it does not train on pre-assigned market labels. It may use rolling/expanding standardization and feature-block factor/score extraction from `trading_derived.derived_01_market_regime`.
+The model should remain unsupervised in the sense that it does not train on pre-assigned market labels. It may use rolling/expanding standardization and feature-block factor/score extraction from `trading_data.feature_01_market_regime`.
 
 ### Consequences
 
@@ -230,7 +230,7 @@ After deciding that V1 should use a continuous market-state vector rather than c
 Implement `model_01_market_regime` as an importable generator plus SQL runner:
 
 - `src/model_outputs/model_01_market_regime/generator.py` owns point-in-time rolling standardization and factor generation.
-- `scripts/generate_model_01_market_regime.py` reads `trading_derived.derived_01_market_regime` and upserts `trading_model.model_01_market_regime`.
+- `scripts/generate_model_01_market_regime.py` reads `trading_data.feature_01_market_regime` and upserts `trading_model.model_01_market_regime`.
 - Unit tests use in-memory fixture rows and fake cursors only.
 
 The first factor set is:
@@ -326,7 +326,7 @@ Status: Accepted
 
 ### Context
 
-`MarketRegimeModel` evaluation needs train/validation/test windows and future-label horizons such as 1D, 5D, and 20D. Those details are model-evaluation semantics, not manager orchestration semantics. The manager should coordinate production of source/derived data, but it should not need to understand how the model will use that data to construct labels or splits.
+`MarketRegimeModel` evaluation needs train/validation/test windows and future-label horizons such as 1D, 5D, and 20D. Those details are model-evaluation semantics, not manager orchestration semantics. The manager should coordinate production of source/feature data, but it should not need to understand how the model will use that data to construct labels or splits.
 
 ### Decision
 
@@ -347,7 +347,7 @@ A manager-facing request should specify the raw data coverage needed:
 
 Do not put `label_horizons` into the manager-facing request contract. Label horizons, target symbols, split windows, and evaluation rules belong in model-owned evaluation config/run tables.
 
-When future labels need data past the evaluation end time, the model planner should extend `required_data_end_time` before sending the request. For example, if the model wants to evaluate through 2025-12-31 with a 20D future label, the manager-facing request may ask for source/derived data through roughly late January 2026.
+When future labels need data past the evaluation end time, the model planner should extend `required_data_end_time` before sending the request. For example, if the model wants to evaluate through 2025-12-31 with a 20D future label, the manager-facing request may ask for source/feature data through roughly late January 2026.
 
 ### Consequences
 

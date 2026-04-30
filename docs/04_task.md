@@ -2,7 +2,7 @@
 
 ## Active Tasks
 
-- Review and refine the first `MarketRegimeModel` implementation slice: a point-in-time continuous market-state vector from `trading_derived.derived_01_market_regime`, designed to feed Phase 2 `SecuritySelectionModel` and Phase 3 `StrategySelectionModel`.
+- Review and refine the first `MarketRegimeModel` implementation slice: a point-in-time continuous market-state vector from `trading_data.feature_01_market_regime`, designed to feed Phase 2 `SecuritySelectionModel` and Phase 3 `StrategySelectionModel`.
 
 ## Queued Tasks
 

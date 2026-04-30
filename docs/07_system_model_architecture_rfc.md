@@ -122,7 +122,7 @@ V1 does **not** need discrete clustering, hard regime labels, HMM states, or hum
 ### Input table
 
 ```text
-trading_derived.derived_01_market_regime
+trading_data.feature_01_market_regime
 ```
 
 This table is the deterministic Layer 1 feature surface. It contains the reviewed V1 feature families: returns, relative strength, volatility, trend/momentum, and correlation/breadth.
