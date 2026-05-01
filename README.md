@@ -56,7 +56,10 @@ docs/
   05_decision.md
   06_memory.md
   07_system_model_architecture_rfc.md
+  08_model_decomposition.md
 ```
+
+`docs/08_model_decomposition.md` is the model-design review template: each layer should be decomposed by data, features, target, model mapping, loss, training/update process, validation, overfitting control, and decision deployment before implementation or promotion expands.
 
 ## Platform Dependencies
 

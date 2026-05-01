@@ -862,3 +862,35 @@ Treat `model_01_market_regime` as broad market background rather than a direct s
 - Model 2 implementation should prioritize `feature_02_security_selection`, sector/industry rotation state, ETF holdings exposure, and candidate trend/certainty surfaces.
 - Later implementation should define explicit market-state-to-option-expression and market-state-to-execution-policy contracts before treating Layer 1 as production-ready for downstream use.
 - Unified decision records should preserve Layer 1 state separately from Layer 2 candidate rotation context, then show how Layer 5 and Layer 7 used market state.
+
+## D030 - Use nine-part decomposition for model layer design
+
+Date: 2026-05-01
+Status: Accepted
+
+### Context
+
+The seven-layer architecture needs a consistent way to review each model before implementation details, feature contracts, training logic, evaluation harnesses, or promotion gates expand. Chentong accepted a direct decomposition method: data, features, prediction target, model mapping, loss, training updates, validation, overfitting control, and deployment into the real decision process.
+
+### Decision
+
+Use the nine-part model decomposition in `docs/08_model_decomposition.md` as the standard design and review template for every `trading-model` layer:
+
+1. data;
+2. features;
+3. prediction target;
+4. model mapping from `X` to `y` or to the output vector/parameter surface;
+5. loss or error measure;
+6. training/update process;
+7. validation/usefulness;
+8. overfitting control;
+9. deployment into the offline decision flow.
+
+The template applies to supervised models, unsupervised state-vector models, rankers, overlays, parameter surfaces, and risk gates. It does not require every layer to become a supervised `X -> y` predictor.
+
+### Consequences
+
+- Layer design docs should identify what `X`, `y`, loss, validation, and deployment mean for that layer before implementation expands.
+- `MarketRegimeModel` remains unsupervised in V1: its target is a continuous market-state vector rather than a future-return label or hard regime class.
+- Future layer specs should use this structure before adding new code paths, schemas, or registry proposals.
+- Open gaps for incomplete layer decompositions stay in `docs/04_task.md` until reviewed.

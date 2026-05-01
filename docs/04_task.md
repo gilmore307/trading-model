@@ -2,7 +2,8 @@
 
 ## Active Tasks
 
-- Review and refine the first `MarketRegimeModel` implementation slice: a point-in-time continuous market-state vector from `trading_data.feature_01_market_regime`, designed as broad market background for option expression, strategy compatibility, and risk/execution policy rather than direct ETF/stock selection.
+- Review and refine the first `MarketRegimeModel` implementation slice using the nine-part decomposition in `docs/08_model_decomposition.md`: a point-in-time continuous market-state vector from `trading_data.feature_01_market_regime`, designed as broad market background for option expression, strategy compatibility, and risk/execution policy rather than direct ETF/stock selection.
+- Complete nine-part decompositions for the remaining six model layers before expanding implementation beyond Layer 1.
 
 ## Queued Tasks
 

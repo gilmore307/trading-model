@@ -25,6 +25,7 @@ point-in-time data artifacts
 
 ## Operating Principles
 
+- Every model layer should be decomposed with the standard nine-part structure in `docs/08_model_decomposition.md`: data, features, prediction target, model mapping, loss/error measure, training/update process, validation/usefulness, overfitting control, and decision deployment.
 - Every workflow must be point-in-time: no future data, no full-history fitting for historical predictions, no post-event explanation leakage.
 - `MarketRegimeModel` must be market/data-feature based and limited to broad state description. It is background context for option-expression choice, strategy compatibility, and risk/execution policy; it must not rank ETFs, sectors, or stocks.
 - `SecuritySelectionModel` should select and score tradable sector/industry ETF and stock candidates from sector/industry rotation, ETF holdings exposure, full-market scans, trend clarity, trend persistence, certainty, liquidity, optionability, and event exclusions. Broad market state may be referenced as background or gating context, but it is not the direct stock-selection driver.
