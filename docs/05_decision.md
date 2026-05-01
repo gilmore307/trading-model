@@ -968,7 +968,7 @@ After settling `MarketRegimeModel` Layer 1 V1, the next layer is `SecuritySelect
 
 Start Layer 2 from the nine-part decomposition in `docs/08_model_decomposition.md`:
 
-- use `trading_data.feature_02_security_selection`, sector/industry ETF holdings, `stock_etf_exposure`, candidate trend/liquidity/optionability/event evidence, and Layer 1 only as background/audit/coarse-gating context;
+- use `trading_data.feature_02_security_selection` as the home for sector/industry rotation and daily-context evidence moved out of `feature_01_market_regime`, plus sector/industry ETF holdings, `stock_etf_exposure`, candidate trend/liquidity/optionability/event evidence, and Layer 1 only as background/audit/coarse-gating context;
 - output a candidate parameter surface keyed by `available_time + candidate_symbol`;
 - include both sector/industry ETF holdings-driven candidates and full-market scan-driven candidates;
 - keep `candidate_selection_parameter` as an optional convenience scalar, not the only durable output;

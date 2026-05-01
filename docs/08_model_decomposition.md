@@ -169,9 +169,16 @@ stock_etf_exposure          # derived point-in-time exposure surface, exact owne
 model_01_market_regime      # background/audit/coarse gating only, not direct ranking input
 ```
 
+`feature_02_security_selection` should be the Layer 2 home for the evidence moved out of `feature_01_market_regime` when Layer 1 was narrowed to broad market properties. Its V1 scope is:
+
+- candidate-comparison rows for reviewed relative-strength combinations with `combination_type in {sector_rotation, daily_context}`;
+- one per-snapshot `sector_rotation_summary` row for sector-observation breadth and dispersion aggregates;
+- row key: `snapshot_time + candidate_symbol + comparison_symbol + rotation_pair_id`;
+- payload: relative-strength returns, normalized trend distance/slope/spread/alignment, volatility-ratio, correlation, and sector-observation participation/dispersion evidence.
+
 Eligible evidence:
 
-- sector/industry ETF relative strength, trend, persistence, volatility stability, breadth, dispersion, and signal agreement;
+- sector/industry ETF relative strength, trend, persistence, volatility stability, breadth, dispersion, and signal agreement from the migrated Feature 1 rotation surface;
 - point-in-time sector/industry ETF holdings snapshots;
 - stock-to-sector/industry ETF exposure derived from holdings weights;
 - stock and ETF bars, liquidity, spread, volume, gap, volatility, and relative-strength evidence;
