@@ -980,3 +980,29 @@ Start Layer 2 from the nine-part decomposition in `docs/08_model_decomposition.m
 - Whether `stock_etf_exposure` is produced in `trading-data`, `trading-model`, or shared contracts after proof.
 - First eligible sector/industry ETF basket and base stock universe.
 - First parameter-adjustment method and gating thresholds.
+
+## D034 - Feature 2 owns migrated sector rotation evidence
+
+Date: 2026-05-01
+Status: Accepted
+
+### Context
+
+Layer 2 decomposition review started by clarifying the data surface. Chentong confirmed that `feature_02_security_selection` should contain the sector/industry rotation evidence previously moved out of `feature_01_market_regime`.
+
+### Decision
+
+Settle `feature_02_security_selection` V1 as the Feature 2 input surface for migrated Layer 1 rotation evidence:
+
+- candidate-comparison rows for reviewed relative-strength combinations with `combination_type in {sector_rotation, daily_context}`;
+- one `sector_rotation_summary` row per snapshot for sector-observation breadth, participation, and dispersion evidence;
+- physical table columns are the seven metadata columns plus `feature_payload_json`;
+- row key is `snapshot_time + candidate_symbol + comparison_symbol + rotation_pair_id`;
+- current shared contract is 32 rows per snapshot: 1 summary row, 18 `sector_rotation` rows, and 13 `daily_context` rows;
+- current logical payload has 24 keys: 16 relative-strength/trend/volatility/correlation keys and 8 sector-observation breadth/dispersion keys.
+
+### Consequences
+
+- Do not reintroduce these sector/industry rotation payloads into `feature_01_market_regime`.
+- `SecuritySelectionModel` should consume Feature 2 rows as its initial sector/industry rotation evidence before adding holdings exposure, full-market scan, liquidity, optionability, and event overlays.
+- Future Feature 2 changes should preserve the point-in-time row key and document any new payload keys or row types.

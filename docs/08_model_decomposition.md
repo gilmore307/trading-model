@@ -160,6 +160,8 @@ Status: draft for review.
 
 ### 1. Data
 
+Status: accepted for Feature 2 rotation evidence scope on 2026-05-01.
+
 Primary model-facing inputs:
 
 ```text
