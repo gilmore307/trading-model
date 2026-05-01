@@ -19,10 +19,9 @@
 # direction = 1 means higher raw signal increases the factor.
 # direction = -1 means higher raw signal decreases the factor.
 #
-# V1.1 expands reviewed Layer 1 evidence coverage while keeping sector/industry
-# rotation out of Model 1. It intentionally consumes normalized trend distances,
-# slopes, spreads, volatility levels/ratios, and correlation diagnostics rather
-# than raw ratio moving-average levels.
+# V1.2 expands reviewed Layer 1 evidence coverage while keeping sector/industry
+# rotation out of Model 1. Generated data should have an explicit owner: used by
+# a factor, retained as diagnostic/quality/evaluation evidence, or removed.
 
 [standardization]
 lookback = 120
@@ -36,156 +35,770 @@ name = "trend_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
 min_signal_coverage = 0.3
-
 [[factors.groups]]
 symbols = ["spy", "qqq", "iwm", "dia", "rsp"]
-suffixes = ["return_1d", "return_5d", "distance_to_ma20", "ma20_slope_5d"]
+suffixes = [
+  "return_30m",
+  "return_1d",
+  "return_5d",
+  "distance_to_ma20",
+  "ma20_slope_5d",
+]
 direction = 1
 min_history = 20
-
 [[factors.groups]]
 symbols = ["spy", "qqq", "iwm", "dia", "rsp"]
-suffixes = ["return_20d", "distance_to_ma50", "distance_to_ma200", "ma50_slope_10d", "ma200_slope_20d", "ma_alignment_score", "ma20_ma50_spread", "ma50_ma200_spread"]
+suffixes = [
+  "return_20d",
+  "distance_to_ma50",
+  "distance_to_ma200",
+  "ma50_slope_10d",
+  "ma200_slope_20d",
+  "ma_alignment_score",
+  "ma20_ma50_spread",
+  "ma50_ma200_spread",
+]
 direction = 1
 min_history = 60
-
 [[factors]]
 name = "volatility_stress_factor"
 reducer = "bounded_mean"
-aggregation = "flat"
-
+aggregation = "bucketed_mean"
+min_signal_coverage = 0.3
 [[factors.groups]]
-symbols = ["spy", "qqq", "iwm", "dia", "rsp", "vixy"]
-suffixes = ["realized_vol_5d", "realized_vol_20d", "realized_vol_60d", "ewma_vol", "atr_pct_14d", "parkinson_vol_20d", "garman_klass_vol_20d"]
+symbols = [
+  "bitw",
+  "cper",
+  "dba",
+  "dbc",
+  "dia",
+  "etha",
+  "fsol",
+  "gld",
+  "hyg",
+  "ibit",
+  "ief",
+  "iwm",
+  "lqd",
+  "qqq",
+  "rsp",
+  "shy",
+  "slv",
+  "spy",
+  "tlt",
+  "uso",
+  "uup",
+  "vixy",
+]
+suffixes = [
+  "realized_vol_5d",
+  "realized_vol_20d",
+  "realized_vol_60d",
+  "realized_vol_5d_20d_ratio",
+  "realized_vol_20d_60d_ratio",
+  "ewma_vol",
+  "atr_pct_14d",
+]
 direction = 1
 min_history = 30
-
 [[factors.groups]]
-symbols = ["spy", "qqq", "iwm", "dia", "rsp", "vixy"]
-suffixes = ["realized_vol_5d_20d_ratio", "realized_vol_20d_60d_ratio", "realized_vol_20d_percentile_252d", "realized_vol_20d_zscore_252d"]
+symbols = [
+  "bitw",
+  "cper",
+  "dba",
+  "dbc",
+  "dia",
+  "etha",
+  "fsol",
+  "gld",
+  "hyg",
+  "ibit",
+  "ief",
+  "iwm",
+  "lqd",
+  "qqq",
+  "rsp",
+  "shy",
+  "slv",
+  "spy",
+  "tlt",
+  "uso",
+  "uup",
+  "vixy",
+]
+suffixes = [
+  "realized_vol_20d_percentile_252d",
+  "realized_vol_20d_zscore_252d",
+  "parkinson_vol_20d",
+  "garman_klass_vol_20d",
+]
 direction = 1
 min_history = 60
-
 [[factors.groups]]
-symbols = ["vixy"]
-suffixes = ["return_5d", "distance_to_ma20", "return_20d", "ma_alignment_score"]
+columns = [
+  "qqq_spy_realized_vol_20d_ratio",
+  "iwm_spy_realized_vol_20d_ratio",
+  "rsp_spy_realized_vol_20d_ratio",
+  "dia_spy_realized_vol_20d_ratio",
+  "hyg_lqd_realized_vol_20d_ratio",
+  "hyg_tlt_realized_vol_20d_ratio",
+  "lqd_tlt_realized_vol_20d_ratio",
+  "tlt_shy_realized_vol_20d_ratio",
+  "ief_shy_realized_vol_20d_ratio",
+  "tlt_ief_realized_vol_20d_ratio",
+  "tlt_spy_realized_vol_20d_ratio",
+  "uup_spy_realized_vol_20d_ratio",
+  "vixy_spy_realized_vol_20d_ratio",
+  "gld_spy_realized_vol_20d_ratio",
+  "dbc_spy_realized_vol_20d_ratio",
+  "uso_spy_realized_vol_20d_ratio",
+  "cper_dbc_realized_vol_20d_ratio",
+  "dba_dbc_realized_vol_20d_ratio",
+  "slv_gld_realized_vol_20d_ratio",
+  "gld_uup_realized_vol_20d_ratio",
+  "bitw_spy_realized_vol_20d_ratio",
+  "ibit_bitw_realized_vol_20d_ratio",
+  "etha_bitw_realized_vol_20d_ratio",
+  "fsol_bitw_realized_vol_20d_ratio",
+]
 direction = 1
-min_history = 60
-
+min_history = 30
 [[factors]]
 name = "correlation_stress_factor"
 reducer = "bounded_mean"
 aggregation = "flat"
-
 [[factors.groups]]
-columns = ["market_state_avg_abs_return_corr_20d", "market_state_avg_abs_return_corr_60d", "market_state_avg_return_corr_20d", "market_state_avg_return_corr_60d", "market_state_return_corr_dispersion_20d", "market_state_return_corr_dispersion_60d"]
+columns = [
+  "market_state_avg_abs_return_corr_20d",
+  "market_state_avg_abs_return_corr_60d",
+  "market_state_avg_return_corr_20d",
+  "market_state_avg_return_corr_60d",
+  "market_state_return_corr_dispersion_20d",
+  "market_state_return_corr_dispersion_60d",
+]
 direction = 1
 min_history = 30
-
 [[factors.groups]]
-columns = ["qqq_spy_return_corr_20d", "qqq_spy_return_corr_60d", "iwm_spy_return_corr_20d", "iwm_spy_return_corr_60d", "rsp_spy_return_corr_20d", "rsp_spy_return_corr_60d", "dia_spy_return_corr_20d", "dia_spy_return_corr_60d"]
+columns = [
+  "qqq_spy_return_corr_20d",
+  "qqq_spy_return_corr_60d",
+  "qqq_spy_return_corr_20d_60d_change",
+  "iwm_spy_return_corr_20d",
+  "iwm_spy_return_corr_60d",
+  "iwm_spy_return_corr_20d_60d_change",
+  "rsp_spy_return_corr_20d",
+  "rsp_spy_return_corr_60d",
+  "rsp_spy_return_corr_20d_60d_change",
+  "dia_spy_return_corr_20d",
+  "dia_spy_return_corr_60d",
+  "dia_spy_return_corr_20d_60d_change",
+  "hyg_lqd_return_corr_20d",
+  "hyg_lqd_return_corr_60d",
+  "hyg_lqd_return_corr_20d_60d_change",
+  "hyg_tlt_return_corr_20d",
+  "hyg_tlt_return_corr_60d",
+  "hyg_tlt_return_corr_20d_60d_change",
+  "lqd_tlt_return_corr_20d",
+  "lqd_tlt_return_corr_60d",
+  "lqd_tlt_return_corr_20d_60d_change",
+  "tlt_shy_return_corr_20d",
+  "tlt_shy_return_corr_60d",
+  "tlt_shy_return_corr_20d_60d_change",
+  "ief_shy_return_corr_20d",
+  "ief_shy_return_corr_60d",
+  "ief_shy_return_corr_20d_60d_change",
+  "tlt_ief_return_corr_20d",
+  "tlt_ief_return_corr_60d",
+  "tlt_ief_return_corr_20d_60d_change",
+  "tlt_spy_return_corr_20d",
+  "tlt_spy_return_corr_60d",
+  "tlt_spy_return_corr_20d_60d_change",
+  "uup_spy_return_corr_20d",
+  "uup_spy_return_corr_60d",
+  "uup_spy_return_corr_20d_60d_change",
+  "vixy_spy_return_corr_20d",
+  "vixy_spy_return_corr_60d",
+  "vixy_spy_return_corr_20d_60d_change",
+  "gld_spy_return_corr_20d",
+  "gld_spy_return_corr_60d",
+  "gld_spy_return_corr_20d_60d_change",
+  "dbc_spy_return_corr_20d",
+  "dbc_spy_return_corr_60d",
+  "dbc_spy_return_corr_20d_60d_change",
+  "uso_spy_return_corr_20d",
+  "uso_spy_return_corr_60d",
+  "uso_spy_return_corr_20d_60d_change",
+  "cper_dbc_return_corr_20d",
+  "cper_dbc_return_corr_60d",
+  "cper_dbc_return_corr_20d_60d_change",
+  "dba_dbc_return_corr_20d",
+  "dba_dbc_return_corr_60d",
+  "dba_dbc_return_corr_20d_60d_change",
+  "slv_gld_return_corr_20d",
+  "slv_gld_return_corr_60d",
+  "slv_gld_return_corr_20d_60d_change",
+  "gld_uup_return_corr_20d",
+  "gld_uup_return_corr_60d",
+  "gld_uup_return_corr_20d_60d_change",
+  "bitw_spy_return_corr_20d",
+  "bitw_spy_return_corr_60d",
+  "bitw_spy_return_corr_20d_60d_change",
+  "ibit_bitw_return_corr_20d",
+  "ibit_bitw_return_corr_60d",
+  "ibit_bitw_return_corr_20d_60d_change",
+  "etha_bitw_return_corr_20d",
+  "etha_bitw_return_corr_60d",
+  "etha_bitw_return_corr_20d_60d_change",
+  "fsol_bitw_return_corr_20d",
+  "fsol_bitw_return_corr_60d",
+  "fsol_bitw_return_corr_20d_60d_change",
+]
 direction = 1
 min_history = 30
-
 [[factors]]
 name = "credit_stress_factor"
 reducer = "bounded_mean"
-aggregation = "flat"
-
+aggregation = "bucketed_mean"
+min_signal_coverage = 0.3
 [[factors.groups]]
-columns = ["hyg_lqd_30m", "hyg_lqd_distance_to_ma20", "hyg_lqd_distance_to_ma50", "hyg_lqd_ma20_slope_5d", "hyg_lqd_ma50_slope_10d", "hyg_lqd_ma_alignment_score", "hyg_lqd_ma20_ma50_spread", "hyg_lqd_ma50_ma200_spread"]
+symbols = ["hyg", "lqd"]
+suffixes = [
+  "return_30m",
+  "return_1d",
+  "return_5d",
+  "distance_to_ma20",
+  "ma20_slope_5d",
+]
 direction = -1
 min_history = 20
-
 [[factors.groups]]
-columns = ["hyg_tlt_30m", "hyg_tlt_distance_to_ma20", "hyg_tlt_distance_to_ma50", "hyg_tlt_ma20_slope_5d", "hyg_tlt_ma50_slope_10d", "hyg_tlt_ma_alignment_score", "lqd_tlt_30m", "lqd_tlt_distance_to_ma20", "lqd_tlt_ma_alignment_score"]
+symbols = ["hyg", "lqd"]
+suffixes = [
+  "return_20d",
+  "distance_to_ma50",
+  "distance_to_ma200",
+  "ma50_slope_10d",
+  "ma200_slope_20d",
+  "ma_alignment_score",
+  "ma20_ma50_spread",
+  "ma50_ma200_spread",
+]
+direction = -1
+min_history = 60
+[[factors.groups]]
+columns = [
+  "hyg_lqd_30m",
+  "hyg_lqd_distance_to_ma20",
+  "hyg_lqd_distance_to_ma50",
+  "hyg_lqd_distance_to_ma200",
+  "hyg_lqd_ma20_slope_5d",
+  "hyg_lqd_ma50_slope_10d",
+  "hyg_lqd_ma200_slope_20d",
+  "hyg_lqd_ma_alignment_score",
+  "hyg_lqd_ma20_ma50_spread",
+  "hyg_lqd_ma50_ma200_spread",
+  "hyg_tlt_30m",
+  "hyg_tlt_distance_to_ma20",
+  "hyg_tlt_distance_to_ma50",
+  "hyg_tlt_distance_to_ma200",
+  "hyg_tlt_ma20_slope_5d",
+  "hyg_tlt_ma50_slope_10d",
+  "hyg_tlt_ma200_slope_20d",
+  "hyg_tlt_ma_alignment_score",
+  "hyg_tlt_ma20_ma50_spread",
+  "hyg_tlt_ma50_ma200_spread",
+  "lqd_tlt_30m",
+  "lqd_tlt_distance_to_ma20",
+  "lqd_tlt_distance_to_ma50",
+  "lqd_tlt_distance_to_ma200",
+  "lqd_tlt_ma20_slope_5d",
+  "lqd_tlt_ma50_slope_10d",
+  "lqd_tlt_ma200_slope_20d",
+  "lqd_tlt_ma_alignment_score",
+  "lqd_tlt_ma20_ma50_spread",
+  "lqd_tlt_ma50_ma200_spread",
+]
 direction = -1
 min_history = 20
-
 [[factors.groups]]
-columns = ["hyg_lqd_realized_vol_20d_ratio", "hyg_tlt_realized_vol_20d_ratio", "lqd_tlt_realized_vol_20d_ratio"]
+columns = [
+  "hyg_lqd_realized_vol_20d_ratio",
+  "hyg_tlt_realized_vol_20d_ratio",
+  "lqd_tlt_realized_vol_20d_ratio",
+]
 direction = 1
 min_history = 30
-
 [[factors]]
 name = "rate_pressure_factor"
 reducer = "bounded_mean"
-aggregation = "flat"
-# TLT/SHY, IEF/SHY, and TLT/IEF are cross-asset macro sensors, not tradable-candidate conclusions.
-# High value means duration strength; direction = -1 maps that to lower discount-rate pressure.
-# TLT strength can also indicate risk-off safe-haven demand; that may become a separate factor later.
-# Target ontology should migrate this toward discount_rate_pressure_factor after schema review.
-
+aggregation = "bucketed_mean"
+min_signal_coverage = 0.3
+# High value means discount-rate / duration pressure is rising.
 [[factors.groups]]
-columns = ["tlt_shy_30m", "tlt_shy_distance_to_ma20", "tlt_shy_distance_to_ma50", "tlt_shy_distance_to_ma200", "tlt_shy_ma20_slope_5d", "tlt_shy_ma50_slope_10d", "tlt_shy_ma200_slope_20d", "tlt_shy_ma_alignment_score", "tlt_shy_ma20_ma50_spread", "tlt_shy_ma50_ma200_spread", "ief_shy_30m", "ief_shy_distance_to_ma20", "ief_shy_distance_to_ma50", "ief_shy_distance_to_ma200", "ief_shy_ma20_slope_5d", "ief_shy_ma50_slope_10d", "ief_shy_ma200_slope_20d", "ief_shy_ma_alignment_score", "ief_shy_ma20_ma50_spread", "ief_shy_ma50_ma200_spread", "tlt_ief_30m", "tlt_ief_distance_to_ma20", "tlt_ief_ma_alignment_score"]
+symbols = ["tlt", "ief"]
+suffixes = [
+  "return_30m",
+  "return_1d",
+  "return_5d",
+  "distance_to_ma20",
+  "ma20_slope_5d",
+]
 direction = -1
 min_history = 20
-
+[[factors.groups]]
+symbols = ["tlt", "ief"]
+suffixes = [
+  "return_20d",
+  "distance_to_ma50",
+  "distance_to_ma200",
+  "ma50_slope_10d",
+  "ma200_slope_20d",
+  "ma_alignment_score",
+  "ma20_ma50_spread",
+  "ma50_ma200_spread",
+]
+direction = -1
+min_history = 60
+[[factors.groups]]
+columns = [
+  "tlt_shy_30m",
+  "tlt_shy_distance_to_ma20",
+  "tlt_shy_distance_to_ma50",
+  "tlt_shy_distance_to_ma200",
+  "tlt_shy_ma20_slope_5d",
+  "tlt_shy_ma50_slope_10d",
+  "tlt_shy_ma200_slope_20d",
+  "tlt_shy_ma_alignment_score",
+  "tlt_shy_ma20_ma50_spread",
+  "tlt_shy_ma50_ma200_spread",
+  "ief_shy_30m",
+  "ief_shy_distance_to_ma20",
+  "ief_shy_distance_to_ma50",
+  "ief_shy_distance_to_ma200",
+  "ief_shy_ma20_slope_5d",
+  "ief_shy_ma50_slope_10d",
+  "ief_shy_ma200_slope_20d",
+  "ief_shy_ma_alignment_score",
+  "ief_shy_ma20_ma50_spread",
+  "ief_shy_ma50_ma200_spread",
+  "tlt_ief_30m",
+  "tlt_ief_distance_to_ma20",
+  "tlt_ief_distance_to_ma50",
+  "tlt_ief_distance_to_ma200",
+  "tlt_ief_ma20_slope_5d",
+  "tlt_ief_ma50_slope_10d",
+  "tlt_ief_ma200_slope_20d",
+  "tlt_ief_ma_alignment_score",
+  "tlt_ief_ma20_ma50_spread",
+  "tlt_ief_ma50_ma200_spread",
+]
+direction = -1
+min_history = 20
+[[factors.groups]]
+columns = [
+  "tlt_shy_realized_vol_20d_ratio",
+  "ief_shy_realized_vol_20d_ratio",
+  "tlt_ief_realized_vol_20d_ratio",
+  "tlt_spy_realized_vol_20d_ratio",
+]
+direction = 1
+min_history = 30
 [[factors]]
 name = "dollar_pressure_factor"
 reducer = "bounded_mean"
-aggregation = "flat"
-
-[[factors.groups]]
-columns = ["uup_spy_30m", "uup_spy_distance_to_ma20", "uup_spy_distance_to_ma50", "uup_spy_distance_to_ma200", "uup_spy_ma20_slope_5d", "uup_spy_ma50_slope_10d", "uup_spy_ma200_slope_20d", "uup_spy_ma_alignment_score", "uup_spy_ma20_ma50_spread", "uup_spy_ma50_ma200_spread"]
-direction = 1
-min_history = 20
-
+aggregation = "bucketed_mean"
+min_signal_coverage = 0.3
 [[factors.groups]]
 symbols = ["uup"]
-suffixes = ["return_1d", "return_5d", "return_20d", "distance_to_ma20", "distance_to_ma50", "distance_to_ma200", "ma20_slope_5d", "ma50_slope_10d", "ma200_slope_20d", "ma_alignment_score", "ma20_ma50_spread", "ma50_ma200_spread"]
+suffixes = [
+  "return_30m",
+  "return_1d",
+  "return_5d",
+  "distance_to_ma20",
+  "ma20_slope_5d",
+]
+direction = 1
+min_history = 20
+[[factors.groups]]
+symbols = ["uup"]
+suffixes = [
+  "return_20d",
+  "distance_to_ma50",
+  "distance_to_ma200",
+  "ma50_slope_10d",
+  "ma200_slope_20d",
+  "ma_alignment_score",
+  "ma20_ma50_spread",
+  "ma50_ma200_spread",
+]
 direction = 1
 min_history = 60
-
+[[factors.groups]]
+columns = [
+  "uup_spy_30m",
+  "uup_spy_distance_to_ma20",
+  "uup_spy_distance_to_ma50",
+  "uup_spy_distance_to_ma200",
+  "uup_spy_ma20_slope_5d",
+  "uup_spy_ma50_slope_10d",
+  "uup_spy_ma200_slope_20d",
+  "uup_spy_ma_alignment_score",
+  "uup_spy_ma20_ma50_spread",
+  "uup_spy_ma50_ma200_spread",
+  "gld_uup_30m",
+  "gld_uup_distance_to_ma20",
+  "gld_uup_distance_to_ma50",
+  "gld_uup_distance_to_ma200",
+  "gld_uup_ma20_slope_5d",
+  "gld_uup_ma50_slope_10d",
+  "gld_uup_ma200_slope_20d",
+  "gld_uup_ma_alignment_score",
+  "gld_uup_ma20_ma50_spread",
+  "gld_uup_ma50_ma200_spread",
+]
+direction = 1
+min_history = 20
+[[factors.groups]]
+columns = [
+  "uup_spy_realized_vol_20d_ratio",
+  "gld_uup_realized_vol_20d_ratio",
+]
+direction = 1
+min_history = 30
 [[factors]]
 name = "commodity_pressure_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
 min_signal_coverage = 0.3
-# High value means commodity-related assets are becoming a dominant market driver.
-# It is not automatically bearish: energy/industrial commodity leadership can be risk-on or inflation-led,
-# while GLD leadership versus SPY may be safe-haven pressure. Future versions may split this into
-# commodity_strength_factor, inflation_pressure_factor, and safe_haven_commodity_factor.
-
+# High value means commodity-related assets are becoming a dominant market driver, not necessarily bearish.
 [[factors.groups]]
 symbols = ["dbc", "gld", "slv", "uso", "dba", "cper"]
-suffixes = ["return_1d", "return_5d", "distance_to_ma20", "ma20_slope_5d"]
+suffixes = [
+  "return_30m",
+  "return_1d",
+  "return_5d",
+  "distance_to_ma20",
+  "ma20_slope_5d",
+]
 direction = 1
 min_history = 20
-
 [[factors.groups]]
 symbols = ["dbc", "gld", "slv", "uso", "dba", "cper"]
-suffixes = ["return_20d", "distance_to_ma50", "distance_to_ma200", "ma50_slope_10d", "ma200_slope_20d", "ma_alignment_score", "ma20_ma50_spread", "ma50_ma200_spread"]
+suffixes = [
+  "return_20d",
+  "distance_to_ma50",
+  "distance_to_ma200",
+  "ma50_slope_10d",
+  "ma200_slope_20d",
+  "ma_alignment_score",
+  "ma20_ma50_spread",
+  "ma50_ma200_spread",
+]
 direction = 1
 min_history = 60
-
 [[factors.groups]]
-columns = ["gld_spy_30m", "gld_spy_distance_to_ma20", "gld_spy_ma_alignment_score", "dbc_spy_30m", "dbc_spy_distance_to_ma20", "dbc_spy_ma_alignment_score", "uso_spy_30m", "uso_spy_distance_to_ma20", "uso_spy_ma_alignment_score", "cper_dbc_30m", "cper_dbc_distance_to_ma20", "cper_dbc_ma_alignment_score", "dba_dbc_30m", "dba_dbc_distance_to_ma20", "dba_dbc_ma_alignment_score", "slv_gld_30m", "slv_gld_distance_to_ma20", "slv_gld_ma_alignment_score", "gld_uup_30m", "gld_uup_distance_to_ma20", "gld_uup_ma_alignment_score"]
+columns = [
+  "gld_spy_30m",
+  "gld_spy_distance_to_ma20",
+  "gld_spy_distance_to_ma50",
+  "gld_spy_distance_to_ma200",
+  "gld_spy_ma20_slope_5d",
+  "gld_spy_ma50_slope_10d",
+  "gld_spy_ma200_slope_20d",
+  "gld_spy_ma_alignment_score",
+  "gld_spy_ma20_ma50_spread",
+  "gld_spy_ma50_ma200_spread",
+  "dbc_spy_30m",
+  "dbc_spy_distance_to_ma20",
+  "dbc_spy_distance_to_ma50",
+  "dbc_spy_distance_to_ma200",
+  "dbc_spy_ma20_slope_5d",
+  "dbc_spy_ma50_slope_10d",
+  "dbc_spy_ma200_slope_20d",
+  "dbc_spy_ma_alignment_score",
+  "dbc_spy_ma20_ma50_spread",
+  "dbc_spy_ma50_ma200_spread",
+  "uso_spy_30m",
+  "uso_spy_distance_to_ma20",
+  "uso_spy_distance_to_ma50",
+  "uso_spy_distance_to_ma200",
+  "uso_spy_ma20_slope_5d",
+  "uso_spy_ma50_slope_10d",
+  "uso_spy_ma200_slope_20d",
+  "uso_spy_ma_alignment_score",
+  "uso_spy_ma20_ma50_spread",
+  "uso_spy_ma50_ma200_spread",
+  "cper_dbc_30m",
+  "cper_dbc_distance_to_ma20",
+  "cper_dbc_distance_to_ma50",
+  "cper_dbc_distance_to_ma200",
+  "cper_dbc_ma20_slope_5d",
+  "cper_dbc_ma50_slope_10d",
+  "cper_dbc_ma200_slope_20d",
+  "cper_dbc_ma_alignment_score",
+  "cper_dbc_ma20_ma50_spread",
+  "cper_dbc_ma50_ma200_spread",
+  "dba_dbc_30m",
+  "dba_dbc_distance_to_ma20",
+  "dba_dbc_distance_to_ma50",
+  "dba_dbc_distance_to_ma200",
+  "dba_dbc_ma20_slope_5d",
+  "dba_dbc_ma50_slope_10d",
+  "dba_dbc_ma200_slope_20d",
+  "dba_dbc_ma_alignment_score",
+  "dba_dbc_ma20_ma50_spread",
+  "dba_dbc_ma50_ma200_spread",
+  "slv_gld_30m",
+  "slv_gld_distance_to_ma20",
+  "slv_gld_distance_to_ma50",
+  "slv_gld_distance_to_ma200",
+  "slv_gld_ma20_slope_5d",
+  "slv_gld_ma50_slope_10d",
+  "slv_gld_ma200_slope_20d",
+  "slv_gld_ma_alignment_score",
+  "slv_gld_ma20_ma50_spread",
+  "slv_gld_ma50_ma200_spread",
+  "gld_uup_30m",
+  "gld_uup_distance_to_ma20",
+  "gld_uup_distance_to_ma50",
+  "gld_uup_distance_to_ma200",
+  "gld_uup_ma20_slope_5d",
+  "gld_uup_ma50_slope_10d",
+  "gld_uup_ma200_slope_20d",
+  "gld_uup_ma_alignment_score",
+  "gld_uup_ma20_ma50_spread",
+  "gld_uup_ma50_ma200_spread",
+]
 direction = 1
 min_history = 20
-
+[[factors.groups]]
+columns = [
+  "gld_spy_realized_vol_20d_ratio",
+  "dbc_spy_realized_vol_20d_ratio",
+  "uso_spy_realized_vol_20d_ratio",
+  "cper_dbc_realized_vol_20d_ratio",
+  "dba_dbc_realized_vol_20d_ratio",
+  "slv_gld_realized_vol_20d_ratio",
+  "gld_uup_realized_vol_20d_ratio",
+]
+direction = 1
+min_history = 30
 [[factors]]
 name = "breadth_factor"
 reducer = "bounded_mean"
 aggregation = "flat"
-# Breadth is now broad-market participation only. Sector-observation breadth/dispersion lives in Layer 2.
-
+# Broad-market participation only. Sector-observation breadth/dispersion lives in Layer 2.
 [[factors.groups]]
-columns = ["rsp_spy_30m", "rsp_spy_distance_to_ma20", "rsp_spy_distance_to_ma50", "rsp_spy_distance_to_ma200", "rsp_spy_ma20_slope_5d", "rsp_spy_ma50_slope_10d", "rsp_spy_ma200_slope_20d", "rsp_spy_ma_alignment_score", "rsp_spy_ma20_ma50_spread", "rsp_spy_ma50_ma200_spread"]
+columns = [
+  "rsp_spy_30m",
+  "rsp_spy_distance_to_ma20",
+  "rsp_spy_distance_to_ma50",
+  "rsp_spy_distance_to_ma200",
+  "rsp_spy_ma20_slope_5d",
+  "rsp_spy_ma50_slope_10d",
+  "rsp_spy_ma200_slope_20d",
+  "rsp_spy_ma_alignment_score",
+  "rsp_spy_ma20_ma50_spread",
+  "rsp_spy_ma50_ma200_spread",
+  "rsp_spy_realized_vol_20d_ratio",
+]
 direction = 1
 min_history = 20
-
 [[factors]]
 name = "risk_appetite_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
-
+min_signal_coverage = 0.3
 [[factors.groups]]
-columns = ["qqq_spy_30m", "qqq_spy_distance_to_ma20", "qqq_spy_ma_alignment_score", "iwm_spy_30m", "iwm_spy_distance_to_ma20", "iwm_spy_ma_alignment_score", "rsp_spy_30m", "rsp_spy_distance_to_ma20", "rsp_spy_ma_alignment_score", "hyg_lqd_30m", "hyg_lqd_distance_to_ma20", "hyg_lqd_ma_alignment_score", "bitw_spy_30m", "bitw_spy_distance_to_ma20", "bitw_spy_ma_alignment_score", "ibit_bitw_30m", "ibit_bitw_distance_to_ma20", "ibit_bitw_ma_alignment_score", "etha_bitw_30m", "etha_bitw_distance_to_ma20", "etha_bitw_ma_alignment_score", "fsol_bitw_30m", "fsol_bitw_distance_to_ma20", "fsol_bitw_ma_alignment_score"]
+symbols = ["bitw", "ibit", "etha", "fsol"]
+suffixes = [
+  "return_30m",
+  "return_1d",
+  "return_5d",
+  "distance_to_ma20",
+  "ma20_slope_5d",
+]
 direction = 1
 min_history = 20
-
 [[factors.groups]]
-columns = ["tlt_spy_30m", "tlt_spy_distance_to_ma20", "tlt_spy_ma_alignment_score", "gld_spy_30m", "gld_spy_distance_to_ma20", "gld_spy_ma_alignment_score", "uup_spy_30m", "uup_spy_distance_to_ma20", "uup_spy_ma_alignment_score", "vixy_spy_30m", "vixy_spy_distance_to_ma20", "vixy_spy_ma_alignment_score"]
+symbols = ["bitw", "ibit", "etha", "fsol"]
+suffixes = [
+  "return_20d",
+  "distance_to_ma50",
+  "distance_to_ma200",
+  "ma50_slope_10d",
+  "ma200_slope_20d",
+  "ma_alignment_score",
+  "ma20_ma50_spread",
+  "ma50_ma200_spread",
+]
+direction = 1
+min_history = 60
+[[factors.groups]]
+columns = [
+  "qqq_spy_30m",
+  "qqq_spy_distance_to_ma20",
+  "qqq_spy_distance_to_ma50",
+  "qqq_spy_distance_to_ma200",
+  "qqq_spy_ma20_slope_5d",
+  "qqq_spy_ma50_slope_10d",
+  "qqq_spy_ma200_slope_20d",
+  "qqq_spy_ma_alignment_score",
+  "qqq_spy_ma20_ma50_spread",
+  "qqq_spy_ma50_ma200_spread",
+  "iwm_spy_30m",
+  "iwm_spy_distance_to_ma20",
+  "iwm_spy_distance_to_ma50",
+  "iwm_spy_distance_to_ma200",
+  "iwm_spy_ma20_slope_5d",
+  "iwm_spy_ma50_slope_10d",
+  "iwm_spy_ma200_slope_20d",
+  "iwm_spy_ma_alignment_score",
+  "iwm_spy_ma20_ma50_spread",
+  "iwm_spy_ma50_ma200_spread",
+  "rsp_spy_30m",
+  "rsp_spy_distance_to_ma20",
+  "rsp_spy_distance_to_ma50",
+  "rsp_spy_distance_to_ma200",
+  "rsp_spy_ma20_slope_5d",
+  "rsp_spy_ma50_slope_10d",
+  "rsp_spy_ma200_slope_20d",
+  "rsp_spy_ma_alignment_score",
+  "rsp_spy_ma20_ma50_spread",
+  "rsp_spy_ma50_ma200_spread",
+  "dia_spy_30m",
+  "dia_spy_distance_to_ma20",
+  "dia_spy_distance_to_ma50",
+  "dia_spy_distance_to_ma200",
+  "dia_spy_ma20_slope_5d",
+  "dia_spy_ma50_slope_10d",
+  "dia_spy_ma200_slope_20d",
+  "dia_spy_ma_alignment_score",
+  "dia_spy_ma20_ma50_spread",
+  "dia_spy_ma50_ma200_spread",
+  "bitw_spy_30m",
+  "bitw_spy_distance_to_ma20",
+  "bitw_spy_distance_to_ma50",
+  "bitw_spy_distance_to_ma200",
+  "bitw_spy_ma20_slope_5d",
+  "bitw_spy_ma50_slope_10d",
+  "bitw_spy_ma200_slope_20d",
+  "bitw_spy_ma_alignment_score",
+  "bitw_spy_ma20_ma50_spread",
+  "bitw_spy_ma50_ma200_spread",
+  "ibit_bitw_30m",
+  "ibit_bitw_distance_to_ma20",
+  "ibit_bitw_distance_to_ma50",
+  "ibit_bitw_distance_to_ma200",
+  "ibit_bitw_ma20_slope_5d",
+  "ibit_bitw_ma50_slope_10d",
+  "ibit_bitw_ma200_slope_20d",
+  "ibit_bitw_ma_alignment_score",
+  "ibit_bitw_ma20_ma50_spread",
+  "ibit_bitw_ma50_ma200_spread",
+  "etha_bitw_30m",
+  "etha_bitw_distance_to_ma20",
+  "etha_bitw_distance_to_ma50",
+  "etha_bitw_distance_to_ma200",
+  "etha_bitw_ma20_slope_5d",
+  "etha_bitw_ma50_slope_10d",
+  "etha_bitw_ma200_slope_20d",
+  "etha_bitw_ma_alignment_score",
+  "etha_bitw_ma20_ma50_spread",
+  "etha_bitw_ma50_ma200_spread",
+  "fsol_bitw_30m",
+  "fsol_bitw_distance_to_ma20",
+  "fsol_bitw_distance_to_ma50",
+  "fsol_bitw_distance_to_ma200",
+  "fsol_bitw_ma20_slope_5d",
+  "fsol_bitw_ma50_slope_10d",
+  "fsol_bitw_ma200_slope_20d",
+  "fsol_bitw_ma_alignment_score",
+  "fsol_bitw_ma20_ma50_spread",
+  "fsol_bitw_ma50_ma200_spread",
+]
+direction = 1
+min_history = 20
+[[factors.groups]]
+columns = [
+  "qqq_spy_realized_vol_20d_ratio",
+  "iwm_spy_realized_vol_20d_ratio",
+  "rsp_spy_realized_vol_20d_ratio",
+  "dia_spy_realized_vol_20d_ratio",
+  "bitw_spy_realized_vol_20d_ratio",
+  "ibit_bitw_realized_vol_20d_ratio",
+  "etha_bitw_realized_vol_20d_ratio",
+  "fsol_bitw_realized_vol_20d_ratio",
+]
+direction = 1
+min_history = 30
+[[factors.groups]]
+columns = [
+  "tlt_spy_30m",
+  "tlt_spy_distance_to_ma20",
+  "tlt_spy_distance_to_ma50",
+  "tlt_spy_distance_to_ma200",
+  "tlt_spy_ma20_slope_5d",
+  "tlt_spy_ma50_slope_10d",
+  "tlt_spy_ma200_slope_20d",
+  "tlt_spy_ma_alignment_score",
+  "tlt_spy_ma20_ma50_spread",
+  "tlt_spy_ma50_ma200_spread",
+  "gld_spy_30m",
+  "gld_spy_distance_to_ma20",
+  "gld_spy_distance_to_ma50",
+  "gld_spy_distance_to_ma200",
+  "gld_spy_ma20_slope_5d",
+  "gld_spy_ma50_slope_10d",
+  "gld_spy_ma200_slope_20d",
+  "gld_spy_ma_alignment_score",
+  "gld_spy_ma20_ma50_spread",
+  "gld_spy_ma50_ma200_spread",
+  "uup_spy_30m",
+  "uup_spy_distance_to_ma20",
+  "uup_spy_distance_to_ma50",
+  "uup_spy_distance_to_ma200",
+  "uup_spy_ma20_slope_5d",
+  "uup_spy_ma50_slope_10d",
+  "uup_spy_ma200_slope_20d",
+  "uup_spy_ma_alignment_score",
+  "uup_spy_ma20_ma50_spread",
+  "uup_spy_ma50_ma200_spread",
+  "vixy_spy_30m",
+  "vixy_spy_distance_to_ma20",
+  "vixy_spy_distance_to_ma50",
+  "vixy_spy_distance_to_ma200",
+  "vixy_spy_ma20_slope_5d",
+  "vixy_spy_ma50_slope_10d",
+  "vixy_spy_ma200_slope_20d",
+  "vixy_spy_ma_alignment_score",
+  "vixy_spy_ma20_ma50_spread",
+  "vixy_spy_ma50_ma200_spread",
+]
 direction = -1
 min_history = 20
+[[factors.groups]]
+symbols = ["vixy"]
+suffixes = [
+  "return_30m",
+  "return_1d",
+  "return_5d",
+  "distance_to_ma20",
+  "ma20_slope_5d",
+]
+direction = -1
+min_history = 20
+[[factors.groups]]
+symbols = ["vixy"]
+suffixes = [
+  "return_20d",
+  "distance_to_ma50",
+  "distance_to_ma200",
+  "ma50_slope_10d",
+  "ma200_slope_20d",
+  "ma_alignment_score",
+  "ma20_ma50_spread",
+  "ma50_ma200_spread",
+]
+direction = -1
+min_history = 60

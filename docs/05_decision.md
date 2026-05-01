@@ -539,7 +539,7 @@ Read `trading_data.feature_01_market_regime` as a table keyed by `snapshot_time`
 ### Consequences
 
 - `model_01_market_regime` remains a normal typed model-output table keyed by `available_time`.
-- The feature generator can keep model-local generated feature keys without registering every generated feature as a physical column; after moving sector/industry rotation pairs and sector-observation aggregates to Layer 2, then pruning raw ratio moving-average level keys, the Layer 1 payload contains 870 logical keys.
+- The feature generator can keep model-local generated feature keys without registering every generated feature as a physical column; after moving sector/industry rotation pairs and sector-observation aggregates to Layer 2, then pruning raw ratio moving-average level keys and standalone SHY return/trend keys, the Layer 1 payload contains 857 logical keys.
 - If specific generated features become cross-repository contracts, promote them separately instead of treating every generated key as a database column contract.
 
 ## D019 - Promotion gate uses agent review but not automatic promotion
@@ -714,7 +714,7 @@ Status: Accepted
 
 ### Context
 
-Chentong flagged the initial evidence usage as too low when `model_01_market_regime` used only a narrow hand-selected slice of the Layer 1 feature payload. After the first reviewed expansion and raw ratio-MA pruning, `feature_01_market_regime` contains 870 Layer 1 logical feature keys and `model_01_market_regime` uses 336 signal columns across 9 provisional factors, about 38.6% feature utilization.
+Chentong flagged the initial evidence usage as too low when `model_01_market_regime` used only a narrow hand-selected slice of the Layer 1 feature payload. After the reviewed expansion plus raw ratio-MA and orphan SHY-trend pruning, `feature_01_market_regime` contains 857 Layer 1 logical feature keys and `model_01_market_regime` uses 857 signal columns across 9 provisional factors, 100% reviewed feature ownership.
 
 The issue is not that every generated feature must be forced into every factor. Some columns should remain quality controls, diagnostics, redundant checks, fallback evidence, future-review candidates, or evaluation-only fields. But underusing the reviewed input surface risks collapsing Model 1 back into a shallow ETF-ratio dashboard.
 
@@ -729,7 +729,7 @@ The target is broad, explainable coverage of the input evidence universe, not in
 - Add or maintain a reviewed evidence map for `model_01_market_regime` before major factor expansion.
 - Track evidence utilization as an acceptance metric: total generated feature keys, keys assigned to a latent market-property factor, keys used only for data quality/diagnostics/evaluation, and keys intentionally unused.
 - Keep factors interpretable by grouping evidence into the accepted market-property ontology instead of adding opaque high-dimensional raw features directly to the output vector.
-- Future implementation work should continue expanding or pruning from the current 336-column provisional slice while preserving point-in-time correctness and no-leakage rules.
+- Future implementation work should continue expanding or pruning from the current 857-column provisional slice while preserving point-in-time correctness and no-leakage rules.
 
 
 ## D025 - Sector and industry rotation belongs to SecuritySelectionModel
@@ -796,11 +796,11 @@ Chentong asked to continue expanding the data usage surface, and to stop generat
 
 Expand `model_01_market_regime` factor specifications to use a broader reviewed set of Layer 1 evidence across trend, volatility stress, correlation stress, credit stress, rate pressure, dollar pressure, commodity pressure, broad-market breadth, and risk appetite. The expansion uses normalized returns, distance-to-moving-average, moving-average slope, MA spread/alignment, volatility level/ratio/percentile/z-score, and reviewed broad/cross-asset correlation evidence.
 
-Do not treat raw ratio moving-average level keys as durable evidence. Those generated features should be pruned from Feature 01/Feature 02 unless a later review defines a stable use that is not covered by distance/slope/spread/alignment features.
+Do not treat raw ratio moving-average level keys or standalone SHY return/trend keys as durable evidence. Those generated features should be pruned from Feature 01/Feature 02 unless a later review defines a stable use that is not covered by distance/slope/spread/alignment features, rate-pair evidence, or volatility evidence.
 
 ### Consequences
 
-- Current Model 1 evidence usage rises to 336 configured signal columns out of 870 Layer 1 feature keys, about 38.6% reviewed utilization.
-- All configured Model 1 signals are present in the Layer 1 payload.
+- Current Model 1 evidence usage rises to 857 configured signal columns out of 857 Layer 1 feature keys, 100% reviewed ownership.
+- All configured Model 1 signals are present in the Layer 1 payload, and every Layer 1 payload key is currently owned by the Model 1 signal configuration.
 - Layer 1 still avoids sector/industry rotation and sector-observation evidence; those remain Layer 2 responsibilities.
-- Remaining unused generated keys should continue through the evidence-map process: assign to latent factor, diagnostic/quality/evaluation-only, future-review, or remove from generation.
+- Future generated keys should not be added without an owner: Model 1 signal, diagnostic/quality/evaluation role, future-review note, or immediate removal from generation.
