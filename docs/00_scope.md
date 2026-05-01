@@ -20,12 +20,12 @@ The repository does **not** place live orders. It produces offline research arti
 
 - Point-in-time model research and validation workflows.
 - Market-state/regime discovery from market-only features.
-- Security/target selection and candidate universe construction from regime/style context, sector/industry ETF holdings exposure, full-market scans, liquidity, optionability, and event exclusions.
-- Regime-conditioned strategy family/variant selection research.
+- Security/target selection and candidate universe construction from sector/industry rotation, sector/industry ETF holdings exposure, full-market scans, liquidity, optionability, and event exclusions.
+- Composite strategy research that combines multiple strategy components/families instead of choosing one isolated historical champion.
 - Signal-quality, meta-labeling, target/stop, MFE/MAE, and holding-period models.
-- Option expression selection research using option-chain snapshots, liquidity, IV, Greeks, and conservative fill assumptions.
+- Option expression selection research using option-chain snapshots, market-state background, liquidity, IV, Greeks, and conservative fill assumptions.
 - Event overlay research for scheduled events, breaking news shocks, pre-event abnormal activity, and historical event-impact memory.
-- Portfolio risk, sizing, exposure, execution-gate, exit-rule, and kill-switch research logic.
+- Portfolio risk, sizing, exposure, execution-gate, execution-style, exit-rule, and kill-switch research logic using market-state background plus portfolio reality.
 - Unified candidate-trade decision-record prototypes for audit, attribution, replay, and retraining.
 - Model-local tests, fixtures, reproducibility evidence, and acceptance gates.
 - Proposing shared names/contracts to `trading-manager` when model outputs need cross-repository consumption.

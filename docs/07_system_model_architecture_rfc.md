@@ -34,13 +34,14 @@ Layer 6 and Layer 7 are not simple downstream stages:
 The system should not answer only “buy or sell.” It should answer:
 
 - What market state are we in?
-- Which strategy family is appropriate in this state?
+- Which sector/industry and stock candidates show the clearest rotation/trend evidence?
+- Which strategy components should be combined into the final strategy for this candidate?
 - Is this signal worth trading?
 - What target, stop, holding time, and adverse/favorable excursion are expected?
-- Should the trade be expressed with stock, ETF, long call, or long put?
+- Given the broad market state, should the trade be expressed with stock, ETF, long call, or long put, and which contract constraints apply?
 - Is there event risk or event opportunity?
 - Does the current portfolio allow this trade?
-- What size, execution style, and exit plan should be used?
+- Given the broad market state, what size, execution style, and exit plan should be used?
 
 ## Canonical Layer Names
 
@@ -49,12 +50,12 @@ These names are canonical for docs, code, artifact metadata, and future registry
 | Layer | Model class | Stable id | Chinese name | Role |
 |---|---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 | Describe point-in-time broad market state, market-property factors, confidence, transition risk, and dominant macro/risk drivers without sector/industry candidate conclusions. |
-| 2 | `SecuritySelectionModel` | `security_selection_model` | 标的选择模型 | Build candidate tradable universes from regime/sector style, sector/industry ETF holdings exposure, stock relative strength, liquidity, optionability, and event exclusions. |
-| 3 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Select strategy family/variant conditioned on regime, candidate symbol, cost, and robustness evidence. |
+| 2 | `SecuritySelectionModel` | `security_selection_model` | 标的选择模型 | Build candidate tradable universes from sector/industry rotation, ETF holdings exposure, stock relative strength, liquidity, optionability, and event exclusions; broad market state is background, not the direct stock selector. |
+| 3 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Compose and weight multiple strategy components into one comprehensive strategy recommendation conditioned on candidate evidence, market background, cost, and robustness. |
 | 4 | `TradeQualityModel` | `trade_quality_model` | 交易质量模型 | Score candidate signals and predict trade outcome distribution, target/stop, MFE/MAE, and holding horizon. |
-| 5 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 | Choose stock/ETF/long-call/long-put expression from signal forecast, option chain, liquidity, IV, and Greeks. V1 excludes multi-leg option structures. |
+| 5 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 | Choose stock/ETF/long-call/long-put expression and option-contract constraints from signal forecast, option chain, liquidity, IV, Greeks, and broad market-state background. V1 excludes multi-leg option structures. |
 | 6 | `EventOverlayModel` | `event_overlay_model` | 事件覆盖模型 | Overlay scheduled/breaking event risk, abnormal activity, and event-memory adjustments across earlier layers and the risk gate. |
-| 7 | `PortfolioRiskModel` | `portfolio_risk_model` | 组合风控模型 | Final offline risk, sizing, exposure, execution-gate, exit-rule, and kill-switch model. |
+| 7 | `PortfolioRiskModel` | `portfolio_risk_model` | 组合风控模型 | Final offline risk, sizing, exposure, execution-style, exit-rule, and kill-switch model using market-state background plus portfolio reality. |
 
 Naming rule: do not call Layer 7 simply `ExecutionModel`, because live/paper order placement is outside `trading-model`. `PortfolioRiskModel` may describe execution-gate logic but does not mutate brokerage state.
 
@@ -170,7 +171,7 @@ Current implementation columns such as `trend_factor`, `credit_stress_factor`, a
 
 - point-in-time correctness and no leakage
 - vector stability under rolling/expanding fits
-- downstream usefulness for security selection and strategy selection without leaking downstream selection labels into Layer 1
+- downstream usefulness for option expression, strategy compatibility, and portfolio risk/execution policy without leaking downstream selection labels into Layer 1
 - interpretability of market-property factors and their supporting evidence signals
 - drawdown warning usefulness
 
@@ -178,63 +179,63 @@ Current implementation columns such as `trend_factor`, `credit_stress_factor`, a
 
 ### Goal
 
-Study sector/industry rotation and build candidate-level selection parameters for the current tradable sector/industry ETF and stock universe after `MarketRegimeModel` identifies broad market conditions.
+Study sector/industry rotation and build candidate-level parameter rows for the current tradable sector/industry ETF and stock universe.
+
+The broad market-state vector is background context. It may be referenced for audit, coarse gating, or later option/risk policy, but Model 2 should not select stocks by transforming Layer 1 state into a candidate market parameter. Stock and sector selection should be driven by sector/industry rotation, relative strength, trend clarity, breadth/participation, liquidity, optionability, and event exclusions.
 
 It answers:
 
-- What is the adjusted `candidate_selection_parameter` for each eligible sector/industry ETF or stock?
+- Which sector/industry ETFs show the clearest, most persistent, and least ambiguous leadership?
+- Which stocks inherit that sector/industry strength through ETF holdings exposure or full-market scans?
 - Which candidates are eligible, watch-only, or gated out because of liquidity, event risk, poor optionability, or unstable trend state?
-- Which sector/industry ETF market-context vector should be transmitted into stock-level candidate vectors through ETF holdings exposure?
 
-This layer does not output "the selected ETF", entry timing, strategy parameters, option contracts, final position size, or final portfolio weights. Sorting by `candidate_selection_parameter` and choosing the highest-parameter ETF is a downstream usage pattern, not the durable Model 2 output contract.
+This layer does not output entry timing, strategy parameters, option contracts, final position size, or final portfolio weights. Sorting by `candidate_selection_parameter` and choosing the highest-parameter candidate is a downstream usage pattern, not the durable Model 2 output contract.
 
 ### Inputs
 
-- `MarketRegimeModel` outputs: continuous broad market-state vector, risk-on/risk-off context, transition pressure, and dominant macro/risk drivers. It does not output sector/style condition factors, sector rankings, ETF rankings, or selected securities.
-- Model 2 market-context vectors derived from the Layer 1 vector: base tape context, transition/turning risk components, and sector-weighted market-context vectors.
-- ETF holdings snapshots: constituent weights for eligible sector/industry equity ETFs. Broad index ETFs and non-equity macro ETFs may remain state inputs or filters, but they are not V1 tradable ETF candidates.
+- Feature 02 sector/industry rotation rows: sector-vs-broad, industry-vs-sector, sector-vs-sector, daily-context relative strength, trend, volatility, correlation, and breadth/dispersion evidence.
+- ETF holdings snapshots: constituent weights for eligible sector/industry equity ETFs. Broad index ETFs and non-equity macro ETFs may remain benchmarks, filters, or risk context, but they are not V1 tradable ETF candidates.
 - ETF and stock bars/liquidity: relative strength vs sector ETF and SPY, trend clarity, trend persistence, volatility fit, gap behavior, volume expansion, spread/liquidity.
 - Optionability summaries: option availability, spread, volume, open interest, DTE coverage.
 - Event exclusions: earnings proximity, known macro/event shock windows, SEC/news risk, abnormal activity flags.
+- `MarketRegimeModel` outputs only as background/reference or coarse gating context, not as a direct sector/stock ranking transform.
 
-### Market and selection parameters
+### Sector rotation and candidate parameters
 
-`SecuritySelectionModel` should not feed the full Layer 1 vector directly into every candidate parameter without interpretation. It also should not compress the 9-factor Layer 1 vector into one deterministic market scalar before candidate work. Instead, it owns a vector-preserving parameter adjustment step: transform the market-state vector into candidate market-context vectors, attach the appropriate vector to each candidate, and derive any ranking/scalar parameter from the full candidate parameter surface.
+`SecuritySelectionModel` should build a candidate parameter surface from sector/industry rotation evidence and candidate-specific trend/certainty/tradability fields. It should not define a Layer-1-to-Layer-2 bridge such as `market_parameterizer(model_01_market_regime_vector)` or `sector_weighted_market_context_vector` for stock ranking.
 
 Core conceptual fields:
 
 ```text
-base_market_context_vector
-sector_weighted_market_context_vector
-candidate_market_context_vector
-market_trend_certainty_component
-market_transition_risk_component
+sector_rotation_state_vector
+sector_trend_clarity_score
+sector_certainty_score
+stock_sector_exposure_vector
+candidate_rotation_context
 candidate_selection_parameter   # optional/convenience scalar, not sole context
 ```
 
 Interpretation:
 
-- `base_market_context_vector` is the unweighted 9-factor market-state vector or reviewed projection used when a candidate has no reliable sector/industry ETF mapping.
-- `sector_weighted_market_context_vector` is a sector/industry-specific vector produced by applying a sector factor-weight vector or transform to the Layer 1 state vector. It is not a scalar collapse.
-- `candidate_market_context_vector` is the market-context vector inserted into a specific ETF or stock candidate row. For a sector/industry ETF it equals that ETF's sector-weighted vector; for a stock with ETF exposure it is the exposure-weighted blend of its mapped sector/industry ETF vectors; for an unmapped stock it falls back to `base_market_context_vector`.
-- `market_trend_certainty_component` and `market_transition_risk_component` are interpretable components that may be derived from the vector, but they do not replace it.
-- `candidate_selection_parameter`, if produced, is a convenience scalar for downstream ranking. It must be persisted with enough supporting vector/context fields that downstream consumers do not need to treat the scalar as the whole model state.
+- `sector_rotation_state_vector` describes a sector/industry ETF's own leadership, relative-strength persistence, breadth, volatility stability, and signal agreement.
+- `stock_sector_exposure_vector` maps a stock to eligible sector/industry ETF exposures using point-in-time holdings.
+- `candidate_rotation_context` is the candidate-level blend of sector/industry rotation evidence plus the candidate's own relative-strength and tradability evidence.
+- `candidate_selection_parameter`, if produced, is a convenience scalar for downstream ranking. It must be persisted with enough supporting rotation/context fields that downstream consumers can inspect why the candidate was strong.
 
 Sketch:
 
 ```text
-base_market_context_vector = market_context_projector(model_01_market_regime_vector)
+sector_rotation_state_vector[sector_etf] = rotation_model(feature_02_security_selection_rows)
 
-sector_weighted_market_context_vector[sector_etf] =
-  vector_transform(model_01_market_regime_vector, sector_etf_factor_weight_vector)
+stock_sector_exposure_vector[stock] = point_in_time_etf_holding_exposure(stock)
 
-candidate_market_context_vector =
-  sector_weighted_market_context_vector[candidate_symbol]                         # sector/industry ETF
-  or exposure_weighted_blend(sector_weighted_market_context_vector, stock_etf_exposure)
-  or base_market_context_vector                                                   # unmapped stock fallback
+candidate_rotation_context =
+  sector_rotation_state_vector[candidate_symbol]                         # sector/industry ETF
+  or exposure_weighted_blend(sector_rotation_state_vector, stock_sector_exposure_vector)
+  or full_market_scan_context(candidate_symbol)                           # unmapped stock fallback
 
 candidate_parameter_surface = parameter_adjuster(
-  candidate_market_context_vector,
+  candidate_rotation_context,
   candidate_trend_state_vector,
   candidate_certainty_state_vector,
   tradability_and_risk_vector
@@ -243,8 +244,7 @@ candidate_parameter_surface = parameter_adjuster(
 candidate_selection_parameter = optional_scalar_projection(candidate_parameter_surface)
 ```
 
-`parameter_adjuster` may start as a transparent calibrated rule, monotonic transform, or small learned model, but the contract should remain parameter-surface/vector centric. Top-N selection is an operational usage of those parameters, and scalar projection must not be the only retained context.
-
+Top-N selection is an operational usage of those parameters, and scalar projection must not be the only retained context.
 
 ### ETF holdings exposure matrix
 
@@ -272,10 +272,10 @@ Example:
 }
 ```
 
-Then sector/industry ETF market-context vectors can be transmitted to stocks:
+Then sector/industry rotation context can be transmitted to stocks:
 
 ```text
-stock_candidate_market_context_vector = exposure_weighted_blend(sector_weighted_market_context_vector, stock_etf_exposure)
+stock_candidate_rotation_context = exposure_weighted_blend(sector_rotation_state_vector, stock_etf_exposure)
 ```
 
 ### Tradable ETF universe
@@ -289,11 +289,11 @@ Excluded ETFs can still be useful as MarketRegimeModel state inputs, risk filter
 `SecuritySelectionModel` does **not** output the sector/industry ETF or stock with the highest realized or expected return. It adjusts `candidate_selection_parameter` higher when the candidate has:
 
 ```text
-clear, persistent trend
+clear, persistent sector/industry leadership
 high certainty / low ambiguity
+strong relative strength with broad participation
 enough liquidity and optionability
 acceptable event and volatility risk
-a market-context vector that supports this candidate's sector/industry state
 ```
 
 Forward returns are labels for evaluation and calibration, not direct production inputs. Ranking by `candidate_selection_parameter` is allowed as a downstream usage pattern, but the model output remains a candidate-parameter surface.
@@ -309,7 +309,7 @@ Do not rely only on ETF holdings. Build parameter rows from two candidate source
 
 ```text
 candidate_parameter_surface = parameter_adjuster(
-  candidate_market_context_vector,
+  candidate_rotation_context,
   trend_clarity_score,
   trend_persistence_score,
   relative_strength_consistency_score,
@@ -334,8 +334,7 @@ The sketch deliberately avoids fixed `+ w` / `- w` arithmetic. Additive coeffici
       "candidate_symbol": "SMH",
       "candidate_type": "industry_etf",
       "candidate_selection_parameter": 0.89,
-      "candidate_market_context_vector": {"trend_factor": 0.72, "rate_pressure_factor": -0.18, "risk_appetite_factor": 0.64},
-      "market_transition_risk_component": 0.16,
+      "sector_rotation_state_vector": {"relative_strength_score": 0.88, "leadership_persistence_score": 0.84, "breadth_support_score": 0.77},
       "trend_clarity_score": 0.92,
       "trend_persistence_score": 0.87,
       "certainty_score": 0.84,
@@ -346,7 +345,7 @@ The sketch deliberately avoids fixed `+ w` / `- w` arithmetic. Additive coeffici
       "candidate_symbol": "NVDA",
       "candidate_type": "stock",
       "candidate_selection_parameter": 0.91,
-      "candidate_market_context_vector": {"trend_factor": 0.70, "rate_pressure_factor": -0.16, "risk_appetite_factor": 0.67},
+      "candidate_rotation_context": {"SMH": 0.20, "XLK": 0.12, "SOXX": 0.09, "blended_rotation_score": 0.86},
       "etf_holding_exposure": {"SMH": 0.20, "XLK": 0.12, "SOXX": 0.09},
       "relative_strength_score": 0.88,
       "trend_clarity_score": 0.91,
@@ -376,9 +375,9 @@ This layer creates a direct need for two data products, scoped to eligible secto
 
 ### Goal
 
-Choose strategy family and variant for a symbol under the current regime.
+Compose the final strategy recommendation for a candidate from multiple strategy components/families. The output should not be a single historical champion strategy; it should be a controlled blend or ordered set of components conditioned on candidate evidence, market background, costs, and robustness.
 
-Candidate families:
+Candidate families/components:
 
 - trend following
 - breakout/breakdown
@@ -403,10 +402,10 @@ Keep variants limited at first. Example parameters:
 
 ### Scoring principle
 
-Do not select historical champions. Penalize overfitting and instability:
+Do not select historical champions. Score components and the composite strategy while penalizing overfitting and instability:
 
 ```text
-variant_score =
+component_or_composite_score =
   OOS_expectancy
   + risk_adjusted_return
   - drawdown_penalty
@@ -499,6 +498,15 @@ Explicitly deferred until risk/margin, multi-leg execution, slippage, and exit r
 - max loss constraint
 - event-risk constraint
 
+### Market-state usage
+
+Market state should enter this layer most directly. It can adjust contract-expression choices without becoming a stock selector:
+
+- higher transition/risk stress can require longer DTE, higher liquidity, wider time buffers, or no-trade;
+- high volatility/IV stress can tighten IV percentile, vega, and theta-decay constraints;
+- strong low-fragility trend conditions can allow more directional long-call/long-put expressions;
+- rate, credit, dollar, commodity, and risk-appetite context can change acceptable moneyness/delta and expected holding horizon.
+
 ### Scoring principle
 
 Choose expected utility, not theoretical max return:
@@ -551,12 +559,12 @@ Never train pre-event models using post-event explanations. Every event row must
 
 ### Goal
 
-Decide whether a candidate trade may be placed, at what size, through what execution style, and under what exit plan.
+Decide whether a candidate trade may be placed, at what size, through what execution style, and under what exit plan. This is the other primary consumer of broad market-state background: the market state should influence risk budget, order aggressiveness, slippage tolerance, holding permission, and kill-switch posture.
 
 Inputs include:
 
-- Layer 1 regime/confidence
-- Layer 2 selected symbol/candidate pool context
+- Layer 1 broad market-state vector, confidence, transition/risk stress, and dominant background drivers
+- Layer 2 candidate pool and sector/industry rotation context
 - Layer 3 strategy recommendation
 - Layer 4 signal quality
 - Layer 5 option structure/liquidity
@@ -594,16 +602,19 @@ Every candidate trade should produce a complete point-in-time decision record fo
   },
   "layer_2_security_selection": {
     "candidate_selection_parameter": 0.91,
-    "candidate_market_context_vector": {"trend_factor": 0.70, "rate_pressure_factor": -0.16, "risk_appetite_factor": 0.67},
-    "market_transition_risk_component": 0.16,
+    "candidate_rotation_context": {"SMH": 0.20, "XLK": 0.12, "SOXX": 0.09, "blended_rotation_score": 0.86},
     "trend_clarity_score": 0.90,
     "certainty_score": 0.84,
     "candidate_reason": ["core holding of strong semiconductor ETFs", "clear persistent trend", "high option liquidity"]
   },
   "layer_3_strategy": {
-    "family": "breakdown_trend_following",
-    "variant_id": "BT_12_3ATR_5D",
-    "strategy_score": 0.74
+    "composite_strategy_id": "trend_breakout_pullback_v1",
+    "components": [
+      {"family": "trend_following", "weight": 0.55, "variant_id": "TF_20_2ATR_10D"},
+      {"family": "breakout", "weight": 0.30, "variant_id": "BO_12_3ATR_5D"},
+      {"family": "pullback_in_trend", "weight": 0.15, "variant_id": "PB_10_2ATR_5D"}
+    ],
+    "composite_strategy_score": 0.74
   },
   "layer_4_signal_quality": {
     "trade_quality_score": 0.72,
@@ -616,6 +627,7 @@ Every candidate trade should produce a complete point-in-time decision record fo
   "layer_5_option_expression": {
     "structure": "long_call",
     "contracts": ["SMH 2026-05-15 250C"],
+    "market_state_contract_adjustment": {"dte_bias": "longer", "delta_band": "0.55-0.70", "iv_tolerance": "normal"},
     "expected_option_pnl": 1.35,
     "max_loss": 3.2,
     "liquidity_score": 0.88,
@@ -629,6 +641,7 @@ Every candidate trade should produce a complete point-in-time decision record fo
   "layer_7_portfolio_risk": {
     "decision": "approved",
     "size": 5,
+    "market_state_execution_policy": {"risk_budget": "normal", "order_aggressiveness": "passive_limit", "overnight_allowed": true},
     "order_type": "limit",
     "limit_price": 3.2,
     "max_slippage": 0.08,
@@ -681,10 +694,10 @@ Deliver:
 
 - market-state feature dataset contract
 - rolling/expanding regime model prototype
-- regime probability and transition-risk outputs
-- regime dashboard/data artifact sketch
-- per-regime market behavior statistics
-- first evidence that regimes are stable, interpretable, and useful
+- market-state vector and transition-risk outputs
+- market-state dashboard/data artifact sketch
+- per-state market behavior statistics
+- first evidence that states are stable, interpretable, and useful for option expression and risk/execution policy
 
 ### Phase 2: Layer 2 security selection
 
@@ -695,7 +708,7 @@ Deliver:
 - full-market scan candidate logic
 - long/short/watch/excluded candidate pools
 - optionability and liquidity filters
-- sector/industry rotation transmission evidence from ETF candidate parameters to stocks
+- sector/industry rotation transmission evidence from ETF rotation context to stocks
 
 ### Phase 3: Layer 3 strategy library
 
@@ -703,7 +716,7 @@ Deliver:
 
 - small strategy-family library
 - limited variants
-- regime/security-conditioned performance table
+- candidate/market-background-conditioned performance table
 - disabled strategy list
 - parameter-neighborhood stability evidence
 
@@ -723,6 +736,7 @@ Deliver:
 
 - option-chain snapshot feature contract
 - long call/put ranker only
+- market-state-conditioned DTE/delta/moneyness/IV constraints
 - liquidity/IV/crush filters
 - expected option PnL and fill/slippage assumptions
 
@@ -743,7 +757,7 @@ Deliver:
 
 - position sizing engine
 - exposure monitor
-- order/execution rules
+- market-state-conditioned order/execution rules
 - exit lifecycle rules
 - kill switch
 - PnL and attribution dashboard contract
@@ -753,9 +767,11 @@ Deliver:
 Before implementation, decide:
 
 1. What exact sector/industry ETF basket and base equity universe should `SecuritySelectionModel` use first?
-2. What initial sector factor-weight matrix should convert the Layer 1 vector into `sector_weighted_market_context_vector`?
+2. What first sector/industry rotation state vector should Model 2 output, and which Feature 02 evidence families define trend clarity, persistence, breadth, and certainty?
 3. What is the first tradable universe for Phase 2? Sector/industry ETF basket only, liquid mega-cap equities, or both?
 4. What timestamp fields should be globally registered for model-facing event/evidence rows: `event_time`, `available_time`, `tradeable_time`, and ET/UTC variants?
 5. What is the first label horizon for underlying trades: intraday, 1D, 5D, 10D, or multi-horizon?
-6. Should `stock_etf_exposure` be registered as a derived data kind in `trading-manager`, or remain model-local until SecuritySelectionModel proves useful?
-6. Should Phase 1 produce only offline research artifacts, or also a ready-signal contract for later execution systems?
+6. How exactly should `MarketRegimeModel` state adjust `OptionExpressionModel` contract constraints such as DTE, delta/moneyness, IV tolerance, and no-trade filters?
+7. How exactly should `MarketRegimeModel` state adjust `PortfolioRiskModel` execution/risk policy such as risk budget, order aggressiveness, slippage tolerance, overnight permission, and kill-switch posture?
+8. Should `stock_etf_exposure` be registered as a derived data kind in `trading-manager`, or remain model-local until SecuritySelectionModel proves useful?
+9. Should Phase 1 produce only offline research artifacts, or also a ready-signal contract for later execution systems?

@@ -137,27 +137,27 @@ Stable names prevent schema drift and keep future data organization, decision re
 - Machine-facing paths/configs should prefer the stable ids.
 - The canonical naming table in `docs/07_system_model_architecture_rfc.md` is the working reference until promoted into `trading-main` registry/contracts.
 
-## D006 - SecuritySelectionModel bridges market regime to tradable symbols
+## D006 - SecuritySelectionModel bridges sector rotation to tradable symbols
 
 Date: 2026-04-28
 
 ### Context
 
-ETF holdings are not primarily a `MarketRegimeModel` input. Their key role is to transmit sector/style strength from sector/industry ETF baskets into individual tradable stock candidates. The prior architecture jumped from market regime directly to strategy selection, which skipped the question of which symbols deserve strategy evaluation under the current regime.
+ETF holdings are not primarily a `MarketRegimeModel` input. Their key role is to transmit sector/industry rotation strength from sector/industry ETF baskets into individual tradable stock candidates. The prior architecture jumped from broad market state directly to strategy selection, which skipped the question of which symbols deserve strategy evaluation based on sector rotation and candidate evidence.
 
 ### Decision
 
 Add `SecuritySelectionModel` (`security_selection_model`) as Layer 2 between `MarketRegimeModel` and `StrategySelectionModel`.
 
-`SecuritySelectionModel` owns target/security selection and universe construction. It uses market/sector/style context, sector/industry ETF holdings exposures, full-market scans, individual stock relative strength, liquidity, optionability, and event exclusions to produce long, short, watch, and excluded candidate pools.
+`SecuritySelectionModel` owns target/security selection and universe construction. It uses sector/industry rotation context, sector/industry ETF holdings exposures, full-market scans, individual stock relative strength, liquidity, optionability, and event exclusions to produce long, short, watch, and excluded candidate pools. Broad market state may be retained as background/audit or coarse gating context, but it is not the direct stock selector.
 
 ### Rationale
 
-Different market regimes require different selection styles. Risk-on regimes may prefer high-relative-strength core holdings of strong sector/industry ETFs; risk-off regimes may prefer defensive/low-volatility sector ETFs or stocks; rotation regimes may prefer newly strengthening industry ETF holdings or laggards catching up. This is a distinct modeling problem from choosing strategy family or signal entry quality.
+Different sector/industry rotation states imply different candidate pools. Strong leadership may prefer high-relative-strength core holdings of strong sector/industry ETFs; broad but early rotation may prefer newly strengthening industry ETF holdings; unstable or narrow leadership may gate candidates into watch-only status. This is a distinct modeling problem from choosing strategy components, signal entry quality, option expression, or execution/risk policy.
 
 ### Consequences
 
-- `MarketRegimeModel` should output broad market-state context useful for security selection, but should not output sector/style condition factors, ETF rankings, or security candidates; sector/style rotation belongs to `SecuritySelectionModel`.
+- `MarketRegimeModel` should output broad market-state context useful for option expression, strategy compatibility, and execution/risk policy, but should not output sector/style condition factors, ETF rankings, or security candidates; sector/style rotation belongs to `SecuritySelectionModel`.
 - `etf_holding_snapshot` for eligible sector/industry equity ETFs becomes an important upstream data kind for Layer 2.
 - A derived point-in-time `stock_etf_exposure` table should be designed, either model-local first or registered through `trading-main` if cross-repository use is needed.
 - `StrategySelectionModel` consumes selected candidate pools instead of scanning the whole universe directly.
@@ -578,13 +578,13 @@ Status: Accepted
 
 A temporary design placed per-ETF market-state affinity inside `MarketRegimeModel`. Chentong identified the boundary risk: ETF/security ranking inside Layer 1 can blur the separation between state description and downstream selection, and increases the chance that evaluation labels such as future return leak into production state construction.
 
-The current market-state vector should help downstream selection, but it should not itself select ETFs or stocks.
+The current market-state vector is downstream background context, but it should not itself select ETFs, sectors, or stocks. Its more direct uses are option-expression constraints, strategy compatibility, and execution/risk policy.
 
 ### Decision
 
 Remove per-ETF affinity/ranking from `MarketRegimeModel` V1. Layer 1 returns only the continuous point-in-time market-state vector keyed by `available_time`.
 
-`SecuritySelectionModel` owns candidate-level selection-parameter construction for sector/industry ETFs and stocks. It may consume the Layer 1 state vector, sector/industry ETF and stock trend features, relative strength, ETF holdings exposure, liquidity, optionability, and event exclusions to adjust each candidate's selection parameter.
+`SecuritySelectionModel` owns candidate-level selection-parameter construction for sector/industry ETFs and stocks. It may retain the Layer 1 state vector as background/audit/coarse-gating context, but candidate ranking should be driven by sector/industry ETF and stock trend features, relative strength, ETF holdings exposure, liquidity, optionability, and event exclusions.
 
 The Layer 2 parameter objective is not maximum realized or expected return. The final `candidate_selection_parameter` should be higher for the clearest and most certain tradable trend: trend clarity, trend persistence, relative strength consistency, signal agreement, adequate liquidity/optionability, and controlled event/volatility ambiguity. Future returns are evaluation labels for calibration, not direct production ranking inputs.
 
@@ -592,7 +592,7 @@ The Layer 2 parameter objective is not maximum realized or expected return. The 
 
 - `model_01_market_regime` remains a pure state-description output.
 - No `model_01_market_regime_etf_affinity` output is produced by Model 1.
-- Model 2 should define candidate state features such as `trend_clarity_score`, `trend_persistence_score`, and `certainty_score`, plus a final `candidate_selection_parameter`.
+- Model 2 should define sector/industry rotation and candidate state features such as `sector_rotation_state_vector`, `trend_clarity_score`, `trend_persistence_score`, and `certainty_score`, plus any optional `candidate_selection_parameter`.
 - Evaluation may still ask whether high-parameter, high-certainty trends later performed well, but that is downstream validation rather than Layer 1 construction.
 
 
@@ -622,9 +622,11 @@ Broad market/style ETFs such as `SPY`, `QQQ`, `IWM`, `DIA`, and `RSP`, and non-e
 ## D021 - SecuritySelectionModel preserves market-state vector context for candidate vectors
 
 Date: 2026-04-30
-Status: Accepted
+Status: Superseded by D029
 
 ### Context
+
+Supersession note: D029 refines this decision. The key durable part is "do not collapse the Layer 1 vector into one scalar"; the superseded part is assigning Model 2 a direct candidate market-context vector bridge from Layer 1. Market state is now treated primarily as background for option expression and execution/risk policy, while security selection is sector-rotation driven.
 
 The bridge from market state to target selection should be explicit. Layer 1 correctly compresses the broad input surface into a compact market-state vector, but Chentong clarified that the next layer should not compress that 9-dimensional state vector into one deterministic market parameter. A single scalar would hide important differences such as trend strength versus rate pressure, credit stress versus volatility stress, or commodity impulse versus risk appetite.
 
@@ -665,14 +667,14 @@ A previous sketch expressed Model 2 as an additive `target_score` formula and ex
 
 ### Decision
 
-Define Model 2's core output as candidate-level parameter rows keyed by `available_time + candidate_symbol` with `candidate_market_context_vector`, supporting candidate state fields, and any derived `candidate_selection_parameter` clearly marked as a convenience/ranking scalar rather than the only durable representation.
+Define Model 2's core output as candidate-level parameter rows keyed by `available_time + candidate_symbol` with sector/industry rotation context, supporting candidate state fields, and any derived `candidate_selection_parameter` clearly marked as a convenience/ranking scalar rather than the only durable representation.
 
 Do not define the model contract as direct `+ w` / `- w` arithmetic, a top-ETF picker, or a preferred ETF list. A linear formula may be tested later as one implementation candidate, but the durable contract is a parameter-adjustment surface.
 
 ### Consequences
 
-- Replace `target_score`/preferred-list language with candidate parameter rows that preserve vector context; `candidate_selection_parameter` may exist only as a derived convenience scalar.
-- Ranking, top-N selection, and choosing the highest sector/industry ETF are downstream usage of Model 2 output and should not require discarding the candidate market-context vector.
+- Replace `target_score`/preferred-list language with candidate parameter rows that preserve sector/industry rotation context; `candidate_selection_parameter` may exist only as a derived convenience scalar.
+- Ranking, top-N selection, and choosing the highest sector/industry ETF are downstream usage of Model 2 output and should not require discarding the underlying rotation/context evidence.
 - Model 2 acceptance should test parameter stability, point-in-time correctness, monotonic sanity, and calibration against future labels, not whether the model directly emits one chosen ETF.
 
 
@@ -751,7 +753,7 @@ Move sector/industry rotation, sector leadership, industry leadership, sector-vs
 
 - Remove `sector_rotation_factor` from the Model 1 output contract and current factor configuration.
 - Treat sector/industry ETF relative-strength and sector-observation breadth/dispersion evidence as Model 2 evidence, even when aggregated without a single candidate identity.
-- `SecuritySelectionModel` owns sector/industry rotation research, sector-weighted candidate parameters, ETF holdings exposure propagation into stocks, and candidate-level certainty comparisons.
+- `SecuritySelectionModel` owns sector/industry rotation research, sector/industry rotation state/context, ETF holdings exposure propagation into stocks, and candidate-level certainty comparisons.
 - The apparent Model 1 input-utilization denominator is reduced after removing both sector/industry rotation pair features and `sector_observation_*` aggregate features from `feature_01_market_regime`.
 
 
@@ -808,9 +810,11 @@ Do not treat raw ratio moving-average level keys or standalone SHY return/trend 
 ## D028 - Do not collapse market-state vector into a single Model 2 market scalar
 
 Date: 2026-04-30
-Status: Accepted
+Status: Superseded by D029
 
 ### Context
+
+Supersession note: D029 keeps the no-scalar-collapse rule but moves the primary market-state consumers away from Model 2 candidate ranking and toward option expression plus execution/risk policy.
 
 After Model 1 reached a compact 9-factor market-state vector, Chentong clarified that the vector shape is acceptable, but compressing that vector again into one deterministic market parameter for Model 2 would lose too much information. The issue is not Layer 1's 9-factor compression; it is the proposed next-stage scalar `base_market_parameter` / `candidate_market_parameter` bridge.
 
@@ -825,3 +829,36 @@ A scalar `candidate_selection_parameter` may exist only as a downstream/convenie
 - The Model 2 bridge is vector-preserving: factor weighting changes component emphasis but does not collapse the Layer 1 state into one number.
 - Candidate rows should retain market-context vector fields plus candidate-specific trend/certainty/tradability/risk fields.
 - Downstream ranking can still consume a scalar projection, but analysis, calibration, and later models must be able to inspect the underlying vector context.
+
+
+## D029 - Market state is background for option expression and execution policy
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+Chentong clarified the model boundary after the vector-preserving Model 2 bridge discussion. The broad market state is important, but it is still background. The system trades concrete underlyings and option contracts, and the final trading strategy is a composite assembled from multiple strategy components.
+
+Therefore the most direct uses of `MarketRegimeModel` are not stock selection. They are:
+
+1. helping `OptionExpressionModel` choose the appropriate contract expression and constraints;
+2. helping `PortfolioRiskModel` / execution-gate logic choose risk budget, execution style, and exit posture.
+
+Stock and ETF candidate selection should be driven primarily by sector/industry rotation and candidate-specific trend/certainty evidence.
+
+### Decision
+
+Treat `model_01_market_regime` as broad market background rather than a direct stock/sector selector.
+
+- `SecuritySelectionModel` should use sector/industry rotation, ETF holdings exposure, candidate trend/relative-strength evidence, liquidity, optionability, and event exclusions to construct candidate parameter rows. It may reference market state for audit or coarse gating, but it should not rank stocks by applying a sector-weighted transform to the Layer 1 vector.
+- `StrategySelectionModel` should compose multiple strategy components into a final comprehensive strategy recommendation instead of selecting one historical champion strategy in isolation. Market state can inform component eligibility/weighting, but candidate selection remains rotation/candidate-evidence driven.
+- `OptionExpressionModel` should consume market state directly when deciding contract constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, holding horizon, and no-trade filters.
+- `PortfolioRiskModel` should consume market state directly when deciding risk budget, position sizing, order aggressiveness, slippage tolerance, overnight permission, exit strictness, and kill-switch posture.
+
+### Consequences
+
+- D021 and D028 are refined/superseded: the no-scalar-collapse rule remains valid, but Model 2 no longer owns a direct Layer-1-to-candidate market-context vector bridge.
+- Model 2 implementation should prioritize `feature_02_security_selection`, sector/industry rotation state, ETF holdings exposure, and candidate trend/certainty surfaces.
+- Later implementation should define explicit market-state-to-option-expression and market-state-to-execution-policy contracts before treating Layer 1 as production-ready for downstream use.
+- Unified decision records should preserve Layer 1 state separately from Layer 2 candidate rotation context, then show how Layer 5 and Layer 7 used market state.
