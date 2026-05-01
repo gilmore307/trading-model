@@ -18,6 +18,11 @@
 #
 # direction = 1 means higher raw signal increases the factor.
 # direction = -1 means higher raw signal decreases the factor.
+#
+# V1.1 expands reviewed Layer 1 evidence coverage while keeping sector/industry
+# rotation out of Model 1. It intentionally consumes normalized trend distances,
+# slopes, spreads, volatility levels/ratios, and correlation diagnostics rather
+# than raw ratio moving-average levels.
 
 [standardization]
 lookback = 120
@@ -30,16 +35,17 @@ min_signal_coverage = 0.5
 name = "trend_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
+min_signal_coverage = 0.3
 
 [[factors.groups]]
 symbols = ["spy", "qqq", "iwm", "dia", "rsp"]
-suffixes = ["return_5d", "distance_to_ma20", "ma20_slope_5d"]
+suffixes = ["return_1d", "return_5d", "distance_to_ma20", "ma20_slope_5d"]
 direction = 1
 min_history = 20
 
 [[factors.groups]]
 symbols = ["spy", "qqq", "iwm", "dia", "rsp"]
-suffixes = ["return_20d", "distance_to_ma50", "ma_alignment_score"]
+suffixes = ["return_20d", "distance_to_ma50", "distance_to_ma200", "ma50_slope_10d", "ma200_slope_20d", "ma_alignment_score", "ma20_ma50_spread", "ma50_ma200_spread"]
 direction = 1
 min_history = 60
 
@@ -50,25 +56,19 @@ aggregation = "flat"
 
 [[factors.groups]]
 symbols = ["spy", "qqq", "iwm", "dia", "rsp", "vixy"]
-suffixes = ["realized_vol_20d", "ewma_vol", "atr_pct_14d"]
+suffixes = ["realized_vol_5d", "realized_vol_20d", "realized_vol_60d", "ewma_vol", "atr_pct_14d", "parkinson_vol_20d", "garman_klass_vol_20d"]
 direction = 1
 min_history = 30
 
 [[factors.groups]]
 symbols = ["spy", "qqq", "iwm", "dia", "rsp", "vixy"]
-suffixes = ["realized_vol_20d_percentile_252d", "realized_vol_20d_zscore_252d"]
+suffixes = ["realized_vol_5d_20d_ratio", "realized_vol_20d_60d_ratio", "realized_vol_20d_percentile_252d", "realized_vol_20d_zscore_252d"]
 direction = 1
 min_history = 60
 
 [[factors.groups]]
 symbols = ["vixy"]
-suffixes = ["return_5d", "distance_to_ma20"]
-direction = 1
-min_history = 20
-
-[[factors.groups]]
-symbols = ["vixy"]
-suffixes = ["return_20d", "ma_alignment_score"]
+suffixes = ["return_5d", "distance_to_ma20", "return_20d", "ma_alignment_score"]
 direction = 1
 min_history = 60
 
@@ -78,7 +78,12 @@ reducer = "bounded_mean"
 aggregation = "flat"
 
 [[factors.groups]]
-columns = ["market_state_avg_abs_return_corr_20d", "market_state_avg_abs_return_corr_60d", "market_state_avg_return_corr_20d", "market_state_avg_return_corr_60d"]
+columns = ["market_state_avg_abs_return_corr_20d", "market_state_avg_abs_return_corr_60d", "market_state_avg_return_corr_20d", "market_state_avg_return_corr_60d", "market_state_return_corr_dispersion_20d", "market_state_return_corr_dispersion_60d"]
+direction = 1
+min_history = 30
+
+[[factors.groups]]
+columns = ["qqq_spy_return_corr_20d", "qqq_spy_return_corr_60d", "iwm_spy_return_corr_20d", "iwm_spy_return_corr_60d", "rsp_spy_return_corr_20d", "rsp_spy_return_corr_60d", "dia_spy_return_corr_20d", "dia_spy_return_corr_60d"]
 direction = 1
 min_history = 30
 
@@ -88,12 +93,17 @@ reducer = "bounded_mean"
 aggregation = "flat"
 
 [[factors.groups]]
-columns = ["hyg_lqd_30m", "hyg_lqd_distance_to_ma20", "hyg_lqd_ma_alignment_score"]
+columns = ["hyg_lqd_30m", "hyg_lqd_distance_to_ma20", "hyg_lqd_distance_to_ma50", "hyg_lqd_ma20_slope_5d", "hyg_lqd_ma50_slope_10d", "hyg_lqd_ma_alignment_score", "hyg_lqd_ma20_ma50_spread", "hyg_lqd_ma50_ma200_spread"]
 direction = -1
 min_history = 20
 
 [[factors.groups]]
-columns = ["hyg_lqd_realized_vol_20d_ratio"]
+columns = ["hyg_tlt_30m", "hyg_tlt_distance_to_ma20", "hyg_tlt_distance_to_ma50", "hyg_tlt_ma20_slope_5d", "hyg_tlt_ma50_slope_10d", "hyg_tlt_ma_alignment_score", "lqd_tlt_30m", "lqd_tlt_distance_to_ma20", "lqd_tlt_ma_alignment_score"]
+direction = -1
+min_history = 20
+
+[[factors.groups]]
+columns = ["hyg_lqd_realized_vol_20d_ratio", "hyg_tlt_realized_vol_20d_ratio", "lqd_tlt_realized_vol_20d_ratio"]
 direction = 1
 min_history = 30
 
@@ -101,13 +111,13 @@ min_history = 30
 name = "rate_pressure_factor"
 reducer = "bounded_mean"
 aggregation = "flat"
-# TLT/SHY and IEF/SHY are cross-asset macro sensors, not tradable-candidate conclusions.
-# High value means duration/discount-rate pressure: long-duration bonds weakening versus short-duration bonds.
+# TLT/SHY, IEF/SHY, and TLT/IEF are cross-asset macro sensors, not tradable-candidate conclusions.
+# High value means duration strength; direction = -1 maps that to lower discount-rate pressure.
 # TLT strength can also indicate risk-off safe-haven demand; that may become a separate factor later.
 # Target ontology should migrate this toward discount_rate_pressure_factor after schema review.
 
 [[factors.groups]]
-columns = ["tlt_shy_30m", "tlt_shy_distance_to_ma20", "tlt_shy_ma_alignment_score", "ief_shy_30m", "ief_shy_distance_to_ma20", "ief_shy_ma_alignment_score"]
+columns = ["tlt_shy_30m", "tlt_shy_distance_to_ma20", "tlt_shy_distance_to_ma50", "tlt_shy_distance_to_ma200", "tlt_shy_ma20_slope_5d", "tlt_shy_ma50_slope_10d", "tlt_shy_ma200_slope_20d", "tlt_shy_ma_alignment_score", "tlt_shy_ma20_ma50_spread", "tlt_shy_ma50_ma200_spread", "ief_shy_30m", "ief_shy_distance_to_ma20", "ief_shy_distance_to_ma50", "ief_shy_distance_to_ma200", "ief_shy_ma20_slope_5d", "ief_shy_ma50_slope_10d", "ief_shy_ma200_slope_20d", "ief_shy_ma_alignment_score", "ief_shy_ma20_ma50_spread", "ief_shy_ma50_ma200_spread", "tlt_ief_30m", "tlt_ief_distance_to_ma20", "tlt_ief_ma_alignment_score"]
 direction = -1
 min_history = 20
 
@@ -117,26 +127,21 @@ reducer = "bounded_mean"
 aggregation = "flat"
 
 [[factors.groups]]
-columns = ["uup_spy_30m", "uup_spy_distance_to_ma20", "uup_spy_ma_alignment_score"]
+columns = ["uup_spy_30m", "uup_spy_distance_to_ma20", "uup_spy_distance_to_ma50", "uup_spy_distance_to_ma200", "uup_spy_ma20_slope_5d", "uup_spy_ma50_slope_10d", "uup_spy_ma200_slope_20d", "uup_spy_ma_alignment_score", "uup_spy_ma20_ma50_spread", "uup_spy_ma50_ma200_spread"]
 direction = 1
 min_history = 20
 
 [[factors.groups]]
 symbols = ["uup"]
-suffixes = ["return_5d", "distance_to_ma20"]
-direction = 1
-min_history = 20
-
-[[factors.groups]]
-symbols = ["uup"]
-suffixes = ["return_20d", "ma_alignment_score"]
+suffixes = ["return_1d", "return_5d", "return_20d", "distance_to_ma20", "distance_to_ma50", "distance_to_ma200", "ma20_slope_5d", "ma50_slope_10d", "ma200_slope_20d", "ma_alignment_score", "ma20_ma50_spread", "ma50_ma200_spread"]
 direction = 1
 min_history = 60
 
 [[factors]]
 name = "commodity_pressure_factor"
 reducer = "bounded_mean"
-aggregation = "flat"
+aggregation = "bucketed_mean"
+min_signal_coverage = 0.3
 # High value means commodity-related assets are becoming a dominant market driver.
 # It is not automatically bearish: energy/industrial commodity leadership can be risk-on or inflation-led,
 # while GLD leadership versus SPY may be safe-haven pressure. Future versions may split this into
@@ -144,43 +149,43 @@ aggregation = "flat"
 
 [[factors.groups]]
 symbols = ["dbc", "gld", "slv", "uso", "dba", "cper"]
-suffixes = ["return_5d", "distance_to_ma20"]
+suffixes = ["return_1d", "return_5d", "distance_to_ma20", "ma20_slope_5d"]
 direction = 1
 min_history = 20
 
 [[factors.groups]]
 symbols = ["dbc", "gld", "slv", "uso", "dba", "cper"]
-suffixes = ["return_20d", "ma_alignment_score"]
+suffixes = ["return_20d", "distance_to_ma50", "distance_to_ma200", "ma50_slope_10d", "ma200_slope_20d", "ma_alignment_score", "ma20_ma50_spread", "ma50_ma200_spread"]
 direction = 1
 min_history = 60
 
 [[factors.groups]]
-columns = ["gld_spy_30m", "dbc_spy_30m", "uso_spy_30m", "cper_dbc_30m"]
+columns = ["gld_spy_30m", "gld_spy_distance_to_ma20", "gld_spy_ma_alignment_score", "dbc_spy_30m", "dbc_spy_distance_to_ma20", "dbc_spy_ma_alignment_score", "uso_spy_30m", "uso_spy_distance_to_ma20", "uso_spy_ma_alignment_score", "cper_dbc_30m", "cper_dbc_distance_to_ma20", "cper_dbc_ma_alignment_score", "dba_dbc_30m", "dba_dbc_distance_to_ma20", "dba_dbc_ma_alignment_score", "slv_gld_30m", "slv_gld_distance_to_ma20", "slv_gld_ma_alignment_score", "gld_uup_30m", "gld_uup_distance_to_ma20", "gld_uup_ma_alignment_score"]
 direction = 1
 min_history = 20
-
 
 [[factors]]
 name = "breadth_factor"
 reducer = "bounded_mean"
 aggregation = "flat"
+# Breadth is now broad-market participation only. Sector-observation breadth/dispersion lives in Layer 2.
 
 [[factors.groups]]
-columns = ["rsp_spy_30m", "rsp_spy_distance_to_ma20", "rsp_spy_ma_alignment_score"]
+columns = ["rsp_spy_30m", "rsp_spy_distance_to_ma20", "rsp_spy_distance_to_ma50", "rsp_spy_distance_to_ma200", "rsp_spy_ma20_slope_5d", "rsp_spy_ma50_slope_10d", "rsp_spy_ma200_slope_20d", "rsp_spy_ma_alignment_score", "rsp_spy_ma20_ma50_spread", "rsp_spy_ma50_ma200_spread"]
 direction = 1
 min_history = 20
 
 [[factors]]
 name = "risk_appetite_factor"
 reducer = "bounded_mean"
-aggregation = "flat"
+aggregation = "bucketed_mean"
 
 [[factors.groups]]
-columns = ["qqq_spy_30m", "iwm_spy_30m", "rsp_spy_30m", "hyg_lqd_30m", "bitw_spy_30m"]
+columns = ["qqq_spy_30m", "qqq_spy_distance_to_ma20", "qqq_spy_ma_alignment_score", "iwm_spy_30m", "iwm_spy_distance_to_ma20", "iwm_spy_ma_alignment_score", "rsp_spy_30m", "rsp_spy_distance_to_ma20", "rsp_spy_ma_alignment_score", "hyg_lqd_30m", "hyg_lqd_distance_to_ma20", "hyg_lqd_ma_alignment_score", "bitw_spy_30m", "bitw_spy_distance_to_ma20", "bitw_spy_ma_alignment_score", "ibit_bitw_30m", "ibit_bitw_distance_to_ma20", "ibit_bitw_ma_alignment_score", "etha_bitw_30m", "etha_bitw_distance_to_ma20", "etha_bitw_ma_alignment_score", "fsol_bitw_30m", "fsol_bitw_distance_to_ma20", "fsol_bitw_ma_alignment_score"]
 direction = 1
 min_history = 20
 
 [[factors.groups]]
-columns = ["tlt_spy_30m", "gld_spy_30m", "uup_spy_30m", "vixy_spy_30m"]
+columns = ["tlt_spy_30m", "tlt_spy_distance_to_ma20", "tlt_spy_ma_alignment_score", "gld_spy_30m", "gld_spy_distance_to_ma20", "gld_spy_ma_alignment_score", "uup_spy_30m", "uup_spy_distance_to_ma20", "uup_spy_ma_alignment_score", "vixy_spy_30m", "vixy_spy_distance_to_ma20", "vixy_spy_ma_alignment_score"]
 direction = -1
 min_history = 20
