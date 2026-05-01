@@ -2,7 +2,6 @@
 
 ## Active Tasks
 
-- Review and refine the first `MarketRegimeModel` market-property implementation slice using the nine-part decomposition in `docs/08_model_decomposition.md`: a point-in-time continuous market-property vector from `trading_data.feature_01_market_regime`, designed as broad market background for option expression, strategy compatibility, and risk/execution policy rather than direct ETF/stock selection.
 - Complete nine-part decompositions for the remaining six model layers before expanding implementation beyond Layer 1.
 
 ## Queued Tasks
@@ -29,6 +28,7 @@
 
 ## Recently Accepted
 
+- Chentong accepted Layer 1 as settled for V1: `MarketRegimeModel` outputs a point-in-time market-property vector from `trading_data.feature_01_market_regime`, remains unsupervised/no-clustering, and serves as broad market background rather than sector/security selection.
 - Migrated `model_01_market_regime` from proxy-dashboard output columns to market-property factors: `price_behavior_factor`, `trend_certainty_factor`, `capital_flow_factor`, `sentiment_factor`, `valuation_pressure_factor`, `fundamental_strength_factor`, `macro_environment_factor`, `market_structure_factor`, and `risk_stress_factor`, plus transition pressure and data quality.
 - Implemented agent-backed `MarketRegimeModel` promotion review gate in `src/model_governance/agent_review.py` and `scripts/review_market_regime_promotion.py`. The script builds config/candidate rows from evaluation evidence, can invoke `openclaw agent` for a strict JSON promotion review, validates the decision, and emits a promotion decision row proposal without writing it or changing a production pointer.
 - Implemented dry-run-only `MarketRegimeModel` evaluation harness in `src/model_evaluation/market_regime.py` and `scripts/evaluate_model_01_market_regime.py`. It builds in-memory governance/evaluation rows and metrics without opening a database connection, so development data cannot enter a durable SQL database by default.

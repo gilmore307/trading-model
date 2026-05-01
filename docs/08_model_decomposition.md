@@ -29,6 +29,8 @@ This is a design and review template, not a mandate that every layer must be a s
 
 ## Layer 1 Decomposition: MarketRegimeModel
 
+Status: accepted as the Layer 1 V1 contract on 2026-05-01.
+
 ### 1. Data
 
 Primary input:

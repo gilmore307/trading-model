@@ -928,3 +928,29 @@ Observable proxy signals remain valid sensors inside `config/factor_specs.toml`,
 - Price behavior and trend certainty are split instead of being collapsed into one trend proxy.
 - Dollar and commodity pressure evidence is treated as macro-environment evidence rather than separate public output factors.
 - Downstream consumers should read Layer 1 as broad market properties, not as sector/security selection signals.
+
+## D032 - MarketRegimeModel Layer 1 V1 contract is settled
+
+Date: 2026-05-01
+Status: Accepted
+
+### Context
+
+After migrating the Layer 1 output from proxy-dashboard factors into market-property factors, Chentong reviewed the Layer 1 decomposition and accepted the current direction as settled for V1.
+
+### Decision
+
+Treat `MarketRegimeModel` Layer 1 V1 as accepted with this contract:
+
+- input is `trading_data.feature_01_market_regime`;
+- output is `trading_model.model_01_market_regime` keyed by `available_time`;
+- output factors are market-property fields: price behavior, trend certainty, capital/funding flow, sentiment, valuation pressure, fundamental strength, macro environment, market structure, risk stress, transition pressure, and data quality;
+- V1 remains unsupervised and does not require clustering, hard regime labels, or future-return targets;
+- Layer 1 is broad market background for strategy compatibility, option expression, and portfolio risk/execution policy;
+- Layer 1 must not rank sectors, ETFs, or securities.
+
+### Consequences
+
+- Further Layer 1 work should be refinement, evidence maturation, evaluation, and promotion-readiness rather than reopening the core output ontology.
+- Remaining architecture work should move to the nine-part decompositions for Layers 2-7, starting with `SecuritySelectionModel`.
+- Any future Layer 1 schema change requires a new decision because downstream consumers can now treat the market-property vector as the V1 contract.
