@@ -24,15 +24,15 @@ DEFAULT_MODEL_TABLE = "model_01_market_regime"
 DEFAULT_SOURCE_KEY = "SOURCE_01_MARKET_REGIME"
 DEFAULT_FEATURE_KEY = "FEATURE_01_MARKET_REGIME"
 FACTOR_COLUMNS = (
-    "trend_factor",
-    "volatility_stress_factor",
-    "correlation_stress_factor",
-    "credit_stress_factor",
-    "rate_pressure_factor",
-    "dollar_pressure_factor",
-    "commodity_pressure_factor",
-    "breadth_factor",
-    "risk_appetite_factor",
+    "price_behavior_factor",
+    "trend_certainty_factor",
+    "capital_flow_factor",
+    "sentiment_factor",
+    "valuation_pressure_factor",
+    "fundamental_strength_factor",
+    "macro_environment_factor",
+    "market_structure_factor",
+    "risk_stress_factor",
     "transition_pressure",
     "data_quality_score",
 )

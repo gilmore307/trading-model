@@ -33,11 +33,23 @@ Supported aggregations:
 Standardization defaults are currently `lookback = 120`, `min_history = 20`, `std_floor = 1e-8`, `z_clip = 5.0`, and `min_signal_coverage = 0.5`. Groups may override `min_history`, `std_floor`, or `z_clip`; correlation/volatility/low-frequency groups deliberately use longer minimum histories.
 
 
-## Factor ontology direction
+## Market-property factor ontology
 
-The current implementation is a first proxy-backed slice. Its observable inputs include ETF ratios, returns, volatility, trend, correlation, and breadth signals. The durable Model 1 direction is deeper: output factors should describe market properties such as price behavior, trend certainty, capital/funding flow, sentiment, valuation pressure, fundamentals, macro environment, market-wide structure, and risk stress.
+The current output columns are market-property factors, not proxy-dashboard factors:
 
-Proxy signals are sensors; they are not the conceptual factor ontology. A later reviewed migration should update concrete output columns/config/tests only after the deeper factor definitions are settled.
+- `price_behavior_factor`
+- `trend_certainty_factor`
+- `capital_flow_factor`
+- `sentiment_factor`
+- `valuation_pressure_factor`
+- `fundamental_strength_factor`
+- `macro_environment_factor`
+- `market_structure_factor`
+- `risk_stress_factor`
+- `transition_pressure`
+- `data_quality_score`
+
+Observable ETF ratios, returns, volatility, trend, correlation, credit/rate/dollar/commodity, and breadth signals are sensors. They support the market-property ontology but are not themselves the public output contract. `fundamental_strength_factor` is currently a broad-market participation proxy until true point-in-time fundamental evidence is added.
 
 
 ## Evidence coverage gap

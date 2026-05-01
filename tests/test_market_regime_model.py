@@ -37,11 +37,15 @@ class MarketRegimeModelTests(unittest.TestCase):
         self.assertEqual(len(rows), 65)
         mature = rows[-1]
         self.assertEqual(mature["available_time"], _row(65)["snapshot_time"])
-        self.assertGreater(mature["trend_factor"], 0)
-        self.assertGreater(mature["volatility_stress_factor"], 0)
-        self.assertGreater(mature["credit_stress_factor"], 0)
-        self.assertGreater(mature["rate_pressure_factor"], 0)
-        self.assertGreater(mature["risk_appetite_factor"], 0)
+        self.assertGreater(mature["price_behavior_factor"], 0)
+        self.assertGreater(mature["trend_certainty_factor"], 0)
+        self.assertGreater(mature["capital_flow_factor"], 0)
+        self.assertGreater(mature["sentiment_factor"], 0)
+        self.assertGreater(mature["valuation_pressure_factor"], 0)
+        self.assertGreater(mature["fundamental_strength_factor"], 0)
+        self.assertGreater(mature["macro_environment_factor"], 0)
+        self.assertGreater(mature["market_structure_factor"], 0)
+        self.assertGreater(mature["risk_stress_factor"], 0)
         self.assertGreater(mature["data_quality_score"], 0)
         self.assertLessEqual(mature["data_quality_score"], 1)
         self.assertIsNotNone(mature["transition_pressure"])
@@ -56,29 +60,32 @@ class MarketRegimeModelTests(unittest.TestCase):
         self.assertEqual(rows[0]["available_time"], "2026-01-02T12:00:00-05:00")
 
     def test_rolling_standardization_does_not_use_current_or_future_rows(self) -> None:
-        rows = generator.generate_rows([_row(index) for index in range(1, 22)], lookback=120)
+        rows = generator.generate_rows([_row(index) for index in range(1, 62)], lookback=120)
 
-        # The first twenty rows cannot score themselves into the rolling fit; the
-        # twenty-first row is compared only to prior rows and becomes positive.
-        self.assertIsNone(rows[0]["trend_factor"])
-        self.assertIsNone(rows[19]["trend_factor"])
-        self.assertGreater(rows[20]["trend_factor"], 0)
+        # The first sixty rows cannot score trend certainty because the long-horizon
+        # market-property group requires sixty prior observations; the sixty-first
+        # row is compared only to prior rows and becomes positive.
+        self.assertIsNone(rows[0]["trend_certainty_factor"])
+        self.assertIsNone(rows[59]["trend_certainty_factor"])
+        self.assertGreater(rows[60]["trend_certainty_factor"], 0)
 
     def test_factor_config_controls_membership_direction_and_reducer(self) -> None:
         specs = {spec.name: spec for spec in generator.load_factor_specs()}
 
-        self.assertIn("trend_factor", specs)
-        self.assertIn("spy_return_20d", {signal.column for signal in specs["trend_factor"].signals})
+        self.assertIn("price_behavior_factor", specs)
+        self.assertIn("trend_certainty_factor", specs)
+        self.assertIn("spy_return_30m", {signal.column for signal in specs["price_behavior_factor"].signals})
+        self.assertIn("spy_return_20d", {signal.column for signal in specs["trend_certainty_factor"].signals})
         credit_directions = {
             signal.column: signal.direction
-            for signal in specs["credit_stress_factor"].signals
+            for signal in specs["capital_flow_factor"].signals
             if signal.column in {"hyg_lqd_30m", "hyg_lqd_realized_vol_20d_ratio"}
         }
         self.assertEqual(credit_directions["hyg_lqd_30m"], -1)
         self.assertEqual(credit_directions["hyg_lqd_realized_vol_20d_ratio"], 1)
         self.assertNotIn("sector_rotation_factor", specs)
-        self.assertEqual(specs["trend_factor"].aggregation, "bucketed_mean")
-        self.assertGreaterEqual(next(signal.min_history for signal in specs["correlation_stress_factor"].signals), 30)
+        self.assertEqual(specs["trend_certainty_factor"].aggregation, "bucketed_mean")
+        self.assertGreaterEqual(next(signal.min_history for signal in specs["market_structure_factor"].signals), 30)
 
     def test_zscore_uses_std_floor_and_clip(self) -> None:
         signal = generator.Signal("example", min_history=2, std_floor=1e-8, z_clip=5.0)
@@ -126,14 +133,14 @@ class MarketRegimeModelTests(unittest.TestCase):
         cursor = FakeCursor()
         sql_runner.write_model_rows_sql(
             cursor,
-            [{"available_time": "2026-01-02T10:00:00-05:00", "trend_factor": 0.5}],
+            [{"available_time": "2026-01-02T10:00:00-05:00", "trend_certainty_factor": 0.5}],
             target_schema="trading_model",
             target_table="model_01_market_regime",
         )
 
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime"', joined_sql)
-        self.assertIn('ADD COLUMN IF NOT EXISTS "trend_factor" DOUBLE PRECISION', joined_sql)
+        self.assertIn('ADD COLUMN IF NOT EXISTS "trend_certainty_factor" DOUBLE PRECISION', joined_sql)
         self.assertIn('ON CONFLICT ("available_time") DO UPDATE SET', joined_sql)
 
 

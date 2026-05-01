@@ -235,15 +235,15 @@ Implement `model_01_market_regime` as an importable generator plus SQL runner:
 
 The first factor set is:
 
-- `trend_factor`
-- `volatility_stress_factor`
-- `correlation_stress_factor`
-- `credit_stress_factor`
-- `rate_pressure_factor`
-- `dollar_pressure_factor`
-- `commodity_pressure_factor`
-- `breadth_factor`
-- `risk_appetite_factor`
+- `price_behavior_factor`
+- `trend_certainty_factor`
+- `capital_flow_factor`
+- `sentiment_factor`
+- `valuation_pressure_factor`
+- `fundamental_strength_factor`
+- `macro_environment_factor`
+- `market_structure_factor`
+- `risk_stress_factor`
 - `transition_pressure`
 - `data_quality_score`
 
@@ -303,12 +303,12 @@ Stabilize factor construction through `config/factor_specs.toml`:
 - `z_clip = 5.0` before direction adjustment and reducer aggregation;
 - `min_signal_coverage = 0.5` so factors remain `null` until enough configured signals have usable point-in-time z-scores;
 - `data_quality_score` is based on eligible signal coverage, not merely raw non-null column presence;
-- `trend_factor` uses `bucketed_mean`, first averaging trend signals by ETF/symbol bucket and then reducing across ETF buckets.
+- `trend_certainty_factor` uses `bucketed_mean`, first averaging trend signals by ETF/symbol bucket and then reducing across ETF buckets.
 
 Clarify semantics:
 
-- `commodity_pressure_factor` means commodity-related assets are becoming a dominant market driver; it is not automatically bearish.
-- `rate_pressure_factor` means long-duration bonds are weakening versus short-duration bonds; safe-haven bond strength may become a separate factor later.
+- `macro_environment_factor` means commodity-related assets are becoming a dominant market driver; it is not automatically bearish.
+- `valuation_pressure_factor` means long-duration bonds are weakening versus short-duration bonds; safe-haven bond strength may become a separate factor later.
 
 ### Consequences
 
@@ -781,8 +781,8 @@ Sector/industry ETF-vs-ETF or sector-vs-broad comparisons belong to Model 2 when
 ### Consequences
 
 - Model 1 may use long/short bond ratios and other cross-asset macro sensors as input evidence.
-- Model 1 should not output durable ratio-named factors such as a literal `tlt_shy_factor`; the output should be latent market-property fields such as `discount_rate_pressure_factor`, `funding_credit_stress_factor`, `dollar_liquidity_pressure_factor`, `inflation_commodity_impulse_factor`, or `risk_stress_factor` after schema review.
-- Current `rate_pressure_factor` remains a provisional implementation name and should be migrated toward the deeper ontology, likely `discount_rate_pressure_factor`, when the Model 1 output schema is reviewed.
+- Model 1 should not output durable ratio-named factors such as a literal `tlt_shy_factor`; the output should be latent market-property fields such as `discount_valuation_pressure_factor`, `funding_capital_flow_factor`, `dollar_liquidity_pressure_factor`, `inflation_commodity_impulse_factor`, or `risk_stress_factor` after schema review.
+- Current `valuation_pressure_factor` remains a provisional implementation name and should be migrated toward the deeper ontology, likely `discount_valuation_pressure_factor`, when the Model 1 output schema is reviewed.
 - Model 2 V1 remains focused on sector/industry equity ETF and stock candidate parameterization; broad/macro ETFs are context/filter evidence, not V1 tradable candidates.
 
 ## D027 - Expand reviewed Model 1 evidence and prune low-value generated features
@@ -894,3 +894,37 @@ The template applies to supervised models, unsupervised state-vector models, ran
 - `MarketRegimeModel` remains unsupervised in V1: its target is a continuous market-state vector rather than a future-return label or hard regime class.
 - Future layer specs should use this structure before adding new code paths, schemas, or registry proposals.
 - Open gaps for incomplete layer decompositions stay in `docs/04_task.md` until reviewed.
+
+## D031 - MarketRegimeModel output columns use market-property factors
+
+Date: 2026-05-01
+Status: Accepted
+
+### Context
+
+The prior `model_01_market_regime` implementation still exposed proxy-dashboard factor names such as trend, volatility stress, correlation stress, credit stress, rate pressure, dollar pressure, commodity pressure, breadth, and risk appetite. Chentong clarified that Layer 1 should now become a market-property vector, not merely a set of observable proxy groupings.
+
+### Decision
+
+Migrate the `model_01_market_regime` output factor contract to market-property columns:
+
+- `price_behavior_factor`
+- `trend_certainty_factor`
+- `capital_flow_factor`
+- `sentiment_factor`
+- `valuation_pressure_factor`
+- `fundamental_strength_factor`
+- `macro_environment_factor`
+- `market_structure_factor`
+- `risk_stress_factor`
+- `transition_pressure`
+- `data_quality_score`
+
+Observable proxy signals remain valid sensors inside `config/factor_specs.toml`, but proxy categories are no longer the public output ontology. The current `fundamental_strength_factor` uses broad-market participation evidence as a provisional proxy until true point-in-time fundamental data is available.
+
+### Consequences
+
+- `factor_specs.toml`, evaluation fixtures, tests, and documentation use market-property output names.
+- Price behavior and trend certainty are split instead of being collapsed into one trend proxy.
+- Dollar and commodity pressure evidence is treated as macro-environment evidence rather than separate public output factors.
+- Downstream consumers should read Layer 1 as broad market properties, not as sector/security selection signals.

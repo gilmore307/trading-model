@@ -2,7 +2,7 @@
 
 ## Active Tasks
 
-- Review and refine the first `MarketRegimeModel` implementation slice using the nine-part decomposition in `docs/08_model_decomposition.md`: a point-in-time continuous market-state vector from `trading_data.feature_01_market_regime`, designed as broad market background for option expression, strategy compatibility, and risk/execution policy rather than direct ETF/stock selection.
+- Review and refine the first `MarketRegimeModel` market-property implementation slice using the nine-part decomposition in `docs/08_model_decomposition.md`: a point-in-time continuous market-property vector from `trading_data.feature_01_market_regime`, designed as broad market background for option expression, strategy compatibility, and risk/execution policy rather than direct ETF/stock selection.
 - Complete nine-part decompositions for the remaining six model layers before expanding implementation beyond Layer 1.
 
 ## Queued Tasks
@@ -17,7 +17,7 @@
 ## Open Gaps
 
 - Reviewed feature-to-latent-factor evidence map for the remaining `model_01_market_regime` Layer 1 keys, including used, diagnostic/quality, evaluation-only, and intentionally unused feature keys.
-- Exact first deep market-property factor formulas for `model_01_market_regime`, replacing provisional surface proxy groupings with price/trend/capital-flow/sentiment/valuation/fundamental/macro/structure/risk ontology and materially increasing reviewed evidence coverage beyond the current 857 of 857 Layer 1 generated feature keys after moving sector/industry rotation features and sector-observation aggregates to Model 2.
+- Exact mature evidence definitions for the market-property factors in `model_01_market_regime`; output columns now use price/trend/capital-flow/sentiment/valuation/fundamental/macro/structure/risk ontology, but several factors remain proxy-backed until richer point-in-time evidence is added.
 - Exact persistence path for agent-reviewed promotion decisions and future active production model pointers.
 - Exact artifact/manifest/ready-signal/request contract interactions for promoted/non-dry-run model evaluation artifacts.
 - Exact storage path/reference requirements.
@@ -29,6 +29,7 @@
 
 ## Recently Accepted
 
+- Migrated `model_01_market_regime` from proxy-dashboard output columns to market-property factors: `price_behavior_factor`, `trend_certainty_factor`, `capital_flow_factor`, `sentiment_factor`, `valuation_pressure_factor`, `fundamental_strength_factor`, `macro_environment_factor`, `market_structure_factor`, and `risk_stress_factor`, plus transition pressure and data quality.
 - Implemented agent-backed `MarketRegimeModel` promotion review gate in `src/model_governance/agent_review.py` and `scripts/review_market_regime_promotion.py`. The script builds config/candidate rows from evaluation evidence, can invoke `openclaw agent` for a strict JSON promotion review, validates the decision, and emits a promotion decision row proposal without writing it or changing a production pointer.
 - Implemented dry-run-only `MarketRegimeModel` evaluation harness in `src/model_evaluation/market_regime.py` and `scripts/evaluate_model_01_market_regime.py`. It builds in-memory governance/evaluation rows and metrics without opening a database connection, so development data cannot enter a durable SQL database by default.
 - Implemented generic model governance SQL schema helpers in `src/model_governance/schema.py` and the operational wrapper `scripts/ensure_model_governance_schema.py` for dataset request/snapshot/split, evaluation label/run/metric, config version, promotion candidate, promotion decision, and rollback tables. The wrapper has a `--dry-run` SQL preview mode; default execution can create the model governance tables in the development DB. `scripts/clear_model_development_database.py` clears the `trading_model` development schema at the end of a development run with explicit confirmation. Table names are registered in `trading-manager`; concrete column registration remains deferred until the schema has been exercised with real evaluation/promotion flows.

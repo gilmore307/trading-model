@@ -29,9 +29,9 @@ def _rows() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
         models.append(
             {
                 "available_time": timestamp,
-                "trend_factor": (index - 4) / 10,
-                "risk_appetite_factor": (index - 4) / 10,
-                "volatility_stress_factor": (4 - index) / 10,
+                "trend_certainty_factor": (index - 4) / 10,
+                "sentiment_factor": (index - 4) / 10,
+                "risk_stress_factor": (4 - index) / 10,
                 "data_quality_score": 1.0,
             }
         )

@@ -165,7 +165,7 @@ The durable Model 1 contract should move toward market-property fields such as:
 
 ETF ratios, spreads, relative strength pairs, and other observed signals remain valid input evidence, but they should not be mistaken for the final factor ontology. Cross-asset macro/risk proxies such as `HYG/LQD`, `TLT/SHY`, `IEF/SHY`, `UUP/SPY`, or `GLD/SPY` may remain Model 1 sensors when they infer broad credit/funding, discount-rate, dollar-liquidity, inflation/safe-haven, or risk-pressure states. Sector/industry ETF comparisons that answer candidate leadership or rotation belong to Model 2.
 
-Current implementation columns such as `trend_factor`, `credit_stress_factor`, and `risk_appetite_factor` are the first proxy-backed slice and should be migrated toward this deeper ontology as Model 1 matures.
+Current implementation columns now use this market-property ontology, but many remain proxy-backed slices; supporting evidence definitions should mature as richer point-in-time data becomes available.
 
 ### Evaluation
 

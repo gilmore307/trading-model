@@ -69,7 +69,7 @@ The output is a continuous point-in-time market-state vector for:
 trading_model.model_01_market_regime
 ```
 
-Current proxy-backed fields include trend, volatility stress, correlation stress, credit stress, rate pressure, dollar pressure, commodity pressure, breadth, risk appetite, transition pressure, and data quality. The durable direction is deeper market-property factors: price behavior, trend certainty, capital/funding flow, sentiment, valuation pressure, fundamentals, macro environment, market-wide structure, and risk stress.
+Current output fields are market-property factors: price behavior, trend certainty, capital/funding flow, sentiment, valuation pressure, fundamental strength, macro environment, market-wide structure, risk stress, transition pressure, and data quality. Observable returns, ratios, volatility, correlation, credit/rate/dollar/commodity, breadth, and risk-appetite signals are sensors that support those properties rather than public output names.
 
 Future-return labels may be attached later for evaluation only, not for constructing the vector.
 
