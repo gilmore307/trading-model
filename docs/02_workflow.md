@@ -28,7 +28,7 @@ point-in-time data artifacts
 - Every model layer should be decomposed with the standard nine-part structure in `docs/08_model_decomposition.md`: data, features, prediction target, model mapping, loss/error measure, training/update process, validation/usefulness, overfitting control, and decision deployment.
 - Every workflow must be point-in-time: no future data, no full-history fitting for historical predictions, no post-event explanation leakage.
 - `MarketRegimeModel` must be market/data-feature based and limited to broad state description. It is background context for option-expression choice, strategy compatibility, and risk/execution policy; it must not rank ETFs, sectors, or stocks.
-- `SecuritySelectionModel` should select and score tradable sector/industry ETF and stock candidates from sector/industry rotation, ETF holdings exposure, full-market scans, trend clarity, trend persistence, certainty, liquidity, optionability, and event exclusions. Broad market state may be referenced as background or gating context, but it is not the direct stock-selection driver.
+- `SecuritySelectionModel` should select and score tradable sector/industry baskets from sector/industry rotation, ETF holdings composition/exposure diagnostics, trend clarity, trend persistence, certainty, liquidity, optionability, and event exclusions. Broad market state may be referenced as background or gating context, but it is not the direct sector-selection driver. It should not select final stocks before `StrategySelectionModel` chooses a compatible strategy.
 - `StrategySelectionModel` should compose a comprehensive strategy from multiple strategy components/families using walk-forward or similarly time-safe evidence, not historical champion-picking of one isolated variant.
 - `TradeQualityModel` should model outcome distribution and risk, not only direction.
 - `OptionExpressionModel` V1 is limited to single-leg long call / long put option expressions and must use timestamped option-chain snapshots, bid/ask, liquidity, IV/Greeks, conservative fills, and failure-to-fill assumptions. It should consume market-state context for contract-expression constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade filters.
@@ -47,7 +47,7 @@ Deliver market-state feature contracts, rolling/expanding state-vector prototype
 
 ### Phase 2: SecuritySelectionModel
 
-Deliver sector/industry rotation research, sector/industry ETF holdings exposure matrix, `stock_etf_exposure` derived table proposal, sector/industry ETF and stock candidate parameter rows, full-market scan candidate sources, eligibility/gating rules, optionability/liquidity filters, and sector/industry transmission evidence. Do not derive sector/stock ranking from a Layer 1 market-state parameter.
+Deliver sector/industry rotation research, sector/industry ETF holdings composition/exposure diagnostics, `stock_etf_exposure` derived table proposal, sector/industry basket parameter rows, eligibility/gating rules, optionability/liquidity filters, and downstream handoff references. Do not derive sector ranking from a Layer 1 market-state parameter, and do not select final stocks in Layer 2 V1.
 
 ### Phase 3: StrategySelectionModel
 

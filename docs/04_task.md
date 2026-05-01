@@ -2,14 +2,14 @@
 
 ## Active Tasks
 
-- Review and refine the draft `SecuritySelectionModel` nine-part decomposition in `docs/08_model_decomposition.md`, especially the exact candidate parameter surface, holdings/exposure boundary, and first V1 output fields.
+- Review and refine the draft `SecuritySelectionModel` nine-part decomposition in `docs/08_model_decomposition.md`, especially the exact sector/industry parameter surface, holdings/exposure diagnostic boundary, and first V1 output fields.
 - Complete nine-part decompositions for the remaining five model layers before expanding implementation beyond Layer 2.
 
 ## Queued Tasks
 
 - Identify global fields, helper surfaces, templates, status values, decision-record fields, model layer ids, artifact types, or ready-signal shapes that must be registered in `trading-manager`.
 - Define model-facing timestamp semantics for `event_time`, `available_time`, and `tradeable_time`.
-- Define the first sector/industry ETF basket and base equity universe for `SecuritySelectionModel`, with candidate parameter rows based on sector/industry rotation, trend clarity, persistence, certainty, liquidity, optionability, and event exclusions rather than highest return or broad-market-state scoring.
+- Define the first sector/industry ETF basket for `SecuritySelectionModel`, with sector/industry parameter rows based on rotation, trend clarity, persistence, certainty, liquidity, optionability, composition quality, and event exclusions rather than highest return, broad-market-state scoring, or premature stock selection.
 - Decide whether `stock_etf_exposure` is model-local first or registered as a derived data kind in `trading-manager`.
 - Define first label horizons and triple-barrier defaults for `TradeQualityModel`.
 - Define how model-generated event standards are identified and versioned for `option_activity_event_detail`, including whether `standard_id` is separate from or derived from a model/run id and how downstream artifacts record the current standard used at event time.
@@ -23,7 +23,7 @@
 - Exact storage path/reference requirements.
 - Whether `trading-strategy` remains separate or `StrategySelectionModel` research is model-local until a later split.
 - Whether `stock_etf_exposure` belongs in `trading-data` as a derived bundle output, in `trading-model` as a feature artifact, or in shared contracts after proof.
-- Exact `SecuritySelectionModel` ETF/security candidate parameter-surface adjustment function for sector/industry rotation, trend clarity, trend persistence, certainty, and liquidity/optionability constraints; draft decomposition exists in `docs/08_model_decomposition.md` and needs review.
+- Exact `SecuritySelectionModel` sector/industry parameter-surface adjustment function for rotation, trend clarity, trend persistence, certainty, composition quality, and liquidity/optionability constraints; draft decomposition exists in `docs/08_model_decomposition.md` and needs review.
 - Exact path by which `MarketRegimeModel` state influences `OptionExpressionModel` contract selection and `PortfolioRiskModel` execution/risk policy without becoming a direct stock/sector ranking input.
 - Exact `StrategySelectionModel` design for composing multiple strategy components into one comprehensive strategy recommendation.
 

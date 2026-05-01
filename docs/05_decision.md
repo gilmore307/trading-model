@@ -1030,3 +1030,33 @@ Treat issuer-published ETF holdings as the source-side input for `SecuritySelect
 - Do not mix issuer holdings acquisition into `trading-model` implementation.
 - `trading-model` should consume holdings/exposure references as point-in-time source-backed inputs.
 - Any exposure scores that combine holdings with model-produced sector/theme scores need explicit boundary review so deterministic source-derived exposure stays separate from model-derived scoring.
+
+## D036 - SecuritySelectionModel V1 selects sectors and industries, not final stocks
+
+Date: 2026-05-01
+Status: Accepted
+
+### Context
+
+Earlier Layer 2 drafts treated `SecuritySelectionModel` as producing ETF and stock candidate parameter rows. Chentong clarified that this is premature: individual stocks are the true objects of interest, but the usefulness of a stock depends on the strategy that will be applied to it. Since strategy choice belongs to `StrategySelectionModel`, selecting final stocks before Layer 3 creates a false sense of precision and mixes responsibilities.
+
+### Decision
+
+For V1, `SecuritySelectionModel` selects and scores sector/industry baskets, not final stocks.
+
+Layer 2 should answer which sector/industry areas are easiest and cleanest to trade now: clear leadership, persistent trend, high certainty, enough breadth/liquidity/optionability, acceptable volatility/event risk, and usable composition evidence.
+
+ETF holdings and `stock_etf_exposure` remain relevant, but their Layer 2 role changes:
+
+- issuer holdings and `source_02_security_selection` explain what each sector/industry ETF actually contains;
+- `stock_etf_exposure` supports composition diagnostics and optional downstream handoff references;
+- neither should make Layer 2 emit final stock selections in V1.
+
+The durable V1 output is a sector/industry parameter surface keyed by `available_time + sector_or_industry_symbol`, with optional handoff references for later strategy-aware stock/security inspection.
+
+### Consequences
+
+- Supersedes prior V1 wording in D006, D019, D022, D033, and D035 that implied Layer 2 directly outputs stock candidate pools or stock candidate parameter rows.
+- Layer 2 may still evaluate sector/industry ETFs as baskets and may produce `eligible`, `watch`, `gated`, or `excluded` states for those baskets.
+- Final stock choice belongs downstream after `StrategySelectionModel` determines which strategy families/components are suitable.
+- `stock_etf_exposure` should be treated as source-backed diagnostic/handoff evidence until a later strategy-aware layer consumes it for concrete stock selection.
