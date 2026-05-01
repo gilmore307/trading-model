@@ -954,3 +954,29 @@ Treat `MarketRegimeModel` Layer 1 V1 as accepted with this contract:
 - Further Layer 1 work should be refinement, evidence maturation, evaluation, and promotion-readiness rather than reopening the core output ontology.
 - Remaining architecture work should move to the nine-part decompositions for Layers 2-7, starting with `SecuritySelectionModel`.
 - Any future Layer 1 schema change requires a new decision because downstream consumers can now treat the market-property vector as the V1 contract.
+
+## D033 - Start SecuritySelectionModel from candidate parameter surface decomposition
+
+Date: 2026-05-01
+Status: Draft
+
+### Context
+
+After settling `MarketRegimeModel` Layer 1 V1, the next layer is `SecuritySelectionModel`. Existing accepted boundaries already state that Layer 2 owns sector/industry ETF and stock candidate parameter construction, while Layer 1 remains broad market background.
+
+### Draft Direction
+
+Start Layer 2 from the nine-part decomposition in `docs/08_model_decomposition.md`:
+
+- use `trading_data.feature_02_security_selection`, sector/industry ETF holdings, `stock_etf_exposure`, candidate trend/liquidity/optionability/event evidence, and Layer 1 only as background/audit/coarse-gating context;
+- output a candidate parameter surface keyed by `available_time + candidate_symbol`;
+- include both sector/industry ETF holdings-driven candidates and full-market scan-driven candidates;
+- keep `candidate_selection_parameter` as an optional convenience scalar, not the only durable output;
+- evaluate against future labels only after construction, never as direct production ranking inputs.
+
+### Open Review Points
+
+- Exact V1 output table name and row shape.
+- Whether `stock_etf_exposure` is produced in `trading-data`, `trading-model`, or shared contracts after proof.
+- First eligible sector/industry ETF basket and base stock universe.
+- First parameter-adjustment method and gating thresholds.

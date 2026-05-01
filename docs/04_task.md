@@ -2,7 +2,8 @@
 
 ## Active Tasks
 
-- Complete nine-part decompositions for the remaining six model layers before expanding implementation beyond Layer 1.
+- Review and refine the draft `SecuritySelectionModel` nine-part decomposition in `docs/08_model_decomposition.md`, especially the exact candidate parameter surface, holdings/exposure boundary, and first V1 output fields.
+- Complete nine-part decompositions for the remaining five model layers before expanding implementation beyond Layer 2.
 
 ## Queued Tasks
 
@@ -22,7 +23,7 @@
 - Exact storage path/reference requirements.
 - Whether `trading-strategy` remains separate or `StrategySelectionModel` research is model-local until a later split.
 - Whether `stock_etf_exposure` belongs in `trading-data` as a derived bundle output, in `trading-model` as a feature artifact, or in shared contracts after proof.
-- Exact `SecuritySelectionModel` ETF/security candidate parameter-surface adjustment function for sector/industry rotation, trend clarity, trend persistence, certainty, and liquidity/optionability constraints.
+- Exact `SecuritySelectionModel` ETF/security candidate parameter-surface adjustment function for sector/industry rotation, trend clarity, trend persistence, certainty, and liquidity/optionability constraints; draft decomposition exists in `docs/08_model_decomposition.md` and needs review.
 - Exact path by which `MarketRegimeModel` state influences `OptionExpressionModel` contract selection and `PortfolioRiskModel` execution/risk policy without becoming a direct stock/sector ranking input.
 - Exact `StrategySelectionModel` design for composing multiple strategy components into one comprehensive strategy recommendation.
 

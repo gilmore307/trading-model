@@ -154,13 +154,197 @@ model_01_market_regime
 
 It must not directly rank sectors, ETFs, or stocks. `SecuritySelectionModel` owns sector/industry rotation and candidate parameter surfaces.
 
+## Layer 2 Decomposition: SecuritySelectionModel
+
+Status: draft for review.
+
+### 1. Data
+
+Primary model-facing inputs:
+
+```text
+trading_data.feature_02_security_selection
+etf_holding_snapshot
+stock_etf_exposure          # derived point-in-time exposure surface, exact owner still open
+model_01_market_regime      # background/audit/coarse gating only, not direct ranking input
+```
+
+Eligible evidence:
+
+- sector/industry ETF relative strength, trend, persistence, volatility stability, breadth, dispersion, and signal agreement;
+- point-in-time sector/industry ETF holdings snapshots;
+- stock-to-sector/industry ETF exposure derived from holdings weights;
+- stock and ETF bars, liquidity, spread, volume, gap, volatility, and relative-strength evidence;
+- optionability summaries such as option availability, spread, volume, open interest, and DTE coverage;
+- event exclusions such as earnings windows, macro shock windows, SEC/news risk, abnormal activity, and known no-trade states;
+- Layer 1 market-property vector only as background, audit context, or coarse no-trade/risk filter.
+
+Excluded from construction:
+
+- future returns as ranking inputs;
+- strategy performance;
+- option-contract outcomes;
+- portfolio PnL;
+- broad/macro ETF candidates that do not provide a sector/industry holdings bridge.
+
+### 2. Features
+
+`X` is a point-in-time candidate evidence surface keyed by `available_time + candidate_symbol`.
+
+Core feature blocks:
+
+- `sector_rotation_state_vector` — sector/industry ETF leadership, persistence, breadth support, volatility stability, and agreement;
+- `stock_sector_exposure_vector` — stock exposure to eligible sector/industry ETFs from point-in-time holdings;
+- `candidate_rotation_context` — sector/industry rotation evidence transmitted to an ETF or stock candidate;
+- `candidate_trend_state_vector` — trend clarity, trend persistence, relative strength, choppiness, gap behavior, and volatility fit;
+- `tradability_and_risk_vector` — liquidity, spread, optionability, borrow/shortability if relevant, event risk, and abnormal activity;
+- `candidate_quality_diagnostics` — missing coverage, stale holdings, low liquidity, conflicting signals, or ambiguous rotation.
+
+Candidate sources must include both:
+
+1. sector/industry ETF holdings-driven candidates;
+2. full-market scan-driven candidates.
+
+Do not rely only on ETF holdings, because emerging stocks may appear before they become large ETF constituents.
+
+### 3. Prediction target
+
+V1 does not target “highest future return.”
+
+The target is a candidate parameter surface describing which sector/industry ETFs and stocks have the clearest, most persistent, highest-certainty tradable setup.
+
+Primary output concept:
+
+```text
+candidate_parameter_surface[available_time, candidate_symbol]
+```
+
+Possible fields:
+
+```text
+candidate_symbol
+candidate_type                  # industry_etf, sector_etf, stock
+candidate_rotation_context
+trend_clarity_score
+trend_persistence_score
+relative_strength_consistency_score
+signal_agreement_score
+liquidity_score
+optionability_score
+event_risk_score
+certainty_score
+eligibility_state               # eligible, watch, gated, excluded
+candidate_selection_parameter   # optional convenience scalar, not sole output
+candidate_reason
+```
+
+Forward returns, realized drawdown, and future trade outcomes are labels for evaluation/calibration only.
+
+### 4. Model mapping from X to output
+
+Conceptual mapping:
+
+```text
+sector_rotation_model(feature_02_security_selection)
+  -> sector_rotation_state_vector[sector_or_industry_etf]
+
+point_in_time_holding_exposure(etf_holding_snapshot)
+  -> stock_sector_exposure_vector[stock]
+
+candidate_context_builder(
+  sector_rotation_state_vector,
+  stock_sector_exposure_vector,
+  full_market_scan_context
+)
+  -> candidate_rotation_context
+
+parameter_adjuster(
+  candidate_rotation_context,
+  candidate_trend_state_vector,
+  tradability_and_risk_vector
+)
+  -> candidate_parameter_surface
+
+optional_scalar_projection(candidate_parameter_surface)
+  -> candidate_selection_parameter
+```
+
+The scalar projection is allowed for sorting, dashboards, and downstream selection, but the durable output must retain supporting context.
+
+### 5. Loss / error measure
+
+Construction loss should not be a simple future-return regression loss. Wrongness is measured by whether the parameter surface identifies tradable, stable, high-certainty candidates without hindsight.
+
+Candidate error/evaluation measures:
+
+- poor rank calibration against forward return/risk labels;
+- high selected-candidate drawdown or adverse excursion;
+- unstable candidate ranks under small window/config changes;
+- high turnover with little added forward evidence;
+- selection of illiquid, unoptionable, stale-holding, or event-blocked names;
+- weak monotonic relationship between parameter deciles and later tradability/outcome quality;
+- leakage or timestamp violations.
+
+### 6. Training / parameter update
+
+V1 should start as interpretable, point-in-time parameter construction rather than a black-box selector:
+
+- reviewed sector/industry ETF universe;
+- explicit holdings exposure rules and staleness policy;
+- rolling/expanding standardization for relative strength, trend, volatility, and liquidity evidence;
+- reviewed eligibility gates for liquidity, optionability, event proximity, stale data, and ambiguity;
+- optional learned weights only after walk-forward evidence proves a benefit.
+
+Updates must be chronological. Holdings revisions, late provider updates, and event timestamps must be represented by `available_time`, not hindsight membership.
+
+### 7. Validation / usefulness
+
+Validation should prove that Model 2 improves the candidate pool handed to later layers.
+
+Minimum checks:
+
+- point-in-time holdings and feature availability;
+- candidate coverage by source: ETF-holdings-driven vs full-market scan;
+- rank/parameter stability through time;
+- decile/quantile analysis of `candidate_selection_parameter` vs future return, drawdown, volatility, MFE/MAE, and liquidity outcomes;
+- event/liquidity/optionability gate precision and false-reject review;
+- comparison to simple baselines such as broad-market top momentum, sector ETF top relative strength, and full-market raw return rank;
+- downstream usefulness for `StrategySelectionModel` without leaking strategy results into Model 2 construction.
+
+### 8. Overfitting control
+
+Controls:
+
+- chronological split or walk-forward evaluation;
+- no future returns, future ETF holdings, future index membership, or future event interpretations in features;
+- sector/industry ETF candidate universe fixed by reviewed eligibility rules, not post-hoc winners;
+- full support context retained instead of only a scalar score;
+- limited candidate gates and parameter components at V1;
+- stability checks across rebalance windows, lookbacks, and liquidity thresholds;
+- explicit treatment of stale/missing holdings and survivorship bias;
+- forward labels used only for evaluation/calibration.
+
+### 9. Decision deployment
+
+Layer 2 output enters the decision stack as the candidate universe and candidate parameter surface:
+
+```text
+SecuritySelectionModel
+  -> eligible/watch/gated/excluded ETF and stock candidates
+  -> candidate parameter surface and reasons
+  -> StrategySelectionModel candidate input
+  -> TradeQualityModel candidate signal input
+  -> unified decision record candidate-selection audit section
+```
+
+Layer 2 does not choose entry timing, strategy family, option contract, final size, execution style, or portfolio approval. Those belong to later layers.
+
 ## Remaining Layer Decomposition Queue
 
 The same nine-part decomposition still needs to be completed for:
 
-1. `SecuritySelectionModel` — sector/industry rotation and candidate parameter surfaces.
-2. `StrategySelectionModel` — strategy-component composition and compatibility.
-3. `TradeQualityModel` — trade outcome distribution, target/stop, MFE/MAE, and horizon.
-4. `OptionExpressionModel` — stock/ETF/long-call/long-put expression and contract constraints.
-5. `EventOverlayModel` — scheduled/breaking event risk and abnormal-activity overlays.
-6. `PortfolioRiskModel` — final offline sizing, exposure, execution-style, exit, and kill-switch gate.
+1. `StrategySelectionModel` — strategy-component composition and compatibility.
+2. `TradeQualityModel` — trade outcome distribution, target/stop, MFE/MAE, and horizon.
+3. `OptionExpressionModel` — stock/ETF/long-call/long-put expression and contract constraints.
+4. `EventOverlayModel` — scheduled/breaking event risk and abnormal-activity overlays.
+5. `PortfolioRiskModel` — final offline sizing, exposure, execution-style, exit, and kill-switch gate.
