@@ -1006,3 +1006,27 @@ Settle `feature_02_security_selection` V1 as the Feature 2 input surface for mig
 - Do not reintroduce these sector/industry rotation payloads into `feature_01_market_regime`.
 - `SecuritySelectionModel` should consume Feature 2 rows as its initial sector/industry rotation evidence before adding holdings exposure, full-market scan, liquidity, optionability, and event overlays.
 - Future Feature 2 changes should preserve the point-in-time row key and document any new payload keys or row types.
+
+## D035 - ETF holdings are the Layer 2 source-side bridge
+
+Date: 2026-05-01
+Status: Accepted
+
+### Context
+
+After accepting Feature 2 as the migrated sector-rotation feature surface, the next Layer 2 input boundary is the holdings bridge from sector/industry ETFs into stock candidates.
+
+### Decision
+
+Treat issuer-published ETF holdings as the source-side input for `SecuritySelectionModel`:
+
+- raw issuer holdings enter through the ETF holdings feed;
+- cleaned sector/industry ETF holdings rows belong to `source_02_security_selection`;
+- `stock_etf_exposure` is a source-backed point-in-time aggregation derived from those holdings rows, not a raw provider source table;
+- `stock_etf_exposure` may become a model-facing input surface for candidate construction after its ownership, freshness, and scoring boundary are reviewed.
+
+### Consequences
+
+- Do not mix issuer holdings acquisition into `trading-model` implementation.
+- `trading-model` should consume holdings/exposure references as point-in-time source-backed inputs.
+- Any exposure scores that combine holdings with model-produced sector/theme scores need explicit boundary review so deterministic source-derived exposure stays separate from model-derived scoring.

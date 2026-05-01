@@ -167,9 +167,12 @@ Primary model-facing inputs:
 ```text
 trading_data.feature_02_security_selection
 etf_holding_snapshot
-stock_etf_exposure          # derived point-in-time exposure surface, exact owner still open
+source_02_security_selection # cleaned sector/industry ETF holdings source rows
+stock_etf_exposure          # source-backed point-in-time exposure aggregation, not raw provider source
 model_01_market_regime      # background/audit/coarse gating only, not direct ranking input
 ```
+
+ETF holdings are a source-side input: issuer-published holdings enter through the ETF holdings feed and are cleaned into `source_02_security_selection` rows. `stock_etf_exposure` is downstream of those source rows: a source-backed aggregation that maps stocks to sector/industry ETF exposure for Layer 2 candidate construction.
 
 `feature_02_security_selection` should be the Layer 2 home for the evidence moved out of `feature_01_market_regime` when Layer 1 was narrowed to broad market properties. Its V1 scope is:
 
