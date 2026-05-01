@@ -22,8 +22,8 @@
 - Exact storage path/reference requirements.
 - Whether `trading-strategy` remains separate or `StrategySelectionModel` research is model-local until a later split.
 - Whether `stock_etf_exposure` belongs in `trading-data` as a derived bundle output, in `trading-model` as a feature artifact, or in shared contracts after proof.
-- Exact `SecuritySelectionModel` ETF/security `candidate_selection_parameter` adjustment function for sector/industry rotation, candidate market parameter, trend clarity, trend persistence, certainty, and liquidity/optionability constraints.
-- Exact derivation of `base_market_parameter`, `sector_weighted_market_parameter`, `candidate_market_parameter`, and unmapped-stock fallback behavior.
+- Exact `SecuritySelectionModel` ETF/security candidate parameter-surface adjustment function for sector/industry rotation, candidate market-context vector, trend clarity, trend persistence, certainty, and liquidity/optionability constraints.
+- Exact derivation of `base_market_context_vector`, `sector_weighted_market_context_vector`, `candidate_market_context_vector`, optional scalar projection, and unmapped-stock fallback behavior.
 
 ## Recently Accepted
 

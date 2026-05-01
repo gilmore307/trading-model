@@ -619,38 +619,38 @@ Broad market/style ETFs such as `SPY`, `QQQ`, `IWM`, `DIA`, and `RSP`, and non-e
 - Direct trading of broad/macro ETFs, if ever needed, should be modeled as a separate later scope rather than mixed into `SecuritySelectionModel` V1.
 
 
-## D021 - SecuritySelectionModel derives market parameters for candidate vectors
+## D021 - SecuritySelectionModel preserves market-state vector context for candidate vectors
 
 Date: 2026-04-30
 Status: Accepted
 
 ### Context
 
-The bridge from market state to target selection should be explicit. Passing the full Layer 1 vector directly into every ETF/stock parameter is hard to interpret, while selecting ETFs inside Layer 1 would blur model boundaries and raise leakage risk. Chentong proposed compressing the broad market vector into a market parameter that becomes part of each target candidate vector.
+The bridge from market state to target selection should be explicit. Layer 1 correctly compresses the broad input surface into a compact market-state vector, but Chentong clarified that the next layer should not compress that 9-dimensional state vector into one deterministic market parameter. A single scalar would hide important differences such as trend strength versus rate pressure, credit stress versus volatility stress, or commodity impulse versus risk appetite.
 
-The parameter should focus on trend certainty and broad-market turning risk. Because sectors respond differently to the same broad tape, each sector/industry ETF should also have its own weighted market parameter. Stocks that do not map into the eligible sector/industry ETF universe should use the unweighted base market parameter.
+Layer 2 still needs an interpretable candidate-facing transformation, but that transformation should preserve the vector structure. Sector/industry ETFs and stocks may weight the Layer 1 factors differently, yet the result should remain a candidate market-context vector or parameter bundle rather than one collapsed value.
 
 ### Decision
 
-`SecuritySelectionModel` owns the transformation from `model_01_market_regime` into candidate-level market-parameter fields. The initial conceptual fields are:
+`SecuritySelectionModel` owns the transformation from `model_01_market_regime` into candidate-level market-context vectors. The initial conceptual fields are:
 
-- `market_trend_certainty_parameter`;
-- `market_transition_risk_parameter`;
-- `base_market_parameter`;
-- `sector_weighted_market_parameter`;
-- `candidate_market_parameter`;
-- `candidate_selection_parameter`.
+- `base_market_context_vector`;
+- `sector_weighted_market_context_vector`;
+- `candidate_market_context_vector`;
+- `market_trend_certainty_component`;
+- `market_transition_risk_component`;
+- `candidate_selection_parameter` only as an optional/convenience scalar derived from the full candidate parameter surface, not as the sole durable market-context representation.
 
-For sector/industry ETF candidates, `candidate_market_parameter` equals that ETF's sector-weighted market parameter. For stock candidates with sector/industry ETF exposure, it is the exposure-weighted blend of the mapped ETF market parameters. For unmapped stocks, it falls back to `base_market_parameter`.
+For sector/industry ETF candidates, `candidate_market_context_vector` equals that ETF's sector-weighted transformation of the Layer 1 vector. For stock candidates with sector/industry ETF exposure, it is the exposure-weighted blend of the mapped ETF market-context vectors. For unmapped stocks, it falls back to `base_market_context_vector`.
 
-`candidate_selection_parameter` is the final Model 2 parameter for each candidate. It is adjusted using the candidate market parameter and the candidate's own trend/certainty/tradability/risk state. Ranking or choosing the highest value is a downstream usage pattern, not the persisted model-output contract.
+Do not define `market_parameterizer(model_01_market_regime_vector) -> scalar` as the Model 2 bridge. Any scalar ranking parameter must remain downstream/convenience information and must be accompanied by the underlying candidate market-context vector and candidate state fields.
 
 ### Consequences
 
-- Model 1 remains a pure market-state vector; Model 2 creates the selection-facing parameters.
-- Model 2 candidate vectors include both market parameter and target-specific state: trend clarity, trend persistence, certainty, relative strength, liquidity, optionability, and event risk.
-- Sector/industry ETF parameter rows can be sorted by downstream users, but Model 2 itself should persist the parameter surface rather than a selected ETF list.
-- The first Model 2 implementation needs an explicit sector factor-weight matrix mapping Layer 1 factors to eligible sector/industry ETFs.
+- Model 1 remains a pure 9-factor market-state vector; Model 2 creates selection-facing candidate context without collapsing the market state into one scalar.
+- Model 2 candidate rows should include both market context and target-specific state: trend clarity, trend persistence, certainty, relative strength, liquidity, optionability, and event risk.
+- Sector/industry ETF parameter rows can be sorted by downstream users if a scalar is produced, but Model 2 itself should persist the parameter surface/vector rather than only a selected ETF list or one market scalar.
+- The first Model 2 implementation needs an explicit sector factor-weight matrix or vector transform mapping Layer 1 factors to eligible sector/industry ETFs.
 - Field names remain model-local until implementation proves the shape and any shared registry registration is reviewed.
 
 
@@ -665,14 +665,14 @@ A previous sketch expressed Model 2 as an additive `target_score` formula and ex
 
 ### Decision
 
-Define Model 2's core output as candidate-level parameter rows keyed by `available_time + candidate_symbol` with a final `candidate_selection_parameter` and supporting candidate state fields.
+Define Model 2's core output as candidate-level parameter rows keyed by `available_time + candidate_symbol` with `candidate_market_context_vector`, supporting candidate state fields, and any derived `candidate_selection_parameter` clearly marked as a convenience/ranking scalar rather than the only durable representation.
 
 Do not define the model contract as direct `+ w` / `- w` arithmetic, a top-ETF picker, or a preferred ETF list. A linear formula may be tested later as one implementation candidate, but the durable contract is a parameter-adjustment surface.
 
 ### Consequences
 
-- Replace `target_score`/preferred-list language with `candidate_selection_parameter` and candidate parameter rows.
-- Ranking, top-N selection, and choosing the highest sector/industry ETF are downstream usage of Model 2 output.
+- Replace `target_score`/preferred-list language with candidate parameter rows that preserve vector context; `candidate_selection_parameter` may exist only as a derived convenience scalar.
+- Ranking, top-N selection, and choosing the highest sector/industry ETF are downstream usage of Model 2 output and should not require discarding the candidate market-context vector.
 - Model 2 acceptance should test parameter stability, point-in-time correctness, monotonic sanity, and calibration against future labels, not whether the model directly emits one chosen ETF.
 
 
@@ -804,3 +804,24 @@ Do not treat raw ratio moving-average level keys or standalone SHY return/trend 
 - All configured Model 1 signals are present in the Layer 1 payload, and every Layer 1 payload key is currently owned by the Model 1 signal configuration.
 - Layer 1 still avoids sector/industry rotation and sector-observation evidence; those remain Layer 2 responsibilities.
 - Future generated keys should not be added without an owner: Model 1 signal, diagnostic/quality/evaluation role, future-review note, or immediate removal from generation.
+
+## D028 - Do not collapse market-state vector into a single Model 2 market scalar
+
+Date: 2026-04-30
+Status: Accepted
+
+### Context
+
+After Model 1 reached a compact 9-factor market-state vector, Chentong clarified that the vector shape is acceptable, but compressing that vector again into one deterministic market parameter for Model 2 would lose too much information. The issue is not Layer 1's 9-factor compression; it is the proposed next-stage scalar `base_market_parameter` / `candidate_market_parameter` bridge.
+
+### Decision
+
+Model 2 must preserve the Layer 1 vector structure when creating candidate-facing market context. Use candidate market-context vectors or parameter bundles, such as `base_market_context_vector`, `sector_weighted_market_context_vector`, and `candidate_market_context_vector`, instead of scalar market parameters.
+
+A scalar `candidate_selection_parameter` may exist only as a downstream/convenience projection for ranking or UI, and must not be the sole persisted representation of candidate context.
+
+### Consequences
+
+- The Model 2 bridge is vector-preserving: factor weighting changes component emphasis but does not collapse the Layer 1 state into one number.
+- Candidate rows should retain market-context vector fields plus candidate-specific trend/certainty/tradability/risk fields.
+- Downstream ranking can still consume a scalar projection, but analysis, calibration, and later models must be able to inspect the underlying vector context.
