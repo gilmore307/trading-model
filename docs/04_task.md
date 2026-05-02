@@ -2,6 +2,7 @@
 
 ## Active Tasks
 
+- Mature Layer 1 `MarketRegimeModel` evidence and evaluation without changing its core output columns: build the feature-to-factor evidence map, define stability/usefulness evaluation, and optionally design a `market_context_state` alias/view.
 - Review and refine the revised `SecuritySelectionModel` Layer 2 decomposition in `docs/08_model_decomposition.md`, especially the exact `sector_attribute_vector`, `sector_market_condition_profile`, `sector_trend_stability_vector`, holdings/exposure diagnostic boundary, and first V1 output fields.
 - Complete nine-part decompositions for the remaining five model layers before expanding implementation beyond Layer 2.
 
@@ -16,8 +17,10 @@
 
 ## Open Gaps
 
-- Reviewed feature-to-latent-factor evidence map for the remaining `model_01_market_regime` Layer 1 keys, including used, diagnostic/quality, evaluation-only, and intentionally unused feature keys.
+- Reviewed feature-to-factor evidence map for `model_01_market_regime`, classifying feature families as primary evidence, diagnostic evidence, quality evidence, evaluation-only evidence, or intentionally unused evidence for each market-property factor.
 - Exact mature evidence definitions for the market-property factors in `model_01_market_regime`; output columns now use price/trend/capital-flow/sentiment/valuation/fundamental/macro/structure/risk ontology, but several factors remain proxy-backed until richer point-in-time evidence is added.
+- Exact Layer 1 evaluation bundle for `market_context_state` stability, Layer 2 sector trend-stability explanatory power, option-expression usefulness, and portfolio-risk usefulness.
+- Whether to add a model-local `market_context_state` output view/alias around the existing factor columns for downstream readability without changing core fields.
 - Exact persistence path for agent-reviewed promotion decisions and future active production model pointers.
 - Exact artifact/manifest/ready-signal/request contract interactions for promoted/non-dry-run model evaluation artifacts.
 - Exact storage path/reference requirements.

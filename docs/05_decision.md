@@ -1257,3 +1257,28 @@ sector_context_state[available_time, sector_or_industry_symbol]
 - Human-readable ETF descriptions may be generated only as optional post-fit interpretations of `sector_attribute_vector`.
 - Layer 3 receives sector context plus optional handoff references for anonymous target-candidate construction.
 - Layer 2 validation must include market-state-conditioned trend stability, false-break/chop rate, cycle regularity, and downstream usefulness for anonymized strategy selection.
+
+
+## D042 - Layer 1 remaining work is evidence maturation, evaluation, and context aliasing
+
+Date: 2026-05-02
+Status: Accepted
+
+### Context
+
+After confirming that `MarketRegimeModel` should not infer ETF/sector attributes or select sectors/stocks, Chentong clarified the remaining Layer 1 work: mature the factor evidence map, evaluate whether `market_context_state` is stable and useful downstream, and optionally wrap the existing factor columns under a clearer context name.
+
+### Decision
+
+Keep the core Layer 1 output fields unchanged for V1. The remaining Layer 1 work is:
+
+1. Evidence maturation: for each market-property factor, document which feature families are primary evidence, diagnostic evidence, quality evidence, evaluation-only evidence, or intentionally unused evidence.
+2. Evaluation maturation: test whether `market_context_state` is stable under rolling/expanding refits, whether it explains Layer 2 sector trend-stability better than a market-context-free baseline, and whether it helps option-expression and portfolio-risk policy.
+3. Naming cleanup: optionally add a model-local `market_context_state` alias/view around the current factor columns for downstream readability, without changing the physical core fields.
+
+### Consequences
+
+- Layer 1 structure is settled; do not reopen it to add sector/ETF attributes, sector rankings, stock candidates, or strategy labels.
+- Evaluation labels remain outside construction.
+- Future implementation should focus on evidence maps and evaluation artifacts before changing factor formulas or adding learned weights.
+- Any shared `market_context_state` contract should be routed through `trading-manager` before cross-repository dependence.

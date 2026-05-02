@@ -202,6 +202,17 @@ ETF ratios, spreads, relative strength pairs, and other observed signals remain 
 
 Current implementation columns now use this market-property ontology, but many remain proxy-backed slices; supporting evidence definitions should mature as richer point-in-time data becomes available.
 
+### Layer 1 maturation track
+
+Layer 1 structure is settled for V1. Remaining work is evidence and evaluation maturation:
+
+1. **Feature-to-factor evidence map** — for each market-property factor, classify supporting feature families as primary evidence, diagnostic evidence, quality evidence, evaluation-only evidence, or intentionally unused evidence.
+2. **Market-context stability evaluation** — test whether factor values are stable under rolling/expanding refits while still responsive to genuine market transitions.
+3. **Downstream explanatory evaluation** — test whether `market_context_state` improves Layer 2 sector trend-stability calibration, option-expression constraints, and portfolio-risk/execution policy over context-free baselines.
+4. **Naming wrapper** — keep current factor columns, but allow a future view/alias that packages them as `market_context_state` for downstream readers.
+
+This maturation track must not add sector rankings, ETF attributes, stock candidates, or strategy labels to Layer 1.
+
 ### Evaluation
 
 - point-in-time correctness and no leakage

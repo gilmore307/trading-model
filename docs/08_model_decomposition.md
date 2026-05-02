@@ -56,10 +56,13 @@ Layer 1 must not use sector/industry rotation labels, selected securities, strat
 
 Feature roles must be explicit:
 
-- **used** — contributes to a factor;
-- **diagnostic/quality** — informs confidence or data quality;
-- **evaluation-only** — used only after output construction to test usefulness;
-- **intentionally unused** — excluded with a reason.
+- **primary evidence** — directly supports a market-property factor and participates in factor construction;
+- **diagnostic evidence** — explains, stress-tests, or sanity-checks a factor without directly driving the factor value;
+- **quality evidence** — informs coverage, freshness, reliability, or `data_quality_score`;
+- **evaluation-only evidence** — used only after output construction to test usefulness;
+- **intentionally unused evidence** — excluded with a reason.
+
+The next Layer 1 maturation work is a reviewed feature-to-factor evidence map. For each output factor, document the feature families that are primary, diagnostic, quality, evaluation-only, or intentionally unused. This is evidence maturation, not a structural change to the factor columns.
 
 ### 3. Prediction target
 
@@ -121,11 +124,21 @@ Validation should show that the state vector is:
 - point-in-time correct;
 - stable enough for decision use but responsive to actual regime transitions;
 - interpretable from supporting evidence;
-- useful as background context for `OptionExpressionModel`, `StrategySelectionModel`, and `PortfolioRiskModel`;
+- useful as background context for Layer 2 sector trend-stability inference;
+- useful as background context for `OptionExpressionModel` contract constraints and `PortfolioRiskModel` risk/execution policy;
 - useful for risk/drawdown/volatility-transition diagnostics;
 - not acting as a hidden sector/security selector.
 
-Minimum validation evidence should include chronological splits, factor distribution checks, stability/refit checks, evaluation labels kept outside construction, and downstream usefulness tests.
+Minimum validation evidence should include:
+
+- chronological splits;
+- factor distribution checks;
+- rolling/refit stability checks;
+- feature-to-factor evidence-map review;
+- evaluation labels kept outside construction;
+- explanatory tests showing whether `market_context_state` improves Layer 2 sector trend-stability calibration over a market-context-agnostic baseline;
+- option-expression usefulness checks, such as whether market context improves DTE/delta/IV/theta tolerance or no-trade policy calibration;
+- portfolio-risk usefulness checks, such as whether market context improves drawdown, exposure, sizing, execution-style, or kill-switch policy calibration.
 
 ### 8. Overfitting control
 
@@ -146,11 +159,15 @@ Layer 1 output enters the decision stack as broad market background:
 
 ```text
 model_01_market_regime
+  -> market_context_state alias/view for downstream readers
+  -> Layer 2 sector trend-stability conditioning context
   -> strategy compatibility / disabled-strategy context
   -> option-expression constraints such as DTE, delta/moneyness, IV/theta tolerance, and no-trade filters
   -> portfolio risk/exposure/sizing/execution-policy gate
   -> unified decision record audit context
 ```
+
+The physical output columns do not need to change for V1. A later alias/view may wrap the existing factor columns as `market_context_state` for readability and downstream contract clarity.
 
 It must not directly rank sectors, ETFs, or stocks. It also must not pre-assign ETF or sector attributes such as "growth", "defensive", "inflation hedge", or "risk-off beneficiary" as model conclusions. Those relationships must be inferred in Layer 2 from point-in-time behavior, holdings, and market-state-conditioned trend stability.
 
