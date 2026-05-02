@@ -170,24 +170,23 @@ sector_observed_behavior_vector
 sector_attribute_vector
 sector_conditional_behavior_vector
 sector_trend_stability_vector
-sector_composition_vector
 sector_tradability_vector
 sector_risk_context_vector
 eligibility_state
+sector_handoff_state
 optional sector_selection_parameter
-optional handoff_stock_universe_refs
 ```
 
-Layer 2 may use ETF holdings and `stock_etf_exposure` for composition diagnostics and downstream handoff evidence. It must not choose final stocks, entry timing, strategy parameters, option contracts, final size, or portfolio weights.
+Layer 2 may select or block sector/industry baskets for downstream candidate construction. It must not choose final stocks, entry timing, strategy parameters, option contracts, final size, or portfolio weights.
 
-## D007 - `stock_etf_exposure` is evidence, not the Layer 2 target
+## D007 - ETF holdings move to downstream candidate construction
 
 Date: 2026-05-02
 Status: Accepted
 
-ETF holdings are source-side evidence for eligible sector/industry equity ETFs. `stock_etf_exposure` is a source-backed aggregation used to explain basket composition, concentration, overlap, freshness, and possible downstream stock-universe references.
+ETF holdings and `stock_etf_exposure` are not core inputs to Layer 2 sector behavior modeling. Layer 2 should learn ETF/basket conditional behavior from price/relative-strength/volatility/correlation/tradability/event evidence under similar market backgrounds.
 
-For Layer 2 V1, `stock_etf_exposure` is not a final stock-selection target and must not make Layer 2 behave as a hidden stock selector.
+After Layer 2 selects or prioritizes sector/industry baskets, the anonymous target candidate builder may use ETF holdings and `stock_etf_exposure` to transmit selected baskets into a stock candidate universe. Layer 3 strategy fitting must still consume anonymous target feature vectors rather than raw ticker/company identity.
 
 ## D008 - Strategy fitting must use anonymous target candidates
 

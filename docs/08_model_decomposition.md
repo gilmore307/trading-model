@@ -179,8 +179,6 @@ Primary inputs:
 ```text
 market_context_state                 # Layer 1, conditioning only
 trading_data.feature_02_security_selection
-source_02_security_selection         # ETF holdings source rows
-stock_etf_exposure                   # composition/transmission evidence
 ETF liquidity / optionability / event evidence
 ```
 
@@ -206,7 +204,6 @@ sector_observed_behavior_vector
 sector_attribute_vector
 sector_conditional_behavior_vector
 sector_trend_stability_vector
-sector_composition_vector
 sector_tradability_vector
 sector_risk_context_vector
 sector_quality_diagnostics
@@ -235,15 +232,14 @@ sector_observed_behavior_vector
 sector_attribute_vector
 sector_conditional_behavior_vector
 sector_trend_stability_vector
-sector_composition_vector
 sector_tradability_vector
 sector_risk_context_vector
 eligibility_state
+sector_handoff_state
 optional sector_selection_parameter
-optional handoff_stock_universe_refs
 ```
 
-The target is clean, persistent, understandable sector/industry trend behavior under market context, not highest future return and not final stock selection.
+The target is clean, persistent, understandable sector/industry trend behavior under market context, not highest future return and not final stock selection. Layer 2 may select/prioritize sector baskets for downstream candidate construction, but it does not expand them into stock candidates.
 
 ### 4. Model mapping
 
@@ -255,7 +251,7 @@ sector behavior evidence
   + distinct conditional behavior vector learning
   + inferred attribute discovery
   + trend stability / cycle regularity scoring
-  + composition / tradability / risk diagnostics
+  + tradability / risk diagnostics
   -> sector_context_state
 ```
 
@@ -296,7 +292,7 @@ Controls:
 - avoid hand-written style labels as training truth;
 - separate production features from evaluation labels;
 - require liquidity/optionability/event gates;
-- keep `stock_etf_exposure` as composition evidence, not stock target selection.
+- keep ETF holdings and `stock_etf_exposure` outside Layer 2 core behavior modeling.
 
 ### 9. Decision deployment
 
@@ -311,13 +307,13 @@ sector_context_state
   -> PortfolioRiskModel
 ```
 
-It may provide `handoff_stock_universe_refs`, but final stock choice waits for strategy-aware downstream layers.
+It may provide selected/prioritized sector basket handoff state, but stock-universe construction waits for the anonymous target candidate builder.
 
 ## Anonymous Target Candidate Builder
 
 Status: required boundary; detailed contract pending.
 
-Purpose: create anonymous model-facing candidate rows for Layer 3+ while preserving real symbol references for audit/routing only.
+Purpose: create anonymous model-facing candidate rows for Layer 3+ from Layer 2 selected/prioritized sector baskets while preserving real symbol references for audit/routing only.
 
 Required separation:
 
@@ -326,7 +322,7 @@ model-facing:  target_candidate_id + anonymous_target_feature_vector
 metadata:      audit_symbol_ref + routing_symbol_ref
 ```
 
-The model-facing vector may include target behavior, liquidity/tradability, market context, sector context, event/risk context, cost, and strategy-compatibility features. It must exclude raw ticker/company identity.
+The candidate builder may use ETF holdings and `stock_etf_exposure` to transmit Layer 2 selected sector/industry baskets into stock candidates. The model-facing vector may include target behavior, liquidity/tradability, market context, sector context, event/risk context, cost, and strategy-compatibility features. It must exclude raw ticker/company identity.
 
 ## Layer 3: StrategySelectionModel
 

@@ -10,7 +10,7 @@
 2. **Layer 2 contract refinement**
    - Keep `src/models/model_02_security_selection/sector_context_state_contract.md` aligned with implementation.
    - Keep ETF/sector attributes inferred from evidence.
-   - Keep `stock_etf_exposure` as composition/transmission evidence, not final stock selection.
+   - Keep `stock_etf_exposure` as downstream candidate-construction evidence, not Layer 2 core behavior modeling.
 
 ## Queued Tasks
 

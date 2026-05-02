@@ -197,8 +197,6 @@ Layer 2 does **not** choose final stocks.
 
 - `market_context_state` from Layer 1 as conditioning context only.
 - `trading_data.feature_02_security_selection` for sector/industry relative strength, trend, volatility, correlation, breadth, and dispersion evidence.
-- ETF holdings snapshots for eligible sector/industry equity ETFs.
-- `stock_etf_exposure` as source-backed composition/transmission evidence.
 - ETF liquidity, optionability, gap/chop behavior, event density, and abnormal activity evidence.
 
 ### Output blocks
@@ -208,12 +206,11 @@ sector_observed_behavior_vector
 sector_attribute_vector
 sector_conditional_behavior_vector
 sector_trend_stability_vector
-sector_composition_vector
 sector_tradability_vector
 sector_risk_context_vector
 eligibility_state
+sector_handoff_state
 optional sector_selection_parameter
-optional handoff_stock_universe_refs
 ```
 
 ### Boundaries
@@ -222,11 +219,12 @@ optional handoff_stock_universe_refs
 - Do not consume hard-coded labels such as `technology = growth` or `utilities = defensive`.
 - Do not use future returns as production ranking inputs.
 - Do not select final stocks in V1.
-- Use ETF holdings and `stock_etf_exposure` for composition diagnostics and downstream handoff references.
+- Do not use ETF holdings or `stock_etf_exposure` as core Layer 2 behavior-model inputs.
+- Output selected/prioritized sector basket handoff state for downstream candidate construction.
 
 ## Anonymous Target Candidate Builder
 
-The target candidate builder creates strategy-aware candidate rows for Layer 3+ without exposing ticker identity to model fitting.
+The target candidate builder creates strategy-aware candidate rows for Layer 3+ from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
 
 Conceptual fields:
 
@@ -239,7 +237,7 @@ market_context_state_ref
 sector_context_state_ref
 ```
 
-Model-facing vectors may include behavior shape, liquidity, volatility, event/risk context, sector context, market context, and cost/tradability features.
+The builder may use ETF holdings and `stock_etf_exposure` to transmit selected sector baskets into stock candidates. Model-facing vectors may include behavior shape, liquidity, volatility, event/risk context, sector context, market context, and cost/tradability features.
 
 Model-facing vectors must exclude raw ticker/company identity and memorized symbol labels.
 

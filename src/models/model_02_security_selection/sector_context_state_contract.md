@@ -10,8 +10,7 @@ Layer 2 answers: for each eligible sector/industry equity ETF basket, what is
 its market-context-conditioned trend-stability state and inferred basket
 attribute profile at `available_time`?
 
-It does **not** answer which final stock to buy, which strategy to run, which
-option contract to trade, or how much portfolio risk to allocate.
+It may mark which sector/industry baskets are suitable for downstream candidate construction. It does **not** answer which final stock to buy, which strategy to run, which option contract to trade, or how much portfolio risk to allocate.
 
 ## Row identity
 
@@ -112,21 +111,15 @@ Core V1 output block for downstream target/strategy work.
 | `cycle_regularity_score` | float/null | Evidence that behavior cycles regularly enough for downstream strategy use. |
 | `selection_readiness_score` | float/null | Readiness for downstream anonymous target generation; not a final selection. |
 
-### Composition / transmission block
+### Downstream sector handoff block
 
-Basket composition and `stock_etf_exposure` evidence. This block may inform
-anonymous target generation later, but it must not become hidden final stock
-selection.
+Layer 2 may identify sector/industry baskets that are suitable for downstream anonymous target construction. It does not use ETF holdings to choose stocks. ETF holdings and `stock_etf_exposure` belong to the downstream candidate builder / Layer 3 input-preparation boundary, where selected Layer 2 baskets are transmitted into a stock candidate universe and then anonymized for strategy fitting.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `stock_etf_exposure_ref` | text/null | Reference to the point-in-time exposure artifact used for composition evidence. |
-| `holding_count` | integer/null | Number of known holdings/components in the evidence snapshot. |
-| `top_holding_weight` | float/null | Largest holding weight, when available. |
-| `concentration_score` | float/null | Basket concentration diagnostic. Higher means more concentrated. |
-| `composition_freshness_score` | float/null | Freshness/reliability of holdings and exposure evidence. |
-| `composition_overlap_score` | float/null | Overlap/crowding diagnostic versus other eligible baskets. |
-| `handoff_stock_universe_ref` | text/null | Optional reference to downstream candidate-universe evidence, not selected stocks. |
+| `sector_handoff_state` | text/null | Downstream handoff state such as `selected`, `watch`, `blocked`, or `insufficient_data`. |
+| `sector_handoff_rank` | integer/null | Optional rank among sector/industry baskets for candidate-builder priority; not a portfolio weight. |
+| `sector_handoff_reason_codes` | text/null | Stable reason codes explaining why the basket is selected, watched, or blocked. |
 
 ### Tradability block
 
@@ -172,6 +165,8 @@ handoff.
 
 The following do not belong in `sector_context_state` V1:
 
+- ETF holdings-derived stock-universe membership;
+- `stock_etf_exposure` rows or stock exposure scores;
 - final selected stock symbols;
 - final stock weights;
 - final ETF/sector allocation weights;
@@ -188,8 +183,7 @@ V1 acceptance must show:
 
 1. point-in-time construction with no future labels in production fields;
 2. eligible baskets limited to reviewed sector/industry equity ETFs;
-3. `stock_etf_exposure` used only as composition/transmission evidence;
+3. ETF holdings and `stock_etf_exposure` are not used as Layer 2 core behavior-model inputs;
 4. inferred attributes stable enough across chronological refits to be useful;
 5. trend-stability separation versus a market-context-free baseline;
-6. downstream anonymous target generation can consume the row without raw
-   company/ticker identity leakage.
+6. downstream anonymous target generation can consume selected Layer 2 baskets, use holdings/exposure evidence to build stock candidates, and then anonymize candidates without raw company/ticker identity leakage in strategy fitting.

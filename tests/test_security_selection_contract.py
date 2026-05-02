@@ -26,7 +26,9 @@ class SecuritySelectionContractTests(unittest.TestCase):
             "`response_convexity_score`",
             "`context_support_score`",
             "`context_conditioned_stability_score`",
-            "`stock_etf_exposure_ref`",
+            "`sector_handoff_state`",
+            "`sector_handoff_rank`",
+            "`sector_handoff_reason_codes`",
             "`eligibility_state`",
             "`data_quality_score`",
         }:
@@ -43,7 +45,8 @@ class SecuritySelectionContractTests(unittest.TestCase):
             "hand-written sector labels used as input truth",
         }:
             self.assertIn(forbidden_boundary, contract)
-        self.assertIn("must not become hidden final stock\nselection", contract)
+        self.assertIn("ETF holdings and `stock_etf_exposure` are not used as Layer 2 core behavior-model inputs", contract)
+        self.assertIn("selected Layer 2 baskets", contract)
         self.assertIn("must not copy Layer 1 market-property factor names", contract)
         self.assertIn("not reused Layer 1 market-property factors", contract)
         self.assertIn("V1 prefers signed axes", contract)

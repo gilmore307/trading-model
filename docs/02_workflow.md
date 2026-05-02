@@ -32,7 +32,8 @@ point-in-time data artifacts
   - Layer 2: market-context-conditioned sector/industry background;
   - Layer 3+: strategy-aware anonymous target work.
 - Layer 1 must not rank ETFs, sectors, or stocks and must not pre-label ETF/sector behavior classes.
-- Layer 2 infers ETF/sector attributes from evidence and studies trend stability under market context. It does not choose final stocks in V1.
+- Layer 2 infers ETF/sector attributes from evidence and studies trend stability under market context. It may select/prioritize sector baskets for downstream candidate construction, but it does not choose final stocks in V1.
+- The anonymous target candidate builder expands Layer 2 selected sector baskets into stock candidates using ETF holdings/stock-exposure evidence, then anonymizes target vectors before Layer 3 strategy fitting.
 - Target/security choice becomes meaningful only after strategy context is introduced. Model-facing target vectors must anonymize ticker/company identity.
 - `TradeQualityModel` models payoff quality and outcome distribution, not only direction.
 - `OptionExpressionModel` V1 supports direct stock/ETF comparison plus long call / long put only.
@@ -50,11 +51,11 @@ Deliver `model_01_market_regime` as a point-in-time continuous market-property v
 
 ### Phase 2: SecuritySelectionModel
 
-Deliver `sector_context_state` for eligible sector/industry baskets: inferred attributes, conditional behavior profiles, trend-stability vectors, composition diagnostics, tradability diagnostics, risk context, eligibility, and downstream handoff references.
+Deliver `sector_context_state` for eligible sector/industry baskets: inferred attributes, conditional behavior profiles, trend-stability vectors, tradability diagnostics, risk context, eligibility, and selected-sector handoff state.
 
 ### Phase 3: Anonymous target candidate builder + StrategySelectionModel
 
-Deliver anonymous target candidate rows, strategy-family/component library, composite strategy weighting, disabled-strategy rules, parameter-neighborhood stability, and target/market/sector-context-conditioned performance evidence.
+Deliver anonymous target candidate rows derived from Layer 2 selected sectors, strategy-family/component library, composite strategy weighting, disabled-strategy rules, parameter-neighborhood stability, and target/market/sector-context-conditioned performance evidence.
 
 ### Phase 4: TradeQualityModel
 

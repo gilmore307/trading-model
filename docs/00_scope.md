@@ -20,7 +20,7 @@ The repository does **not** place live orders. It produces offline research arti
 
 - Point-in-time model research and validation workflows.
 - Market-state/regime discovery from market-only features.
-- Market-state-conditioned sector/industry trend-stability modeling: identifying which sector/industry baskets are easiest to trade under each broad market environment, using sector/industry rotation, holdings composition/exposure diagnostics, liquidity, optionability, and event exclusions.
+- Market-state-conditioned sector/industry trend-stability modeling: identifying which sector/industry baskets are easiest to trade under each broad market environment, using sector/industry rotation, liquidity, optionability, and event exclusions. Holdings/exposure evidence is downstream candidate-builder input after Layer 2 selects/prioritizes sector baskets.
 - Anonymous target-candidate and composite strategy research that combines multiple strategy components/families instead of choosing one isolated historical champion or memorizing ticker identity.
 - Signal-quality, meta-labeling, target/stop, MFE/MAE, and holding-period models.
 - Option expression selection research using option-chain snapshots, market-state background, liquidity, IV, Greeks, and conservative fill assumptions.
