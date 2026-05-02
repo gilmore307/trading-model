@@ -151,6 +151,14 @@ Conceptual output:
 sector_context_state[available_time, sector_or_industry_symbol]
 ```
 
+Planned physical output:
+
+```text
+trading_model.model_02_security_selection
+```
+
+The V1 field contract is owned by `src/models/model_02_security_selection/sector_context_state_contract.md` until implementation/evaluation proves which names should be shared through the registry.
+
 Core state blocks:
 
 ```text

@@ -8,7 +8,7 @@
    - Mature stability/usefulness evaluation for `market_context_state` against downstream baselines.
 
 2. **Layer 2 contract refinement**
-   - Lock the first `sector_context_state` field contract.
+   - Keep `src/models/model_02_security_selection/sector_context_state_contract.md` aligned with implementation.
    - Keep ETF/sector attributes inferred from evidence.
    - Keep `stock_etf_exposure` as composition/transmission evidence, not final stock selection.
 
@@ -28,7 +28,7 @@
 
 - Exact mature evidence definitions for each Layer 1 factor beyond the current V1 family-level map.
 - Exact `market_context_state` alias/view implementation, if any.
-- Exact `sector_context_state` physical table/artifact name for Layer 2 implementation.
+- Exact implementation/evaluation shape for producing `trading_model.model_02_security_selection` rows.
 - Exact persistence path for promotion decisions and future active production model pointers.
 - Exact artifact/manifest/ready-signal/request contracts for promoted model artifacts.
 - Exact storage path/reference requirements for model evaluation and promotion artifacts.
@@ -40,6 +40,7 @@
 - Layer 1 outputs only broad `market_context_state` from current market-property factors.
 - Layer 1 must not pre-label ETF/sector behavior or rank sectors/ETFs/stocks.
 - Layer 2 outputs sector/industry trend-stability and inferred basket attributes as `sector_context_state`.
+- `src/models/model_02_security_selection/sector_context_state_contract.md` owns the current Layer 2 V1 field contract.
 - Layer 2 does not choose final stocks in V1.
 - Target-aware fitting starts downstream through anonymous target candidates.
 - Model-facing target vectors must exclude ticker/company identity.

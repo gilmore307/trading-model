@@ -216,6 +216,14 @@ Conceptual output:
 sector_context_state[available_time, sector_or_industry_symbol]
 ```
 
+Planned physical output:
+
+```text
+trading_model.model_02_security_selection
+```
+
+The V1 field contract is owned by `src/models/model_02_security_selection/sector_context_state_contract.md`.
+
 Core output blocks:
 
 ```text
@@ -272,7 +280,8 @@ Layer 2 must prove:
 - improved downstream strategy-candidate quality versus context-free sector ranking;
 - stable inferred attributes across refits;
 - no final-stock leakage;
-- no hard-coded style-label dependence.
+- no hard-coded style-label dependence;
+- conformance to `src/models/model_02_security_selection/sector_context_state_contract.md`.
 
 ### 8. Overfitting control
 
