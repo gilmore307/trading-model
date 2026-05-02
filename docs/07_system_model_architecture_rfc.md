@@ -47,6 +47,14 @@ The system should not answer only “buy or sell.” It should answer:
 
 These names are canonical for docs, code, artifact metadata, and future registry proposals. Use the `stable id` in machine-facing paths/configs and the `model class` name in code/docs where PascalCase is appropriate.
 
+Core separation rule:
+
+```text
+broad market background -> sector/industry background -> strategy-aware target subject
+```
+
+Layer 1 describes the market environment. Layer 2 describes sector/industry tradability. Final target/security selection is not meaningful until downstream strategy, trade-quality, option-expression, event, and portfolio constraints are known.
+
 | Layer | Model class | Stable id | Chinese name | Role |
 |---|---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 | Describe point-in-time broad market state, market-property factors, confidence, transition risk, and dominant macro/risk drivers without sector/industry candidate conclusions. |

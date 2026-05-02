@@ -1060,3 +1060,35 @@ The durable V1 output is a sector/industry parameter surface keyed by `available
 - Layer 2 may still evaluate sector/industry ETFs as baskets and may produce `eligible`, `watch`, `gated`, or `excluded` states for those baskets.
 - Final stock choice belongs downstream after `StrategySelectionModel` determines which strategy families/components are suitable.
 - `stock_etf_exposure` should be treated as source-backed diagnostic/handoff evidence until a later strategy-aware layer consumes it for concrete stock selection.
+
+## D037 - Separate market background, sector background, and target subject
+
+Date: 2026-05-01
+Status: Accepted
+
+### Context
+
+After narrowing `SecuritySelectionModel` V1 to sector/industry baskets, Chentong summarized the deeper architecture rule: the system must separate broad market background, sector/industry background, and the actual target subject. Mixing these creates premature selection and unclear responsibility boundaries.
+
+### Decision
+
+Keep three contexts separate across the model stack:
+
+```text
+Layer 1: broad market background
+Layer 2: sector/industry background
+Layer 3+: strategy-aware target subject and trade construction
+```
+
+Rules:
+
+- `MarketRegimeModel` describes the broad market environment and must not rank sectors, ETFs, or stocks.
+- `SecuritySelectionModel` describes which sector/industry baskets are easiest to trade and must not finalize stock targets in V1.
+- The target subject becomes meaningful only after strategy compatibility is known, so concrete stock/security refinement belongs downstream of Layer 2.
+- ETF holdings and `stock_etf_exposure` remain bridge evidence: they explain sector composition and provide handoff references, but they do not collapse sector selection into stock selection.
+
+### Consequences
+
+- Layer contracts should name whether a field is broad-market context, sector/industry context, or target/security context.
+- Layer 2 output should use sector-oriented names such as `sector_or_industry_symbol` and `sector_selection_parameter`, not generic stock-candidate naming.
+- Downstream decision records should preserve the separation so attribution can distinguish market background, sector selection, and strategy-aware target selection.

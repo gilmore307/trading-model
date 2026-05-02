@@ -358,6 +358,23 @@ Layer 2 does not choose final stock, entry timing, strategy family, option contr
 
 ## Remaining Layer Decomposition Queue
 
+## Cross-Layer Separation Principle
+
+The seven-layer stack must keep three contexts separate:
+
+```text
+Layer 1: broad market background
+Layer 2: sector/industry background
+Layer 3+: target subject and strategy-aware trade construction
+```
+
+Boundary rules:
+
+- broad market background describes the environment; it must not select sectors or symbols;
+- sector/industry background describes where conditions are easiest to trade; it must not finalize stock targets;
+- target subject selection is strategy-aware: the tradable symbol only becomes meaningful once the strategy family, signal horizon, liquidity/option expression, event overlay, and portfolio constraints are considered;
+- ETF holdings and `stock_etf_exposure` bridge sector composition into later target work, but they do not collapse Layer 2 into stock selection.
+
 The same nine-part decomposition still needs to be completed for:
 
 1. `StrategySelectionModel` — strategy-component composition and compatibility.
