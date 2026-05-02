@@ -19,6 +19,12 @@ class SecuritySelectionContractTests(unittest.TestCase):
             "`sector_or_industry_symbol`",
             "`market_context_state_ref`",
             "`trend_stability_score`",
+            "`conditional_beta_score`",
+            "`directional_coupling_score`",
+            "`volatility_response_score`",
+            "`capture_asymmetry_score`",
+            "`response_convexity_score`",
+            "`context_support_score`",
             "`context_conditioned_stability_score`",
             "`stock_etf_exposure_ref`",
             "`eligibility_state`",
@@ -38,6 +44,10 @@ class SecuritySelectionContractTests(unittest.TestCase):
         }:
             self.assertIn(forbidden_boundary, contract)
         self.assertIn("must not become hidden final stock\nselection", contract)
+        self.assertIn("must not copy Layer 1 market-property factor names", contract)
+        self.assertIn("not reused Layer 1 market-property factors", contract)
+        self.assertIn("V1 prefers signed axes", contract)
+        self.assertIn("positive = upside-favorable capture; negative = downside-heavy capture", contract)
 
 
 if __name__ == "__main__":

@@ -35,7 +35,9 @@ Required key / identity fields:
 | `sector_or_industry_symbol` | text | Eligible sector/industry equity ETF or basket symbol. |
 | `model_id` | text | Stable model id, normally `security_selection_model`. |
 | `model_version` | text | Version/config label that produced the row. |
-| `market_context_state_ref` | text/null | Reference to the Layer 1 market-context row used for conditioning. |
+| `market_context_state_ref` | text/null | Reference to the Layer 1 market-context row used only as conditioning context. |
+
+Layer 2 must not copy Layer 1 market-property factor names into ETF style fields. Layer 1 provides the background condition used to compare similar market environments; Layer 2 outputs a separate conditional behavior vector learned from each ETF/basket's behavior under those environments.
 
 `sector_or_industry_symbol` is routing/audit identity for a sector/industry ETF
 basket. It is allowed in Layer 2 because Layer 2's unit of analysis is the
@@ -80,15 +82,20 @@ Human-readable labels such as `growth`, `defensive`, or `cyclical` may be shown
 only as post-fit interpretation derived from these scores; they are not input
 truth and are not required row fields.
 
-### Market-condition profile block
+### Conditional behavior block
 
-How the sector/industry basket behaves under the current Layer 1 market context.
+A new vector describing how the sector/industry basket behaves under similar Layer 1 market backgrounds. These fields are ETF/basket behavior properties, not reused Layer 1 market-property factors.
+
+V1 prefers signed axes over duplicated opposite fields. Positive and negative values describe opposite behavior on the same reviewed axis; magnitude describes strength. This keeps the vector compact and avoids pairs such as `*_upside` / `*_downside`, `*_tailwind` / `*_headwind`, or `*_amplification` / `*_dampening` unless later evidence proves the pair needs two independent degrees of freedom.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `market_alignment_score` | float/null | Compatibility between current basket behavior and current market context. |
-| `market_tailwind_score` | float/null | Evidence that current market context supports the basket's trend. |
-| `market_headwind_score` | float/null | Evidence that current market context conflicts with the basket's trend. |
+| `conditional_beta_score` | float/null | Relative market beta under similar market-context rows. |
+| `directional_coupling_score` | float/null | Signed direction coupling under similar backgrounds: positive = moves with broad market direction; negative = inverse behavior; near zero = weak/unstable direction relation. |
+| `volatility_response_score` | float/null | Signed volatility response: positive = amplifies broad-market volatility; negative = dampens/absorbs it. |
+| `capture_asymmetry_score` | float/null | Signed conditional capture: positive = upside-favorable capture; negative = downside-heavy capture. If future evidence needs total capture magnitude separately, add a distinct intensity field rather than re-splitting this axis. |
+| `response_convexity_score` | float/null | Signed nonlinear response: positive = favorable convexity under similar backgrounds; negative = adverse concavity / worse downside response. |
+| `context_support_score` | float/null | Signed current-context support: positive = context tailwind for this basket behavior; negative = context headwind. |
 | `transition_sensitivity_score` | float/null | Sensitivity to changing/unstable market context. |
 | `context_conditioned_stability_score` | float/null | Trend-stability score after conditioning on market context. |
 

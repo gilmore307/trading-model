@@ -186,6 +186,10 @@ ETF liquidity / optionability / event evidence
 
 Layer 1 input must not provide pre-labeled ETF attributes. Labels such as `growth`, `defensive`, `cyclical`, or `safe_haven` are optional post-fit interpretations, not input truth.
 
+Layer 1 market-property factors are conditioning context only. Layer 2 should build a distinct `sector_conditional_behavior_vector` that describes how each ETF/basket behaves under similar market backgrounds; it should not reuse Layer 1 factor names as ETF style fields.
+
+The conditional behavior vector should prefer signed axes: for example, positive/negative values on one axis can represent with-market versus inverse direction, volatility amplification versus dampening, upside-favorable versus downside-heavy capture, or context tailwind versus headwind.
+
 ### 2. Features
 
 `X` is keyed by:
@@ -200,7 +204,7 @@ Core blocks:
 market_context_state
 sector_observed_behavior_vector
 sector_attribute_vector
-sector_market_condition_profile
+sector_conditional_behavior_vector
 sector_trend_stability_vector
 sector_composition_vector
 sector_tradability_vector
@@ -229,7 +233,7 @@ Core output blocks:
 ```text
 sector_observed_behavior_vector
 sector_attribute_vector
-sector_market_condition_profile
+sector_conditional_behavior_vector
 sector_trend_stability_vector
 sector_composition_vector
 sector_tradability_vector
@@ -247,7 +251,8 @@ V1 mapping should combine:
 
 ```text
 sector behavior evidence
-  + market-context conditioning
+  + market-context conditioning for similar-background comparison
+  + distinct conditional behavior vector learning
   + inferred attribute discovery
   + trend stability / cycle regularity scoring
   + composition / tradability / risk diagnostics

@@ -29,7 +29,7 @@ point-in-time data artifacts
 - Every workflow is point-in-time: no future data, no full-history fitting for historical predictions, and no post-event explanation leakage.
 - Keep three contexts separate:
   - Layer 1: broad market background;
-  - Layer 2: market-conditioned sector/industry background;
+  - Layer 2: market-context-conditioned sector/industry background;
   - Layer 3+: strategy-aware anonymous target work.
 - Layer 1 must not rank ETFs, sectors, or stocks and must not pre-label ETF/sector behavior classes.
 - Layer 2 infers ETF/sector attributes from evidence and studies trend stability under market context. It does not choose final stocks in V1.
@@ -50,7 +50,7 @@ Deliver `model_01_market_regime` as a point-in-time continuous market-property v
 
 ### Phase 2: SecuritySelectionModel
 
-Deliver `sector_context_state` for eligible sector/industry baskets: inferred attributes, market-condition profiles, trend-stability vectors, composition diagnostics, tradability diagnostics, risk context, eligibility, and downstream handoff references.
+Deliver `sector_context_state` for eligible sector/industry baskets: inferred attributes, conditional behavior profiles, trend-stability vectors, composition diagnostics, tradability diagnostics, risk context, eligibility, and downstream handoff references.
 
 ### Phase 3: Anonymous target candidate builder + StrategySelectionModel
 

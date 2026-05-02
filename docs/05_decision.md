@@ -145,6 +145,10 @@ Status: Accepted
 
 `SecuritySelectionModel` V1 outputs a sector/industry context state. It studies which sector/industry ETF baskets have stable, tradable trend behavior under each broad market context.
 
+Layer 1 market-property factors are conditioning context only. Layer 2 must learn a separate conditional behavior vector for each ETF/basket under similar market backgrounds; it must not reuse Layer 1 factor names as ETF style fields.
+
+Conditional behavior fields should prefer signed axes over duplicated opposite fields: positive and negative values represent opposite behavior on the same reviewed axis, and magnitude represents strength. If later evidence needs total intensity separately, add a separate intensity field rather than splitting every opposite pair by default.
+
 Conceptual output:
 
 ```text
@@ -164,7 +168,7 @@ Core state blocks:
 ```text
 sector_observed_behavior_vector
 sector_attribute_vector
-sector_market_condition_profile
+sector_conditional_behavior_vector
 sector_trend_stability_vector
 sector_composition_vector
 sector_tradability_vector

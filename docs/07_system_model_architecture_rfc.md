@@ -21,7 +21,7 @@ The stack separates three different questions:
 
 ```text
 broad market background
-  -> market-conditioned sector/industry background
+  -> market-context-conditioned sector/industry background
   -> strategy-aware anonymous target subject
 ```
 
@@ -206,7 +206,7 @@ Layer 2 does **not** choose final stocks.
 ```text
 sector_observed_behavior_vector
 sector_attribute_vector
-sector_market_condition_profile
+sector_conditional_behavior_vector
 sector_trend_stability_vector
 sector_composition_vector
 sector_tradability_vector
