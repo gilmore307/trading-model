@@ -16,20 +16,23 @@ It does not own raw source acquisition, live/paper order placement, broker/accou
 
 ## Current Model Structure
 
-The accepted structure separates context and target work:
+The accepted structure separates market, sector, and target work:
 
 ```text
 MarketRegimeModel
-  -> broad market background state
+  -> market_context_state
 
 SecuritySelectionModel
-  -> market-state-conditioned sector/industry trend-stability state
+  -> sector_context_state
 
-StrategySelectionModel and later layers
-  -> anonymized target candidates, strategy fit, trade quality, expression, events, and portfolio risk
+anonymous target candidate builder + StrategySelectionModel
+  -> anonymous_target_feature_vector
+  -> strategy_fit_state
+
+TradeQualityModel -> OptionExpressionModel -> EventOverlayModel -> PortfolioRiskModel
 ```
 
-Layer 2 is not a final stock selector. It studies which sector/industry baskets develop stable trends under each broad market environment. Layer 3+ may evaluate target candidates, but model-facing fitting rows should anonymize ticker identity so the strategy model learns tradable shapes and context fit rather than memorizing symbols.
+Layer 1 describes broad market state only. Layer 2 describes sector/industry trend stability and inferred basket attributes under that market state. Layer 3+ evaluates anonymous target candidates; ticker/company identity stays in audit/routing metadata, not in model-facing fitting vectors.
 
 ## Top-Level Structure
 

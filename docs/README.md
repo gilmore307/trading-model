@@ -11,7 +11,7 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `04_task.md` — current task state, queued work, blockers, and recently accepted work.
 - `05_decision.md` — ratified repository decisions.
 - `06_memory.md` — durable local continuity that does not fit narrower docs.
-- `07_system_model_architecture_rfc.md` — draft seven-layer model architecture and phased implementation proposal.
-- `08_model_decomposition.md` — nine-part model decomposition template and current layer-by-layer design breakdown.
+- `07_system_model_architecture_rfc.md` — accepted current seven-layer model architecture and phased implementation route.
+- `08_model_decomposition.md` — current nine-part model decomposition framework and layer-by-layer design breakdown.
 
 Do not place generated data, artifacts, notebooks, logs, credentials, or implementation outputs in this directory.

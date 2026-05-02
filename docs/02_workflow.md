@@ -2,93 +2,82 @@
 
 ## Purpose
 
-This file defines the intended offline modeling workflow for `trading-model`.
+This file defines the current offline modeling workflow for `trading-model`.
 
 ## Primary Flow
 
 ```text
 point-in-time data artifacts
-  -> feature/label builders
   -> MarketRegimeModel
-  -> SecuritySelectionModel (market-state-conditioned sector trend stability)
-  -> anonymized target candidate builder
+  -> SecuritySelectionModel
+  -> anonymous target candidate builder
   -> StrategySelectionModel
   -> TradeQualityModel
   -> OptionExpressionModel
-  -> EventOverlayModel adjustments
+  -> EventOverlayModel
   -> PortfolioRiskModel
   -> unified decision record + validation evidence
 ```
 
-`EventOverlayModel` is an overlay, not merely a late stage. It can modify regime transition risk, candidate selection, strategy availability, signal scores, option structure constraints, or risk-gate reductions.
+`EventOverlayModel` is an overlay. It can adjust earlier layer outputs and the final risk gate.
 
-`PortfolioRiskModel` is the final offline execution-gate model. It may approve, reject, resize, delay, or alter candidate trades, but actual order placement remains outside this repository.
+`PortfolioRiskModel` is the final offline risk gate. It may approve, reject, resize, delay, or alter a candidate trade plan, but actual order placement remains outside this repository.
 
 ## Operating Principles
 
-- Every model layer should be decomposed with the standard nine-part structure in `docs/08_model_decomposition.md`: data, features, prediction target, model mapping, loss/error measure, training/update process, validation/usefulness, overfitting control, and decision deployment.
-- Every workflow must be point-in-time: no future data, no full-history fitting for historical predictions, no post-event explanation leakage.
-- Keep broad market background, sector/industry trend-stability background, and target subject selection separate. Layer 1 describes the broad environment; Layer 2 identifies which sector/industry baskets have stable, tradable trends under each market environment; target/security choice must be strategy-aware, anonymized for model fitting, and belongs downstream.
-- `MarketRegimeModel` must be market/data-feature based and limited to broad state description. It is background context for option-expression choice, strategy compatibility, and risk/execution policy; it must not rank ETFs, sectors, or stocks, and must not pre-label ETF/sector attributes as growth, defensive, cyclical, safe-haven, or similar behavior classes.
-- `SecuritySelectionModel` should select and score tradable sector/industry baskets by studying trend stability under different broad market states: persistent one-way trends, clean breakdowns, or repeatable cycles rather than random chop. It owns ETF/sector attribute discovery from evidence rather than consuming pre-assigned behavior labels from Layer 1. ETF holdings/exposure are composition diagnostics. It should not select final stocks before `StrategySelectionModel` chooses a compatible strategy.
-- `StrategySelectionModel` should compose a comprehensive strategy from multiple strategy components/families using walk-forward or similarly time-safe evidence, not historical champion-picking of one isolated variant. It is the first layer where target/security refinement can become meaningful because the target is evaluated together with the strategy. Target candidates should be anonymized for model fitting so the unsupervised strategy model learns tradable shapes and context fit, not ticker identity.
-- `TradeQualityModel` should model outcome distribution and risk, not only direction.
-- `OptionExpressionModel` V1 is limited to single-leg long call / long put option expressions and must use timestamped option-chain snapshots, bid/ask, liquidity, IV/Greeks, conservative fills, and failure-to-fill assumptions. It should consume market-state context for contract-expression constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade filters.
-- `EventOverlayModel` must preserve event/evidence timing and source priority.
-- `PortfolioRiskModel` must account for portfolio exposure, correlation, drawdown state, liquidity, slippage, kill-switch behavior, and market-state-conditioned execution/risk policy.
+- Every layer uses the nine-part design structure in `docs/08_model_decomposition.md`.
+- Every workflow is point-in-time: no future data, no full-history fitting for historical predictions, and no post-event explanation leakage.
+- Keep three contexts separate:
+  - Layer 1: broad market background;
+  - Layer 2: market-conditioned sector/industry background;
+  - Layer 3+: strategy-aware anonymous target work.
+- Layer 1 must not rank ETFs, sectors, or stocks and must not pre-label ETF/sector behavior classes.
+- Layer 2 infers ETF/sector attributes from evidence and studies trend stability under market context. It does not choose final stocks in V1.
+- Target/security choice becomes meaningful only after strategy context is introduced. Model-facing target vectors must anonymize ticker/company identity.
+- `TradeQualityModel` models payoff quality and outcome distribution, not only direction.
+- `OptionExpressionModel` V1 supports direct stock/ETF comparison plus long call / long put only.
+- `EventOverlayModel` preserves event timing and source priority.
+- `PortfolioRiskModel` accounts for exposure, correlation, drawdown state, liquidity, slippage, kill-switch behavior, and market-context-conditioned execution/risk policy.
 - Research outputs need manifests and ready signals before downstream promotion.
-- Shared fields, statuses, type values, helpers, and reusable templates must come from `trading-manager`.
+- Shared fields, statuses, type values, helpers, templates, and reusable contracts must come from `trading-manager`.
 - Runtime outputs must be written outside Git-tracked source paths.
-- Cross-repository handoffs should use accepted request, artifact, manifest, and ready-signal contracts.
 
 ## Phased Build Order
 
 ### Phase 1: MarketRegimeModel
 
-Deliver market-state feature contracts, rolling/expanding state-vector prototype, transition pressure, and evidence that the state vector is stable, interpretable, and useful as background context for option expression, strategy compatibility, and risk/execution policy without ETF/security selection leakage.
+Deliver `model_01_market_regime` as a point-in-time continuous market-property vector and evaluate `market_context_state` for stability, interpretability, Layer 2 explanatory value, option-expression usefulness, and portfolio-risk usefulness.
 
 ### Phase 2: SecuritySelectionModel
 
-Deliver sector/industry rotation research, market-state-conditioned sector trend-stability profiles, sector/industry ETF holdings composition/exposure diagnostics, `stock_etf_exposure` derived table proposal, sector/industry basket parameter rows, eligibility/gating rules, optionability/liquidity filters, and downstream handoff references. Do not derive sector ranking from a Layer 1 market-state scalar, and do not select final stocks in Layer 2 V1.
+Deliver `sector_context_state` for eligible sector/industry baskets: inferred attributes, market-condition profiles, trend-stability vectors, composition diagnostics, tradability diagnostics, risk context, eligibility, and downstream handoff references.
 
-### Phase 3: StrategySelectionModel
+### Phase 3: Anonymous target candidate builder + StrategySelectionModel
 
-Deliver a small strategy-family library, limited variants, composite-strategy weighting rules, anonymized target-candidate feature contracts, candidate/market/sector-context-conditioned performance tables, disabled-strategy rules, and parameter-neighborhood stability evidence.
+Deliver anonymous target candidate rows, strategy-family/component library, composite strategy weighting, disabled-strategy rules, parameter-neighborhood stability, and target/market/sector-context-conditioned performance evidence.
 
 ### Phase 4: TradeQualityModel
 
-Deliver underlying-only trade labels, triple-barrier labeling, trade-quality score, expected return/target/stop/holding-time outputs, and score-decile performance evidence.
+Deliver trade-quality labels, score, outcome distribution, target/stop, MFE/MAE, holding-period outputs, and score-decile evidence.
 
 ### Phase 5: OptionExpressionModel
 
-Deliver option-chain snapshot feature contract, long call/put ranker only, market-state-conditioned DTE/delta/moneyness/IV constraints, liquidity/IV/crush filters, expected option PnL, and conservative fill/slippage assumptions. Multi-leg spreads are deferred.
+Deliver option-chain snapshot features, direct/long-call/long-put expression ranker, market-context-conditioned contract constraints, liquidity/IV/crush filters, expected option PnL, and conservative fill/slippage assumptions.
 
 ### Phase 6: EventOverlayModel
 
-Deliver scheduled event risk score, earnings IV-crush model, macro event risk model, abnormal option/price/volume activity detector, stock/equity abnormal activity detector, and overlay adjustment rules for the other layers.
+Deliver scheduled-event risk, earnings/event impact models, abnormal option/price/volume activity detection, and overlay adjustment rules.
 
 ### Phase 7: PortfolioRiskModel
 
-Deliver position sizing research, exposure monitor, market-state-conditioned order/execution rules, exit lifecycle rules, kill-switch logic, and PnL/attribution dashboard contract.
+Deliver position sizing, exposure monitoring, market-context-conditioned execution policy, exit lifecycle, kill-switch logic, and attribution evidence.
 
 ## Unified Decision Record
 
-Every candidate trade should ultimately produce a point-in-time decision record containing all seven layer outputs. The decision record is the audit/replay/retraining spine.
+Every candidate trade should ultimately produce a point-in-time decision record containing references to all accepted layer outputs.
 
-The canonical draft shape lives in `docs/07_system_model_architecture_rfc.md` until promoted through `trading-manager` registry/contracts.
+The exact shared record contract must be promoted through `trading-manager` before cross-repository dependence.
 
 ## Collaboration Boundary
 
-`trading-model` collaborates with other trading repositories through explicit contracts, not direct mutation of their local state.
-
-Upstream inputs and downstream outputs should be described by artifact references, manifests, ready signals, requests, or accepted storage contracts.
-
-## Open Gaps
-
-- Exact first implementation slice under the new seven-layer scope.
-- Exact request shape consumed or produced by this repository.
-- Exact artifact, manifest, and ready-signal schema interactions.
-- Exact shared storage paths and references.
-- Exact test harness and fixture policy.
-- Exact package/source layout once implementation begins.
-- Whether `trading-strategy` remains separate or strategy-selection research becomes model-local until later split.
+`trading-model` collaborates through explicit contracts: artifact references, manifests, ready signals, requests, and accepted storage contracts. It does not mutate other repositories' local state directly.

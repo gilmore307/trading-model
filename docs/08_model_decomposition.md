@@ -1,35 +1,33 @@
 # Model Decomposition Framework
 
-Status: draft  
-Owner intent: use one reviewable structure for every model layer before implementation, evaluation, or promotion work expands.
+Status: current design spine
+Owner intent: every model layer must have the same reviewable nine-part decomposition before implementation or promotion expands.
 
-## Purpose
+## Nine-Part Structure
 
-Every `trading-model` layer must be explained with the same nine-part decomposition before its implementation is treated as accepted design:
+For each layer, define:
 
-1. **Data** — what point-in-time input tables/artifacts are eligible, who owns them, and which timestamps define availability.
-2. **Features** — what model-facing `X` fields are built from the data and which fields are diagnostic, evaluation-only, or intentionally unused.
-3. **Prediction target** — what `y` is predicted, scored, ranked, optimized, or inferred; if unsupervised, what latent state/vector replaces a supervised target.
-4. **Model mapping** — how the model maps `X` to `y` or to the output vector/parameter surface.
+1. **Data** — eligible point-in-time input tables/artifacts, owner, and availability timestamp.
+2. **Features** — model-facing `X`, diagnostic fields, evaluation-only fields, and intentionally unused fields.
+3. **Prediction target** — supervised target, rank objective, inferred latent state, or parameter surface.
+4. **Model mapping** — how `X` becomes the output state/vector/ranker/gate.
 5. **Loss / error measure** — how wrongness is measured during fitting, scoring, calibration, or evaluation.
-6. **Training / parameter update** — how parameters, thresholds, scalers, weights, or rules are updated over time without leakage.
-7. **Validation / usefulness** — how the layer proves it helps the trading decision stack rather than merely fitting history.
-8. **Overfitting control** — how the layer avoids hindsight, data snooping, unstable refits, over-complexity, and false confidence.
-9. **Decision deployment** — how the output enters the real decision flow, including downstream consumers, gates, audit rows, and non-owned live execution boundaries.
-
-This is a design and review template, not a mandate that every layer must be a supervised predictive model. Some layers produce continuous state vectors, parameter surfaces, rankers, overlays, or risk gates.
+6. **Training / parameter update** — how scalers, thresholds, rules, or learned parameters update without leakage.
+7. **Validation / usefulness** — how the layer proves decision usefulness, not just historical fit.
+8. **Overfitting control** — how the layer avoids hindsight, data snooping, unstable refits, and false confidence.
+9. **Decision deployment** — how the output enters the offline decision record and downstream gates.
 
 ## Cross-Layer Rules
 
-- Preserve point-in-time semantics: every row must be keyed by a time that was genuinely knowable to the system.
-- Keep data acquisition and source evidence in `trading-data`; keep global shared contracts and registry terms routed through `trading-manager`.
-- Do not collapse rich context into a scalar unless the retained output also preserves enough supporting fields for audit and downstream interpretation.
-- Validation must test decision usefulness and leakage resistance, not only statistical fit.
-- Deployment means offline decision-record integration in this repository; live/paper order mutation remains outside `trading-model`.
+- Every row must be point-in-time and keyed by a timestamp genuinely knowable to the system.
+- Data acquisition/source evidence stays in `trading-data`.
+- Global terms, fields, artifacts, statuses, templates, and contracts route through `trading-manager`.
+- Do not collapse rich context into a scalar unless supporting fields remain available for audit and downstream interpretation.
+- Live/paper order mutation remains outside `trading-model`.
 
-## Layer 1 Decomposition: MarketRegimeModel
+## Layer 1: MarketRegimeModel
 
-Status: accepted as the Layer 1 V1 contract on 2026-05-01.
+Status: accepted V1 contract.
 
 ### 1. Data
 
@@ -39,46 +37,61 @@ Primary input:
 trading_data.feature_01_market_regime
 ```
 
-Eligible evidence is broad-market, cross-asset, credit/rate/dollar/commodity, volatility, breadth, correlation, concentration, trend, and market-structure evidence available at or before `available_time`.
+Eligible evidence: broad-market, cross-asset, credit/rate/dollar/commodity, volatility, breadth, correlation, concentration, trend, liquidity/funding, sentiment/risk-appetite, and market-structure signals available at or before `available_time`.
 
-Layer 1 must not use sector/industry rotation labels, selected securities, strategy performance, option-contract outcomes, portfolio PnL, or future-return labels as construction inputs.
+Excluded construction inputs: sector/industry rotation conclusions, ETF/sector behavior labels, selected securities, strategy performance, option-contract outcomes, portfolio PnL, and future-return labels.
 
 ### 2. Features
 
-`X` is the point-in-time feature vector from `feature_01_market_regime`, grouped into reviewed evidence blocks such as:
+`X` is the point-in-time feature vector from `feature_01_market_regime`.
 
-- price behavior and broad index returns;
-- trend certainty and momentum persistence;
-- volatility, correlation, breadth, and market-structure stress;
-- credit, rate, dollar, commodity, and funding/liquidity proxies;
-- sentiment/risk-appetite proxies;
-- data-quality and signal-coverage diagnostics.
+Evidence roles:
 
-Feature roles must be explicit:
+| Role | Meaning |
+|---|---|
+| primary evidence | Directly supports a market-property factor and participates in construction. |
+| diagnostic evidence | Explains, stress-tests, or sanity-checks a factor without directly driving it. |
+| quality evidence | Supports coverage, freshness, reliability, or `data_quality_score`. |
+| evaluation-only evidence | Used only after output construction to test usefulness. |
+| intentionally unused evidence | Excluded with a documented reason. |
 
-- **primary evidence** — directly supports a market-property factor and participates in factor construction;
-- **diagnostic evidence** — explains, stress-tests, or sanity-checks a factor without directly driving the factor value;
-- **quality evidence** — informs coverage, freshness, reliability, or `data_quality_score`;
-- **evaluation-only evidence** — used only after output construction to test usefulness;
-- **intentionally unused evidence** — excluded with a reason.
+Feature groups should map to the current market-property factors:
 
-The next Layer 1 maturation work is a reviewed feature-to-factor evidence map. For each output factor, document the feature families that are primary, diagnostic, quality, evaluation-only, or intentionally unused. This is evidence maturation, not a structural change to the factor columns.
+```text
+price_behavior_factor
+trend_certainty_factor
+capital_flow_factor
+sentiment_factor
+valuation_pressure_factor
+fundamental_strength_factor
+macro_environment_factor
+market_structure_factor
+risk_stress_factor
+transition_pressure
+data_quality_score
+```
+
+Layer 1 evidence maturation means completing the feature-to-factor evidence map. It does not mean adding sector/ETF/stock conclusions to Layer 1.
 
 ### 3. Prediction target
 
-V1 has no supervised target and no required hard regime label.
+V1 has no supervised target and no required regime label.
 
-The output is a continuous point-in-time market-state vector for:
+Physical output:
 
 ```text
 trading_model.model_01_market_regime
 ```
 
-Current output fields are market-property factors: price behavior, trend certainty, capital/funding flow, sentiment, valuation pressure, fundamental strength, macro environment, market-wide structure, risk stress, transition pressure, and data quality. Observable returns, ratios, volatility, correlation, credit/rate/dollar/commodity, breadth, and risk-appetite signals are sensors that support those properties rather than public output names.
+Conceptual output:
 
-Future-return labels may be attached later for evaluation only, not for constructing the vector.
+```text
+market_context_state
+```
 
-### 4. Model mapping from X to output
+Future returns may be used only as evaluation labels.
+
+### 4. Model mapping
 
 Current V1 mapping:
 
@@ -88,364 +101,245 @@ rolling/expanding point-in-time scaler
   -> reviewed sign direction
   -> factor-level reducer
   -> bounded continuous factor values
-  -> transition pressure and data-quality score
+  -> transition_pressure + data_quality_score
 ```
 
-No current or future row may be used to fit the scaler for the row being scored.
+No current or future row may fit the scaler for the row being scored.
 
 ### 5. Loss / error measure
 
-Because V1 is unsupervised, construction does not optimize a supervised prediction loss. Wrongness is reviewed through proxy and evaluation measures:
+V1 is unsupervised. Wrongness is reviewed through:
 
-- leakage or timestamp violation count;
-- missing/low signal coverage;
+- leakage/timestamp violations;
+- missing or low signal coverage;
 - factor instability under rolling/expanding refits;
-- unintuitive sign behavior against reviewed evidence blocks;
-- poor downstream separation for future risk/return/drawdown diagnostics;
-- poor usefulness for option-expression constraints, strategy compatibility, or portfolio risk policy.
-
-If later supervised/calibrated sub-models are introduced, their loss functions must be recorded separately and must not redefine the Layer 1 output as a future-return predictor.
+- unintuitive sign behavior against reviewed evidence;
+- weak explanatory value for Layer 2 sector trend stability;
+- weak usefulness for option-expression constraints or portfolio-risk policy.
 
 ### 6. Training / parameter update
 
-Current parameters are reviewed configuration and rolling state, not learned black-box weights:
+Current parameters are reviewed configuration and rolling state:
 
-- factor membership and signs live in config;
-- lookback, minimum history, floors, z-score clipping, reducers, and coverage thresholds are explicit;
+- factor membership and signs in config;
+- lookback, minimum history, floors, z-score clipping, reducers, and coverage thresholds explicit;
 - rolling/expanding statistics update only from prior available rows;
-- config changes require tests and decision/acceptance evidence.
-
-Future learned weights may be added only after a leakage-safe training/evaluation design is accepted.
+- config changes require tests and acceptance evidence.
 
 ### 7. Validation / usefulness
 
-Validation should show that the state vector is:
-
-- point-in-time correct;
-- stable enough for decision use but responsive to actual regime transitions;
-- interpretable from supporting evidence;
-- useful as background context for Layer 2 sector trend-stability inference;
-- useful as background context for `OptionExpressionModel` contract constraints and `PortfolioRiskModel` risk/execution policy;
-- useful for risk/drawdown/volatility-transition diagnostics;
-- not acting as a hidden sector/security selector.
-
-Minimum validation evidence should include:
+Minimum validation:
 
 - chronological splits;
 - factor distribution checks;
 - rolling/refit stability checks;
 - feature-to-factor evidence-map review;
-- evaluation labels kept outside construction;
-- explanatory tests showing whether `market_context_state` improves Layer 2 sector trend-stability calibration over a market-context-agnostic baseline;
-- option-expression usefulness checks, such as whether market context improves DTE/delta/IV/theta tolerance or no-trade policy calibration;
-- portfolio-risk usefulness checks, such as whether market context improves drawdown, exposure, sizing, execution-style, or kill-switch policy calibration.
+- downstream explanatory tests against a market-context-free Layer 2 baseline;
+- option-expression usefulness checks for DTE/delta/IV/theta/no-trade policy;
+- portfolio-risk usefulness checks for drawdown, exposure, sizing, execution-style, exit, and kill-switch policy.
 
 ### 8. Overfitting control
 
 Controls:
 
-- chronological train/validation/test or walk-forward evaluation;
-- no future labels in vector construction;
-- limited factor count with reviewed evidence membership;
-- bounded/clipped factor values;
-- minimum signal coverage and data-quality scoring;
-- config-driven formulas rather than ad hoc notebook tuning;
-- sector/industry rotation kept out of Layer 1;
-- promotion gate requires evaluation-backed evidence, not visual plausibility.
+- no future labels in construction;
+- limited factor count;
+- reviewed feature membership;
+- bounded/clipped values;
+- minimum signal coverage;
+- config-driven formulas;
+- promotion gate based on evaluation evidence.
 
 ### 9. Decision deployment
 
-Layer 1 output enters the decision stack as broad market background:
+Layer 1 is broad market background:
 
 ```text
 model_01_market_regime
-  -> market_context_state alias/view for downstream readers
-  -> Layer 2 sector trend-stability conditioning context
-  -> strategy compatibility / disabled-strategy context
-  -> option-expression constraints such as DTE, delta/moneyness, IV/theta tolerance, and no-trade filters
-  -> portfolio risk/exposure/sizing/execution-policy gate
-  -> unified decision record audit context
+  -> market_context_state
+  -> Layer 2 sector trend-stability conditioning
+  -> strategy compatibility context
+  -> option-expression constraints
+  -> portfolio-risk policy
+  -> decision-record audit context
 ```
 
-The physical output columns do not need to change for V1. A later alias/view may wrap the existing factor columns as `market_context_state` for readability and downstream contract clarity.
+It must not directly rank sectors, ETFs, or stocks and must not pre-assign ETF/sector attributes.
 
-It must not directly rank sectors, ETFs, or stocks. It also must not pre-assign ETF or sector attributes such as "growth", "defensive", "inflation hedge", or "risk-off beneficiary" as model conclusions. Those relationships must be inferred in Layer 2 from point-in-time behavior, holdings, and market-state-conditioned trend stability.
+## Layer 2: SecuritySelectionModel
 
-`SecuritySelectionModel` owns sector/industry rotation, ETF attribute discovery, and candidate parameter surfaces.
+Status: accepted design route; implementation pending.
 
-## Layer 2 Decomposition: SecuritySelectionModel
-
-Status: revised first-pass structure accepted for the current design route on 2026-05-02.
-
-Layer 2 V1 is an **ETF/sector attribute discovery and sector/industry trend-stability model**. It is not a stock selector and not a hand-written sector-style classifier.
-
-Its core question is:
-
-> Given the current and historical broad market context, which sector/industry ETF baskets exhibit stable, tradable trend behavior, and what attributes does the data imply for each basket?
-
-Here, stability means **trend stability**, not price stability: persistent one-way advance/decline, clean directional continuation, orderly pullback-resumption, persistent breakdown, or clear repeatable cyclicality. Random chop, repeated false breaks, and inconsistent reaction to similar market states are unstable even if price volatility is low.
+Layer 2 V1 is an ETF/sector attribute discovery and sector/industry trend-stability model. It is not a stock selector and not a hand-written sector-style classifier.
 
 ### 1. Data
 
-Primary model-facing inputs:
+Primary inputs:
 
 ```text
-model_01_market_regime       # broad market context state, conditioning input only
+market_context_state                 # Layer 1, conditioning only
 trading_data.feature_02_security_selection
-source_02_security_selection # cleaned sector/industry ETF holdings source rows
-stock_etf_exposure           # source-backed composition/transmission evidence, not a stock-selection target
-ETF/liquidity/optionability/event evidence
+source_02_security_selection         # ETF holdings source rows
+stock_etf_exposure                   # composition/transmission evidence
+ETF liquidity / optionability / event evidence
 ```
 
-Layer 1 input is used only as market context. It must not provide pre-labeled ETF attributes. For example, Layer 2 should not receive conclusions like `technology = growth`, `utilities = defensive`, or `gold = safe_haven` as fixed truth. If such labels are useful, they are optional post-fit interpretations of Layer 2 evidence.
-
-`feature_02_security_selection` is the Layer 2 home for sector/industry rotation and daily-context evidence moved out of Layer 1. Its V1 physical row shape remains the accepted comparison surface:
-
-- candidate-comparison rows for reviewed relative-strength combinations with `combination_type in {sector_rotation, daily_context}`;
-- one per-snapshot `sector_rotation_summary` row for sector-observation breadth and dispersion aggregates;
-- row key: `snapshot_time + candidate_symbol + comparison_symbol + rotation_pair_id` where `candidate_symbol` is the compared ETF/basket, not a stock target;
-- payload: relative-strength returns, normalized trend distance/slope/spread/alignment, volatility-ratio, correlation, and sector-observation participation/dispersion evidence.
-
-ETF holdings and `stock_etf_exposure` answer what each basket contains and how concentrated/fresh/fragile that composition is. They also create downstream handoff references for anonymous target-candidate construction. They do **not** make Layer 2 choose final stocks.
-
-Eligible evidence:
-
-- broad market context from `model_01_market_regime` as a conditioning variable;
-- sector/industry ETF relative strength, trend, persistence, cyclicality, volatility-of-trend, breadth, dispersion, and signal agreement;
-- point-in-time ETF holdings, concentration, top-name dominance, holdings freshness, and exposure overlap;
-- ETF liquidity, spread, volume, gap behavior, optionability, event density, and abnormal activity;
-- inferred ETF/sector attributes learned from point-in-time behavior and holdings.
-
-Excluded from construction:
-
-- hard-coded ETF behavior classes such as growth/defensive/cyclical/safe-haven;
-- individual stock selection as a V1 Layer 2 output;
-- future returns as ranking inputs;
-- strategy performance;
-- option-contract outcomes;
-- portfolio PnL.
+Layer 1 input must not provide pre-labeled ETF attributes. Labels such as `growth`, `defensive`, `cyclical`, or `safe_haven` are optional post-fit interpretations, not input truth.
 
 ### 2. Features
 
-`X` is a point-in-time sector/industry evidence surface keyed by:
+`X` is keyed by:
 
 ```text
 available_time + sector_or_industry_symbol
 ```
 
-Core feature blocks:
+Core blocks:
 
 ```text
 market_context_state
 sector_observed_behavior_vector
+sector_attribute_vector
 sector_market_condition_profile
 sector_trend_stability_vector
-sector_attribute_vector
 sector_composition_vector
 sector_tradability_vector
 sector_risk_context_vector
 sector_quality_diagnostics
 ```
 
-Definitions:
-
-- `market_context_state` — Layer 1 broad market state, used as conditioning context only.
-- `sector_observed_behavior_vector` — observed sector/industry ETF behavior: relative strength, trend direction, trend clarity, trend persistence, breadth support, volatility-of-trend, correlation, and dispersion.
-- `sector_market_condition_profile` — how the basket behaves under different broad market states; e.g. which market contexts historically produce clean trends, chop, reversals, or cycles.
-- `sector_trend_stability_vector` — directional persistence, monotonicity, pullback regularity, breakdown persistence, cycle regularity, false-break frequency, and choppiness.
-- `sector_attribute_vector` — inferred, evidence-backed ETF/sector attributes. This may later include human-readable interpretations, but the model-facing vector is behavioral and point-in-time.
-- `sector_composition_vector` — holdings concentration, top-name dominance, holdings freshness, source coverage, overlap/crowding, and stock-exposure diagnostics.
-- `sector_tradability_vector` — ETF/basket liquidity, spread, volume, optionability, gap/choppiness, and execution difficulty.
-- `sector_risk_context_vector` — event density, earnings concentration, abnormal activity, macro shock sensitivity, and known no-trade states.
-- `sector_quality_diagnostics` — stale holdings, missing coverage, conflicting signals, low liquidity, sparse history, or ambiguous rotation.
-
 ### 3. Prediction target
 
-V1 does not target “highest future return” and does not target “best stock.”
-
-The target is a sector/industry state and parameter surface describing:
-
-1. what attributes the ETF/sector currently exhibits;
-2. in which broad market contexts its trend tends to be stable;
-3. whether it is currently easy enough to pass downstream for strategy-aware anonymous target work.
-
-Primary output concept:
+Conceptual output:
 
 ```text
 sector_context_state[available_time, sector_or_industry_symbol]
 ```
 
-Possible fields:
+Core output blocks:
 
 ```text
-sector_or_industry_symbol
-basket_type
+sector_observed_behavior_vector
 sector_attribute_vector
 sector_market_condition_profile
 sector_trend_stability_vector
-trend_direction_state              # advance / decline / range / transition / mixed
-trend_stability_state              # stable_directional / stable_cyclical / choppy / false_break_prone / unstable
-trend_stability_score
-cycle_regularity_score
-relative_strength_consistency_score
-breadth_support_score
-composition_quality_score
-liquidity_score
-optionability_score
-event_risk_score
-certainty_score
-eligibility_state                  # eligible / watch / gated / excluded
-sector_selection_parameter         # optional routing scalar, not sole output
-handoff_stock_universe_refs        # optional references for later anonymous target construction
-selection_reason
+sector_composition_vector
+sector_tradability_vector
+sector_risk_context_vector
+eligibility_state
+optional sector_selection_parameter
+optional handoff_stock_universe_refs
 ```
 
-Forward returns, future drawdown, future trend-stability labels, and future strategy outcomes are evaluation/calibration labels only.
+The target is clean, persistent, understandable sector/industry trend behavior under market context, not highest future return and not final stock selection.
 
-### 4. Model mapping from X to output
+### 4. Model mapping
 
-Conceptual mapping:
+V1 mapping should combine:
 
 ```text
-observed_behavior_builder(feature_02_security_selection)
-  -> sector_observed_behavior_vector
-
-market_condition_stability_model(
-  model_01_market_regime,
-  sector_observed_behavior_vector
-)
-  -> sector_market_condition_profile
-  -> sector_trend_stability_vector
-
-sector_composition_builder(source_02_security_selection, stock_etf_exposure)
-  -> sector_composition_vector
-
-sector_tradability_builder(etf_liquidity_optionability_event_evidence)
-  -> sector_tradability_vector
-
-attribute_discovery_model(
-  sector_observed_behavior_vector,
-  sector_market_condition_profile,
-  sector_composition_vector,
-  sector_tradability_vector,
-  sector_risk_context_vector
-)
-  -> sector_attribute_vector
-
-parameter_adjuster(
-  sector_attribute_vector,
-  sector_market_condition_profile,
-  sector_trend_stability_vector,
-  sector_composition_vector,
-  sector_tradability_vector,
-  sector_risk_context_vector,
-  sector_quality_diagnostics
-)
+sector behavior evidence
+  + market-context conditioning
+  + inferred attribute discovery
+  + trend stability / cycle regularity scoring
+  + composition / tradability / risk diagnostics
   -> sector_context_state
-  -> optional sector_selection_parameter
 ```
-
-The scalar projection is allowed for dashboards and routing, but the durable output is the full context state.
 
 ### 5. Loss / error measure
 
-Wrongness is measured by whether inferred sector attributes and stability states are point-in-time, stable under refits, and useful downstream.
+Evaluate wrongness through:
 
-Evaluation/error measures:
+- trend persistence/cycle stability errors;
+- false-break and chop misclassification;
+- poor calibration under similar market contexts;
+- low downstream strategy usefulness;
+- unstable inferred attributes;
+- liquidity/optionability/event gate misses.
 
-- sector trend-stability calibration by market context;
-- false-break / chop rate after an `eligible` state;
-- directional persistence after stable-directional states;
-- cycle regularity after stable-cyclical states;
-- rank/parameter stability under small lookback/config changes;
-- selection of illiquid, unoptionable, stale-holding, event-dense, or compositionally fragile baskets;
-- weak monotonic relationship between parameter deciles and future trend stability/tradability;
-- poor downstream usefulness for anonymous target/strategy selection;
-- leakage or timestamp violations.
+Future returns can evaluate usefulness but must not become direct production ranking inputs.
 
 ### 6. Training / parameter update
 
-V1 should start as interpretable, point-in-time state construction:
-
-- reviewed sector/industry ETF universe;
-- no hard-coded ETF behavior labels;
-- rolling/expanding standardization for sector behavior evidence;
-- market-state-conditioned behavior tables/profiles;
-- explicit holdings freshness, concentration, overlap, and coverage diagnostics;
-- reviewed gates for liquidity, optionability, event proximity, stale data, and ambiguity;
-- optional learned weights or clustering only after walk-forward evidence proves a benefit.
-
-Updates must be chronological. Holdings revisions, late provider updates, market-state revisions, and event timestamps must be represented by `available_time`, not hindsight membership.
+Use chronological/walk-forward updates. Refit sector profiles only with information available by each evaluation time. Attribute labels, if shown to humans, are post-fit interpretations and should be versioned with the model/config.
 
 ### 7. Validation / usefulness
 
-Validation should prove that Layer 2 adds useful sector context for downstream anonymous target and strategy selection.
+Layer 2 must prove:
 
-Minimum checks:
-
-- point-in-time feature, holdings, event, and market-context availability;
-- no pre-assigned ETF behavior labels in model-facing inputs;
-- sector/industry universe coverage and missing-data diagnostics;
-- stability of inferred `sector_attribute_vector` and `sector_trend_stability_vector` through time;
-- decile/quantile analysis of `sector_selection_parameter` vs future trend stability, directional persistence, cycle regularity, false-break frequency, drawdown, volatility, liquidity, and tradability outcomes;
-- comparison to baselines: raw sector ETF momentum, equal-weight sector rotation, and market-context-agnostic sector ranking;
-- downstream usefulness for anonymized `StrategySelectionModel` without leaking strategy results into Layer 2 construction.
+- sector trend-stability separation;
+- calibration by market context;
+- improved downstream strategy-candidate quality versus context-free sector ranking;
+- stable inferred attributes across refits;
+- no final-stock leakage;
+- no hard-coded style-label dependence.
 
 ### 8. Overfitting control
 
 Controls:
 
-- chronological split or walk-forward evaluation;
-- no future returns, future ETF holdings, future index membership, future sector labels, or future event interpretations in features;
-- no hand-coded behavior labels as hidden priors;
-- sector/industry ETF universe fixed by reviewed eligibility rules, not post-hoc winners;
-- full support context retained instead of only a scalar score;
-- limited gates and parameter components at V1;
-- stability checks across market-context buckets, rebalance windows, lookbacks, and liquidity thresholds;
-- explicit treatment of stale/missing holdings and survivorship bias;
-- forward labels used only for evaluation/calibration.
+- limit eligible baskets to reviewed sector/industry equity ETFs;
+- avoid hand-written style labels as training truth;
+- separate production features from evaluation labels;
+- require liquidity/optionability/event gates;
+- keep `stock_etf_exposure` as composition evidence, not stock target selection.
 
 ### 9. Decision deployment
 
-Layer 2 output enters the decision stack as sector/industry context:
+Layer 2 output feeds downstream target and strategy work:
 
 ```text
-SecuritySelectionModel
-  -> sector_context_state
-  -> inferred sector_attribute_vector
-  -> sector_market_condition_profile
-  -> sector_trend_stability_vector
-  -> eligible/watch/gated/excluded sector/industry baskets
-  -> optional handoff_stock_universe_refs for anonymous target-candidate construction
-  -> StrategySelectionModel sector-context input
-  -> unified decision record sector-selection audit section
+sector_context_state
+  -> anonymous target candidate builder
+  -> StrategySelectionModel
+  -> TradeQualityModel
+  -> OptionExpressionModel
+  -> PortfolioRiskModel
 ```
 
-Layer 2 does not choose final stock, entry timing, strategy family, option contract, final size, execution style, or portfolio approval. Those belong to later layers.
+It may provide `handoff_stock_universe_refs`, but final stock choice waits for strategy-aware downstream layers.
 
-## Remaining Layer Decomposition Queue
+## Anonymous Target Candidate Builder
 
-## Cross-Layer Separation Principle
+Status: required boundary; detailed contract pending.
 
-The seven-layer stack must keep three contexts separate:
+Purpose: create anonymous model-facing candidate rows for Layer 3+ while preserving real symbol references for audit/routing only.
+
+Required separation:
 
 ```text
-Layer 1: broad market background
-Layer 2: sector/industry background
-Layer 3+: target subject and strategy-aware trade construction
+model-facing:  target_candidate_id + anonymous_target_feature_vector
+metadata:      audit_symbol_ref + routing_symbol_ref
 ```
 
-Boundary rules:
+The model-facing vector may include target behavior, liquidity/tradability, market context, sector context, event/risk context, cost, and strategy-compatibility features. It must exclude raw ticker/company identity.
 
-- broad market background describes the environment; it must not select sectors or symbols;
-- sector/industry background describes where conditions are easiest to trade and in which broad-market states sector trends are stable; it must not finalize stock targets;
-- target subject selection is strategy-aware and identity-neutral: the tradable symbol only becomes meaningful once the strategy family, signal horizon, liquidity/option expression, event overlay, and portfolio constraints are considered; target models should consume anonymized candidate feature vectors rather than memorize tickers;
-- ETF holdings and `stock_etf_exposure` bridge sector composition into later target work, but they do not collapse Layer 2 into stock selection.
+## Layer 3: StrategySelectionModel
 
-The same nine-part decomposition still needs to be completed for:
+Status: decomposition pending.
 
-1. `StrategySelectionModel` — strategy-component composition and compatibility.
-2. `TradeQualityModel` — trade outcome distribution, target/stop, MFE/MAE, and horizon.
-3. `OptionExpressionModel` — stock/ETF/long-call/long-put expression and contract constraints.
-4. `EventOverlayModel` — scheduled/breaking event risk and abnormal-activity overlays.
-5. `PortfolioRiskModel` — final offline sizing, exposure, execution-style, exit, and kill-switch gate.
+Must compose strategy components for anonymous target candidates. It should output strategy fit, component weights, disabled-strategy reasons, parameter-neighborhood stability, and robustness evidence.
+
+## Layer 4: TradeQualityModel
+
+Status: decomposition pending.
+
+Must estimate trade outcome quality, expected move, target/stop, MFE/MAE, and holding horizon under selected strategy context.
+
+## Layer 5: OptionExpressionModel
+
+Status: decomposition pending.
+
+V1 is direct stock/ETF comparison plus long call / long put only. It must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market-context constraints.
+
+## Layer 6: EventOverlayModel
+
+Status: decomposition pending.
+
+Must preserve event timing and source priority. It can adjust earlier layers and risk based on scheduled events, breaking news, abnormal activity, and event-memory evidence.
+
+## Layer 7: PortfolioRiskModel
+
+Status: decomposition pending.
+
+Final offline risk gate for exposure, sizing, execution-style policy, exit lifecycle, drawdown state, correlation, liquidity, and kill-switch behavior. It does not place orders.
