@@ -152,7 +152,9 @@ model_01_market_regime
   -> unified decision record audit context
 ```
 
-It must not directly rank sectors, ETFs, or stocks. `SecuritySelectionModel` owns sector/industry rotation and candidate parameter surfaces.
+It must not directly rank sectors, ETFs, or stocks. It also must not pre-assign ETF or sector attributes such as "growth", "defensive", "inflation hedge", or "risk-off beneficiary" as model conclusions. Those relationships must be inferred in Layer 2 from point-in-time behavior, holdings, and market-state-conditioned trend stability.
+
+`SecuritySelectionModel` owns sector/industry rotation, ETF attribute discovery, and candidate parameter surfaces.
 
 ## Layer 2 Decomposition: SecuritySelectionModel
 
@@ -193,6 +195,7 @@ They do **not** make Layer 2 choose final stocks.
 Eligible evidence:
 
 - sector/industry ETF relative strength, trend, trend stability, persistence, cyclicality, volatility-of-trend, breadth, dispersion, and signal agreement from the migrated Feature 1 rotation surface;
+- inferred ETF/sector attributes learned from point-in-time behavior and holdings, not hard-coded style labels;
 - point-in-time sector/industry ETF holdings snapshots for composition and transmission diagnostics;
 - sector/industry ETF liquidity, spread, volume, gap, volatility, and trend evidence;
 - ETF optionability summaries if the sector/industry ETF itself may be traded or used as an options proxy;
@@ -206,7 +209,8 @@ Excluded from construction:
 - strategy performance;
 - option-contract outcomes;
 - portfolio PnL;
-- broad/macro ETF candidates that do not represent tradable equity sector/industry baskets.
+- broad/macro ETF candidates that do not represent tradable equity sector/industry baskets;
+- pre-assigned ETF behavior classes such as growth/defensive/cyclical/safe-haven as model outputs before Layer 2 inference.
 
 ### 2. Features
 

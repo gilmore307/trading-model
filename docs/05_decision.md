@@ -1187,3 +1187,33 @@ Layer 3 is structurally defined as the first strategy-aware target layer. It may
 - Layer 3 docs should use anonymous target-candidate language rather than generic candidate identity learning.
 - Future implementation should introduce any target-candidate builder as a model-facing anonymization boundary before `StrategySelectionModel` fitting.
 - Registry/shared-contract proposals should distinguish `market_context_state`, `sector_context_state`, and anonymous `target_candidate_id`/`anonymous_target_feature_vector` fields.
+
+
+## D040 - ETF and sector behavior attributes are inferred in Layer 2
+
+Date: 2026-05-02
+Status: Accepted
+
+### Context
+
+While re-walking the architecture from Layer 1, an example framed sectors/ETFs as growth/technology, defensive, energy, or gold-like beneficiaries under certain market states. Chentong corrected the boundary: which ETF has which attribute must not be preset by Layer 1 or by hand-written assumptions. Those attributes should be learned or inferred in the second layer.
+
+### Decision
+
+Do not pre-assign ETF/sector behavior classes as model conclusions in `MarketRegimeModel` or as fixed prerequisites for `SecuritySelectionModel`.
+
+Layer 1 may output only broad market context. Layer 2 owns ETF/sector attribute discovery from point-in-time evidence, including:
+
+- market-state-conditioned trend stability;
+- relative strength and trend behavior;
+- cyclicality and false-break/chop behavior;
+- holdings/composition evidence;
+- liquidity, optionability, and event/risk context.
+
+Human-readable descriptions such as `growth`, `defensive`, `cyclical`, `inflation_sensitive`, or `safe_haven` may be optional post-hoc interpretations after Layer 2 evidence. They are not hard-coded inputs or assumptions.
+
+### Consequences
+
+- Layer 1 examples must avoid saying a given market state implies a predefined sector/ETF style bucket.
+- Layer 2 output may include inferred ETF/sector attributes, but those attributes need evidence, timestamps, and versioned inference rules.
+- Universe files may contain operational metadata such as ticker, issuer, role, or observation grain, but should not be treated as final behavioral truth for model outputs.

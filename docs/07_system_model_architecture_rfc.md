@@ -154,7 +154,7 @@ The model should capture deeper market properties, not merely surface ETF-ratio 
 
 V1 does **not** need discrete clustering, hard regime labels, HMM states, human-readable state names, ETF rankings, sector/industry rotation conclusions, sector leadership rankings, or security candidates. Those can be research diagnostics or downstream outputs later, but they are not the Layer 1 contract.
 
-Sector/industry rotation is a Layer 2 problem. Layer 1 may describe aggregate tape structure, breadth, crowding, correlation, and fragility, but it should not answer which sector or industry is currently the best candidate.
+Sector/industry rotation is a Layer 2 problem. Layer 1 may describe aggregate tape structure, breadth, crowding, correlation, and fragility, but it should not answer which sector or industry is currently the best candidate. It also should not pre-label ETFs or sectors as growth, defensive, cyclical, inflation-sensitive, safe-haven, or any other behavior class as a model conclusion; those ETF/sector attributes must be inferred by Layer 2 from point-in-time behavior, holdings, and market-state-conditioned trend stability.
 
 ### Input table
 
@@ -235,6 +235,7 @@ This layer does not output final stocks, entry timing, strategy parameters, opti
 - ETF optionability summaries if the basket itself may be traded or used as an options proxy.
 - Event exclusions: earnings concentration, known macro/event shock windows, SEC/news risk, abnormal activity flags.
 - `MarketRegimeModel` outputs only as background/reference or coarse gating context, not as a direct sector/stock ranking transform.
+- No hard-coded ETF behavior attributes from Layer 1; labels such as growth/defensive/cyclical/safe-haven may be human descriptions after Layer 2 evidence, but not prerequisites.
 
 ### Sector/industry parameters
 
