@@ -54,12 +54,12 @@ src/model_governance/            Shared governance, promotion, and review helper
 Current runtime wrappers:
 
 ```text
-scripts/generate_model_01_market_regime.py
-scripts/ensure_model_governance_schema.py
-scripts/evaluate_model_01_market_regime.py
-scripts/clear_model_development_database.py
-scripts/run_market_regime_development_smoke.py
-scripts/review_market_regime_promotion.py
+scripts/models/model_01_market_regime/generate_model_01_market_regime.py
+scripts/model_governance/ensure_model_governance_schema.py
+scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py
+scripts/model_governance/clear_model_development_database.py
+scripts/models/model_01_market_regime/run_market_regime_development_smoke.py
+scripts/models/model_01_market_regime/review_market_regime_promotion.py
 ```
 
 `src/` owns reusable model logic. `scripts/` may import `src/`; `src/` must not import `scripts/`.

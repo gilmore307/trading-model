@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import scripts.review_market_regime_promotion as review_script
+import scripts.models.model_01_market_regime.review_market_regime_promotion as review_script
 from model_governance.agent_review import (
     build_decision_row_from_review,
     build_market_regime_promotion_prompt,
@@ -121,7 +121,7 @@ class AgentPromotionReviewTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/review_market_regime_promotion.py",
+                    "scripts/models/model_01_market_regime/review_market_regime_promotion.py",
                     "--evaluation-summary-json",
                     str(summary_path),
                     "--dry-run",
@@ -145,7 +145,7 @@ class AgentPromotionReviewTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/review_market_regime_promotion.py",
+                    "scripts/models/model_01_market_regime/review_market_regime_promotion.py",
                     "--evaluation-summary-json",
                     str(summary_path),
                     "--local-fallback-review",

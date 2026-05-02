@@ -43,19 +43,19 @@ Current implementation checks:
 ```bash
 python3 -m compileall -q src scripts tests
 PYTHONPATH=src python3 -m unittest discover -s tests -v
-PYTHONPATH=src python3 scripts/generate_model_01_market_regime.py --help
-PYTHONPATH=src python3 scripts/ensure_model_governance_schema.py --help
-PYTHONPATH=src python3 scripts/ensure_model_governance_schema.py --dry-run
-PYTHONPATH=src python3 scripts/clear_model_development_database.py --help
-PYTHONPATH=src python3 scripts/clear_model_development_database.py --dry-run
-PYTHONPATH=src python3 scripts/evaluate_model_01_market_regime.py --help
-PYTHONPATH=src python3 scripts/evaluate_model_01_market_regime.py
-PYTHONPATH=src python3 scripts/run_market_regime_development_smoke.py --help
-PYTHONPATH=src python3 scripts/review_market_regime_promotion.py --help
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/generate_model_01_market_regime.py --help
+PYTHONPATH=src python3 scripts/model_governance/ensure_model_governance_schema.py --help
+PYTHONPATH=src python3 scripts/model_governance/ensure_model_governance_schema.py --dry-run
+PYTHONPATH=src python3 scripts/model_governance/clear_model_development_database.py --help
+PYTHONPATH=src python3 scripts/model_governance/clear_model_development_database.py --dry-run
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --help
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/run_market_regime_development_smoke.py --help
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --help
 # Optional runtime DB smoke, cleans development tables by default:
-PYTHONPATH=src python3 scripts/run_market_regime_development_smoke.py
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/run_market_regime_development_smoke.py
 # Agent invocation is opt-in; use --dry-run or --local-fallback-review for tests:
-PYTHONPATH=src python3 scripts/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --dry-run
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --dry-run
 git diff --check
 ```
 

@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 ET = ZoneInfo("America/New_York")
 generator = importlib.import_module("models.model_01_market_regime.generator")
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_PATH = REPO_ROOT / "scripts" / "generate_model_01_market_regime.py"
+SCRIPT_PATH = REPO_ROOT / "scripts" / "models" / "model_01_market_regime" / "generate_model_01_market_regime.py"
 EVIDENCE_MAP_PATH = REPO_ROOT / "src" / "models" / "model_01_market_regime" / "evidence_map.md"
 SCRIPT_SPEC = importlib.util.spec_from_file_location("generate_model_01_market_regime", SCRIPT_PATH)
 sql_runner = importlib.util.module_from_spec(SCRIPT_SPEC)

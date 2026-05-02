@@ -98,7 +98,7 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
         repo_root = Path(__file__).resolve().parents[1]
         texts = [
             (repo_root / "src" / "models" / "model_01_market_regime" / "evaluation.py").read_text(encoding="utf-8"),
-            (repo_root / "scripts" / "evaluate_model_01_market_regime.py").read_text(encoding="utf-8"),
+            (repo_root / "scripts" / "models" / "model_01_market_regime" / "evaluate_model_01_market_regime.py").read_text(encoding="utf-8"),
         ]
         forbidden = ["psycopg", "OPENCLAW_DATABASE_URL", "database-url", "connect("]
         for text in texts:

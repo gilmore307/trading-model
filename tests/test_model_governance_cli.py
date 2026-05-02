@@ -10,7 +10,7 @@ class ModelGovernanceCliTests(unittest.TestCase):
     def test_governance_cli_dry_run_prints_sql_without_database_connection(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         result = subprocess.run(
-            [sys.executable, "scripts/ensure_model_governance_schema.py", "--dry-run"],
+            [sys.executable, "scripts/model_governance/ensure_model_governance_schema.py", "--dry-run"],
             cwd=repo_root,
             env={"PYTHONPATH": "src"},
             text=True,
@@ -24,7 +24,7 @@ class ModelGovernanceCliTests(unittest.TestCase):
 
     def test_governance_cli_default_connects_to_database_path(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        script_text = (repo_root / "scripts" / "ensure_model_governance_schema.py").read_text(encoding="utf-8")
+        script_text = (repo_root / "scripts" / "model_governance" / "ensure_model_governance_schema.py").read_text(encoding="utf-8")
 
         self.assertIn("if args.dry_run:", script_text)
         self.assertIn('["psql", database_url', script_text)
@@ -34,14 +34,14 @@ class ModelGovernanceCliTests(unittest.TestCase):
     def test_cleanup_cli_is_destructive_only_with_confirm_token(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         result = subprocess.run(
-            [sys.executable, "scripts/clear_model_development_database.py", "--dry-run"],
+            [sys.executable, "scripts/model_governance/clear_model_development_database.py", "--dry-run"],
             cwd=repo_root,
             env={"PYTHONPATH": "src"},
             text=True,
             capture_output=True,
             check=True,
         )
-        script_text = (repo_root / "scripts" / "clear_model_development_database.py").read_text(encoding="utf-8")
+        script_text = (repo_root / "scripts" / "model_governance" / "clear_model_development_database.py").read_text(encoding="utf-8")
 
         self.assertIn('DROP SCHEMA IF EXISTS "trading_model" CASCADE;', result.stdout)
         self.assertIn("DRY RUN ONLY", result.stdout)

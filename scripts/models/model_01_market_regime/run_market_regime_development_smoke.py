@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
 DEFAULT_TRADING_DATA_SRC = Path("/root/projects/trading-data/src")
 DEFAULT_UNIVERSE_CSV = Path("/root/projects/trading-storage/main/shared/market_regime_etf_universe.csv")
