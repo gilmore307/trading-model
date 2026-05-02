@@ -119,7 +119,7 @@ Status: Accepted
 
 Layer 1 structure is settled for V1. Remaining Layer 1 work is evidence and evaluation maturation, not boundary redesign.
 
-For each market-property factor, maintain a feature-to-factor evidence map classifying feature families as:
+For each market-property factor, maintain `src/model_outputs/model_01_market_regime/evidence_map.md` as the feature-to-factor evidence map classifying feature families as:
 
 - primary evidence;
 - diagnostic evidence;

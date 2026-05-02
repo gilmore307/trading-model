@@ -9,7 +9,9 @@ from zoneinfo import ZoneInfo
 
 ET = ZoneInfo("America/New_York")
 generator = importlib.import_module("model_outputs.model_01_market_regime.generator")
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "generate_model_01_market_regime.py"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCRIPT_PATH = REPO_ROOT / "scripts" / "generate_model_01_market_regime.py"
+EVIDENCE_MAP_PATH = REPO_ROOT / "src" / "model_outputs" / "model_01_market_regime" / "evidence_map.md"
 SCRIPT_SPEC = importlib.util.spec_from_file_location("generate_model_01_market_regime", SCRIPT_PATH)
 sql_runner = importlib.util.module_from_spec(SCRIPT_SPEC)
 assert SCRIPT_SPEC and SCRIPT_SPEC.loader
@@ -68,6 +70,22 @@ class MarketRegimeModelTests(unittest.TestCase):
         self.assertIsNone(rows[0]["trend_certainty_factor"])
         self.assertIsNone(rows[59]["trend_certainty_factor"])
         self.assertGreater(rows[60]["trend_certainty_factor"], 0)
+
+    def test_evidence_map_tracks_factor_config_and_roles(self) -> None:
+        evidence_map = EVIDENCE_MAP_PATH.read_text(encoding="utf-8")
+
+        for spec in generator.load_factor_specs():
+            self.assertIn(f"`{spec.name}`", evidence_map)
+        for role in {
+            "Primary evidence",
+            "Diagnostic evidence",
+            "Quality evidence",
+            "Evaluation-only evidence",
+            "Intentionally unused evidence",
+        }:
+            self.assertIn(role, evidence_map)
+        self.assertIn("sector/industry rotation conclusions", evidence_map)
+        self.assertIn("future broad-market, sector/industry, and candidate returns", evidence_map)
 
     def test_factor_config_controls_membership_direction_and_reducer(self) -> None:
         specs = {spec.name: spec for spec in generator.load_factor_specs()}

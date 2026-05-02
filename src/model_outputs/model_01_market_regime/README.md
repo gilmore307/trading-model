@@ -15,6 +15,8 @@ Runtime SQL reads/writes are isolated in `scripts/generate_model_01_market_regim
 
 `config/factor_specs.toml` owns factor membership, signal directions, reducer choices, and standardization defaults.
 
+`evidence_map.md` owns the reviewed evidence-role contract for current Layer 1 signals and downstream usefulness checks.
+
 Supported group forms:
 
 - explicit columns: `columns = ["hyg_lqd_30m", ...]`
@@ -52,9 +54,11 @@ The current output columns are market-property factors, not proxy-dashboard fact
 Observable ETF ratios, returns, volatility, trend, correlation, credit/rate/dollar/commodity, and breadth signals are sensors. They support the market-property ontology but are not themselves the public output contract. `fundamental_strength_factor` is currently a broad-market participation proxy until true point-in-time fundamental evidence is added.
 
 
-## Evidence coverage gap
+## Evidence map
 
-The current Layer 1 feature payload has 857 logical feature keys after moving sector/industry rotation pairs and sector-observation aggregates to `feature_02_security_selection` and pruning raw ratio moving-average levels and standalone SHY return/trend keys, while the expanded factor specification owns all 857 signal columns. This is an ownership baseline, not a claim that the factor ontology is final: future feature additions must either map to a reviewed factor/diagnostic role or be removed rather than silently expanding the payload.
+The current Layer 1 feature payload has 857 logical feature keys after moving sector/industry rotation pairs and sector-observation aggregates to `feature_02_security_selection` and pruning raw ratio moving-average levels and standalone SHY return/trend keys, while the expanded factor specification owns all 857 signal columns. This is an ownership baseline, not a claim that the factor ontology is final.
+
+See `evidence_map.md` for the current feature-to-factor evidence map, evidence-role vocabulary, intentionally unused evidence, quality evidence, and market-context usefulness checks. Future feature additions must either map to a reviewed primary/diagnostic/quality/evaluation role or be removed rather than silently expanding the payload.
 
 
 ## Sector rotation boundary

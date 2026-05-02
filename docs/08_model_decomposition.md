@@ -71,7 +71,7 @@ transition_pressure
 data_quality_score
 ```
 
-Layer 1 evidence maturation means completing the feature-to-factor evidence map. It does not mean adding sector/ETF/stock conclusions to Layer 1.
+Layer 1 evidence maturation means maintaining the feature-to-factor evidence map in `src/model_outputs/model_01_market_regime/evidence_map.md`. It does not mean adding sector/ETF/stock conclusions to Layer 1.
 
 ### 3. Prediction target
 
@@ -133,7 +133,7 @@ Minimum validation:
 - chronological splits;
 - factor distribution checks;
 - rolling/refit stability checks;
-- feature-to-factor evidence-map review;
+- feature-to-factor evidence-map review against `src/model_outputs/model_01_market_regime/evidence_map.md`;
 - downstream explanatory tests against a market-context-free Layer 2 baseline;
 - option-expression usefulness checks for DTE/delta/IV/theta/no-trade policy;
 - portfolio-risk usefulness checks for drawdown, exposure, sizing, execution-style, exit, and kill-switch policy.

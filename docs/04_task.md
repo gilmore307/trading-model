@@ -2,22 +2,12 @@
 
 ## Active Tasks
 
-1. **Clean documentation spine**
-   - Keep the current route as the direct description.
-   - Remove route-change residue, supersession language, and historical detours from active docs.
-   - Preserve history in Git rather than in the live architecture text.
+1. **Layer 1 evidence maturation**
+   - Keep `src/model_outputs/model_01_market_regime/evidence_map.md` aligned with `config/factor_specs.toml`.
+   - Review every Feature 01 addition as primary, diagnostic, quality, evaluation-only, or intentionally unused evidence.
+   - Mature stability/usefulness evaluation for `market_context_state` against downstream baselines.
 
-2. **Registry alignment review**
-   - Check `trading-manager` registry terms against current `trading-model` names.
-   - Update stale Layer 1 field names that still describe the old proxy-factor output.
-   - Register only stable shared terms; keep experimental fields model-local until proven.
-
-3. **Layer 1 evidence maturation**
-   - Build the `model_01_market_regime` feature-to-factor evidence map.
-   - Classify evidence as primary, diagnostic, quality, evaluation-only, or intentionally unused.
-   - Define stability/usefulness evaluation for `market_context_state`.
-
-4. **Layer 2 contract refinement**
+2. **Layer 2 contract refinement**
    - Lock the first `sector_context_state` field contract.
    - Keep ETF/sector attributes inferred from evidence.
    - Keep `stock_etf_exposure` as composition/transmission evidence, not final stock selection.
@@ -36,8 +26,7 @@
 
 ## Open Gaps
 
-- Reviewed feature-to-factor evidence map for current Layer 1 factor fields.
-- Exact mature evidence definitions for each Layer 1 factor.
+- Exact mature evidence definitions for each Layer 1 factor beyond the current V1 family-level map.
 - Exact `market_context_state` alias/view implementation, if any.
 - Exact `sector_context_state` physical table/artifact name for Layer 2 implementation.
 - Exact persistence path for promotion decisions and future active production model pointers.
@@ -55,3 +44,4 @@
 - Target-aware fitting starts downstream through anonymous target candidates.
 - Model-facing target vectors must exclude ticker/company identity.
 - `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only.
+- `src/model_outputs/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-factor evidence-role contract.
