@@ -3,7 +3,7 @@
 ## Active Tasks
 
 1. **Layer 1 evidence maturation**
-   - Keep `src/model_outputs/model_01_market_regime/evidence_map.md` aligned with `config/factor_specs.toml`.
+   - Keep `src/models/model_01_market_regime/evidence_map.md` aligned with `config/factor_specs.toml`.
    - Review every Feature 01 addition as primary, diagnostic, quality, evaluation-only, or intentionally unused evidence.
    - Mature stability/usefulness evaluation for `market_context_state` against downstream baselines.
 
@@ -44,4 +44,4 @@
 - Target-aware fitting starts downstream through anonymous target candidates.
 - Model-facing target vectors must exclude ticker/company identity.
 - `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only.
-- `src/model_outputs/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-factor evidence-role contract.
+- `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-factor evidence-role contract.

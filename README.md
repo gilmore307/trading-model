@@ -38,7 +38,7 @@ Layer 1 describes broad market state only. Layer 2 describes sector/industry tre
 
 ```text
 docs/        Repository scope, context, workflow, acceptance, task, decisions, memory, and architecture RFCs.
-src/         Importable model-output, model-governance, promotion, and evaluation implementation code.
+src/         Importable model-specific and shared-governance implementation code.
 scripts/     SQL generation wrappers and operational entrypoints.
 tests/       First-party unit tests using in-memory fixtures/fake cursors.
 ```
@@ -46,9 +46,9 @@ tests/       First-party unit tests using in-memory fixtures/fake cursors.
 Current implementation packages:
 
 ```text
-src/model_outputs/model_01_market_regime/
-src/model_governance/
-src/model_evaluation/
+src/models/                      Model-specific packages, one folder per model boundary.
+src/models/model_01_market_regime/ MarketRegimeModel V1 generator, evaluation, config, and evidence map.
+src/model_governance/            Shared governance, promotion, and review helpers.
 ```
 
 Current runtime wrappers:

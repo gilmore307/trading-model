@@ -54,8 +54,8 @@ def _load_modules(trading_data_src: Path):
     sys.path.insert(0, str(trading_data_src))
     sys.path.insert(0, str(REPO_ROOT / "src"))
     from data_feature.feature_01_market_regime import generator as feature_generator  # type: ignore
-    from model_evaluation.market_regime import build_evaluation_artifacts, summarize_artifacts
-    from model_outputs.model_01_market_regime import generator as model_generator
+    from models.model_01_market_regime.evaluation import build_evaluation_artifacts, summarize_artifacts
+    from models.model_01_market_regime import generator as model_generator
 
     return feature_generator, model_generator, build_evaluation_artifacts, summarize_artifacts
 

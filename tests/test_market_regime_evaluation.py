@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from model_evaluation.market_regime import (
+from models.model_01_market_regime.evaluation import (
     build_evaluation_artifacts,
     summarize_artifacts,
 )
@@ -97,7 +97,7 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
     def test_dry_run_harness_has_no_database_connection_surface(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         texts = [
-            (repo_root / "src" / "model_evaluation" / "market_regime.py").read_text(encoding="utf-8"),
+            (repo_root / "src" / "models" / "model_01_market_regime" / "evaluation.py").read_text(encoding="utf-8"),
             (repo_root / "scripts" / "evaluate_model_01_market_regime.py").read_text(encoding="utf-8"),
         ]
         forbidden = ["psycopg", "OPENCLAW_DATABASE_URL", "database-url", "connect("]

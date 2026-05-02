@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from model_evaluation.market_regime import build_evaluation_artifacts, summarize_artifacts
+from models.model_01_market_regime.evaluation import build_evaluation_artifacts, summarize_artifacts
 
 ET = ZoneInfo("America/New_York")
 

@@ -16,7 +16,7 @@ IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def _load_generator():
-    return importlib.import_module("model_outputs.model_01_market_regime.generator")
+    return importlib.import_module("models.model_01_market_regime.generator")
 
 
 def _load_psycopg():
