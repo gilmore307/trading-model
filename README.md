@@ -14,6 +14,23 @@ It owns point-in-time model research, validation, decision-record prototypes, an
 
 It does not own raw source acquisition, live/paper order placement, broker/account mutation, global registry authority, generated runtime artifacts committed to Git, or secrets.
 
+## Current Model Structure
+
+The accepted structure separates context and target work:
+
+```text
+MarketRegimeModel
+  -> broad market background state
+
+SecuritySelectionModel
+  -> market-state-conditioned sector/industry trend-stability state
+
+StrategySelectionModel and later layers
+  -> anonymized target candidates, strategy fit, trade quality, expression, events, and portfolio risk
+```
+
+Layer 2 is not a final stock selector. It studies which sector/industry baskets develop stable trends under each broad market environment. Layer 3+ may evaluate target candidates, but model-facing fitting rows should anonymize ticker identity so the strategy model learns tradable shapes and context fit rather than memorizing symbols.
+
 ## Top-Level Structure
 
 ```text

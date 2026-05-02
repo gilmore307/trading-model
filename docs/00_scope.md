@@ -20,8 +20,8 @@ The repository does **not** place live orders. It produces offline research arti
 
 - Point-in-time model research and validation workflows.
 - Market-state/regime discovery from market-only features.
-- Security/target selection and candidate universe construction from sector/industry rotation, sector/industry ETF holdings exposure, full-market scans, liquidity, optionability, and event exclusions.
-- Composite strategy research that combines multiple strategy components/families instead of choosing one isolated historical champion.
+- Market-state-conditioned sector/industry trend-stability modeling: identifying which sector/industry baskets are easiest to trade under each broad market environment, using sector/industry rotation, holdings composition/exposure diagnostics, liquidity, optionability, and event exclusions.
+- Anonymous target-candidate and composite strategy research that combines multiple strategy components/families instead of choosing one isolated historical champion or memorizing ticker identity.
 - Signal-quality, meta-labeling, target/stop, MFE/MAE, and holding-period models.
 - Option expression selection research using option-chain snapshots, market-state background, liquidity, IV, Greeks, and conservative fill assumptions.
 - Event overlay research for scheduled events, breaking news shocks, pre-event abnormal activity, and historical event-impact memory.
@@ -45,7 +45,7 @@ The repository does **not** place live orders. It produces offline research arti
 
 `trading-model` should become the disciplined offline modeling home for the full trading decision stack, not merely a market-state repository.
 
-The repository should prefer explicit point-in-time interfaces, fixture-backed tests, walk-forward validation, and evidence-backed acceptance over quick scripts or hindsight analysis.
+The repository should prefer explicit point-in-time interfaces, fixture-backed tests, walk-forward validation, and evidence-backed acceptance over quick scripts or hindsight analysis. Its model structure separates broad market background, sector/industry background, and strategy-aware anonymous target work.
 
 ## Boundary Rules
 

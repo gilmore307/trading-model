@@ -10,7 +10,8 @@ This file defines the intended offline modeling workflow for `trading-model`.
 point-in-time data artifacts
   -> feature/label builders
   -> MarketRegimeModel
-  -> SecuritySelectionModel
+  -> SecuritySelectionModel (market-state-conditioned sector trend stability)
+  -> anonymized target candidate builder
   -> StrategySelectionModel
   -> TradeQualityModel
   -> OptionExpressionModel
@@ -27,7 +28,7 @@ point-in-time data artifacts
 
 - Every model layer should be decomposed with the standard nine-part structure in `docs/08_model_decomposition.md`: data, features, prediction target, model mapping, loss/error measure, training/update process, validation/usefulness, overfitting control, and decision deployment.
 - Every workflow must be point-in-time: no future data, no full-history fitting for historical predictions, no post-event explanation leakage.
-- Keep broad market background, sector/industry background, and target subject selection separate. Layer 1 describes the broad environment; Layer 2 identifies tradable sector/industry conditions; target/security choice must be strategy-aware and belongs downstream.
+- Keep broad market background, sector/industry trend-stability background, and target subject selection separate. Layer 1 describes the broad environment; Layer 2 identifies which sector/industry baskets have stable, tradable trends under each market environment; target/security choice must be strategy-aware, anonymized for model fitting, and belongs downstream.
 - `MarketRegimeModel` must be market/data-feature based and limited to broad state description. It is background context for option-expression choice, strategy compatibility, and risk/execution policy; it must not rank ETFs, sectors, or stocks.
 - `SecuritySelectionModel` should select and score tradable sector/industry baskets by studying trend stability under different broad market states: persistent one-way trends, clean breakdowns, or repeatable cycles rather than random chop. ETF holdings/exposure are composition diagnostics. It should not select final stocks before `StrategySelectionModel` chooses a compatible strategy.
 - `StrategySelectionModel` should compose a comprehensive strategy from multiple strategy components/families using walk-forward or similarly time-safe evidence, not historical champion-picking of one isolated variant. It is the first layer where target/security refinement can become meaningful because the target is evaluated together with the strategy. Target candidates should be anonymized for model fitting so the unsupervised strategy model learns tradable shapes and context fit, not ticker identity.

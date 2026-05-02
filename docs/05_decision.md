@@ -1096,7 +1096,7 @@ Rules:
 ## D038 - Sector stability is market-state conditioned and target candidates are anonymous
 
 Date: 2026-05-01
-Status: Proposed
+Status: Accepted
 
 ### Context
 
@@ -1143,3 +1143,47 @@ The unsupervised strategy model should not consume raw ticker, company name, per
 - Layer 3+ can select the best-to-trade anonymous target candidates using market and sector states as context inputs.
 - `stock_etf_exposure` remains useful for creating candidate pools and sector context, but it should not make the strategy model memorize ticker identities.
 - Evaluation should measure sector trend stability, directional persistence, cycle regularity, false-break/chop frequency, and downstream usefulness, not only return rank.
+
+
+## D039 - Adopt revised context-to-target model structure
+
+Date: 2026-05-02
+Status: Accepted
+
+### Context
+
+D037 separated broad market background, sector/industry background, and target subject. D038 refined that Layer 2 should study sector trend stability under each broad market environment and that downstream target candidates should be anonymous for unsupervised strategy fitting. Chentong then asked to adjust the model structure according to this design.
+
+### Decision
+
+Adopt the following model structure:
+
+```text
+MarketRegimeModel
+  -> market_context_state
+
+SecuritySelectionModel
+  -> sector_market_condition_profile
+  -> sector_trend_stability_vector
+  -> sector_selection_parameter_surface
+
+Anonymous target candidate builder + StrategySelectionModel
+  -> target_candidate_id
+  -> anonymous_target_feature_vector
+  -> strategy_fit_state
+  -> composite_strategy_recommendation
+
+TradeQualityModel -> OptionExpressionModel -> EventOverlayModel -> PortfolioRiskModel
+  -> trade construction, expression, overlays, and final offline risk approval
+```
+
+Layer 2 is now structurally defined as a market-state-conditioned sector/industry trend-stability model, not a stock selector or simple sector momentum ranker.
+
+Layer 3 is structurally defined as the first strategy-aware target layer. It may evaluate target candidates, but model-facing target rows must be anonymous: raw ticker, company name, permanent identity, and per-ticker champion history are excluded from the fitting vector. Real symbols may remain in audit/routing metadata outside the model-facing feature vector.
+
+### Consequences
+
+- Scope, workflow, architecture, and decomposition docs should use sector-stability language for Layer 2.
+- Layer 3 docs should use anonymous target-candidate language rather than generic candidate identity learning.
+- Future implementation should introduce any target-candidate builder as a model-facing anonymization boundary before `StrategySelectionModel` fitting.
+- Registry/shared-contract proposals should distinguish `market_context_state`, `sector_context_state`, and anonymous `target_candidate_id`/`anonymous_target_feature_vector` fields.

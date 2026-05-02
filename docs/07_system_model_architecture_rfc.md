@@ -50,22 +50,49 @@ These names are canonical for docs, code, artifact metadata, and future registry
 Core separation rule:
 
 ```text
-broad market background -> sector/industry background -> strategy-aware target subject
+broad market background -> market-conditioned sector/industry trend-stability background -> anonymized strategy-aware target subject
 ```
 
-Layer 1 describes the market environment. Layer 2 describes sector/industry tradability. Final target/security selection is not meaningful until downstream strategy, trade-quality, option-expression, event, and portfolio constraints are known.
+Layer 1 describes the market environment. Layer 2 describes which sector/industry baskets have stable trends under each market environment. Final target/security selection is model-facing only as an anonymized candidate until downstream strategy, trade-quality, option-expression, event, and portfolio constraints are known.
 
 | Layer | Model class | Stable id | Chinese name | Role |
 |---|---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 | Describe point-in-time broad market state, market-property factors, confidence, transition risk, and dominant macro/risk drivers without sector/industry candidate conclusions. |
 | 2 | `SecuritySelectionModel` | `security_selection_model` | 板块/行业选择模型 | Select tradable sector/industry baskets by studying which sectors have trend-stable behavior under each broad market state; ETF holdings/exposure are composition diagnostics, broad market state is conditioning context, and final stock selection waits for anonymized strategy-aware downstream layers. |
-| 3 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Compose and weight multiple strategy components into one comprehensive strategy recommendation conditioned on candidate evidence, market background, cost, and robustness. |
+| 3 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Compose and weight multiple strategy components for anonymized target candidates conditioned on target shape, broad market background, sector/industry trend-stability context, cost, and robustness; avoid ticker-identity learning. |
 | 4 | `TradeQualityModel` | `trade_quality_model` | 交易质量模型 | Score candidate signals and predict trade outcome distribution, target/stop, MFE/MAE, and holding horizon. |
 | 5 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 | Choose stock/ETF/long-call/long-put expression and option-contract constraints from signal forecast, option chain, liquidity, IV, Greeks, and broad market-state background. V1 excludes multi-leg option structures. |
 | 6 | `EventOverlayModel` | `event_overlay_model` | 事件覆盖模型 | Overlay scheduled/breaking event risk, abnormal activity, and event-memory adjustments across earlier layers and the risk gate. |
 | 7 | `PortfolioRiskModel` | `portfolio_risk_model` | 组合风控模型 | Final offline risk, sizing, exposure, execution-style, exit-rule, and kill-switch model using market-state background plus portfolio reality. |
 
 Naming rule: do not call Layer 7 simply `ExecutionModel`, because live/paper order placement is outside `trading-model`. `PortfolioRiskModel` may describe execution-gate logic but does not mutate brokerage state.
+
+## Revised Model Structure
+
+The current accepted structure is:
+
+```text
+1. Market context
+   model_01_market_regime
+   -> market_context_state
+
+2. Sector/industry context
+   model_02_security_selection
+   -> sector_market_condition_profile
+   -> sector_trend_stability_vector
+   -> sector_selection_parameter_surface
+
+3. Anonymous target + strategy context
+   target_candidate_builder / model_03_strategy_selection
+   -> target_candidate_id
+   -> anonymous_target_feature_vector
+   -> strategy_fit_state / composite_strategy_recommendation
+
+4+. Trade construction and approval
+   trade_quality -> option_expression -> event_overlay -> portfolio_risk
+```
+
+Layer 2 is a market-state-conditioned sector trend-stability model. It is not a stock selector. Layer 3 is the first point where a target candidate is evaluated, and the model-facing row should be anonymous: ticker identity is retained for audit/routing outside the fitting vector, not used as a learned identity feature.
 
 ## Non-negotiable Point-in-Time Rule
 

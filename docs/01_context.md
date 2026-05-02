@@ -14,6 +14,14 @@ The trading platform is split across multiple repositories so each major respons
 
 The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
 
+Current structural boundary:
+
+```text
+broad market background -> sector/industry trend-stability background -> anonymized strategy-aware target work
+```
+
+`MarketRegimeModel` describes the broad environment. `SecuritySelectionModel` studies sector/industry trend stability under each broad market state. `StrategySelectionModel` and later layers evaluate anonymized target candidates with market and sector context, then map back to real symbols only for audit, routing, and decision records.
+
 ## Related Systems
 
 | System | Relationship |
