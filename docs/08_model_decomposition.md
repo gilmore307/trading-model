@@ -158,7 +158,7 @@ It must not directly rank sectors, ETFs, or stocks. `SecuritySelectionModel` own
 
 Status: draft updated for review on 2026-05-01.
 
-Layer 2 V1 is a **sector/industry selection model**, not a stock-selection model. Its job is to identify which sector/industry baskets are easiest to trade now: clear leadership, persistent trend, high certainty, enough breadth, acceptable volatility/liquidity, and no obvious event/risk disqualification.
+Layer 2 V1 is a **sector/industry selection model**, not a stock-selection model. Its job is to identify which sector/industry baskets are easiest to trade now and in which broad-market environments their trends are stable. Here, stable means trend-stable, not price-stable: persistent one-way advance/decline, clean directional continuation, or a clear repeatable cycle rather than random chop.
 
 Individual stocks remain the real tradable objects, but selecting a stock before choosing a compatible strategy is premature. Stock-level holdings and exposure data are retained as supporting evidence and a bridge for later layers, not as a Layer 2 V1 output target.
 
@@ -192,7 +192,7 @@ They do **not** make Layer 2 choose final stocks.
 
 Eligible evidence:
 
-- sector/industry ETF relative strength, trend, persistence, volatility stability, breadth, dispersion, and signal agreement from the migrated Feature 1 rotation surface;
+- sector/industry ETF relative strength, trend, trend stability, persistence, cyclicality, volatility-of-trend, breadth, dispersion, and signal agreement from the migrated Feature 1 rotation surface;
 - point-in-time sector/industry ETF holdings snapshots for composition and transmission diagnostics;
 - sector/industry ETF liquidity, spread, volume, gap, volatility, and trend evidence;
 - ETF optionability summaries if the sector/industry ETF itself may be traded or used as an options proxy;
@@ -214,7 +214,9 @@ Excluded from construction:
 
 Core feature blocks:
 
-- `sector_rotation_state_vector` — sector/industry ETF leadership, persistence, breadth support, volatility stability, and agreement;
+- `sector_rotation_state_vector` — sector/industry ETF leadership, persistence, breadth support, trend stability, and agreement;
+- `sector_market_condition_profile` — how the sector behaves under different broad market states, including whether its trend is stable in risk-on, neutral, risk-off, high-volatility, liquidity-stressed, or transition regimes;
+- `sector_trend_stability_vector` — directional persistence, monotonicity, pullback regularity, breakdown persistence, cycle regularity, false-break frequency, and choppiness;
 - `sector_tradability_vector` — liquidity, spread, volume, optionability if applicable, gap/choppiness, and execution difficulty for the ETF/basket;
 - `sector_composition_vector` — holdings concentration, top-name dominance, holdings freshness, source coverage, and stock-exposure diagnostics;
 - `sector_risk_context_vector` — event density, earnings concentration, abnormal activity, and macro shock sensitivity for the basket;
@@ -243,8 +245,11 @@ sector_rotation_state_vector
 sector_tradability_vector
 sector_composition_vector
 sector_risk_context_vector
+sector_market_condition_profile
 trend_clarity_score
 trend_persistence_score
+trend_stability_score
+cycle_regularity_score
 relative_strength_consistency_score
 breadth_support_score
 liquidity_score
@@ -267,6 +272,10 @@ Conceptual mapping:
 sector_rotation_model(feature_02_security_selection)
   -> sector_rotation_state_vector[sector_or_industry_etf]
 
+market_condition_stability_model(model_01_market_regime, feature_02_security_selection)
+  -> sector_market_condition_profile[sector_or_industry_etf]
+  -> sector_trend_stability_vector[sector_or_industry_etf]
+
 sector_composition_builder(source_02_security_selection, stock_etf_exposure)
   -> sector_composition_vector[sector_or_industry_etf]
 
@@ -275,6 +284,8 @@ sector_tradability_builder(etf_bar_liquidity_optionability_event_evidence)
 
 parameter_adjuster(
   sector_rotation_state_vector,
+  sector_market_condition_profile,
+  sector_trend_stability_vector,
   sector_composition_vector,
   sector_tradability_vector,
   sector_risk_context_vector
@@ -293,8 +304,8 @@ Construction loss should not be a simple future-return regression loss. Wrongnes
 
 Sector error/evaluation measures:
 
-- poor rank calibration against forward sector/industry return-risk labels;
-- high selected-basket drawdown, adverse excursion, or volatility shock;
+- poor rank calibration against forward sector/industry trend-stability, return-risk, and tradability labels;
+- high selected-basket drawdown, adverse excursion, volatility shock, false-break frequency, or trend-chop after selection;
 - unstable sector ranks under small window/config changes;
 - high turnover with little added forward evidence;
 - selection of illiquid, unoptionable, stale-holding, event-dense, or compositionally fragile baskets;
@@ -323,7 +334,7 @@ Minimum checks:
 - point-in-time feature, holdings, and event availability;
 - sector/industry universe coverage and missing-data diagnostics;
 - rank/parameter stability through time;
-- decile/quantile analysis of `sector_selection_parameter` vs future sector return, drawdown, volatility, MFE/MAE, liquidity, and tradability outcomes;
+- decile/quantile analysis of `sector_selection_parameter` vs future sector trend stability, directional persistence, cycle regularity, return, drawdown, volatility, MFE/MAE, liquidity, and tradability outcomes;
 - event/liquidity/optionability gate precision and false-reject review;
 - comparison to simple baselines such as broad-market top momentum, raw sector ETF relative strength, and equal-weight sector rotation;
 - downstream usefulness for `StrategySelectionModel` without leaking strategy results into Model 2 construction.
@@ -371,8 +382,8 @@ Layer 3+: target subject and strategy-aware trade construction
 Boundary rules:
 
 - broad market background describes the environment; it must not select sectors or symbols;
-- sector/industry background describes where conditions are easiest to trade; it must not finalize stock targets;
-- target subject selection is strategy-aware: the tradable symbol only becomes meaningful once the strategy family, signal horizon, liquidity/option expression, event overlay, and portfolio constraints are considered;
+- sector/industry background describes where conditions are easiest to trade and in which broad-market states sector trends are stable; it must not finalize stock targets;
+- target subject selection is strategy-aware and identity-neutral: the tradable symbol only becomes meaningful once the strategy family, signal horizon, liquidity/option expression, event overlay, and portfolio constraints are considered; target models should consume anonymized candidate feature vectors rather than memorize tickers;
 - ETF holdings and `stock_etf_exposure` bridge sector composition into later target work, but they do not collapse Layer 2 into stock selection.
 
 The same nine-part decomposition still needs to be completed for:

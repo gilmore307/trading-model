@@ -23,9 +23,9 @@
 - Exact storage path/reference requirements.
 - Whether `trading-strategy` remains separate or `StrategySelectionModel` research is model-local until a later split.
 - Whether `stock_etf_exposure` belongs in `trading-data` as a derived bundle output, in `trading-model` as a feature artifact, or in shared contracts after proof.
-- Exact `SecuritySelectionModel` sector/industry parameter-surface adjustment function for rotation, trend clarity, trend persistence, certainty, composition quality, and liquidity/optionability constraints; draft decomposition exists in `docs/08_model_decomposition.md` and needs review.
+- Exact `SecuritySelectionModel` sector/industry parameter-surface adjustment function for market-state-conditioned trend stability, cycle regularity, rotation, trend clarity, trend persistence, certainty, composition quality, and liquidity/optionability constraints; draft decomposition exists in `docs/08_model_decomposition.md` and needs review.
 - Exact path by which `MarketRegimeModel` state influences `OptionExpressionModel` contract selection and `PortfolioRiskModel` execution/risk policy without becoming a direct stock/sector ranking input.
-- Exact `StrategySelectionModel` design for composing multiple strategy components into one comprehensive strategy recommendation.
+- Exact `StrategySelectionModel` design for composing multiple strategy components into one comprehensive strategy recommendation, using anonymized target candidates plus market/sector context rather than ticker identity.
 
 ## Recently Accepted
 

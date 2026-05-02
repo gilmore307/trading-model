@@ -58,7 +58,7 @@ Layer 1 describes the market environment. Layer 2 describes sector/industry trad
 | Layer | Model class | Stable id | Chinese name | Role |
 |---|---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | 市场状态模型 | Describe point-in-time broad market state, market-property factors, confidence, transition risk, and dominant macro/risk drivers without sector/industry candidate conclusions. |
-| 2 | `SecuritySelectionModel` | `security_selection_model` | 板块/行业选择模型 | Select tradable sector/industry baskets from rotation, ETF holdings composition/exposure diagnostics, liquidity, optionability, and event exclusions; broad market state is background, and final stock selection waits for strategy-aware downstream layers. |
+| 2 | `SecuritySelectionModel` | `security_selection_model` | 板块/行业选择模型 | Select tradable sector/industry baskets by studying which sectors have trend-stable behavior under each broad market state; ETF holdings/exposure are composition diagnostics, broad market state is conditioning context, and final stock selection waits for anonymized strategy-aware downstream layers. |
 | 3 | `StrategySelectionModel` | `strategy_selection_model` | 策略选择模型 | Compose and weight multiple strategy components into one comprehensive strategy recommendation conditioned on candidate evidence, market background, cost, and robustness. |
 | 4 | `TradeQualityModel` | `trade_quality_model` | 交易质量模型 | Score candidate signals and predict trade outcome distribution, target/stop, MFE/MAE, and holding horizon. |
 | 5 | `OptionExpressionModel` | `option_expression_model` | 期权表达模型 | Choose stock/ETF/long-call/long-put expression and option-contract constraints from signal forecast, option chain, liquidity, IV, Greeks, and broad market-state background. V1 excludes multi-leg option structures. |
@@ -187,11 +187,11 @@ Current implementation columns now use this market-property ontology, but many r
 
 ### Goal
 
-Select the sector/industry baskets that are easiest and cleanest to trade now. Layer 2 V1 is a sector/industry selection model, not a final stock selector.
+Select the sector/industry baskets that are easiest and cleanest to trade now, with special attention to which broad-market environments make each sector trend-stable. Layer 2 V1 is a sector/industry selection model, not a final stock selector. Trend-stable means persistent directional behavior or clear cyclical regularity, not low price volatility.
 
 It answers:
 
-- Which sector/industry ETFs show the clearest, most persistent, and least ambiguous leadership?
+- Which sector/industry ETFs show the clearest, most persistent, least ambiguous leadership, and under which broad market states does that trend remain stable?
 - Which sector/industry baskets have enough breadth, liquidity, optionability, composition quality, and event cleanliness to be worth downstream strategy work?
 - Which baskets are eligible, watch-only, or gated out because they are noisy, stale, illiquid, event-dense, or compositionally fragile?
 
@@ -217,6 +217,8 @@ Core conceptual fields:
 
 ```text
 sector_rotation_state_vector
+sector_market_condition_profile
+sector_trend_stability_vector
 sector_trend_clarity_score
 sector_certainty_score
 sector_composition_vector
@@ -226,7 +228,9 @@ sector_selection_parameter   # optional/convenience scalar, not sole context
 
 Interpretation:
 
-- `sector_rotation_state_vector` describes a sector/industry ETF's leadership, relative-strength persistence, breadth, volatility stability, and signal agreement.
+- `sector_rotation_state_vector` describes a sector/industry ETF's leadership, relative-strength persistence, breadth, trend stability, and signal agreement.
+- `sector_market_condition_profile` describes which broad market states make that sector's trend easier or harder to trade.
+- `sector_trend_stability_vector` describes directional persistence, monotonicity, pullback regularity, breakdown persistence, cycle regularity, false-break frequency, and choppiness.
 - `sector_composition_vector` describes what the basket actually contains: holdings concentration, top-name dominance, freshness, coverage, and exposure diagnostics.
 - `sector_tradability_vector` describes whether the basket is practical to trade or route into later strategy work.
 - `sector_selection_parameter`, if produced, is a convenience scalar for sorting. It must be persisted with enough supporting context that downstream consumers can inspect why the basket was strong.
@@ -240,6 +244,8 @@ sector_composition_vector[sector_etf] = holdings_composition_model(source_02_sec
 
 sector_selection_parameter_surface = parameter_adjuster(
   sector_rotation_state_vector,
+  sector_market_condition_profile,
+  sector_trend_stability_vector,
   sector_trend_clarity_score,
   sector_certainty_score,
   sector_composition_vector,
@@ -339,7 +345,15 @@ This layer creates a direct need for two source-backed data products, scoped to 
 
 ### Goal
 
-Compose the final strategy recommendation for a candidate from multiple strategy components/families. The output should not be a single historical champion strategy; it should be a controlled blend or ordered set of components conditioned on candidate evidence, market background, costs, and robustness.
+Compose the final strategy recommendation for an anonymized target candidate from multiple strategy components/families. The output should not be a single historical champion strategy; it should be a controlled blend or ordered set of components conditioned on anonymous target features, market background, sector/industry background, costs, and robustness. The model should not learn that a particular ticker is special; it should learn which anonymous target shapes are easiest to trade under the current market and sector states.
+
+Target candidate handling:
+
+- use an ephemeral `target_candidate_id`, not ticker identity, as the model-facing row id;
+- include anonymized target features such as trend shape, relative-strength shape, liquidity/optionability, event state, and exposure/context features;
+- include `market_context_state` and `sector_context_state` as inputs;
+- exclude raw ticker, company name, permanent identity, and historical per-ticker champion labels from unsupervised strategy fitting;
+- map the selected anonymous candidate back to the real symbol only after scoring/audit.
 
 Candidate families/components:
 

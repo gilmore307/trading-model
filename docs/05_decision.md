@@ -1092,3 +1092,54 @@ Rules:
 - Layer contracts should name whether a field is broad-market context, sector/industry context, or target/security context.
 - Layer 2 output should use sector-oriented names such as `sector_or_industry_symbol` and `sector_selection_parameter`, not generic stock-candidate naming.
 - Downstream decision records should preserve the separation so attribution can distinguish market background, sector selection, and strategy-aware target selection.
+
+## D038 - Sector stability is market-state conditioned and target candidates are anonymous
+
+Date: 2026-05-01
+Status: Proposed
+
+### Context
+
+After separating broad market background, sector/industry background, and target subject, Chentong clarified two refinements:
+
+1. The sector layer should not merely rank currently strong sectors. It should study which sectors have stable trends under each broad market environment.
+2. Because the strategy model is intended to be unsupervised, target/security candidates should be anonymized so the model learns tradable shapes and context fit rather than ticker identity.
+
+Here, stability means trend stability, not low price volatility. A stable sector trend may be a clean one-way advance, a persistent decline, or a clear repeatable cycle. Random chop is unstable even if price volatility is low.
+
+### Proposed decision
+
+`SecuritySelectionModel` should produce sector/industry states conditioned on `MarketRegimeModel` broad market states. Core Layer 2 outputs should include fields such as:
+
+```text
+sector_market_condition_profile
+sector_trend_stability_vector
+trend_stability_score
+cycle_regularity_score
+sector_selection_parameter
+```
+
+These fields answer:
+
+- in which broad market states this sector/industry tends to trend cleanly;
+- whether the current sector move is directional, cyclical, choppy, or ambiguous;
+- whether the sector is worth passing to strategy-aware downstream target evaluation.
+
+For target/security work downstream, model-facing rows should use anonymous target candidates:
+
+```text
+target_candidate_id
+anonymous_target_feature_vector
+market_context_state
+sector_context_state
+strategy_fit_state
+```
+
+The unsupervised strategy model should not consume raw ticker, company name, permanent identity, or historical per-ticker champion labels as fitting features. The real symbol may be retained outside the model-facing feature vector for audit, order routing, and final decision records, but the fitting surface should treat targets as anonymous tradable shapes.
+
+### Consequences
+
+- Layer 2 becomes a market-state-conditioned sector trend-stability model, not a simple sector momentum ranker.
+- Layer 3+ can select the best-to-trade anonymous target candidates using market and sector states as context inputs.
+- `stock_etf_exposure` remains useful for creating candidate pools and sector context, but it should not make the strategy model memorize ticker identities.
+- Evaluation should measure sector trend stability, directional persistence, cycle regularity, false-break/chop frequency, and downstream usefulness, not only return rank.

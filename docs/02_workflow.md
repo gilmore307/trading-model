@@ -29,8 +29,8 @@ point-in-time data artifacts
 - Every workflow must be point-in-time: no future data, no full-history fitting for historical predictions, no post-event explanation leakage.
 - Keep broad market background, sector/industry background, and target subject selection separate. Layer 1 describes the broad environment; Layer 2 identifies tradable sector/industry conditions; target/security choice must be strategy-aware and belongs downstream.
 - `MarketRegimeModel` must be market/data-feature based and limited to broad state description. It is background context for option-expression choice, strategy compatibility, and risk/execution policy; it must not rank ETFs, sectors, or stocks.
-- `SecuritySelectionModel` should select and score tradable sector/industry baskets from sector/industry rotation, ETF holdings composition/exposure diagnostics, trend clarity, trend persistence, certainty, liquidity, optionability, and event exclusions. Broad market state may be referenced as background or gating context, but it is not the direct sector-selection driver. It should not select final stocks before `StrategySelectionModel` chooses a compatible strategy.
-- `StrategySelectionModel` should compose a comprehensive strategy from multiple strategy components/families using walk-forward or similarly time-safe evidence, not historical champion-picking of one isolated variant. It is the first layer where target/security refinement can become meaningful because the target is evaluated together with the strategy.
+- `SecuritySelectionModel` should select and score tradable sector/industry baskets by studying trend stability under different broad market states: persistent one-way trends, clean breakdowns, or repeatable cycles rather than random chop. ETF holdings/exposure are composition diagnostics. It should not select final stocks before `StrategySelectionModel` chooses a compatible strategy.
+- `StrategySelectionModel` should compose a comprehensive strategy from multiple strategy components/families using walk-forward or similarly time-safe evidence, not historical champion-picking of one isolated variant. It is the first layer where target/security refinement can become meaningful because the target is evaluated together with the strategy. Target candidates should be anonymized for model fitting so the unsupervised strategy model learns tradable shapes and context fit, not ticker identity.
 - `TradeQualityModel` should model outcome distribution and risk, not only direction.
 - `OptionExpressionModel` V1 is limited to single-leg long call / long put option expressions and must use timestamped option-chain snapshots, bid/ask, liquidity, IV/Greeks, conservative fills, and failure-to-fill assumptions. It should consume market-state context for contract-expression constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade filters.
 - `EventOverlayModel` must preserve event/evidence timing and source priority.
@@ -48,11 +48,11 @@ Deliver market-state feature contracts, rolling/expanding state-vector prototype
 
 ### Phase 2: SecuritySelectionModel
 
-Deliver sector/industry rotation research, sector/industry ETF holdings composition/exposure diagnostics, `stock_etf_exposure` derived table proposal, sector/industry basket parameter rows, eligibility/gating rules, optionability/liquidity filters, and downstream handoff references. Do not derive sector ranking from a Layer 1 market-state parameter, and do not select final stocks in Layer 2 V1.
+Deliver sector/industry rotation research, market-state-conditioned sector trend-stability profiles, sector/industry ETF holdings composition/exposure diagnostics, `stock_etf_exposure` derived table proposal, sector/industry basket parameter rows, eligibility/gating rules, optionability/liquidity filters, and downstream handoff references. Do not derive sector ranking from a Layer 1 market-state scalar, and do not select final stocks in Layer 2 V1.
 
 ### Phase 3: StrategySelectionModel
 
-Deliver a small strategy-family library, limited variants, composite-strategy weighting rules, candidate/market-background-conditioned performance tables, disabled-strategy rules, and parameter-neighborhood stability evidence.
+Deliver a small strategy-family library, limited variants, composite-strategy weighting rules, anonymized target-candidate feature contracts, candidate/market/sector-context-conditioned performance tables, disabled-strategy rules, and parameter-neighborhood stability evidence.
 
 ### Phase 4: TradeQualityModel
 
