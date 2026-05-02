@@ -2,14 +2,14 @@
 
 ## Active Tasks
 
-- Review and refine the draft `SecuritySelectionModel` nine-part decomposition in `docs/08_model_decomposition.md`, especially the exact sector/industry parameter surface, holdings/exposure diagnostic boundary, and first V1 output fields.
+- Review and refine the revised `SecuritySelectionModel` Layer 2 decomposition in `docs/08_model_decomposition.md`, especially the exact `sector_attribute_vector`, `sector_market_condition_profile`, `sector_trend_stability_vector`, holdings/exposure diagnostic boundary, and first V1 output fields.
 - Complete nine-part decompositions for the remaining five model layers before expanding implementation beyond Layer 2.
 
 ## Queued Tasks
 
 - Identify global fields, helper surfaces, templates, status values, decision-record fields, model layer ids, artifact types, or ready-signal shapes that must be registered in `trading-manager`.
 - Define model-facing timestamp semantics for `event_time`, `available_time`, and `tradeable_time`.
-- Define the first sector/industry ETF basket for `SecuritySelectionModel`, with sector/industry parameter rows based on rotation, trend clarity, persistence, certainty, liquidity, optionability, composition quality, and event exclusions rather than highest return, broad-market-state scoring, or premature stock selection.
+- Define the first sector/industry ETF basket for `SecuritySelectionModel`, with sector context rows based on inferred ETF/sector attributes, market-state-conditioned trend stability, cycle regularity, rotation, trend clarity, persistence, certainty, liquidity, optionability, composition quality, and event exclusions rather than highest return, hard-coded style labels, broad-market-state scalar scoring, or premature stock selection.
 - Decide whether `stock_etf_exposure` is model-local first or registered as a derived data kind in `trading-manager`.
 - Define first label horizons and triple-barrier defaults for `TradeQualityModel`.
 - Define how model-generated event standards are identified and versioned for `option_activity_event_detail`, including whether `standard_id` is separate from or derived from a model/run id and how downstream artifacts record the current standard used at event time.

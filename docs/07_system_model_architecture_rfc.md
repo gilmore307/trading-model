@@ -214,7 +214,7 @@ Current implementation columns now use this market-property ontology, but many r
 
 ### Goal
 
-Select the sector/industry baskets that are easiest and cleanest to trade now, with special attention to which broad-market environments make each sector trend-stable. Layer 2 V1 is a sector/industry selection model, not a final stock selector. Trend-stable means persistent directional behavior or clear cyclical regularity, not low price volatility.
+Discover ETF/sector behavior attributes and select the sector/industry baskets that are easiest and cleanest to trade now, with special attention to which broad-market environments make each sector trend-stable. Layer 2 V1 is an ETF/sector attribute discovery and sector/industry trend-stability model, not a final stock selector or hand-written sector-style classifier. Trend-stable means persistent directional behavior or clear cyclical regularity, not low price volatility.
 
 It answers:
 
@@ -237,26 +237,27 @@ This layer does not output final stocks, entry timing, strategy parameters, opti
 - `MarketRegimeModel` outputs only as background/reference or coarse gating context, not as a direct sector/stock ranking transform.
 - No hard-coded ETF behavior attributes from Layer 1; labels such as growth/defensive/cyclical/safe-haven may be human descriptions after Layer 2 evidence, but not prerequisites.
 
-### Sector/industry parameters
+### ETF/sector attribute discovery and sector parameters
 
-`SecuritySelectionModel` should build a sector/industry parameter surface from rotation evidence and tradability/composition/risk fields. It should not define a Layer-1-to-Layer-2 bridge such as `market_parameterizer(model_01_market_regime_vector)` or `sector_weighted_market_context_vector` for stock ranking.
+`SecuritySelectionModel` should build a sector context surface from observed sector behavior, market-state-conditioned stability, inferred ETF/sector attributes, and tradability/composition/risk fields. It should not define a Layer-1-to-Layer-2 bridge such as `market_parameterizer(model_01_market_regime_vector)` or `sector_weighted_market_context_vector` for stock ranking, and it should not consume hard-coded style labels as truth.
 
 Core conceptual fields:
 
 ```text
-sector_rotation_state_vector
+sector_observed_behavior_vector
+sector_attribute_vector
 sector_market_condition_profile
 sector_trend_stability_vector
-sector_trend_clarity_score
-sector_certainty_score
 sector_composition_vector
 sector_tradability_vector
+sector_context_state
 sector_selection_parameter   # optional/convenience scalar, not sole context
 ```
 
 Interpretation:
 
-- `sector_rotation_state_vector` describes a sector/industry ETF's leadership, relative-strength persistence, breadth, trend stability, and signal agreement.
+- `sector_observed_behavior_vector` describes a sector/industry ETF's leadership, relative-strength persistence, breadth, trend behavior, and signal agreement.
+- `sector_attribute_vector` contains inferred, evidence-backed ETF/sector attributes; human-readable labels are optional post-fit interpretation, not inputs.
 - `sector_market_condition_profile` describes which broad market states make that sector's trend easier or harder to trade.
 - `sector_trend_stability_vector` describes directional persistence, monotonicity, pullback regularity, breakdown persistence, cycle regularity, false-break frequency, and choppiness.
 - `sector_composition_vector` describes what the basket actually contains: holdings concentration, top-name dominance, freshness, coverage, and exposure diagnostics.
@@ -266,22 +267,33 @@ Interpretation:
 Sketch:
 
 ```text
-sector_rotation_state_vector[sector_etf] = rotation_model(feature_02_security_selection_rows)
+sector_observed_behavior_vector = observed_behavior_builder(feature_02_security_selection_rows)
 
-sector_composition_vector[sector_etf] = holdings_composition_model(source_02_security_selection, stock_etf_exposure)
+sector_market_condition_profile, sector_trend_stability_vector = market_condition_stability_model(
+  model_01_market_regime,
+  sector_observed_behavior_vector
+)
 
-sector_selection_parameter_surface = parameter_adjuster(
-  sector_rotation_state_vector,
+sector_composition_vector = holdings_composition_model(source_02_security_selection, stock_etf_exposure)
+
+sector_attribute_vector = attribute_discovery_model(
+  sector_observed_behavior_vector,
   sector_market_condition_profile,
-  sector_trend_stability_vector,
-  sector_trend_clarity_score,
-  sector_certainty_score,
   sector_composition_vector,
   sector_tradability_vector,
   sector_event_risk_vector
 )
 
-sector_selection_parameter = optional_scalar_projection(sector_selection_parameter_surface)
+sector_context_state = parameter_adjuster(
+  sector_attribute_vector,
+  sector_market_condition_profile,
+  sector_trend_stability_vector,
+  sector_composition_vector,
+  sector_tradability_vector,
+  sector_event_risk_vector
+)
+
+sector_selection_parameter = optional_scalar_projection(sector_context_state)
 ```
 
 Top-N sector selection is an operational usage of those parameters, and scalar projection must not be the only retained context.
@@ -345,7 +357,8 @@ Forward returns are labels for evaluation and calibration, not direct production
       "sector_or_industry_symbol": "SMH",
       "basket_type": "industry_etf",
       "sector_selection_parameter": 0.89,
-      "sector_rotation_state_vector": {"relative_strength_score": 0.88, "leadership_persistence_score": 0.84, "breadth_support_score": 0.77},
+      "sector_attribute_vector": {"relative_strength_score": 0.88, "leadership_persistence_score": 0.84, "breadth_support_score": 0.77},
+      "sector_trend_stability_vector": {"trend_stability_score": 0.86, "cycle_regularity_score": 0.31, "false_break_risk_score": 0.18},
       "sector_composition_vector": {"top_holding_concentration_score": 0.42, "holdings_freshness_score": 0.95},
       "trend_clarity_score": 0.92,
       "trend_persistence_score": 0.87,
@@ -609,7 +622,8 @@ Every candidate trade should produce a complete point-in-time decision record fo
   "layer_2_security_selection": {
     "sector_or_industry_symbol": "SMH",
     "sector_selection_parameter": 0.91,
-    "sector_rotation_state_vector": {"relative_strength_score": 0.88, "leadership_persistence_score": 0.84, "breadth_support_score": 0.77},
+    "sector_attribute_vector": {"relative_strength_score": 0.88, "leadership_persistence_score": 0.84, "breadth_support_score": 0.77},
+      "sector_trend_stability_vector": {"trend_stability_score": 0.86, "cycle_regularity_score": 0.31, "false_break_risk_score": 0.18},
     "sector_composition_vector": {"top_holding_concentration_score": 0.42, "holdings_freshness_score": 0.95},
     "trend_clarity_score": 0.90,
     "certainty_score": 0.84,

@@ -1217,3 +1217,43 @@ Human-readable descriptions such as `growth`, `defensive`, `cyclical`, `inflatio
 - Layer 1 examples must avoid saying a given market state implies a predefined sector/ETF style bucket.
 - Layer 2 output may include inferred ETF/sector attributes, but those attributes need evidence, timestamps, and versioned inference rules.
 - Universe files may contain operational metadata such as ticker, issuer, role, or observation grain, but should not be treated as final behavioral truth for model outputs.
+
+## D041 - Layer 2 structure is ETF attribute discovery plus sector trend stability
+
+Date: 2026-05-02
+Status: Accepted
+
+### Context
+
+After locking Layer 1 as broad market context only and D040 as the rule that ETF/sector behavior attributes must be inferred in Layer 2, the Layer 2 structure needed to be re-walked from first principles.
+
+### Decision
+
+Define `SecuritySelectionModel` V1 as an ETF/sector attribute discovery and sector/industry trend-stability model.
+
+Layer 2 consumes `market_context_state` from Layer 1 only as conditioning context. It infers ETF/sector attributes from point-in-time sector behavior, market-state-conditioned trend stability, holdings/composition, tradability, and risk evidence.
+
+The durable Layer 2 output should be a full sector context state, not just a scalar rank:
+
+```text
+sector_context_state[available_time, sector_or_industry_symbol]
+  sector_observed_behavior_vector
+  sector_attribute_vector
+  sector_market_condition_profile
+  sector_trend_stability_vector
+  sector_composition_vector
+  sector_tradability_vector
+  sector_risk_context_vector
+  eligibility_state
+  optional sector_selection_parameter
+  optional handoff_stock_universe_refs
+```
+
+`sector_selection_parameter` is only a routing/dashboard scalar. The full context state is the model contract.
+
+### Consequences
+
+- Layer 2 is not a simple momentum ranker, not a stock selector, and not a hand-written ETF style classifier.
+- Human-readable ETF descriptions may be generated only as optional post-fit interpretations of `sector_attribute_vector`.
+- Layer 3 receives sector context plus optional handoff references for anonymous target-candidate construction.
+- Layer 2 validation must include market-state-conditioned trend stability, false-break/chop rate, cycle regularity, and downstream usefulness for anonymized strategy selection.

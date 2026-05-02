@@ -158,213 +158,248 @@ It must not directly rank sectors, ETFs, or stocks. It also must not pre-assign 
 
 ## Layer 2 Decomposition: SecuritySelectionModel
 
-Status: draft updated for review on 2026-05-01.
+Status: revised first-pass structure accepted for the current design route on 2026-05-02.
 
-Layer 2 V1 is a **sector/industry selection model**, not a stock-selection model. Its job is to identify which sector/industry baskets are easiest to trade now and in which broad-market environments their trends are stable. Here, stable means trend-stable, not price-stable: persistent one-way advance/decline, clean directional continuation, or a clear repeatable cycle rather than random chop.
+Layer 2 V1 is an **ETF/sector attribute discovery and sector/industry trend-stability model**. It is not a stock selector and not a hand-written sector-style classifier.
 
-Individual stocks remain the real tradable objects, but selecting a stock before choosing a compatible strategy is premature. Stock-level holdings and exposure data are retained as supporting evidence and a bridge for later layers, not as a Layer 2 V1 output target.
+Its core question is:
+
+> Given the current and historical broad market context, which sector/industry ETF baskets exhibit stable, tradable trend behavior, and what attributes does the data imply for each basket?
+
+Here, stability means **trend stability**, not price stability: persistent one-way advance/decline, clean directional continuation, orderly pullback-resumption, persistent breakdown, or clear repeatable cyclicality. Random chop, repeated false breaks, and inconsistent reaction to similar market states are unstable even if price volatility is low.
 
 ### 1. Data
 
 Primary model-facing inputs:
 
 ```text
+model_01_market_regime       # broad market context state, conditioning input only
 trading_data.feature_02_security_selection
 source_02_security_selection # cleaned sector/industry ETF holdings source rows
-stock_etf_exposure           # source-backed evidence for sector composition/transmission, not a stock-selection target
-model_01_market_regime       # background/audit/coarse gating only, not direct ranking input
+stock_etf_exposure           # source-backed composition/transmission evidence, not a stock-selection target
+ETF/liquidity/optionability/event evidence
 ```
 
-ETF holdings are source-side evidence: issuer-published holdings enter through the ETF holdings feed and are cleaned into `source_02_security_selection` rows. `stock_etf_exposure` is downstream of those source rows: a source-backed aggregation that can explain what stocks compose a sector/industry basket and which later stock-level searches may be relevant.
+Layer 1 input is used only as market context. It must not provide pre-labeled ETF attributes. For example, Layer 2 should not receive conclusions like `technology = growth`, `utilities = defensive`, or `gold = safe_haven` as fixed truth. If such labels are useful, they are optional post-fit interpretations of Layer 2 evidence.
 
-For Layer 2 V1, ETF holdings/exposure answer:
-
-- what the sector/industry ETF actually represents;
-- whether the basket is concentrated, diversified, liquid, stale, or compositionally fragile;
-- which stocks may later be inspected by `StrategySelectionModel` and later layers.
-
-They do **not** make Layer 2 choose final stocks.
-
-`feature_02_security_selection` is the Layer 2 home for the evidence moved out of `feature_01_market_regime` when Layer 1 was narrowed to broad market properties. Its V1 scope is:
+`feature_02_security_selection` is the Layer 2 home for sector/industry rotation and daily-context evidence moved out of Layer 1. Its V1 physical row shape remains the accepted comparison surface:
 
 - candidate-comparison rows for reviewed relative-strength combinations with `combination_type in {sector_rotation, daily_context}`;
 - one per-snapshot `sector_rotation_summary` row for sector-observation breadth and dispersion aggregates;
-- row key: `snapshot_time + candidate_symbol + comparison_symbol + rotation_pair_id` where `candidate_symbol` is the compared sector/industry/daily-context ETF, not an individual stock target;
+- row key: `snapshot_time + candidate_symbol + comparison_symbol + rotation_pair_id` where `candidate_symbol` is the compared ETF/basket, not a stock target;
 - payload: relative-strength returns, normalized trend distance/slope/spread/alignment, volatility-ratio, correlation, and sector-observation participation/dispersion evidence.
+
+ETF holdings and `stock_etf_exposure` answer what each basket contains and how concentrated/fresh/fragile that composition is. They also create downstream handoff references for anonymous target-candidate construction. They do **not** make Layer 2 choose final stocks.
 
 Eligible evidence:
 
-- sector/industry ETF relative strength, trend, trend stability, persistence, cyclicality, volatility-of-trend, breadth, dispersion, and signal agreement from the migrated Feature 1 rotation surface;
-- inferred ETF/sector attributes learned from point-in-time behavior and holdings, not hard-coded style labels;
-- point-in-time sector/industry ETF holdings snapshots for composition and transmission diagnostics;
-- sector/industry ETF liquidity, spread, volume, gap, volatility, and trend evidence;
-- ETF optionability summaries if the sector/industry ETF itself may be traded or used as an options proxy;
-- event exclusions that affect the sector/industry basket or make the basket temporarily hard to trade;
-- Layer 1 market-property vector only as background, audit context, or coarse no-trade/risk filter.
+- broad market context from `model_01_market_regime` as a conditioning variable;
+- sector/industry ETF relative strength, trend, persistence, cyclicality, volatility-of-trend, breadth, dispersion, and signal agreement;
+- point-in-time ETF holdings, concentration, top-name dominance, holdings freshness, and exposure overlap;
+- ETF liquidity, spread, volume, gap behavior, optionability, event density, and abnormal activity;
+- inferred ETF/sector attributes learned from point-in-time behavior and holdings.
 
 Excluded from construction:
 
+- hard-coded ETF behavior classes such as growth/defensive/cyclical/safe-haven;
 - individual stock selection as a V1 Layer 2 output;
 - future returns as ranking inputs;
 - strategy performance;
 - option-contract outcomes;
-- portfolio PnL;
-- broad/macro ETF candidates that do not represent tradable equity sector/industry baskets;
-- pre-assigned ETF behavior classes such as growth/defensive/cyclical/safe-haven as model outputs before Layer 2 inference.
+- portfolio PnL.
 
 ### 2. Features
 
-`X` is a point-in-time sector/industry evidence surface keyed by `available_time + sector_or_industry_symbol`.
+`X` is a point-in-time sector/industry evidence surface keyed by:
+
+```text
+available_time + sector_or_industry_symbol
+```
 
 Core feature blocks:
 
-- `sector_rotation_state_vector` — sector/industry ETF leadership, persistence, breadth support, trend stability, and agreement;
-- `sector_market_condition_profile` — how the sector behaves under different broad market states, including whether its trend is stable in risk-on, neutral, risk-off, high-volatility, liquidity-stressed, or transition regimes;
-- `sector_trend_stability_vector` — directional persistence, monotonicity, pullback regularity, breakdown persistence, cycle regularity, false-break frequency, and choppiness;
-- `sector_tradability_vector` — liquidity, spread, volume, optionability if applicable, gap/choppiness, and execution difficulty for the ETF/basket;
-- `sector_composition_vector` — holdings concentration, top-name dominance, holdings freshness, source coverage, and stock-exposure diagnostics;
-- `sector_risk_context_vector` — event density, earnings concentration, abnormal activity, and macro shock sensitivity for the basket;
-- `sector_quality_diagnostics` — stale holdings, missing coverage, conflicting signals, low liquidity, or ambiguous rotation.
+```text
+market_context_state
+sector_observed_behavior_vector
+sector_market_condition_profile
+sector_trend_stability_vector
+sector_attribute_vector
+sector_composition_vector
+sector_tradability_vector
+sector_risk_context_vector
+sector_quality_diagnostics
+```
 
-`stock_etf_exposure` is a diagnostic/supporting block here, not a row target. It can explain sector composition and provide a handoff universe to later layers, but Layer 2 V1 scores the sector/industry basket.
+Definitions:
+
+- `market_context_state` — Layer 1 broad market state, used as conditioning context only.
+- `sector_observed_behavior_vector` — observed sector/industry ETF behavior: relative strength, trend direction, trend clarity, trend persistence, breadth support, volatility-of-trend, correlation, and dispersion.
+- `sector_market_condition_profile` — how the basket behaves under different broad market states; e.g. which market contexts historically produce clean trends, chop, reversals, or cycles.
+- `sector_trend_stability_vector` — directional persistence, monotonicity, pullback regularity, breakdown persistence, cycle regularity, false-break frequency, and choppiness.
+- `sector_attribute_vector` — inferred, evidence-backed ETF/sector attributes. This may later include human-readable interpretations, but the model-facing vector is behavioral and point-in-time.
+- `sector_composition_vector` — holdings concentration, top-name dominance, holdings freshness, source coverage, overlap/crowding, and stock-exposure diagnostics.
+- `sector_tradability_vector` — ETF/basket liquidity, spread, volume, optionability, gap/choppiness, and execution difficulty.
+- `sector_risk_context_vector` — event density, earnings concentration, abnormal activity, macro shock sensitivity, and known no-trade states.
+- `sector_quality_diagnostics` — stale holdings, missing coverage, conflicting signals, low liquidity, sparse history, or ambiguous rotation.
 
 ### 3. Prediction target
 
 V1 does not target “highest future return” and does not target “best stock.”
 
-The target is a sector/industry parameter surface describing which sector/industry baskets are easiest and cleanest to trade under current evidence.
+The target is a sector/industry state and parameter surface describing:
+
+1. what attributes the ETF/sector currently exhibits;
+2. in which broad market contexts its trend tends to be stable;
+3. whether it is currently easy enough to pass downstream for strategy-aware anonymous target work.
 
 Primary output concept:
 
 ```text
-sector_selection_parameter_surface[available_time, sector_or_industry_symbol]
+sector_context_state[available_time, sector_or_industry_symbol]
 ```
 
 Possible fields:
 
 ```text
 sector_or_industry_symbol
-basket_type                         # sector_etf, industry_etf, theme_etf_if_accepted
-sector_rotation_state_vector
-sector_tradability_vector
-sector_composition_vector
-sector_risk_context_vector
+basket_type
+sector_attribute_vector
 sector_market_condition_profile
-trend_clarity_score
-trend_persistence_score
+sector_trend_stability_vector
+trend_direction_state              # advance / decline / range / transition / mixed
+trend_stability_state              # stable_directional / stable_cyclical / choppy / false_break_prone / unstable
 trend_stability_score
 cycle_regularity_score
 relative_strength_consistency_score
 breadth_support_score
+composition_quality_score
 liquidity_score
 optionability_score
 event_risk_score
 certainty_score
-eligibility_state                   # eligible, watch, gated, excluded
-sector_selection_parameter          # optional convenience scalar, not sole output
-handoff_stock_universe_refs         # optional references for later strategy/security work
+eligibility_state                  # eligible / watch / gated / excluded
+sector_selection_parameter         # optional routing scalar, not sole output
+handoff_stock_universe_refs        # optional references for later anonymous target construction
 selection_reason
 ```
 
-Forward returns, realized drawdown, future strategy outcomes, and future trade outcomes are labels for evaluation/calibration only.
+Forward returns, future drawdown, future trend-stability labels, and future strategy outcomes are evaluation/calibration labels only.
 
 ### 4. Model mapping from X to output
 
 Conceptual mapping:
 
 ```text
-sector_rotation_model(feature_02_security_selection)
-  -> sector_rotation_state_vector[sector_or_industry_etf]
+observed_behavior_builder(feature_02_security_selection)
+  -> sector_observed_behavior_vector
 
-market_condition_stability_model(model_01_market_regime, feature_02_security_selection)
-  -> sector_market_condition_profile[sector_or_industry_etf]
-  -> sector_trend_stability_vector[sector_or_industry_etf]
+market_condition_stability_model(
+  model_01_market_regime,
+  sector_observed_behavior_vector
+)
+  -> sector_market_condition_profile
+  -> sector_trend_stability_vector
 
 sector_composition_builder(source_02_security_selection, stock_etf_exposure)
-  -> sector_composition_vector[sector_or_industry_etf]
+  -> sector_composition_vector
 
-sector_tradability_builder(etf_bar_liquidity_optionability_event_evidence)
-  -> sector_tradability_vector[sector_or_industry_etf]
+sector_tradability_builder(etf_liquidity_optionability_event_evidence)
+  -> sector_tradability_vector
 
-parameter_adjuster(
-  sector_rotation_state_vector,
+attribute_discovery_model(
+  sector_observed_behavior_vector,
   sector_market_condition_profile,
-  sector_trend_stability_vector,
   sector_composition_vector,
   sector_tradability_vector,
   sector_risk_context_vector
 )
-  -> sector_selection_parameter_surface
+  -> sector_attribute_vector
 
-optional_scalar_projection(sector_selection_parameter_surface)
-  -> sector_selection_parameter
+parameter_adjuster(
+  sector_attribute_vector,
+  sector_market_condition_profile,
+  sector_trend_stability_vector,
+  sector_composition_vector,
+  sector_tradability_vector,
+  sector_risk_context_vector,
+  sector_quality_diagnostics
+)
+  -> sector_context_state
+  -> optional sector_selection_parameter
 ```
 
-The scalar projection is allowed for sorting, dashboards, and downstream routing, but the durable output must retain supporting context.
+The scalar projection is allowed for dashboards and routing, but the durable output is the full context state.
 
 ### 5. Loss / error measure
 
-Construction loss should not be a simple future-return regression loss. Wrongness is measured by whether the selected sector/industry baskets are actually cleaner, more persistent, easier to trade, and more useful to downstream strategy selection than alternatives.
+Wrongness is measured by whether inferred sector attributes and stability states are point-in-time, stable under refits, and useful downstream.
 
-Sector error/evaluation measures:
+Evaluation/error measures:
 
-- poor rank calibration against forward sector/industry trend-stability, return-risk, and tradability labels;
-- high selected-basket drawdown, adverse excursion, volatility shock, false-break frequency, or trend-chop after selection;
-- unstable sector ranks under small window/config changes;
-- high turnover with little added forward evidence;
+- sector trend-stability calibration by market context;
+- false-break / chop rate after an `eligible` state;
+- directional persistence after stable-directional states;
+- cycle regularity after stable-cyclical states;
+- rank/parameter stability under small lookback/config changes;
 - selection of illiquid, unoptionable, stale-holding, event-dense, or compositionally fragile baskets;
-- weak monotonic relationship between parameter deciles and later sector-level tradability/outcome quality;
-- poor downstream usefulness for `StrategySelectionModel`;
+- weak monotonic relationship between parameter deciles and future trend stability/tradability;
+- poor downstream usefulness for anonymous target/strategy selection;
 - leakage or timestamp violations.
 
 ### 6. Training / parameter update
 
-V1 should start as interpretable, point-in-time parameter construction rather than a black-box selector:
+V1 should start as interpretable, point-in-time state construction:
 
 - reviewed sector/industry ETF universe;
-- explicit holdings freshness, concentration, and coverage diagnostics;
-- rolling/expanding standardization for relative strength, trend, volatility, and liquidity evidence;
-- reviewed eligibility gates for liquidity, optionability, event proximity, stale data, and ambiguity;
-- optional learned weights only after walk-forward evidence proves a benefit.
+- no hard-coded ETF behavior labels;
+- rolling/expanding standardization for sector behavior evidence;
+- market-state-conditioned behavior tables/profiles;
+- explicit holdings freshness, concentration, overlap, and coverage diagnostics;
+- reviewed gates for liquidity, optionability, event proximity, stale data, and ambiguity;
+- optional learned weights or clustering only after walk-forward evidence proves a benefit.
 
-Updates must be chronological. Holdings revisions, late provider updates, and event timestamps must be represented by `available_time`, not hindsight membership.
+Updates must be chronological. Holdings revisions, late provider updates, market-state revisions, and event timestamps must be represented by `available_time`, not hindsight membership.
 
 ### 7. Validation / usefulness
 
-Validation should prove that Model 2 improves the sector/industry context handed to `StrategySelectionModel`.
+Validation should prove that Layer 2 adds useful sector context for downstream anonymous target and strategy selection.
 
 Minimum checks:
 
-- point-in-time feature, holdings, and event availability;
+- point-in-time feature, holdings, event, and market-context availability;
+- no pre-assigned ETF behavior labels in model-facing inputs;
 - sector/industry universe coverage and missing-data diagnostics;
-- rank/parameter stability through time;
-- decile/quantile analysis of `sector_selection_parameter` vs future sector trend stability, directional persistence, cycle regularity, return, drawdown, volatility, MFE/MAE, liquidity, and tradability outcomes;
-- event/liquidity/optionability gate precision and false-reject review;
-- comparison to simple baselines such as broad-market top momentum, raw sector ETF relative strength, and equal-weight sector rotation;
-- downstream usefulness for `StrategySelectionModel` without leaking strategy results into Model 2 construction.
+- stability of inferred `sector_attribute_vector` and `sector_trend_stability_vector` through time;
+- decile/quantile analysis of `sector_selection_parameter` vs future trend stability, directional persistence, cycle regularity, false-break frequency, drawdown, volatility, liquidity, and tradability outcomes;
+- comparison to baselines: raw sector ETF momentum, equal-weight sector rotation, and market-context-agnostic sector ranking;
+- downstream usefulness for anonymized `StrategySelectionModel` without leaking strategy results into Layer 2 construction.
 
 ### 8. Overfitting control
 
 Controls:
 
 - chronological split or walk-forward evaluation;
-- no future returns, future ETF holdings, future index membership, or future event interpretations in features;
+- no future returns, future ETF holdings, future index membership, future sector labels, or future event interpretations in features;
+- no hand-coded behavior labels as hidden priors;
 - sector/industry ETF universe fixed by reviewed eligibility rules, not post-hoc winners;
 - full support context retained instead of only a scalar score;
 - limited gates and parameter components at V1;
-- stability checks across rebalance windows, lookbacks, and liquidity thresholds;
+- stability checks across market-context buckets, rebalance windows, lookbacks, and liquidity thresholds;
 - explicit treatment of stale/missing holdings and survivorship bias;
 - forward labels used only for evaluation/calibration.
 
 ### 9. Decision deployment
 
-Layer 2 output enters the decision stack as sector/industry context, not final stock selection:
+Layer 2 output enters the decision stack as sector/industry context:
 
 ```text
 SecuritySelectionModel
+  -> sector_context_state
+  -> inferred sector_attribute_vector
+  -> sector_market_condition_profile
+  -> sector_trend_stability_vector
   -> eligible/watch/gated/excluded sector/industry baskets
-  -> sector selection parameter surface and reasons
-  -> optional stock-exposure/handoff references for later inspection
+  -> optional handoff_stock_universe_refs for anonymous target-candidate construction
   -> StrategySelectionModel sector-context input
   -> unified decision record sector-selection audit section
 ```
