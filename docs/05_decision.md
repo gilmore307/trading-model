@@ -92,21 +92,23 @@ The downstream conceptual view is:
 market_context_state
 ```
 
-Current factor fields:
+Current model-facing factor keys:
 
 ```text
-price_behavior_factor
-trend_certainty_factor
-capital_flow_factor
-sentiment_factor
-valuation_pressure_factor
-fundamental_strength_factor
-macro_environment_factor
-market_structure_factor
-risk_stress_factor
-transition_pressure
-data_quality_score
+1_price_behavior_factor
+1_trend_certainty_factor
+1_capital_flow_factor
+1_sentiment_factor
+1_valuation_pressure_factor
+1_fundamental_strength_factor
+1_macro_environment_factor
+1_market_structure_factor
+1_risk_stress_factor
+1_transition_pressure
+1_data_quality_score
 ```
+
+Physical SQL columns use the same ownership signal as safe identifiers (`layer01_*`) while model-facing JSON/dict keys keep the compact `1_*` contract.
 
 Layer 1 must not output sector rankings, ETF rankings, stock candidates, strategy labels, or pre-assigned ETF/sector behavior classes.
 
@@ -166,16 +168,18 @@ The V1 field contract is owned by `src/models/model_02_security_selection/sector
 Core state blocks:
 
 ```text
-sector_observed_behavior_vector
-sector_attribute_vector
-sector_conditional_behavior_vector
-sector_trend_stability_vector
-sector_tradability_vector
-sector_risk_context_vector
-eligibility_state
-sector_handoff_state
-optional sector_selection_parameter
+2_sector_observed_behavior_vector
+2_sector_attribute_vector
+2_sector_conditional_behavior_vector
+2_sector_trend_stability_vector
+2_sector_tradability_vector
+2_sector_risk_context_vector
+2_eligibility_state
+2_sector_handoff_state
+optional 2_sector_selection_parameter
 ```
+
+Physical SQL columns for these model-facing keys should use safe `layer02_*` aliases when persisted.
 
 Layer 2 may select or block sector/industry baskets for downstream candidate construction. It must not choose final stocks, entry timing, strategy parameters, option contracts, final size, or portfolio weights.
 
@@ -237,3 +241,17 @@ Model evaluation, config versions, promotion candidates, promotion decisions, ro
 Current implementation provides dry-run/evidence-building paths first. Durable writes or production active-pointer changes require explicit accepted contracts and review.
 
 The current table-name terms are registered in `trading-manager`; concrete column-level registration can wait until real evaluation/promotion flows prove the schema.
+
+## D011 - Model output keys carry layer ownership prefixes
+
+Date: 2026-05-02
+Status: Accepted
+
+Model-facing output vectors and output fields must carry their layer owner in the field name so downstream contracts cannot confuse similarly named concepts across layers.
+
+Rules:
+
+- Layer 1 model-facing output keys use compact `1_*` names, for example `1_trend_certainty_factor`.
+- Layer 2 model-facing output keys use compact `2_*` names, for example `2_sector_conditional_behavior_vector` and `2_trend_stability_score`.
+- Deterministic data evidence fields from `trading-data` do not receive model-layer prefixes merely because a model consumes them.
+- Physical SQL storage should use safe identifier aliases (`layer01_*`, `layer02_*`) for these compact model-facing keys when numeric-leading identifiers would violate repository SQL identifier guards or downstream compatibility.

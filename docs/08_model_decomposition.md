@@ -51,25 +51,27 @@ Evidence roles:
 |---|---|
 | primary evidence | Directly supports a market-property factor and participates in construction. |
 | diagnostic evidence | Explains, stress-tests, or sanity-checks a factor without directly driving it. |
-| quality evidence | Supports coverage, freshness, reliability, or `data_quality_score`. |
+| quality evidence | Supports coverage, freshness, reliability, or `1_data_quality_score`. |
 | evaluation-only evidence | Used only after output construction to test usefulness. |
 | intentionally unused evidence | Excluded with a documented reason. |
 
-Feature groups should map to the current market-property factors:
+Feature groups should map to the current model-facing market-property keys:
 
 ```text
-price_behavior_factor
-trend_certainty_factor
-capital_flow_factor
-sentiment_factor
-valuation_pressure_factor
-fundamental_strength_factor
-macro_environment_factor
-market_structure_factor
-risk_stress_factor
-transition_pressure
-data_quality_score
+1_price_behavior_factor
+1_trend_certainty_factor
+1_capital_flow_factor
+1_sentiment_factor
+1_valuation_pressure_factor
+1_fundamental_strength_factor
+1_macro_environment_factor
+1_market_structure_factor
+1_risk_stress_factor
+1_transition_pressure
+1_data_quality_score
 ```
+
+When persisted to SQL, these `1_*` model-facing keys should be stored with safe `layer01_*` physical column aliases.
 
 Layer 1 evidence maturation means maintaining the feature-to-factor evidence map in `src/models/model_01_market_regime/evidence_map.md`. It does not mean adding sector/ETF/stock conclusions to Layer 1.
 
@@ -101,7 +103,7 @@ rolling/expanding point-in-time scaler
   -> reviewed sign direction
   -> factor-level reducer
   -> bounded continuous factor values
-  -> transition_pressure + data_quality_score
+  -> 1_transition_pressure + 1_data_quality_score
 ```
 
 No current or future row may fit the scaler for the row being scored.
@@ -184,7 +186,7 @@ ETF liquidity / optionability / event evidence
 
 Layer 1 input must not provide pre-labeled ETF attributes. Labels such as `growth`, `defensive`, `cyclical`, or `safe_haven` are optional post-fit interpretations, not input truth.
 
-Layer 1 market-property factors are conditioning context only. Layer 2 should build a distinct `sector_conditional_behavior_vector` that describes how each ETF/basket behaves under similar market backgrounds; it should not reuse Layer 1 factor names as ETF style fields.
+Layer 1 market-property factors are conditioning context only. Layer 2 should build a distinct `2_sector_conditional_behavior_vector` that describes how each ETF/basket behaves under similar market backgrounds; it should not reuse Layer 1 factor names as ETF style fields.
 
 The conditional behavior vector should prefer signed axes: for example, positive/negative values on one axis can represent with-market versus inverse direction, volatility amplification versus dampening, upside-favorable versus downside-heavy capture, or context tailwind versus headwind.
 
@@ -200,13 +202,13 @@ Core blocks:
 
 ```text
 market_context_state
-sector_observed_behavior_vector
-sector_attribute_vector
-sector_conditional_behavior_vector
-sector_trend_stability_vector
-sector_tradability_vector
-sector_risk_context_vector
-sector_quality_diagnostics
+2_sector_observed_behavior_vector
+2_sector_attribute_vector
+2_sector_conditional_behavior_vector
+2_sector_trend_stability_vector
+2_sector_tradability_vector
+2_sector_risk_context_vector
+2_sector_quality_diagnostics
 ```
 
 ### 3. Prediction target
@@ -228,16 +230,18 @@ The V1 field contract is owned by `src/models/model_02_security_selection/sector
 Core output blocks:
 
 ```text
-sector_observed_behavior_vector
-sector_attribute_vector
-sector_conditional_behavior_vector
-sector_trend_stability_vector
-sector_tradability_vector
-sector_risk_context_vector
-eligibility_state
-sector_handoff_state
-optional sector_selection_parameter
+2_sector_observed_behavior_vector
+2_sector_attribute_vector
+2_sector_conditional_behavior_vector
+2_sector_trend_stability_vector
+2_sector_tradability_vector
+2_sector_risk_context_vector
+2_eligibility_state
+2_sector_handoff_state
+optional 2_sector_selection_parameter
 ```
+
+When persisted to SQL, these `2_*` model-facing keys should be stored with safe `layer02_*` physical column aliases.
 
 The target is clean, persistent, understandable sector/industry trend behavior under market context, not highest future return and not final stock selection. Layer 2 may select/prioritize sector baskets for downstream candidate construction, but it does not expand them into stock candidates.
 

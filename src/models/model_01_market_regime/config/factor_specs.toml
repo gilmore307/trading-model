@@ -31,7 +31,7 @@ z_clip = 5.0
 min_signal_coverage = 0.5
 
 [[factors]]
-name = "price_behavior_factor"
+name = "1_price_behavior_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
 min_signal_coverage = 0.3
@@ -47,7 +47,7 @@ suffixes = [
 direction = 1
 min_history = 20
 [[factors]]
-name = "trend_certainty_factor"
+name = "1_trend_certainty_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
 min_signal_coverage = 0.3
@@ -66,7 +66,7 @@ suffixes = [
 direction = 1
 min_history = 60
 [[factors]]
-name = "capital_flow_factor"
+name = "1_capital_flow_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
 min_signal_coverage = 0.3
@@ -139,7 +139,7 @@ columns = [
 direction = 1
 min_history = 30
 [[factors]]
-name = "sentiment_factor"
+name = "1_sentiment_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
 min_signal_coverage = 0.3
@@ -337,7 +337,7 @@ suffixes = [
 direction = -1
 min_history = 60
 [[factors]]
-name = "valuation_pressure_factor"
+name = "1_valuation_pressure_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
 min_signal_coverage = 0.3
@@ -412,7 +412,7 @@ columns = [
 direction = 1
 min_history = 30
 [[factors]]
-name = "fundamental_strength_factor"
+name = "1_fundamental_strength_factor"
 reducer = "bounded_mean"
 aggregation = "flat"
 # Broad-market participation only. Sector-observation breadth/dispersion lives in Layer 2.
@@ -433,7 +433,7 @@ columns = [
 direction = 1
 min_history = 20
 [[factors]]
-name = "macro_environment_factor"
+name = "1_macro_environment_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
 min_signal_coverage = 0.3
@@ -607,7 +607,7 @@ columns = [
 direction = 1
 min_history = 30
 [[factors]]
-name = "market_structure_factor"
+name = "1_market_structure_factor"
 reducer = "bounded_mean"
 aggregation = "flat"
 [[factors.groups]]
@@ -699,7 +699,7 @@ columns = [
 direction = 1
 min_history = 30
 [[factors]]
-name = "risk_stress_factor"
+name = "1_risk_stress_factor"
 reducer = "bounded_mean"
 aggregation = "bucketed_mean"
 min_signal_coverage = 0.3

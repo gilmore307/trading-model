@@ -273,7 +273,7 @@ class RollingZScore:
 STANDARDIZATION = load_standardization_config()
 FACTOR_SPECS = load_factor_specs()
 FACTOR_COLUMNS = [spec.name for spec in FACTOR_SPECS]
-OUTPUT_COLUMNS = ["available_time", *FACTOR_COLUMNS, "transition_pressure", "data_quality_score"]
+OUTPUT_COLUMNS = ["available_time", *FACTOR_COLUMNS, "1_transition_pressure", "1_data_quality_score"]
 SPEC_BY_NAME = {spec.name: spec for spec in FACTOR_SPECS}
 SIGNAL_COLUMNS = sorted({signal.column for spec in FACTOR_SPECS for signal in spec.signals})
 
@@ -318,8 +318,8 @@ def generate_row(
         if factor is not None:
             factor_values[spec.name] = factor
 
-    output["transition_pressure"] = _transition_pressure(factor_values, previous_factors)
-    output["data_quality_score"] = len(eligible_signal_columns) / total_signals if total_signals else None
+    output["1_transition_pressure"] = _transition_pressure(factor_values, previous_factors)
+    output["1_data_quality_score"] = len(eligible_signal_columns) / total_signals if total_signals else None
     return output
 
 

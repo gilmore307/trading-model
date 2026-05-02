@@ -36,6 +36,8 @@ Required key / identity fields:
 | `model_version` | text | Version/config label that produced the row. |
 | `market_context_state_ref` | text/null | Reference to the Layer 1 market-context row used only as conditioning context. |
 
+Model-facing Layer 2 output keys use the compact `2_*` prefix. Physical SQL storage should use safe `layer02_*` aliases for these keys.
+
 Layer 2 must not copy Layer 1 market-property factor names into ETF style fields. Layer 1 provides the background condition used to compare similar market environments; Layer 2 outputs a separate conditional behavior vector learned from each ETF/basket's behavior under those environments.
 
 `sector_or_industry_symbol` is routing/audit identity for a sector/industry ETF
@@ -52,14 +54,14 @@ are not final selection commands.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `relative_strength_score` | float/null | Market-relative strength of the basket using current point-in-time evidence. |
-| `trend_direction_score` | float/null | Directional trend score after reviewed sign/scale handling. |
-| `trend_persistence_score` | float/null | Evidence that trend behavior persists across recent windows. |
-| `volatility_adjusted_trend_score` | float/null | Trend strength adjusted for realized volatility/chop. |
-| `breadth_participation_score` | float/null | Breadth/participation support inside the basket or comparable sector universe. |
-| `dispersion_score` | float/null | Cross-component dispersion; high dispersion weakens clean basket interpretation. |
-| `market_correlation_score` | float/null | Current co-movement with broad market context. |
-| `chop_score` | float/null | Sideways/noisy behavior diagnostic. Higher means less clean trend behavior. |
+| `2_relative_strength_score` | float/null | Market-relative strength of the basket using current point-in-time evidence. |
+| `2_trend_direction_score` | float/null | Directional trend score after reviewed sign/scale handling. |
+| `2_trend_persistence_score` | float/null | Evidence that trend behavior persists across recent windows. |
+| `2_volatility_adjusted_trend_score` | float/null | Trend strength adjusted for realized volatility/chop. |
+| `2_breadth_participation_score` | float/null | Breadth/participation support inside the basket or comparable sector universe. |
+| `2_dispersion_score` | float/null | Cross-component dispersion; high dispersion weakens clean basket interpretation. |
+| `2_market_correlation_score` | float/null | Current co-movement with broad market context. |
+| `2_chop_score` | float/null | Sideways/noisy behavior diagnostic. Higher means less clean trend behavior. |
 
 ### Inferred attribute block
 
@@ -68,14 +70,14 @@ model outputs, not hand-written labels and not Layer 1 facts.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `growth_sensitivity_score` | float/null | Inferred sensitivity to growth/speculative market behavior. |
-| `defensive_sensitivity_score` | float/null | Inferred sensitivity to defensive/risk-off behavior. |
-| `cyclical_sensitivity_score` | float/null | Inferred sensitivity to cyclical/economic-activity behavior. |
-| `rate_sensitivity_score` | float/null | Inferred sensitivity to rate/duration pressure. |
-| `dollar_sensitivity_score` | float/null | Inferred sensitivity to dollar/liquidity pressure. |
-| `commodity_sensitivity_score` | float/null | Inferred sensitivity to commodity/inflation pressure. |
-| `risk_appetite_sensitivity_score` | float/null | Inferred sensitivity to broad risk appetite. |
-| `attribute_certainty_score` | float/null | Stability/certainty of inferred attributes across refits/windows. |
+| `2_growth_sensitivity_score` | float/null | Inferred sensitivity to growth/speculative market behavior. |
+| `2_defensive_sensitivity_score` | float/null | Inferred sensitivity to defensive/risk-off behavior. |
+| `2_cyclical_sensitivity_score` | float/null | Inferred sensitivity to cyclical/economic-activity behavior. |
+| `2_rate_sensitivity_score` | float/null | Inferred sensitivity to rate/duration pressure. |
+| `2_dollar_sensitivity_score` | float/null | Inferred sensitivity to dollar/liquidity pressure. |
+| `2_commodity_sensitivity_score` | float/null | Inferred sensitivity to commodity/inflation pressure. |
+| `2_risk_appetite_sensitivity_score` | float/null | Inferred sensitivity to broad risk appetite. |
+| `2_attribute_certainty_score` | float/null | Stability/certainty of inferred attributes across refits/windows. |
 
 Human-readable labels such as `growth`, `defensive`, or `cyclical` may be shown
 only as post-fit interpretation derived from these scores; they are not input
@@ -89,14 +91,14 @@ V1 prefers signed axes over duplicated opposite fields. Positive and negative va
 
 | Field | Type | Meaning |
 |---|---|---|
-| `conditional_beta_score` | float/null | Relative market beta under similar market-context rows. |
-| `directional_coupling_score` | float/null | Signed direction coupling under similar backgrounds: positive = moves with broad market direction; negative = inverse behavior; near zero = weak/unstable direction relation. |
-| `volatility_response_score` | float/null | Signed volatility response: positive = amplifies broad-market volatility; negative = dampens/absorbs it. |
-| `capture_asymmetry_score` | float/null | Signed conditional capture: positive = upside-favorable capture; negative = downside-heavy capture. If future evidence needs total capture magnitude separately, add a distinct intensity field rather than re-splitting this axis. |
-| `response_convexity_score` | float/null | Signed nonlinear response: positive = favorable convexity under similar backgrounds; negative = adverse concavity / worse downside response. |
-| `context_support_score` | float/null | Signed current-context support: positive = context tailwind for this basket behavior; negative = context headwind. |
-| `transition_sensitivity_score` | float/null | Sensitivity to changing/unstable market context. |
-| `context_conditioned_stability_score` | float/null | Trend-stability score after conditioning on market context. |
+| `2_conditional_beta_score` | float/null | Relative market beta under similar market-context rows. |
+| `2_directional_coupling_score` | float/null | Signed direction coupling under similar backgrounds: positive = moves with broad market direction; negative = inverse behavior; near zero = weak/unstable direction relation. |
+| `2_volatility_response_score` | float/null | Signed volatility response: positive = amplifies broad-market volatility; negative = dampens/absorbs it. |
+| `2_capture_asymmetry_score` | float/null | Signed conditional capture: positive = upside-favorable capture; negative = downside-heavy capture. If future evidence needs total capture magnitude separately, add a distinct intensity field rather than re-splitting this axis. |
+| `2_response_convexity_score` | float/null | Signed nonlinear response: positive = favorable convexity under similar backgrounds; negative = adverse concavity / worse downside response. |
+| `2_context_support_score` | float/null | Signed current-context support: positive = context tailwind for this basket behavior; negative = context headwind. |
+| `2_transition_sensitivity_score` | float/null | Sensitivity to changing/unstable market context. |
+| `2_context_conditioned_stability_score` | float/null | Trend-stability score after conditioning on market context. |
 
 ### Trend-stability block
 
@@ -104,12 +106,12 @@ Core V1 output block for downstream target/strategy work.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `trend_stability_score` | float/null | Overall stability of tradable trend behavior. |
-| `trend_certainty_score` | float/null | Confidence/certainty in the trend-stability reading. |
-| `false_break_risk_score` | float/null | Risk that apparent trend behavior is a false break. |
-| `reversal_risk_score` | float/null | Risk of near-term reversal under current evidence. |
-| `cycle_regularity_score` | float/null | Evidence that behavior cycles regularly enough for downstream strategy use. |
-| `selection_readiness_score` | float/null | Readiness for downstream anonymous target generation; not a final selection. |
+| `2_trend_stability_score` | float/null | Overall stability of tradable trend behavior. |
+| `2_trend_certainty_score` | float/null | Confidence/certainty in the trend-stability reading. |
+| `2_false_break_risk_score` | float/null | Risk that apparent trend behavior is a false break. |
+| `2_reversal_risk_score` | float/null | Risk of near-term reversal under current evidence. |
+| `2_cycle_regularity_score` | float/null | Evidence that behavior cycles regularly enough for downstream strategy use. |
+| `2_selection_readiness_score` | float/null | Readiness for downstream anonymous target generation; not a final selection. |
 
 ### Downstream sector handoff block
 
@@ -117,9 +119,9 @@ Layer 2 may identify sector/industry baskets that are suitable for downstream an
 
 | Field | Type | Meaning |
 |---|---|---|
-| `sector_handoff_state` | text/null | Downstream handoff state such as `selected`, `watch`, `blocked`, or `insufficient_data`. |
-| `sector_handoff_rank` | integer/null | Optional rank among sector/industry baskets for candidate-builder priority; not a portfolio weight. |
-| `sector_handoff_reason_codes` | text/null | Stable reason codes explaining why the basket is selected, watched, or blocked. |
+| `2_sector_handoff_state` | text/null | Downstream handoff state such as `selected`, `watch`, `blocked`, or `insufficient_data`. |
+| `2_sector_handoff_rank` | integer/null | Optional rank among sector/industry baskets for candidate-builder priority; not a portfolio weight. |
+| `2_sector_handoff_reason_codes` | text/null | Stable reason codes explaining why the basket is selected, watched, or blocked. |
 
 ### Tradability block
 
@@ -128,11 +130,11 @@ whether downstream stock/option work should be cautious.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `liquidity_score` | float/null | Basket liquidity/volume/depth diagnostic. |
-| `spread_cost_score` | float/null | Estimated spread/friction burden. Higher means worse cost. |
-| `optionability_score` | float/null | Option-chain availability/quality diagnostic for ETF or constituents. |
-| `capacity_score` | float/null | Capacity/slippage diagnostic for using the basket context downstream. |
-| `tradability_score` | float/null | Combined tradability diagnostic for downstream gating. |
+| `2_liquidity_score` | float/null | Basket liquidity/volume/depth diagnostic. |
+| `2_spread_cost_score` | float/null | Estimated spread/friction burden. Higher means worse cost. |
+| `2_optionability_score` | float/null | Option-chain availability/quality diagnostic for ETF or constituents. |
+| `2_capacity_score` | float/null | Capacity/slippage diagnostic for using the basket context downstream. |
+| `2_tradability_score` | float/null | Combined tradability diagnostic for downstream gating. |
 
 ### Risk / event block
 
@@ -141,12 +143,12 @@ risk layers.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `volatility_risk_score` | float/null | Realized/implied volatility risk diagnostic. |
-| `gap_risk_score` | float/null | Gap/jump risk diagnostic. |
-| `event_density_score` | float/null | Scheduled/unscheduled event density around the basket. |
-| `abnormal_activity_score` | float/null | Equity/ETF abnormal activity diagnostic when available. |
-| `correlation_stress_score` | float/null | Stress from rising market/basket correlation or contagion. |
-| `downside_tail_risk_score` | float/null | Tail/downside risk diagnostic. |
+| `2_volatility_risk_score` | float/null | Realized/implied volatility risk diagnostic. |
+| `2_gap_risk_score` | float/null | Gap/jump risk diagnostic. |
+| `2_event_density_score` | float/null | Scheduled/unscheduled event density around the basket. |
+| `2_abnormal_activity_score` | float/null | Equity/ETF abnormal activity diagnostic when available. |
+| `2_correlation_stress_score` | float/null | Stress from rising market/basket correlation or contagion. |
+| `2_downside_tail_risk_score` | float/null | Tail/downside risk diagnostic. |
 
 ### Eligibility / quality block
 
@@ -155,11 +157,11 @@ handoff.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `eligibility_state` | text | One of `eligible`, `watch`, `excluded`, or `insufficient_data`. |
-| `eligibility_reason_codes` | text/null | Semicolon-separated stable reason codes for watch/excluded/insufficient rows. |
-| `data_quality_score` | float/null | Input coverage/freshness/reliability summary. |
-| `state_quality_score` | float/null | Overall reliability of the produced `sector_context_state` row. |
-| `evidence_count` | integer/null | Count of usable evidence fields/families contributing to the row. |
+| `2_eligibility_state` | text | One of `eligible`, `watch`, `excluded`, or `insufficient_data`. |
+| `2_eligibility_reason_codes` | text/null | Semicolon-separated stable reason codes for watch/excluded/insufficient rows. |
+| `2_data_quality_score` | float/null | Input coverage/freshness/reliability summary. |
+| `2_state_quality_score` | float/null | Overall reliability of the produced `sector_context_state` row. |
+| `2_evidence_count` | integer/null | Count of usable evidence fields/families contributing to the row. |
 
 ## Excluded V1 fields
 

@@ -39,19 +39,21 @@ Standardization defaults are currently `lookback = 120`, `min_history = 20`, `st
 
 The current output columns are market-property factors, not proxy-dashboard factors:
 
-- `price_behavior_factor`
-- `trend_certainty_factor`
-- `capital_flow_factor`
-- `sentiment_factor`
-- `valuation_pressure_factor`
-- `fundamental_strength_factor`
-- `macro_environment_factor`
-- `market_structure_factor`
-- `risk_stress_factor`
-- `transition_pressure`
-- `data_quality_score`
+- `1_price_behavior_factor`
+- `1_trend_certainty_factor`
+- `1_capital_flow_factor`
+- `1_sentiment_factor`
+- `1_valuation_pressure_factor`
+- `1_fundamental_strength_factor`
+- `1_macro_environment_factor`
+- `1_market_structure_factor`
+- `1_risk_stress_factor`
+- `1_transition_pressure`
+- `1_data_quality_score`
 
-Observable ETF ratios, returns, volatility, trend, correlation, credit/rate/dollar/commodity, and breadth signals are sensors. They support the market-property ontology but are not themselves the public output contract. `fundamental_strength_factor` is currently a broad-market participation proxy until true point-in-time fundamental evidence is added.
+When writing to SQL, the runtime wrapper maps compact model-facing keys such as `1_trend_certainty_factor` to safe physical aliases such as `layer01_trend_certainty_factor`.
+
+Observable ETF ratios, returns, volatility, trend, correlation, credit/rate/dollar/commodity, and breadth signals are sensors. They support the market-property ontology but are not themselves the public output contract. `1_fundamental_strength_factor` is currently a broad-market participation proxy until true point-in-time fundamental evidence is added.
 
 
 ## Evidence map

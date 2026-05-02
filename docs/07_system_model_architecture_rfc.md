@@ -95,17 +95,17 @@ Current fields:
 
 ```text
 available_time
-price_behavior_factor
-trend_certainty_factor
-capital_flow_factor
-sentiment_factor
-valuation_pressure_factor
-fundamental_strength_factor
-macro_environment_factor
-market_structure_factor
-risk_stress_factor
-transition_pressure
-data_quality_score
+1_price_behavior_factor
+1_trend_certainty_factor
+1_capital_flow_factor
+1_sentiment_factor
+1_valuation_pressure_factor
+1_fundamental_strength_factor
+1_macro_environment_factor
+1_market_structure_factor
+1_risk_stress_factor
+1_transition_pressure
+1_data_quality_score
 ```
 
 ### Inputs
@@ -142,7 +142,7 @@ rolling/expanding scaler
   -> per-signal z-score with reviewed sign direction
   -> factor-level reducer
   -> bounded continuous market-property factors
-  -> transition_pressure + data_quality_score
+  -> 1_transition_pressure + 1_data_quality_score
 ```
 
 No clustering, HMM state, hard state id, or human-readable regime label is required for V1.
@@ -155,7 +155,7 @@ Each factor needs a reviewed evidence map:
 |---|---|
 | primary evidence | Directly contributes to factor construction. |
 | diagnostic evidence | Explains or stress-tests the factor without directly driving it. |
-| quality evidence | Supports coverage, freshness, reliability, or `data_quality_score`. |
+| quality evidence | Supports coverage, freshness, reliability, or `1_data_quality_score`. |
 | evaluation-only evidence | Used only after construction to test usefulness. |
 | intentionally unused evidence | Excluded with a documented reason. |
 
@@ -202,15 +202,15 @@ Layer 2 does **not** choose final stocks.
 ### Output blocks
 
 ```text
-sector_observed_behavior_vector
-sector_attribute_vector
-sector_conditional_behavior_vector
-sector_trend_stability_vector
-sector_tradability_vector
-sector_risk_context_vector
-eligibility_state
-sector_handoff_state
-optional sector_selection_parameter
+2_sector_observed_behavior_vector
+2_sector_attribute_vector
+2_sector_conditional_behavior_vector
+2_sector_trend_stability_vector
+2_sector_tradability_vector
+2_sector_risk_context_vector
+2_eligibility_state
+2_sector_handoff_state
+optional 2_sector_selection_parameter
 ```
 
 ### Boundaries
