@@ -108,7 +108,7 @@ Current model-facing factor keys:
 1_data_quality_score
 ```
 
-Physical SQL columns use the same ownership signal as safe identifiers (`layer01_*`) while model-facing JSON/dict keys keep the compact `1_*` contract.
+Docs, model-facing payloads, and physical SQL columns use the same compact `1_*` contract. SQL writers quote numeric-leading identifiers where required instead of creating `layer01_*` aliases.
 
 Layer 1 must not output sector rankings, ETF rankings, stock candidates, strategy labels, or pre-assigned ETF/sector behavior classes.
 
