@@ -1,6 +1,6 @@
 # sector_context_state V1 contract
 
-This file owns the first `SecuritySelectionModel` V1 output contract for
+This file owns the first `SectorContextModel` V1 output contract for
 `sector_context_state`. It is model-local until implementation/evaluation prove
 which fields should be registered as shared terms.
 
@@ -17,7 +17,7 @@ It may mark which sector/industry baskets are suitable for downstream candidate 
 Planned physical artifact:
 
 ```text
-trading_model.model_02_security_selection
+trading_model.model_02_sector_context
 ```
 
 Conceptual row shape:
@@ -32,7 +32,7 @@ Required key / identity fields:
 |---|---|---|
 | `available_time` | timestamp | Point-in-time availability of the state row. |
 | `sector_or_industry_symbol` | text | Eligible sector/industry equity ETF or basket symbol. |
-| `model_id` | text | Stable model id, normally `security_selection_model`. |
+| `model_id` | text | Stable model id, normally `sector_context_model`. |
 | `model_version` | text | Version/config label that produced the row. |
 | `market_context_state_ref` | text/null | Reference to the Layer 1 market-context row used only as conditioning context. |
 

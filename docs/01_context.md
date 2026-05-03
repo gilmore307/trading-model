@@ -5,7 +5,7 @@
 The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the full seven-layer trading decision system:
 
 1. MarketRegimeModel (`market_regime_model`);
-2. SecuritySelectionModel (`security_selection_model`);
+2. SectorContextModel (`sector_context_model`);
 3. StrategySelectionModel (`strategy_selection_model`);
 4. TradeQualityModel (`trade_quality_model`);
 5. OptionExpressionModel (`option_expression_model`);
@@ -20,7 +20,7 @@ Current structural boundary:
 broad market background -> sector/industry trend-stability background -> anonymized strategy-aware target work
 ```
 
-`MarketRegimeModel` describes the broad environment. `SecuritySelectionModel` studies sector/industry trend stability under each broad market state. `StrategySelectionModel` and later layers evaluate anonymized target candidates with market and sector context, then map back to real symbols only for audit, routing, and decision records.
+`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies sector/industry trend stability under each broad market state. `StrategySelectionModel` and later layers evaluate anonymized target candidates with market and sector context, then map back to real symbols only for audit, routing, and decision records.
 
 ## Related Systems
 

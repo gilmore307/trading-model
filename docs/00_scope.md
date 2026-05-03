@@ -7,7 +7,7 @@
 It owns point-in-time model research, training/evaluation workflows, model-local feature/label logic, model verdicts, and reproducibility evidence for:
 
 1. MarketRegimeModel (`market_regime_model`);
-2. SecuritySelectionModel (`security_selection_model`);
+2. SectorContextModel (`sector_context_model`);
 3. StrategySelectionModel (`strategy_selection_model`);
 4. TradeQualityModel (`trade_quality_model`);
 5. OptionExpressionModel (`option_expression_model`);

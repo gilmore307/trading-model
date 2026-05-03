@@ -23,7 +23,7 @@ Status: Accepted
 | Layer | Model | Stable id | Role |
 |---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | Broad market context state. |
-| 2 | `SecuritySelectionModel` | `security_selection_model` | Market-state-conditioned sector/industry trend-stability state. |
+| 2 | `SectorContextModel` | `sector_context_model` | Market-state-conditioned sector/industry trend-stability state. |
 | 3 | `StrategySelectionModel` | `strategy_selection_model` | Strategy fit for anonymized target candidates. |
 | 4 | `TradeQualityModel` | `trade_quality_model` | Trade outcome quality, target/stop, MFE/MAE, and horizon. |
 | 5 | `OptionExpressionModel` | `option_expression_model` | Stock/ETF/long-call/long-put expression and option contract constraints. |
@@ -43,7 +43,7 @@ The current route is:
 MarketRegimeModel
   -> market_context_state
 
-SecuritySelectionModel
+SectorContextModel
   -> sector_context_state
 
 anonymous target candidate builder + StrategySelectionModel
@@ -145,7 +145,7 @@ A `market_context_state` alias/view may wrap the current factor columns for down
 Date: 2026-05-02
 Status: Accepted
 
-`SecuritySelectionModel` V1 outputs a sector/industry context state. It studies which sector/industry ETF baskets have stable, tradable trend behavior under each broad market context.
+`SectorContextModel` V1 outputs a sector/industry context state. It studies which sector/industry ETF baskets have stable, tradable trend behavior under each broad market context.
 
 Layer 1 market-property factors are conditioning context only. Layer 2 must learn a separate conditional behavior vector for each ETF/basket under similar market backgrounds; it must not reuse Layer 1 factor names as ETF style fields.
 
@@ -160,10 +160,10 @@ sector_context_state[available_time, sector_or_industry_symbol]
 Planned physical output:
 
 ```text
-trading_model.model_02_security_selection
+trading_model.model_02_sector_context
 ```
 
-The V1 field contract is owned by `src/models/model_02_security_selection/sector_context_state_contract.md` until implementation/evaluation proves which names should be shared through the registry.
+The V1 field contract is owned by `src/models/model_02_sector_context/sector_context_state_contract.md` until implementation/evaluation proves which names should be shared through the registry.
 
 Core state blocks:
 
@@ -261,7 +261,7 @@ Rules:
 Date: 2026-05-02
 Status: Accepted
 
-The boundary between `SecuritySelectionModel` and `StrategySelectionModel` is an anonymous target candidate builder, not direct ticker-aware strategy fitting.
+The boundary between `SectorContextModel` and `StrategySelectionModel` is an anonymous target candidate builder, not direct ticker-aware strategy fitting.
 
 The model-local V1 contract is owned by:
 
@@ -281,3 +281,19 @@ metadata: audit/routing symbol references and source evidence refs
 `target_candidate_id` is a row key only. It must not expose raw ticker/company identity and must not become a categorical fitting feature for Layer 3+.
 
 Real symbols may remain recoverable through audit/routing metadata, but that metadata must not be joined into model-facing fitting vectors except through reviewed non-identity evidence fields.
+
+## D013 - Rename Layer 2 to SectorContextModel
+
+Date: 2026-05-03
+Status: Accepted
+
+`SecuritySelectionModel` is no longer the accepted Layer 2 name because Layer 2 does not select final securities. Layer 2 models sector/industry basket context under the current broad market background, then hands selected/prioritized baskets to the anonymous target candidate builder.
+
+Accepted canonical names:
+
+- Class/display: `SectorContextModel`
+- Stable id: `sector_context_model`
+- Physical output table term: `model_02_sector_context`
+- Conceptual output: `sector_context_state`
+
+Retire active-use references to `SecuritySelectionModel`, `security_selection_model`, and `model_02_security_selection`. Historical decision text may mention them only as superseded terms.

@@ -9,7 +9,7 @@ This file defines the current offline modeling workflow for `trading-model`.
 ```text
 point-in-time data artifacts
   -> MarketRegimeModel
-  -> SecuritySelectionModel
+  -> SectorContextModel
   -> anonymous target candidate builder
   -> StrategySelectionModel
   -> TradeQualityModel
@@ -49,7 +49,7 @@ point-in-time data artifacts
 
 Deliver `model_01_market_regime` as a point-in-time continuous market-property vector and evaluate `market_context_state` for stability, interpretability, Layer 2 explanatory value, option-expression usefulness, and portfolio-risk usefulness.
 
-### Phase 2: SecuritySelectionModel
+### Phase 2: SectorContextModel
 
 Deliver `sector_context_state` for eligible sector/industry baskets: inferred attributes, conditional behavior profiles, trend-stability vectors, tradability diagnostics, risk context, eligibility, and selected-sector handoff state.
 

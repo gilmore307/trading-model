@@ -5,7 +5,7 @@
 It owns point-in-time model research, validation, decision-record prototypes, and model outputs for:
 
 1. MarketRegimeModel (`market_regime_model`);
-2. SecuritySelectionModel (`security_selection_model`);
+2. SectorContextModel (`sector_context_model`);
 3. StrategySelectionModel (`strategy_selection_model`);
 4. TradeQualityModel (`trade_quality_model`);
 5. OptionExpressionModel (`option_expression_model`);
@@ -22,7 +22,7 @@ The accepted structure separates market, sector, and target work:
 MarketRegimeModel
   -> market_context_state
 
-SecuritySelectionModel
+SectorContextModel
   -> sector_context_state
 
 anonymous target candidate builder + StrategySelectionModel
@@ -48,7 +48,7 @@ Current implementation packages:
 ```text
 src/models/                           Model-specific packages and layer-boundary contracts.
 src/models/model_01_market_regime/    MarketRegimeModel V1 generator, evaluation, config, and evidence map.
-src/models/model_02_security_selection/ SecuritySelectionModel V1 sector-context contract.
+src/models/model_02_sector_context/ SectorContextModel V1 sector-context contract.
 src/models/anonymous_target_candidate_builder/ Anonymous target candidate builder V1 contract.
 src/model_governance/                 Shared governance, promotion, and review helpers.
 ```

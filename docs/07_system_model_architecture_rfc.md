@@ -8,7 +8,7 @@ Owner intent: keep the model stack direct, point-in-time, and current-route auth
 ```text
 point-in-time data foundation
   -> MarketRegimeModel
-  -> SecuritySelectionModel
+  -> SectorContextModel
   -> anonymous target candidate builder + StrategySelectionModel
   -> TradeQualityModel
   -> OptionExpressionModel
@@ -37,7 +37,7 @@ This separation is mandatory:
 | Layer | Model class | Stable id | Conceptual output | Role |
 |---|---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | `market_context_state` | Broad market-property state keyed by `available_time`. |
-| 2 | `SecuritySelectionModel` | `security_selection_model` | `sector_context_state` | Sector/industry trend-stability and inferred basket attributes under market context. |
+| 2 | `SectorContextModel` | `sector_context_model` | `sector_context_state` | Sector/industry trend-stability and inferred basket attributes under market context. |
 | 3 | `StrategySelectionModel` | `strategy_selection_model` | `strategy_fit_state` | Composite strategy fit for anonymous target candidates. |
 | 4 | `TradeQualityModel` | `trade_quality_model` | `trade_quality_state` | Signal quality, outcome distribution, target/stop, MFE/MAE, and holding horizon. |
 | 5 | `OptionExpressionModel` | `option_expression_model` | `expression_state` | Stock/ETF/long-call/long-put expression and option-contract constraints. |
@@ -172,7 +172,7 @@ Layer 1 must prove:
 - usefulness for portfolio risk, sizing, execution-style, exit, and kill-switch policy;
 - no hidden sector/ETF/stock/strategy selection.
 
-## Layer 2: SecuritySelectionModel
+## Layer 2: SectorContextModel
 
 ### Goal
 
@@ -196,7 +196,7 @@ Layer 2 does **not** choose final stocks.
 ### Inputs
 
 - `market_context_state` from Layer 1 as conditioning context only.
-- `trading_data.feature_02_security_selection` for sector/industry relative strength, trend, volatility, correlation, breadth, and dispersion evidence.
+- `trading_data.feature_02_sector_context` for sector/industry relative strength, trend, volatility, correlation, breadth, and dispersion evidence.
 - ETF liquidity, optionability, gap/chop behavior, event density, and abnormal activity evidence.
 
 ### Output blocks

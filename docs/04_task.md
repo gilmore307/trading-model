@@ -8,7 +8,7 @@
    - Mature stability/usefulness evaluation for `market_context_state` against downstream baselines.
 
 2. **Layer 2 contract refinement**
-   - Keep `src/models/model_02_security_selection/sector_context_state_contract.md` aligned with implementation.
+   - Keep `src/models/model_02_sector_context/sector_context_state_contract.md` aligned with implementation.
    - Keep ETF/sector attributes inferred from evidence.
    - Keep `stock_etf_exposure` as downstream candidate-construction evidence, not Layer 2 core behavior modeling.
 
@@ -29,7 +29,7 @@
 
 - Exact mature evidence definitions for each Layer 1 factor beyond the current V1 family-level map.
 - Exact `market_context_state` alias/view implementation, if any.
-- Exact implementation/evaluation shape for producing `trading_model.model_02_security_selection` rows.
+- Exact implementation/evaluation shape for producing `trading_model.model_02_sector_context` rows.
 - Exact implementation/evaluation shape for producing anonymous target candidate rows.
 - Exact persistence path for promotion decisions and future active production model pointers.
 - Exact artifact/manifest/ready-signal/request contracts for promoted model artifacts.
@@ -38,11 +38,11 @@
 
 ## Recently Accepted
 
-- Current architecture is `MarketRegimeModel -> SecuritySelectionModel -> anonymous target candidate builder + StrategySelectionModel -> TradeQualityModel -> OptionExpressionModel -> EventOverlayModel -> PortfolioRiskModel`.
+- Current architecture is `MarketRegimeModel -> SectorContextModel -> anonymous target candidate builder + StrategySelectionModel -> TradeQualityModel -> OptionExpressionModel -> EventOverlayModel -> PortfolioRiskModel`.
 - Layer 1 outputs only broad `market_context_state` from current market-property factors.
 - Layer 1 must not pre-label ETF/sector behavior or rank sectors/ETFs/stocks.
 - Layer 2 outputs sector/industry trend-stability and inferred basket attributes as `sector_context_state`.
-- `src/models/model_02_security_selection/sector_context_state_contract.md` owns the current Layer 2 V1 field contract.
+- `src/models/model_02_sector_context/sector_context_state_contract.md` owns the current Layer 2 V1 field contract.
 - Layer 2 does not choose final stocks in V1.
 - `src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md` owns the current anonymous candidate-builder V1 contract.
 - Target-aware fitting starts downstream through anonymous target candidates.

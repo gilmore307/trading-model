@@ -168,7 +168,7 @@ model_01_market_regime
 
 It must not directly rank sectors, ETFs, or stocks and must not pre-assign ETF/sector attributes.
 
-## Layer 2: SecuritySelectionModel
+## Layer 2: SectorContextModel
 
 Status: accepted design route; implementation pending.
 
@@ -180,7 +180,7 @@ Primary inputs:
 
 ```text
 market_context_state                 # Layer 1, conditioning only
-trading_data.feature_02_security_selection
+trading_data.feature_02_sector_context
 ETF liquidity / optionability / event evidence
 ```
 
@@ -222,10 +222,10 @@ sector_context_state[available_time, sector_or_industry_symbol]
 Planned physical output:
 
 ```text
-trading_model.model_02_security_selection
+trading_model.model_02_sector_context
 ```
 
-The V1 field contract is owned by `src/models/model_02_security_selection/sector_context_state_contract.md`.
+The V1 field contract is owned by `src/models/model_02_sector_context/sector_context_state_contract.md`.
 
 Core output blocks:
 
@@ -286,7 +286,7 @@ Layer 2 must prove:
 - stable inferred attributes across refits;
 - no final-stock leakage;
 - no hard-coded style-label dependence;
-- conformance to `src/models/model_02_security_selection/sector_context_state_contract.md`.
+- conformance to `src/models/model_02_sector_context/sector_context_state_contract.md`.
 
 ### 8. Overfitting control
 

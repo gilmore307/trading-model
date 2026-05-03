@@ -5,15 +5,15 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONTRACT_PATH = REPO_ROOT / "src" / "models" / "model_02_security_selection" / "sector_context_state_contract.md"
+CONTRACT_PATH = REPO_ROOT / "src" / "models" / "model_02_sector_context" / "sector_context_state_contract.md"
 
 
-class SecuritySelectionContractTests(unittest.TestCase):
+class SectorContextContractTests(unittest.TestCase):
     def test_sector_context_state_contract_names_required_fields(self) -> None:
         contract = CONTRACT_PATH.read_text(encoding="utf-8")
 
         for token in {
-            "trading_model.model_02_security_selection",
+            "trading_model.model_02_sector_context",
             "sector_context_state[available_time, sector_or_industry_symbol]",
             "`available_time`",
             "`sector_or_industry_symbol`",
