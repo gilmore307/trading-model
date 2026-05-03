@@ -179,7 +179,7 @@ Core state blocks:
 optional 2_sector_selection_parameter
 ```
 
-Physical SQL columns for these model-facing keys should use safe `layer02_*` aliases when persisted.
+Physical SQL columns for these model-facing keys use the same compact `2_*` names. SQL writers quote numeric-leading identifiers where required instead of creating `layer02_*` aliases.
 
 Layer 2 may select or block sector/industry baskets for downstream candidate construction. It must not choose final stocks, entry timing, strategy parameters, option contracts, final size, or portfolio weights.
 
