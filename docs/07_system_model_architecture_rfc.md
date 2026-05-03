@@ -46,6 +46,18 @@ This separation is mandatory:
 
 Do not call Layer 7 `ExecutionModel`; broker mutation and live/paper order placement are outside `trading-model`.
 
+## Model Artifact Rule
+
+Implemented model layers separate the primary output from review and gating surfaces:
+
+```text
+model_NN_<layer_slug>
+model_NN_<layer_slug>_explainability
+model_NN_<layer_slug>_diagnostics
+```
+
+The primary output is the narrow downstream dependency contract. Explainability owns human-review internals. Diagnostics owns acceptance, monitoring, and gating evidence. Layer-owned fields use compact `1_*`, `2_*`, ... names in docs, model-facing payloads, and SQL physical columns; SQL writers quote numeric-leading names when needed rather than storing `layer01_*` / `layer02_*` aliases.
+
 ## Point-in-Time Rule
 
 At prediction time `t`, every model may use only data genuinely available before or at `t`.

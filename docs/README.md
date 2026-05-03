@@ -13,5 +13,7 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `06_memory.md` — durable local continuity that does not fit narrower docs.
 - `07_system_model_architecture_rfc.md` — accepted current seven-layer model architecture and phased implementation route.
 - `08_model_decomposition.md` — current nine-part model decomposition framework and layer-by-layer design breakdown.
+- `91_layer_01_market_regime.md` — current Layer 1 model artifact contract.
+- `92_layer_02_sector_context.md` — current Layer 2 model artifact contract.
 
 Do not place generated data, artifacts, notebooks, logs, credentials, or implementation outputs in this directory.

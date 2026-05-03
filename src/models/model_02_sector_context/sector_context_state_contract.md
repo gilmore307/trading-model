@@ -1,24 +1,28 @@
 # sector_context_state V1 contract
 
-This file owns the first `SectorContextModel` V1 output contract for
-`sector_context_state`. It is model-local until implementation/evaluation prove
-which fields should be registered as shared terms.
+This file owns the first `SectorContextModel` V1 output contract for `sector_context_state`. It is model-local until implementation/evaluation prove which fields should be registered as shared terms.
 
 ## Purpose
 
-Layer 2 answers: for each eligible sector/industry equity ETF basket, what is
-its market-context-conditioned trend-stability state and inferred basket
-attribute profile at `available_time`?
+Layer 2 answers: for each eligible sector/industry equity ETF basket, what is its market-context-conditioned trend-stability state and inferred basket attribute profile at `available_time`?
 
 It may mark which sector/industry baskets are suitable for downstream candidate construction. It does **not** answer which final stock to buy, which strategy to run, which option contract to trade, or how much portfolio risk to allocate.
 
-## Row identity
+## Physical artifacts
 
-Planned physical artifact:
+Layer 2 uses three physical artifacts so the downstream contract stays narrow without discarding review and gating evidence:
 
 ```text
-trading_model.model_02_sector_context
+trading_model.model_02_sector_context                  # output
+trading_model.model_02_sector_context_explainability   # explainability
+trading_model.model_02_sector_context_diagnostics      # diagnostics
 ```
+
+`model_02_sector_context` is the stable downstream dependency surface. `model_02_sector_context_explainability` is for human review/debug/explain. `model_02_sector_context_diagnostics` is for acceptance, monitoring, and gating.
+
+Downstream production logic should not hard-depend on explainability or diagnostics fields without a later reviewed promotion decision.
+
+## Row identity
 
 Conceptual row shape:
 
@@ -36,21 +40,49 @@ Required key / identity fields:
 | `model_version` | text | Version/config label that produced the row. |
 | `market_context_state_ref` | text/null | Reference to the Layer 1 market-context row used only as conditioning context. |
 
-Model-facing Layer 2 output keys use the compact `2_*` prefix. Physical SQL storage should use safe `layer02_*` aliases for these keys.
+Layer 2 model fields use compact `2_*` names in docs, model-facing payloads, and SQL physical columns. SQL writers should quote numeric-leading identifiers where required rather than storing semantic aliases such as `layer02_*`.
 
 Layer 2 must not copy Layer 1 market-property factor names into ETF style fields. Layer 1 provides the background condition used to compare similar market environments; Layer 2 outputs a separate conditional behavior vector learned from each ETF/basket's behavior under those environments.
 
-`sector_or_industry_symbol` is routing/audit identity for a sector/industry ETF
-basket. It is allowed in Layer 2 because Layer 2's unit of analysis is the
-sector/industry basket. It must not be propagated as raw ticker identity into
-anonymous target fitting vectors downstream.
+`sector_or_industry_symbol` is routing/audit identity for a sector/industry ETF basket. It is allowed in Layer 2 because Layer 2's unit of analysis is the sector/industry basket. It must not be propagated as raw ticker identity into anonymous target fitting vectors downstream.
 
-## V1 output fields
+## `model_02_sector_context` output fields
+
+The primary output is intentionally narrow: identity, trend/context stability state, downstream sector handoff, and eligibility/quality summary.
+
+### Trend-stability state
+
+| Field | Type | Meaning |
+|---|---|---|
+| `2_trend_stability_score` | float/null | Overall stability of tradable trend behavior. |
+| `2_trend_certainty_score` | float/null | Confidence/certainty in the trend-stability reading. |
+| `2_context_conditioned_stability_score` | float/null | Trend-stability score after conditioning on market context. |
+| `2_selection_readiness_score` | float/null | Readiness for downstream anonymous target generation; not a final selection. |
+
+### Downstream sector handoff
+
+Layer 2 may identify sector/industry baskets suitable for downstream anonymous target construction. It does not use ETF holdings to choose stocks. ETF holdings and `stock_etf_exposure` belong to the downstream candidate builder / Layer 3 input-preparation boundary.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `2_sector_handoff_state` | text/null | One of `selected`, `watch`, `blocked`, or `insufficient_data`. |
+| `2_sector_handoff_rank` | integer/null | Optional rank among sector/industry baskets for candidate-builder priority; not a portfolio weight. |
+| `2_sector_handoff_reason_codes` | text/null | Stable reason codes explaining why the basket is selected, watched, or blocked. |
+
+### Eligibility / quality summary
+
+| Field | Type | Meaning |
+|---|---|---|
+| `2_eligibility_state` | text | One of `eligible`, `watch`, `excluded`, or `insufficient_data`. |
+| `2_eligibility_reason_codes` | text/null | Semicolon-separated stable reason codes for watch/excluded/insufficient rows. |
+| `2_state_quality_score` | float/null | Overall reliability of the produced `sector_context_state` row. |
+| `2_evidence_count` | integer/null | Count of usable evidence fields/families contributing to the row. |
+
+## `model_02_sector_context_explainability` fields
+
+Explainability owns behavior and attribution detail for human review. These fields are allowed to be wider and more detailed than the primary output, but they should not become hard downstream dependencies.
 
 ### Observed behavior block
-
-Point-in-time sector/industry behavior. These fields summarize evidence; they
-are not final selection commands.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -65,8 +97,7 @@ are not final selection commands.
 
 ### Inferred attribute block
 
-Posterior attributes inferred from evidence and market conditioning. These are
-model outputs, not hand-written labels and not Layer 1 facts.
+Posterior attributes are model outputs, not hand-written labels and not Layer 1 facts.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -79,54 +110,33 @@ model outputs, not hand-written labels and not Layer 1 facts.
 | `2_risk_appetite_sensitivity_score` | float/null | Inferred sensitivity to broad risk appetite. |
 | `2_attribute_certainty_score` | float/null | Stability/certainty of inferred attributes across refits/windows. |
 
-Human-readable labels such as `growth`, `defensive`, or `cyclical` may be shown
-only as post-fit interpretation derived from these scores; they are not input
-truth and are not required row fields.
+Human-readable labels such as `growth`, `defensive`, or `cyclical` may be shown only as post-fit interpretation derived from these scores; they are not input truth and are not required row fields.
 
 ### Conditional behavior block
 
-A new vector describing how the sector/industry basket behaves under similar Layer 1 market backgrounds. These fields are ETF/basket behavior properties, not reused Layer 1 market-property factors.
+These fields describe how the sector/industry basket behaves under similar Layer 1 market backgrounds. They are ETF/basket behavior properties, not reused Layer 1 market-property factors.
 
-V1 prefers signed axes over duplicated opposite fields. Positive and negative values describe opposite behavior on the same reviewed axis; magnitude describes strength. This keeps the vector compact and avoids pairs such as `*_upside` / `*_downside`, `*_tailwind` / `*_headwind`, or `*_amplification` / `*_dampening` unless later evidence proves the pair needs two independent degrees of freedom.
+V1 prefers signed axes over duplicated opposite fields. Positive and negative values describe opposite behavior on the same reviewed axis; magnitude describes strength.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `2_conditional_beta_score` | float/null | Relative market beta under similar market-context rows. |
-| `2_directional_coupling_score` | float/null | Signed direction coupling under similar backgrounds: positive = moves with broad market direction; negative = inverse behavior; near zero = weak/unstable direction relation. |
-| `2_volatility_response_score` | float/null | Signed volatility response: positive = amplifies broad-market volatility; negative = dampens/absorbs it. |
-| `2_capture_asymmetry_score` | float/null | Signed conditional capture: positive = upside-favorable capture; negative = downside-heavy capture. If future evidence needs total capture magnitude separately, add a distinct intensity field rather than re-splitting this axis. |
-| `2_response_convexity_score` | float/null | Signed nonlinear response: positive = favorable convexity under similar backgrounds; negative = adverse concavity / worse downside response. |
-| `2_context_support_score` | float/null | Signed current-context support: positive = context tailwind for this basket behavior; negative = context headwind. |
+| `2_directional_coupling_score` | float/null | Signed direction coupling: positive = moves with broad market direction; negative = inverse behavior. |
+| `2_volatility_response_score` | float/null | Signed volatility response: positive = amplifies broad-market volatility; negative = dampens it. |
+| `2_capture_asymmetry_score` | float/null | Signed conditional capture: positive = upside-favorable capture; negative = downside-heavy capture. |
+| `2_response_convexity_score` | float/null | Signed nonlinear response: positive = favorable convexity; negative = adverse concavity. |
+| `2_context_support_score` | float/null | Signed current-context support: positive = tailwind; negative = headwind. |
 | `2_transition_sensitivity_score` | float/null | Sensitivity to changing/unstable market context. |
-| `2_context_conditioned_stability_score` | float/null | Trend-stability score after conditioning on market context. |
 
-### Trend-stability block
+### Reason and evidence detail
 
-Core V1 output block for downstream target/strategy work.
+Explainability may also include contributing evidence refs, reason-code expansions, bucket/subscore detail, config refs, and feature-family contribution detail once implementation proves the concrete shape.
 
-| Field | Type | Meaning |
-|---|---|---|
-| `2_trend_stability_score` | float/null | Overall stability of tradable trend behavior. |
-| `2_trend_certainty_score` | float/null | Confidence/certainty in the trend-stability reading. |
-| `2_false_break_risk_score` | float/null | Risk that apparent trend behavior is a false break. |
-| `2_reversal_risk_score` | float/null | Risk of near-term reversal under current evidence. |
-| `2_cycle_regularity_score` | float/null | Evidence that behavior cycles regularly enough for downstream strategy use. |
-| `2_selection_readiness_score` | float/null | Readiness for downstream anonymous target generation; not a final selection. |
+## `model_02_sector_context_diagnostics` fields
 
-### Downstream sector handoff block
+Diagnostics owns acceptance, monitoring, and gating evidence. These fields may gate use of the row, but they do not directly express the sector-context state itself.
 
-Layer 2 may identify sector/industry baskets that are suitable for downstream anonymous target construction. It does not use ETF holdings to choose stocks. ETF holdings and `stock_etf_exposure` belong to the downstream candidate builder / Layer 3 input-preparation boundary, where selected Layer 2 baskets are transmitted into a stock candidate universe and then anonymized for strategy fitting.
-
-| Field | Type | Meaning |
-|---|---|---|
-| `2_sector_handoff_state` | text/null | Downstream handoff state such as `selected`, `watch`, `blocked`, or `insufficient_data`. |
-| `2_sector_handoff_rank` | integer/null | Optional rank among sector/industry baskets for candidate-builder priority; not a portfolio weight. |
-| `2_sector_handoff_reason_codes` | text/null | Stable reason codes explaining why the basket is selected, watched, or blocked. |
-
-### Tradability block
-
-Whether the basket can be used as a clean, liquid sector/industry context and
-whether downstream stock/option work should be cautious.
+### Tradability diagnostics
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -136,10 +146,7 @@ whether downstream stock/option work should be cautious.
 | `2_capacity_score` | float/null | Capacity/slippage diagnostic for using the basket context downstream. |
 | `2_tradability_score` | float/null | Combined tradability diagnostic for downstream gating. |
 
-### Risk / event block
-
-Risk diagnostics used by downstream strategy, option-expression, and portfolio
-risk layers.
+### Risk / event diagnostics
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -150,18 +157,13 @@ risk layers.
 | `2_correlation_stress_score` | float/null | Stress from rising market/basket correlation or contagion. |
 | `2_downside_tail_risk_score` | float/null | Tail/downside risk diagnostic. |
 
-### Eligibility / quality block
-
-Whether the row is usable and why it may be excluded from downstream candidate
-handoff.
+### Data and model diagnostics
 
 | Field | Type | Meaning |
 |---|---|---|
-| `2_eligibility_state` | text | One of `eligible`, `watch`, `excluded`, or `insufficient_data`. |
-| `2_eligibility_reason_codes` | text/null | Semicolon-separated stable reason codes for watch/excluded/insufficient rows. |
 | `2_data_quality_score` | float/null | Input coverage/freshness/reliability summary. |
-| `2_state_quality_score` | float/null | Overall reliability of the produced `sector_context_state` row. |
-| `2_evidence_count` | integer/null | Count of usable evidence fields/families contributing to the row. |
+
+Diagnostics may also include coverage/freshness/missingness detail, baseline comparison, rolling/refit stability, chronological split evidence, and no-future-leak checks once implementation proves the concrete shape.
 
 ## Excluded V1 fields
 

@@ -158,7 +158,7 @@ class MarketRegimeModelTests(unittest.TestCase):
 
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime"', joined_sql)
-        self.assertIn('ADD COLUMN IF NOT EXISTS "layer01_trend_certainty_factor" DOUBLE PRECISION', joined_sql)
+        self.assertIn('ADD COLUMN IF NOT EXISTS "1_trend_certainty_factor" DOUBLE PRECISION', joined_sql)
         self.assertIn('ON CONFLICT ("available_time") DO UPDATE SET', joined_sql)
 
 

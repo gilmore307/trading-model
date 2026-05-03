@@ -19,6 +19,20 @@ For each layer, define:
 
 ## Cross-Layer Rules
 
+### Model artifact split
+
+Each implemented model layer should separate three artifact classes:
+
+```text
+model_NN_<layer_slug>                 # output
+model_NN_<layer_slug>_explainability  # human review/debug/explain
+model_NN_<layer_slug>_diagnostics     # acceptance/monitoring/gating
+```
+
+Primary `model` outputs stay narrow and stable. Explainability and diagnostics may be wider, but downstream production logic should not hard-depend on them without a reviewed promotion decision.
+
+Layer-owned fields use compact `1_*`, `2_*`, ... prefixes consistently across docs, model-facing payloads, and SQL physical columns. SQL writers quote numeric-leading names where required rather than inventing `layer01_*` / `layer02_*` aliases.
+
 - Every row must be point-in-time and keyed by a timestamp genuinely knowable to the system.
 - Data acquisition/source evidence stays in `trading-data`.
 - Global terms, fields, artifacts, statuses, templates, and contracts route through `trading-manager`.
@@ -71,7 +85,7 @@ Feature groups should map to the current model-facing market-property keys:
 1_data_quality_score
 ```
 
-When persisted to SQL, these `1_*` model-facing keys should be stored with safe `layer01_*` physical column aliases.
+When persisted to SQL, these `1_*` model-facing keys remain the physical column names. SQL writers should quote numeric-leading identifiers where required instead of creating `layer01_*` aliases.
 
 Layer 1 evidence maturation means maintaining the feature-to-factor evidence map in `src/models/model_01_market_regime/evidence_map.md`. It does not mean adding sector/ETF/stock conclusions to Layer 1.
 
@@ -79,11 +93,15 @@ Layer 1 evidence maturation means maintaining the feature-to-factor evidence map
 
 V1 has no supervised target and no required regime label.
 
-Physical output:
+Physical artifacts:
 
 ```text
 trading_model.model_01_market_regime
+trading_model.model_01_market_regime_explainability
+trading_model.model_01_market_regime_diagnostics
 ```
+
+The primary output carries the narrow downstream market-context state. Factor attribution, source feature contributions, bucket-level scores, evidence-role refs, and config/factor spec refs belong to `model_01_market_regime_explainability`. Missingness/freshness, minimum-history, standardization, z-score clipping, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness, baseline comparison, and no-future-leak checks belong to `model_01_market_regime_diagnostics`.
 
 Conceptual output:
 
@@ -219,29 +237,19 @@ Conceptual output:
 sector_context_state[available_time, sector_or_industry_symbol]
 ```
 
-Planned physical output:
+Planned physical artifacts:
 
 ```text
 trading_model.model_02_sector_context
+trading_model.model_02_sector_context_explainability
+trading_model.model_02_sector_context_diagnostics
 ```
 
 The V1 field contract is owned by `src/models/model_02_sector_context/sector_context_state_contract.md`.
 
-Core output blocks:
+Primary output keeps only the narrow downstream dependency surface: identity, trend/context stability state, downstream sector handoff, and eligibility/quality summary. Observed behavior, inferred attributes, conditional behavior internals, contributing evidence, and reason-code detail belong to `model_02_sector_context_explainability`. Liquidity/spread/optionability, event/gap/volatility/correlation stress, freshness/missingness, baseline comparison, refit stability, and no-future-leak evidence belong to `model_02_sector_context_diagnostics`.
 
-```text
-2_sector_observed_behavior_vector
-2_sector_attribute_vector
-2_sector_conditional_behavior_vector
-2_sector_trend_stability_vector
-2_sector_tradability_vector
-2_sector_risk_context_vector
-2_eligibility_state
-2_sector_handoff_state
-optional 2_sector_selection_parameter
-```
-
-When persisted to SQL, these `2_*` model-facing keys should be stored with safe `layer02_*` physical column aliases.
+When persisted to SQL, `2_*` model-facing keys remain the physical column names. SQL writers should quote numeric-leading identifiers where required instead of creating `layer02_*` aliases.
 
 The target is clean, persistent, understandable sector/industry trend behavior under market context, not highest future return and not final stock selection. Layer 2 may select/prioritize sector baskets for downstream candidate construction, but it does not expand them into stock candidates.
 

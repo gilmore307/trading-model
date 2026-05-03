@@ -13,10 +13,7 @@ from typing import Any, Mapping, Sequence
 
 DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-LAYER_PREFIX_SQL_ALIASES = {
-    "1_": "layer01_",
-    "2_": "layer02_",
-}
+COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
 
 def _load_generator():
@@ -49,19 +46,18 @@ def _quote_identifier(identifier: str) -> str:
     return '"' + identifier.replace('"', '""') + '"'
 
 
-def _sql_column_name(logical_column: str) -> str:
-    """Return the safe SQL storage name for a model-facing output key.
+def _quote_column_identifier(identifier: str) -> str:
+    """Quote a reviewed output column name.
 
-    Model-facing JSON/dict contracts use concise layer prefixes such as
-    ``1_`` and ``2_``. Physical SQL identifiers keep the same ownership signal
-    but use ``layer01_`` / ``layer02_`` so they remain portable unquoted-safe
-    identifiers under the repository's SQL identifier guard.
+    Model-facing contracts use compact layer prefixes such as ``1_`` and
+    ``2_``. Physical SQL columns preserve those canonical names; numeric-leading
+    names are safe because every column identifier is quoted and restricted to
+    alphanumeric/underscore characters.
     """
 
-    for logical_prefix, sql_prefix in LAYER_PREFIX_SQL_ALIASES.items():
-        if logical_column.startswith(logical_prefix):
-            return sql_prefix + logical_column[len(logical_prefix) :]
-    return logical_column
+    if not COLUMN_IDENTIFIER_RE.match(identifier):
+        raise ValueError(f"unsafe SQL column identifier: {identifier!r}")
+    return '"' + identifier.replace('"', '""') + '"'
 
 
 def _qualified(schema: str, table: str) -> str:
@@ -121,16 +117,16 @@ def write_model_rows_sql(
         )
         """
     )
-    sql_columns = [_sql_column_name(column) for column in columns]
+    sql_columns = list(columns)
     for column in sql_columns:
         if column == "available_time":
             continue
-        cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS {_quote_identifier(column)} DOUBLE PRECISION")
+        cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS {_quote_column_identifier(column)} DOUBLE PRECISION")
 
-    quoted_columns = [_quote_identifier(column) for column in sql_columns]
+    quoted_columns = [_quote_column_identifier(column) for column in sql_columns]
     placeholders = ", ".join(["%s"] * len(columns))
     update_sql = ", ".join(
-        f"{_quote_identifier(column)} = EXCLUDED.{_quote_identifier(column)}"
+        f"{_quote_column_identifier(column)} = EXCLUDED.{_quote_column_identifier(column)}"
         for column in sql_columns
         if column != "available_time"
     )

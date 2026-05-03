@@ -254,7 +254,7 @@ Rules:
 - Layer 1 model-facing output keys use compact `1_*` names, for example `1_trend_certainty_factor`.
 - Layer 2 model-facing output keys use compact `2_*` names, for example `2_sector_conditional_behavior_vector` and `2_trend_stability_score`.
 - Deterministic data evidence fields from `trading-data` do not receive model-layer prefixes merely because a model consumes them.
-- Physical SQL storage should use safe identifier aliases (`layer01_*`, `layer02_*`) for these compact model-facing keys when numeric-leading identifiers would violate repository SQL identifier guards or downstream compatibility.
+- Docs, model-facing payloads, and physical SQL columns use the same compact names. SQL writers should quote numeric-leading identifiers where required instead of storing semantic aliases such as `layer01_*` or `layer02_*`.
 
 ## D012 - Anonymous target candidate builder owns the Layer 2 to Layer 3 identity boundary
 
@@ -297,3 +297,21 @@ Accepted canonical names:
 - Conceptual output: `sector_context_state`
 
 Retire active-use references to `SecuritySelectionModel`, `security_selection_model`, and `model_02_security_selection`. Historical decision text may mention them only as superseded terms.
+
+
+## D014 - Model outputs split into output, explainability, and diagnostics artifacts
+
+Date: 2026-05-03
+Status: Accepted
+
+Model-layer outputs should preserve downstream stability without discarding review detail. Each implemented model layer should therefore separate three physical artifacts:
+
+```text
+model_NN_<layer_slug>
+model_NN_<layer_slug>_explainability
+model_NN_<layer_slug>_diagnostics
+```
+
+The primary `model` artifact is the narrow downstream dependency surface: identity, stable state, handoff, and eligibility/quality summary fields. `explainability` owns human-review internals such as feature/factor attribution, observed behavior, inferred attributes, conditional behavior detail, contributing evidence, and reason-code detail. `diagnostics` owns acceptance, monitoring, and gating evidence such as freshness, missingness, standardization, liquidity/spread/optionability, event/gap/volatility/correlation stress, baseline comparison, refit stability, and no-future-leak checks.
+
+Downstream production logic should not hard-depend on explainability or diagnostics fields without a later reviewed promotion decision.

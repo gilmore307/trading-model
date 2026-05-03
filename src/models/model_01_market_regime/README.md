@@ -51,7 +51,7 @@ The current output columns are market-property factors, not proxy-dashboard fact
 - `1_transition_pressure`
 - `1_data_quality_score`
 
-When writing to SQL, the runtime wrapper maps compact model-facing keys such as `1_trend_certainty_factor` to safe physical aliases such as `layer01_trend_certainty_factor`.
+When writing to SQL, the runtime wrapper preserves compact model-facing keys such as `1_trend_certainty_factor` as the physical column name and quotes numeric-leading identifiers where required.
 
 Observable ETF ratios, returns, volatility, trend, correlation, credit/rate/dollar/commodity, and breadth signals are sensors. They support the market-property ontology but are not themselves the public output contract. `1_fundamental_strength_factor` is currently a broad-market participation proxy until true point-in-time fundamental evidence is added.
 

@@ -79,9 +79,11 @@ docs/
   06_memory.md
   07_system_model_architecture_rfc.md
   08_model_decomposition.md
+  91_layer_01_market_regime.md
+  92_layer_02_sector_context.md
 ```
 
-`docs/08_model_decomposition.md` is the model-design review template: each layer should be decomposed by data, features, target, model mapping, loss, training/update process, validation, overfitting control, and decision deployment before implementation or promotion expands.
+`docs/08_model_decomposition.md` is the model-design review template: each layer should be decomposed by data, features, target, model mapping, loss, training/update process, validation, overfitting control, and decision deployment before implementation or promotion expands. Layer-specific `91_`/`92_` docs record the active Layer 1 and Layer 2 artifact contracts while the lower-number docs spine is being evaluated.
 
 ## Platform Dependencies
 
