@@ -20,12 +20,10 @@ trading_model.model_01_market_regime_diagnostics
 
 ## `model_01_market_regime` - output
 
-The primary output is the narrow, stable downstream contract. It contains identity fields plus market-context state factors that downstream layers may depend on:
+The primary output is the narrow, stable downstream contract. It is keyed by `available_time` and contains market-context state factors that downstream layers may depend on:
 
 ```text
 available_time
-model_id
-model_version
 1_price_behavior_factor
 1_trend_certainty_factor
 1_capital_flow_factor
@@ -41,26 +39,30 @@ model_version
 
 ## `model_01_market_regime_explainability` - explainability
 
-Explainability owns human-review detail that should not become a hard downstream dependency:
+Explainability owns human-review detail that should not become a hard downstream dependency. The current generic SQL artifact is optional but, when written, uses one row per `(available_time, factor_name)` with:
 
-- factor attribution;
-- source feature contributions;
-- bucket-level scores;
-- evidence-role references;
-- config and factor-spec version references;
-- reason-code detail when accepted.
+```text
+available_time
+factor_name
+factor_value
+explanation_payload_json
+```
+
+`explanation_payload_json` owns factor attribution context such as aggregation, reducer, required coverage, reviewed signal counts, evidence-role references, config/factor-spec references, and future accepted reason-code detail.
 
 ## `model_01_market_regime_diagnostics` - diagnostics
 
-Diagnostics owns acceptance, monitoring, and gating evidence:
+Diagnostics owns acceptance, monitoring, and gating evidence. The current generic SQL artifact is optional but, when written, uses one row per `available_time` with:
 
-- freshness and missingness;
-- minimum-history satisfaction;
-- standardization and z-score clipping checks;
-- feature coverage and data-quality decomposition;
-- chronological split and rolling/refit stability;
-- downstream usefulness versus baselines;
-- no-future-leak checks.
+```text
+available_time
+present_factor_count
+missing_factor_count
+data_quality_score
+diagnostic_payload_json
+```
+
+`diagnostic_payload_json` owns missingness/freshness, minimum-history, standardization and z-score clipping checks, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness versus baselines, and no-future-leak checks.
 
 ## Naming rule
 

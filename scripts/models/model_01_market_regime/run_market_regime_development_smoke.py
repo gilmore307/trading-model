@@ -2,9 +2,10 @@
 """Run a development DB smoke test for the MarketRegimeModel chain.
 
 The smoke path uses deterministic fixture market bars, writes temporary
-component-owned tables to the configured development database, reads the feature
-and model rows back from SQL, runs the dry-run evaluation artifact builder, and
-cleans the development tables by default.
+component-owned tables to the configured development database, writes the Layer 1
+primary model and support-artifact tables, reads the feature and model rows back
+from SQL, runs the dry-run evaluation artifact builder, and cleans the
+development tables by default.
 
 It does not call market-data providers, read provider secrets, or promote a
 model. Use ``--keep-db`` only when inspecting the temporary development tables.
@@ -37,6 +38,8 @@ FEATURE_SCHEMA = "trading_data"
 FEATURE_TABLE = "feature_01_market_regime"
 MODEL_SCHEMA = "trading_model"
 MODEL_TABLE = "model_01_market_regime"
+EXPLAINABILITY_TABLE = "model_01_market_regime_explainability"
+DIAGNOSTICS_TABLE = "model_01_market_regime_diagnostics"
 
 
 def _database_url(explicit: str | None) -> str:
@@ -145,7 +148,7 @@ def _sql_literal(value: Any, *, jsonb: bool = False) -> str:
 
 
 def _ident(value: str) -> str:
-    if not value.replace("_", "").isalnum() or value[0].isdigit():
+    if not value or not value.replace("_", "").isalnum():
         raise ValueError(f"unsafe identifier: {value!r}")
     return '"' + value + '"'
 
@@ -261,6 +264,44 @@ def _create_model_table(database_url: str, columns: Sequence[str]) -> None:
     )
 
 
+def _create_explainability_table(database_url: str) -> list[str]:
+    columns = ["available_time", "factor_name", "factor_value", "explanation_payload_json"]
+    _run_psql(
+        database_url,
+        f"""
+        CREATE SCHEMA IF NOT EXISTS {_ident(MODEL_SCHEMA)};
+        DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, EXPLAINABILITY_TABLE)};
+        CREATE TABLE {_qualified(MODEL_SCHEMA, EXPLAINABILITY_TABLE)} (
+          {_ident('available_time')} TIMESTAMPTZ NOT NULL,
+          {_ident('factor_name')} TEXT NOT NULL,
+          {_ident('factor_value')} DOUBLE PRECISION,
+          {_ident('explanation_payload_json')} JSONB NOT NULL,
+          PRIMARY KEY ({_ident('available_time')}, {_ident('factor_name')})
+        );
+        """,
+    )
+    return columns
+
+
+def _create_diagnostics_table(database_url: str) -> list[str]:
+    columns = ["available_time", "present_factor_count", "missing_factor_count", "data_quality_score", "diagnostic_payload_json"]
+    _run_psql(
+        database_url,
+        f"""
+        CREATE SCHEMA IF NOT EXISTS {_ident(MODEL_SCHEMA)};
+        DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, DIAGNOSTICS_TABLE)};
+        CREATE TABLE {_qualified(MODEL_SCHEMA, DIAGNOSTICS_TABLE)} (
+          {_ident('available_time')} TIMESTAMPTZ PRIMARY KEY,
+          {_ident('present_factor_count')} INTEGER NOT NULL,
+          {_ident('missing_factor_count')} INTEGER NOT NULL,
+          {_ident('data_quality_score')} DOUBLE PRECISION,
+          {_ident('diagnostic_payload_json')} JSONB NOT NULL
+        );
+        """,
+    )
+    return columns
+
+
 def _fetch_json_rows(database_url: str, *, schema: str, table: str, order_column: str) -> list[dict[str, Any]]:
     output = _run_psql(
         database_url,
@@ -282,6 +323,8 @@ def _cleanup(database_url: str) -> None:
         f"""
         DROP TABLE IF EXISTS {_qualified(FEATURE_SCHEMA, FEATURE_TABLE)};
         DROP TABLE IF EXISTS {_qualified(SOURCE_SCHEMA, SOURCE_TABLE)};
+        DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, DIAGNOSTICS_TABLE)};
+        DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, EXPLAINABILITY_TABLE)};
         DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, MODEL_TABLE)};
         DROP SCHEMA IF EXISTS {_ident(MODEL_SCHEMA)} CASCADE;
         """,
@@ -320,8 +363,14 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
         _insert_rows(database_url, schema=FEATURE_SCHEMA, table=FEATURE_TABLE, rows=_feature_storage_rows(feature_rows), columns=feature_columns)
 
         model_rows = model_generator.generate_rows(feature_rows, min_history=args.min_history)
+        explainability_rows = model_generator.build_explainability_rows(model_rows)
+        diagnostics_rows = model_generator.build_diagnostics_rows(model_rows)
         _create_model_table(database_url, model_generator.OUTPUT_COLUMNS)
         _insert_rows(database_url, schema=MODEL_SCHEMA, table=MODEL_TABLE, rows=model_rows, columns=model_generator.OUTPUT_COLUMNS)
+        explainability_columns = _create_explainability_table(database_url)
+        _insert_rows(database_url, schema=MODEL_SCHEMA, table=EXPLAINABILITY_TABLE, rows=explainability_rows, columns=explainability_columns)
+        diagnostics_columns = _create_diagnostics_table(database_url)
+        _insert_rows(database_url, schema=MODEL_SCHEMA, table=DIAGNOSTICS_TABLE, rows=diagnostics_rows, columns=diagnostics_columns)
 
         db_feature_storage_rows = _fetch_json_rows(database_url, schema=FEATURE_SCHEMA, table=FEATURE_TABLE, order_column="snapshot_time")
         db_feature_rows = _flatten_feature_payload_rows(db_feature_storage_rows)
@@ -334,6 +383,8 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
                 "source_rows": len(bar_rows),
                 "feature_rows": len(db_feature_rows),
                 "model_rows": len(db_model_rows),
+                "explainability_rows": len(explainability_rows),
+                "diagnostics_rows": len(diagnostics_rows),
                 "database_write_policy": "development_tables_written_then_cleaned" if not args.keep_db else "development_tables_kept_for_inspection",
                 "evaluation_artifact_write_policy": evaluation_write_policy,
                 "cleanup_policy": "cleanup_after_run" if not args.keep_db else "keep_db_requested",

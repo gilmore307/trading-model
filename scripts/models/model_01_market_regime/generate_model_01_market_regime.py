@@ -139,6 +139,91 @@ def write_model_rows_sql(
         cursor.execute(insert_sql, [row.get(column) for column in columns])
 
 
+def write_explainability_rows_sql(
+    cursor: Any,
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    target_schema: str,
+    target_table: str,
+) -> None:
+    if not rows:
+        return
+    qualified_table = _qualified(target_schema, target_table)
+    cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {_quote_identifier(target_schema)}")
+    cursor.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS {qualified_table} (
+          "available_time" TIMESTAMPTZ NOT NULL,
+          "factor_name" TEXT NOT NULL,
+          "factor_value" DOUBLE PRECISION,
+          "explanation_payload_json" JSONB NOT NULL,
+          PRIMARY KEY ("available_time", "factor_name")
+        )
+        """
+    )
+    insert_sql = f"""
+        INSERT INTO {qualified_table} ("available_time", "factor_name", "factor_value", "explanation_payload_json")
+        VALUES (%s, %s, %s, %s::jsonb)
+        ON CONFLICT ("available_time", "factor_name") DO UPDATE SET
+          "factor_value" = EXCLUDED."factor_value",
+          "explanation_payload_json" = EXCLUDED."explanation_payload_json"
+    """
+    for row in rows:
+        cursor.execute(
+            insert_sql,
+            [
+                row.get("available_time"),
+                row.get("factor_name"),
+                row.get("factor_value"),
+                json.dumps(row.get("explanation_payload_json", {}), sort_keys=True),
+            ],
+        )
+
+
+def write_diagnostics_rows_sql(
+    cursor: Any,
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    target_schema: str,
+    target_table: str,
+) -> None:
+    if not rows:
+        return
+    qualified_table = _qualified(target_schema, target_table)
+    cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {_quote_identifier(target_schema)}")
+    cursor.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS {qualified_table} (
+          "available_time" TIMESTAMPTZ PRIMARY KEY,
+          "present_factor_count" INTEGER NOT NULL,
+          "missing_factor_count" INTEGER NOT NULL,
+          "data_quality_score" DOUBLE PRECISION,
+          "diagnostic_payload_json" JSONB NOT NULL
+        )
+        """
+    )
+    insert_sql = f"""
+        INSERT INTO {qualified_table} ("available_time", "present_factor_count", "missing_factor_count", "data_quality_score", "diagnostic_payload_json")
+        VALUES (%s, %s, %s, %s, %s::jsonb)
+        ON CONFLICT ("available_time") DO UPDATE SET
+          "present_factor_count" = EXCLUDED."present_factor_count",
+          "missing_factor_count" = EXCLUDED."missing_factor_count",
+          "data_quality_score" = EXCLUDED."data_quality_score",
+          "diagnostic_payload_json" = EXCLUDED."diagnostic_payload_json"
+    """
+    for row in rows:
+        cursor.execute(
+            insert_sql,
+            [
+                row.get("available_time"),
+                row.get("present_factor_count"),
+                row.get("missing_factor_count"),
+                row.get("data_quality_score"),
+                json.dumps(row.get("diagnostic_payload_json", {}), sort_keys=True),
+            ],
+        )
+
+
 def generate_sql(
     *,
     database_url: str,
@@ -146,6 +231,8 @@ def generate_sql(
     source_table: str,
     target_schema: str,
     target_table: str,
+    explainability_table: str,
+    diagnostics_table: str,
     source_start: str | None,
     source_end: str | None,
     lookback: int,
@@ -164,6 +251,18 @@ def generate_sql(
             )
             rows = generator.generate_rows(feature_rows, lookback=lookback, min_history=min_history)
             write_model_rows_sql(cursor, rows, target_schema=target_schema, target_table=target_table)
+            write_explainability_rows_sql(
+                cursor,
+                generator.build_explainability_rows(rows),
+                target_schema=target_schema,
+                target_table=explainability_table,
+            )
+            write_diagnostics_rows_sql(
+                cursor,
+                generator.build_diagnostics_rows(rows),
+                target_schema=target_schema,
+                target_table=diagnostics_table,
+            )
             return len(rows)
 
 
@@ -174,6 +273,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-table", default="feature_01_market_regime")
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_01_market_regime")
+    parser.add_argument("--explainability-table", help="Optional explainability artifact table. Defaults to <target-table>_explainability.")
+    parser.add_argument("--diagnostics-table", help="Optional diagnostics artifact table. Defaults to <target-table>_diagnostics.")
     parser.add_argument("--source-start", help="Optional lower timestamp bound for derived rows. Include enough lookback for rolling factors.")
     parser.add_argument("--source-end", help="Optional upper timestamp bound for derived rows.")
     generator = _load_generator()
@@ -187,12 +288,18 @@ def main(argv: list[str] | None = None) -> int:
         source_table=args.source_table,
         target_schema=args.target_schema,
         target_table=args.target_table,
+        explainability_table=args.explainability_table or f"{args.target_table}_explainability",
+        diagnostics_table=args.diagnostics_table or f"{args.target_table}_diagnostics",
         source_start=args.source_start,
         source_end=args.source_end,
         lookback=args.lookback,
         min_history=args.min_history,
     )
-    print(f"generated {row_count} rows into {args.target_schema}.{args.target_table}")
+    print(
+        f"generated {row_count} rows into {args.target_schema}.{args.target_table} "
+        f"with support artifacts {args.target_schema}.{args.explainability_table or args.target_table + '_explainability'} "
+        f"and {args.target_schema}.{args.diagnostics_table or args.target_table + '_diagnostics'}"
+    )
     return 0
 
 

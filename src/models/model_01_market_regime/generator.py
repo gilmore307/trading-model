@@ -274,6 +274,8 @@ STANDARDIZATION = load_standardization_config()
 FACTOR_SPECS = load_factor_specs()
 FACTOR_COLUMNS = [spec.name for spec in FACTOR_SPECS]
 OUTPUT_COLUMNS = ["available_time", *FACTOR_COLUMNS, "1_transition_pressure", "1_data_quality_score"]
+EXPLAINABILITY_TABLE = "model_01_market_regime_explainability"
+DIAGNOSTICS_TABLE = "model_01_market_regime_diagnostics"
 SPEC_BY_NAME = {spec.name: spec for spec in FACTOR_SPECS}
 SIGNAL_COLUMNS = sorted({signal.column for spec in FACTOR_SPECS for signal in spec.signals})
 
@@ -385,3 +387,72 @@ def _transition_pressure(current: Mapping[str, float], previous: Mapping[str, fl
     if not deltas:
         return None
     return math.tanh(mean(deltas) * 2.0)
+
+
+def build_explainability_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Build per-factor explainability artifact rows for SQL storage.
+
+    The rows intentionally expose reviewed factor-level context, not raw feature
+    dumps. Downstream layers should depend on ``model_01_market_regime`` only;
+    this artifact is for human review, attribution inspection, and model-audit
+    workflows.
+    """
+
+    rows: list[dict[str, Any]] = []
+    for model_row in model_rows:
+        available_time = str(model_row.get("available_time") or "").strip()
+        if not available_time:
+            raise ValueError("model row available_time is required for explainability rows")
+        for spec in FACTOR_SPECS:
+            factor_value = _safe_float(model_row.get(spec.name))
+            rows.append(
+                {
+                    "available_time": available_time,
+                    "factor_name": spec.name,
+                    "factor_value": factor_value,
+                    "explanation_payload_json": {
+                        "artifact": EXPLAINABILITY_TABLE,
+                        "factor_name": spec.name,
+                        "factor_value": factor_value,
+                        "aggregation": spec.aggregation,
+                        "reducer": next((name for name, reducer in REDUCERS.items() if reducer is spec.reducer), "custom"),
+                        "min_signal_coverage": spec.min_signal_coverage,
+                        "signal_count": len(spec.signals),
+                        "eligible_when_factor_value_present": factor_value is not None,
+                        "dependency_policy": "human_review_only_not_downstream_contract",
+                    },
+                }
+            )
+    return rows
+
+
+def build_diagnostics_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Build one diagnostics artifact row per model output row."""
+
+    rows: list[dict[str, Any]] = []
+    for model_row in model_rows:
+        available_time = str(model_row.get("available_time") or "").strip()
+        if not available_time:
+            raise ValueError("model row available_time is required for diagnostics rows")
+        present_factors = [column for column in FACTOR_COLUMNS if _safe_float(model_row.get(column)) is not None]
+        missing_factors = [column for column in FACTOR_COLUMNS if column not in present_factors]
+        data_quality_score = _safe_float(model_row.get("1_data_quality_score"))
+        rows.append(
+            {
+                "available_time": available_time,
+                "present_factor_count": len(present_factors),
+                "missing_factor_count": len(missing_factors),
+                "data_quality_score": data_quality_score,
+                "diagnostic_payload_json": {
+                    "artifact": DIAGNOSTICS_TABLE,
+                    "present_factor_columns": present_factors,
+                    "missing_factor_columns": missing_factors,
+                    "factor_column_count": len(FACTOR_COLUMNS),
+                    "transition_pressure": _safe_float(model_row.get("1_transition_pressure")),
+                    "data_quality_score": data_quality_score,
+                    "acceptance_scope": "freshness_missingness_coverage_and_no_future_leak_review",
+                    "dependency_policy": "gating_and_monitoring_not_downstream_prediction_contract",
+                },
+            }
+        )
+    return rows

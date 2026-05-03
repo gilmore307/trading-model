@@ -101,7 +101,7 @@ trading_model.model_01_market_regime_explainability
 trading_model.model_01_market_regime_diagnostics
 ```
 
-The primary output carries the narrow downstream market-context state. Factor attribution, source feature contributions, bucket-level scores, evidence-role refs, and config/factor spec refs belong to `model_01_market_regime_explainability`. Missingness/freshness, minimum-history, standardization, z-score clipping, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness, baseline comparison, and no-future-leak checks belong to `model_01_market_regime_diagnostics`.
+The primary output carries the narrow downstream market-context state. Reviewed per-factor attribution context, evidence-role refs, and config/factor spec refs belong to `model_01_market_regime_explainability`; detailed source-contribution and bucket-score rows may be added there only when a reviewed implementation needs them. Missingness/freshness, minimum-history, standardization, z-score clipping, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness, baseline comparison, and no-future-leak checks belong to `model_01_market_regime_diagnostics`.
 
 Conceptual output:
 

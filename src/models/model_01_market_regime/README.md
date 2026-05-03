@@ -5,8 +5,9 @@ Continuous MarketRegimeModel V1 state-vector builder.
 Boundary:
 
 - Input: rows from `trading_data.feature_01_market_regime`.
-- Output: rows for `trading_model.model_01_market_regime`.
-- Row key: `available_time`.
+- Primary output: rows for `trading_model.model_01_market_regime`.
+- Optional support outputs: rows for `trading_model.model_01_market_regime_explainability` and `trading_model.model_01_market_regime_diagnostics`.
+- Row key: `available_time`; explainability is keyed by `(available_time, factor_name)`.
 - No clustering, hard state labels, supervised regime labels, provider calls, or durable writes in the pure generator.
 
 Runtime SQL reads/writes are isolated in `scripts/generate_model_01_market_regime.py`.
@@ -51,7 +52,7 @@ The current output columns are market-property factors, not proxy-dashboard fact
 - `1_transition_pressure`
 - `1_data_quality_score`
 
-When writing to SQL, the runtime wrapper preserves compact model-facing keys such as `1_trend_certainty_factor` as the physical column name and quotes numeric-leading identifiers where required.
+When writing to SQL, the runtime wrapper preserves compact model-facing keys such as `1_trend_certainty_factor` as the physical column name and quotes numeric-leading identifiers where required. The support artifact builders are intentionally generic: explainability stores reviewed per-factor context, while diagnostics stores row-level coverage/missingness/gating context. If a future model layer genuinely has no support artifact to write, the Layer naming contract does not require inventing one.
 
 Observable ETF ratios, returns, volatility, trend, correlation, credit/rate/dollar/commodity, and breadth signals are sensors. They support the market-property ontology but are not themselves the public output contract. `1_fundamental_strength_factor` is currently a broad-market participation proxy until true point-in-time fundamental evidence is added.
 

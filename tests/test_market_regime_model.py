@@ -140,6 +140,25 @@ class MarketRegimeModelTests(unittest.TestCase):
         self.assertEqual(rows[0]["spy_return_1d"], 0.01)
         self.assertNotIn("feature_payload_json", rows[0])
 
+    def test_support_artifact_builders_emit_explainability_and_diagnostics(self) -> None:
+        model_rows = generator.generate_rows([_row(index) for index in range(1, 66)], lookback=120)
+
+        explainability_rows = generator.build_explainability_rows(model_rows[-1:])
+        diagnostics_rows = generator.build_diagnostics_rows(model_rows[-1:])
+
+        self.assertEqual(
+            {row["factor_name"] for row in explainability_rows},
+            set(generator.FACTOR_COLUMNS),
+        )
+        self.assertTrue(all(row["available_time"] == model_rows[-1]["available_time"] for row in explainability_rows))
+        self.assertIn("signal_count", explainability_rows[0]["explanation_payload_json"])
+        self.assertEqual(len(diagnostics_rows), 1)
+        self.assertEqual(
+            diagnostics_rows[0]["present_factor_count"] + diagnostics_rows[0]["missing_factor_count"],
+            len(generator.FACTOR_COLUMNS),
+        )
+        self.assertIn("missing_factor_columns", diagnostics_rows[0]["diagnostic_payload_json"])
+
     def test_sql_writer_uses_model_table_and_columns(self) -> None:
         class FakeCursor:
             def __init__(self) -> None:
@@ -159,6 +178,52 @@ class MarketRegimeModelTests(unittest.TestCase):
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime"', joined_sql)
         self.assertIn('ADD COLUMN IF NOT EXISTS "1_trend_certainty_factor" DOUBLE PRECISION', joined_sql)
+        self.assertIn('ON CONFLICT ("available_time") DO UPDATE SET', joined_sql)
+
+
+    def test_sql_writer_uses_layer_one_support_artifact_tables(self) -> None:
+        class FakeCursor:
+            def __init__(self) -> None:
+                self.calls: list[tuple[str, list[object] | None]] = []
+
+            def execute(self, sql: str, params: list[object] | None = None) -> None:
+                self.calls.append((sql, params))
+
+        cursor = FakeCursor()
+        available_time = "2026-01-02T10:00:00-05:00"
+        sql_runner.write_explainability_rows_sql(
+            cursor,
+            [
+                {
+                    "available_time": available_time,
+                    "factor_name": "1_price_behavior_factor",
+                    "factor_value": 0.25,
+                    "explanation_payload_json": {"signal_count": 3},
+                }
+            ],
+            target_schema="trading_model",
+            target_table="model_01_market_regime_explainability",
+        )
+        sql_runner.write_diagnostics_rows_sql(
+            cursor,
+            [
+                {
+                    "available_time": available_time,
+                    "present_factor_count": 9,
+                    "missing_factor_count": 0,
+                    "data_quality_score": 1.0,
+                    "diagnostic_payload_json": {"missing_factor_columns": []},
+                }
+            ],
+            target_schema="trading_model",
+            target_table="model_01_market_regime_diagnostics",
+        )
+
+        joined_sql = "\n".join(sql for sql, _params in cursor.calls)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime_explainability"', joined_sql)
+        self.assertIn('PRIMARY KEY ("available_time", "factor_name")', joined_sql)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime_diagnostics"', joined_sql)
+        self.assertIn('"diagnostic_payload_json" JSONB NOT NULL', joined_sql)
         self.assertIn('ON CONFLICT ("available_time") DO UPDATE SET', joined_sql)
 
 
