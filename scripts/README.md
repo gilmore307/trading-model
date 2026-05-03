@@ -12,7 +12,7 @@ Current model-specific entrypoints:
 - `models/model_01_market_regime/generate_model_01_market_regime.py` reads `trading_data.feature_01_market_regime`, upserts the continuous state vector into `trading_model.model_01_market_regime`, and writes generic support artifacts to `trading_model.model_01_market_regime_explainability` and `trading_model.model_01_market_regime_diagnostics` by default.
 - `models/model_01_market_regime/evaluate_model_01_market_regime.py` runs a dry-run-only MarketRegimeModel evaluation harness. It creates in-memory governance/evaluation rows from fixture or local JSONL data and never connects to PostgreSQL.
 - `models/model_01_market_regime/run_market_regime_development_smoke.py` runs a deterministic development DB smoke test for `source_01_market_regime -> feature_01_market_regime -> model_01_market_regime -> evaluation`. It calls no providers and cleans its development tables by default.
-- `models/model_01_market_regime/review_market_regime_promotion.py` builds an evaluation-backed promotion candidate and asks an OpenClaw agent to review whether it can be promoted. It emits review/decision rows only; it does not write promotion decisions or change a production pointer.
+- `models/model_01_market_regime/review_market_regime_promotion.py` builds an evaluation-backed promotion candidate and asks an OpenClaw agent to review whether it can be promoted. By default it prints review/decision rows only; with `--write-decision` it can persist the reviewed evidence, config, candidate, and decision rows, and with `--activate-approved-config` it can activate only accepted approval decisions by marking the reviewed config active.
 
 Current shared governance entrypoints:
 
