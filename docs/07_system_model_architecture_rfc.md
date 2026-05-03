@@ -226,6 +226,12 @@ optional 2_sector_selection_parameter
 
 The target candidate builder creates strategy-aware candidate rows for Layer 3+ from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
 
+The current model-local contract is:
+
+```text
+src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md
+```
+
 Conceptual fields:
 
 ```text
@@ -237,9 +243,9 @@ market_context_state_ref
 sector_context_state_ref
 ```
 
-The builder may use ETF holdings and `stock_etf_exposure` to transmit selected sector baskets into stock candidates. Model-facing vectors may include behavior shape, liquidity, volatility, event/risk context, sector context, market context, and cost/tradability features.
+The builder may use ETF holdings and `stock_etf_exposure` to transmit selected sector baskets into stock candidates. Model-facing vectors may include behavior shape, liquidity, volatility, event/risk context, sector context, market context, exposure transmission, and cost/tradability features.
 
-Model-facing vectors must exclude raw ticker/company identity and memorized symbol labels.
+Model-facing vectors must exclude raw ticker/company identity and memorized symbol labels. `target_candidate_id` is a row key only, not a categorical fitting feature.
 
 ## Layer 3: StrategySelectionModel
 

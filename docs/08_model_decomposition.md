@@ -315,18 +315,42 @@ It may provide selected/prioritized sector basket handoff state, but stock-unive
 
 ## Anonymous Target Candidate Builder
 
-Status: required boundary; detailed contract pending.
+Status: contract-first; implementation pending.
+
+Contract owner:
+
+```text
+src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md
+```
 
 Purpose: create anonymous model-facing candidate rows for Layer 3+ from Layer 2 selected/prioritized sector baskets while preserving real symbol references for audit/routing only.
+
+Conceptual row shape:
+
+```text
+anonymous_target_candidate[available_time, target_candidate_id]
+```
 
 Required separation:
 
 ```text
-model-facing:  target_candidate_id + anonymous_target_feature_vector
-metadata:      audit_symbol_ref + routing_symbol_ref
+model-facing:
+  target_candidate_id
+  anonymous_target_feature_vector
+  market_context_state_ref
+  sector_context_state_ref
+
+metadata:
+  audit_symbol_ref
+  routing_symbol_ref
+  source_sector_or_industry_symbol
+  source_holding_ref
+  source_stock_etf_exposure_ref
 ```
 
-The candidate builder may use ETF holdings and `stock_etf_exposure` to transmit Layer 2 selected sector/industry baskets into stock candidates. The model-facing vector may include target behavior, liquidity/tradability, market context, sector context, event/risk context, cost, and strategy-compatibility features. It must exclude raw ticker/company identity.
+The candidate builder may use ETF holdings and `stock_etf_exposure` to transmit Layer 2 selected sector/industry baskets into stock candidates. The model-facing vector may include target behavior, liquidity/tradability, market context, sector context, event/risk context, exposure transmission, cost, optionability, and quality evidence. It must exclude raw ticker/company identity and must not let `target_candidate_id` become a categorical fitting feature.
+
+V1 acceptance must prove point-in-time construction, no Layer 2 holdings leakage, recoverable audit/routing metadata, duplicate-candidate handling, and anonymity checks before StrategySelectionModel consumes candidates.
 
 ## Layer 3: StrategySelectionModel
 

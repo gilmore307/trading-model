@@ -12,12 +12,13 @@
    - Keep ETF/sector attributes inferred from evidence.
    - Keep `stock_etf_exposure` as downstream candidate-construction evidence, not Layer 2 core behavior modeling.
 
+3. **Anonymous target candidate builder contract maturation**
+   - Keep `src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md` aligned with Layer 2 handoff and Layer 3 fitting needs.
+   - Preserve the separation between model-facing anonymous vectors and audit/routing symbol metadata.
+   - Define implementation/evaluation shape before promoting any fields through `trading-manager`.
+
 ## Queued Tasks
 
-- Define the anonymous target candidate builder contract:
-  - `target_candidate_id`;
-  - `anonymous_target_feature_vector`;
-  - audit/routing symbol metadata boundary.
 - Complete nine-part decompositions for Layers 3-7.
 - Define first label horizons and triple-barrier defaults for `TradeQualityModel`.
 - Define how `OptionExpressionModel` V1 uses market context for DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade policy.
@@ -29,6 +30,7 @@
 - Exact mature evidence definitions for each Layer 1 factor beyond the current V1 family-level map.
 - Exact `market_context_state` alias/view implementation, if any.
 - Exact implementation/evaluation shape for producing `trading_model.model_02_security_selection` rows.
+- Exact implementation/evaluation shape for producing anonymous target candidate rows.
 - Exact persistence path for promotion decisions and future active production model pointers.
 - Exact artifact/manifest/ready-signal/request contracts for promoted model artifacts.
 - Exact storage path/reference requirements for model evaluation and promotion artifacts.
@@ -42,6 +44,7 @@
 - Layer 2 outputs sector/industry trend-stability and inferred basket attributes as `sector_context_state`.
 - `src/models/model_02_security_selection/sector_context_state_contract.md` owns the current Layer 2 V1 field contract.
 - Layer 2 does not choose final stocks in V1.
+- `src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md` owns the current anonymous candidate-builder V1 contract.
 - Target-aware fitting starts downstream through anonymous target candidates.
 - Model-facing target vectors must exclude ticker/company identity.
 - `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only.

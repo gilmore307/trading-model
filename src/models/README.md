@@ -8,5 +8,6 @@ Current packages:
 
 - `model_01_market_regime/` — `MarketRegimeModel` V1 broad market-context state implementation.
 - `model_02_security_selection/` — `SecuritySelectionModel` V1 contract-first package for sector/industry context state.
+- `anonymous_target_candidate_builder/` — contract-first boundary for anonymous candidate rows between Layer 2 and Layer 3.
 
 Shared governance/promotion helpers stay outside this directory in `src/model_governance/`.

@@ -46,10 +46,11 @@ tests/       First-party unit tests using in-memory fixtures/fake cursors.
 Current implementation packages:
 
 ```text
-src/models/                      Model-specific packages, one folder per model boundary.
-src/models/model_01_market_regime/   MarketRegimeModel V1 generator, evaluation, config, and evidence map.
+src/models/                           Model-specific packages and layer-boundary contracts.
+src/models/model_01_market_regime/    MarketRegimeModel V1 generator, evaluation, config, and evidence map.
 src/models/model_02_security_selection/ SecuritySelectionModel V1 sector-context contract.
-src/model_governance/              Shared governance, promotion, and review helpers.
+src/models/anonymous_target_candidate_builder/ Anonymous target candidate builder V1 contract.
+src/model_governance/                 Shared governance, promotion, and review helpers.
 ```
 
 Current runtime wrappers:

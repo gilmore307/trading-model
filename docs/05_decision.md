@@ -255,3 +255,29 @@ Rules:
 - Layer 2 model-facing output keys use compact `2_*` names, for example `2_sector_conditional_behavior_vector` and `2_trend_stability_score`.
 - Deterministic data evidence fields from `trading-data` do not receive model-layer prefixes merely because a model consumes them.
 - Physical SQL storage should use safe identifier aliases (`layer01_*`, `layer02_*`) for these compact model-facing keys when numeric-leading identifiers would violate repository SQL identifier guards or downstream compatibility.
+
+## D012 - Anonymous target candidate builder owns the Layer 2 to Layer 3 identity boundary
+
+Date: 2026-05-02
+Status: Accepted
+
+The boundary between `SecuritySelectionModel` and `StrategySelectionModel` is an anonymous target candidate builder, not direct ticker-aware strategy fitting.
+
+The model-local V1 contract is owned by:
+
+```text
+src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md
+```
+
+The builder expands Layer 2 selected/prioritized sector or industry baskets into target candidates using point-in-time ETF holdings, `stock_etf_exposure`, target-local behavior, liquidity/tradability, event/risk, cost, optionability, and quality evidence.
+
+It produces separate surfaces:
+
+```text
+model-facing: target_candidate_id + anonymous_target_feature_vector + context refs
+metadata: audit/routing symbol references and source evidence refs
+```
+
+`target_candidate_id` is a row key only. It must not expose raw ticker/company identity and must not become a categorical fitting feature for Layer 3+.
+
+Real symbols may remain recoverable through audit/routing metadata, but that metadata must not be joined into model-facing fitting vectors except through reviewed non-identity evidence fields.
