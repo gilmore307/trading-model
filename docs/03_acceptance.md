@@ -50,12 +50,14 @@ PYTHONPATH=src python3 scripts/model_governance/clear_model_development_database
 PYTHONPATH=src python3 scripts/model_governance/clear_model_development_database.py --dry-run
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --help
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --print-artifacts --output-json /tmp/l1_promotion_artifacts.json
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/run_market_regime_development_smoke.py --help
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --help
 # Optional runtime DB smoke, cleans development tables by default:
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/run_market_regime_development_smoke.py
 # Agent invocation is opt-in; use --dry-run or --local-fallback-review for tests:
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --dry-run
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --local-fallback-review --print-write-sql
 git diff --check
 ```
 

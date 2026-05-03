@@ -31,7 +31,6 @@
 - Exact `market_context_state` alias/view implementation, if any.
 - Exact implementation/evaluation shape for producing `trading_model.model_02_sector_context` rows.
 - Exact implementation/evaluation shape for producing anonymous target candidate rows.
-- Exact persistence path for promotion decisions and future active production model pointers.
 - Exact artifact/manifest/ready-signal/request contracts for promoted model artifacts.
 - Exact storage path/reference requirements for model evaluation and promotion artifacts.
 - Whether `trading-strategy` remains separate or Layer 3 strategy-selection research stays model-local until a later split.
@@ -49,3 +48,4 @@
 - Model-facing target vectors must exclude ticker/company identity.
 - `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only.
 - `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-factor evidence-role contract.
+- Promotion decisions can now be durably persisted through `review_market_regime_promotion.py --write-decision`; accepted approval decisions can activate the reviewed config via `model_config_version.config_status = active`, while deferred/rejected decisions leave the active config unchanged.

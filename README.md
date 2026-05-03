@@ -50,7 +50,7 @@ src/models/                           Model-specific packages and layer-boundary
 src/models/model_01_market_regime/    MarketRegimeModel V1 generator, evaluation, config, and evidence map.
 src/models/model_02_sector_context/ SectorContextModel V1 sector-context contract.
 src/models/anonymous_target_candidate_builder/ Anonymous target candidate builder V1 contract.
-src/model_governance/                 Shared governance, promotion, and review helpers.
+src/model_governance/                 Shared governance, promotion, review, and persistence helpers.
 ```
 
 Current runtime wrappers:
@@ -63,6 +63,8 @@ scripts/model_governance/clear_model_development_database.py
 scripts/models/model_01_market_regime/run_market_regime_development_smoke.py
 scripts/models/model_01_market_regime/review_market_regime_promotion.py
 ```
+
+`review_market_regime_promotion.py` is review-only by default. With `--write-decision`, it persists evaluation artifacts, config/candidate rows, and the reviewed promotion decision. With `--activate-approved-config`, accepted approval decisions mark the reviewed config row active through `model_config_version`; deferred or rejected decisions leave the active config unchanged.
 
 `src/` owns reusable model logic. `scripts/` may import `src/`; `src/` must not import `scripts/`.
 

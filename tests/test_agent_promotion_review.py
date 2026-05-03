@@ -137,6 +137,18 @@ class AgentPromotionReviewTests(unittest.TestCase):
         self.assertIn("agent_prompt", result.stdout)
         self.assertIn("promotion_candidate", result.stdout)
 
+    def test_local_fallback_treats_no_database_write_summary_as_not_real_promotion_evidence(self) -> None:
+        review = review_script._fallback_review(
+            {
+                "eval_run_id": "mdevrun_001",
+                "write_policy": "no_database_write",
+                "tables": {"model_eval_metric": 211},
+            }
+        )
+
+        self.assertFalse(review["can_promote"])
+        self.assertFalse(review["evidence_checks"]["has_real_non_fixture_data"])
+
     def test_review_script_local_fallback_defers_dev_smoke_promotion(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as tmp_dir:

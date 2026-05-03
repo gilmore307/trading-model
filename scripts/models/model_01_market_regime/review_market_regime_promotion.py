@@ -5,8 +5,11 @@ The script prepares a promotion candidate from evaluation evidence, builds a
 strict reviewer-agent prompt, optionally invokes ``openclaw agent``, validates the
 returned JSON decision, and prints the resulting candidate/decision rows.
 
-It does not write promotion decisions to PostgreSQL and does not create an active
-production model pointer.
+By default this is review-only. With ``--write-decision`` it persists the
+reviewed config/candidate/decision rows, plus optional full evaluation artifacts,
+to PostgreSQL. With ``--activate-approved-config`` an accepted approval marks the
+reviewed config row active and retires any prior active config row for the same
+model. Deferred/rejected decisions never activate a config.
 """
 from __future__ import annotations
 
@@ -23,6 +26,7 @@ from model_governance.agent_review import (
     extract_json_object,
     validate_promotion_review,
 )
+from model_governance.persistence import database_url, render_promotion_persistence_sql, run_psql
 from model_governance.promotion import build_config_version_row, build_promotion_candidate_row
 
 DEFAULT_MODEL_ID = "model_01_market_regime"
@@ -34,6 +38,15 @@ def _load_summary(path: Path) -> dict[str, Any]:
     parsed = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(parsed, dict):
         raise ValueError("evaluation summary JSON must be an object")
+    return parsed
+
+
+def _load_artifacts(path: Path | None) -> dict[str, Any] | None:
+    if path is None:
+        return None
+    parsed = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(parsed, dict):
+        raise ValueError("evaluation artifacts JSON must be an object keyed by governance table name")
     return parsed
 
 
@@ -97,10 +110,11 @@ def _fallback_review(summary: dict[str, Any]) -> dict[str, Any]:
     This is intentionally conservative: fixture/dev-smoke evidence can exercise
     the gate, but cannot approve production promotion.
     """
+    write_policy = summary.get("write_policy") or summary.get("database_write_policy")
     checks = {
         "has_eval_run": bool(summary.get("eval_run_id")),
         "has_metrics": bool(summary.get("tables", {}).get("model_eval_metric")),
-        "has_real_non_fixture_data": summary.get("database_write_policy") != "development_tables_written_then_cleaned",
+        "has_real_non_fixture_data": write_policy not in {"development_tables_written_then_cleaned", "no_database_write", "dry_run_only"},
         "has_explicit_thresholds": False,
         "cleanup_confirmed": summary.get("cleanup_policy") == "cleanup_after_run",
     }
@@ -125,6 +139,7 @@ def _fallback_review(summary: dict[str, Any]) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--evaluation-summary-json", type=Path, required=True, help="JSON summary from the evaluation or development smoke run.")
+    parser.add_argument("--evaluation-artifacts-json", type=Path, help="Optional full evaluation artifacts JSON from evaluate_model_01_market_regime.py --print-artifacts. Used when persisting a decision whose eval_run_id is not already in PostgreSQL.")
     parser.add_argument("--model-id", default=DEFAULT_MODEL_ID)
     parser.add_argument("--model-version", default=DEFAULT_MODEL_VERSION)
     parser.add_argument("--config-hash", default=DEFAULT_CONFIG_HASH)
@@ -136,9 +151,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--thinking", default="high")
     parser.add_argument("--timeout-seconds", type=int, default=600)
     parser.add_argument("--openclaw-bin", default="openclaw")
+    parser.add_argument("--write-decision", action="store_true", help="Persist evaluation artifacts if supplied plus config/candidate/decision rows to PostgreSQL.")
+    parser.add_argument("--activate-approved-config", action="store_true", help="When used with --write-decision, mark an accepted approval's config_version active and retire prior active configs for the model.")
+    parser.add_argument("--schema", default="trading_model")
+    parser.add_argument("--database-url", help="PostgreSQL URL. Defaults to OPENCLAW_DATABASE_URL or the local OpenClaw DB secret file.")
+    parser.add_argument("--print-write-sql", action="store_true", help="Print the SQL that would be/will be used for persistence.")
     args = parser.parse_args(argv)
 
     summary = _load_summary(args.evaluation_summary_json)
+    artifacts = _load_artifacts(args.evaluation_artifacts_json)
     config_row = build_config_version_row(
         model_id=args.model_id,
         model_version=args.model_version,
@@ -178,8 +199,40 @@ def main(argv: list[str] | None = None) -> int:
         promotion_candidate_id=candidate_row["promotion_candidate_id"],
         review=review,
     )
-    print(json.dumps({"config_version": config_row, "promotion_candidate": candidate_row, "agent_review": review, "promotion_decision": decision_row}, indent=2, sort_keys=True, default=str))
-    print("REVIEW ONLY: no promotion decision was written and no production pointer was changed.")
+    payload = {"config_version": config_row, "promotion_candidate": candidate_row, "agent_review": review, "promotion_decision": decision_row}
+    print(json.dumps(payload, indent=2, sort_keys=True, default=str))
+
+    if args.write_decision:
+        sql = render_promotion_persistence_sql(
+            evaluation_artifacts=artifacts,
+            config_version_row=config_row,
+            promotion_candidate_row=candidate_row,
+            promotion_decision_row=decision_row,
+            schema=args.schema,
+            activate_approved_config=args.activate_approved_config,
+        )
+        if args.print_write_sql:
+            print(sql, end="")
+        run_psql(database_url(args.database_url), sql)
+        if args.activate_approved_config and decision_row["decision_type"] == "approve" and decision_row["decision_status"] == "accepted":
+            print("WRITE COMPLETE: promotion decision persisted and accepted config marked active.")
+        else:
+            print("WRITE COMPLETE: promotion decision persisted; active config unchanged.")
+        return 0
+
+    if args.print_write_sql:
+        sql = render_promotion_persistence_sql(
+            evaluation_artifacts=artifacts,
+            config_version_row=config_row,
+            promotion_candidate_row=candidate_row,
+            promotion_decision_row=decision_row,
+            schema=args.schema,
+            activate_approved_config=args.activate_approved_config,
+        )
+        print(sql, end="")
+        print("SQL PREVIEW ONLY: no promotion decision was written and no active config was changed.")
+    else:
+        print("REVIEW ONLY: no promotion decision was written and no active config was changed.")
     return 0
 
 
