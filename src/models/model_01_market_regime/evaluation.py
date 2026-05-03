@@ -80,7 +80,7 @@ class EvaluationArtifacts:
             "model_dataset_split": self.dataset_splits,
             "model_eval_label": self.eval_labels,
             "model_eval_run": [self.eval_run],
-            "model_eval_metric": self.eval_metrics,
+            "model_promotion_metric": self.eval_metrics,
         }
 
 

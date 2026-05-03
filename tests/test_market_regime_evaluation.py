@@ -48,7 +48,7 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
         self.assertEqual(len(table_rows["model_dataset_snapshot"]), 1)
         self.assertEqual(len(table_rows["model_dataset_split"]), 3)
         self.assertGreater(len(table_rows["model_eval_label"]), 0)
-        self.assertGreater(len(table_rows["model_eval_metric"]), 0)
+        self.assertGreater(len(table_rows["model_promotion_metric"]), 0)
         self.assertEqual(artifacts.dataset_request["request_status"], "dry_run_only")
         self.assertEqual(artifacts.eval_run["run_status"], "dry_run_only")
         self.assertEqual(artifacts.dataset_request["required_feature_key"], "FEATURE_01_MARKET_REGIME")
@@ -92,7 +92,7 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
 
         self.assertEqual(summary["write_policy"], "no_database_write")
         self.assertEqual(summary["tables"]["model_dataset_request"], 1)
-        self.assertGreater(summary["tables"]["model_eval_metric"], 0)
+        self.assertGreater(summary["tables"]["model_promotion_metric"], 0)
 
     def test_summary_includes_promotion_evidence_values(self) -> None:
         features, models = _rows()

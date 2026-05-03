@@ -4,6 +4,7 @@ import unittest
 
 from model_governance.promotion import (
     build_config_version_row,
+    build_promotion_activation_row,
     build_promotion_candidate_row,
     build_promotion_decision_row,
     build_promotion_rollback_row,
@@ -56,6 +57,20 @@ class ModelPromotionTests(unittest.TestCase):
                 decision_type="approve",
                 decision_status="promoted",
             )
+
+    def test_activation_row_tracks_model_replacement_event(self) -> None:
+        activation = build_promotion_activation_row(
+            model_id="market_regime_model",
+            from_config_version_id="mcfg_old",
+            to_config_version_id="mcfg_new",
+            promotion_decision_id="mpdec_001",
+            activated_by="reviewer",
+        )
+
+        self.assertEqual(activation["model_id"], "market_regime_model")
+        self.assertEqual(activation["from_config_version_id"], "mcfg_old")
+        self.assertEqual(activation["to_config_version_id"], "mcfg_new")
+        self.assertEqual(activation["activation_status"], "activated")
 
     def test_rollback_row_tracks_from_and_optional_to_config_versions(self) -> None:
         rollback = build_promotion_rollback_row(

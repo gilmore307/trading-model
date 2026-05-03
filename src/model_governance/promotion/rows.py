@@ -1,9 +1,4 @@
-"""Helpers for model configuration and promotion governance rows.
-
-These helpers build row dictionaries for the generic promotion tables. They do
-not write to PostgreSQL and do not mark any model as active; persistence and
-promotion decisions remain explicit operational steps.
-"""
+"""Helpers for model configuration and promotion lifecycle rows."""
 from __future__ import annotations
 
 import hashlib
@@ -14,6 +9,7 @@ from typing import Any
 CONFIG_VERSION_TABLE = "model_config_version"
 PROMOTION_CANDIDATE_TABLE = "model_promotion_candidate"
 PROMOTION_DECISION_TABLE = "model_promotion_decision"
+PROMOTION_ACTIVATION_TABLE = "model_promotion_activation"
 PROMOTION_ROLLBACK_TABLE = "model_promotion_rollback"
 
 _ALLOWED_DECISION_TYPES = {"approve", "reject", "defer"}
@@ -96,11 +92,7 @@ def build_promotion_decision_row(
     decision_payload: Mapping[str, Any] | None = None,
     status_detail: str | None = None,
 ) -> dict[str, Any]:
-    """Build a deterministic promotion decision row.
-
-    Decision rows record evidence-backed governance decisions. They do not by
-    themselves create an active production model pointer.
-    """
+    """Build a deterministic promotion decision row."""
     _require_non_empty("promotion_candidate_id", promotion_candidate_id)
     if decision_type not in _ALLOWED_DECISION_TYPES:
         raise ValueError(f"unsupported decision_type: {decision_type!r}")
@@ -120,6 +112,41 @@ def build_promotion_decision_row(
         "decision_status": decision_status,
         "decided_by": decided_by,
         "decision_payload_json": payload,
+        "status_detail": status_detail,
+    }
+
+
+def build_promotion_activation_row(
+    *,
+    model_id: str,
+    to_config_version_id: str,
+    promotion_decision_id: str,
+    from_config_version_id: str | None = None,
+    activated_by: str | None = None,
+    activation_status: str = "activated",
+    activation_payload: Mapping[str, Any] | None = None,
+    status_detail: str | None = None,
+) -> dict[str, Any]:
+    """Build a deterministic model replacement/activation event row."""
+    _require_non_empty("model_id", model_id)
+    _require_non_empty("to_config_version_id", to_config_version_id)
+    _require_non_empty("promotion_decision_id", promotion_decision_id)
+    payload = dict(activation_payload or {})
+    identity = {
+        "model_id": model_id,
+        "from_config_version_id": from_config_version_id,
+        "to_config_version_id": to_config_version_id,
+        "promotion_decision_id": promotion_decision_id,
+    }
+    return {
+        "activation_id": _stable_id("mpact", identity),
+        "model_id": model_id,
+        "from_config_version_id": from_config_version_id,
+        "to_config_version_id": to_config_version_id,
+        "promotion_decision_id": promotion_decision_id,
+        "activated_by": activated_by,
+        "activation_status": activation_status,
+        "activation_payload_json": payload,
         "status_detail": status_detail,
     }
 

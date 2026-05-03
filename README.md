@@ -50,7 +50,9 @@ src/models/                           Model-specific packages and layer-boundary
 src/models/model_01_market_regime/    MarketRegimeModel V1 generator, evaluation, config, and evidence map.
 src/models/model_02_sector_context/ SectorContextModel V1 sector-context contract.
 src/models/anonymous_target_candidate_builder/ Anonymous target candidate builder V1 contract.
-src/model_governance/                 Shared governance, promotion, review, and persistence helpers.
+src/model_governance/common/          Shared SQL, database-url, and `psql` helpers.
+src/model_governance/evaluation/      Dataset/evaluation evidence schema helpers.
+src/model_governance/promotion/       Promotion lifecycle rows, schema, persistence, activation, and agent review helpers.
 ```
 
 Current runtime wrappers:
@@ -66,7 +68,7 @@ scripts/models/model_01_market_regime/review_market_regime_promotion.py
 
 `evaluate_model_01_market_regime.py` is fixture/local-JSONL dry-run by default and has an explicit `--from-database` read-only path for real feature/model SQL rows. Its promotion summary includes metric values, explicit thresholds, baseline comparison, split-stability evidence, and no-future-leak checks.
 
-`review_market_regime_promotion.py` is review-only by default. With `--write-decision`, it persists evaluation artifacts, config/candidate rows, and the reviewed promotion decision. With `--activate-approved-config`, accepted approval decisions mark the reviewed config row active through `model_config_version`; deferred or rejected decisions leave the active config unchanged.
+`review_market_regime_promotion.py` is review-only by default. With `--write-decision`, it persists evaluation artifacts, config/candidate rows, and the reviewed promotion decision. With `--activate-approved-config`, accepted approval decisions insert a `model_promotion_activation` event and mark the reviewed config row active through `model_config_version`; deferred or rejected decisions leave the active config unchanged.
 
 `src/` owns reusable model logic. `scripts/` may import `src/`; `src/` must not import `scripts/`.
 

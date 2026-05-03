@@ -12,7 +12,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from model_governance.schema import DEFAULT_SCHEMA, quote_identifier
+from model_governance.common.sql import DEFAULT_SCHEMA, quote_identifier
 
 DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
 CONFIRM_TOKEN = "clear-trading-model-development-database"

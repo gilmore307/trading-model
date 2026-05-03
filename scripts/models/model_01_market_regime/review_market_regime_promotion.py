@@ -20,14 +20,14 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from model_governance.agent_review import (
+from model_governance.promotion import build_config_version_row, build_promotion_candidate_row
+from model_governance.promotion.agent_review import (
     build_decision_row_from_review,
     build_market_regime_promotion_prompt,
     extract_json_object,
     validate_promotion_review,
 )
-from model_governance.persistence import database_url, render_promotion_persistence_sql, run_psql
-from model_governance.promotion import build_config_version_row, build_promotion_candidate_row
+from model_governance.promotion.persistence import database_url, render_promotion_persistence_sql, run_psql
 
 DEFAULT_MODEL_ID = "model_01_market_regime"
 DEFAULT_MODEL_VERSION = "model_01_market_regime"

@@ -238,7 +238,7 @@ Status: Accepted
 
 Model evaluation, config versions, promotion candidates, promotion decisions, rollback proposals, and active-pointer proposals are model-governance artifacts.
 
-Current implementation provides dry-run/evidence-building paths first, plus an explicit durable persistence path for reviewed promotion decisions. `review_market_regime_promotion.py --write-decision` persists evaluation artifacts when supplied, config/candidate rows, and the promotion decision. `--activate-approved-config` activates only accepted approval decisions by marking the reviewed `model_config_version` row `active` and retiring prior active configs for the same model. Deferred or rejected decisions must never change the active config.
+Current implementation provides dry-run/evidence-building paths first, plus an explicit durable persistence path for reviewed promotion decisions. `review_market_regime_promotion.py --write-decision` persists evaluation artifacts when supplied, config/candidate rows, and the promotion decision. `--activate-approved-config` activates only accepted approval decisions by inserting a `model_promotion_activation` event, marking the reviewed `model_config_version` row `active`, and retiring prior active configs for the same model. Deferred or rejected decisions must never change the active config.
 
 The current table-name terms are registered in `trading-manager`; concrete column-level registration can wait until real evaluation/promotion flows prove the schema.
 

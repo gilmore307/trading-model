@@ -67,6 +67,7 @@ class ModelPromotionPersistenceTests(unittest.TestCase):
         self.assertIn('INSERT INTO "trading_model"."model_config_version"', sql)
         self.assertIn('INSERT INTO "trading_model"."model_promotion_candidate"', sql)
         self.assertIn('INSERT INTO "trading_model"."model_promotion_decision"', sql)
+        self.assertIn('INSERT INTO "trading_model"."model_promotion_activation"', sql)
         self.assertIn('SET "config_status" = \'retired\'', sql)
         self.assertIn('SET "config_status" = \'active\'', sql)
 
@@ -87,6 +88,7 @@ class ModelPromotionPersistenceTests(unittest.TestCase):
         )
 
         self.assertIn("Promotion decision persisted", sql)
+        self.assertNotIn('INSERT INTO "trading_model"."model_promotion_activation"', sql)
         self.assertNotIn('SET "config_status" = \'active\'', sql)
 
     def test_review_script_can_preview_persistence_sql_without_database(self) -> None:
@@ -95,7 +97,7 @@ class ModelPromotionPersistenceTests(unittest.TestCase):
             "eval_run_id": "mdevrun_001",
             "database_write_policy": "development_tables_written_then_cleaned",
             "cleanup_policy": "cleanup_after_run",
-            "tables": {"model_eval_metric": 3},
+            "tables": {"model_promotion_metric": 3},
         }
         with tempfile.TemporaryDirectory() as tmp_dir:
             summary_path = Path(tmp_dir) / "summary.json"

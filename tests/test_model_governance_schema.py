@@ -19,10 +19,11 @@ class ModelGovernanceSchemaTests(unittest.TestCase):
         self.assertLess(table_positions["model_dataset_snapshot"], table_positions["model_dataset_split"])
         self.assertLess(table_positions["model_dataset_snapshot"], table_positions["model_eval_label"])
         self.assertLess(table_positions["model_dataset_snapshot"], table_positions["model_eval_run"])
-        self.assertLess(table_positions["model_eval_run"], table_positions["model_eval_metric"])
+        self.assertLess(table_positions["model_eval_run"], table_positions["model_promotion_metric"])
         self.assertLess(table_positions["model_eval_run"], table_positions["model_promotion_candidate"])
         self.assertLess(table_positions["model_config_version"], table_positions["model_promotion_candidate"])
         self.assertLess(table_positions["model_promotion_candidate"], table_positions["model_promotion_decision"])
+        self.assertLess(table_positions["model_promotion_decision"], table_positions["model_promotion_activation"])
         self.assertLess(table_positions["model_promotion_decision"], table_positions["model_promotion_rollback"])
 
     def test_request_table_uses_control_plane_data_window_contract(self) -> None:
@@ -42,7 +43,7 @@ class ModelGovernanceSchemaTests(unittest.TestCase):
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_eval_label"', joined)
         self.assertIn('"horizon" TEXT NOT NULL', joined)
         self.assertIn('"label_value" DOUBLE PRECISION', joined)
-        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_eval_metric"', joined)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_promotion_metric"', joined)
         self.assertIn('"factor_name" TEXT', joined)
         self.assertIn('"metric_value" DOUBLE PRECISION', joined)
 
@@ -55,6 +56,8 @@ class ModelGovernanceSchemaTests(unittest.TestCase):
         self.assertIn('"config_version_id" TEXT NOT NULL REFERENCES "trading_model"."model_config_version"', joined)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_promotion_decision"', joined)
         self.assertIn('"promotion_candidate_id" TEXT NOT NULL REFERENCES "trading_model"."model_promotion_candidate"', joined)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_promotion_activation"', joined)
+        self.assertIn('"to_config_version_id" TEXT NOT NULL REFERENCES "trading_model"."model_config_version"', joined)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_promotion_rollback"', joined)
         self.assertIn('"from_config_version_id" TEXT NOT NULL REFERENCES "trading_model"."model_config_version"', joined)
 
@@ -71,6 +74,7 @@ class ModelGovernanceSchemaTests(unittest.TestCase):
             "config_payload_json",
             "candidate_payload_json",
             "decision_payload_json",
+            "activation_payload_json",
             "rollback_payload_json",
         ]:
             self.assertIn(f'"{column}" JSONB NOT NULL DEFAULT', joined)

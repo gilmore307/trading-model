@@ -23,7 +23,7 @@ class AgentPromotionReviewTests(unittest.TestCase):
             "eval_run_id": "mdevrun_001",
             "database_write_policy": "development_tables_written_then_cleaned",
             "cleanup_policy": "cleanup_after_run",
-            "tables": {"model_eval_metric": 211},
+            "tables": {"model_promotion_metric": 211},
         }
 
     def test_prompt_requires_strict_json_and_blocks_fixture_only_approval(self) -> None:
@@ -142,7 +142,7 @@ class AgentPromotionReviewTests(unittest.TestCase):
             {
                 "eval_run_id": "mdevrun_001",
                 "write_policy": "no_database_write",
-                "tables": {"model_eval_metric": 211},
+                "tables": {"model_promotion_metric": 211},
             }
         )
 
