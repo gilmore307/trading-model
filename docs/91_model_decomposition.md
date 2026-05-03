@@ -362,9 +362,15 @@ V1 acceptance must prove point-in-time construction, no Layer 2 holdings leakage
 
 ## Layer 3: StrategySelectionModel
 
-Status: decomposition pending.
+Status: draft strategy-family/variant contract pending review.
 
-Must compose strategy components for anonymous target candidates. It should output strategy fit, component weights, disabled-strategy reasons, parameter-neighborhood stability, and robustness evidence.
+Contract owner:
+
+```text
+docs/04_layer_03_strategy_selection.md
+```
+
+Must compose strategy components for anonymous target candidates. It should output strategy family, strategy variant, directional/horizon/setup attributes, fit scores, disabled-strategy reasons, parameter-neighborhood stability, and robustness evidence. It must not output final entry/exit prices, option contracts, position sizes, execution policy, or portfolio allocation.
 
 ## Layer 4: TradeQualityModel
 

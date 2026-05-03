@@ -17,9 +17,14 @@
    - Preserve the separation between model-facing anonymous vectors and audit/routing symbol metadata.
    - Define implementation/evaluation shape before promoting any fields through `trading-manager`.
 
+4. **Layer 3 StrategySelectionModel contract design**
+   - Review `docs/04_layer_03_strategy_selection.md` before implementation.
+   - Keep `strategy_family` as the stable setup/edge archetype and `strategy_variant` as the parameter-neighborhood inside one family.
+   - Do not promote shared Layer 3 fields or statuses through `trading-manager` until the family/variant taxonomy is accepted.
+
 ## Queued Tasks
 
-- Complete nine-part decompositions for Layers 3-7.
+- Complete nine-part decompositions for Layers 4-7.
 - Define first label horizons and triple-barrier defaults for `TradeQualityModel`.
 - Define how `OptionExpressionModel` V1 uses market context for DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade policy.
 - Define event standard/version semantics for `EventOverlayModel` abnormal activity and event-memory outputs.
