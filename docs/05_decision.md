@@ -315,3 +315,24 @@ model_NN_<layer_slug>_diagnostics
 The primary `model` artifact is the narrow downstream dependency surface: identity, stable state, handoff, and eligibility/quality summary fields. `explainability` owns human-review internals such as feature/factor attribution, observed behavior, inferred attributes, conditional behavior detail, contributing evidence, and reason-code detail. `diagnostics` owns acceptance, monitoring, and gating evidence such as freshness, missingness, standardization, liquidity/spread/optionability, event/gap/volatility/correlation stress, baseline comparison, refit stability, and no-future-leak checks.
 
 Downstream production logic should not hard-depend on explainability or diagnostics fields without a later reviewed promotion decision.
+
+## D015 - Promotion review uses a complete evidence package, not metrics alone
+
+Date: 2026-05-03
+Status: Accepted
+
+Model promotion review must continue to use the full model-governance evidence chain rather than treating `model_promotion_metric` as a standalone decision surface.
+
+The durable review flow is:
+
+```text
+model_dataset_snapshot
+  ├─ model_dataset_split
+  ├─ model_eval_label
+  └─ model_eval_run
+        └─ model_promotion_metric
+```
+
+`model_promotion_metric` owns the measured promotion scores. The surrounding dataset/evaluation tables own the context that makes those scores reviewable: the frozen data snapshot, point-in-time split windows, label/horizon construction, and the specific evaluation run that produced the metrics.
+
+Agent or human promotion review should therefore receive a candidate evidence package rooted in `model_promotion_candidate` and backed by `model_eval_run`, including metric values plus thresholds, baseline comparison, split-stability evidence, leakage/no-future checks, and dataset/label provenance. Missing real-data evaluation, thresholds, baseline/stability/leakage evidence, or dataset/label context is grounds to defer promotion rather than approve.
