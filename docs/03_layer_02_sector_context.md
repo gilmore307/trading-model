@@ -103,9 +103,11 @@ Layer 2 changes are acceptable when they:
 - preserve `model_02_sector_context` as the narrow downstream sector-context output and keep explainability/diagnostics as support surfaces;
 - route new shared names, statuses, fields, handoff states, or reason-code vocabularies through `trading-manager/scripts/` before cross-repository dependence.
 
-Current Layer 2 verification is documentation/contract inspection until implementation lands:
+Current Layer 2 verification covers the V1 deterministic generator, SQL physical-artifact writers, and contract boundary checks:
 
 ```bash
 git diff --check
+python3 -m compileall -q src scripts tests
+PYTHONPATH=src python3 -m unittest tests.test_sector_context_contract tests.test_sector_context_model
 rg -n "source_02_sector_context|layer02_|SecuritySelectionModel|security_selection" docs src scripts tests
 ```
