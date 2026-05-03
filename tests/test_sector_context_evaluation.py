@@ -74,6 +74,24 @@ class SectorContextEvaluationTests(unittest.TestCase):
         self.assertEqual(label["label_time"], features[2]["snapshot_time"])
         self.assertEqual(label["label_value"], features[2]["relative_strength_return"])
 
+    def test_future_labels_are_rotation_pair_specific_without_same_time_leakage(self) -> None:
+        features, models = _rows()
+        extra_features = []
+        for row in features:
+            if row["candidate_symbol"] == "XLK":
+                clone = dict(row)
+                clone["comparison_symbol"] = "QQQ"
+                clone["rotation_pair_id"] = "xlk_qqq"
+                clone["relative_strength_return"] = float(row["relative_strength_return"]) * 2
+                extra_features.append(clone)
+        artifacts = build_evaluation_artifacts(feature_rows=[*features, *extra_features], model_rows=models)
+
+        self.assertTrue(artifacts.eval_labels)
+        self.assertTrue(all(label["label_time"] > label["available_time"] for label in artifacts.eval_labels))
+        xlk_labels = [label for label in artifacts.eval_labels if label["target_symbol"] == "XLK" and label["horizon"] == "1_step"]
+        self.assertEqual(len({label["label_id"] for label in xlk_labels}), len(xlk_labels))
+        self.assertEqual({label["label_payload_json"]["rotation_pair_id"] for label in xlk_labels}, {"xlk_spy", "xlk_qqq"})
+
     def test_summary_includes_sector_handoff_promotion_evidence(self) -> None:
         features, models = _rows()
         summary = summarize_artifacts(

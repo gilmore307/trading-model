@@ -107,6 +107,8 @@ Layer 2 changes are acceptable when they:
 
 `model_02_sector_context` must not become a production-hard downstream dependency until it has a reviewed promotion candidate backed by real-data evaluation evidence. Promotion evidence must include explicit thresholds, metric values, baseline comparison, split/refit stability, sector handoff quality, and no-future-leak checks. Fixture/local dry-run evidence should defer.
 
+Current real-data status: the Layer 2 real-data evaluation path is operational and persisted governance evidence can be written, but the latest promotion review is deferred rather than approved because the configured baseline/stability gates did not all pass. The model is therefore implementation-complete for the V1 path but not production-promoted as a hard downstream dependency.
+
 Current Layer 2 verification covers the V1 deterministic generator, SQL physical-artifact writers, promotion evidence builders, and contract boundary checks:
 
 ```bash

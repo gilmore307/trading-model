@@ -118,7 +118,18 @@ def _row_time(row: Mapping[str, Any], *, preferred: str) -> datetime:
 
 
 def _candidate_symbol(row: Mapping[str, Any]) -> str:
-    return str(row.get("sector_or_industry_symbol") or row.get("candidate_symbol") or "").strip().upper()
+    return str(row.get("sector_or_industry_symbol") or row.get("candidate_symbol") or row.get("target_symbol") or "").strip().upper()
+
+
+def _feature_identity(row: Mapping[str, Any]) -> tuple[str, str, str]:
+    payload = row.get("label_payload_json")
+    if isinstance(payload, Mapping):
+        rotation_pair_id = str(payload.get("rotation_pair_id") or "")
+        comparison_symbol = str(payload.get("comparison_symbol") or "")
+    else:
+        rotation_pair_id = str(row.get("rotation_pair_id") or "")
+        comparison_symbol = str(row.get("comparison_symbol") or "")
+    return (_candidate_symbol(row), rotation_pair_id, comparison_symbol.strip().upper())
 
 
 def _canonical_json(value: Any) -> str:
@@ -247,11 +258,11 @@ def build_eval_labels(
     label_specs: Sequence[LabelSpec] = DEFAULT_LABEL_SPECS,
     write_policy: str = DEFAULT_DRY_RUN_WRITE_POLICY,
 ) -> list[dict[str, Any]]:
-    by_symbol: dict[str, list[Mapping[str, Any]]] = {}
+    by_feature_identity: dict[tuple[str, str, str], list[Mapping[str, Any]]] = {}
     for row in feature_rows:
-        by_symbol.setdefault(_candidate_symbol(row), []).append(row)
+        by_feature_identity.setdefault(_feature_identity(row), []).append(row)
     labels: list[dict[str, Any]] = []
-    for symbol, rows in by_symbol.items():
+    for (symbol, rotation_pair_id, comparison_symbol), rows in by_feature_identity.items():
         ordered = sorted(rows, key=lambda row: _row_time(row, preferred="snapshot_time"))
         for index, row in enumerate(ordered):
             available_time = _row_time(row, preferred="snapshot_time")
@@ -266,7 +277,7 @@ def build_eval_labels(
                 label_time = _row_time(future_row, preferred="snapshot_time")
                 labels.append(
                     {
-                        "label_id": _stable_id("mdlabel", snapshot_id, spec.label_name, symbol, spec.horizon, _iso(available_time)),
+                        "label_id": _stable_id("mdlabel", snapshot_id, spec.label_name, symbol, rotation_pair_id, comparison_symbol, spec.horizon, _iso(available_time)),
                         "snapshot_id": snapshot_id,
                         "label_name": spec.label_name,
                         "target_symbol": symbol,
@@ -274,7 +285,13 @@ def build_eval_labels(
                         "available_time": _iso(available_time),
                         "label_time": _iso(label_time),
                         "label_value": label_value,
-                        "label_payload_json": {"source_column": spec.source_column, "horizon_steps": spec.horizon_steps, "write_policy": write_policy},
+                        "label_payload_json": {
+                            "source_column": spec.source_column,
+                            "horizon_steps": spec.horizon_steps,
+                            "rotation_pair_id": rotation_pair_id,
+                            "comparison_symbol": comparison_symbol,
+                            "write_policy": write_policy,
+                        },
                     }
                 )
     return labels
@@ -357,7 +374,7 @@ def build_baseline_metrics(
     eval_run_id: str,
     write_policy: str = DEFAULT_DRY_RUN_WRITE_POLICY,
 ) -> list[dict[str, Any]]:
-    feature_by_key = {(_iso(_row_time(row, preferred="snapshot_time")), _candidate_symbol(row)): row for row in feature_rows}
+    feature_by_key = {(_iso(_row_time(row, preferred="snapshot_time")), *_feature_identity(row)): row for row in feature_rows}
     metrics: list[dict[str, Any]] = []
     for split in splits:
         split_start = _parse_time(split["split_start_time"])
@@ -369,7 +386,7 @@ def build_baseline_metrics(
         for (label_name, symbol, horizon), group in grouped.items():
             pairs: list[tuple[float, float]] = []
             for label in group:
-                feature_row = feature_by_key.get((str(label["available_time"]), symbol))
+                feature_row = feature_by_key.get((str(label["available_time"]), *_feature_identity(label)))
                 if feature_row is None:
                     continue
                 baseline_value = _safe_float(feature_row.get("relative_strength_return"))

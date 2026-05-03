@@ -85,10 +85,10 @@ def create_evaluation_schema_sql(schema: str = DEFAULT_SCHEMA) -> list[str]:
           "label_value" DOUBLE PRECISION,
           "label_payload_json" JSONB NOT NULL DEFAULT '{{}}'::jsonb,
           "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          UNIQUE ("snapshot_id", "label_name", "target_symbol", "horizon", "available_time"),
           CHECK ("label_time" >= "available_time")
         )
         """,
+        f"ALTER TABLE {label} DROP CONSTRAINT IF EXISTS \"model_eval_label_snapshot_id_label_name_target_symbol_horiz_key\"",
         f"CREATE INDEX IF NOT EXISTS \"idx_model_eval_label_lookup\" ON {label} (\"snapshot_id\", \"label_name\", \"horizon\", \"available_time\")",
         f"""
         CREATE TABLE IF NOT EXISTS {run} (
