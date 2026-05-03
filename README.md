@@ -64,6 +64,8 @@ scripts/models/model_01_market_regime/run_market_regime_development_smoke.py
 scripts/models/model_01_market_regime/review_market_regime_promotion.py
 ```
 
+`evaluate_model_01_market_regime.py` is fixture/local-JSONL dry-run by default and has an explicit `--from-database` read-only path for real feature/model SQL rows. Its promotion summary includes metric values, explicit thresholds, baseline comparison, split-stability evidence, and no-future-leak checks.
+
 `review_market_regime_promotion.py` is review-only by default. With `--write-decision`, it persists evaluation artifacts, config/candidate rows, and the reviewed promotion decision. With `--activate-approved-config`, accepted approval decisions mark the reviewed config row active through `model_config_version`; deferred or rejected decisions leave the active config unchanged.
 
 `src/` owns reusable model logic. `scripts/` may import `src/`; `src/` must not import `scripts/`.

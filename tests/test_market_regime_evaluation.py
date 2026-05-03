@@ -94,16 +94,47 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
         self.assertEqual(summary["tables"]["model_dataset_request"], 1)
         self.assertGreater(summary["tables"]["model_eval_metric"], 0)
 
-    def test_dry_run_harness_has_no_database_connection_surface(self) -> None:
+    def test_summary_includes_promotion_evidence_values(self) -> None:
+        features, models = _rows()
+        summary = summarize_artifacts(
+            build_evaluation_artifacts(feature_rows=features, model_rows=models),
+            thresholds={
+                "minimum_feature_rows": 1,
+                "minimum_model_rows": 1,
+                "minimum_eval_labels": 1,
+                "minimum_split_count": 1,
+                "minimum_pair_count": 1,
+                "minimum_coverage": 0,
+                "minimum_factor_abs_pearson": 0,
+                "minimum_baseline_improvement_abs": -2,
+                "minimum_stability_sign_consistency": 0,
+                "maximum_stability_correlation_range": 2,
+                "maximum_leakage_violation_count": 0,
+            },
+        )
+
+        self.assertIn("metric_value_summary", summary)
+        self.assertIn("baseline_summary", summary)
+        self.assertIn("stability_summary", summary)
+        self.assertIn("leakage_summary", summary)
+        self.assertIn("threshold_results", summary)
+        self.assertTrue(summary["promotion_evidence_ready"])
+
+    def test_core_evaluator_has_no_database_connection_surface(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        texts = [
-            (repo_root / "src" / "models" / "model_01_market_regime" / "evaluation.py").read_text(encoding="utf-8"),
-            (repo_root / "scripts" / "models" / "model_01_market_regime" / "evaluate_model_01_market_regime.py").read_text(encoding="utf-8"),
-        ]
-        forbidden = ["psycopg", "OPENCLAW_DATABASE_URL", "database-url", "connect("]
-        for text in texts:
-            for token in forbidden:
-                self.assertNotIn(token, text)
+        text = (repo_root / "src" / "models" / "model_01_market_regime" / "evaluation.py").read_text(encoding="utf-8")
+        forbidden = ["psycopg", "OPENCLAW_DATABASE_URL", "database-url", "connect(", "subprocess"]
+        for token in forbidden:
+            self.assertNotIn(token, text)
+
+    def test_database_reader_is_guarded_by_explicit_flag(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        text = (repo_root / "scripts" / "models" / "model_01_market_regime" / "evaluate_model_01_market_regime.py").read_text(encoding="utf-8")
+
+        self.assertIn("--from-database", text)
+        self.assertIn("READ ONLY: database rows were read", text)
+        self.assertIn("DRY RUN ONLY: no database connection was opened", text)
+        self.assertIn("if args.from_database:", text)
 
 
 if __name__ == "__main__":

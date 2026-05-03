@@ -1,0 +1,15 @@
+# MarketRegimeModel promotion acceptance thresholds.
+# These are deliberately strict defaults for production promotion. Tests may pass
+# lower in-memory thresholds directly; the production review path should not.
+
+minimum_feature_rows = 252
+minimum_model_rows = 252
+minimum_eval_labels = 200
+minimum_split_count = 3
+minimum_pair_count = 30
+minimum_coverage = 0.80
+minimum_factor_abs_pearson = 0.03
+minimum_baseline_improvement_abs = 0.00
+minimum_stability_sign_consistency = 0.66
+maximum_stability_correlation_range = 1.50
+maximum_leakage_violation_count = 0

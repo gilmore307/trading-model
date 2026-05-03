@@ -49,3 +49,4 @@
 - `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only.
 - `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-factor evidence-role contract.
 - Promotion decisions can now be durably persisted through `review_market_regime_promotion.py --write-decision`; accepted approval decisions can activate the reviewed config via `model_config_version.config_status = active`, while deferred/rejected decisions leave the active config unchanged.
+- MarketRegimeModel evaluation summaries now expose real metric values, explicit promotion thresholds, baseline comparison, split-stability evidence, and no-future-leak checks; the default path remains dry-run, while `evaluate_model_01_market_regime.py --from-database` performs a read-only SQL evaluation feed.

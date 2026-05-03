@@ -326,7 +326,6 @@ def _cleanup(database_url: str) -> None:
         DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, DIAGNOSTICS_TABLE)};
         DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, EXPLAINABILITY_TABLE)};
         DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, MODEL_TABLE)};
-        DROP SCHEMA IF EXISTS {_ident(MODEL_SCHEMA)} CASCADE;
         """,
     )
 

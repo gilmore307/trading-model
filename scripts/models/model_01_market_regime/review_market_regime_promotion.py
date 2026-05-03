@@ -107,29 +107,36 @@ def _invoke_agent(
 def _fallback_review(summary: dict[str, Any]) -> dict[str, Any]:
     """Deterministic local reviewer for prompt tests and unavailable agents.
 
-    This is intentionally conservative: fixture/dev-smoke evidence can exercise
-    the gate, but cannot approve production promotion.
+    This mirrors the hard gate without replacing the independent agent reviewer.
+    It only approves non-fixture evidence when every explicit threshold passes.
     """
     write_policy = summary.get("write_policy") or summary.get("database_write_policy")
+    threshold_results = summary.get("threshold_results") if isinstance(summary.get("threshold_results"), dict) else {}
+    all_thresholds_pass = bool(threshold_results) and all(bool(result.get("passed")) for result in threshold_results.values() if isinstance(result, dict))
     checks = {
         "has_eval_run": bool(summary.get("eval_run_id")),
-        "has_metrics": bool(summary.get("tables", {}).get("model_eval_metric")),
+        "has_metric_values": bool(summary.get("metric_value_summary")),
         "has_real_non_fixture_data": write_policy not in {"development_tables_written_then_cleaned", "no_database_write", "dry_run_only"},
-        "has_explicit_thresholds": False,
-        "cleanup_confirmed": summary.get("cleanup_policy") == "cleanup_after_run",
+        "has_explicit_thresholds": bool(summary.get("acceptance_thresholds")),
+        "has_baseline_evidence": bool(summary.get("baseline_summary")),
+        "has_stability_evidence": bool(summary.get("stability_summary")),
+        "has_no_future_leak_evidence": bool(summary.get("leakage_summary")),
+        "thresholds_pass": all_thresholds_pass,
     }
+    can_promote = all(checks.values())
+    blockers = [key for key, passed in checks.items() if not passed]
     return validate_promotion_review(
         {
-            "can_promote": False,
-            "decision_type": "defer",
-            "decision_status": "deferred",
+            "can_promote": can_promote,
+            "decision_type": "approve" if can_promote else "defer",
+            "decision_status": "accepted" if can_promote else "deferred",
             "confidence": 0.9,
-            "reasons": ["Evaluation plumbing is present, but current evidence is development smoke evidence only."],
-            "blockers": ["Real non-fixture evaluation metrics and explicit acceptance thresholds are required before promotion."],
-            "required_next_steps": [
+            "reasons": ["Local fallback checked real evidence shape, metric values, thresholds, baseline, stability, and leakage summaries."],
+            "blockers": blockers,
+            "required_next_steps": [] if can_promote else [
                 "Run evaluation on real feature/model data.",
-                "Define acceptance thresholds for MarketRegimeModel promotion.",
-                "Re-run the agent promotion review with real metrics.",
+                "Provide metric values, thresholds, baseline comparison, stability, and no-future-leak evidence.",
+                "Re-run the agent promotion review with complete evidence.",
             ],
             "evidence_checks": checks,
         }
