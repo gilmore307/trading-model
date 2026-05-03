@@ -92,3 +92,20 @@ Diagnostics owns acceptance, monitoring, and gating evidence:
 ## Naming rule
 
 Layer 2 model fields use compact `2_*` names in docs, model-facing payloads, and SQL physical columns. SQL writers should quote numeric-leading column names when needed rather than storing semantic aliases such as `layer02_*`.
+
+## Layer acceptance
+
+Layer 2 changes are acceptable when they:
+
+- consume `trading_model.model_01_market_regime` / `market_context_state` as conditioning context plus `trading_data.feature_02_sector_context` as the deterministic feature surface;
+- keep Layer 1 context from becoming sector, ETF, stock, strategy, option, or portfolio selection by itself;
+- exclude ETF holdings and `stock_etf_exposure` from core Layer 2 behavior modeling unless a later accepted contract moves that boundary;
+- preserve `model_02_sector_context` as the narrow downstream sector-context output and keep explainability/diagnostics as support surfaces;
+- route new shared names, statuses, fields, handoff states, or reason-code vocabularies through `trading-manager/scripts/` before cross-repository dependence.
+
+Current Layer 2 verification is documentation/contract inspection until implementation lands:
+
+```bash
+git diff --check
+rg -n "source_02_sector_context|layer02_|SecuritySelectionModel|security_selection" docs src scripts tests
+```

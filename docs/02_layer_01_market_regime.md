@@ -85,3 +85,32 @@ diagnostic_payload_json
 ## Naming rule
 
 Layer 1 model fields use compact `1_*` names in docs, model-facing payloads, and SQL physical columns. SQL writers should quote numeric-leading column names when needed rather than storing semantic aliases such as `layer01_*`.
+
+## Layer acceptance
+
+Layer 1 changes are acceptable when they:
+
+- preserve the broad-market-only boundary and exclude sector/security/strategy/option/portfolio outcome leakage;
+- keep `trading_data.feature_01_market_regime` as the production input and `trading_model.model_01_market_regime` as the narrow downstream output;
+- keep explainability and diagnostics as review/support artifacts rather than hard downstream dependencies;
+- provide evidence-backed verification for generation, evaluation, smoke, and promotion-review paths when implementation changes;
+- route new shared names, statuses, fields, or reason-code vocabularies through `trading-manager/scripts/` before cross-repository dependence.
+
+Current Layer 1 verification gates include:
+
+```bash
+python3 -m compileall -q src scripts tests
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/generate_model_01_market_regime.py --help
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --help
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --print-artifacts --output-json /tmp/l1_promotion_artifacts.json
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --from-database --output-json /tmp/l1_database_promotion_summary.json
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/run_market_regime_development_smoke.py --help
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --help
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --dry-run
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --local-fallback-review --print-write-sql
+git diff --check
+```
+
+Runtime SQL smoke tests require an explicitly configured PostgreSQL target and should not run as default unit tests.

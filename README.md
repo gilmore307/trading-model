@@ -37,7 +37,7 @@ Layer 1 describes broad market state only. Layer 2 describes sector/industry tre
 ## Top-Level Structure
 
 ```text
-docs/        Repository scope, context, workflow, acceptance, task, decisions, memory, and architecture RFCs.
+docs/        Repository scope/context, layer workflows with acceptance, task/decision/memory, and architecture references.
 src/         Importable model-specific and shared-governance implementation code.
 scripts/     SQL generation wrappers and operational entrypoints.
 tests/       First-party unit tests using in-memory fixtures/fake cursors.
@@ -78,18 +78,16 @@ scripts/models/model_01_market_regime/review_market_regime_promotion.py
 docs/
   00_scope.md
   01_context.md
-  02_workflow.md
-  03_acceptance.md
-  04_task.md
-  05_decision.md
-  06_memory.md
-  07_system_model_architecture_rfc.md
-  08_model_decomposition.md
-  91_layer_01_market_regime.md
-  92_layer_02_sector_context.md
+  02_layer_01_market_regime.md
+  03_layer_02_sector_context.md
+  80_task.md
+  81_decision.md
+  82_memory.md
+  90_system_model_architecture_rfc.md
+  91_model_decomposition.md
 ```
 
-`docs/08_model_decomposition.md` is the model-design review template: each layer should be decomposed by data, features, target, model mapping, loss, training/update process, validation, overfitting control, and decision deployment before implementation or promotion expands. Layer-specific `91_`/`92_` docs record the active Layer 1 and Layer 2 artifact contracts while the lower-number docs spine is being evaluated.
+`docs/91_model_decomposition.md` is the model-design review template: each layer should be decomposed by data, features, target, model mapping, loss, training/update process, validation, overfitting control, and decision deployment before implementation or promotion expands. Layer-specific `02_`/`03_` docs now own workflow, artifact contracts, and acceptance gates for the active Layer 1 and Layer 2 boundaries.
 
 ## Platform Dependencies
 
