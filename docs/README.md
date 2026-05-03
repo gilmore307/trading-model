@@ -6,7 +6,7 @@ This directory is the authoritative documentation spine for `trading-model`.
 
 - `00_scope.md` — repository boundary, in-scope work, out-of-scope work, and owner intent.
 - `01_context.md` — why the repository exists, related systems, environment assumptions, and dependencies.
-- `02_workflow.md` — component workflow, handoffs, and operating sequence.
+- `02_workflow.md` — compact cross-layer workflow index, handoffs, and operating sequence; detailed stage diagrams belong in the `91_`/`92_`/later layer files.
 - `03_acceptance.md` — acceptance gates, verification commands, evidence requirements, and rejection reasons.
 - `04_task.md` — current task state, queued work, blockers, and recently accepted work.
 - `05_decision.md` — ratified repository decisions.

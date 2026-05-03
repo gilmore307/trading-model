@@ -10,6 +10,24 @@ trading_data.feature_01_market_regime
 
 Layer 1 consumes broad-market and cross-asset evidence only. Sector/industry rotation, sector/industry ETF leadership, ETF holdings, selected securities, strategies, option contracts, portfolio actions, and future-return labels are excluded from production construction.
 
+## Stage flow
+
+```mermaid
+flowchart LR
+    source["trading_data source evidence<br/>point-in-time broad-market and cross-asset data"]
+    feature["trading_data.feature_01_market_regime<br/>deterministic Layer 1 feature surface"]
+    model["MarketRegimeModel<br/>Layer 1 model logic"]
+    output["trading_model.model_01_market_regime<br/>primary market_context_state"]
+    explain["trading_model.model_01_market_regime_explainability<br/>human-review factor attribution"]
+    diagnostics["trading_model.model_01_market_regime_diagnostics<br/>acceptance and gating evidence"]
+    downstream["Layer 2+ conditioning context<br/>not sector/security selection"]
+
+    source --> feature --> model
+    model --> output --> downstream
+    model --> explain
+    model --> diagnostics
+```
+
 ## Physical artifacts
 
 ```text

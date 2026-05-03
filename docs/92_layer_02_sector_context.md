@@ -5,11 +5,32 @@ This file records the current `trading-model` contract for Layer 2.
 ## Input
 
 ```text
-market_context_state
+trading_model.model_01_market_regime   # Layer 1 primary output, consumed conceptually as market_context_state
 trading_data.feature_02_sector_context
 ```
 
-Layer 1 market context is conditioning context only. Layer 2 consumes sector/industry ETF behavior evidence from `feature_02_sector_context`. ETF holdings and `stock_etf_exposure` belong downstream to anonymous target candidate construction, not Layer 2 core behavior modeling.
+Layer 2 needs the Layer 1 output in addition to the Layer 2 data feature surface. `model_01_market_regime` / `market_context_state` is conditioning context only; it should shape interpretation of sector behavior but should not become sector, ETF, stock, or strategy selection by itself.
+
+Layer 2 consumes sector/industry ETF behavior evidence from `feature_02_sector_context`. The data-owned source rows behind that feature surface are provenance/construction evidence, not a separate direct model dependency unless a later accepted contract creates one. ETF holdings and `stock_etf_exposure` belong downstream to anonymous target candidate construction, not Layer 2 core behavior modeling.
+
+## Stage flow
+
+```mermaid
+flowchart LR
+    l1["trading_model.model_01_market_regime<br/>Layer 1 market_context_state"]
+    feature["trading_data.feature_02_sector_context<br/>sector/industry behavior feature surface"]
+    model["SectorContextModel<br/>Layer 2 model logic"]
+    output["trading_model.model_02_sector_context<br/>primary sector_context_state"]
+    explain["trading_model.model_02_sector_context_explainability<br/>human-review behavior and attribution"]
+    diagnostics["trading_model.model_02_sector_context_diagnostics<br/>acceptance and gating evidence"]
+    builder["anonymous target candidate builder<br/>uses selected sector context plus holdings/exposure evidence"]
+
+    l1 --> model
+    feature --> model
+    model --> output --> builder
+    model --> explain
+    model --> diagnostics
+```
 
 ## Physical artifacts
 

@@ -2,7 +2,9 @@
 
 ## Purpose
 
-This file defines the current offline modeling workflow for `trading-model`.
+This file defines the current high-level offline modeling workflow for `trading-model`.
+
+Detailed per-layer workflow diagrams and active artifact contracts belong in the stage files such as `docs/91_layer_01_market_regime.md` and `docs/92_layer_02_sector_context.md`. As each stage matures, those stage files should replace detailed workflow prose here; this file should remain the compact cross-layer index and ordering map.
 
 ## Primary Flow
 
@@ -42,6 +44,12 @@ point-in-time data artifacts
 - Research outputs need manifests and ready signals before downstream promotion.
 - Shared fields, statuses, type values, helpers, templates, and reusable contracts must come from `trading-manager`.
 - Runtime outputs must be written outside Git-tracked source paths.
+
+## Detailed layer workflow ownership
+
+- `docs/91_layer_01_market_regime.md` owns the current Layer 1 flow diagram, inputs, outputs, explainability, diagnostics, and naming rule.
+- `docs/92_layer_02_sector_context.md` owns the current Layer 2 flow diagram, inputs, outputs, explainability, diagnostics, and naming rule.
+- Future `93_` and later stage files should follow the same pattern before this overview expands into detailed implementation prose.
 
 ## Phased Build Order
 
