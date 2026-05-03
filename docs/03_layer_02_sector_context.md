@@ -103,11 +103,15 @@ Layer 2 changes are acceptable when they:
 - preserve `model_02_sector_context` as the narrow downstream sector-context output and keep explainability/diagnostics as support surfaces;
 - route new shared names, statuses, fields, handoff states, or reason-code vocabularies through `trading-manager/scripts/` before cross-repository dependence.
 
-Current Layer 2 verification covers the V1 deterministic generator, SQL physical-artifact writers, and contract boundary checks:
+## Production promotion
+
+`model_02_sector_context` must not become a production-hard downstream dependency until it has a reviewed promotion candidate backed by real-data evaluation evidence. Promotion evidence must include explicit thresholds, metric values, baseline comparison, split/refit stability, sector handoff quality, and no-future-leak checks. Fixture/local dry-run evidence should defer.
+
+Current Layer 2 verification covers the V1 deterministic generator, SQL physical-artifact writers, promotion evidence builders, and contract boundary checks:
 
 ```bash
 git diff --check
 python3 -m compileall -q src scripts tests
-PYTHONPATH=src python3 -m unittest tests.test_sector_context_contract tests.test_sector_context_model
+PYTHONPATH=src python3 -m unittest tests.test_sector_context_contract tests.test_sector_context_model tests.test_sector_context_evaluation
 rg -n "source_02_sector_context|layer02_|SecuritySelectionModel|security_selection" docs src scripts tests
 ```

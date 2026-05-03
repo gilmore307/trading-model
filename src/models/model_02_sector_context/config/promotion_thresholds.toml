@@ -1,0 +1,18 @@
+# SectorContextModel production promotion thresholds.
+# These are intentionally stricter than fixture/smoke evidence. Fixture and
+# local-jsonl runs should normally defer until real database evaluation evidence
+# clears these gates.
+minimum_feature_rows = 252.0
+minimum_model_rows = 252.0
+minimum_eval_labels = 200.0
+minimum_split_count = 3.0
+minimum_pair_count = 20.0
+minimum_coverage = 0.80
+minimum_factor_abs_pearson = 0.03
+minimum_baseline_improvement_abs = 0.0
+minimum_stability_sign_consistency = 0.66
+maximum_stability_correlation_range = 1.50
+maximum_leakage_violation_count = 0.0
+minimum_selected_count = 5.0
+minimum_selected_positive_rate = 0.50
+minimum_selected_average_label = 0.0

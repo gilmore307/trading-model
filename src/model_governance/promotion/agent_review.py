@@ -57,6 +57,48 @@ def build_market_regime_promotion_prompt(
     )
 
 
+def build_sector_context_promotion_prompt(
+    *,
+    evaluation_summary: Mapping[str, Any],
+    config_version_row: Mapping[str, Any],
+    promotion_candidate_row: Mapping[str, Any],
+) -> str:
+    """Build the reviewer-agent prompt for a SectorContextModel promotion gate."""
+    evidence = {
+        "evaluation_summary": dict(evaluation_summary),
+        "config_version": dict(config_version_row),
+        "promotion_candidate": dict(promotion_candidate_row),
+    }
+    return (
+        "You are the independent promotion reviewer for trading-model SectorContextModel.\n"
+        "Evaluate whether this candidate can be promoted for downstream anonymous target candidate construction. Be strict.\n\n"
+        "Hard rules:\n"
+        "- Return ONLY one JSON object. No markdown, no prose outside JSON.\n"
+        "- Do not approve if evidence is fixture-only, dry-run-only, missing real-data metrics, "
+        "missing metric_value_summary, missing explicit thresholds, missing baseline/stability evidence, "
+        "missing sector handoff evidence, or missing no-future-leak checks.\n"
+        "- Promotion requires an evaluation-backed candidate, sufficient metric coverage, explicit acceptance thresholds, "
+        "passing threshold_results, baseline comparison, split/refit-stability evidence, selected/watch/blocked handoff quality, "
+        "and no unresolved data-leakage or boundary blocker.\n"
+        "- ETF holdings, stock_etf_exposure, final target symbols, strategies, options, sizing, and realized PnL must not be Layer 2 core inputs.\n"
+        "- If evidence is insufficient, use decision_type='defer' and decision_status='deferred'.\n"
+        "- A review decision is not an active production pointer.\n\n"
+        "Required JSON schema:\n"
+        "{\n"
+        "  \"can_promote\": boolean,\n"
+        "  \"decision_type\": \"approve\" | \"reject\" | \"defer\",\n"
+        "  \"decision_status\": \"accepted\" | \"rejected\" | \"deferred\",\n"
+        "  \"confidence\": number,\n"
+        "  \"reasons\": [string],\n"
+        "  \"blockers\": [string],\n"
+        "  \"required_next_steps\": [string],\n"
+        "  \"evidence_checks\": { string: boolean }\n"
+        "}\n\n"
+        "Evidence:\n"
+        f"{json.dumps(evidence, indent=2, sort_keys=True, default=str)}\n"
+    )
+
+
 def extract_json_object(text: str) -> dict[str, Any]:
     """Extract a single JSON object from agent output."""
     stripped = text.strip()
