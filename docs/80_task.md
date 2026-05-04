@@ -12,8 +12,8 @@
    - Keep ETF/sector attributes inferred from evidence.
    - Keep `stock_etf_exposure` as downstream candidate-construction evidence, not Layer 2 core behavior modeling.
 
-3. **Anonymous target candidate builder contract maturation**
-   - Keep `src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md` aligned with Layer 2 handoff and Layer 3 fitting needs.
+3. **Layer 3 anonymous target candidate builder contract maturation**
+   - Keep `src/models/model_03_strategy_selection/anonymous_target_candidate_builder/target_candidate_builder_contract.md` aligned with Layer 2 handoff and Layer 3 fitting needs.
    - Preserve the separation between model-facing anonymous vectors and audit/routing symbol metadata.
    - Define implementation/evaluation shape before promoting any fields through `trading-manager`.
 
@@ -48,7 +48,7 @@
 - Layer 2 outputs sector/industry trend-stability and inferred basket attributes as `sector_context_state`.
 - `src/models/model_02_sector_context/sector_context_state_contract.md` owns the current Layer 2 V1 field contract.
 - Layer 2 does not choose final stocks in V1.
-- `src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md` owns the current anonymous candidate-builder V1 contract.
+- `src/models/model_03_strategy_selection/anonymous_target_candidate_builder/target_candidate_builder_contract.md` owns the current anonymous candidate-builder V1 contract.
 - Target-aware fitting starts downstream through anonymous target candidates.
 - Model-facing target vectors must exclude ticker/company identity.
 - `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only.

@@ -6,6 +6,7 @@ Layer 3 scores which standalone strategy family and parameter-neighborhood varia
 
 Key files:
 
+- `anonymous_target_candidate_builder/target_candidate_builder_contract.md` — Layer 3 candidate-preparation identity/anonymity contract that turns Layer 2 sector context into anonymous target candidates.
 - `strategy_family_catalog.md` — reviewed strategy-family summary, suitable trading periods, parameter gradients, variant counts, and implementation notes.
 
 Current status: design/catalog only; implementation pending.

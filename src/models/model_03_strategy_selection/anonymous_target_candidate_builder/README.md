@@ -1,6 +1,6 @@
 # anonymous_target_candidate_builder
 
-Contract-first boundary for building anonymous target candidates between Layer 2 and Layer 3.
+Layer 3 candidate-preparation sub-boundary for building anonymous target candidates from Layer 2 sector context.
 
 Current status: contract-first; implementation pending.
 

@@ -234,14 +234,14 @@ optional 2_sector_selection_parameter
 - Do not use ETF holdings or `stock_etf_exposure` as core Layer 2 behavior-model inputs.
 - Output selected/prioritized sector basket handoff state for downstream candidate construction.
 
-## Anonymous Target Candidate Builder
+## Layer 3 candidate preparation: Anonymous Target Candidate Builder
 
-The target candidate builder creates strategy-aware candidate rows for Layer 3+ from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
+The target candidate builder is part of Layer 3. It creates strategy-aware candidate rows from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
 
 The current model-local contract is:
 
 ```text
-src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md
+src/models/model_03_strategy_selection/anonymous_target_candidate_builder/target_candidate_builder_contract.md
 ```
 
 Conceptual fields:

@@ -256,17 +256,17 @@ Rules:
 - Deterministic data evidence fields from `trading-data` do not receive model-layer prefixes merely because a model consumes them.
 - Docs, model-facing payloads, and physical SQL columns use the same compact names. SQL writers should quote numeric-leading identifiers where required instead of storing semantic aliases such as `layer01_*` or `layer02_*`.
 
-## D012 - Anonymous target candidate builder owns the Layer 2 to Layer 3 identity boundary
+## D012 - Anonymous target candidate builder owns the Layer 3 candidate-preparation identity boundary
 
 Date: 2026-05-02
 Status: Accepted
 
-The boundary between `SectorContextModel` and `StrategySelectionModel` is an anonymous target candidate builder, not direct ticker-aware strategy fitting.
+The boundary between `SectorContextModel` and `StrategySelectionModel` is a Layer 3 anonymous target candidate builder, not a peer model layer and not direct ticker-aware strategy fitting.
 
 The model-local V1 contract is owned by:
 
 ```text
-src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md
+src/models/model_03_strategy_selection/anonymous_target_candidate_builder/target_candidate_builder_contract.md
 ```
 
 The builder expands Layer 2 selected/prioritized sector or industry baskets into target candidates using point-in-time ETF holdings, `stock_etf_exposure`, target-local behavior, liquidity/tradability, event/risk, cost, optionability, and quality evidence.
@@ -278,7 +278,7 @@ model-facing: target_candidate_id + anonymous_target_feature_vector + context re
 metadata: audit/routing symbol references and source evidence refs
 ```
 
-`target_candidate_id` is a row key only. It must not expose raw ticker/company identity and must not become a categorical fitting feature for Layer 3+.
+`target_candidate_id` is a row key only. It must not expose raw ticker/company identity and must not become a categorical fitting feature for Layer 3.
 
 Real symbols may remain recoverable through audit/routing metadata, but that metadata must not be joined into model-facing fitting vectors except through reviewed non-identity evidence fields.
 

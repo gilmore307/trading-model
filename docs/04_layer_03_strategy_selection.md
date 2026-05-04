@@ -18,12 +18,23 @@ src/models/model_03_strategy_selection/strategy_family_catalog.md
 
 Layer 3 does **not** choose final entry price, stop, target, option contract, position size, execution policy, or portfolio allocation. Those belong to later layers.
 
-## Input boundary
+## Input and candidate-preparation boundary
+
+Layer 3 includes the anonymous target candidate builder as its candidate-preparation sub-boundary:
 
 ```text
-anonymous_target_candidate_builder output
+src/models/model_03_strategy_selection/anonymous_target_candidate_builder/
+```
+
+Layer 3 input flow:
+
+```text
+trading_model.model_02_sector_context      # Layer 2 sector_context_state / basket handoff
++ target/holding/liquidity evidence         # point-in-time candidate construction evidence
+-> anonymous_target_candidate_builder       # Layer 3 candidate-prep sub-boundary
+-> anonymous target candidates              # StrategySelectionModel fitting inputs
+
 trading_model.model_01_market_regime       # market_context_state reference / factors
-trading_model.model_02_sector_context      # sector_context_state reference / handoff context
 trading_data.source_03_strategy_selection  # target-local bars, quotes, liquidity evidence when implemented
 ```
 

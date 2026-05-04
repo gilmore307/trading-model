@@ -321,17 +321,17 @@ sector_context_state
 
 It may provide selected/prioritized sector basket handoff state, but stock-universe construction waits for the anonymous target candidate builder.
 
-## Anonymous Target Candidate Builder
+## Layer 3 candidate preparation: Anonymous Target Candidate Builder
 
-Status: contract-first; implementation pending.
+Status: Layer 3 sub-boundary; contract-first; implementation pending.
 
 Contract owner:
 
 ```text
-src/models/anonymous_target_candidate_builder/target_candidate_builder_contract.md
+src/models/model_03_strategy_selection/anonymous_target_candidate_builder/target_candidate_builder_contract.md
 ```
 
-Purpose: create anonymous model-facing candidate rows for Layer 3+ from Layer 2 selected/prioritized sector baskets while preserving real symbol references for audit/routing only.
+Purpose: create anonymous model-facing candidate rows for Layer 3 from Layer 2 selected/prioritized sector baskets while preserving real symbol references for audit/routing only.
 
 Conceptual row shape:
 
@@ -362,7 +362,7 @@ V1 acceptance must prove point-in-time construction, no Layer 2 holdings leakage
 
 ## Layer 3: StrategySelectionModel
 
-Status: draft strategy-family/variant contract pending review.
+Status: draft candidate-preparation plus strategy-family/variant contract pending review.
 
 Contract owner:
 

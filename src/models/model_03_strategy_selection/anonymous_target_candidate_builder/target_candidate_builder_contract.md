@@ -3,8 +3,8 @@
 This file owns the first model-local contract for the boundary between
 `sector_context_state` and `StrategySelectionModel` target-aware fitting.
 
-The builder is not a model layer by itself. It is the point-in-time preparation
-boundary that expands selected sector/industry baskets into anonymous target
+The builder is part of Layer 3, not a separate model layer. It is the point-in-time preparation
+sub-boundary that expands selected sector/industry baskets into anonymous target
 candidate rows while preserving real symbol references only for audit and
 routing.
 
@@ -13,7 +13,7 @@ routing.
 The anonymous target candidate builder answers:
 
 > Given Layer 2 selected/prioritized sector or industry baskets, which target
-> candidates can be evaluated by Layer 3+ without exposing ticker/company
+> candidates can be evaluated by Layer 3 without exposing ticker/company
 > identity to model fitting?
 
 It may create stock or ETF target candidates, but it does not choose a final
@@ -40,7 +40,7 @@ Required model-facing identity fields:
 
 `target_candidate_id` must not reveal raw ticker, company, exchange, issuer, or
 stable symbol identity. It may be deterministic inside a reviewed artifact/run,
-but Layer 3+ must not use it as a categorical feature, and long-lived ids must
+but Layer 3 must not use it as a categorical feature, and long-lived ids must
 not become a route for memorizing symbol-specific winners.
 
 ## Metadata separation
