@@ -7,6 +7,5 @@ Layer 3 scores which standalone strategy family and parameter-neighborhood varia
 Key files:
 
 - `strategy_family_catalog.md` — reviewed strategy-family summary, suitable trading periods, parameter gradients, variant counts, and implementation notes.
-- `strategy_idea_universe.md` — broader strategy idea registry for future backlog, moved boundaries, option-expression ideas, event overlays, and deferred ML/RL targets.
 
 Current status: design/catalog only; implementation pending.

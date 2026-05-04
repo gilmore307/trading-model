@@ -513,3 +513,146 @@ Deferred because it is too easy to overfit or learn non-executable behavior befo
 8. **Stability gates** — split/refit stability, parameter-neighborhood stability, and variant-family robustness.
 9. **Anonymity checks** — ensure strategy variants consume anonymous target features and reviewed context, not raw ticker/company identity.
 10. **Promotion path** — no family becomes production-active until real-data evaluation and promotion review are accepted.
+
+## Backlog family variant catalog
+
+The catalog is not limited to the first implementation batch. Every retained strategy family should be represented here with enough parameter structure to become variants later. `implementation_status` controls rollout; it does not excuse missing variant design.
+
+Statuses:
+
+- `active_catalog`: ready for first implementation/evaluation batches.
+- `layer3_backlog`: retained as future standalone Layer 3 family.
+- `modifier`: reusable filter/score adjustment, not standalone by default.
+- `meta_family`: composition or ensemble layer over other families.
+- `position_management`: retained for portfolio/position layer, not Layer 3 standalone.
+- `option_expression`: retained for `OptionExpressionModel`, not Layer 3.
+- `event_overlay`: retained for event/overlay layer, not Layer 3 standalone.
+- `deferred_ml_rl`: retained final-goal ML/RL family.
+- `removed`: explicitly excluded; no variants assigned.
+
+### Layer 3 backlog families with variant-ready axes
+
+| Family | Status | Basic idea | Suitable periods | Variable gradients | Variant count |
+|---|---|---|---|---|---:|
+| `adx_trend_strength` | `layer3_backlog` | Score directional trend strength with ADX/DMI. | 30Min, 1Hour, 1Day | `timeframe=30Min/1Hour/1Day`; `adx_window=14/20`; `adx_min=20/25/30`; `di_confirmation=required/optional`; `slope_confirm=0/1` | 72 |
+| `parabolic_sar_trend` | `layer3_backlog` | Follow PSAR trend flips and persistence. | 30Min, 1Hour, 1Day | `timeframe=30Min/1Hour/1Day`; `sar_step=0.01/0.02/0.03`; `sar_max=0.1/0.2`; `confirmation_bars=1/2/3`; `trend_filter=off/on` | 108 |
+| `supertrend_following` | `layer3_backlog` | ATR-band trend state and flips. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `atr_window=10/14/20`; `multiplier=2/3/4`; `confirmation_bars=1/2`; `direction_mode=bullish/bearish/both` | 216 |
+| `ichimoku_trend` | `layer3_backlog` | Cloud and tenkan/kijun trend confirmation. | 1Hour, 1Day | `timeframe=1Hour/1Day`; `ichimoku_spec=9_26_52/12_24_48`; `cloud_filter=price_above_below/price_and_cloud_slope`; `tk_cross=required/optional`; `lagging_confirm=off/on` | 32 |
+| `ma_stack_alignment` | `layer3_backlog` | Trend alignment from ordered moving-average stack. | 30Min, 1Hour, 1Day | `timeframe=30Min/1Hour/1Day`; `stack_spec=5_10_20/10_20_50/20_50_200`; `ma_type=sma/ema`; `min_separation_bps=0/10/25`; `slope_confirm=off/on` | 108 |
+| `higher_high_higher_low_trend` | `layer3_backlog` | Mechanical swing-structure continuation. | 30Min, 1Hour, 1Day | `timeframe=30Min/1Hour/1Day`; `swing_window=3/5/8`; `structure_count=2/3`; `break_buffer_atr=0/0.25`; `confirmation_bars=1/2` | 72 |
+| `pullback_to_ma_continuation` | `layer3_backlog` | Continue trend after pullback to MA support/resistance. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `ma_window=20/50`; `ma_type=sma/ema`; `pullback_depth_atr=0.5/1.0/1.5`; `resume_confirm=close_reclaim/momentum_bar` | 96 |
+| `relative_strength_vs_benchmark` | `layer3_backlog` | Single target relative strength versus benchmark/sector reference. | 30Min, 1Hour, 1Day | `timeframe=30Min/1Hour/1Day`; `benchmark_ref=market/sector`; `lookback=10/20/60`; `rs_threshold=0/0.5/1.0_z`; `confirm_bars=1/2` | 108 |
+| `trend_day_continuation` | `layer3_backlog` | Intraday trend-day continuation after strong directional morning. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `morning_window=30/60`; `trend_strength_min=1.0/1.5/2.0_atr`; `pullback_allowed=none/shallow`; `no_trade_after=13:00/14:00` | 108 |
+| `anchored_vwap_trend_continuation` | `layer3_backlog` | Continue trend around anchored VWAP from a reviewed anchor. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `anchor=session_open/day_high_low/gap_open`; `distance_filter_bps=0/25/50`; `reclaim_confirm=1/2`; `liquidity_filter=standard/strict` | 108 |
+| `keltner_channel_reversion` | `layer3_backlog` | Revert from ATR channel extremes. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `ema_window=20/30`; `atr_window=10/20`; `multiplier=1.5/2/2.5`; `exit_rule=midline/half_channel`; `trend_filter=off/on` | 192 |
+| `cci_reversion` | `layer3_backlog` | Fade CCI overextension. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `cci_window=14/20/30`; `entry_threshold=100/150/200`; `exit_threshold=0/50`; `trend_filter=off/on` | 144 |
+| `stochastic_reversion` | `layer3_backlog` | Fade stochastic overbought/oversold. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `k_window=14/21`; `d_window=3/5`; `threshold_pair=20_80/10_90`; `cross_required=false/true`; `trend_filter=off/on` | 128 |
+| `williams_r_reversion` | `layer3_backlog` | Fade Williams %R extremes. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `window=14/21/28`; `threshold_pair=-80_-20/-90_-10`; `exit_level=-50/-40_60_band`; `trend_filter=off/on` | 96 |
+| `zscore_return_reversion` | `layer3_backlog` | Fade statistically unusual recent returns. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `return_window=3/5/10`; `zscore_window=20/60`; `entry_z=1.5/2/2.5`; `exit_z=0/0.5`; `trend_filter=off/on` | 288 |
+| `gap_fade` | `layer3_backlog` | Fade opening gap after regular-session confirmation. | 1Min, 5Min, 15Min, daily context | `signal_timeframe=1Min/5Min/15Min`; `gap_min_bps=50/100/200`; `confirmation_minutes=15/30`; `fade_target=half_gap/full_gap`; `trend_filter=off/on` | 72 |
+| `failed_breakout_reversion` | `layer3_backlog` | Fade breakout that fails back inside range. | 15Min, 30Min, 1Hour | `timeframe=15Min/30Min/1Hour`; `range_lookback=20/40`; `failure_window=3/5`; `reentry_depth=inside_close/mid_range`; `volume_filter=off/on`; `max_hold=10/20` | 96 |
+| `vwap_band_reversion` | `layer3_backlog` | Fade from VWAP bands rather than raw VWAP distance. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `band_method=stddev/atr`; `band_width=1/1.5/2`; `entry_band=outer_touch/close_outside`; `exit_band=vwap/half_band`; `spread_filter=standard/strict` | 216 |
+| `support_resistance_reversion` | `layer3_backlog` | Revert at mechanical support/resistance zones. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `level_method=pivot/rolling_high_low/volume_node_proxy`; `lookback=20/60`; `touch_tolerance_bps=10/25/50`; `rejection_confirm=wick/close`; `trend_filter=off/on` | 288 |
+| `overnight_gap_reversion` | `layer3_backlog` | Fade overnight gap after open stabilization. | 1Min, 5Min, daily context | `timeframe=1Min/5Min`; `gap_min_bps=50/100/200`; `earliest_entry=09:45/10:00`; `confirmation=first_pullback/vwap_reclaim`; `no_trade_after=11:00/12:00` | 48 |
+| `keltner_channel_breakout` | `layer3_backlog` | Break out beyond ATR channel. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `ema_window=20/30`; `atr_window=10/20`; `multiplier=1.5/2/2.5`; `confirmation_bars=1/2`; `volume_filter=off/on` | 192 |
+| `bollinger_band_breakout` | `layer3_backlog` | Continue volatility-band expansion. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `window=20/30`; `band_stddev=2/2.5`; `close_outside_bars=1/2`; `squeeze_required=off/on`; `volume_filter=off/on` | 128 |
+| `squeeze_breakout` | `layer3_backlog` | Trade release from volatility compression. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `squeeze_method=bb_keltner/percentile_range`; `compression_window=20/60`; `release_threshold=1.0/1.5`; `direction_filter=trend/range_break`; `confirmation_bars=1/2` | 128 |
+| `nr7_breakout` | `layer3_backlog` | Breakout after narrowest range in seven bars. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `narrow_range_n=4/7`; `breakout_buffer_atr=0/0.25/0.5`; `direction_mode=both`; `confirmation_bars=1/2`; `volume_filter=off/on` | 96 |
+| `inside_bar_breakout` | `layer3_backlog` | Breakout from inside-bar compression. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `inside_count=1/2/3`; `breakout_buffer_bps=5/10/20`; `confirmation_bars=1/2`; `volume_filter=off/on` | 144 |
+| `gap_continuation` | `layer3_backlog` | Continue strong gap after confirmation. | 1Min, 5Min, 15Min, daily context | `timeframe=1Min/5Min/15Min`; `gap_min_bps=50/100/200`; `hold_above_open_minutes=15/30`; `volume_confirmation=1/1.5`; `direction_mode=both` | 54 |
+| `high_low_range_expansion` | `layer3_backlog` | Trade expansion of high-low range versus baseline. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `baseline_window=20/60`; `expansion_ratio=1.25/1.5/2`; `direction_filter=none/trend`; `confirmation_bars=1/2` | 96 |
+| `volume_price_breakout` | `layer3_backlog` | Price breakout confirmed by relative volume. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `price_break_lookback=20/40`; `volume_ratio=1.25/1.5/2`; `breakout_buffer_bps=5/10/20`; `confirmation_bars=1/2` | 144 |
+| `atr_trailing_breakout` | `layer3_backlog` | Directional break with ATR trailing invalidation context. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `atr_window=14/20`; `trail_multiple=2/3/4`; `break_confirm=1/2`; `direction_filter=trend/range_break` | 96 |
+| `opening_drive_continuation` | `layer3_backlog` | Continue a strong first 30-60m opening drive. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `drive_window=30/60`; `drive_atr_min=1/1.5/2`; `pullback_rule=none/shallow`; `no_trade_after=11:00/12:00` | 108 |
+| `relative_volume_surge_continuation` | `layer3_backlog` | Continue moves with abnormal relative volume. | 1Min, 5Min, 15Min, 30Min | `timeframe=1Min/5Min/15Min/30Min`; `rv_window=20/60`; `rv_ratio=1.5/2/3`; `price_confirm=close_up_down/breakout`; `spread_filter=standard/strict` | 96 |
+| `volume_climax_reversal` | `layer3_backlog` | Fade exhaustion after volume climax. | 1Min, 5Min, 15Min, 30Min | `timeframe=1Min/5Min/15Min/30Min`; `volume_ratio=2/3/5`; `range_extension_atr=1/1.5/2`; `reversal_confirm=wick/close`; `trend_filter=off/on` | 144 |
+| `spread_compression_breakout` | `layer3_backlog` | Breakout after spread/liquidity improves. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `compression_window=10/20/30`; `spread_percentile=20/30`; `breakout_buffer_bps=5/10/20`; `volume_filter=off/on` | 108 |
+| `trade_count_activity_surge` | `layer3_backlog` | Activity burst as continuation confirmation. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `activity_window=10/20/60`; `trade_count_ratio=1.5/2/3`; `price_confirm=trend/breakout`; `spread_filter=standard/strict` | 108 |
+| `vwap_minus_mid_dislocation` | `layer3_backlog` | Score dislocation between trade VWAP and quote mid. | 1Min, 5Min | `timeframe=1Min/5Min`; `dislocation_bps=5/10/20`; `persistence_bars=1/2/3`; `direction_mode=mean_revert/continue`; `spread_filter=strict` | 36 |
+| `quote_imbalance_pressure` | `layer3_backlog` | Use bid/ask size imbalance as directional pressure. | 1Min, 5Min | `timeframe=1Min/5Min`; `imbalance_threshold=0.6/0.7/0.8`; `persistence_bars=1/2/3`; `price_confirm=off/on`; `spread_filter=strict` | 36 |
+| `liquidity_vacuum_breakout` | `layer3_backlog` | Breakout when liquidity thins and price moves. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `spread_widening_bps=5/10/20`; `depth_proxy_drop=20/40`; `price_break=5/10/20_bps`; `risk_filter=strict` | 54 |
+| `midday_range_breakout` | `layer3_backlog` | Breakout from lunchtime consolidation. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `range_window=60/90/120`; `breakout_buffer_bps=5/10/20`; `volume_ratio=1/1.5`; `no_trade_after=14:00/14:30` | 108 |
+| `afternoon_trend_continuation` | `layer3_backlog` | Continue established afternoon trend before cutoff. | 5Min, 15Min, 30Min | `timeframe=5Min/15Min/30Min`; `trend_window=30/60/120`; `pullback_depth=0.5/1.0_atr`; `no_trade_after=15:00/15:30`; `liquidity_filter=standard/strict` | 72 |
+| `power_hour_breakout` | `layer3_backlog` | Late-day breakout/continuation. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `range_window=30/60`; `breakout_buffer_bps=5/10/20`; `volume_ratio=1.5/2`; `risk_mode=strict_only` | 36 |
+| `morning_reversal` | `layer3_backlog` | Fade first-hour extreme after confirmation. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `extreme_window=30/60`; `extension_atr=1/1.5/2`; `confirm=vwap_reclaim/range_reentry`; `no_trade_after=11:00/12:00` | 108 |
+| `lunch_reversion` | `layer3_backlog` | Revert midday overextension. | 5Min, 15Min | `timeframe=5Min/15Min`; `window=60/90/120`; `zscore=1.5/2/2.5`; `target=vwap/mid_range`; `spread_filter=standard/strict` | 72 |
+| `previous_day_high_low_break` | `layer3_backlog` | Break prior day high/low. | 1Min, 5Min, 15Min, 30Min | `timeframe=1Min/5Min/15Min/30Min`; `level=prev_high/prev_low/both`; `buffer_bps=5/10/20`; `confirmation_bars=1/2`; `volume_filter=off/on` | 96 |
+| `previous_close_gap_hold` | `layer3_backlog` | Gap holds beyond previous close and continues. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `gap_min_bps=50/100/200`; `hold_minutes=15/30/60`; `direction_mode=both`; `volume_filter=off/on` | 54 |
+| `first_pullback_after_opening_drive` | `layer3_backlog` | Continue after first pullback in trend day. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `drive_window=30/60`; `pullback_depth_atr=0.5/1/1.5`; `resume_confirm=break_pullback_high/vwap_hold`; `no_trade_after=12:00/13:00` | 72 |
+| `engulfing_reversal` | `layer3_backlog` | Mechanical engulfing candle reversal. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `body_ratio_min=1/1.5/2`; `trend_context=required/optional`; `volume_filter=off/on`; `confirmation_bars=1/2` | 96 |
+| `pin_bar_reversal` | `layer3_backlog` | Wick rejection reversal. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `wick_body_ratio=2/3/4`; `location=band/level/any`; `confirmation_bars=1/2`; `trend_filter=off/on` | 144 |
+| `inside_outside_bar_pattern` | `layer3_backlog` | Inside/outside bar continuation or reversal. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `pattern=inside/outside`; `mode=continuation/reversal`; `confirmation_bars=1/2`; `volume_filter=off/on` | 64 |
+| `three_bar_reversal` | `layer3_backlog` | Three-bar exhaustion/reversal. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `extension_atr=1/1.5/2`; `middle_bar_rule=required/optional`; `confirmation=close_reversal/range_break`; `volume_filter=off/on` | 96 |
+| `breakaway_gap_pattern` | `layer3_backlog` | Gap plus follow-through continuation. | 1Min, 5Min, 15Min, daily context | `timeframe=1Min/5Min/15Min`; `gap_min_bps=100/200/300`; `followthrough_minutes=15/30/60`; `volume_ratio=1/1.5/2`; `direction_mode=both` | 81 |
+| `measured_move_continuation` | `layer3_backlog` | Follow proportional continuation after first leg. | 15Min, 30Min, 1Hour | `timeframe=15Min/30Min/1Hour`; `leg_window=10/20/40`; `projection_ratio=0.5/1.0/1.5`; `pullback_depth=0.382/0.5/0.618`; `confirm=break/reclaim` | 162 |
+| `support_resistance_break_retest` | `layer3_backlog` | Break and retest of mechanical level. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `level_method=pivot/rolling_high_low`; `lookback=20/60`; `retest_tolerance_bps=10/25/50`; `confirmation=wick/close`; `volume_filter=off/on` | 192 |
+
+### Position / portfolio-management variant families
+
+These are retained with variants, but their implementation owner is not Layer 3 standalone strategy selection.
+
+| Family | Status | Basic idea | Suitable periods | Variable gradients | Variant count |
+|---|---|---|---|---|---:|
+| `cross_sectional_momentum` | `position_management` | Rank a universe by momentum and allocate/choose winners or losers. | Daily, weekly; intraday only after universe/liquidity maturity. | `ranking_lookback=20/60/120`; `skip_window=0/5/20`; `selection_quantile=10/20/30`; `rebalance_horizon=1D/5D/20D`; `vol_adjust=off/on`; `sector_neutral=off/on` | 324 |
+| `pairs_statistical_arbitrage` | `position_management` | Two-leg spread reversion. | Daily, hourly research; intraday only for highly liquid pairs. | `lookback_window=60/120/252`; `spread_model=price_ratio/log_spread/residual`; `hedge_ratio=static/rolling_ols`; `entry_z=1.5/2/2.5`; `exit_z=0/0.5`; `stop_z=3/4`; `correlation_min=0.7/0.85` | 648* |
+| `sector_rotation_allocation` | `position_management` | Allocate among sectors based on rotation evidence. | Daily, weekly. | `lookback=20/60/120`; `rank_method=return/vol_adj/sector_context`; `top_n=1/3/5`; `rebalance=weekly/monthly`; `risk_cap=standard/strict` | 162 |
+| `risk_parity_allocation` | `position_management` | Allocate by risk contribution. | Daily, weekly. | `vol_window=20/60/120`; `covariance=diagonal/shrinkage`; `rebalance=weekly/monthly`; `max_weight=20/30/50`; `vol_target=low/medium/high` | 162 |
+| `volatility_targeting_overlay` | `position_management` | Adjust exposure by realized volatility. | Daily, weekly. | `vol_window=20/60`; `target_vol=10/15/20`; `scaling_speed=slow/medium/fast`; `cap=1x/1.5x`; `floor=0/0.25x` | 72 |
+| `anti_martingale_sizing_overlay` | `position_management` | Increase exposure after gains under controls. | Daily/intraday after risk layer. | `win_window=3/5/10`; `scale_step=0.25/0.5`; `max_scale=1.5/2`; `reset_rule=loss/drawdown/time`; `risk_gate=standard/strict` | 72 |
+
+`pairs_statistical_arbitrage` exceeds the normal 500 cap if fully expanded. It must use curated combinations or sampled grids before implementation.
+
+### OptionExpressionModel variant families
+
+These are retained with variant shape but belong to option expression, not Layer 3.
+
+| Family | Status | Basic idea | Suitable periods | Variable gradients | Variant count |
+|---|---|---|---|---|---:|
+| `long_call_expression` | `option_expression` | Express bullish setup as long call. | Intraday, swing 1-5D, swing 5-20D. | `dte_bucket=0DTE/1_5D/7_21D/30_60D`; `delta_bucket=0.25/0.35/0.5/0.65`; `max_spread_bps=5/10/15`; `iv_filter=none/avoid_high`; `premium_budget=low/medium/high` | 192 |
+| `long_put_expression` | `option_expression` | Express bearish setup as long put. | Intraday, swing 1-5D, swing 5-20D. | `dte_bucket=0DTE/1_5D/7_21D/30_60D`; `delta_bucket=0.25/0.35/0.5/0.65`; `max_spread_bps=5/10/15`; `iv_filter=none/avoid_high`; `premium_budget=low/medium/high` | 192 |
+| `debit_spread_expression` | `option_expression` | Express setup with capped-risk vertical spread. | Swing 1-5D, swing 5-20D. | `dte_bucket=7_21D/30_60D`; `long_delta=0.35/0.5`; `short_delta=0.15/0.25`; `width=standard/wide`; `iv_filter=avoid_high/any` | 32 |
+| `iv_rank_filter` | `option_expression` | Gate option entry by IV context. | All option periods. | `iv_rank_max=50/70/90`; `iv_percentile_max=50/70/90`; `mode=gate/score`; `lookback=60/252` | 36 |
+| `delta_bucket_selection` | `option_expression` | Choose contract delta/moneyness. | All option periods. | `direction=bullish/bearish`; `delta_bucket=0.25/0.35/0.5/0.65`; `liquidity_mode=standard/strict`; `moneyness=otm/atm/itm` | 48 |
+| `dte_bucket_selection` | `option_expression` | Choose expiration horizon. | Intraday/swing. | `horizon=intraday/swing_1_5d/swing_5_20d`; `dte_bucket=0DTE/1_5D/7_21D/30_60D`; `theta_tolerance=low/medium/high`; `liquidity_mode=standard/strict` | 72 |
+| `theta_decay_filter` | `option_expression` | Avoid poor time-decay tradeoffs. | Intraday/swing. | `theta_budget=low/medium/high`; `dte_bucket=0DTE/1_5D/7_21D`; `mode=gate/score`; `iv_mode=normal/high_only` | 36 |
+| `option_liquidity_filter` | `option_expression` | Gate by option spread/open interest/volume. | All option periods. | `spread_max=5/10/15`; `volume_min=low/medium/high`; `open_interest_min=low/medium/high`; `mode=standard/strict` | 54 |
+
+### Event / overlay variant families
+
+Event-driven standalone strategies remain removed from current Layer 3, but event/overlay variants are retained for later overlay ownership.
+
+| Family | Status | Basic idea | Suitable periods | Variable gradients | Variant count |
+|---|---|---|---|---|---:|
+| `earnings_gap_reaction` | `event_overlay` | React to post-earnings gap behavior. | Intraday, 1-5D swing. | `gap_min=2/5/10_pct`; `reaction_mode=fade/continue`; `confirmation_minutes=30/60`; `iv_filter=avoid_extreme/any`; `liquidity=strict` | 36 |
+| `earnings_iv_crush_avoidance` | `event_overlay` | Avoid long premium into IV crush. | Options only. | `days_to_event=0/1/3/7`; `iv_rank_min=50/70/90`; `mode=gate/score`; `exception=none/after_event_only` | 48 |
+| `macro_release_volatility_filter` | `event_overlay` | Gate around CPI/FOMC/NFP. | Intraday/daily. | `event_type=CPI/FOMC/NFP`; `blackout_before=30m/60m/1d`; `blackout_after=30m/60m/1d`; `mode=gate/score` | 108 |
+| `news_sentiment_reaction` | `event_overlay` | React to news sentiment/features. | Intraday, daily. | `sentiment_source=alpaca/derived`; `score_threshold=medium/high`; `reaction_mode=fade/continue`; `freshness=15m/60m/1d`; `liquidity=strict` | 48 |
+| `analyst_rating_reaction` | `event_overlay` | React to upgrades/downgrades. | Intraday, daily. | `action=upgrade/downgrade/both`; `broker_tier=all/high`; `gap_filter=off/on`; `confirmation=price/volume`; `freshness=1d/3d` | 48 |
+| `sec_filing_reaction` | `event_overlay` | React to 8-K/filing events. | Intraday, daily. | `filing_type=8k/10q/10k/material`; `reaction_mode=avoid/fade/continue`; `freshness=1d/3d`; `confirmation=price/volume` | 48 |
+| `halt_resume_pattern` | `event_overlay` | Handle halt/resume volatility. | Intraday only. | `halt_type=volatility/news/unknown`; `resume_wait=5/15/30m`; `mode=avoid/strict_reaction`; `liquidity=strict` | 24 |
+
+### Deferred ML/RL variant families
+
+These are variant-shaped final goals. They should not be implemented before deterministic baselines, labels, leakage checks, and validation protocols are mature.
+
+| Family | Status | Basic idea | Suitable periods | Variable gradients | Variant count |
+|---|---|---|---|---|---:|
+| `supervised_direction_classifier` | `deferred_ml_rl` | Predict future direction/return bucket. | 30Min, 1Hour, 1Day first. | `model_class=logistic/xgboost/lightgbm`; `feature_set=technical/technical_liquidity/family_outputs`; `label_horizon=1/3/5/10_bars`; `prob_threshold=0.55/0.6/0.65`; `calibration=none/isotonic` | 270 |
+| `supervised_strategy_selector` | `deferred_ml_rl` | Choose best deterministic family/variant for a candidate. | After family outputs mature. | `model_class=xgboost/lightgbm`; `candidate_family_set=core/all`; `label=best_family/best_variant/take_skip`; `validation=walk_forward/purged_kfold`; `threshold=standard/strict` | 48 |
+| `meta_labeling_filter` | `deferred_ml_rl` | Predict whether a deterministic signal should be taken. | Same as underlying signal. | `base_signal_set=core/trend/reversion/breakout`; `model_class=logistic/xgboost/lightgbm`; `label_horizon=1/3/5_bars`; `threshold=0.55/0.6/0.65`; `calibration=none/isotonic` | 162 |
+| `probabilistic_return_forecaster` | `deferred_ml_rl` | Predict distribution/quantiles of forward return. | 30Min, 1Hour, 1Day first. | `model_class=quantile_gbm/ngboost`; `feature_set=technical/technical_liquidity/family_outputs`; `horizon=1/3/5/10_bars`; `quantile_set=3q/5q`; `calibration=none/conformal` | 96 |
+| `reinforcement_learning_policy` | `deferred_ml_rl` | Learn actions in simulated environment. | Not selected yet. | `environment=single_asset/multi_asset`; `action_space=discrete/continuous`; `reward=pnl/sharpe/drawdown_penalized`; `cost_model=basic/strict`; `policy_class=dqn/ppo/sac`; `validation=offline_walk_forward/paper_trade_gate` | 144 |
+
+### Removed families
+
+These are intentionally not variant-expanded in this catalog unless the project boundary changes.
+
+| Family | Status | Reason |
+|---|---|---|
+| `cross_exchange_arbitrage` | `removed` | Venue transfer/execution/latency problem, not current Alpaca equity/options strategy selection. |
+| `cash_futures_basis_arbitrage` | `removed` | Requires futures/carry/margin/settlement stack outside current boundary. |
+| `funding_rate_arbitrage` | `removed` | Crypto perpetual/funding venue stack outside current boundary. |
+| `grid_trading` | `removed` | Inventory/execution/position-management behavior; unsafe as Layer 3 standalone family. |
+| `martingale_anti_martingale` | `removed` | Martingale disallowed; anti-martingale only as constrained sizing overlay if ever reopened. |
+| `passive_market_making` | `removed` | Order-book/inventory/latency execution system, not Layer 3 setup selection. |
+| `onchain_sentiment_reaction` | `removed` | Crypto/on-chain data not current Alpaca equity/options boundary. |
