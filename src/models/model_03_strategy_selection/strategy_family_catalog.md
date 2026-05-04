@@ -55,9 +55,10 @@ Deferred final goals:
 
 - `variant_count` is the product of listed variable axes unless a curated tuple axis is explicitly named.
 - Fixed/default fields do not multiply variants.
-- The hard ceiling remains 500 variants per standalone family unless a later review accepts an exception.
+- There is no fixed per-family variant ceiling. A family may define a large reviewed searchable universe, but training and promotion do not have to consume every variant.
 - Variant IDs should be generated from a canonical JSON spec and stable hash.
-- Grids are intentionally sparse: variant differences must be large enough to survive costs, spread, slippage, and market noise.
+- Grids should start sparse enough to be reviewable, then expand only when evidence shows likely value between existing gradient options.
+- Variant pruning should remove variants with no observed conditional edge, not merely variants with weak aggregate monthly return.
 
 ## Standalone strategy families
 
@@ -90,14 +91,14 @@ Variable gradients:
 | `min_slope` | `0.01`, `0.03`, `0.05` | 3 |
 Variant count: `8 * 2 * 2 * 3 * 3 * 3 = 864`.
 
-Reviewed cap exception: `moving_average_crossover` intentionally exceeds the normal 500-variant standalone family ceiling so the first MA baseline can test price source, cooldown, and slope sensitivity across the accepted sparse window grid.
+Reviewed searchable universe: `moving_average_crossover` currently uses an 864-variant reviewed universe so the first MA baseline can test price source, cooldown, and slope sensitivity across the accepted sparse window grid. This is not a requirement that every variant be used for model training after monthly review.
 
 Implementation notes:
 
 - Each `ma_window_profile` value expands to `(profile_id, fast_window_1min_bars, slow_window_1min_bars)`.
 - Enforce `fast_window_1min_bars < slow_window_1min_bars` through curated `ma_window_profile` values.
 - Fast profiles cover crypto and near-zero-slippage high-volume options; intraday profiles are intentionally limited to three sparse left/middle/right points; the longest initial profile preserves a long day-level right endpoint so later reviews can insert intermediate windows between accepted endpoints.
-- The profile grid is intentionally sparse; add intermediate windows only when evaluation shows stable uncovered performance between adjacent profiles.
+- The profile grid is intentionally sparse; add intermediate windows only when monthly evaluation shows stable uncovered performance between adjacent profiles.
 - `bar_hlc3` means `(bar_high + bar_low + bar_close) / 3`.
 - This family should remain a simple crossover baseline, not the final strategy selector by itself.
 - Do not add an embedded trend-filter axis to this family; market and sector context should influence Layer 3 family/variant selection or weighting outside the strategy's own signal rule.
@@ -615,7 +616,7 @@ These are retained with variants, but their implementation owner is not Layer 3 
 | `volatility_targeting_overlay` | `position_management` | Adjust exposure by realized volatility. | Daily, weekly. | `vol_window=20/60`; `target_vol=10/15/20`; `scaling_speed=slow/medium/fast`; `cap=1x/1.5x`; `floor=0/0.25x` | 72 |
 | `anti_martingale_sizing_overlay` | `position_management` | Increase exposure after gains under controls. | Daily/intraday after risk layer. | `win_window=3/5/10`; `scale_step=0.25/0.5`; `max_scale=1.5/2`; `reset_rule=loss/drawdown/time`; `risk_gate=standard/strict` | 72 |
 
-`pairs_statistical_arbitrage` exceeds the normal 500 cap if fully expanded. It must use curated combinations or sampled grids before implementation.
+`pairs_statistical_arbitrage` is a large searchable universe if fully expanded. It must use reviewed combinations or sampled grids before implementation and belongs outside Layer 3 standalone strategy selection.
 
 ### OptionExpressionModel variant families
 

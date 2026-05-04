@@ -21,3 +21,11 @@ Boundary:
 - It consumes anonymous target-candidate features during evaluation; it must not consume raw ticker/company identity.
 - It does not emit entry/exit orders, option contract selection, DTE, strike, delta, premium, Greeks, size, portfolio allocation, or execution policy.
 - Backlog, modifier, meta, position-management, and option-expression families remain in `strategy_family_catalog.md` until promoted into this package.
+
+Variant lifecycle:
+
+- Family specs define the reviewed searchable variant universe, not necessarily the exact subset used for model training.
+- Strategy simulation and review advance in natural-month batches.
+- Monthly review may expand a gradient when adjacent options suggest an untested optimum between them.
+- Monthly review may retire variants from the active training subset only when they lack conditional edge across reviewed market/sector/target states or are dominated by neighboring variants in the same conditions.
+- Weak aggregate monthly return alone is not a pruning reason; rare-regime variants can remain valuable if they approach oracle performance under specific states.

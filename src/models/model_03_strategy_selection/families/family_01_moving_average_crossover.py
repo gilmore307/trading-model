@@ -39,7 +39,7 @@ SPEC = StrategyFamilySpec(
         'ma_window_profile values are tuples of (profile_id, fast_window_1min_bars, slow_window_1min_bars).',
         'fast_window_1min_bars < slow_window_1min_bars is enforced through curated ma_window_profile values.',
         'The initial profile grid is intentionally sparse; add intermediate profiles only when evaluation finds stable uncovered performance between adjacent windows.',
-        'The reviewed 864-variant grid is an accepted exception to the normal 500-variant standalone family cap.',
+        'The 864-variant grid is a reviewed searchable universe; downstream training/review may select, expand, or retire variants after monthly simulation evidence.',
         'Market/sector context should affect strategy selection outside this simple crossover family, not through an embedded trend filter axis.',
     ),
 )

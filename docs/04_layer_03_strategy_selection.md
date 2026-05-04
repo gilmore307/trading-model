@@ -170,33 +170,63 @@ Evaluation order: standalone families must be tested and pruned before modifiers
 
 ## Variant generation rules
 
-Each family may declare a `max_variants` cap of 500, but the default target should be far lower. The cap is a safety ceiling, not a goal.
+Layer 3 no longer uses a fixed per-family variant ceiling. A family may define a large reviewed searchable universe, but each monthly training/review cycle may train on, promote, retain, expand, or retire only a subset of that universe.
 
 Recommended constraints:
 
 - use reviewed parameter grids with constraints such as `fast_window < slow_window`;
 - use sparse, information-preserving grids: lookbacks should usually be log-spaced or regime-spaced, not every integer;
 - generate parameter neighborhoods, not microscopic one-tick variants;
-- avoid variants whose only difference is too small to survive costs/slippage/noise;
+- avoid variants whose only difference is too small to survive noise or materially change the oracle-gap evidence;
 - keep direction, signal-bar policy, confirmation, and invalidation parameters explicit;
 - store a stable variant spec payload and hash so results are reproducible.
 
-Indicative variant budgets:
+Indicative variant universe sizes:
 
-| Family | Initial target variants | Hard cap | Main parameter axes |
-|---|---:|---:|---|
-| `moving_average_crossover` | 864 | 864 reviewed exception | fixed 1Min signal bars, sparse MA window profiles with three intraday points and a long endpoint, price field, MA type, confirmation bars, cooldown bars, minimum slope; no embedded trend filter. |
-| `donchian_channel_breakout` | 80-180 | 500 | fixed 1Min signal bars, channel window profiles, breakout buffer, ATR stop proxy, confirmation. |
-| `macd_trend` | 120-300 | 500 | fixed 1Min signal bars, MACD profiles, histogram threshold, confirmation, trend filter. |
-| `bollinger_band_reversion` | 120-400 | 500 | fixed 1Min signal bars, band window profiles, band width, entry/exit band, trend filter. |
-| `rsi_reversion` | 80-240 | 500 | fixed 1Min signal bars, RSI period profiles, thresholds, divergence flag, multi-duration confirmation. |
-| `bias_reversion` | 120-400 | 500 | fixed 1Min signal bars, MA window profiles, deviation threshold, normalization, exit threshold, trend filter. |
-| `range_breakout` | 120-300 | 500 | fixed 1Min signal bars, range window profiles, breakout buffer, volume confirmation, retest rule. |
-| `volatility_breakout` | 80-160 | 500 | fixed 1Min signal bars, volatility profiles, expansion threshold, direction filter, confirmation. |
-| `vwap_reversion` | 80-120 | 500 | fixed 1Min signal bars, session VWAP, deviation threshold, liquidity filter, time-of-day bucket. |
-| `opening_range_breakout` | 30-80 | 500 | fixed 1Min signal bars, opening range minutes, breakout buffer, time stop, volume/liquidity confirmation. |
+| Family | Current / initial reviewed variants | Training subset rule | Main parameter axes |
+|---|---:|---|---|
+| `moving_average_crossover` | 864 | train/review a selected subset after monthly evidence; retain rare-regime specialists when conditional edge exists | fixed 1Min signal bars, sparse MA window profiles with three intraday points and a long endpoint, price field, MA type, confirmation bars, cooldown bars, minimum slope; no embedded trend filter. |
+| `donchian_channel_breakout` | 80-180 initial target | expandable/prunable monthly | fixed 1Min signal bars, channel window profiles, breakout buffer, ATR stop proxy, confirmation. |
+| `macd_trend` | 120-300 initial target | expandable/prunable monthly | fixed 1Min signal bars, MACD profiles, histogram threshold, confirmation, trend filter. |
+| `bollinger_band_reversion` | 120-400 initial target | expandable/prunable monthly | fixed 1Min signal bars, band window profiles, band width, entry/exit band, trend filter. |
+| `rsi_reversion` | 80-240 initial target | expandable/prunable monthly | fixed 1Min signal bars, RSI period profiles, thresholds, divergence flag, multi-duration confirmation. |
+| `bias_reversion` | 120-400 initial target | expandable/prunable monthly | fixed 1Min signal bars, MA window profiles, deviation threshold, normalization, exit threshold, trend filter. |
+| `range_breakout` | 120-300 initial target | expandable/prunable monthly | fixed 1Min signal bars, range window profiles, breakout buffer, volume confirmation, retest rule. |
+| `volatility_breakout` | 80-160 initial target | expandable/prunable monthly | fixed 1Min signal bars, volatility profiles, expansion threshold, direction filter, confirmation. |
+| `vwap_reversion` | 80-120 initial target | expandable/prunable monthly | fixed 1Min signal bars, session VWAP, deviation threshold, liquidity filter, time-of-day bucket. |
+| `opening_range_breakout` | 30-80 initial target | expandable/prunable monthly | fixed 1Min signal bars, opening range minutes, breakout buffer, time stop, volume/liquidity confirmation. |
 
-Families with fewer meaningful axes should produce fewer variants. Families with many axes should use sampled/curated grids rather than full Cartesian expansion. `moving_average_crossover` is the current reviewed exception because its 864-variant grid is still a simple rule family and is used as the first MA baseline for oracle-gap evaluation.
+Families with fewer meaningful axes may produce fewer variants. Families with large searchable universes are acceptable when they remain simple, reproducible, and reviewable; the important constraint is that monthly training uses evidence-selected candidate subsets rather than blindly training on every generated variant.
+
+## Variant lifecycle and monthly review
+
+Layer 3 strategy simulation advances in natural-month batches. After each new month of strategy simulation data is generated, run a review before promotion or further expansion.
+
+Monthly review inputs:
+
+- one month of simulated family/variant exposure paths and returns;
+- current market context, sector context, and anonymous target state features;
+- Universal Oracle, Theoretic Strategy Oracle, and Practical Strategy Oracle paths for the same month;
+- prior active variant universe and prior model-selected strategy path.
+
+Expansion rule:
+
+- Add a new gradient option only when evidence suggests an optimum may lie between two existing adjacent options.
+- Examples: if `intraday_90_360` and `intraday_240_960` bracket strong conditional performance, add an intermediate profile; if `min_slope=0.01` and `0.03` show a stable transition, test a middle value.
+- Expansion should target the specific axis/condition that explains the gap, not broad Cartesian growth across every axis.
+
+Pruning rule:
+
+- Do not prune based only on weak aggregate monthly return.
+- Retain variants that show strong conditional value under specific market/sector/target states, even if their all-regime average is mediocre.
+- Prune variants only when evidence shows they have no useful conditional edge across reviewed states, or are dominated by neighboring variants for the same state conditions.
+- Pruned variants may remain reproducible historical specs but should be excluded from the active training candidate subset unless later evidence reopens them.
+
+Promotion rule:
+
+- Strategy-library promotion is incremental: promote a variant-universe change when it improves Theoretic Strategy Oracle versus the current active universe on the reviewed monthly evidence.
+- Model-training promotion is incremental: promote a StrategySelectionModel change when it improves Practical Strategy Oracle versus the current active model under the same strategy universe.
+- No promotion is justified when the relevant oracle gap fails to shrink, even if the candidate has attractive raw aggregate return.
 
 ## Adjustable parameter surface
 
