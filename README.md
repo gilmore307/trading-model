@@ -49,7 +49,8 @@ Current implementation packages:
 src/models/                           Model-specific packages and layer-boundary contracts.
 src/models/model_01_market_regime/    MarketRegimeModel V1 generator, evaluation, config, and evidence map.
 src/models/model_02_sector_context/ SectorContextModel V1 sector-context contract.
-src/models/anonymous_target_candidate_builder/ Anonymous target candidate builder V1 contract.
+src/models/model_03_strategy_selection/ StrategySelectionModel draft contract and Layer 3 catalogs.
+src/models/model_03_strategy_selection/anonymous_target_candidate_builder/ Candidate-preparation sub-boundary.
 src/model_governance/common/          Shared SQL, database-url, and `psql` helpers.
 src/model_governance/evaluation/      Dataset/evaluation evidence schema helpers.
 src/model_governance/promotion/       Promotion lifecycle rows, schema, persistence, activation, and agent review helpers.
