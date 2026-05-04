@@ -9,7 +9,7 @@ SPEC = StrategyFamilySpec(
     status=ACTIVE_CATALOG,
     summary='Follow trend changes when a faster moving average crosses a slower moving average.',
     suitable_periods=('unified_1min_bar_grid',),
-    alpaca_data_support=('equity_bar_1min',),
+    alpaca_data_support=('equity_bar',),
     fixed_parameters={
         'signal_bar_interval': '1Min',
         'price_field': 'bar_close',
@@ -17,7 +17,23 @@ SPEC = StrategyFamilySpec(
         'cooldown_bars': 1,
     },
     axes=(
-        VariantAxis('ma_window_minutes', ((30, 120), (60, 240), (120, 480), (300, 1200))),
+        VariantAxis(
+            'ma_window_profile',
+            (
+                ('micro_3_10', 3, 10),
+                ('scalp_5_20', 5, 20),
+                ('fast_10_30', 10, 30),
+                ('intraday_15_60', 15, 60),
+                ('intraday_30_120', 30, 120),
+                ('intraday_60_240', 60, 240),
+                ('intraday_120_480', 120, 480),
+                ('intraday_240_960', 240, 960),
+                ('equity_day_390_1950', 390, 1950),
+                ('equity_swing_780_3900', 780, 3900),
+                ('continuous_day_1440_7200', 1440, 7200),
+                ('continuous_swing_4320_20160', 4320, 20160),
+            ),
+        ),
         VariantAxis('ma_type', ('sma', 'ema')),
         VariantAxis('crossover_confirmation_bars', (1, 2, 3)),
         VariantAxis('min_slope', (0, 0.05)),
@@ -25,6 +41,7 @@ SPEC = StrategyFamilySpec(
     ),
     notes=(
         'All variants use completed 1Min bars; timeframe is not a variant axis.',
-        'fast_window_minutes < slow_window_minutes is enforced through curated ma_window_minutes values.',
+        'ma_window_profile values are tuples of (profile_id, fast_window_1min_bars, slow_window_1min_bars).',
+        'fast_window_1min_bars < slow_window_1min_bars is enforced through curated ma_window_profile values.',
     ),
 )
