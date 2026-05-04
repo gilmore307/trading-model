@@ -4,6 +4,12 @@ Status: Draft contract for review.
 
 This file records the proposed `trading-model` contract for Layer 3. It is intentionally contract-first: implementation, registry promotion, and cross-repository dependence should wait until this layer shape is accepted.
 
+Model-local detailed strategy catalog:
+
+```text
+src/models/model_03_strategy_selection/strategy_family_catalog.md
+```
+
 ## Purpose
 
 `StrategySelectionModel` answers:
