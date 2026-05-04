@@ -59,6 +59,7 @@ Deferred final goals:
 - Variant IDs should be generated from a canonical JSON spec and stable hash.
 - Grids should start sparse enough to be reviewable, then expand only when evidence shows likely value between existing gradient options.
 - Variant pruning should remove variants with no observed conditional edge, not merely variants with weak aggregate monthly return.
+- Expansion, pruning, and promotion are script-orchestrated but agent-reviewed: scripts build evidence and recommendations; an accepted agent decision is required before active-universe, active-training-subset, or promotion state changes.
 
 ## Standalone strategy families
 

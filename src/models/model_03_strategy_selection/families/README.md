@@ -26,6 +26,7 @@ Variant lifecycle:
 
 - Family specs define the reviewed searchable variant universe, not necessarily the exact subset used for model training.
 - Strategy simulation and review advance in natural-month batches.
-- Monthly review may expand a gradient when adjacent options suggest an untested optimum between them.
-- Monthly review may retire variants from the active training subset only when they lack conditional edge across reviewed market/sector/target states or are dominated by neighboring variants in the same conditions.
+- Monthly review scripts may propose gradient expansion when adjacent options suggest an untested optimum between them.
+- Monthly review scripts may propose retiring variants from the active training subset only when they lack conditional edge across reviewed market/sector/target states or are dominated by neighboring variants in the same conditions.
 - Weak aggregate monthly return alone is not a pruning reason; rare-regime variants can remain valuable if they approach oracle performance under specific states.
+- Final expansion, pruning, strategy-library promotion, and model-training promotion decisions must be accepted by an agent reviewer; scripts assemble evidence and recommendations, but do not independently approve active-universe or promotion changes.

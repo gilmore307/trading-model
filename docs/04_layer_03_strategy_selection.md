@@ -200,20 +200,29 @@ Families with fewer meaningful axes may produce fewer variants. Families with la
 
 ## Variant lifecycle and monthly review
 
-Layer 3 strategy simulation advances in natural-month batches. After each new month of strategy simulation data is generated, run a review before promotion or further expansion.
+Layer 3 strategy simulation advances in natural-month batches. After each new month of strategy simulation data is generated, run a script-driven review before promotion or further expansion. The script prepares evidence, candidate actions, and prompts, but final expand/prune/promote decisions must be made by an agent review call rather than by raw script heuristics alone.
 
 Monthly review inputs:
 
 - one month of simulated family/variant exposure paths and returns;
 - current market context, sector context, and anonymous target state features;
 - Universal Oracle, Theoretic Strategy Oracle, and Practical Strategy Oracle paths for the same month;
-- prior active variant universe and prior model-selected strategy path.
+- prior active variant universe and prior model-selected strategy path;
+- script-generated candidate actions: expand, retain, prune, promote, defer.
+
+Review authority:
+
+- The review script owns deterministic evidence assembly, oracle-gap calculations, dominance checks, and candidate-action proposal.
+- The agent reviewer owns the final decision: approve, reject, or defer each expansion, pruning, strategy-library promotion, or model-training promotion action.
+- Script heuristics may recommend an action but must not directly mutate the active variant universe, active training subset, or promoted model without an accepted agent decision.
+- Local fallback logic may safely produce a defer/reject decision when evidence is incomplete, but it must not approve promotion, expansion, or pruning as a substitute for agent review.
 
 Expansion rule:
 
 - Add a new gradient option only when evidence suggests an optimum may lie between two existing adjacent options.
 - Examples: if `intraday_90_360` and `intraday_240_960` bracket strong conditional performance, add an intermediate profile; if `min_slope=0.01` and `0.03` show a stable transition, test a middle value.
 - Expansion should target the specific axis/condition that explains the gap, not broad Cartesian growth across every axis.
+- Expansion is only accepted after the review script presents the evidence package and the agent reviewer approves the candidate expansion.
 
 Pruning rule:
 
@@ -221,12 +230,14 @@ Pruning rule:
 - Retain variants that show strong conditional value under specific market/sector/target states, even if their all-regime average is mediocre.
 - Prune variants only when evidence shows they have no useful conditional edge across reviewed states, or are dominated by neighboring variants for the same state conditions.
 - Pruned variants may remain reproducible historical specs but should be excluded from the active training candidate subset unless later evidence reopens them.
+- Pruning is only accepted after the review script presents conditional-edge and dominance evidence and the agent reviewer approves the candidate pruning.
 
 Promotion rule:
 
 - Strategy-library promotion is incremental: promote a variant-universe change when it improves Theoretic Strategy Oracle versus the current active universe on the reviewed monthly evidence.
 - Model-training promotion is incremental: promote a StrategySelectionModel change when it improves Practical Strategy Oracle versus the current active model under the same strategy universe.
 - No promotion is justified when the relevant oracle gap fails to shrink, even if the candidate has attractive raw aggregate return.
+- Promotion is only accepted after the review script presents oracle-gap evidence and the agent reviewer approves the candidate promotion.
 
 ## Adjustable parameter surface
 
