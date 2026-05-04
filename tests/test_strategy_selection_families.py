@@ -51,7 +51,7 @@ class StrategySelectionFamilyTests(unittest.TestCase):
 
     def test_reviewed_variant_counts_match_catalog(self) -> None:
         expected_counts = {
-            "moving_average_crossover": 96,
+            "moving_average_crossover": 108,
             "donchian_channel_breakout": 144,
             "macd_trend": 288,
             "bollinger_band_reversion": 384,
@@ -89,9 +89,9 @@ class StrategySelectionFamilyTests(unittest.TestCase):
         self.assertEqual(window_profiles["micro_3_10"], (3, 10))
         self.assertEqual(window_profiles["intraday_60_240"], (60, 240))
         self.assertEqual(window_profiles["equity_day_390_1950"], (390, 1950))
+        self.assertEqual(window_profiles["continuous_day_1440_7200"], (1440, 7200))
         self.assertNotIn("intraday_15_60", window_profiles)
         self.assertNotIn("equity_swing_780_3900", window_profiles)
-        self.assertNotIn("continuous_day_1440_7200", window_profiles)
         self.assertNotIn("continuous_swing_4320_20160", window_profiles)
         first_variant = next(iter(spec.iter_variant_specs()))
         self.assertEqual(first_variant["fixed_parameters"]["signal_bar_interval"], "1Min")

@@ -28,6 +28,7 @@ SPEC = StrategyFamilySpec(
                 ('intraday_120_480', 120, 480),
                 ('intraday_240_960', 240, 960),
                 ('equity_day_390_1950', 390, 1950),
+                ('continuous_day_1440_7200', 1440, 7200),
             ),
         ),
         VariantAxis('ma_type', ('sma', 'ema')),
