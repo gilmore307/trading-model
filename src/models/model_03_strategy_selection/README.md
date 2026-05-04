@@ -10,4 +10,4 @@ Key files:
 - `families/` — importable numbered per-family strategy specs; `family_spec_common.py` owns shared primitives and `family_01_*` through `family_10_*` follow first evaluation order, with deterministic variant expansion and stable spec hashes.
 - `strategy_family_catalog.md` — reviewed strategy-family summary, suitable trading periods, parameter gradients, variant counts, and implementation notes.
 
-Current status: active standalone family specs are implemented for one-by-one evaluation; signal scoring and promotion remain pending real-data tests.
+Current status: active standalone family specs are implemented for one-by-one evaluation. Per-bar strategy variant simulation should be produced by `trading-data` as `feature_03_strategy_variant_simulation` from `trading-manager` requests; this package consumes those features for oracle construction, lifecycle review, model selection, and promotion evidence.

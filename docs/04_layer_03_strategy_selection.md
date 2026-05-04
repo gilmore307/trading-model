@@ -36,7 +36,11 @@ trading_model.model_02_sector_context      # Layer 2 sector_context_state / bask
 
 trading_model.model_01_market_regime       # market_context_state reference / factors
 trading_data.source_03_strategy_selection  # target-local bars, quotes, liquidity evidence when implemented
+trading_data.feature_03_strategy_variant_simulation
+                                             # manager-requested deterministic family/variant simulation surface
 ```
+
+`trading-data` owns the deterministic per-bar variant simulation feature production. `trading-model` owns oracle construction, variant expansion/pruning proposals, StrategySelectionModel training, promotion evidence, and agent-reviewed lifecycle decisions. The review script may request `feature_03_strategy_variant_simulation` through `trading-manager`, then consume the completed feature surface; it should not implement the data-production runner itself.
 
 Because Layer 2 is not yet production-promoted, Layer 3 development may use reviewed fixture/dev evidence and explicit evaluation snapshots, but production hard-dependence on `model_02_sector_context` must wait for accepted Layer 2 promotion or an approved fallback contract.
 
