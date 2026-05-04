@@ -186,15 +186,15 @@ Indicative variant budgets:
 | Family | Initial target variants | Hard cap | Main parameter axes |
 |---|---:|---:|---|
 | `moving_average_crossover` | 120-300 | 500 | fixed 1Min signal bars, MA window profiles, MA type, confirmation bars, trend filter. |
-| `donchian_channel_breakout` | 40-100 | 500 | channel window, breakout buffer, exit window, ATR stop proxy, confirmation. |
-| `macd_trend` | 30-90 | 500 | fast/slow/signal windows, histogram threshold, confirmation, trend filter. |
-| `bollinger_band_reversion` | 40-120 | 500 | window, band width, entry band, exit band, trend filter, volatility filter. |
-| `rsi_reversion` | 40-120 | 500 | RSI period, entry/exit thresholds, divergence flag, multi-timeframe confirmation. |
-| `bias_reversion` | 30-90 | 500 | MA window, deviation threshold, normalization, exit threshold, trend filter. |
-| `range_breakout` | 40-100 | 500 | range lookback, breakout buffer, volume confirmation, retest rule, invalidation. |
-| `volatility_breakout` | 40-100 | 500 | ATR/HV window, expansion threshold, direction filter, confirmation, cooldown. |
-| `vwap_reversion` | 30-80 | 500 | session/window VWAP, deviation threshold, liquidity filter, time-of-day bucket. |
-| `opening_range_breakout` | 30-80 | 500 | opening range minutes, breakout buffer, time stop, volume/liquidity confirmation. |
+| `donchian_channel_breakout` | 80-180 | 500 | fixed 1Min signal bars, channel window profiles, breakout buffer, ATR stop proxy, confirmation. |
+| `macd_trend` | 120-300 | 500 | fixed 1Min signal bars, MACD profiles, histogram threshold, confirmation, trend filter. |
+| `bollinger_band_reversion` | 120-400 | 500 | fixed 1Min signal bars, band window profiles, band width, entry/exit band, trend filter. |
+| `rsi_reversion` | 80-240 | 500 | fixed 1Min signal bars, RSI period profiles, thresholds, divergence flag, multi-duration confirmation. |
+| `bias_reversion` | 120-400 | 500 | fixed 1Min signal bars, MA window profiles, deviation threshold, normalization, exit threshold, trend filter. |
+| `range_breakout` | 120-300 | 500 | fixed 1Min signal bars, range window profiles, breakout buffer, volume confirmation, retest rule. |
+| `volatility_breakout` | 80-160 | 500 | fixed 1Min signal bars, volatility profiles, expansion threshold, direction filter, confirmation. |
+| `vwap_reversion` | 80-120 | 500 | fixed 1Min signal bars, session VWAP, deviation threshold, liquidity filter, time-of-day bucket. |
+| `opening_range_breakout` | 30-80 | 500 | fixed 1Min signal bars, opening range minutes, breakout buffer, time stop, volume/liquidity confirmation. |
 
 Families with fewer meaningful axes should produce fewer variants. Families with many axes should use sampled/curated grids rather than full Cartesian expansion.
 
@@ -205,17 +205,17 @@ The first implementation should expose each family through a reviewed spec objec
 | Family | Status | Adjustable parameters |
 |---|---|---|
 | `moving_average_crossover` | Included | fixed `signal_bar_interval=1Min`, `ma_window_profile`, `ma_type`, `price_field`, `crossover_confirmation_bars`, `min_slope`, `trend_filter_enabled`, `trend_filter_window`, `exit_rule`, `cooldown_bars`. |
-| `donchian_channel_breakout` | Included | `timeframe`, `entry_channel_window`, `exit_channel_window`, `breakout_side`, `breakout_buffer_atr`, `confirmation_bars`, `atr_window`, `stop_atr_multiple`, `retest_allowed`, `cooldown_bars`. |
-| `macd_trend` | Included | `timeframe`, `fast_ema_window`, `slow_ema_window`, `signal_window`, `histogram_threshold`, `zero_line_filter`, `slope_confirmation_bars`, `trend_filter_window`, `exit_on_signal_cross`, `cooldown_bars`. |
-| `bollinger_band_reversion` | Included | `timeframe`, `window`, `band_stddev`, `entry_band`, `exit_band`, `rsi_filter_period`, `trend_filter_window`, `volatility_regime_filter`, `max_hold_bars`, `stop_band_extension`. |
-| `rsi_reversion` | Included | `timeframe`, `rsi_period`, `oversold_threshold`, `overbought_threshold`, `exit_midline`, `divergence_required`, `multi_timeframe_confirm`, `trend_filter_window`, `max_hold_bars`, `cooldown_bars`. |
-| `bias_reversion` | Included | `timeframe`, `ma_window`, `ma_type`, `deviation_measure`, `entry_deviation_threshold`, `exit_deviation_threshold`, `zscore_window`, `trend_filter_window`, `max_hold_bars`, `stop_deviation_threshold`. |
-| `vwap_reversion` | Included-if-Alpaca-intraday | `timeframe`, `vwap_scope`, `deviation_bps`, `entry_zscore`, `exit_zscore`, `time_of_day_bucket`, `minimum_dollar_volume`, `maximum_spread_bps`, `max_hold_bars`, `no_trade_near_close_minutes`. |
-| `range_breakout` | Included | `timeframe`, `range_lookback`, `range_width_max_atr`, `breakout_direction`, `breakout_buffer_atr`, `volume_confirmation_ratio`, `close_confirmation`, `retest_rule`, `failed_breakout_timeout`, `cooldown_bars`. |
-| `opening_range_breakout` | Included-if-Alpaca-intraday | `timeframe`, `opening_range_minutes`, `breakout_buffer_bps`, `direction_mode`, `volume_confirmation_ratio`, `first_trade_delay_minutes`, `time_stop_minutes`, `max_trades_per_session`, `liquidity_filter`, `no_trade_after_time`. |
-| `volatility_breakout` | Included | `timeframe`, `volatility_measure`, `volatility_window`, `expansion_threshold`, `atr_window`, `direction_filter`, `confirmation_bars`, `stop_atr_multiple`, `cooldown_bars`, `volatility_cooloff_threshold`. |
+| `donchian_channel_breakout` | Included | fixed `signal_bar_interval=1Min`, `channel_window_profile`, `breakout_side`, `breakout_buffer_atr`, `confirmation_bars`, `stop_atr_multiple`, `retest_allowed`, `cooldown_bars`. |
+| `macd_trend` | Included | fixed `signal_bar_interval=1Min`, `macd_profile`, `histogram_threshold`, `zero_line_filter`, `slope_confirmation_bars`, `trend_filter_window`, `exit_on_signal_cross`, `cooldown_bars`. |
+| `bollinger_band_reversion` | Included | fixed `signal_bar_interval=1Min`, `band_window_profile`, `band_stddev`, `entry_band`, `exit_band`, `rsi_filter_period`, `trend_filter_enabled`, `volatility_regime_filter`, `max_hold_minutes`. |
+| `rsi_reversion` | Included | fixed `signal_bar_interval=1Min`, `rsi_period_profile`, `oversold_threshold`, `overbought_threshold`, `exit_midline`, `divergence_required`, `multi_duration_confirm`, `max_hold_minutes`, `cooldown_bars`. |
+| `bias_reversion` | Included | fixed `signal_bar_interval=1Min`, `ma_window_profile`, `ma_type`, `deviation_measure`, `entry_deviation_threshold`, `exit_deviation_threshold`, `zscore_window`, `trend_filter_enabled`, `max_hold_minutes`. |
+| `vwap_reversion` | Included-if-Alpaca-intraday | fixed `signal_bar_interval=1Min`, `vwap_scope`, `deviation_bps`, `entry_zscore`, `exit_zscore`, `time_of_day_bucket`, `minimum_dollar_volume`, `maximum_spread_bps`, `no_trade_after_time`. |
+| `range_breakout` | Included | fixed `signal_bar_interval=1Min`, `range_window_profile`, `range_width_max_atr`, `breakout_direction`, `breakout_buffer_atr`, `volume_confirmation_ratio`, `close_confirmation`, `retest_rule`, `failed_breakout_timeout_minutes`, `cooldown_bars`. |
+| `opening_range_breakout` | Included-if-Alpaca-intraday | fixed `signal_bar_interval=1Min`, `opening_range_minutes`, `breakout_buffer_bps`, `direction_mode`, `volume_confirmation_ratio`, `first_trade_delay_minutes`, `time_stop_minutes`, `max_trades_per_session`, `liquidity_filter`, `no_trade_after_time`. |
+| `volatility_breakout` | Included | fixed `signal_bar_interval=1Min`, `volatility_profile`, `direction_filter`, `confirmation_bars`, `stop_atr_multiple`, `cooldown_bars`, `volatility_cooloff_threshold`. |
 | `trend_volatility_filter` | Modifier | `enabled`, `trend_window`, `trend_slope_min`, `volatility_measure`, `volatility_window`, `volatility_min`, `volatility_max`, `applies_to_families`, `filter_mode`. |
-| `mean_reversion_trend_filter` | Modifier | `enabled`, `higher_timeframe`, `higher_timeframe_trend_window`, `allowed_trend_states`, `pullback_depth_min`, `pullback_depth_max`, `filter_mode`, `applies_to_families`. |
+| `mean_reversion_trend_filter` | Modifier | `enabled`, `higher_duration_profile`, `higher_duration_trend_window`, `allowed_trend_states`, `pullback_depth_min`, `pullback_depth_max`, `filter_mode`, `applies_to_families`. |
 | `multi_factor_scoring` | Meta-family | `factor_set_id`, `factor_weights`, `normalization_method`, `score_window`, `rank_method`, `minimum_score`, `top_quantile`, `rebalance_horizon`, `turnover_penalty`, `correlation_penalty`. |
 | `supervised_direction_classifier` | Deferred-final-goal | `model_class`, `feature_set_id`, `label_horizon`, `label_definition`, `train_window`, `validation_scheme`, `probability_threshold`, `calibration_method`, `class_weighting`, `retrain_frequency`. |
 | `reinforcement_learning_policy` | Deferred-final-goal | `environment_id`, `state_feature_set_id`, `action_space`, `reward_function_id`, `episode_length`, `transaction_cost_model`, `risk_penalty`, `exploration_schedule`, `policy_class`, `offline_validation_protocol`. |
@@ -254,7 +254,7 @@ time_of_day_bucket = derived label, not a variant axis
 
 The derived `time_of_day_bucket` is computed from `available_time` for analysis, calibration, and diagnostics. It should not multiply variants unless evaluation later proves materially different behavior by bucket.
 
-The target-relative liquidity gate should compare the current signal window's dollar volume to that target's own rolling baseline, for example a rolling median/percentile by symbol and timeframe. This avoids applying the same absolute threshold to highly liquid names and small/liquidity-constrained names.
+The target-relative liquidity gate should compare the current signal window's dollar volume to that target's own rolling baseline, for example a rolling median/percentile by symbol and 1-minute duration profile. This avoids applying the same absolute threshold to highly liquid names and small/liquidity-constrained names.
 
 ### `opening_range_breakout`
 
@@ -328,7 +328,7 @@ Alpaca support by remaining family:
 | `opening_range_breakout` | `equity_bar` at 1Min; optional `equity_liquidity_bar` | Source data supported | No new Alpaca data kind is missing; implementation must define regular-session open, opening range, premarket inclusion/exclusion, confirmation, and time-stop rules. |
 | `volatility_breakout` | `equity_bar`; optional `equity_liquidity_bar` | Supported | ATR/HV are bar-derived; liquidity can gate tradability. |
 | `trend_volatility_filter` | `equity_bar` | Supported | Derived from trend and volatility windows. |
-| `mean_reversion_trend_filter` | `equity_bar` | Supported | Derived from higher-timeframe trend and pullback depth. |
+| `mean_reversion_trend_filter` | `equity_bar` | Supported | Derived from higher-duration trend and pullback depth over reviewed 1-minute windows. |
 | `multi_factor_scoring` | `equity_bar`, `equity_liquidity_bar`, optional `equity_snapshot` | Supported for technical/liquidity factors | Fundamental/event/sentiment factor sets require non-Alpaca or deferred data. |
 | `supervised_direction_classifier` | `equity_bar`, `equity_liquidity_bar`, optional `equity_snapshot`, optional `equity_news` | Data-supported but deferred | Alpaca can supply many features/labels; modeling governance remains deferred. |
 | `reinforcement_learning_policy` | `equity_bar`, `equity_liquidity_bar`, optional snapshots/news | Data-supported but deferred | Requires simulator/action/reward validation before implementation. |

@@ -31,15 +31,15 @@ Layer 3 must not output:
 | Family | Basic idea | Best-fit trading periods | Variant count | Alpaca data support |
 |---|---|---|---:|---|
 | `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | Unified 1-minute bars; MA profiles cover micro, intraday, day, and swing horizons. | 288 | `equity_bar` |
-| `donchian_channel_breakout` | Follow price when it breaks a prior high/low channel. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
-| `macd_trend` | Use MACD line/signal/histogram behavior to detect trend acceleration or reversal. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
-| `bollinger_band_reversion` | Fade stretched prices back toward a volatility band center when context supports reversion. | 15-minute, 30-minute, hourly, daily. | 384 | `equity_bar` |
-| `rsi_reversion` | Fade overbought/oversold momentum extremes, optionally requiring divergence or higher-timeframe confirmation. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
-| `bias_reversion` | Fade large deviations from a moving average or z-score baseline. | 15-minute, 30-minute, hourly, daily. | 384 | `equity_bar` |
-| `vwap_reversion` | Fade intraday price deviations back toward regular-session VWAP. | Minute-level / intraday only; default signal grains are 1-minute and 5-minute. | 216 | `equity_bar`; preferred `equity_liquidity_bar` |
-| `range_breakout` | Trade a confirmed escape from a recent consolidation range. | 15-minute, 30-minute, hourly, daily. | 432 | `equity_bar`; optional `equity_liquidity_bar` |
-| `opening_range_breakout` | Trade a regular-session break above/below the opening range. | Minute-level / morning intraday only; 1-minute bars required. | 48 | `equity_bar`; optional `equity_liquidity_bar` |
-| `volatility_breakout` | Trade when volatility expands enough to suggest a new directional move. | 15-minute, 30-minute, hourly, daily. | 240 | `equity_bar`; optional `equity_liquidity_bar` |
+| `donchian_channel_breakout` | Follow price when it breaks a prior high/low channel. | Unified 1-minute bars; channel profiles encode duration. | 144 | `equity_bar` |
+| `macd_trend` | Use MACD line/signal/histogram behavior to detect trend acceleration or reversal. | Unified 1-minute bars; MACD profiles encode duration. | 288 | `equity_bar` |
+| `bollinger_band_reversion` | Fade stretched prices back toward a volatility band center when context supports reversion. | Unified 1-minute bars; band profiles encode duration. | 384 | `equity_bar` |
+| `rsi_reversion` | Fade overbought/oversold momentum extremes, optionally requiring divergence or higher-duration confirmation. | Unified 1-minute bars; RSI profiles encode duration. | 192 | `equity_bar` |
+| `bias_reversion` | Fade large deviations from a moving average or z-score baseline. | Unified 1-minute bars; MA profiles encode duration. | 384 | `equity_bar` |
+| `vwap_reversion` | Fade intraday price deviations back toward regular-session VWAP. | Unified 1-minute bars. | 108 | `equity_bar`; preferred `equity_liquidity_bar` |
+| `range_breakout` | Trade a confirmed escape from a recent consolidation range. | Unified 1-minute bars; range profiles encode duration. | 288 | `equity_bar`; optional `equity_liquidity_bar` |
+| `opening_range_breakout` | Trade a regular-session break above/below the opening range. | Unified 1-minute bars; opening range duration remains a variant axis. | 48 | `equity_bar`; optional `equity_liquidity_bar` |
+| `volatility_breakout` | Trade when volatility expands enough to suggest a new directional move. | Unified 1-minute bars; volatility profiles encode duration. | 96 | `equity_bar`; optional `equity_liquidity_bar` |
 
 Moved out of Layer 3 standalone implementation:
 
@@ -103,18 +103,18 @@ Implementation notes:
 
 Basic introduction: trend/breakout family based on prior high/low channels. It attempts to catch persistent moves after price exits a historical range.
 
-Suitable trading periods:
+Signal bar policy:
 
-- Best: 30-minute, hourly, daily.
-- Usable: 15-minute for liquid names with confirmation.
-- Weekly can be derived for slow trend research, but is not a first option-oriented target.
+- Use completed 1-minute bars only.
+- Do not treat bar interval as a variant axis; every variant runs on the same 1-minute evidence grid.
+- Channel, exit, and ATR durations are encoded by curated profiles.
 
 Fixed parameters:
 
 | Parameter | Value |
 |---|---|
+| `signal_bar_interval` | `1Min` |
 | `breakout_side` | `both` |
-| `atr_window` | `14` |
 | `retest_allowed` | `false` initially |
 | `cooldown_bars` | `1` |
 
@@ -122,34 +122,33 @@ Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `timeframe` | `15Min`, `30Min`, `1Hour`, `1Day` | 4 |
-| `entry_channel_window` | `20`, `55` | 2 |
-| `exit_channel_window` | `10`, `20` | 2 |
+| `channel_window_profile` | `micro_10_5_atr10`, `scalp_20_10_atr14`, `fast_30_15_atr20`, `intraday_60_30_atr30`, `intraday_120_60_atr60`, `intraday_240_120_atr120`, `equity_day_390_195_atr195`, `continuous_day_1440_720_atr720` | 8 |
 | `breakout_buffer_atr` | `0`, `0.25`, `0.5` | 3 |
 | `confirmation_bars` | `1`, `2` | 2 |
 | `stop_atr_multiple` | `1.5`, `2.5`, `3.5` | 3 |
 
-Variant count: `4 * 2 * 2 * 3 * 2 * 3 = 288`.
+Variant count: `8 * 3 * 2 * 3 = 144`.
 
 Implementation notes:
 
+- Each `channel_window_profile` expands to `(profile_id, entry_channel_1min_bars, exit_channel_1min_bars, atr_window_1min_bars)`.
 - `stop_atr_multiple` is setup/invalidation context only; actual order stops belong downstream.
-- Daily variants need enough history before producing eligible state.
 
 ### `macd_trend`
 
 Basic introduction: trend-following and momentum-confirmation family using MACD line, signal line, and histogram behavior.
 
-Suitable trading periods:
+Signal bar policy:
 
-- Best: 30-minute, hourly, daily.
-- Usable: 15-minute for liquid names.
-- Avoid ultra-short 1-minute variants at first because MACD becomes noisy and option spreads magnify false signals.
+- Use completed 1-minute bars only.
+- Do not treat bar interval as a variant axis; every variant runs on the same 1-minute evidence grid.
+- MACD durations are encoded by curated profiles.
 
 Fixed parameters:
 
 | Parameter | Value |
 |---|---|
+| `signal_bar_interval` | `1Min` |
 | `price_field` | `bar_close` |
 | `trend_filter_window` | inherited from variant context if enabled later |
 | `cooldown_bars` | `1` |
@@ -158,34 +157,34 @@ Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `timeframe` | `15Min`, `30Min`, `1Hour`, `1Day` | 4 |
-| `macd_spec` | `(12,26,9)`, `(8,21,5)`, `(19,39,9)` | 3 |
+| `macd_profile` | `micro_3_10_3`, `scalp_5_20_5`, `fast_8_21_5`, `intraday_12_26_9`, `intraday_24_52_18`, `intraday_60_180_45`, `intraday_120_360_90`, `intraday_240_720_180`, `equity_day_390_1014_351`, `equity_swing_1950_5070_1755`, `continuous_day_1440_3744_1296`, `continuous_swing_7200_18720_6480` | 12 |
 | `histogram_threshold` | `0`, `0.25_atr_normalized` | 2 |
 | `zero_line_filter` | `false`, `true` | 2 |
 | `slope_confirmation_bars` | `1`, `2`, `3` | 3 |
 | `exit_on_signal_cross` | `false`, `true` | 2 |
 
-Variant count: `4 * 3 * 2 * 2 * 3 * 2 = 288`.
+Variant count: `12 * 2 * 2 * 3 * 2 = 288`.
 
 Implementation notes:
 
-- `macd_spec` expands to `fast_ema_window`, `slow_ema_window`, and `signal_window`.
+- Each `macd_profile` expands to `(profile_id, fast_ema_1min_bars, slow_ema_1min_bars, signal_ema_1min_bars)`.
 - Normalize histogram thresholds where possible so symbols with different price scales are comparable.
 
 ### `bollinger_band_reversion`
 
 Basic introduction: mean-reversion family. It looks for price stretched toward/outside a volatility band and scores whether return toward the center is plausible.
 
-Suitable trading periods:
+Signal bar policy:
 
-- Best: 30-minute, hourly, daily.
-- Usable: 15-minute for liquid names with strict trend filters.
-- Less suitable for weekly option-targeted work because signal frequency is too low.
+- Use completed 1-minute bars only.
+- Do not treat bar interval as a variant axis; every variant runs on the same 1-minute evidence grid.
+- Band duration is encoded by curated profiles.
 
 Fixed parameters:
 
 | Parameter | Value |
 |---|---|
+| `signal_bar_interval` | `1Min` |
 | `price_field` | `bar_close` |
 | `rsi_filter_period` | optional diagnostic only initially |
 | `volatility_regime_filter` | `allowed_unless_extreme_trend` |
@@ -194,53 +193,55 @@ Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `timeframe` | `15Min`, `30Min`, `1Hour`, `1Day` | 4 |
-| `window` | `20`, `30` | 2 |
+| `band_window_profile` | `micro_10`, `scalp_20`, `fast_30`, `intraday_60`, `intraday_120`, `intraday_240`, `equity_day_390`, `continuous_day_1440` | 8 |
 | `band_stddev` | `1.5`, `2.0`, `2.5` | 3 |
 | `entry_band` | `outer_touch`, `close_outside` | 2 |
 | `exit_band` | `midline`, `half_sigma` | 2 |
 | `trend_filter_enabled` | `false`, `true` | 2 |
-| `max_hold_bars` | `10`, `20` | 2 |
+| `max_hold_minutes` | `30`, `120` | 2 |
 
-Variant count: `4 * 2 * 3 * 2 * 2 * 2 * 2 = 384`.
+Variant count: `8 * 3 * 2 * 2 * 2 * 2 = 384`.
 
 Implementation notes:
 
+- Each `band_window_profile` expands to `(profile_id, window_1min_bars)`.
 - Trend filter is important: this family should avoid fading strong one-way trend regimes without extra evidence.
-- `max_hold_bars` is an evaluation/setup expiry concept, not an execution instruction.
+- `max_hold_minutes` is an evaluation/setup expiry concept, not an execution instruction.
 
 ### `rsi_reversion`
 
-Basic introduction: mean-reversion family based on overbought/oversold momentum. It can optionally require divergence or multi-timeframe confirmation.
+Basic introduction: mean-reversion family based on overbought/oversold momentum. It can optionally require divergence or multi-duration confirmation.
 
-Suitable trading periods:
+Signal bar policy:
 
-- Best: 15-minute, 30-minute, hourly, daily.
-- Minute-level use below 15-minute should wait until liquidity/cost evidence is strong.
+- Use completed 1-minute bars only.
+- Do not treat bar interval as a variant axis; every variant runs on the same 1-minute evidence grid.
+- RSI duration is encoded by curated profiles.
 
 Fixed parameters:
 
 | Parameter | Value |
 |---|---|
+| `signal_bar_interval` | `1Min` |
 | `price_field` | `bar_close` |
-| `max_hold_bars` | family default by timeframe |
+| `max_hold_minutes` | family default by profile |
 | `cooldown_bars` | `1` |
 
 Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `timeframe` | `15Min`, `30Min`, `1Hour`, `1Day` | 4 |
-| `rsi_period` | `7`, `14`, `21` | 3 |
+| `rsi_period_profile` | `micro_5`, `fast_7`, `scalp_14`, `intraday_30`, `intraday_60`, `intraday_120`, `equity_day_390`, `continuous_day_1440` | 8 |
 | `threshold_pair` | `(30,70)`, `(25,75)`, `(20,80)` | 3 |
 | `exit_midline` | `45_55_band`, `50_cross` | 2 |
 | `divergence_required` | `false`, `true` | 2 |
-| `multi_timeframe_confirm` | `false`, `true` | 2 |
+| `multi_duration_confirm` | `false`, `true` | 2 |
 
-Variant count: `4 * 3 * 3 * 2 * 2 * 2 = 288`.
+Variant count: `8 * 3 * 2 * 2 * 2 = 192`.
 
 Implementation notes:
 
+- Each `rsi_period_profile` expands to `(profile_id, rsi_period_1min_bars)`.
 - `threshold_pair` expands to `oversold_threshold` and `overbought_threshold`.
 - Divergence detection must be deterministic and point-in-time; avoid post-hoc swing-point leakage.
 
@@ -248,34 +249,36 @@ Implementation notes:
 
 Basic introduction: mean-reversion family based on distance from a moving average or z-score baseline. It is a direct measure of price stretch.
 
-Suitable trading periods:
+Signal bar policy:
 
-- Best: 30-minute, hourly, daily.
-- Usable: 15-minute with strict liquidity and trend filters.
+- Use completed 1-minute bars only.
+- Do not treat bar interval as a variant axis; every variant runs on the same 1-minute evidence grid.
+- Baseline duration is encoded by curated profiles.
 
 Fixed parameters:
 
 | Parameter | Value |
 |---|---|
+| `signal_bar_interval` | `1Min` |
 | `price_field` | `bar_close` |
-| `max_hold_bars` | family default by timeframe |
+| `max_hold_minutes` | family default by profile |
 
 Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `timeframe` | `15Min`, `30Min`, `1Hour`, `1Day` | 4 |
-| `ma_window` | `20`, `50` | 2 |
+| `ma_window_profile` | `micro_10`, `scalp_20`, `fast_30`, `intraday_60`, `intraday_120`, `intraday_240`, `equity_day_390`, `continuous_day_1440` | 8 |
 | `ma_type` | `sma`, `ema` | 2 |
 | `deviation_measure` | `pct_from_ma`, `zscore_from_ma` | 2 |
 | `entry_deviation_threshold` | `1.5`, `2.0`, `2.5` | 3 |
 | `exit_deviation_threshold` | `0.25`, `0.5` | 2 |
 | `trend_filter_enabled` | `false`, `true` | 2 |
 
-Variant count: `4 * 2 * 2 * 2 * 3 * 2 * 2 = 384`.
+Variant count: `8 * 2 * 2 * 3 * 2 * 2 = 384`.
 
 Implementation notes:
 
+- Each `ma_window_profile` expands to `(profile_id, ma_window_1min_bars)`.
 - If `deviation_measure = pct_from_ma`, thresholds should be interpreted as percent/bps families; if z-score, thresholds are standard-deviation units.
 - Keep threshold semantics explicit in the variant payload.
 
@@ -283,16 +286,17 @@ Implementation notes:
 
 Basic introduction: intraday mean-reversion family. It looks for a liquid underlying moving too far from regular-session VWAP and scores whether reversion is plausible before the option trade window decays.
 
-Suitable trading periods:
+Signal bar policy:
 
-- Best: minute-level / intraday.
-- Default signal grains: 1-minute and 5-minute.
-- Not suitable for daily/weekly variants.
+- Use completed 1-minute bars only.
+- Do not treat signal timeframe as a variant axis; every variant runs on the same 1-minute evidence grid.
+- VWAP remains regular-session anchored.
 
 Fixed parameters:
 
 | Parameter | Value |
 |---|---|
+| `signal_bar_interval` | `1Min` |
 | `vwap_scope` | `regular_session_vwap` |
 | `premarket_context_mode` | `context_filter` |
 | `earliest_entry_time` | `10:00 ET` |
@@ -304,17 +308,16 @@ Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `signal_timeframe` | `1Min`, `5Min` | 2 |
 | `deviation_bps` | `30`, `50`, `75`, `100` | 4 |
 | `entry_zscore` | `1.0`, `1.5`, `2.0` | 3 |
 | `exit_zscore` | `0.25`, `0.5`, `0.75` | 3 |
 | `maximum_spread_bps` | `5`, `10`, `15` | 3 |
 
-Variant count: `2 * 4 * 3 * 3 * 3 = 216`.
+Variant count: `4 * 3 * 3 * 3 = 108`.
 
 Implementation notes:
 
-- `minimum_dollar_volume` must be target-relative, e.g. current-window dollar volume versus rolling median/percentile for the same target and timeframe.
+- `minimum_dollar_volume` must be target-relative, e.g. current-window dollar volume versus rolling median/percentile for the same target.
 - `time_of_day_bucket` is derived from `available_time` for diagnostics and calibration; do not let it multiply variants initially.
 - Option chain and contract liquidity checks belong to `OptionExpressionModel`.
 
@@ -322,35 +325,37 @@ Implementation notes:
 
 Basic introduction: breakout family that looks for price escaping a recent consolidation range with enough confirmation to avoid wick-only false breaks.
 
-Suitable trading periods:
+Signal bar policy:
 
-- Best: 30-minute, hourly, daily.
-- Usable: 15-minute with volume/liquidity confirmation.
+- Use completed 1-minute bars only.
+- Do not treat bar interval as a variant axis; every variant runs on the same 1-minute evidence grid.
+- Range duration is encoded by curated profiles.
 
 Fixed parameters:
 
 | Parameter | Value |
 |---|---|
+| `signal_bar_interval` | `1Min` |
 | `breakout_direction` | `both` |
 | `close_confirmation` | `true` |
-| `failed_breakout_timeout` | family default by timeframe |
+| `failed_breakout_timeout_minutes` | family default by profile |
 | `cooldown_bars` | `1` |
 
 Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `timeframe` | `15Min`, `30Min`, `1Hour`, `1Day` | 4 |
-| `range_lookback` | `20`, `40`, `60` | 3 |
+| `range_window_profile` | `micro_10`, `scalp_20`, `fast_30`, `intraday_60`, `intraday_120`, `intraday_240`, `equity_day_390`, `continuous_day_1440` | 8 |
 | `range_width_max_atr` | `1.0`, `1.5`, `2.0` | 3 |
 | `breakout_buffer_atr` | `0`, `0.25`, `0.5` | 3 |
 | `volume_confirmation_ratio` | `1.0`, `1.5` | 2 |
 | `retest_rule` | `none`, `allow_once` | 2 |
 
-Variant count: `4 * 3 * 3 * 3 * 2 * 2 = 432`.
+Variant count: `8 * 3 * 3 * 2 * 2 = 288`.
 
 Implementation notes:
 
+- Each `range_window_profile` expands to `(profile_id, range_lookback_1min_bars)`.
 - Range width cap prevents labeling already-expanded moves as range breaks.
 - `retest_rule` should remain setup evidence, not a downstream order instruction.
 
@@ -358,16 +363,17 @@ Implementation notes:
 
 Basic introduction: morning intraday breakout family. It defines the regular-session opening range and scores a confirmed move above or below it.
 
-Suitable trading periods:
+Signal bar policy:
 
-- Best: minute-level / morning intraday.
-- Requires 1-minute bars for opening range construction.
-- Not suitable for daily/weekly variants.
+- Use completed 1-minute bars only.
+- The opening range duration remains a variant axis, but bar interval is fixed.
+- Premarket can filter context but must not define the opening range.
 
 Fixed parameters:
 
 | Parameter | Value |
 |---|---|
+| `signal_bar_interval` | `1Min` |
 | `regular_session_open` | `09:30 ET` |
 | `direction_mode` | `both` |
 | `first_trade_delay_minutes` | `5` |
@@ -389,54 +395,41 @@ Variant count: `4 * 3 * 4 = 48`.
 
 Implementation notes:
 
-- Premarket can filter context but must not define the opening range.
 - One signal per target/session is the starting rule; repeated breakouts usually imply chop and are costly for option trades.
 
 ### `volatility_breakout`
 
 Basic introduction: breakout/volatility family. It scores whether volatility expansion is large enough to suggest a tradable move, then uses a direction filter to avoid directionless noise.
 
-Suitable trading periods:
+Signal bar policy:
 
-- Best: 30-minute, hourly, daily.
-- Usable: 15-minute with strict liquidity gates.
+- Use completed 1-minute bars only.
+- Do not treat bar interval as a variant axis; every variant runs on the same 1-minute evidence grid.
+- Volatility duration is encoded by curated profiles.
 
 Fixed parameters:
 
 | Parameter | Value |
 |---|---|
+| `signal_bar_interval` | `1Min` |
 | `cooldown_bars` | `1` |
-| `volatility_cooloff_threshold` | family default by timeframe |
+| `volatility_cooloff_threshold` | family default by profile |
 
 Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `timeframe` | `15Min`, `30Min`, `1Hour`, `1Day` | 4 |
-| `volatility_spec` | `ATR14_x1.25`, `ATR14_x1.5`, `ATR20_x1.5`, `HV20_x1.5`, `HV30_x2.0` | 5 |
+| `volatility_profile` | `micro_atr10_x1.25`, `scalp_atr14_x1.5`, `fast_atr20_x1.5`, `intraday_atr60_x1.5`, `intraday_atr120_x2.0`, `intraday_hv240_x1.5`, `equity_day_atr390_x1.5`, `continuous_day_hv1440_x2.0` | 8 |
 | `direction_filter` | `none`, `trend`, `range_break` | 3 |
 | `confirmation_bars` | `1`, `2` | 2 |
 | `stop_atr_multiple` | `1.5`, `2.5` | 2 |
 
-Variant count: `4 * 5 * 3 * 2 * 2 = 240`.
+Variant count: `8 * 3 * 2 * 2 = 96`.
 
 Implementation notes:
 
-- `volatility_spec` expands to `volatility_measure`, `volatility_window`, and `expansion_threshold`.
+- Each `volatility_profile` expands to `(profile_id, volatility_measure, volatility_window_1min_bars, expansion_threshold)`.
 - A volatility breakout without direction filter should be evaluated cautiously; expansion alone does not guarantee directional edge.
-
-## Modifier and meta families
-
-These are retained in the catalog, but they should **not** participate in the first standalone-family evaluation wave. First evaluate each standalone strategy family on its own, identify which families/variants have no robust edge, and prune weak families before adding filters or meta-scoring.
-
-Rationale:
-
-- with many strategies, some will appear active in almost every market state but still fail after costs, stability checks, or option-expression constraints;
-- global filters/meta-scoring can hide whether a family itself has edge;
-- weak families should be eliminated or downgraded before they become inputs to an ensemble;
-- modifiers should be introduced only as controlled follow-up experiments after standalone evidence is available.
-
-These should not blindly multiply every standalone family variant. Apply them only through reviewed experiments, otherwise variant count explodes and interpretation degrades.
 
 ### `trend_volatility_filter`
 
@@ -460,16 +453,16 @@ Potential standalone config count: `2 * 2 * 2 * 2 * 2 * 2 * 2 = 128`, but it sho
 
 ### `mean_reversion_trend_filter`
 
-Basic introduction: reusable filter/modifier that permits mean reversion only under acceptable higher-timeframe trend and pullback conditions.
+Basic introduction: reusable filter/modifier that permits mean reversion only under acceptable higher-duration trend and pullback conditions.
 
-Suitable periods: same as the mean-reversion family it modifies; higher timeframe should be one level above the signal timeframe where possible.
+Suitable periods: same as the mean-reversion family it modifies; higher-duration context should be derived from reviewed 1-minute windows rather than a separate signal timeframe.
 
 Potential gradients:
 
 | Axis | Values |
 |---|---|
-| `higher_timeframe` | `30Min`, `1Hour`, `1Day` |
-| `higher_timeframe_trend_window` | `20`, `50` |
+| `higher_duration_profile` | reviewed 1-minute trend-context windows |
+| `higher_duration_trend_window` | `20`, `50` profile units |
 | `allowed_trend_states` | `with_trend_pullback`, `range_only`, `any_non_extreme` |
 | `pullback_depth_min` | `0.5_atr`, `1.0_atr` |
 | `pullback_depth_max` | `2.0_atr`, `3.0_atr` |
@@ -549,60 +542,62 @@ Statuses:
 
 ### Layer 3 backlog families with variant-ready axes
 
+Backlog promotion rule: every Layer 3 backlog family must use completed 1-minute bars for signal output. Historical `timeframe` or `signal_timeframe` axes are not accepted promotion surfaces; they must be converted to curated 1-minute duration/window profiles before implementation. Provisional counts below are retained as sizing hints until each backlog row receives a full profile review.
+
 | Family | Status | Basic idea | Suitable periods | Variable gradients | Variant count |
 |---|---|---|---|---|---:|
-| `adx_trend_strength` | `layer3_backlog` | Score directional trend strength with ADX/DMI. | 30Min, 1Hour, 1Day | `timeframe=30Min/1Hour/1Day`; `adx_window=14/20`; `adx_min=20/25/30`; `di_confirmation=required/optional`; `slope_confirm=0/1` | 72 |
-| `parabolic_sar_trend` | `layer3_backlog` | Follow PSAR trend flips and persistence. | 30Min, 1Hour, 1Day | `timeframe=30Min/1Hour/1Day`; `sar_step=0.01/0.02/0.03`; `sar_max=0.1/0.2`; `confirmation_bars=1/2/3`; `trend_filter=off/on` | 108 |
-| `supertrend_following` | `layer3_backlog` | ATR-band trend state and flips. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `atr_window=10/14/20`; `multiplier=2/3/4`; `confirmation_bars=1/2`; `direction_mode=bullish/bearish/both` | 216 |
-| `ichimoku_trend` | `layer3_backlog` | Cloud and tenkan/kijun trend confirmation. | 1Hour, 1Day | `timeframe=1Hour/1Day`; `ichimoku_spec=9_26_52/12_24_48`; `cloud_filter=price_above_below/price_and_cloud_slope`; `tk_cross=required/optional`; `lagging_confirm=off/on` | 32 |
-| `ma_stack_alignment` | `layer3_backlog` | Trend alignment from ordered moving-average stack. | 30Min, 1Hour, 1Day | `timeframe=30Min/1Hour/1Day`; `stack_spec=5_10_20/10_20_50/20_50_200`; `ma_type=sma/ema`; `min_separation_bps=0/10/25`; `slope_confirm=off/on` | 108 |
-| `higher_high_higher_low_trend` | `layer3_backlog` | Mechanical swing-structure continuation. | 30Min, 1Hour, 1Day | `timeframe=30Min/1Hour/1Day`; `swing_window=3/5/8`; `structure_count=2/3`; `break_buffer_atr=0/0.25`; `confirmation_bars=1/2` | 72 |
-| `pullback_to_ma_continuation` | `layer3_backlog` | Continue trend after pullback to MA support/resistance. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `ma_window=20/50`; `ma_type=sma/ema`; `pullback_depth_atr=0.5/1.0/1.5`; `resume_confirm=close_reclaim/momentum_bar` | 96 |
-| `relative_strength_vs_benchmark` | `layer3_backlog` | Single target relative strength versus benchmark/sector reference. | 30Min, 1Hour, 1Day | `timeframe=30Min/1Hour/1Day`; `benchmark_ref=market/sector`; `lookback=10/20/60`; `rs_threshold=0/0.5/1.0_z`; `confirm_bars=1/2` | 108 |
-| `trend_day_continuation` | `layer3_backlog` | Intraday trend-day continuation after strong directional morning. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `morning_window=30/60`; `trend_strength_min=1.0/1.5/2.0_atr`; `pullback_allowed=none/shallow`; `no_trade_after=13:00/14:00` | 108 |
-| `anchored_vwap_trend_continuation` | `layer3_backlog` | Continue trend around anchored VWAP from a reviewed anchor. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `anchor=session_open/day_high_low/gap_open`; `distance_filter_bps=0/25/50`; `reclaim_confirm=1/2`; `liquidity_filter=standard/strict` | 108 |
-| `keltner_channel_reversion` | `layer3_backlog` | Revert from ATR channel extremes. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `ema_window=20/30`; `atr_window=10/20`; `multiplier=1.5/2/2.5`; `exit_rule=midline/half_channel`; `trend_filter=off/on` | 192 |
-| `cci_reversion` | `layer3_backlog` | Fade CCI overextension. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `cci_window=14/20/30`; `entry_threshold=100/150/200`; `exit_threshold=0/50`; `trend_filter=off/on` | 144 |
-| `stochastic_reversion` | `layer3_backlog` | Fade stochastic overbought/oversold. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `k_window=14/21`; `d_window=3/5`; `threshold_pair=20_80/10_90`; `cross_required=false/true`; `trend_filter=off/on` | 128 |
-| `williams_r_reversion` | `layer3_backlog` | Fade Williams %R extremes. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `window=14/21/28`; `threshold_pair=-80_-20/-90_-10`; `exit_level=-50/-40_60_band`; `trend_filter=off/on` | 96 |
-| `zscore_return_reversion` | `layer3_backlog` | Fade statistically unusual recent returns. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `return_window=3/5/10`; `zscore_window=20/60`; `entry_z=1.5/2/2.5`; `exit_z=0/0.5`; `trend_filter=off/on` | 288 |
-| `gap_fade` | `layer3_backlog` | Fade opening gap after regular-session confirmation. | 1Min, 5Min, 15Min, daily context | `signal_timeframe=1Min/5Min/15Min`; `gap_min_bps=50/100/200`; `confirmation_minutes=15/30`; `fade_target=half_gap/full_gap`; `trend_filter=off/on` | 72 |
-| `failed_breakout_reversion` | `layer3_backlog` | Fade breakout that fails back inside range. | 15Min, 30Min, 1Hour | `timeframe=15Min/30Min/1Hour`; `range_lookback=20/40`; `failure_window=3/5`; `reentry_depth=inside_close/mid_range`; `volume_filter=off/on`; `max_hold=10/20` | 96 |
-| `vwap_band_reversion` | `layer3_backlog` | Fade from VWAP bands rather than raw VWAP distance. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `band_method=stddev/atr`; `band_width=1/1.5/2`; `entry_band=outer_touch/close_outside`; `exit_band=vwap/half_band`; `spread_filter=standard/strict` | 216 |
-| `support_resistance_reversion` | `layer3_backlog` | Revert at mechanical support/resistance zones. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `level_method=pivot/rolling_high_low/volume_node_proxy`; `lookback=20/60`; `touch_tolerance_bps=10/25/50`; `rejection_confirm=wick/close`; `trend_filter=off/on` | 288 |
-| `overnight_gap_reversion` | `layer3_backlog` | Fade overnight gap after open stabilization. | 1Min, 5Min, daily context | `timeframe=1Min/5Min`; `gap_min_bps=50/100/200`; `earliest_entry=09:45/10:00`; `confirmation=first_pullback/vwap_reclaim`; `no_trade_after=11:00/12:00` | 48 |
-| `keltner_channel_breakout` | `layer3_backlog` | Break out beyond ATR channel. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `ema_window=20/30`; `atr_window=10/20`; `multiplier=1.5/2/2.5`; `confirmation_bars=1/2`; `volume_filter=off/on` | 192 |
-| `bollinger_band_breakout` | `layer3_backlog` | Continue volatility-band expansion. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `window=20/30`; `band_stddev=2/2.5`; `close_outside_bars=1/2`; `squeeze_required=off/on`; `volume_filter=off/on` | 128 |
-| `squeeze_breakout` | `layer3_backlog` | Trade release from volatility compression. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `squeeze_method=bb_keltner/percentile_range`; `compression_window=20/60`; `release_threshold=1.0/1.5`; `direction_filter=trend/range_break`; `confirmation_bars=1/2` | 128 |
-| `nr7_breakout` | `layer3_backlog` | Breakout after narrowest range in seven bars. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `narrow_range_n=4/7`; `breakout_buffer_atr=0/0.25/0.5`; `direction_mode=both`; `confirmation_bars=1/2`; `volume_filter=off/on` | 96 |
-| `inside_bar_breakout` | `layer3_backlog` | Breakout from inside-bar compression. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `inside_count=1/2/3`; `breakout_buffer_bps=5/10/20`; `confirmation_bars=1/2`; `volume_filter=off/on` | 144 |
-| `gap_continuation` | `layer3_backlog` | Continue strong gap after confirmation. | 1Min, 5Min, 15Min, daily context | `timeframe=1Min/5Min/15Min`; `gap_min_bps=50/100/200`; `hold_above_open_minutes=15/30`; `volume_confirmation=1/1.5`; `direction_mode=both` | 54 |
-| `high_low_range_expansion` | `layer3_backlog` | Trade expansion of high-low range versus baseline. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `baseline_window=20/60`; `expansion_ratio=1.25/1.5/2`; `direction_filter=none/trend`; `confirmation_bars=1/2` | 96 |
-| `volume_price_breakout` | `layer3_backlog` | Price breakout confirmed by relative volume. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `price_break_lookback=20/40`; `volume_ratio=1.25/1.5/2`; `breakout_buffer_bps=5/10/20`; `confirmation_bars=1/2` | 144 |
-| `atr_trailing_breakout` | `layer3_backlog` | Directional break with ATR trailing invalidation context. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `atr_window=14/20`; `trail_multiple=2/3/4`; `break_confirm=1/2`; `direction_filter=trend/range_break` | 96 |
-| `opening_drive_continuation` | `layer3_backlog` | Continue a strong first 30-60m opening drive. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `drive_window=30/60`; `drive_atr_min=1/1.5/2`; `pullback_rule=none/shallow`; `no_trade_after=11:00/12:00` | 108 |
-| `relative_volume_surge_continuation` | `layer3_backlog` | Continue moves with abnormal relative volume. | 1Min, 5Min, 15Min, 30Min | `timeframe=1Min/5Min/15Min/30Min`; `rv_window=20/60`; `rv_ratio=1.5/2/3`; `price_confirm=close_up_down/breakout`; `spread_filter=standard/strict` | 96 |
-| `volume_climax_reversal` | `layer3_backlog` | Fade exhaustion after volume climax. | 1Min, 5Min, 15Min, 30Min | `timeframe=1Min/5Min/15Min/30Min`; `volume_ratio=2/3/5`; `range_extension_atr=1/1.5/2`; `reversal_confirm=wick/close`; `trend_filter=off/on` | 144 |
-| `spread_compression_breakout` | `layer3_backlog` | Breakout after spread/liquidity improves. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `compression_window=10/20/30`; `spread_percentile=20/30`; `breakout_buffer_bps=5/10/20`; `volume_filter=off/on` | 108 |
-| `trade_count_activity_surge` | `layer3_backlog` | Activity burst as continuation confirmation. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `activity_window=10/20/60`; `trade_count_ratio=1.5/2/3`; `price_confirm=trend/breakout`; `spread_filter=standard/strict` | 108 |
-| `vwap_minus_mid_dislocation` | `layer3_backlog` | Score dislocation between trade VWAP and quote mid. | 1Min, 5Min | `timeframe=1Min/5Min`; `dislocation_bps=5/10/20`; `persistence_bars=1/2/3`; `direction_mode=mean_revert/continue`; `spread_filter=strict` | 36 |
-| `quote_imbalance_pressure` | `layer3_backlog` | Use bid/ask size imbalance as directional pressure. | 1Min, 5Min | `timeframe=1Min/5Min`; `imbalance_threshold=0.6/0.7/0.8`; `persistence_bars=1/2/3`; `price_confirm=off/on`; `spread_filter=strict` | 36 |
-| `liquidity_vacuum_breakout` | `layer3_backlog` | Breakout when liquidity thins and price moves. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `spread_widening_bps=5/10/20`; `depth_proxy_drop=20/40`; `price_break=5/10/20_bps`; `risk_filter=strict` | 54 |
-| `midday_range_breakout` | `layer3_backlog` | Breakout from lunchtime consolidation. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `range_window=60/90/120`; `breakout_buffer_bps=5/10/20`; `volume_ratio=1/1.5`; `no_trade_after=14:00/14:30` | 108 |
-| `afternoon_trend_continuation` | `layer3_backlog` | Continue established afternoon trend before cutoff. | 5Min, 15Min, 30Min | `timeframe=5Min/15Min/30Min`; `trend_window=30/60/120`; `pullback_depth=0.5/1.0_atr`; `no_trade_after=15:00/15:30`; `liquidity_filter=standard/strict` | 72 |
-| `power_hour_breakout` | `layer3_backlog` | Late-day breakout/continuation. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `range_window=30/60`; `breakout_buffer_bps=5/10/20`; `volume_ratio=1.5/2`; `risk_mode=strict_only` | 36 |
-| `morning_reversal` | `layer3_backlog` | Fade first-hour extreme after confirmation. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `extreme_window=30/60`; `extension_atr=1/1.5/2`; `confirm=vwap_reclaim/range_reentry`; `no_trade_after=11:00/12:00` | 108 |
-| `lunch_reversion` | `layer3_backlog` | Revert midday overextension. | 5Min, 15Min | `timeframe=5Min/15Min`; `window=60/90/120`; `zscore=1.5/2/2.5`; `target=vwap/mid_range`; `spread_filter=standard/strict` | 72 |
-| `previous_day_high_low_break` | `layer3_backlog` | Break prior day high/low. | 1Min, 5Min, 15Min, 30Min | `timeframe=1Min/5Min/15Min/30Min`; `level=prev_high/prev_low/both`; `buffer_bps=5/10/20`; `confirmation_bars=1/2`; `volume_filter=off/on` | 96 |
-| `previous_close_gap_hold` | `layer3_backlog` | Gap holds beyond previous close and continues. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `gap_min_bps=50/100/200`; `hold_minutes=15/30/60`; `direction_mode=both`; `volume_filter=off/on` | 54 |
-| `first_pullback_after_opening_drive` | `layer3_backlog` | Continue after first pullback in trend day. | 1Min, 5Min, 15Min | `timeframe=1Min/5Min/15Min`; `drive_window=30/60`; `pullback_depth_atr=0.5/1/1.5`; `resume_confirm=break_pullback_high/vwap_hold`; `no_trade_after=12:00/13:00` | 72 |
-| `engulfing_reversal` | `layer3_backlog` | Mechanical engulfing candle reversal. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `body_ratio_min=1/1.5/2`; `trend_context=required/optional`; `volume_filter=off/on`; `confirmation_bars=1/2` | 96 |
-| `pin_bar_reversal` | `layer3_backlog` | Wick rejection reversal. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `wick_body_ratio=2/3/4`; `location=band/level/any`; `confirmation_bars=1/2`; `trend_filter=off/on` | 144 |
-| `inside_outside_bar_pattern` | `layer3_backlog` | Inside/outside bar continuation or reversal. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `pattern=inside/outside`; `mode=continuation/reversal`; `confirmation_bars=1/2`; `volume_filter=off/on` | 64 |
-| `three_bar_reversal` | `layer3_backlog` | Three-bar exhaustion/reversal. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `extension_atr=1/1.5/2`; `middle_bar_rule=required/optional`; `confirmation=close_reversal/range_break`; `volume_filter=off/on` | 96 |
-| `breakaway_gap_pattern` | `layer3_backlog` | Gap plus follow-through continuation. | 1Min, 5Min, 15Min, daily context | `timeframe=1Min/5Min/15Min`; `gap_min_bps=100/200/300`; `followthrough_minutes=15/30/60`; `volume_ratio=1/1.5/2`; `direction_mode=both` | 81 |
-| `measured_move_continuation` | `layer3_backlog` | Follow proportional continuation after first leg. | 15Min, 30Min, 1Hour | `timeframe=15Min/30Min/1Hour`; `leg_window=10/20/40`; `projection_ratio=0.5/1.0/1.5`; `pullback_depth=0.382/0.5/0.618`; `confirm=break/reclaim` | 162 |
-| `support_resistance_break_retest` | `layer3_backlog` | Break and retest of mechanical level. | 15Min, 30Min, 1Hour, 1Day | `timeframe=15Min/30Min/1Hour/1Day`; `level_method=pivot/rolling_high_low`; `lookback=20/60`; `retest_tolerance_bps=10/25/50`; `confirmation=wick/close`; `volume_filter=off/on` | 192 |
+| `adx_trend_strength` | `layer3_backlog` | Score directional trend strength with ADX/DMI. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `adx_window=14/20`; `adx_min=20/25/30`; `di_confirmation=required/optional`; `slope_confirm=0/1` | 72 |
+| `parabolic_sar_trend` | `layer3_backlog` | Follow PSAR trend flips and persistence. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `sar_step=0.01/0.02/0.03`; `sar_max=0.1/0.2`; `confirmation_bars=1/2/3`; `trend_filter=off/on` | 108 |
+| `supertrend_following` | `layer3_backlog` | ATR-band trend state and flips. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `atr_window=10/14/20`; `multiplier=2/3/4`; `confirmation_bars=1/2`; `direction_mode=bullish/bearish/both` | 216 |
+| `ichimoku_trend` | `layer3_backlog` | Cloud and tenkan/kijun trend confirmation. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `ichimoku_spec=9_26_52/12_24_48`; `cloud_filter=price_above_below/price_and_cloud_slope`; `tk_cross=required/optional`; `lagging_confirm=off/on` | 32 |
+| `ma_stack_alignment` | `layer3_backlog` | Trend alignment from ordered moving-average stack. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `stack_spec=5_10_20/10_20_50/20_50_200`; `ma_type=sma/ema`; `min_separation_bps=0/10/25`; `slope_confirm=off/on` | 108 |
+| `higher_high_higher_low_trend` | `layer3_backlog` | Mechanical swing-structure continuation. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `swing_window=3/5/8`; `structure_count=2/3`; `break_buffer_atr=0/0.25`; `confirmation_bars=1/2` | 72 |
+| `pullback_to_ma_continuation` | `layer3_backlog` | Continue trend after pullback to MA support/resistance. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `ma_window=20/50`; `ma_type=sma/ema`; `pullback_depth_atr=0.5/1.0/1.5`; `resume_confirm=close_reclaim/momentum_bar` | 96 |
+| `relative_strength_vs_benchmark` | `layer3_backlog` | Single target relative strength versus benchmark/sector reference. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `benchmark_ref=market/sector`; `lookback=10/20/60`; `rs_threshold=0/0.5/1.0_z`; `confirm_bars=1/2` | 108 |
+| `trend_day_continuation` | `layer3_backlog` | Intraday trend-day continuation after strong directional morning. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `morning_window=30/60`; `trend_strength_min=1.0/1.5/2.0_atr`; `pullback_allowed=none/shallow`; `no_trade_after=13:00/14:00` | 108 |
+| `anchored_vwap_trend_continuation` | `layer3_backlog` | Continue trend around anchored VWAP from a reviewed anchor. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `anchor=session_open/day_high_low/gap_open`; `distance_filter_bps=0/25/50`; `reclaim_confirm=1/2`; `liquidity_filter=standard/strict` | 108 |
+| `keltner_channel_reversion` | `layer3_backlog` | Revert from ATR channel extremes. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `ema_window=20/30`; `atr_window=10/20`; `multiplier=1.5/2/2.5`; `exit_rule=midline/half_channel`; `trend_filter=off/on` | 192 |
+| `cci_reversion` | `layer3_backlog` | Fade CCI overextension. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `cci_window=14/20/30`; `entry_threshold=100/150/200`; `exit_threshold=0/50`; `trend_filter=off/on` | 144 |
+| `stochastic_reversion` | `layer3_backlog` | Fade stochastic overbought/oversold. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `k_window=14/21`; `d_window=3/5`; `threshold_pair=20_80/10_90`; `cross_required=false/true`; `trend_filter=off/on` | 128 |
+| `williams_r_reversion` | `layer3_backlog` | Fade Williams %R extremes. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `window=14/21/28`; `threshold_pair=-80_-20/-90_-10`; `exit_level=-50/-40_60_band`; `trend_filter=off/on` | 96 |
+| `zscore_return_reversion` | `layer3_backlog` | Fade statistically unusual recent returns. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `return_window=3/5/10`; `zscore_window=20/60`; `entry_z=1.5/2/2.5`; `exit_z=0/0.5`; `trend_filter=off/on` | 288 |
+| `gap_fade` | `layer3_backlog` | Fade opening gap after regular-session confirmation. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `gap_min_bps=50/100/200`; `confirmation_minutes=15/30`; `fade_target=half_gap/full_gap`; `trend_filter=off/on` | 72 |
+| `failed_breakout_reversion` | `layer3_backlog` | Fade breakout that fails back inside range. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `range_lookback=20/40`; `failure_window=3/5`; `reentry_depth=inside_close/mid_range`; `volume_filter=off/on`; `max_hold=10/20` | 96 |
+| `vwap_band_reversion` | `layer3_backlog` | Fade from VWAP bands rather than raw VWAP distance. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `band_method=stddev/atr`; `band_width=1/1.5/2`; `entry_band=outer_touch/close_outside`; `exit_band=vwap/half_band`; `spread_filter=standard/strict` | 216 |
+| `support_resistance_reversion` | `layer3_backlog` | Revert at mechanical support/resistance zones. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `level_method=pivot/rolling_high_low/volume_node_proxy`; `lookback=20/60`; `touch_tolerance_bps=10/25/50`; `rejection_confirm=wick/close`; `trend_filter=off/on` | 288 |
+| `overnight_gap_reversion` | `layer3_backlog` | Fade overnight gap after open stabilization. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `gap_min_bps=50/100/200`; `earliest_entry=09:45/10:00`; `confirmation=first_pullback/vwap_reclaim`; `no_trade_after=11:00/12:00` | 48 |
+| `keltner_channel_breakout` | `layer3_backlog` | Break out beyond ATR channel. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `ema_window=20/30`; `atr_window=10/20`; `multiplier=1.5/2/2.5`; `confirmation_bars=1/2`; `volume_filter=off/on` | 192 |
+| `bollinger_band_breakout` | `layer3_backlog` | Continue volatility-band expansion. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `window=20/30`; `band_stddev=2/2.5`; `close_outside_bars=1/2`; `squeeze_required=off/on`; `volume_filter=off/on` | 128 |
+| `squeeze_breakout` | `layer3_backlog` | Trade release from volatility compression. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `squeeze_method=bb_keltner/percentile_range`; `compression_window=20/60`; `release_threshold=1.0/1.5`; `direction_filter=trend/range_break`; `confirmation_bars=1/2` | 128 |
+| `nr7_breakout` | `layer3_backlog` | Breakout after narrowest range in seven bars. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `narrow_range_n=4/7`; `breakout_buffer_atr=0/0.25/0.5`; `direction_mode=both`; `confirmation_bars=1/2`; `volume_filter=off/on` | 96 |
+| `inside_bar_breakout` | `layer3_backlog` | Breakout from inside-bar compression. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `inside_count=1/2/3`; `breakout_buffer_bps=5/10/20`; `confirmation_bars=1/2`; `volume_filter=off/on` | 144 |
+| `gap_continuation` | `layer3_backlog` | Continue strong gap after confirmation. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `gap_min_bps=50/100/200`; `hold_above_open_minutes=15/30`; `volume_confirmation=1/1.5`; `direction_mode=both` | 54 |
+| `high_low_range_expansion` | `layer3_backlog` | Trade expansion of high-low range versus baseline. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `baseline_window=20/60`; `expansion_ratio=1.25/1.5/2`; `direction_filter=none/trend`; `confirmation_bars=1/2` | 96 |
+| `volume_price_breakout` | `layer3_backlog` | Price breakout confirmed by relative volume. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `price_break_lookback=20/40`; `volume_ratio=1.25/1.5/2`; `breakout_buffer_bps=5/10/20`; `confirmation_bars=1/2` | 144 |
+| `atr_trailing_breakout` | `layer3_backlog` | Directional break with ATR trailing invalidation context. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `atr_window=14/20`; `trail_multiple=2/3/4`; `break_confirm=1/2`; `direction_filter=trend/range_break` | 96 |
+| `opening_drive_continuation` | `layer3_backlog` | Continue a strong first 30-60m opening drive. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `drive_window=30/60`; `drive_atr_min=1/1.5/2`; `pullback_rule=none/shallow`; `no_trade_after=11:00/12:00` | 108 |
+| `relative_volume_surge_continuation` | `layer3_backlog` | Continue moves with abnormal relative volume. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `rv_window=20/60`; `rv_ratio=1.5/2/3`; `price_confirm=close_up_down/breakout`; `spread_filter=standard/strict` | 96 |
+| `volume_climax_reversal` | `layer3_backlog` | Fade exhaustion after volume climax. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `volume_ratio=2/3/5`; `range_extension_atr=1/1.5/2`; `reversal_confirm=wick/close`; `trend_filter=off/on` | 144 |
+| `spread_compression_breakout` | `layer3_backlog` | Breakout after spread/liquidity improves. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `compression_window=10/20/30`; `spread_percentile=20/30`; `breakout_buffer_bps=5/10/20`; `volume_filter=off/on` | 108 |
+| `trade_count_activity_surge` | `layer3_backlog` | Activity burst as continuation confirmation. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `activity_window=10/20/60`; `trade_count_ratio=1.5/2/3`; `price_confirm=trend/breakout`; `spread_filter=standard/strict` | 108 |
+| `vwap_minus_mid_dislocation` | `layer3_backlog` | Score dislocation between trade VWAP and quote mid. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `dislocation_bps=5/10/20`; `persistence_bars=1/2/3`; `direction_mode=mean_revert/continue`; `spread_filter=strict` | 36 |
+| `quote_imbalance_pressure` | `layer3_backlog` | Use bid/ask size imbalance as directional pressure. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `imbalance_threshold=0.6/0.7/0.8`; `persistence_bars=1/2/3`; `price_confirm=off/on`; `spread_filter=strict` | 36 |
+| `liquidity_vacuum_breakout` | `layer3_backlog` | Breakout when liquidity thins and price moves. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `spread_widening_bps=5/10/20`; `depth_proxy_drop=20/40`; `price_break=5/10/20_bps`; `risk_filter=strict` | 54 |
+| `midday_range_breakout` | `layer3_backlog` | Breakout from lunchtime consolidation. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `range_window=60/90/120`; `breakout_buffer_bps=5/10/20`; `volume_ratio=1/1.5`; `no_trade_after=14:00/14:30` | 108 |
+| `afternoon_trend_continuation` | `layer3_backlog` | Continue established afternoon trend before cutoff. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `trend_window=30/60/120`; `pullback_depth=0.5/1.0_atr`; `no_trade_after=15:00/15:30`; `liquidity_filter=standard/strict` | 72 |
+| `power_hour_breakout` | `layer3_backlog` | Late-day breakout/continuation. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `range_window=30/60`; `breakout_buffer_bps=5/10/20`; `volume_ratio=1.5/2`; `risk_mode=strict_only` | 36 |
+| `morning_reversal` | `layer3_backlog` | Fade first-hour extreme after confirmation. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `extreme_window=30/60`; `extension_atr=1/1.5/2`; `confirm=vwap_reclaim/range_reentry`; `no_trade_after=11:00/12:00` | 108 |
+| `lunch_reversion` | `layer3_backlog` | Revert midday overextension. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `window=60/90/120`; `zscore=1.5/2/2.5`; `target=vwap/mid_range`; `spread_filter=standard/strict` | 72 |
+| `previous_day_high_low_break` | `layer3_backlog` | Break prior day high/low. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `level=prev_high/prev_low/both`; `buffer_bps=5/10/20`; `confirmation_bars=1/2`; `volume_filter=off/on` | 96 |
+| `previous_close_gap_hold` | `layer3_backlog` | Gap holds beyond previous close and continues. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `gap_min_bps=50/100/200`; `hold_minutes=15/30/60`; `direction_mode=both`; `volume_filter=off/on` | 54 |
+| `first_pullback_after_opening_drive` | `layer3_backlog` | Continue after first pullback in trend day. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `drive_window=30/60`; `pullback_depth_atr=0.5/1/1.5`; `resume_confirm=break_pullback_high/vwap_hold`; `no_trade_after=12:00/13:00` | 72 |
+| `engulfing_reversal` | `layer3_backlog` | Mechanical engulfing candle reversal. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `body_ratio_min=1/1.5/2`; `trend_context=required/optional`; `volume_filter=off/on`; `confirmation_bars=1/2` | 96 |
+| `pin_bar_reversal` | `layer3_backlog` | Wick rejection reversal. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `wick_body_ratio=2/3/4`; `location=band/level/any`; `confirmation_bars=1/2`; `trend_filter=off/on` | 144 |
+| `inside_outside_bar_pattern` | `layer3_backlog` | Inside/outside bar continuation or reversal. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `pattern=inside/outside`; `mode=continuation/reversal`; `confirmation_bars=1/2`; `volume_filter=off/on` | 64 |
+| `three_bar_reversal` | `layer3_backlog` | Three-bar exhaustion/reversal. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `extension_atr=1/1.5/2`; `middle_bar_rule=required/optional`; `confirmation=close_reversal/range_break`; `volume_filter=off/on` | 96 |
+| `breakaway_gap_pattern` | `layer3_backlog` | Gap plus follow-through continuation. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `gap_min_bps=100/200/300`; `followthrough_minutes=15/30/60`; `volume_ratio=1/1.5/2`; `direction_mode=both` | 81 |
+| `measured_move_continuation` | `layer3_backlog` | Follow proportional continuation after first leg. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `leg_window=10/20/40`; `projection_ratio=0.5/1.0/1.5`; `pullback_depth=0.382/0.5/0.618`; `confirm=break/reclaim` | 162 |
+| `support_resistance_break_retest` | `layer3_backlog` | Break and retest of mechanical level. | Unified 1-minute bars; profile pending review. | `signal_bar_interval=1Min`; `duration_profile=reviewed_1min_window_grid`; `level_method=pivot/rolling_high_low`; `lookback=20/60`; `retest_tolerance_bps=10/25/50`; `confirmation=wick/close`; `volume_filter=off/on` | 192 |
 
 ### Position / portfolio-management variant families
 

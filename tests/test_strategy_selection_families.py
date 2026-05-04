@@ -52,26 +52,32 @@ class StrategySelectionFamilyTests(unittest.TestCase):
     def test_reviewed_variant_counts_match_catalog(self) -> None:
         expected_counts = {
             "moving_average_crossover": 288,
-            "donchian_channel_breakout": 288,
+            "donchian_channel_breakout": 144,
             "macd_trend": 288,
             "bollinger_band_reversion": 384,
-            "rsi_reversion": 288,
+            "rsi_reversion": 192,
             "bias_reversion": 384,
-            "vwap_reversion": 216,
-            "range_breakout": 432,
+            "vwap_reversion": 108,
+            "range_breakout": 288,
             "opening_range_breakout": 48,
-            "volatility_breakout": 240,
+            "volatility_breakout": 96,
         }
 
         self.assertEqual(set(FAMILIES_BY_NAME), set(expected_counts))
         for family, expected_count in expected_counts.items():
             self.assertEqual(FAMILIES_BY_NAME[family].variant_count, expected_count, family)
 
-    def test_moving_average_uses_fixed_one_minute_bars(self) -> None:
+    def test_active_families_use_fixed_one_minute_bars(self) -> None:
+        for spec in ACTIVE_STANDALONE_FAMILIES:
+            axis_names = {axis.name for axis in spec.axes}
+            self.assertEqual(spec.fixed_parameters["signal_bar_interval"], "1Min", spec.family)
+            self.assertNotIn("timeframe", axis_names, spec.family)
+            self.assertNotIn("signal_timeframe", axis_names, spec.family)
+
+    def test_moving_average_profiles_cover_required_trade_rhythms(self) -> None:
         spec = FAMILIES_BY_NAME["moving_average_crossover"]
         axis_names = {axis.name for axis in spec.axes}
 
-        self.assertEqual(spec.fixed_parameters["signal_bar_interval"], "1Min")
         self.assertNotIn("timeframe", axis_names)
         self.assertIn("ma_window_profile", axis_names)
         window_profiles = dict(
@@ -114,6 +120,9 @@ class StrategySelectionFamilyTests(unittest.TestCase):
                 self.assertEqual(row["3_family_evaluation_order"], spec.evaluation_order)
                 self.assertFalse(any(key.endswith("_group") for key in row))
                 self.assertEqual(row["3_strategy_family"], spec.family)
+                self.assertEqual(row["fixed_parameters"]["signal_bar_interval"], "1Min")
+                self.assertNotIn("timeframe", row["variable_parameters"])
+                self.assertNotIn("signal_timeframe", row["variable_parameters"])
                 self.assertTrue(row["3_strategy_variant"].startswith(f"{spec.family}."))
                 self.assertEqual(
                     row["strategy_spec_hash"],
