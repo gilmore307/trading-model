@@ -30,7 +30,7 @@ Layer 3 must not output:
 
 | Family | Basic idea | Best-fit trading periods | Variant count | Alpaca data support |
 |---|---|---|---:|---|
-| `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | Unified 1-minute bars; sparse MA profiles cover micro through long day-level horizons; market/sector context affects strategy selection outside the family. | 96 | `equity_bar` |
+| `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | Unified 1-minute bars; sparse MA profiles cover micro through long day-level horizons; market/sector context affects strategy selection outside the family. | 864 | `equity_bar` |
 | `donchian_channel_breakout` | Follow price when it breaks a prior high/low channel. | Unified 1-minute bars; channel profiles encode duration. | 144 | `equity_bar` |
 | `macd_trend` | Use MACD line/signal/histogram behavior to detect trend acceleration or reversal. | Unified 1-minute bars; MACD profiles encode duration. | 288 | `equity_bar` |
 | `bollinger_band_reversion` | Fade stretched prices back toward a volatility band center when context supports reversion. | Unified 1-minute bars; band profiles encode duration. | 384 | `equity_bar` |
@@ -76,19 +76,21 @@ Fixed parameters:
 | Parameter | Value |
 |---|---|
 | `signal_bar_interval` | `1Min` |
-| `price_field` | `bar_close` |
 | `exit_rule` | `opposite_cross_or_score_decay` |
-| `cooldown_bars` | `1` |
 
 Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
 | `ma_window_profile` | `micro_3_10`, `scalp_5_20`, `fast_10_30`, `intraday_30_120`, `intraday_90_360`, `intraday_240_960`, `equity_day_390_1950`, `continuous_day_1440_7200` | 8 |
-| `ma_type` | `sma`, `ema` | 2 |
+| `price_field` | `bar_close`, `bar_hlc3` | 2 |
+| `ma_type` | `ema`, `sma` | 2 |
 | `crossover_confirmation_bars` | `1`, `2`, `3` | 3 |
-| `min_slope` | `0`, `0.05` | 2 |
-Variant count: `8 * 2 * 3 * 2 = 96`.
+| `cooldown_bars` | `1`, `3`, `5` | 3 |
+| `min_slope` | `0.01`, `0.03`, `0.05` | 3 |
+Variant count: `8 * 2 * 2 * 3 * 3 * 3 = 864`.
+
+Reviewed cap exception: `moving_average_crossover` intentionally exceeds the normal 500-variant standalone family ceiling so the first MA baseline can test price source, cooldown, and slope sensitivity across the accepted sparse window grid.
 
 Implementation notes:
 
@@ -96,6 +98,7 @@ Implementation notes:
 - Enforce `fast_window_1min_bars < slow_window_1min_bars` through curated `ma_window_profile` values.
 - Fast profiles cover crypto and near-zero-slippage high-volume options; intraday profiles are intentionally limited to three sparse left/middle/right points; the longest initial profile preserves a long day-level right endpoint so later reviews can insert intermediate windows between accepted endpoints.
 - The profile grid is intentionally sparse; add intermediate windows only when evaluation shows stable uncovered performance between adjacent profiles.
+- `bar_hlc3` means `(bar_high + bar_low + bar_close) / 3`.
 - This family should remain a simple crossover baseline, not the final strategy selector by itself.
 - Do not add an embedded trend-filter axis to this family; market and sector context should influence Layer 3 family/variant selection or weighting outside the strategy's own signal rule.
 

@@ -185,7 +185,7 @@ Indicative variant budgets:
 
 | Family | Initial target variants | Hard cap | Main parameter axes |
 |---|---:|---:|---|
-| `moving_average_crossover` | 80-120 | 500 | fixed 1Min signal bars, sparse MA window profiles with three intraday points and a long endpoint, MA type, confirmation bars, minimum slope; no embedded trend filter. |
+| `moving_average_crossover` | 864 | 864 reviewed exception | fixed 1Min signal bars, sparse MA window profiles with three intraday points and a long endpoint, price field, MA type, confirmation bars, cooldown bars, minimum slope; no embedded trend filter. |
 | `donchian_channel_breakout` | 80-180 | 500 | fixed 1Min signal bars, channel window profiles, breakout buffer, ATR stop proxy, confirmation. |
 | `macd_trend` | 120-300 | 500 | fixed 1Min signal bars, MACD profiles, histogram threshold, confirmation, trend filter. |
 | `bollinger_band_reversion` | 120-400 | 500 | fixed 1Min signal bars, band window profiles, band width, entry/exit band, trend filter. |
@@ -196,7 +196,7 @@ Indicative variant budgets:
 | `vwap_reversion` | 80-120 | 500 | fixed 1Min signal bars, session VWAP, deviation threshold, liquidity filter, time-of-day bucket. |
 | `opening_range_breakout` | 30-80 | 500 | fixed 1Min signal bars, opening range minutes, breakout buffer, time stop, volume/liquidity confirmation. |
 
-Families with fewer meaningful axes should produce fewer variants. Families with many axes should use sampled/curated grids rather than full Cartesian expansion.
+Families with fewer meaningful axes should produce fewer variants. Families with many axes should use sampled/curated grids rather than full Cartesian expansion. `moving_average_crossover` is the current reviewed exception because its 864-variant grid is still a simple rule family and is used as the first MA baseline for oracle-gap evaluation.
 
 ## Adjustable parameter surface
 
@@ -204,7 +204,7 @@ The first implementation should expose each family through a reviewed spec objec
 
 | Family | Status | Adjustable parameters |
 |---|---|---|
-| `moving_average_crossover` | Included | fixed `signal_bar_interval=1Min`, `ma_window_profile`, `ma_type`, `price_field`, `crossover_confirmation_bars`, `min_slope`, `exit_rule`, `cooldown_bars`; market/sector context affects strategy selection outside the family rule. |
+| `moving_average_crossover` | Included | fixed `signal_bar_interval=1Min`; variable `ma_window_profile`, `price_field=bar_close/bar_hlc3`, `ma_type=ema/sma`, `crossover_confirmation_bars=1/2/3`, `cooldown_bars=1/3/5`, `min_slope=0.01/0.03/0.05`; fixed `exit_rule`; market/sector context affects strategy selection outside the family rule. |
 | `donchian_channel_breakout` | Included | fixed `signal_bar_interval=1Min`, `channel_window_profile`, `breakout_side`, `breakout_buffer_atr`, `confirmation_bars`, `stop_atr_multiple`, `retest_allowed`, `cooldown_bars`. |
 | `macd_trend` | Included | fixed `signal_bar_interval=1Min`, `macd_profile`, `histogram_threshold`, `zero_line_filter`, `slope_confirmation_bars`, `trend_filter_window`, `exit_on_signal_cross`, `cooldown_bars`. |
 | `bollinger_band_reversion` | Included | fixed `signal_bar_interval=1Min`, `band_window_profile`, `band_stddev`, `entry_band`, `exit_band`, `rsi_filter_period`, `trend_filter_enabled`, `volatility_regime_filter`, `max_hold_minutes`. |

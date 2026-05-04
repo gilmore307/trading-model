@@ -51,7 +51,7 @@ class StrategySelectionFamilyTests(unittest.TestCase):
 
     def test_reviewed_variant_counts_match_catalog(self) -> None:
         expected_counts = {
-            "moving_average_crossover": 96,
+            "moving_average_crossover": 864,
             "donchian_channel_breakout": 144,
             "macd_trend": 288,
             "bollinger_band_reversion": 384,
@@ -95,9 +95,19 @@ class StrategySelectionFamilyTests(unittest.TestCase):
         self.assertNotIn("intraday_120_480", window_profiles)
         self.assertNotIn("equity_swing_780_3900", window_profiles)
         self.assertNotIn("continuous_swing_4320_20160", window_profiles)
+        axes_by_name = {axis.name: axis for axis in spec.axes}
+        self.assertEqual(axes_by_name["price_field"].values, ("bar_close", "bar_hlc3"))
+        self.assertEqual(axes_by_name["ma_type"].values, ("ema", "sma"))
+        self.assertEqual(axes_by_name["crossover_confirmation_bars"].values, (1, 2, 3))
+        self.assertEqual(axes_by_name["cooldown_bars"].values, (1, 3, 5))
+        self.assertEqual(axes_by_name["min_slope"].values, (0.01, 0.03, 0.05))
         first_variant = next(iter(spec.iter_variant_specs()))
         self.assertEqual(first_variant["fixed_parameters"]["signal_bar_interval"], "1Min")
+        self.assertNotIn("price_field", first_variant["fixed_parameters"])
+        self.assertNotIn("cooldown_bars", first_variant["fixed_parameters"])
         self.assertIn("ma_window_profile", first_variant["variable_parameters"])
+        self.assertIn("price_field", first_variant["variable_parameters"])
+        self.assertIn("cooldown_bars", first_variant["variable_parameters"])
         self.assertNotIn("trend_filter_enabled", axis_names)
         self.assertNotIn("trend_filter_enabled", first_variant["variable_parameters"])
         self.assertNotIn("timeframe", first_variant["variable_parameters"])

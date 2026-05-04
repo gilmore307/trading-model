@@ -12,9 +12,7 @@ SPEC = StrategyFamilySpec(
     alpaca_data_support=('equity_bar',),
     fixed_parameters={
         'signal_bar_interval': '1Min',
-        'price_field': 'bar_close',
         'exit_rule': 'opposite_cross_or_score_decay',
-        'cooldown_bars': 1,
     },
     axes=(
         VariantAxis(
@@ -30,15 +28,18 @@ SPEC = StrategyFamilySpec(
                 ('continuous_day_1440_7200', 1440, 7200),
             ),
         ),
-        VariantAxis('ma_type', ('sma', 'ema')),
+        VariantAxis('price_field', ('bar_close', 'bar_hlc3')),
+        VariantAxis('ma_type', ('ema', 'sma')),
         VariantAxis('crossover_confirmation_bars', (1, 2, 3)),
-        VariantAxis('min_slope', (0, 0.05)),
+        VariantAxis('cooldown_bars', (1, 3, 5)),
+        VariantAxis('min_slope', (0.01, 0.03, 0.05)),
     ),
     notes=(
         'All variants use completed 1Min bars; timeframe is not a variant axis.',
         'ma_window_profile values are tuples of (profile_id, fast_window_1min_bars, slow_window_1min_bars).',
         'fast_window_1min_bars < slow_window_1min_bars is enforced through curated ma_window_profile values.',
         'The initial profile grid is intentionally sparse; add intermediate profiles only when evaluation finds stable uncovered performance between adjacent windows.',
+        'The reviewed 864-variant grid is an accepted exception to the normal 500-variant standalone family cap.',
         'Market/sector context should affect strategy selection outside this simple crossover family, not through an embedded trend filter axis.',
     ),
 )
