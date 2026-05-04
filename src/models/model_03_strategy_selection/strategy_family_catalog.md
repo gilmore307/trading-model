@@ -4,6 +4,8 @@ Status: Draft contract for review.
 
 This catalog owns the Layer 3 standalone strategy-family summary for `StrategySelectionModel`. It is intentionally model-local until the family names, parameter gradients, and variant counts are accepted and promoted through `trading-manager`.
 
+Implemented active standalone family specs live under `families/`, with one reviewed strategy family per Python file. The catalog remains the human-readable authority for backlog, modifier, meta, position-management, and option-expression families that are not yet promoted into executable Layer 3 specs.
+
 ## Boundary
 
 Layer 3 evaluates **single anonymous target candidates** and emits strategy setup fit. It does not choose final trade instructions.

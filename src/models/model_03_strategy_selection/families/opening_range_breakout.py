@@ -1,0 +1,20 @@
+"""opening_range_breakout standalone strategy-family spec."""
+from __future__ import annotations
+
+from .common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
+
+SPEC = StrategyFamilySpec(
+    family='opening_range_breakout',
+    group='breakout_volatility',
+    status=ACTIVE_CATALOG,
+    summary='Trade a regular-session break above/below the opening range.',
+    suitable_periods=('1Min',),
+    alpaca_data_support=('equity_bar', 'equity_liquidity_bar'),
+    fixed_parameters={'regular_session_open': '09:30 ET', 'direction_mode': 'both', 'first_trade_delay_minutes': 5, 'time_stop_minutes': 60, 'max_trades_per_session': 1, 'premarket_context_mode': 'context_filter', 'no_trade_after_time': '11:00 ET', 'liquidity_filter': 'strict'},
+    axes=(
+        VariantAxis('opening_range_minutes', (5, 15, 30, 60)),
+        VariantAxis('breakout_buffer_bps', (5, 10, 20)),
+        VariantAxis('volume_confirmation_ratio', (1.0, 1.25, 1.5, 2.0)),
+    ),
+    notes=('Premarket can filter context but must not define the opening range.',),
+)

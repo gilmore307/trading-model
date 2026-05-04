@@ -1,0 +1,22 @@
+"""vwap_reversion standalone strategy-family spec."""
+from __future__ import annotations
+
+from .common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
+
+SPEC = StrategyFamilySpec(
+    family='vwap_reversion',
+    group='mean_reversion',
+    status=ACTIVE_CATALOG,
+    summary='Fade intraday price deviations back toward regular-session VWAP.',
+    suitable_periods=('1Min', '5Min'),
+    alpaca_data_support=('equity_bar', 'equity_liquidity_bar'),
+    fixed_parameters={'vwap_scope': 'regular_session_vwap', 'premarket_context_mode': 'context_filter', 'earliest_entry_time': '10:00 ET', 'no_trade_after_time': '15:30 ET', 'minimum_dollar_volume': 'target_relative_liquidity_gate', 'time_of_day_bucket': 'derived_label_not_variant_axis'},
+    axes=(
+        VariantAxis('signal_timeframe', ('1Min', '5Min')),
+        VariantAxis('deviation_bps', (30, 50, 75, 100)),
+        VariantAxis('entry_zscore', (1.0, 1.5, 2.0)),
+        VariantAxis('exit_zscore', (0.25, 0.5, 0.75)),
+        VariantAxis('maximum_spread_bps', (5, 10, 15)),
+    ),
+    notes=('Option chain and option liquidity checks belong to OptionExpressionModel.',),
+)
