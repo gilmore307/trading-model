@@ -5,7 +5,6 @@ from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='rsi_reversion',
-    group='mean_reversion',
     evaluation_order=5,
     status=ACTIVE_CATALOG,
     summary='Fade overbought/oversold momentum extremes, optionally requiring divergence or higher-timeframe confirmation.',

@@ -5,7 +5,6 @@ from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='bollinger_band_reversion',
-    group='mean_reversion',
     evaluation_order=4,
     status=ACTIVE_CATALOG,
     summary='Fade stretched prices back toward a volatility band center when context supports reversion.',

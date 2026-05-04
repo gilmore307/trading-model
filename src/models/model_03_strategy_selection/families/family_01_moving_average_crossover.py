@@ -5,7 +5,6 @@ from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='moving_average_crossover',
-    group='trend_following',
     evaluation_order=1,
     status=ACTIVE_CATALOG,
     summary='Follow trend changes when a faster moving average crosses a slower moving average.',

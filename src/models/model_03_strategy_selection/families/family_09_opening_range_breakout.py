@@ -5,7 +5,6 @@ from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='opening_range_breakout',
-    group='breakout_volatility',
     evaluation_order=9,
     status=ACTIVE_CATALOG,
     summary='Trade a regular-session break above/below the opening range.',

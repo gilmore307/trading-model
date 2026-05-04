@@ -10,10 +10,9 @@ Files are numbered in first evaluation order:
 Each strategy owns one Python file with:
 
 - reviewed family/status metadata and explicit `3_family_evaluation_order`;
-- `3_strategy_group` as descriptive taxonomy only, not a pruning or promotion unit;
 - fixed parameters that do not multiply variants;
 - variable axes that deterministically expand into `3_strategy_variant` specs;
-- stable `3_strategy_variant` and `strategy_spec_hash` generation from family plus fixed/variable parameters; taxonomy and evaluation order do not affect the variant hash.
+- stable `3_strategy_variant` and `strategy_spec_hash` generation from family plus fixed/variable parameters; evaluation order does not affect the variant hash.
 
 Boundary:
 

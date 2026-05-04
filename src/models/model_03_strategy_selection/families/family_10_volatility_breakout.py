@@ -5,7 +5,6 @@ from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='volatility_breakout',
-    group='breakout_volatility',
     evaluation_order=10,
     status=ACTIVE_CATALOG,
     summary='Trade when volatility expands enough to suggest a new directional move.',

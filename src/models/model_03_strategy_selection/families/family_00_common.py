@@ -38,7 +38,6 @@ class StrategyFamilySpec:
     """Reviewed standalone Layer 3 strategy-family implementation contract."""
 
     family: str
-    group: str
     evaluation_order: int
     status: str
     summary: str
@@ -75,7 +74,6 @@ class StrategyFamilySpec:
             spec_hash = stable_spec_hash(hash_payload)
             yield {
                 "3_family_evaluation_order": self.evaluation_order,
-                "3_strategy_group": self.group,
                 "3_strategy_family": self.family,
                 "implementation_status": self.status,
                 "fixed_parameters": fixed_parameters,
@@ -97,7 +95,6 @@ def family_payload(spec: StrategyFamilySpec) -> dict[str, Any]:
 
     return {
         "3_family_evaluation_order": spec.evaluation_order,
-        "3_strategy_group": spec.group,
         "3_strategy_family": spec.family,
         "implementation_status": spec.status,
         "summary": spec.summary,

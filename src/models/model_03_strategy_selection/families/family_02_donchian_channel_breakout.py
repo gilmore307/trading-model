@@ -5,7 +5,6 @@ from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='donchian_channel_breakout',
-    group='trend_following',
     evaluation_order=2,
     status=ACTIVE_CATALOG,
     summary='Follow price when it breaks a prior high/low channel.',

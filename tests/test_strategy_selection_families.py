@@ -90,7 +90,7 @@ class StrategySelectionFamilyTests(unittest.TestCase):
 
             for row in first_run[:5]:
                 self.assertEqual(row["3_family_evaluation_order"], spec.evaluation_order)
-                self.assertEqual(row["3_strategy_group"], spec.group)
+                self.assertFalse(any(key.endswith("_group") for key in row))
                 self.assertEqual(row["3_strategy_family"], spec.family)
                 self.assertTrue(row["3_strategy_variant"].startswith(f"{spec.family}."))
                 self.assertEqual(

@@ -40,17 +40,16 @@ trading_data.source_03_strategy_selection  # target-local bars, quotes, liquidit
 
 Because Layer 2 is not yet production-promoted, Layer 3 development may use reviewed fixture/dev evidence and explicit evaluation snapshots, but production hard-dependence on `model_02_sector_context` must wait for accepted Layer 2 promotion or an approved fallback contract.
 
-## Strategy group, family, and variant
+## Strategy family and variant
 
-The user-facing strategy list should not be flattened into one level. Layer 3 needs three levels:
+Layer 3 should not carry a separate strategy-group level. Families are the unit we test, eliminate, and promote; variants are parameter-neighborhoods inside one family.
 
 | Level | Field | Meaning | Example |
 |---|---|---|---|
-| Group | `3_strategy_group` | Broad behavioral class used for reporting and coverage control. | `trend_following`, `mean_reversion` |
 | Family | `3_strategy_family` | Concrete reusable strategy method. This is the unit with its own parameter design space. | `moving_average_crossover`, `rsi_reversion` |
 | Variant | `3_strategy_variant` | One distinguishable parameter-neighborhood generated from a family spec. | `rsi_reversion__tf_1d__period_14__buy_30__sell_70` |
 
-A strategy family is therefore closer to one item in the source strategy list, not merely the broad section header. A strategy group is the broad section header.
+A strategy family is therefore one item in the source strategy list and the standalone pruning/promotion unit.
 
 ### `strategy_family`
 
@@ -78,37 +77,37 @@ Rules:
 - variants should be generated from a reviewed parameter grid with constraints, not from an unbounded Cartesian product;
 - variants should be evaluable against baselines and split-stability tests.
 
-## Source strategy taxonomy
+## Source strategy mapping
 
-The following taxonomy maps the supplied strategy list into Layer 3 groups/families. Status indicates whether the family is suitable for the first implementation wave.
+The following mapping turns the supplied strategy list into Layer 3 families. Status indicates whether the family is suitable for the first implementation wave.
 
-| Group | Family | Source item | Status | Notes |
-|---|---|---:|---|---|
-| `trend_following` | `moving_average_crossover` | 1 | Included | Bar-based, simple, useful baseline. |
-| `trend_following` | `donchian_channel_breakout` | 2 | Included | Bar-based breakout/trend bridge. |
-| `trend_following` | `macd_trend` | 3 | Included | Bar-based momentum/trend confirmation. |
-| `trend_following` | `cross_sectional_momentum` | 4 | Moved-to-position-management | Cross-sectional ranking/rebalancing belongs with portfolio/position selection unless later narrowed to a pure candidate feature. |
-| `mean_reversion` | `bollinger_band_reversion` | 5 | Included | Bar-based; must carry trend filter attributes. |
-| `mean_reversion` | `rsi_reversion` | 6 | Included | Bar-based; good threshold/period family. |
-| `mean_reversion` | `bias_reversion` | 7 | Included | Bar-based distance-from-average family. |
-| `mean_reversion` | `vwap_reversion` | 8 | Included-if-Alpaca-intraday | Requires intraday/VWAP and preferably quote/trade liquidity aggregates. |
-| `breakout_volatility` | `range_breakout` | 9 | Included | Bar-based, volume confirmation optional. |
-| `breakout_volatility` | `opening_range_breakout` | 10 | Included-if-Alpaca-intraday | Requires 1Min bars, session calendar, and opening-range evidence. |
-| `breakout_volatility` | `volatility_breakout` | 11 | Included | ATR/HV expansion plus direction filter. |
-| `relative_value` | `cross_exchange_arbitrage` | 12 | Removed | Explicitly excluded from this strategy-family catalog. |
-| `relative_value` | `cash_futures_basis_arbitrage` | 13 | Removed | Explicitly excluded from this strategy-family catalog. |
-| `relative_value` | `funding_rate_arbitrage` | 14 | Removed | Explicitly excluded from this strategy-family catalog. |
-| `relative_value` | `pairs_statistical_arbitrage` | 15 | Moved-to-position-management | Pair construction, hedge ratio, two-leg sizing, and spread risk belong with position/portfolio management. |
-| `market_making` | `grid_trading` | 16 | Removed | Explicitly excluded from this strategy-family catalog. |
-| `market_making` | `martingale_anti_martingale` | 17 | Removed | Explicitly excluded; martingale must not be implemented as a standalone family. |
-| `market_making` | `passive_market_making` | 18 | Removed | Explicitly excluded from this strategy-family catalog. |
-| `event_driven` | `scheduled_event_reaction` | 19 | Removed | Explicitly excluded from this Layer 3 strategy-family catalog. |
-| `event_driven` | `onchain_sentiment_reaction` | 20 | Removed | Explicitly excluded from this Layer 3 strategy-family catalog. |
-| `composite_filter` | `trend_volatility_filter` | 21 | Modifier | Keep as a reusable filter/modifier applied to trend families. |
-| `composite_filter` | `mean_reversion_trend_filter` | 22 | Modifier | Keep as a reusable filter/modifier applied to reversion families. |
-| `composite_filter` | `multi_factor_scoring` | 23 | Meta-family | Keep; useful as ensemble/scoring layer after deterministic family evidence exists. |
-| `ml_enhanced` | `supervised_direction_classifier` | 24 | Deferred-final-goal | Keep as final target direction; defer until deterministic family baselines and labels are mature. |
-| `ml_enhanced` | `reinforcement_learning_policy` | 25 | Deferred-final-goal | Keep as final target direction; defer until simulator/reward/environment validation is credible. |
+| Family | Source item | Status | Notes |
+|---|---:|---|---|
+| `moving_average_crossover` | 1 | Included | Bar-based, simple, useful baseline. |
+| `donchian_channel_breakout` | 2 | Included | Bar-based breakout/trend bridge. |
+| `macd_trend` | 3 | Included | Bar-based momentum/trend confirmation. |
+| `cross_sectional_momentum` | 4 | Moved-to-position-management | Cross-sectional ranking/rebalancing belongs with portfolio/position selection unless later narrowed to a pure candidate feature. |
+| `bollinger_band_reversion` | 5 | Included | Bar-based; must carry trend filter attributes. |
+| `rsi_reversion` | 6 | Included | Bar-based; good threshold/period family. |
+| `bias_reversion` | 7 | Included | Bar-based distance-from-average family. |
+| `vwap_reversion` | 8 | Included-if-Alpaca-intraday | Requires intraday/VWAP and preferably quote/trade liquidity aggregates. |
+| `range_breakout` | 9 | Included | Bar-based, volume confirmation optional. |
+| `opening_range_breakout` | 10 | Included-if-Alpaca-intraday | Requires 1Min bars, session calendar, and opening-range evidence. |
+| `volatility_breakout` | 11 | Included | ATR/HV expansion plus direction filter. |
+| `cross_exchange_arbitrage` | 12 | Removed | Explicitly excluded from this strategy-family catalog. |
+| `cash_futures_basis_arbitrage` | 13 | Removed | Explicitly excluded from this strategy-family catalog. |
+| `funding_rate_arbitrage` | 14 | Removed | Explicitly excluded from this strategy-family catalog. |
+| `pairs_statistical_arbitrage` | 15 | Moved-to-position-management | Pair construction, hedge ratio, two-leg sizing, and spread risk belong with position/portfolio management. |
+| `grid_trading` | 16 | Removed | Explicitly excluded from this strategy-family catalog. |
+| `martingale_anti_martingale` | 17 | Removed | Explicitly excluded; martingale must not be implemented as a standalone family. |
+| `passive_market_making` | 18 | Removed | Explicitly excluded from this strategy-family catalog. |
+| `scheduled_event_reaction` | 19 | Removed | Explicitly excluded from this Layer 3 strategy-family catalog. |
+| `onchain_sentiment_reaction` | 20 | Removed | Explicitly excluded from this Layer 3 strategy-family catalog. |
+| `trend_volatility_filter` | 21 | Modifier | Keep as a reusable filter/modifier applied to trend families. |
+| `mean_reversion_trend_filter` | 22 | Modifier | Keep as a reusable filter/modifier applied to reversion families. |
+| `multi_factor_scoring` | 23 | Meta-family | Keep; useful as ensemble/scoring layer after deterministic family evidence exists. |
+| `supervised_direction_classifier` | 24 | Deferred-final-goal | Keep as final target direction; defer until deterministic family baselines and labels are mature. |
+| `reinforcement_learning_policy` | 25 | Deferred-final-goal | Keep as final target direction; defer until simulator/reward/environment validation is credible. |
 
 ## Included strategy-family catalog
 
@@ -340,7 +339,6 @@ Family and variant are not enough by themselves. Layer 3 should also emit review
 
 | Field | Values | Role |
 |---|---|---|
-| `3_strategy_group` | reviewed group vocabulary | Broad class for coverage/reporting; not enough by itself to define a strategy. |
 | `3_strategy_family` | reviewed family vocabulary | Concrete strategy method with its own parameter design space. |
 | `3_strategy_variant` | generated stable variant id/name | Distinguishable parameter-neighborhood inside one family. |
 | `3_direction_bias` | `bullish`, `bearish`, `two_sided`, `neutral` | Direction implied by current candidate/setup evidence. |
@@ -374,7 +372,6 @@ model_version
 candidate_builder_version
 market_context_state_ref
 sector_context_state_ref
-3_strategy_group
 3_strategy_family
 3_strategy_variant
 3_direction_bias

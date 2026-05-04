@@ -5,7 +5,6 @@ from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='bias_reversion',
-    group='mean_reversion',
     evaluation_order=6,
     status=ACTIVE_CATALOG,
     summary='Fade large deviations from a moving average or z-score baseline.',

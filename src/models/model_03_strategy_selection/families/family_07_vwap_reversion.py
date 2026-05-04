@@ -5,7 +5,6 @@ from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='vwap_reversion',
-    group='mean_reversion',
     evaluation_order=7,
     status=ACTIVE_CATALOG,
     summary='Fade intraday price deviations back toward regular-session VWAP.',

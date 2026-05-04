@@ -5,7 +5,6 @@ from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='range_breakout',
-    group='breakout_volatility',
     evaluation_order=8,
     status=ACTIVE_CATALOG,
     summary='Trade a confirmed escape from a recent consolidation range.',

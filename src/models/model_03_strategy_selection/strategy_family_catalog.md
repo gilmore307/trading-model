@@ -6,7 +6,7 @@ This catalog owns the Layer 3 standalone strategy-family summary for `StrategySe
 
 Implemented active standalone family specs live under `families/`, with one reviewed strategy family per numbered Python file. `family_00_common.py` owns shared primitives; `family_01_*` through `family_10_*` follow first standalone evaluation order. The catalog remains the human-readable authority for backlog, modifier, meta, position-management, and option-expression families that are not yet promoted into executable Layer 3 specs.
 
-`3_strategy_group` is descriptive taxonomy for review slices, diagnostics, and charts. It is not the pruning or promotion unit: standalone evaluation, elimination, and promotion decisions are made at `3_strategy_family` granularity.
+Standalone evaluation, elimination, and promotion decisions are made at `3_strategy_family` granularity. Layer 3 intentionally does not carry a separate strategy-group field.
 
 ## Boundary
 
@@ -14,7 +14,7 @@ Layer 3 evaluates **single anonymous target candidates** and emits strategy setu
 
 Layer 3 may output:
 
-- strategy group/family/variant;
+- strategy family/variant;
 - direction and horizon preference;
 - setup-fit score and rank;
 - eligibility state and reason codes;
@@ -28,18 +28,18 @@ Layer 3 must not output:
 
 ## Catalog summary
 
-| Family | Group | Basic idea | Best-fit trading periods | Variant count | Alpaca data support |
-|---|---|---|---|---:|---|
-| `moving_average_crossover` | `trend_following` | Follow trend changes when a faster moving average crosses a slower one. | 30-minute, hourly, daily; weekly can be derived from daily bars for slower research. | 288 | `equity_bar` |
-| `donchian_channel_breakout` | `trend_following` | Follow price when it breaks a prior high/low channel. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
-| `macd_trend` | `trend_following` | Use MACD line/signal/histogram behavior to detect trend acceleration or reversal. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
-| `bollinger_band_reversion` | `mean_reversion` | Fade stretched prices back toward a volatility band center when context supports reversion. | 15-minute, 30-minute, hourly, daily. | 384 | `equity_bar` |
-| `rsi_reversion` | `mean_reversion` | Fade overbought/oversold momentum extremes, optionally requiring divergence or higher-timeframe confirmation. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
-| `bias_reversion` | `mean_reversion` | Fade large deviations from a moving average or z-score baseline. | 15-minute, 30-minute, hourly, daily. | 384 | `equity_bar` |
-| `vwap_reversion` | `mean_reversion` | Fade intraday price deviations back toward regular-session VWAP. | Minute-level / intraday only; default signal grains are 1-minute and 5-minute. | 216 | `equity_bar`; preferred `equity_liquidity_bar` |
-| `range_breakout` | `breakout_volatility` | Trade a confirmed escape from a recent consolidation range. | 15-minute, 30-minute, hourly, daily. | 432 | `equity_bar`; optional `equity_liquidity_bar` |
-| `opening_range_breakout` | `breakout_volatility` | Trade a regular-session break above/below the opening range. | Minute-level / morning intraday only; 1-minute bars required. | 48 | `equity_bar`; optional `equity_liquidity_bar` |
-| `volatility_breakout` | `breakout_volatility` | Trade when volatility expands enough to suggest a new directional move. | 15-minute, 30-minute, hourly, daily. | 240 | `equity_bar`; optional `equity_liquidity_bar` |
+| Family | Basic idea | Best-fit trading periods | Variant count | Alpaca data support |
+|---|---|---|---:|---|
+| `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | 30-minute, hourly, daily; weekly can be derived from daily bars for slower research. | 288 | `equity_bar` |
+| `donchian_channel_breakout` | Follow price when it breaks a prior high/low channel. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
+| `macd_trend` | Use MACD line/signal/histogram behavior to detect trend acceleration or reversal. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
+| `bollinger_band_reversion` | Fade stretched prices back toward a volatility band center when context supports reversion. | 15-minute, 30-minute, hourly, daily. | 384 | `equity_bar` |
+| `rsi_reversion` | Fade overbought/oversold momentum extremes, optionally requiring divergence or higher-timeframe confirmation. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
+| `bias_reversion` | Fade large deviations from a moving average or z-score baseline. | 15-minute, 30-minute, hourly, daily. | 384 | `equity_bar` |
+| `vwap_reversion` | Fade intraday price deviations back toward regular-session VWAP. | Minute-level / intraday only; default signal grains are 1-minute and 5-minute. | 216 | `equity_bar`; preferred `equity_liquidity_bar` |
+| `range_breakout` | Trade a confirmed escape from a recent consolidation range. | 15-minute, 30-minute, hourly, daily. | 432 | `equity_bar`; optional `equity_liquidity_bar` |
+| `opening_range_breakout` | Trade a regular-session break above/below the opening range. | Minute-level / morning intraday only; 1-minute bars required. | 48 | `equity_bar`; optional `equity_liquidity_bar` |
+| `volatility_breakout` | Trade when volatility expands enough to suggest a new directional move. | 15-minute, 30-minute, hourly, daily. | 240 | `equity_bar`; optional `equity_liquidity_bar` |
 
 Moved out of Layer 3 standalone implementation:
 
