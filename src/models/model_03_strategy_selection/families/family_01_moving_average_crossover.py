@@ -37,11 +37,11 @@ SPEC = StrategyFamilySpec(
         VariantAxis('ma_type', ('sma', 'ema')),
         VariantAxis('crossover_confirmation_bars', (1, 2, 3)),
         VariantAxis('min_slope', (0, 0.05)),
-        VariantAxis('trend_filter_enabled', (False, True)),
     ),
     notes=(
         'All variants use completed 1Min bars; timeframe is not a variant axis.',
         'ma_window_profile values are tuples of (profile_id, fast_window_1min_bars, slow_window_1min_bars).',
         'fast_window_1min_bars < slow_window_1min_bars is enforced through curated ma_window_profile values.',
+        'Market/sector context should affect strategy selection outside this simple crossover family, not through an embedded trend filter axis.',
     ),
 )

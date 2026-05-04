@@ -30,7 +30,7 @@ Layer 3 must not output:
 
 | Family | Basic idea | Best-fit trading periods | Variant count | Alpaca data support |
 |---|---|---|---:|---|
-| `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | Unified 1-minute bars; MA profiles cover micro, intraday, day, and swing horizons. | 288 | `equity_bar` |
+| `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | Unified 1-minute bars; MA profiles cover micro, intraday, day, and swing horizons; market/sector context affects strategy selection outside the family. | 144 | `equity_bar` |
 | `donchian_channel_breakout` | Follow price when it breaks a prior high/low channel. | Unified 1-minute bars; channel profiles encode duration. | 144 | `equity_bar` |
 | `macd_trend` | Use MACD line/signal/histogram behavior to detect trend acceleration or reversal. | Unified 1-minute bars; MACD profiles encode duration. | 288 | `equity_bar` |
 | `bollinger_band_reversion` | Fade stretched prices back toward a volatility band center when context supports reversion. | Unified 1-minute bars; band profiles encode duration. | 384 | `equity_bar` |
@@ -88,16 +88,15 @@ Variable gradients:
 | `ma_type` | `sma`, `ema` | 2 |
 | `crossover_confirmation_bars` | `1`, `2`, `3` | 3 |
 | `min_slope` | `0`, `0.05` | 2 |
-| `trend_filter_enabled` | `false`, `true` | 2 |
-
-Variant count: `12 * 2 * 3 * 2 * 2 = 288`.
+Variant count: `12 * 2 * 3 * 2 = 144`.
 
 Implementation notes:
 
 - Each `ma_window_profile` value expands to `(profile_id, fast_window_1min_bars, slow_window_1min_bars)`.
 - Enforce `fast_window_1min_bars < slow_window_1min_bars` through curated `ma_window_profile` values.
 - Fast profiles cover crypto and near-zero-slippage high-volume options; intraday profiles cover stock day-trading; day/swing profiles reduce churn for instruments with meaningful slippage.
-- This family should be a trend baseline, not the final strategy selector by itself.
+- This family should remain a simple crossover baseline, not the final strategy selector by itself.
+- Do not add an embedded trend-filter axis to this family; market and sector context should influence Layer 3 family/variant selection or weighting outside the strategy's own signal rule.
 
 ### `donchian_channel_breakout`
 

@@ -185,7 +185,7 @@ Indicative variant budgets:
 
 | Family | Initial target variants | Hard cap | Main parameter axes |
 |---|---:|---:|---|
-| `moving_average_crossover` | 120-300 | 500 | fixed 1Min signal bars, MA window profiles, MA type, confirmation bars, trend filter. |
+| `moving_average_crossover` | 120-180 | 500 | fixed 1Min signal bars, MA window profiles, MA type, confirmation bars, minimum slope; no embedded trend filter. |
 | `donchian_channel_breakout` | 80-180 | 500 | fixed 1Min signal bars, channel window profiles, breakout buffer, ATR stop proxy, confirmation. |
 | `macd_trend` | 120-300 | 500 | fixed 1Min signal bars, MACD profiles, histogram threshold, confirmation, trend filter. |
 | `bollinger_band_reversion` | 120-400 | 500 | fixed 1Min signal bars, band window profiles, band width, entry/exit band, trend filter. |
@@ -204,7 +204,7 @@ The first implementation should expose each family through a reviewed spec objec
 
 | Family | Status | Adjustable parameters |
 |---|---|---|
-| `moving_average_crossover` | Included | fixed `signal_bar_interval=1Min`, `ma_window_profile`, `ma_type`, `price_field`, `crossover_confirmation_bars`, `min_slope`, `trend_filter_enabled`, `trend_filter_window`, `exit_rule`, `cooldown_bars`. |
+| `moving_average_crossover` | Included | fixed `signal_bar_interval=1Min`, `ma_window_profile`, `ma_type`, `price_field`, `crossover_confirmation_bars`, `min_slope`, `exit_rule`, `cooldown_bars`; market/sector context affects strategy selection outside the family rule. |
 | `donchian_channel_breakout` | Included | fixed `signal_bar_interval=1Min`, `channel_window_profile`, `breakout_side`, `breakout_buffer_atr`, `confirmation_bars`, `stop_atr_multiple`, `retest_allowed`, `cooldown_bars`. |
 | `macd_trend` | Included | fixed `signal_bar_interval=1Min`, `macd_profile`, `histogram_threshold`, `zero_line_filter`, `slope_confirmation_bars`, `trend_filter_window`, `exit_on_signal_cross`, `cooldown_bars`. |
 | `bollinger_band_reversion` | Included | fixed `signal_bar_interval=1Min`, `band_window_profile`, `band_stddev`, `entry_band`, `exit_band`, `rsi_filter_period`, `trend_filter_enabled`, `volatility_regime_filter`, `max_hold_minutes`. |

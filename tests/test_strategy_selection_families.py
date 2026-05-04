@@ -51,7 +51,7 @@ class StrategySelectionFamilyTests(unittest.TestCase):
 
     def test_reviewed_variant_counts_match_catalog(self) -> None:
         expected_counts = {
-            "moving_average_crossover": 288,
+            "moving_average_crossover": 144,
             "donchian_channel_breakout": 144,
             "macd_trend": 288,
             "bollinger_band_reversion": 384,
@@ -93,6 +93,8 @@ class StrategySelectionFamilyTests(unittest.TestCase):
         first_variant = next(iter(spec.iter_variant_specs()))
         self.assertEqual(first_variant["fixed_parameters"]["signal_bar_interval"], "1Min")
         self.assertIn("ma_window_profile", first_variant["variable_parameters"])
+        self.assertNotIn("trend_filter_enabled", axis_names)
+        self.assertNotIn("trend_filter_enabled", first_variant["variable_parameters"])
         self.assertNotIn("timeframe", first_variant["variable_parameters"])
 
     def test_variant_generation_is_deterministic_and_layer3_bounded(self) -> None:
