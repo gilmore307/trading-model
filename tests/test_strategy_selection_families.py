@@ -52,7 +52,7 @@ class StrategySelectionFamilyTests(unittest.TestCase):
     def test_reviewed_variant_counts_match_catalog(self) -> None:
         expected_counts = {
             "moving_average_crossover": 864,
-            "donchian_channel_breakout": 144,
+            "donchian_channel_breakout": 648,
             "macd_trend": 288,
             "bollinger_band_reversion": 384,
             "rsi_reversion": 192,
@@ -111,6 +111,20 @@ class StrategySelectionFamilyTests(unittest.TestCase):
         self.assertNotIn("trend_filter_enabled", axis_names)
         self.assertNotIn("trend_filter_enabled", first_variant["variable_parameters"])
         self.assertNotIn("timeframe", first_variant["variable_parameters"])
+
+    def test_donchian_gradients_match_breakout_contract(self) -> None:
+        spec = FAMILIES_BY_NAME["donchian_channel_breakout"]
+        axes_by_name = {axis.name: axis for axis in spec.axes}
+
+        self.assertEqual(axes_by_name["confirmation_bars"].values, (1, 2, 3))
+        self.assertEqual(axes_by_name["breakout_buffer_atr"].values, (0, 0.25, 0.5))
+        self.assertEqual(axes_by_name["min_atr_pct"].values, (0.004, 0.008, 0.012))
+        self.assertEqual(axes_by_name["cooldown_bars"].values, (1, 3, 5))
+        self.assertNotIn("cooldown_bars", spec.fixed_parameters)
+        self.assertNotIn("stop_atr_multiple", axes_by_name)
+        first_variant = next(iter(spec.iter_variant_specs()))
+        self.assertIn("cooldown_bars", first_variant["variable_parameters"])
+        self.assertIn("min_atr_pct", first_variant["variable_parameters"])
 
     def test_variant_generation_is_deterministic_and_layer3_bounded(self) -> None:
         forbidden_payload_tokens = {

@@ -15,7 +15,6 @@ SPEC = StrategyFamilySpec(
         'signal_bar_interval': '1Min',
         'breakout_side': 'both',
         'retest_allowed': False,
-        'cooldown_bars': 1,
     },
     axes=(
         VariantAxis(
@@ -31,13 +30,15 @@ SPEC = StrategyFamilySpec(
                 ('continuous_day_1440_720_atr720', 1440, 720, 720),
             ),
         ),
+        VariantAxis('confirmation_bars', (1, 2, 3)),
         VariantAxis('breakout_buffer_atr', (0, 0.25, 0.5)),
-        VariantAxis('confirmation_bars', (1, 2)),
-        VariantAxis('stop_atr_multiple', (1.5, 2.5, 3.5)),
+        VariantAxis('min_atr_pct', (0.004, 0.008, 0.012)),
+        VariantAxis('cooldown_bars', (1, 3, 5)),
     ),
     notes=(
         'All variants use completed 1Min bars; timeframe is not a variant axis.',
         'channel_window_profile values are tuples of (profile_id, entry_channel_1min_bars, exit_channel_1min_bars, atr_window_1min_bars).',
-        'stop_atr_multiple is setup/invalidation context only; execution stops are downstream.',
+        'A confirmed upward breakout is close > upper channel plus ATR buffer; a confirmed downward breakout is close < lower channel minus ATR buffer.',
+        'min_atr_pct is computed as ATR divided by close and gates breakouts in low-realized-volatility contexts.',
     ),
 )

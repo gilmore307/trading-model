@@ -250,7 +250,7 @@ The first implementation should expose each family through a reviewed spec objec
 | Family | Status | Adjustable parameters |
 |---|---|---|
 | `moving_average_crossover` | Included | fixed `signal_bar_interval=1Min`; variable `ma_window_profile`, `price_field=bar_close/bar_hlc3`, `ma_type=ema/sma`, `crossover_confirmation_bars=1/2/3`, `cooldown_bars=1/3/5`, `min_slope=0.01/0.03/0.05`; fixed `exit_rule`; market/sector context affects strategy selection outside the family rule. |
-| `donchian_channel_breakout` | Included | fixed `signal_bar_interval=1Min`, `channel_window_profile`, `breakout_side`, `breakout_buffer_atr`, `confirmation_bars`, `stop_atr_multiple`, `retest_allowed`, `cooldown_bars`. |
+| `donchian_channel_breakout` | Included | fixed `signal_bar_interval=1Min`, `breakout_side=both`, `retest_allowed=false`; variable `channel_window_profile`, `confirmation_bars=1/2/3`, `breakout_buffer_atr=0/0.25/0.5`, `min_atr_pct=0.004/0.008/0.012`, `cooldown_bars=1/3/5`. |
 | `macd_trend` | Included | fixed `signal_bar_interval=1Min`, `macd_profile`, `histogram_threshold`, `zero_line_filter`, `slope_confirmation_bars`, `trend_filter_window`, `exit_on_signal_cross`, `cooldown_bars`. |
 | `bollinger_band_reversion` | Included | fixed `signal_bar_interval=1Min`, `band_window_profile`, `band_stddev`, `entry_band`, `exit_band`, `rsi_filter_period`, `trend_filter_enabled`, `volatility_regime_filter`, `max_hold_minutes`. |
 | `rsi_reversion` | Included | fixed `signal_bar_interval=1Min`, `rsi_period_profile`, `oversold_threshold`, `overbought_threshold`, `exit_midline`, `divergence_required`, `multi_duration_confirm`, `max_hold_minutes`, `cooldown_bars`. |
