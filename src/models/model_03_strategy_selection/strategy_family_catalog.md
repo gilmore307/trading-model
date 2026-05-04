@@ -31,8 +31,8 @@ Layer 3 must not output:
 | Family | Basic idea | Best-fit trading periods | Variant count | Alpaca data support |
 |---|---|---|---:|---|
 | `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | Unified 1-minute bars; sparse MA profiles cover micro through long day-level horizons; market/sector context affects strategy selection outside the family. | 864 | `equity_bar` |
-| `donchian_channel_breakout` | Follow price when it breaks a prior high/low channel. | Unified 1-minute bars; channel profiles encode duration. | 144 | `equity_bar` |
-| `macd_trend` | Use MACD line/signal/histogram behavior to detect trend acceleration or reversal. | Unified 1-minute bars; MACD profiles encode duration. | 288 | `equity_bar` |
+| `donchian_channel_breakout` | Follow price when it breaks a prior high/low channel. | Unified 1-minute bars; channel profiles encode duration. | 648 | `equity_bar` |
+| `macd_trend` | Use MACD line/signal/histogram behavior to detect trend acceleration or reversal. | Unified 1-minute bars; MACD profiles encode duration. | 192 | `equity_bar` |
 | `bollinger_band_reversion` | Fade stretched prices back toward a volatility band center when context supports reversion. | Unified 1-minute bars; band profiles encode duration. | 384 | `equity_bar` |
 | `rsi_reversion` | Fade overbought/oversold momentum extremes, optionally requiring divergence or higher-duration confirmation. | Unified 1-minute bars; RSI profiles encode duration. | 192 | `equity_bar` |
 | `bias_reversion` | Fade large deviations from a moving average or z-score baseline. | Unified 1-minute bars; MA profiles encode duration. | 384 | `equity_bar` |
@@ -164,13 +164,13 @@ Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `macd_profile` | `micro_3_10_3`, `scalp_5_20_5`, `fast_8_21_5`, `intraday_12_26_9`, `intraday_24_52_18`, `intraday_60_180_45`, `intraday_120_360_90`, `intraday_240_720_180`, `equity_day_390_1014_351`, `equity_swing_1950_5070_1755`, `continuous_day_1440_3744_1296`, `continuous_swing_7200_18720_6480` | 12 |
+| `macd_profile` | `micro_3_10_3`, `scalp_5_20_5`, `fast_8_21_5`, `intraday_12_26_9`, `intraday_60_180_45`, `intraday_240_720_180`, `equity_day_390_1014_351`, `continuous_day_1440_3744_1296` | 8 |
 | `histogram_threshold` | `0`, `0.25_atr_normalized` | 2 |
 | `zero_line_filter` | `false`, `true` | 2 |
 | `slope_confirmation_bars` | `1`, `2`, `3` | 3 |
 | `exit_on_signal_cross` | `false`, `true` | 2 |
 
-Variant count: `12 * 2 * 2 * 3 * 2 = 288`.
+Variant count: `8 * 2 * 2 * 3 * 2 = 192`.
 
 Implementation notes:
 

@@ -53,7 +53,7 @@ class StrategySelectionFamilyTests(unittest.TestCase):
         expected_counts = {
             "moving_average_crossover": 864,
             "donchian_channel_breakout": 648,
-            "macd_trend": 288,
+            "macd_trend": 192,
             "bollinger_band_reversion": 384,
             "rsi_reversion": 192,
             "bias_reversion": 384,
@@ -125,6 +125,29 @@ class StrategySelectionFamilyTests(unittest.TestCase):
         first_variant = next(iter(spec.iter_variant_specs()))
         self.assertIn("cooldown_bars", first_variant["variable_parameters"])
         self.assertIn("min_atr_pct", first_variant["variable_parameters"])
+
+    def test_macd_profiles_use_reviewed_eight_step_grid(self) -> None:
+        spec = FAMILIES_BY_NAME["macd_trend"]
+        axes_by_name = {axis.name: axis for axis in spec.axes}
+        profiles = tuple(value[0] for value in axes_by_name["macd_profile"].values)
+
+        self.assertEqual(
+            profiles,
+            (
+                "micro_3_10_3",
+                "scalp_5_20_5",
+                "fast_8_21_5",
+                "intraday_12_26_9",
+                "intraday_60_180_45",
+                "intraday_240_720_180",
+                "equity_day_390_1014_351",
+                "continuous_day_1440_3744_1296",
+            ),
+        )
+        self.assertNotIn("intraday_24_52_18", profiles)
+        self.assertNotIn("intraday_120_360_90", profiles)
+        self.assertNotIn("equity_swing_1950_5070_1755", profiles)
+        self.assertNotIn("continuous_swing_7200_18720_6480", profiles)
 
     def test_variant_generation_is_deterministic_and_layer3_bounded(self) -> None:
         forbidden_payload_tokens = {
