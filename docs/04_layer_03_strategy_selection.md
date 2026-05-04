@@ -70,7 +70,7 @@ The following taxonomy maps the supplied strategy list into Layer 3 groups/famil
 | `trend_following` | `moving_average_crossover` | 1 | Included | Bar-based, simple, useful baseline. |
 | `trend_following` | `donchian_channel_breakout` | 2 | Included | Bar-based breakout/trend bridge. |
 | `trend_following` | `macd_trend` | 3 | Included | Bar-based momentum/trend confirmation. |
-| `trend_following` | `cross_sectional_momentum` | 4 | Included | Needs candidate/basket peer set; fits anonymous candidate ranking. |
+| `trend_following` | `cross_sectional_momentum` | 4 | Moved-to-position-management | Cross-sectional ranking/rebalancing belongs with portfolio/position selection unless later narrowed to a pure candidate feature. |
 | `mean_reversion` | `bollinger_band_reversion` | 5 | Included | Bar-based; must carry trend filter attributes. |
 | `mean_reversion` | `rsi_reversion` | 6 | Included | Bar-based; good threshold/period family. |
 | `mean_reversion` | `bias_reversion` | 7 | Included | Bar-based distance-from-average family. |
@@ -81,7 +81,7 @@ The following taxonomy maps the supplied strategy list into Layer 3 groups/famil
 | `relative_value` | `cross_exchange_arbitrage` | 12 | Removed | Explicitly excluded from this strategy-family catalog. |
 | `relative_value` | `cash_futures_basis_arbitrage` | 13 | Removed | Explicitly excluded from this strategy-family catalog. |
 | `relative_value` | `funding_rate_arbitrage` | 14 | Removed | Explicitly excluded from this strategy-family catalog. |
-| `relative_value` | `pairs_statistical_arbitrage` | 15 | Included-requires-pair-universe | Keep; pair/spread behavior is modelable once pair universe and spread-stability evidence exist. |
+| `relative_value` | `pairs_statistical_arbitrage` | 15 | Moved-to-position-management | Pair construction, hedge ratio, two-leg sizing, and spread risk belong with position/portfolio management. |
 | `market_making` | `grid_trading` | 16 | Removed | Explicitly excluded from this strategy-family catalog. |
 | `market_making` | `martingale_anti_martingale` | 17 | Removed | Explicitly excluded; martingale must not be implemented as a standalone family. |
 | `market_making` | `passive_market_making` | 18 | Removed | Explicitly excluded from this strategy-family catalog. |
@@ -101,7 +101,6 @@ The deterministic strategy-family catalog should include every remaining non-rem
 moving_average_crossover
 donchian_channel_breakout
 macd_trend
-cross_sectional_momentum
 bollinger_band_reversion
 rsi_reversion
 bias_reversion
@@ -116,10 +115,16 @@ vwap_reversion
 opening_range_breakout
 ```
 
-Included families that require additional universe/modeling support:
+Position/portfolio-management candidates, removed from Layer 3 standalone strategy-family implementation:
 
 ```text
+cross_sectional_momentum
 pairs_statistical_arbitrage
+```
+
+Meta scoring retained for later composition after deterministic family evidence exists:
+
+```text
 multi_factor_scoring
 ```
 
@@ -143,7 +148,7 @@ scheduled_event_reaction
 onchain_sentiment_reaction
 ```
 
-The included deterministic catalog therefore contains 12 strategy families plus 3 modifier/meta families. ML/RL remain retained final goals, but deterministic families should establish labels, feature quality, costs, and baselines first.
+The included deterministic Layer 3 catalog therefore contains 10 standalone strategy families plus 3 modifier/meta families. Cross-sectional momentum and pairs/stat-arb are retained as position/portfolio-management candidates, not Layer 3 standalone family implementations. ML/RL remain retained final goals, but deterministic families should establish labels, feature quality, costs, and baselines first.
 
 ## Variant generation rules
 
@@ -165,7 +170,6 @@ Indicative variant budgets:
 | `moving_average_crossover` | 40-120 | 500 | timeframe, fast window, slow window, MA type, confirmation bars, trend filter. |
 | `donchian_channel_breakout` | 40-100 | 500 | channel window, breakout buffer, exit window, ATR stop proxy, confirmation. |
 | `macd_trend` | 30-90 | 500 | fast/slow/signal windows, histogram threshold, confirmation, trend filter. |
-| `cross_sectional_momentum` | 40-120 | 500 | ranking lookback, skip window, top/bottom quantile, rebalance horizon, volatility filter. |
 | `bollinger_band_reversion` | 40-120 | 500 | window, band width, entry band, exit band, trend filter, volatility filter. |
 | `rsi_reversion` | 40-120 | 500 | RSI period, entry/exit thresholds, divergence flag, multi-timeframe confirmation. |
 | `bias_reversion` | 30-90 | 500 | MA window, deviation threshold, normalization, exit threshold, trend filter. |
@@ -185,7 +189,6 @@ The first implementation should expose each family through a reviewed spec objec
 | `moving_average_crossover` | Included | `timeframe`, `fast_window`, `slow_window`, `ma_type`, `price_field`, `crossover_confirmation_bars`, `min_slope`, `trend_filter_enabled`, `trend_filter_window`, `exit_rule`, `cooldown_bars`. |
 | `donchian_channel_breakout` | Included | `timeframe`, `entry_channel_window`, `exit_channel_window`, `breakout_side`, `breakout_buffer_atr`, `confirmation_bars`, `atr_window`, `stop_atr_multiple`, `retest_allowed`, `cooldown_bars`. |
 | `macd_trend` | Included | `timeframe`, `fast_ema_window`, `slow_ema_window`, `signal_window`, `histogram_threshold`, `zero_line_filter`, `slope_confirmation_bars`, `trend_filter_window`, `exit_on_signal_cross`, `cooldown_bars`. |
-| `cross_sectional_momentum` | Included | `timeframe`, `ranking_lookback`, `skip_window`, `rebalance_horizon`, `selection_quantile`, `minimum_rank_gap`, `volatility_adjustment`, `sector_neutralization`, `liquidity_filter`, `turnover_limit`. |
 | `bollinger_band_reversion` | Included | `timeframe`, `window`, `band_stddev`, `entry_band`, `exit_band`, `rsi_filter_period`, `trend_filter_window`, `volatility_regime_filter`, `max_hold_bars`, `stop_band_extension`. |
 | `rsi_reversion` | Included | `timeframe`, `rsi_period`, `oversold_threshold`, `overbought_threshold`, `exit_midline`, `divergence_required`, `multi_timeframe_confirm`, `trend_filter_window`, `max_hold_bars`, `cooldown_bars`. |
 | `bias_reversion` | Included | `timeframe`, `ma_window`, `ma_type`, `deviation_measure`, `entry_deviation_threshold`, `exit_deviation_threshold`, `zscore_window`, `trend_filter_window`, `max_hold_bars`, `stop_deviation_threshold`. |
@@ -193,7 +196,6 @@ The first implementation should expose each family through a reviewed spec objec
 | `range_breakout` | Included | `timeframe`, `range_lookback`, `range_width_max_atr`, `breakout_direction`, `breakout_buffer_atr`, `volume_confirmation_ratio`, `close_confirmation`, `retest_rule`, `failed_breakout_timeout`, `cooldown_bars`. |
 | `opening_range_breakout` | Included-if-Alpaca-intraday | `timeframe`, `opening_range_minutes`, `breakout_buffer_bps`, `direction_mode`, `volume_confirmation_ratio`, `first_trade_delay_minutes`, `time_stop_minutes`, `max_trades_per_session`, `liquidity_filter`, `no_trade_after_time`. |
 | `volatility_breakout` | Included | `timeframe`, `volatility_measure`, `volatility_window`, `expansion_threshold`, `atr_window`, `direction_filter`, `confirmation_bars`, `stop_atr_multiple`, `cooldown_bars`, `volatility_cooloff_threshold`. |
-| `pairs_statistical_arbitrage` | Included-requires-pair-universe | `pair_universe_id`, `lookback_window`, `spread_model`, `hedge_ratio_method`, `entry_zscore`, `exit_zscore`, `stop_zscore`, `correlation_min`, `cointegration_pvalue_max`, `rebalance_horizon`, `borrow_cost_filter`. |
 | `trend_volatility_filter` | Modifier | `enabled`, `trend_window`, `trend_slope_min`, `volatility_measure`, `volatility_window`, `volatility_min`, `volatility_max`, `applies_to_families`, `filter_mode`. |
 | `mean_reversion_trend_filter` | Modifier | `enabled`, `higher_timeframe`, `higher_timeframe_trend_window`, `allowed_trend_states`, `pullback_depth_min`, `pullback_depth_max`, `filter_mode`, `applies_to_families`. |
 | `multi_factor_scoring` | Meta-family | `factor_set_id`, `factor_weights`, `normalization_method`, `score_window`, `rank_method`, `minimum_score`, `top_quantile`, `rebalance_horizon`, `turnover_penalty`, `correlation_penalty`. |
@@ -201,6 +203,17 @@ The first implementation should expose each family through a reviewed spec objec
 | `reinforcement_learning_policy` | Deferred-final-goal | `environment_id`, `state_feature_set_id`, `action_space`, `reward_function_id`, `episode_length`, `transaction_cost_model`, `risk_penalty`, `exploration_schedule`, `policy_class`, `offline_validation_protocol`. |
 
 Removed families have no exposed parameter interface in Layer 3.
+
+## Moved to position / portfolio management
+
+The following supplied families are not removed from the overall system, but should not be implemented as standalone Layer 3 strategy-family generators:
+
+| Family | Reason for moving | Future owner direction |
+|---|---|---|
+| `cross_sectional_momentum` | Its core action is ranking a universe, selecting top/bottom buckets, setting rebalance cadence, and controlling turnover. That is closer to multi-target selection and allocation than single-candidate setup classification. | Position/portfolio management may consume momentum ranks as allocation evidence; Layer 3 may still expose target-local momentum features. |
+| `pairs_statistical_arbitrage` | Its core action is constructing a pair, estimating hedge ratio, sizing two legs, and managing spread/borrow/cost risk. That is a portfolio/position structure, not a single anonymous-candidate setup. | Position/portfolio management may later own pair universe, pair sizing, spread risk, and unwind rules. |
+
+If a later contract narrows either family into pure single-candidate evidence, that evidence should be named as a feature block, not as a standalone Layer 3 family.
 
 ## Alpaca-backed data support surface
 
@@ -221,15 +234,13 @@ Alpaca support by remaining family:
 | `moving_average_crossover` | `equity_bar` | Supported | Needs adjusted OHLCV bars and enough history for slow windows. |
 | `donchian_channel_breakout` | `equity_bar` | Supported | Needs high/low history and optional ATR from bars. |
 | `macd_trend` | `equity_bar` | Supported | Needs close history. |
-| `cross_sectional_momentum` | `equity_bar`; optional `equity_liquidity_bar` | Supported if candidate universe exists | Alpaca can supply returns/liquidity; candidate-builder universe is separate. |
 | `bollinger_band_reversion` | `equity_bar` | Supported | Needs close history; trend/vol filters also bar-derived. |
 | `rsi_reversion` | `equity_bar` | Supported | Needs close history. |
 | `bias_reversion` | `equity_bar` | Supported | Needs close and MA history. |
-| `vwap_reversion` | `equity_bar`; preferably `equity_trade`/`equity_quote` -> `equity_liquidity_bar` | Supported with intraday liquidity acquisition | Bar VWAP is enough for coarse variants; quote spread/mid improves cost-aware variants. |
+| `vwap_reversion` | `equity_bar`; preferably `equity_trade`/`equity_quote` -> `equity_liquidity_bar` | Source data supported | No new Alpaca data kind is missing; implementation must define session/VWAP scope, spread/liquidity gates, and no-trade time rules. |
 | `range_breakout` | `equity_bar`; optional `equity_liquidity_bar` | Supported | Volume confirmation and range width are bar-derived. |
-| `opening_range_breakout` | `equity_bar` at 1Min; optional `equity_liquidity_bar` | Supported with session-calendar controls | Needs accurate regular-session windowing and no-trade time controls. |
+| `opening_range_breakout` | `equity_bar` at 1Min; optional `equity_liquidity_bar` | Source data supported | No new Alpaca data kind is missing; implementation must define regular-session open, opening range, premarket inclusion/exclusion, confirmation, and time-stop rules. |
 | `volatility_breakout` | `equity_bar`; optional `equity_liquidity_bar` | Supported | ATR/HV are bar-derived; liquidity can gate tradability. |
-| `pairs_statistical_arbitrage` | `equity_bar`; optional `equity_liquidity_bar` | Partially supported | Alpaca can provide pair prices/liquidity; pair universe, hedge-ratio validation, borrow/cost, and stability gates are model-layer work. |
 | `trend_volatility_filter` | `equity_bar` | Supported | Derived from trend and volatility windows. |
 | `mean_reversion_trend_filter` | `equity_bar` | Supported | Derived from higher-timeframe trend and pullback depth. |
 | `multi_factor_scoring` | `equity_bar`, `equity_liquidity_bar`, optional `equity_snapshot` | Supported for technical/liquidity factors | Fundamental/event/sentiment factor sets require non-Alpaca or deferred data. |
