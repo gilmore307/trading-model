@@ -78,20 +78,20 @@ The following taxonomy maps the supplied strategy list into Layer 3 groups/famil
 | `breakout_volatility` | `range_breakout` | 9 | V1 | Bar-based, volume confirmation optional. |
 | `breakout_volatility` | `opening_range_breakout` | 10 | V1-if-intraday | Requires intraday session calendar and opening-range evidence. |
 | `breakout_volatility` | `volatility_breakout` | 11 | V1 | ATR/HV expansion plus direction filter. |
-| `relative_value` | `cross_exchange_arbitrage` | 12 | Reserved | Venue-transfer/execution problem; not current US equity/option Layer 3. |
-| `relative_value` | `cash_futures_basis_arbitrage` | 13 | Reserved | Needs futures/spot funding, margin, expiry, carry data. |
-| `relative_value` | `funding_rate_arbitrage` | 14 | Reserved | Perpetual/funding venue data; not current pipeline. |
-| `relative_value` | `pairs_statistical_arbitrage` | 15 | V2-candidate | Needs pair universe construction, cointegration/correlation stability, borrow/cost. |
-| `market_making` | `grid_trading` | 16 | Reserved | Mostly execution/inventory policy; dangerous without portfolio/risk layer. |
-| `market_making` | `martingale_anti_martingale` | 17 | Excluded/overlay | Martingale is disallowed as standalone; anti-martingale is a later sizing/risk overlay. |
-| `market_making` | `passive_market_making` | 18 | Reserved | Requires order-book/latency/inventory infrastructure. |
-| `event_driven` | `scheduled_event_reaction` | 19 | Reserved | Wait for EventOverlayModel and event-source quality gates. |
-| `event_driven` | `onchain_sentiment_reaction` | 20 | Out-of-scope-now | Crypto/on-chain/social data not current equity/option V1. |
-| `composite_filter` | `trend_volatility_filter` | 21 | Modifier | Should be a filter/modifier applied to trend families, not a standalone strategy family unless evaluation proves independence. |
-| `composite_filter` | `mean_reversion_trend_filter` | 22 | Modifier | Should be a filter/modifier applied to reversion families. |
-| `composite_filter` | `multi_factor_scoring` | 23 | Meta-family | Useful as ensemble/scoring layer; must avoid duplicating family signals as independent alpha. |
-| `ml_enhanced` | `supervised_direction_classifier` | 24 | Meta-family | Model selector/combiner, not first deterministic family wave. |
-| `ml_enhanced` | `reinforcement_learning_policy` | 25 | Reserved | Requires simulator/reward/environment validation; too risky before deterministic baselines. |
+| `relative_value` | `cross_exchange_arbitrage` | 12 | Removed | Explicitly excluded from this strategy-family catalog. |
+| `relative_value` | `cash_futures_basis_arbitrage` | 13 | Removed | Explicitly excluded from this strategy-family catalog. |
+| `relative_value` | `funding_rate_arbitrage` | 14 | Removed | Explicitly excluded from this strategy-family catalog. |
+| `relative_value` | `pairs_statistical_arbitrage` | 15 | V2-candidate | Keep; pair/spread behavior is a modelable family once pair universe and spread-stability evidence exist. |
+| `market_making` | `grid_trading` | 16 | Removed | Explicitly excluded from this strategy-family catalog. |
+| `market_making` | `martingale_anti_martingale` | 17 | Removed | Explicitly excluded; martingale must not be implemented as a standalone family. |
+| `market_making` | `passive_market_making` | 18 | Removed | Explicitly excluded from this strategy-family catalog. |
+| `event_driven` | `scheduled_event_reaction` | 19 | Removed | Explicitly excluded from this Layer 3 strategy-family catalog. |
+| `event_driven` | `onchain_sentiment_reaction` | 20 | Removed | Explicitly excluded from this Layer 3 strategy-family catalog. |
+| `composite_filter` | `trend_volatility_filter` | 21 | Modifier | Keep as a reusable filter/modifier applied to trend families. |
+| `composite_filter` | `mean_reversion_trend_filter` | 22 | Modifier | Keep as a reusable filter/modifier applied to reversion families. |
+| `composite_filter` | `multi_factor_scoring` | 23 | Meta-family | Keep; useful as ensemble/scoring layer after deterministic family evidence exists. |
+| `ml_enhanced` | `supervised_direction_classifier` | 24 | Deferred-final-goal | Keep as final target direction; defer until deterministic family baselines and labels are mature. |
+| `ml_enhanced` | `reinforcement_learning_policy` | 25 | Deferred-final-goal | Keep as final target direction; defer until simulator/reward/environment validation is credible. |
 
 ## V1 implementation wave
 
@@ -121,10 +121,29 @@ V2 candidates after V1 evidence stabilizes:
 ```text
 pairs_statistical_arbitrage
 multi_factor_scoring
-supervised_direction_classifier
 ```
 
-The first implementation should therefore target 9 core families, with up to 11 if intraday/VWAP evidence is ready. This is broad enough to cover trend, reversion, breakout, volatility, and rotation, while avoiding venue/arbitrage/HFT/RL dependencies that the current system cannot honestly evaluate yet.
+Deferred final-goal families, retained but not implemented in the deterministic strategy-family wave:
+
+```text
+supervised_direction_classifier
+reinforcement_learning_policy
+```
+
+Removed families should not be implemented in this catalog unless a later accepted architecture reopens their boundary:
+
+```text
+cross_exchange_arbitrage
+cash_futures_basis_arbitrage
+funding_rate_arbitrage
+grid_trading
+martingale_anti_martingale
+passive_market_making
+scheduled_event_reaction
+onchain_sentiment_reaction
+```
+
+The first implementation should therefore target 9 core families, with up to 11 if intraday/VWAP evidence is ready. This is broad enough to cover trend, reversion, breakout, volatility, and rotation, while avoiding venue-arbitrage, market-making, martingale, event, and deferred ML/RL dependencies that the current system cannot honestly evaluate yet.
 
 ## Variant generation rules
 
@@ -156,6 +175,32 @@ Indicative V1 variant budgets:
 | `opening_range_breakout` | 30-80 | 500 | opening range minutes, breakout buffer, time stop, volume/liquidity confirmation. |
 
 Families with fewer meaningful axes should produce fewer variants. Families with many axes should use sampled/curated grids rather than full Cartesian expansion.
+
+## Adjustable parameter surface
+
+The first implementation should expose each family through a reviewed spec object. The fields below are the initial interface candidates; implementation may narrow the grids, but should not add unreviewed axes silently.
+
+| Family | Status | Adjustable parameters |
+|---|---|---|
+| `moving_average_crossover` | V1 | `timeframe`, `fast_window`, `slow_window`, `ma_type`, `price_field`, `crossover_confirmation_bars`, `min_slope`, `trend_filter_enabled`, `trend_filter_window`, `exit_rule`, `cooldown_bars`. |
+| `donchian_channel_breakout` | V1 | `timeframe`, `entry_channel_window`, `exit_channel_window`, `breakout_side`, `breakout_buffer_atr`, `confirmation_bars`, `atr_window`, `stop_atr_multiple`, `retest_allowed`, `cooldown_bars`. |
+| `macd_trend` | V1 | `timeframe`, `fast_ema_window`, `slow_ema_window`, `signal_window`, `histogram_threshold`, `zero_line_filter`, `slope_confirmation_bars`, `trend_filter_window`, `exit_on_signal_cross`, `cooldown_bars`. |
+| `cross_sectional_momentum` | V1 | `timeframe`, `ranking_lookback`, `skip_window`, `rebalance_horizon`, `selection_quantile`, `minimum_rank_gap`, `volatility_adjustment`, `sector_neutralization`, `liquidity_filter`, `turnover_limit`. |
+| `bollinger_band_reversion` | V1 | `timeframe`, `window`, `band_stddev`, `entry_band`, `exit_band`, `rsi_filter_period`, `trend_filter_window`, `volatility_regime_filter`, `max_hold_bars`, `stop_band_extension`. |
+| `rsi_reversion` | V1 | `timeframe`, `rsi_period`, `oversold_threshold`, `overbought_threshold`, `exit_midline`, `divergence_required`, `multi_timeframe_confirm`, `trend_filter_window`, `max_hold_bars`, `cooldown_bars`. |
+| `bias_reversion` | V1 | `timeframe`, `ma_window`, `ma_type`, `deviation_measure`, `entry_deviation_threshold`, `exit_deviation_threshold`, `zscore_window`, `trend_filter_window`, `max_hold_bars`, `stop_deviation_threshold`. |
+| `vwap_reversion` | Conditional V1 | `timeframe`, `vwap_scope`, `deviation_bps`, `entry_zscore`, `exit_zscore`, `time_of_day_bucket`, `minimum_dollar_volume`, `maximum_spread_bps`, `max_hold_bars`, `no_trade_near_close_minutes`. |
+| `range_breakout` | V1 | `timeframe`, `range_lookback`, `range_width_max_atr`, `breakout_direction`, `breakout_buffer_atr`, `volume_confirmation_ratio`, `close_confirmation`, `retest_rule`, `failed_breakout_timeout`, `cooldown_bars`. |
+| `opening_range_breakout` | Conditional V1 | `timeframe`, `opening_range_minutes`, `breakout_buffer_bps`, `direction_mode`, `volume_confirmation_ratio`, `first_trade_delay_minutes`, `time_stop_minutes`, `max_trades_per_session`, `liquidity_filter`, `no_trade_after_time`. |
+| `volatility_breakout` | V1 | `timeframe`, `volatility_measure`, `volatility_window`, `expansion_threshold`, `atr_window`, `direction_filter`, `confirmation_bars`, `stop_atr_multiple`, `cooldown_bars`, `volatility_cooloff_threshold`. |
+| `pairs_statistical_arbitrage` | V2-candidate | `pair_universe_id`, `lookback_window`, `spread_model`, `hedge_ratio_method`, `entry_zscore`, `exit_zscore`, `stop_zscore`, `correlation_min`, `cointegration_pvalue_max`, `rebalance_horizon`, `borrow_cost_filter`. |
+| `trend_volatility_filter` | Modifier | `enabled`, `trend_window`, `trend_slope_min`, `volatility_measure`, `volatility_window`, `volatility_min`, `volatility_max`, `applies_to_families`, `filter_mode`. |
+| `mean_reversion_trend_filter` | Modifier | `enabled`, `higher_timeframe`, `higher_timeframe_trend_window`, `allowed_trend_states`, `pullback_depth_min`, `pullback_depth_max`, `filter_mode`, `applies_to_families`. |
+| `multi_factor_scoring` | Meta-family | `factor_set_id`, `factor_weights`, `normalization_method`, `score_window`, `rank_method`, `minimum_score`, `top_quantile`, `rebalance_horizon`, `turnover_penalty`, `correlation_penalty`. |
+| `supervised_direction_classifier` | Deferred-final-goal | `model_class`, `feature_set_id`, `label_horizon`, `label_definition`, `train_window`, `validation_scheme`, `probability_threshold`, `calibration_method`, `class_weighting`, `retrain_frequency`. |
+| `reinforcement_learning_policy` | Deferred-final-goal | `environment_id`, `state_feature_set_id`, `action_space`, `reward_function_id`, `episode_length`, `transaction_cost_model`, `risk_penalty`, `exploration_schedule`, `policy_class`, `offline_validation_protocol`. |
+
+Removed families have no exposed parameter interface in Layer 3.
 
 ## Direction and horizon attributes
 
