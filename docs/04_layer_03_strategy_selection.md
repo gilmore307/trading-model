@@ -202,6 +202,68 @@ The first implementation should expose each family through a reviewed spec objec
 | `supervised_direction_classifier` | Deferred-final-goal | `model_class`, `feature_set_id`, `label_horizon`, `label_definition`, `train_window`, `validation_scheme`, `probability_threshold`, `calibration_method`, `class_weighting`, `retrain_frequency`. |
 | `reinforcement_learning_policy` | Deferred-final-goal | `environment_id`, `state_feature_set_id`, `action_space`, `reward_function_id`, `episode_length`, `transaction_cost_model`, `risk_penalty`, `exploration_schedule`, `policy_class`, `offline_validation_protocol`. |
 
+## Options-oriented intraday defaults
+
+Layer 3 signals are ultimately expected to feed option expression work. Intraday families should therefore prefer cleaner, tradable underlying moves over maximum signal count. These defaults are recommendations; explicitly listed axes may still become `3_strategy_variant` parameters.
+
+### `vwap_reversion`
+
+Recommended default stance for option-targeted use:
+
+| Decision | Recommendation | Variant axis? | Rationale |
+|---|---|---|---|
+| VWAP scope | `regular_session_vwap` | Yes: allow `regular_session_vwap`, `rolling_vwap_30m`, `rolling_vwap_60m` | Option entries should key off the liquid regular session. Rolling VWAP can be tested, but anchored session VWAP is the clean default. |
+| Premarket / after-hours | Exclude from signal VWAP and entry triggers; keep as context only | Yes: `premarket_context_mode = ignore/context_filter` | Underlying premarket prints can distort VWAP, while options are illiquid or unavailable. |
+| Entry timing | No entries before 09:45 ET | Yes: `earliest_entry_time` | Avoid first-open spread/IV noise before option chains settle. |
+| Close cutoff | No new entries after 15:15 ET by default | Yes: `no_trade_after_time` / `no_trade_near_close_minutes` | Late entries leave little time for reversion and are more exposed to spread/closing auction noise. |
+| Liquidity gate | Require minimum dollar volume, quote count, and max spread bps | Yes | Option expression later gates option liquidity, but Layer 3 should avoid underlying setups with poor tradability. |
+| Reversion target | Exit/score toward VWAP or mid-band, not final trade exit instruction | Yes: `exit_zscore`, `exit_band` | Layer 3 should score setup fit, not own exact trade management. |
+
+Recommended initial variant axes:
+
+```text
+vwap_scope = regular_session_vwap | rolling_vwap_30m | rolling_vwap_60m
+deviation_bps = 30 | 50 | 75 | 100
+entry_zscore = 1.0 | 1.5 | 2.0
+exit_zscore = 0.25 | 0.5 | 0.75
+earliest_entry_time = 09:45 | 10:00
+no_trade_after_time = 15:00 | 15:15 | 15:30
+maximum_spread_bps = 5 | 10 | 15
+minimum_dollar_volume = liquidity-tiered threshold
+time_of_day_bucket = morning | midday | afternoon
+```
+
+### `opening_range_breakout`
+
+Recommended default stance for option-targeted use:
+
+| Decision | Recommendation | Variant axis? | Rationale |
+|---|---|---|---|
+| Session open | `regular_session_open = 09:30 ET` | No, unless exchange calendar changes | Options-targeted signals should use the regular equity session as the anchor. |
+| Premarket inclusion | Exclude from opening range; use premarket gap/volume as optional context filter | Yes: `premarket_context_mode = ignore/context_filter` | Premarket levels matter, but including them in the range mixes illiquid and regular-session behavior. |
+| Opening range length | Default 15 minutes | Yes: `opening_range_minutes = 5/15/30/60` | 15m balances early signal with reduced first-minute noise; 5m is faster/noisier, 30/60m cleaner/slower. |
+| First trade delay | No breakout entry before range completes; optional extra 5-minute delay | Yes: `first_trade_delay_minutes` | Avoid immediate false breaks and unstable option spreads. |
+| Confirmation | Require close outside range plus volume/liquidity confirmation | Yes | Wick-only breaks are poor option signals; close confirmation reduces false triggers. |
+| Time stop | If no follow-through within 30-60 minutes, downgrade/disable | Yes: `time_stop_minutes` | Long options need timely movement; stale breakouts decay. |
+| Entries near close | No new entries after 15:00-15:15 ET | Yes | Same rationale as VWAP: limited follow-through time and worse closing microstructure. |
+
+Recommended initial variant axes:
+
+```text
+opening_range_minutes = 5 | 15 | 30 | 60
+breakout_buffer_bps = 5 | 10 | 20
+direction_mode = bullish | bearish | both
+volume_confirmation_ratio = 1.0 | 1.25 | 1.5 | 2.0
+first_trade_delay_minutes = 0 | 5 | 10
+time_stop_minutes = 30 | 60 | 120
+max_trades_per_session = 1 | 2
+premarket_context_mode = ignore | context_filter
+no_trade_after_time = 15:00 | 15:15 | 15:30
+liquidity_filter = standard | strict
+```
+
+For both families, the option-specific contract remains downstream: Layer 3 may require underlying tradability and directional/setup quality, but option chain selection, DTE, delta, IV, Greeks, spread, premium, and contract liquidity belong to `OptionExpressionModel`.
+
 Removed families have no exposed parameter interface in Layer 3.
 
 ## Moved to position / portfolio management
