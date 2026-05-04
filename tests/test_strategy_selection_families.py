@@ -51,7 +51,7 @@ class StrategySelectionFamilyTests(unittest.TestCase):
 
     def test_reviewed_variant_counts_match_catalog(self) -> None:
         expected_counts = {
-            "moving_average_crossover": 288,
+            "moving_average_crossover": 96,
             "donchian_channel_breakout": 288,
             "macd_trend": 288,
             "bollinger_band_reversion": 384,
@@ -66,6 +66,18 @@ class StrategySelectionFamilyTests(unittest.TestCase):
         self.assertEqual(set(FAMILIES_BY_NAME), set(expected_counts))
         for family, expected_count in expected_counts.items():
             self.assertEqual(FAMILIES_BY_NAME[family].variant_count, expected_count, family)
+
+    def test_moving_average_uses_fixed_one_minute_bars(self) -> None:
+        spec = FAMILIES_BY_NAME["moving_average_crossover"]
+        axis_names = {axis.name for axis in spec.axes}
+
+        self.assertEqual(spec.fixed_parameters["signal_bar_interval"], "1Min")
+        self.assertNotIn("timeframe", axis_names)
+        self.assertIn("ma_window_minutes", axis_names)
+        first_variant = next(iter(spec.iter_variant_specs()))
+        self.assertEqual(first_variant["fixed_parameters"]["signal_bar_interval"], "1Min")
+        self.assertIn("ma_window_minutes", first_variant["variable_parameters"])
+        self.assertNotIn("timeframe", first_variant["variable_parameters"])
 
     def test_variant_generation_is_deterministic_and_layer3_bounded(self) -> None:
         forbidden_payload_tokens = {

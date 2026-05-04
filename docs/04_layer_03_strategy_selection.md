@@ -178,14 +178,14 @@ Recommended constraints:
 - use sparse, information-preserving grids: lookbacks should usually be log-spaced or regime-spaced, not every integer;
 - generate parameter neighborhoods, not microscopic one-tick variants;
 - avoid variants whose only difference is too small to survive costs/slippage/noise;
-- keep direction, timeframe, confirmation, and invalidation parameters explicit;
+- keep direction, signal-bar policy, confirmation, and invalidation parameters explicit;
 - store a stable variant spec payload and hash so results are reproducible.
 
 Indicative variant budgets:
 
 | Family | Initial target variants | Hard cap | Main parameter axes |
 |---|---:|---:|---|
-| `moving_average_crossover` | 40-120 | 500 | timeframe, fast window, slow window, MA type, confirmation bars, trend filter. |
+| `moving_average_crossover` | 40-120 | 500 | fixed 1Min signal bars, MA window minutes, MA type, confirmation bars, trend filter. |
 | `donchian_channel_breakout` | 40-100 | 500 | channel window, breakout buffer, exit window, ATR stop proxy, confirmation. |
 | `macd_trend` | 30-90 | 500 | fast/slow/signal windows, histogram threshold, confirmation, trend filter. |
 | `bollinger_band_reversion` | 40-120 | 500 | window, band width, entry band, exit band, trend filter, volatility filter. |
@@ -204,7 +204,7 @@ The first implementation should expose each family through a reviewed spec objec
 
 | Family | Status | Adjustable parameters |
 |---|---|---|
-| `moving_average_crossover` | Included | `timeframe`, `fast_window`, `slow_window`, `ma_type`, `price_field`, `crossover_confirmation_bars`, `min_slope`, `trend_filter_enabled`, `trend_filter_window`, `exit_rule`, `cooldown_bars`. |
+| `moving_average_crossover` | Included | fixed `signal_bar_interval=1Min`, `ma_window_minutes`, `ma_type`, `price_field`, `crossover_confirmation_bars`, `min_slope`, `trend_filter_enabled`, `trend_filter_window`, `exit_rule`, `cooldown_bars`. |
 | `donchian_channel_breakout` | Included | `timeframe`, `entry_channel_window`, `exit_channel_window`, `breakout_side`, `breakout_buffer_atr`, `confirmation_bars`, `atr_window`, `stop_atr_multiple`, `retest_allowed`, `cooldown_bars`. |
 | `macd_trend` | Included | `timeframe`, `fast_ema_window`, `slow_ema_window`, `signal_window`, `histogram_threshold`, `zero_line_filter`, `slope_confirmation_bars`, `trend_filter_window`, `exit_on_signal_cross`, `cooldown_bars`. |
 | `bollinger_band_reversion` | Included | `timeframe`, `window`, `band_stddev`, `entry_band`, `exit_band`, `rsi_filter_period`, `trend_filter_window`, `volatility_regime_filter`, `max_hold_bars`, `stop_band_extension`. |

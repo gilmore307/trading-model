@@ -30,7 +30,7 @@ Layer 3 must not output:
 
 | Family | Basic idea | Best-fit trading periods | Variant count | Alpaca data support |
 |---|---|---|---:|---|
-| `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | 30-minute, hourly, daily; weekly can be derived from daily bars for slower research. | 288 | `equity_bar` |
+| `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | Unified 1-minute bars; MA windows encode duration. | 96 | `equity_bar_1min` |
 | `donchian_channel_breakout` | Follow price when it breaks a prior high/low channel. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
 | `macd_trend` | Use MACD line/signal/histogram behavior to detect trend acceleration or reversal. | 15-minute, 30-minute, hourly, daily. | 288 | `equity_bar` |
 | `bollinger_band_reversion` | Fade stretched prices back toward a volatility band center when context supports reversion. | 15-minute, 30-minute, hourly, daily. | 384 | `equity_bar` |
@@ -65,16 +65,17 @@ Deferred final goals:
 
 Basic introduction: trend-following baseline. A bullish setup appears when a fast moving average crosses above a slow moving average; bearish is the inverse. It is simple, interpretable, and useful as a benchmark for more complex trend families.
 
-Suitable trading periods:
+Signal bar policy:
 
-- Best: 30-minute, hourly, daily.
-- Usable: 15-minute for liquid names with strict liquidity gates.
-- Slower research: weekly can be derived from daily bars, but is not an option-oriented default.
+- Use completed 1-minute bars only.
+- Do not treat bar interval as a variant axis; every variant runs on the same 1-minute evidence grid.
+- Longer-horizon behavior is expressed by longer MA windows, not by switching model timeframe.
 
 Fixed parameters:
 
 | Parameter | Value |
 |---|---|
+| `signal_bar_interval` | `1Min` |
 | `price_field` | `bar_close` |
 | `exit_rule` | `opposite_cross_or_score_decay` |
 | `cooldown_bars` | `1` |
@@ -83,18 +84,17 @@ Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `timeframe` | `30Min`, `1Hour`, `1Day` | 3 |
-| `ma_pair` | `(5,20)`, `(10,30)`, `(20,50)`, `(50,200)` | 4 |
+| `ma_window_minutes` | `(30,120)`, `(60,240)`, `(120,480)`, `(300,1200)` | 4 |
 | `ma_type` | `sma`, `ema` | 2 |
 | `crossover_confirmation_bars` | `1`, `2`, `3` | 3 |
 | `min_slope` | `0`, `0.05` | 2 |
 | `trend_filter_enabled` | `false`, `true` | 2 |
 
-Variant count: `3 * 4 * 2 * 3 * 2 * 2 = 288`.
+Variant count: `4 * 2 * 3 * 2 * 2 = 96`.
 
 Implementation notes:
 
-- Enforce `fast_window < slow_window` through curated `ma_pair` values.
+- Enforce `fast_window_minutes < slow_window_minutes` through curated `ma_window_minutes` values.
 - This family should be a trend baseline, not the final strategy selector by itself.
 
 ### `donchian_channel_breakout`
