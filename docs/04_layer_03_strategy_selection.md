@@ -156,6 +156,8 @@ onchain_sentiment_reaction
 
 The included deterministic Layer 3 catalog therefore contains 10 standalone strategy families plus 3 modifier/meta families. Cross-sectional momentum and pairs/stat-arb are retained as position/portfolio-management candidates, not Layer 3 standalone family implementations. ML/RL remain retained final goals, but deterministic families should establish labels, feature quality, costs, and baselines first.
 
+Evaluation order: standalone families must be tested and pruned before modifiers, meta-scoring, or ensemble logic are allowed to influence selection. Modifier/meta families are retained for later controlled experiments, not for the first pass.
+
 ## Variant generation rules
 
 Each family may declare a `max_variants` cap of 500, but the default target should be far lower. The cap is a safety ceiling, not a goal.

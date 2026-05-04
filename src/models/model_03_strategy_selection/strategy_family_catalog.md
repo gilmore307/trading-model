@@ -421,6 +421,15 @@ Implementation notes:
 
 ## Modifier and meta families
 
+These are retained in the catalog, but they should **not** participate in the first standalone-family evaluation wave. First evaluate each standalone strategy family on its own, identify which families/variants have no robust edge, and prune weak families before adding filters or meta-scoring.
+
+Rationale:
+
+- with many strategies, some will appear active in almost every market state but still fail after costs, stability checks, or option-expression constraints;
+- global filters/meta-scoring can hide whether a family itself has edge;
+- weak families should be eliminated or downgraded before they become inputs to an ensemble;
+- modifiers should be introduced only as controlled follow-up experiments after standalone evidence is available.
+
 These should not blindly multiply every standalone family variant. Apply them only through reviewed experiments, otherwise variant count explodes and interpretation degrades.
 
 ### `trend_volatility_filter`
@@ -509,10 +518,12 @@ Deferred because it is too easy to overfit or learn non-executable behavior befo
 4. **Liquidity policy** — target-relative dollar-volume gates, quote-count gates, and spread bps gates.
 5. **Cost/slippage assumptions** — underlying spread/cost evidence at Layer 3, with option-specific costs deferred to `OptionExpressionModel`.
 6. **Label definitions** — future setup-success labels that evaluate setup quality without leaking future trade-management decisions.
-7. **Baseline comparison** — family-specific baseline and market/sector/candidate-only baseline.
-8. **Stability gates** — split/refit stability, parameter-neighborhood stability, and variant-family robustness.
-9. **Anonymity checks** — ensure strategy variants consume anonymous target features and reviewed context, not raw ticker/company identity.
-10. **Promotion path** — no family becomes production-active until real-data evaluation and promotion review are accepted.
+7. **Standalone family evaluation** — test each family/variant independently before applying modifiers, meta-scoring, or ensemble selection.
+8. **Pruning policy** — eliminate, downgrade, or quarantine families that fail baseline, cost, stability, or option-expression feasibility gates.
+9. **Baseline comparison** — family-specific baseline and market/sector/candidate-only baseline.
+10. **Stability gates** — split/refit stability, parameter-neighborhood stability, and variant-family robustness.
+11. **Anonymity checks** — ensure strategy variants consume anonymous target features and reviewed context, not raw ticker/company identity.
+12. **Promotion path** — no family becomes production-active until real-data evaluation and promotion review are accepted.
 
 ## Backlog family variant catalog
 
