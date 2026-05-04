@@ -3,7 +3,13 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from models.model_03_strategy_selection.families import ACTIVE_STANDALONE_FAMILIES, FAMILIES_BY_NAME
+from models.model_03_strategy_selection.families import (
+    ACTIVE_STANDALONE_FAMILIES,
+    FAMILIES_BY_NAME,
+    FAMILY_EVALUATION_ORDER,
+    PRUNING_UNIT,
+    stable_spec_hash,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -11,15 +17,37 @@ FAMILIES_PATH = REPO_ROOT / "src" / "models" / "model_03_strategy_selection" / "
 
 
 class StrategySelectionFamilyTests(unittest.TestCase):
-    def test_active_standalone_families_have_one_file_each(self) -> None:
-        expected = {spec.family for spec in ACTIVE_STANDALONE_FAMILIES}
-        files = {
+    def test_active_standalone_families_have_ordered_importable_files(self) -> None:
+        expected_files = [
+            "family_00_common",
+            "family_01_moving_average_crossover",
+            "family_02_donchian_channel_breakout",
+            "family_03_macd_trend",
+            "family_04_bollinger_band_reversion",
+            "family_05_rsi_reversion",
+            "family_06_bias_reversion",
+            "family_07_vwap_reversion",
+            "family_08_range_breakout",
+            "family_09_opening_range_breakout",
+            "family_10_volatility_breakout",
+        ]
+        files = [
             path.stem
-            for path in FAMILIES_PATH.glob("*.py")
-            if path.stem not in {"__init__", "common"}
-        }
+            for path in sorted(FAMILIES_PATH.glob("family_*.py"))
+        ]
 
-        self.assertEqual(files, expected)
+        self.assertEqual(files, expected_files)
+
+    def test_family_evaluation_order_is_explicit(self) -> None:
+        self.assertEqual(PRUNING_UNIT, "3_strategy_family")
+        self.assertEqual(
+            FAMILY_EVALUATION_ORDER,
+            tuple(spec.family for spec in ACTIVE_STANDALONE_FAMILIES),
+        )
+        self.assertEqual(
+            [spec.evaluation_order for spec in ACTIVE_STANDALONE_FAMILIES],
+            list(range(1, len(ACTIVE_STANDALONE_FAMILIES) + 1)),
+        )
 
     def test_reviewed_variant_counts_match_catalog(self) -> None:
         expected_counts = {
@@ -61,9 +89,20 @@ class StrategySelectionFamilyTests(unittest.TestCase):
             self.assertEqual(len({row["3_strategy_variant"] for row in first_run}), spec.variant_count, spec.family)
 
             for row in first_run[:5]:
+                self.assertEqual(row["3_family_evaluation_order"], spec.evaluation_order)
                 self.assertEqual(row["3_strategy_group"], spec.group)
                 self.assertEqual(row["3_strategy_family"], spec.family)
                 self.assertTrue(row["3_strategy_variant"].startswith(f"{spec.family}."))
+                self.assertEqual(
+                    row["strategy_spec_hash"],
+                    stable_spec_hash(
+                        {
+                            "3_strategy_family": spec.family,
+                            "fixed_parameters": row["fixed_parameters"],
+                            "variable_parameters": row["variable_parameters"],
+                        }
+                    ),
+                )
                 serialized = repr(row).lower()
                 for token in forbidden_payload_tokens:
                     self.assertNotIn(token, serialized, f"{spec.family} leaks {token}")

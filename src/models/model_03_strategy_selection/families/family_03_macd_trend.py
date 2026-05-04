@@ -1,11 +1,12 @@
 """macd_trend standalone strategy-family spec."""
 from __future__ import annotations
 
-from .common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
+from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='macd_trend',
     group='trend_following',
+    evaluation_order=3,
     status=ACTIVE_CATALOG,
     summary='Use MACD line, signal line, and histogram behavior to detect trend acceleration or reversal.',
     suitable_periods=('15Min', '30Min', '1Hour', '1Day'),

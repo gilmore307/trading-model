@@ -16,6 +16,7 @@ from typing import Any, Iterable, Mapping
 
 ACTIVE_CATALOG = "active_catalog"
 LAYER3_BACKLOG = "layer3_backlog"
+PRUNING_UNIT = "3_strategy_family"
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,7 @@ class StrategyFamilySpec:
 
     family: str
     group: str
+    evaluation_order: int
     status: str
     summary: str
     suitable_periods: tuple[str, ...]
@@ -45,6 +47,10 @@ class StrategyFamilySpec:
     fixed_parameters: Mapping[str, Any]
     axes: tuple[VariantAxis, ...]
     notes: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.evaluation_order < 1:
+            raise ValueError("strategy family evaluation_order must be positive; 0 is reserved for common primitives")
 
     @property
     def variant_count(self) -> int:
@@ -60,17 +66,23 @@ class StrategyFamilySpec:
         axis_values = [axis.values for axis in self.axes]
         for values in itertools.product(*axis_values):
             variable_parameters = dict(zip(axis_names, values, strict=True))
-            payload = {
+            fixed_parameters = dict(self.fixed_parameters)
+            hash_payload = {
+                "3_strategy_family": self.family,
+                "fixed_parameters": fixed_parameters,
+                "variable_parameters": variable_parameters,
+            }
+            spec_hash = stable_spec_hash(hash_payload)
+            yield {
+                "3_family_evaluation_order": self.evaluation_order,
                 "3_strategy_group": self.group,
                 "3_strategy_family": self.family,
                 "implementation_status": self.status,
-                "fixed_parameters": dict(self.fixed_parameters),
+                "fixed_parameters": fixed_parameters,
                 "variable_parameters": variable_parameters,
+                "3_strategy_variant": f"{self.family}.{spec_hash[:16]}",
+                "strategy_spec_hash": spec_hash,
             }
-            spec_hash = stable_spec_hash(payload)
-            payload["3_strategy_variant"] = f"{self.family}.{spec_hash[:16]}"
-            payload["strategy_spec_hash"] = spec_hash
-            yield payload
 
 
 def stable_spec_hash(payload: Mapping[str, Any]) -> str:
@@ -84,6 +96,7 @@ def family_payload(spec: StrategyFamilySpec) -> dict[str, Any]:
     """Serialize a family-level spec for documentation/tests."""
 
     return {
+        "3_family_evaluation_order": spec.evaluation_order,
         "3_strategy_group": spec.group,
         "3_strategy_family": spec.family,
         "implementation_status": spec.status,

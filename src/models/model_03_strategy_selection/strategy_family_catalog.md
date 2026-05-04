@@ -4,7 +4,9 @@ Status: Draft contract for review.
 
 This catalog owns the Layer 3 standalone strategy-family summary for `StrategySelectionModel`. It is intentionally model-local until the family names, parameter gradients, and variant counts are accepted and promoted through `trading-manager`.
 
-Implemented active standalone family specs live under `families/`, with one reviewed strategy family per Python file. The catalog remains the human-readable authority for backlog, modifier, meta, position-management, and option-expression families that are not yet promoted into executable Layer 3 specs.
+Implemented active standalone family specs live under `families/`, with one reviewed strategy family per numbered Python file. `family_00_common.py` owns shared primitives; `family_01_*` through `family_10_*` follow first standalone evaluation order. The catalog remains the human-readable authority for backlog, modifier, meta, position-management, and option-expression families that are not yet promoted into executable Layer 3 specs.
+
+`3_strategy_group` is descriptive taxonomy for review slices, diagnostics, and charts. It is not the pruning or promotion unit: standalone evaluation, elimination, and promotion decisions are made at `3_strategy_family` granularity.
 
 ## Boundary
 
