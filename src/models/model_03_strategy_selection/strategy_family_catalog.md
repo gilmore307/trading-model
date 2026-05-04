@@ -30,7 +30,7 @@ Layer 3 must not output:
 
 | Family | Basic idea | Best-fit trading periods | Variant count | Alpaca data support |
 |---|---|---|---:|---|
-| `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | Unified 1-minute bars; MA profiles cover micro, intraday, day, and swing horizons; market/sector context affects strategy selection outside the family. | 144 | `equity_bar` |
+| `moving_average_crossover` | Follow trend changes when a faster moving average crosses a slower one. | Unified 1-minute bars; sparse MA profiles cover micro through day-level horizons; market/sector context affects strategy selection outside the family. | 96 | `equity_bar` |
 | `donchian_channel_breakout` | Follow price when it breaks a prior high/low channel. | Unified 1-minute bars; channel profiles encode duration. | 144 | `equity_bar` |
 | `macd_trend` | Use MACD line/signal/histogram behavior to detect trend acceleration or reversal. | Unified 1-minute bars; MACD profiles encode duration. | 288 | `equity_bar` |
 | `bollinger_band_reversion` | Fade stretched prices back toward a volatility band center when context supports reversion. | Unified 1-minute bars; band profiles encode duration. | 384 | `equity_bar` |
@@ -84,17 +84,18 @@ Variable gradients:
 
 | Axis | Values | Count |
 |---|---|---:|
-| `ma_window_profile` | `micro_3_10`, `scalp_5_20`, `fast_10_30`, `intraday_15_60`, `intraday_30_120`, `intraday_60_240`, `intraday_120_480`, `intraday_240_960`, `equity_day_390_1950`, `equity_swing_780_3900`, `continuous_day_1440_7200`, `continuous_swing_4320_20160` | 12 |
+| `ma_window_profile` | `micro_3_10`, `scalp_5_20`, `fast_10_30`, `intraday_30_120`, `intraday_60_240`, `intraday_120_480`, `intraday_240_960`, `equity_day_390_1950` | 8 |
 | `ma_type` | `sma`, `ema` | 2 |
 | `crossover_confirmation_bars` | `1`, `2`, `3` | 3 |
 | `min_slope` | `0`, `0.05` | 2 |
-Variant count: `12 * 2 * 3 * 2 = 144`.
+Variant count: `8 * 2 * 3 * 2 = 96`.
 
 Implementation notes:
 
 - Each `ma_window_profile` value expands to `(profile_id, fast_window_1min_bars, slow_window_1min_bars)`.
 - Enforce `fast_window_1min_bars < slow_window_1min_bars` through curated `ma_window_profile` values.
-- Fast profiles cover crypto and near-zero-slippage high-volume options; intraday profiles cover stock day-trading; day/swing profiles reduce churn for instruments with meaningful slippage.
+- Fast profiles cover crypto and near-zero-slippage high-volume options; intraday profiles cover stock day-trading; the longest initial profile stops at an equity day-level comparison to avoid over-weighting long swing holds in the first version.
+- The profile grid is intentionally sparse; add intermediate windows only when evaluation shows stable uncovered performance between adjacent profiles.
 - This family should remain a simple crossover baseline, not the final strategy selector by itself.
 - Do not add an embedded trend-filter axis to this family; market and sector context should influence Layer 3 family/variant selection or weighting outside the strategy's own signal rule.
 

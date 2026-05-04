@@ -185,7 +185,7 @@ Indicative variant budgets:
 
 | Family | Initial target variants | Hard cap | Main parameter axes |
 |---|---:|---:|---|
-| `moving_average_crossover` | 120-180 | 500 | fixed 1Min signal bars, MA window profiles, MA type, confirmation bars, minimum slope; no embedded trend filter. |
+| `moving_average_crossover` | 80-120 | 500 | fixed 1Min signal bars, sparse MA window profiles, MA type, confirmation bars, minimum slope; no embedded trend filter. |
 | `donchian_channel_breakout` | 80-180 | 500 | fixed 1Min signal bars, channel window profiles, breakout buffer, ATR stop proxy, confirmation. |
 | `macd_trend` | 120-300 | 500 | fixed 1Min signal bars, MACD profiles, histogram threshold, confirmation, trend filter. |
 | `bollinger_band_reversion` | 120-400 | 500 | fixed 1Min signal bars, band window profiles, band width, entry/exit band, trend filter. |
