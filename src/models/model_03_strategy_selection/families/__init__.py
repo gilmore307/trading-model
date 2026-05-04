@@ -1,7 +1,7 @@
 """Reviewed StrategySelectionModel standalone strategy families."""
 from __future__ import annotations
 
-from .family_00_common import PRUNING_UNIT, StrategyFamilySpec, VariantAxis, family_payload, stable_spec_hash
+from .family_spec_common import PRUNING_UNIT, StrategyFamilySpec, VariantAxis, family_payload, stable_spec_hash
 from .family_01_moving_average_crossover import SPEC as moving_average_crossover
 from .family_02_donchian_channel_breakout import SPEC as donchian_channel_breakout
 from .family_03_macd_trend import SPEC as macd_trend

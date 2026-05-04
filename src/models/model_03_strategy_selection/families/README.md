@@ -4,7 +4,7 @@ Implementation package for reviewed standalone `StrategySelectionModel` strategy
 
 Files are numbered in first evaluation order:
 
-- `family_00_common.py` owns shared primitives only.
+- `family_spec_common.py` owns shared primitives only.
 - `family_01_*` through `family_10_*` are active standalone family specs in one-by-one test order.
 
 Each strategy owns one Python file with:

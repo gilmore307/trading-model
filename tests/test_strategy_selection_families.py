@@ -18,8 +18,8 @@ FAMILIES_PATH = REPO_ROOT / "src" / "models" / "model_03_strategy_selection" / "
 
 class StrategySelectionFamilyTests(unittest.TestCase):
     def test_active_standalone_families_have_ordered_importable_files(self) -> None:
+        self.assertTrue((FAMILIES_PATH / "family_spec_common.py").is_file())
         expected_files = [
-            "family_00_common",
             "family_01_moving_average_crossover",
             "family_02_donchian_channel_breakout",
             "family_03_macd_trend",
@@ -33,7 +33,7 @@ class StrategySelectionFamilyTests(unittest.TestCase):
         ]
         files = [
             path.stem
-            for path in sorted(FAMILIES_PATH.glob("family_*.py"))
+            for path in sorted(FAMILIES_PATH.glob("family_[0-9][0-9]_*.py"))
         ]
 
         self.assertEqual(files, expected_files)

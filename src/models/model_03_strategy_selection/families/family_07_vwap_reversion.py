@@ -1,7 +1,7 @@
 """vwap_reversion standalone strategy-family spec."""
 from __future__ import annotations
 
-from .family_00_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
+from .family_spec_common import ACTIVE_CATALOG, StrategyFamilySpec, VariantAxis
 
 SPEC = StrategyFamilySpec(
     family='vwap_reversion',
