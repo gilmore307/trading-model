@@ -4,7 +4,13 @@ Contract-first workspace for `TargetStateVectorModel` / Layer 3.
 
 Layer 3 has been reset from strategy-family/variant selection to target state-vector construction. It fuses market state, sector state, and anonymous target-local state into a point-in-time vector used by later layers.
 
-This package should own the future importable implementation for:
+Key files:
+
+- `target_state_vector_contract.md` — V1 state-vector row identity, feature blocks, trailing windows, label families, baseline ladder, and rejection rules.
+- `contract.py` — importable constants for the V1 block names, feature groups, label horizons, and baseline ladder.
+- `anonymous_target_candidate_builder/` — candidate-preparation sub-boundary that creates anonymous target candidates before state-vector construction.
+
+This package should own future importable implementation for:
 
 - target state-vector schema helpers;
 - feature block validation;

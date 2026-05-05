@@ -51,13 +51,20 @@ The existing `source_03_strategy_selection` and `feature_03_strategy_selection` 
 
 ## Core state-vector components
 
-Layer 3 vectors must be explicitly decomposable into three blocks.
+Detailed V1 contract:
+
+```text
+src/models/model_03_target_state_vector/target_state_vector_contract.md
+```
+
+Layer 3 vectors must be explicitly decomposable into four model-facing blocks.
 
 | Block | Required role | Example evidence classes |
 |---|---|---|
-| Market state block | Describe the current broad environment inherited from Layer 1. | market regime, volatility/risk state, trend breadth, liquidity stress, correlation/risk-on-risk-off background. |
-| Sector state block | Describe the target's sector/industry context inherited from Layer 2. | sector trend stability, sector rotation rank, sector volatility, basket liquidity, selected/prioritized sector handoff, sector-vs-market relative strength. |
-| Target state block | Describe the anonymous target's own board/tape condition. | target trend, returns, volatility, ATR%, gap, range location, volume/dollar-volume, spread/liquidity, VWAP distance, high/low breakout/reversion state, compression/expansion, abnormal activity. |
+| `market_state_features` | Describe the current broad environment inherited from Layer 1. | market regime, volatility/risk state, trend breadth, liquidity stress, correlation/risk-on-risk-off background. |
+| `sector_state_features` | Describe the target's sector/industry context inherited from Layer 2. | sector trend stability, sector rotation rank, sector volatility, basket liquidity, selected/prioritized sector handoff, sector-vs-market relative strength. |
+| `target_state_features` | Describe the anonymous target's own board/tape condition. | target trend, returns, volatility, ATR%, gap, range location, volume/dollar-volume, spread/liquidity, VWAP distance, compression/expansion, abnormal activity. |
+| `cross_state_features` | Describe the target's relationship to market and sector state. | target-vs-sector strength, target-vs-market strength, volatility ratios, beta/correlation, sector-confirmed/divergent movement, idiosyncratic residual state. |
 
 Layer 3 may also derive cross-block relational features when they are point-in-time and identity-safe:
 
