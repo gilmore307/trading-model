@@ -3,10 +3,10 @@
 This file owns the first model-local contract for the boundary between
 `sector_context_state` and `TargetStateVectorModel` target-state fitting.
 
-The builder is part of Layer 3, not a separate model layer. It is the point-in-time preparation
+The builder is part of Layer 3, not a separate model layer. It is the point-in-time preprocessing and sample-organization
 sub-boundary that expands selected sector/industry baskets into anonymous target
 candidate rows while preserving real symbol references only for audit and
-routing.
+routing. It produces `anonymous_target_feature_vector` inputs for `TargetStateVectorModel`; it does not produce the Layer 3 `target_state_vector` output.
 
 ## Purpose
 
@@ -112,7 +112,7 @@ target candidates. Target-state modeling starts only after Layer 3 receives anon
 ## Model-facing feature vector blocks
 
 The V1 `anonymous_target_feature_vector` should be structured as blocks rather
-than one opaque scalar.
+than one opaque scalar. This is the Layer 3 model-facing input vector, not a model output state vector.
 
 | Block | Meaning |
 |---|---|
@@ -127,7 +127,7 @@ than one opaque scalar.
 | `candidate_quality_vector` | Coverage, freshness, evidence count, duplicate-collapse confidence, and anonymity-check results. |
 
 These block names are model-local until implementation/evaluation proves which
-fields should be promoted through `trading-manager`.
+fields should be promoted through `trading-manager`. Cross-layer vocabulary is governed by `docs/92_vector_taxonomy.md`.
 
 
 Bucket fields must be timestamp-local or reviewed-window-local where possible. They may describe trade structure, liquidity, cost, volatility, and exposure shape, but they must not become long-lived symbol identity surrogates. `target_candidate_id` and bucket combinations must be covered by anonymity/leakage checks before promotion.

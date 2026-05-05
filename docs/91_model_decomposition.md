@@ -37,6 +37,7 @@ Layer-owned fields use compact `1_*`, `2_*`, ... prefixes consistently across do
 - Data acquisition/source evidence stays in `trading-data`.
 - Global terms, fields, artifacts, statuses, templates, and contracts route through `trading-manager`.
 - Do not collapse rich context into a scalar unless supporting fields remain available for audit and downstream interpretation.
+- Use `docs/92_vector_taxonomy.md` as the vocabulary authority: feature surfaces feed models, feature vectors are model-facing inputs, states/state vectors are model outputs, scores are scalar dimensions, labels/outcomes are training/evaluation-only.
 - Live/paper order mutation remains outside `trading-model`.
 
 ## Layer 1: MarketRegimeModel
@@ -69,29 +70,31 @@ Evidence roles:
 | evaluation-only evidence | Used only after output construction to test usefulness. |
 | intentionally unused evidence | Excluded with a documented reason. |
 
-Feature groups should map to the current model-facing market-property keys:
+V2.2 feature groups should map toward separate market-tradability semantic families:
 
 ```text
-1_price_behavior_factor
-1_trend_certainty_factor
-1_capital_flow_factor
-1_sentiment_factor
-1_valuation_pressure_factor
-1_fundamental_strength_factor
-1_macro_environment_factor
-1_market_structure_factor
-1_risk_stress_factor
-1_transition_pressure
+1_market_direction_score
+1_market_direction_strength_score
+1_market_trend_quality_score
+1_market_stability_score
+1_market_risk_stress_score
+1_market_transition_risk_score
+1_breadth_participation_score
+1_correlation_crowding_score
+1_dispersion_opportunity_score
+1_market_liquidity_pressure_score
+1_market_liquidity_support_score
+1_coverage_score
 1_data_quality_score
 ```
 
-When persisted to SQL, these `1_*` model-facing keys remain the physical column names. SQL writers should quote numeric-leading identifiers where required instead of creating `layer01_*` aliases.
+The current implementation still uses legacy `1_*_factor` fields. Until a reviewed migration changes the physical contract, those fields remain compatibility outputs and should be interpreted through the V2.2 semantic split. SQL writers should quote numeric-leading identifiers where required instead of creating `layer01_*` aliases.
 
 Layer 1 evidence maturation means maintaining the feature-to-factor evidence map in `src/models/model_01_market_regime/evidence_map.md`. It does not mean adding sector/ETF/stock conclusions to Layer 1.
 
 ### 3. Prediction target
 
-V1 has no supervised target and no required regime label.
+V1 has no supervised target and no required regime label. The conceptual target is current broad-market tradability/regime state: direction evidence, trend quality, stability, risk/stress, transition risk, breadth, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality.
 
 Physical artifacts:
 
@@ -177,8 +180,9 @@ Layer 1 is broad market background:
 ```text
 model_01_market_regime
   -> market_context_state
-  -> Layer 2 sector trend-stability conditioning
-  -> strategy compatibility context
+  -> Layer 2 sector tradability conditioning
+  -> Layer 3 target-state context
+  -> alpha/confidence and trading-projection constraints
   -> option-expression constraints
   -> portfolio-risk policy
   -> decision-record audit context
@@ -190,7 +194,7 @@ It must not directly rank sectors, ETFs, or stocks and must not pre-assign ETF/s
 
 Status: accepted design route; implementation pending.
 
-Layer 2 V1 is an ETF/sector attribute discovery and sector/industry trend-stability model. It is not a stock selector and not a hand-written sector-style classifier.
+Layer 2 V1 is an ETF/sector attribute discovery and direction-neutral sector/industry tradability-context model. It is not a stock selector and not a hand-written sector-style classifier.
 
 ### 1. Data
 
@@ -312,18 +316,19 @@ Layer 2 output feeds downstream target-state work:
 
 ```text
 sector_context_state
-  -> anonymous target candidate builder
   -> TargetStateVectorModel
-  -> TradeQualityModel
+     (Layer 3 preprocessing: anonymous target candidate builder)
+  -> Alpha / Confidence Model
+  -> Trading Projection Model
   -> OptionExpressionModel
   -> PortfolioRiskModel
 ```
 
 It may provide selected/prioritized sector basket handoff state and a separate `long_bias` / `short_bias` / `neutral` / `mixed` handoff bias, but stock-universe construction waits for the anonymous target candidate builder.
 
-## Layer 3 candidate preparation: Anonymous Target Candidate Builder
+### Layer 3 preprocessing: Anonymous Target Candidate Builder
 
-Status: Layer 3 sub-boundary; contract-first; implementation pending.
+Status: Layer 3 preprocessing sub-boundary; contract-first; implementation pending. It is not a separate model layer and must not be represented as a peer to `TargetStateVectorModel`.
 
 Contract owner:
 
@@ -331,7 +336,7 @@ Contract owner:
 src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md
 ```
 
-Purpose: create anonymous model-facing candidate rows for Layer 3 from Layer 2 selected/prioritized sector baskets while preserving real symbol references for audit/routing only.
+Purpose: create anonymous model-facing candidate rows and `anonymous_target_feature_vector` inputs for Layer 3 from Layer 2 selected/prioritized sector baskets while preserving real symbol references for audit/routing only.
 
 Conceptual row shape:
 
@@ -356,7 +361,7 @@ metadata:
   source_stock_etf_exposure_ref
 ```
 
-The candidate builder may use ETF holdings and `stock_etf_exposure` to transmit Layer 2 selected/watch sector/industry baskets into stock candidates. The model-facing vector may include target behavior, liquidity/tradability, anonymous structural buckets, market context, sector context, event/risk context, exposure transmission, cost, optionability, and quality evidence. It must exclude raw ticker/company identity, stable identity-surrogate bucket combinations, and must not let `target_candidate_id` become a categorical fitting feature.
+The candidate builder may use ETF holdings and `stock_etf_exposure` to transmit Layer 2 selected/watch sector/industry baskets into stock candidates. The model-facing `anonymous_target_feature_vector` may include target behavior, liquidity/tradability, anonymous structural buckets, market context, sector context, event/risk context, exposure transmission, cost, optionability, and quality evidence. It is a Layer 3 input feature vector, not the Layer 3 output state vector. It must exclude raw ticker/company identity, stable identity-surrogate bucket combinations, and must not let `target_candidate_id` become a categorical fitting feature.
 
 V1 acceptance must prove point-in-time construction, no Layer 2 holdings leakage, recoverable audit/routing metadata, duplicate-candidate handling, and anonymity checks before TargetStateVectorModel consumes candidates.
 
@@ -370,27 +375,33 @@ Contract owner:
 docs/04_layer_03_target_state_vector.md
 ```
 
-Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence. It should output inspectable market, sector, target, and cross-state feature blocks plus state embedding/cluster diagnostics. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, and row reliability must remain separate. It must not select strategy families, expand parameter variants, output alpha/direction confidence, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
+Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence prepared by Layer 3 preprocessing. The primary `target_state_vector` output consists of four inspectable blocks: `market_state_features`, `sector_state_features`, `target_state_features`, and `cross_state_features`. Embedding/cluster outputs may be derived representations, but they must not replace the inspectable blocks. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, and row reliability must remain separate. It must not select strategy families, expand parameter variants, output alpha/direction confidence, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
 
-## Layer 4: TradeQualityModel
+## Layer 4: Alpha / Confidence Model
 
 Status: decomposition pending.
 
-Must estimate trade outcome quality, expected move, target/stop, MFE/MAE, and holding horizon under accepted upstream target-state context.
+Must convert `target_state_vector` into long/short direction confidence, expected value, risk, and uncertainty. Direction confidence in `[-1, 1]` belongs here, not in Layer 3.
 
-## Layer 5: OptionExpressionModel
+## Layer 5: Trading Projection Model
+
+Status: decomposition pending.
+
+Must convert confidence, position state, cost, and risk budget into offline target action and target exposure. Real broker mutation remains outside `trading-model`.
+
+## Layer 6: OptionExpressionModel
 
 Status: decomposition pending.
 
 V1 is direct stock/ETF comparison plus long call / long put only. It must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market-context constraints.
 
-## Layer 6: EventOverlayModel
+## Event evidence overlay
 
 Status: decomposition pending.
 
-Must preserve event timing and source priority. It can adjust earlier layers and risk based on scheduled events, breaking news, abnormal activity, and event-memory evidence.
+Must preserve event timing and source priority. Event evidence can adjust Layer 3 preprocessing, Alpha/Confidence, Trading Projection, Option Expression, and Portfolio Risk based on scheduled events, breaking news, abnormal activity, and event-memory evidence. It is an overlay/input family, not a separate core tradability layer.
 
-## Layer 7: PortfolioRiskModel
+## PortfolioRiskModel
 
 Status: decomposition pending.
 

@@ -1,4 +1,4 @@
-# Seven-Layer Trading Model Architecture
+# Direction-Neutral Trading Model Architecture
 
 Status: accepted current route
 Owner intent: keep the model stack direct, point-in-time, and current-route authoritative.
@@ -9,10 +9,11 @@ Owner intent: keep the model stack direct, point-in-time, and current-route auth
 point-in-time data foundation
   -> MarketRegimeModel
   -> SectorContextModel
-  -> anonymous target candidate builder + TargetStateVectorModel
-  -> TradeQualityModel
+  -> TargetStateVectorModel
+     (Layer 3 preprocessing includes anonymous target candidate construction)
+  -> Alpha / Confidence Model
+  -> Trading Projection Model
   -> OptionExpressionModel
-  -> EventOverlayModel
   -> PortfolioRiskModel
   -> unified decision record / downstream execution handoff
 ```
@@ -20,9 +21,9 @@ point-in-time data foundation
 The stack separates three different questions:
 
 ```text
-broad market background
-  -> market-context-conditioned sector/industry background
-  -> target-state anonymous target subject
+broad market tradability background
+  -> market-context-conditioned sector/industry tradability background
+  -> anonymous target tradability state
 ```
 
 This separation is mandatory:
@@ -36,12 +37,12 @@ This separation is mandatory:
 
 | Layer | Model class | Stable id | Conceptual output | Role |
 |---|---|---|---|---|
-| 1 | `MarketRegimeModel` | `market_regime_model` | `market_context_state` | Broad market-property state keyed by `available_time`. |
-| 2 | `SectorContextModel` | `sector_context_model` | `sector_context_state` | Sector/industry trend-stability and inferred basket attributes under market context. |
-| 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_state_vector` | Market + sector + target state vector for anonymous target candidates. |
-| 4 | `TradeQualityModel` | `trade_quality_model` | `trade_quality_state` | Signal quality, outcome distribution, target/stop, MFE/MAE, and holding horizon. |
-| 5 | `OptionExpressionModel` | `option_expression_model` | `expression_state` | Stock/ETF/long-call/long-put expression and option-contract constraints. |
-| 6 | `EventOverlayModel` | `event_overlay_model` | `event_overlay_state` | Event risk/opportunity adjustments across earlier layers and the risk gate. |
+| 1 | `MarketRegimeModel` | `market_regime_model` | `market_context_state` | Direction-neutral broad market tradability/regime state keyed by `available_time`. |
+| 2 | `SectorContextModel` | `sector_context_model` | `sector_context_state` | Direction-neutral sector/industry tradability context under market context. |
+| 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_state_vector` | Direction-neutral market + sector + target state vector for anonymous target candidates; includes candidate construction as preprocessing. |
+| 4 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_state` | Target-state vector to long/short direction confidence, expected value, risk, and uncertainty. |
+| 5 | `TradingProjectionModel` | `trading_projection_model` | `trading_projection_state` | Confidence plus position/cost/risk context to offline target action and target exposure. |
+| 6 | `OptionExpressionModel` | `option_expression_model` | `expression_state` | Stock/ETF/long-call/long-put expression and option-contract constraints. |
 | 7 | `PortfolioRiskModel` | `portfolio_risk_model` | `portfolio_risk_state` | Final offline risk, sizing, exposure, execution-style, exit, and kill-switch gate. |
 
 Do not call Layer 7 `ExecutionModel`; broker mutation and live/paper order placement are outside `trading-model`.
@@ -57,6 +58,8 @@ model_NN_<layer_slug>_diagnostics
 ```
 
 The primary output is the narrow downstream dependency contract. Explainability owns human-review internals. Diagnostics owns acceptance, monitoring, and gating evidence. Layer-owned fields use compact `1_*`, `2_*`, ... names in docs, model-facing payloads, and SQL physical columns; SQL writers quote numeric-leading names when needed rather than storing `layer01_*` / `layer02_*` aliases.
+
+`docs/92_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_state_vector` is the Layer 3 model output.
 
 ## Point-in-Time Rule
 
@@ -89,7 +92,7 @@ Backtests must use `available_time` and `tradeable_time`, not hindsight event in
 
 ### Goal
 
-Describe the broad market environment as a continuous point-in-time market-property vector.
+Describe the broad market/cross-asset environment as a point-in-time direction-neutral tradability/regime state. Layer 1 asks whether the market background is clear, stable, low-transition-risk, and able to support downstream trading; it does not decide long/short actions.
 
 Physical output:
 
@@ -103,22 +106,26 @@ Conceptual downstream output:
 market_context_state
 ```
 
-Current fields:
+V2.2 target semantic fields:
 
 ```text
 available_time
-1_price_behavior_factor
-1_trend_certainty_factor
-1_capital_flow_factor
-1_sentiment_factor
-1_valuation_pressure_factor
-1_fundamental_strength_factor
-1_macro_environment_factor
-1_market_structure_factor
-1_risk_stress_factor
-1_transition_pressure
+1_market_direction_score
+1_market_direction_strength_score
+1_market_trend_quality_score
+1_market_stability_score
+1_market_risk_stress_score
+1_market_transition_risk_score
+1_breadth_participation_score
+1_correlation_crowding_score
+1_dispersion_opportunity_score
+1_market_liquidity_pressure_score
+1_market_liquidity_support_score
+1_coverage_score
 1_data_quality_score
 ```
+
+The current implementation still carries legacy market-property factor fields until a reviewed migration changes the physical contract. Those fields should be treated as compatibility inputs to the V2.2 semantic split, not as a reason to preserve ambiguous downstream semantics.
 
 ### Inputs
 
@@ -188,7 +195,7 @@ Layer 1 must prove:
 
 ### Goal
 
-Infer sector/industry basket behavior and trend stability under broad market context.
+Infer direction-neutral sector/industry tradability context under broad market context.
 
 Conceptual output:
 
@@ -198,7 +205,7 @@ sector_context_state[available_time, sector_or_industry_symbol]
 
 Layer 2 answers:
 
-- Which sector/industry baskets have clean and persistent trend behavior?
+- Which sector/industry baskets have clean, stable, low-noise, low-transition-risk tradability behavior?
 - Under which broad market contexts does each basket trend cleanly, chop, reverse, or cycle?
 - Which basket attributes are inferred from evidence rather than pre-labeled?
 - Which baskets are eligible, watch-only, or gated out for downstream strategy work?
@@ -211,19 +218,9 @@ Layer 2 does **not** choose final stocks.
 - `trading_data.feature_02_sector_context` for sector/industry relative strength, trend, volatility, correlation, breadth, and dispersion evidence.
 - ETF liquidity, optionability, gap/chop behavior, event density, and abnormal activity evidence.
 
-### Output blocks
+### Output semantics
 
-```text
-2_sector_observed_behavior_vector
-2_sector_attribute_vector
-2_sector_conditional_behavior_vector
-2_sector_trend_stability_vector
-2_sector_tradability_vector
-2_sector_risk_context_vector
-2_eligibility_state
-2_sector_handoff_state
-optional 2_sector_selection_parameter
-```
+Layer 2 primary output is `sector_context_state`, not a pile of peer vectors. Internal/explainability vectors may include observed behavior, attributes, conditional behavior, trend stability, tradability, risk context, and quality diagnostics. The narrow downstream fields separate signed direction, trend quality, stability, transition risk, liquidity tradability, handoff state, handoff bias, and row quality.
 
 ### Boundaries
 
@@ -234,9 +231,9 @@ optional 2_sector_selection_parameter
 - Do not use ETF holdings or `stock_etf_exposure` as core Layer 2 behavior-model inputs.
 - Output selected/prioritized sector basket handoff state for downstream candidate construction.
 
-## Layer 3 candidate preparation: Anonymous Target Candidate Builder
+### Layer 3 preprocessing: Anonymous Target Candidate Builder
 
-The target candidate builder is part of Layer 3. It creates anonymous target candidate rows from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
+The target candidate builder is part of Layer 3 preprocessing. It is not a separate model, not a separate layer, and not a peer to `TargetStateVectorModel`. It creates anonymous target candidate rows from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
 
 The current model-local contract is:
 
@@ -244,15 +241,23 @@ The current model-local contract is:
 src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md
 ```
 
-Conceptual fields:
+Conceptual model-facing preprocessing fields:
 
 ```text
 target_candidate_id
 anonymous_target_feature_vector
-audit_symbol_ref
-routing_symbol_ref
 market_context_state_ref
 sector_context_state_ref
+```
+
+Audit/routing-only metadata:
+
+```text
+audit_symbol_ref
+routing_symbol_ref
+source_sector_or_industry_symbol
+source_holding_ref
+source_stock_etf_exposure_ref
 ```
 
 The builder may use ETF holdings and `stock_etf_exposure` to transmit selected sector baskets into stock candidates. Model-facing vectors may include behavior shape, liquidity, volatility, event/risk context, sector context, market context, exposure transmission, and cost/tradability features.
@@ -265,27 +270,31 @@ Model-facing vectors must exclude raw ticker/company identity and memorized symb
 
 It outputs target state vectors, signed current-state direction evidence, direction-neutral tradability scores, cross-state relationship features, state embeddings/clusters, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target state vectors. It does not select strategy variants, output alpha confidence, size positions, or treat positive direction as inherently better than negative direction.
 
-## Layer 4: TradeQualityModel
+## Layer 4: Alpha / Confidence Model
 
-`TradeQualityModel` estimates whether a candidate signal is worth trading. It owns downstream direction-confidence/trade-quality calibration, outcome distribution, expected move, target/stop, MFE/MAE, holding horizon, and trade-quality score.
+`AlphaConfidenceModel` consumes `target_state_vector` and estimates long/short direction confidence in `[-1, 1]`, expected value, risk, and uncertainty. It is the first downstream layer allowed to convert direction-neutral state into directional confidence. It does not directly place orders.
 
-It should model more than direction; it should model payoff shape and adverse/favorable excursion under the selected strategy context. Any `[-1, 1]` direction-confidence output belongs here or in a later downstream consumer, not in Layer 3 state-vector construction.
+## Layer 5: Trading Projection Model
 
-## Layer 5: OptionExpressionModel
+`TradingProjectionModel` consumes confidence, current/pending position state, costs, and risk budget to project an offline target action and target exposure. It owns the mapping from confidence to trade intent, not Layer 3.
+
+## Layer 6: OptionExpressionModel
 
 V1 supports direct stock/ETF comparison plus long call and long put option expressions only.
 
-It consumes option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, trade-quality state, and market context.
+It consumes option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, alpha/confidence state, trading-projection state, and market context.
 
 It outputs expression choice, contract constraints, no-trade filters, and expected expression quality. Multi-leg structures are deferred.
 
-## Layer 6: EventOverlayModel
+## Event evidence overlay
 
-`EventOverlayModel` adjusts earlier layers and final risk based on scheduled events, breaking news, abnormal activity, event memory, earnings concentration, macro windows, and event-driven no-trade states.
+The prior architecture reserved an event overlay stage. Under V2.2, event risk remains an overlay used by Layer 3 preprocessing, Alpha/Confidence, Trading Projection, Option Expression, and Portfolio Risk rather than a peer to the three core tradability layers.
 
-It is an overlay, not merely a final stage.
+Event evidence adjusts earlier layers and final risk based on scheduled events, breaking news, abnormal activity, event memory, earnings concentration, macro windows, and event-driven no-trade states.
 
-## Layer 7: PortfolioRiskModel
+It is an overlay/input family, not a separate fourth core tradability layer.
+
+## PortfolioRiskModel
 
 `PortfolioRiskModel` is the final offline risk gate. It uses candidate context, market context, sector context, event overlays, and portfolio state to approve, reject, resize, delay, or alter the trade plan.
 
@@ -302,9 +311,10 @@ market_context_state_ref
 sector_context_state_ref
 target_candidate_id
 target_state_vector_ref
-trade_quality_state_ref
+alpha_confidence_state_ref
+trading_projection_state_ref
 expression_state_ref
-event_overlay_state_ref
+event_evidence_refs
 portfolio_risk_state_ref
 audit/routing metadata
 final offline verdict

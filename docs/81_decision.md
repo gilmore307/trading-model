@@ -13,24 +13,24 @@ It does not own raw source acquisition, global registry authority, durable stora
 
 Cross-repository names, shared fields, artifact types, statuses, templates, and contracts must be routed through `trading-manager` before other repositories depend on them.
 
-## D002 - Seven-layer model stack
+## D002 - Direction-neutral model stack
 
 Date: 2026-04-27
-Status: Accepted
+Status: Accepted; revised by V2.2 on 2026-05-05
 
-`trading-model` is the offline modeling home for seven layers:
+`trading-model` is the offline modeling home for the direction-neutral tradability decision stack:
 
 | Layer | Model | Stable id | Role |
 |---|---|---|---|
-| 1 | `MarketRegimeModel` | `market_regime_model` | Broad market context state. |
-| 2 | `SectorContextModel` | `sector_context_model` | Market-state-conditioned sector/industry trend-stability state. |
-| 3 | `TargetStateVectorModel` | `target_state_vector_model` | Market + sector + target state vector for anonymized target candidates. |
-| 4 | `TradeQualityModel` | `trade_quality_model` | Trade outcome quality, target/stop, MFE/MAE, and horizon. |
-| 5 | `OptionExpressionModel` | `option_expression_model` | Stock/ETF/long-call/long-put expression and option contract constraints. |
-| 6 | `EventOverlayModel` | `event_overlay_model` | Scheduled/breaking event risk and opportunity overlay across earlier layers and risk. |
+| 1 | `MarketRegimeModel` | `market_regime_model` | Broad market tradability/regime context state. |
+| 2 | `SectorContextModel` | `sector_context_model` | Market-context-conditioned sector/industry tradability context. |
+| 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target state vector for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
+| 4 | `AlphaConfidenceModel` | `alpha_confidence_model` | Target-state vector to long/short direction confidence, expected value, risk, and uncertainty. |
+| 5 | `TradingProjectionModel` | `trading_projection_model` | Confidence plus position/cost/risk context to offline target action and target exposure. |
+| 6 | `OptionExpressionModel` | `option_expression_model` | Stock/ETF/long-call/long-put expression and option contract constraints. |
 | 7 | `PortfolioRiskModel` | `portfolio_risk_model` | Final offline portfolio risk, sizing, execution-style, exit, and kill-switch gate. |
 
-Layer 6 is an overlay. Layer 7 may model execution-gate policy, but live/paper order placement remains outside this repository and the layer must not be renamed `ExecutionModel`.
+Event evidence remains an overlay/input to target-state, confidence, projection, expression, and risk work. Live/paper order placement remains outside this repository and no layer should be renamed `ExecutionModel`.
 
 ## D003 - Current structure separates market, sector, and target work
 
@@ -46,19 +46,23 @@ MarketRegimeModel
 SectorContextModel
   -> sector_context_state
 
-anonymous target candidate builder + TargetStateVectorModel
+TargetStateVectorModel
+  -> Layer 3 preprocessing: anonymous target candidate builder
   -> target_candidate_id
   -> anonymous_target_feature_vector
   -> target_state_vector
 
-TradeQualityModel
-  -> trade_quality_state
+AlphaConfidenceModel
+  -> alpha_confidence_state
+
+TradingProjectionModel
+  -> trading_projection_state
 
 OptionExpressionModel
   -> expression_state
 
-EventOverlayModel
-  -> event_overlay_state
+Event evidence overlay
+  -> event/risk inputs to Layer 3+ and portfolio risk
 
 PortfolioRiskModel
   -> portfolio_risk_state / final offline risk gate
@@ -375,3 +379,24 @@ Layer 3 `TargetStateVectorModel` must make the same separation for anonymous tar
 Signed labels may be used for direction-neutral evaluation, but the orientation sign must come from deterministic point-in-time state evidence or from an out-of-sample upstream prediction. It must not be derived from the same fitted target being evaluated.
 
 Layer 4/5 consumers own direction-confidence calibration, target/stop/action projection, position sizing, and final trading instructions. Layer 3 remains a state-vector model.
+
+## D018 - Vector taxonomy and Layer 3 preprocessing boundary
+
+Date: 2026-05-05
+Status: Accepted
+
+The V2.2 three-layer tradability design uses a strict vocabulary split:
+
+- `feature_*` surfaces are deterministic point-in-time inputs owned by `trading-data`.
+- `*_feature_vector` values are model-facing input vectors.
+- `*_state` values are narrow current-state model outputs.
+- `*_state_vector` is reserved for an accepted block-structured state output such as Layer 3 `target_state_vector`.
+- `*_score` fields are scalar dimensions and must not silently combine direction, quality, tradability, confidence, and position size.
+- `*_diagnostics` and `*_explainability` are support surfaces unless promoted separately.
+- `*_label` / `*_outcome` values are training/evaluation-only and must never enter inference vectors.
+
+Anonymous target candidate construction is Layer 3 preprocessing and sample organization. It is not a separate model, not a fourth layer, not Layer 2.5, and not a peer to `TargetStateVectorModel`.
+
+`anonymous_target_feature_vector` is the Layer 3 model-facing input vector produced by preprocessing. `target_state_vector` is the Layer 3 model output. Audit/routing metadata, including real symbol references, remains outside model-facing vectors.
+
+Layer 1 should migrate toward V2.2 market-tradability semantics: market direction, direction strength, trend quality, stability, risk stress, transition risk, breadth participation, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality. Current `1_*_factor` fields remain implementation compatibility fields until a reviewed code/SQL migration replaces them.

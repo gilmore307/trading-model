@@ -1,6 +1,6 @@
 # model_01_market_regime
 
-Continuous MarketRegimeModel V1 state-vector builder.
+MarketRegimeModel V1 broad market-context state builder.
 
 Boundary:
 
@@ -36,9 +36,11 @@ Supported aggregations:
 Standardization defaults are currently `lookback = 120`, `min_history = 20`, `std_floor = 1e-8`, `z_clip = 5.0`, and `min_signal_coverage = 0.5`. Groups may override `min_history`, `std_floor`, or `z_clip`; correlation/volatility/low-frequency groups deliberately use longer minimum histories.
 
 
-## Market-property factor ontology
+## V2.2 market-tradability semantics
 
-The current output columns are market-property factors, not proxy-dashboard factors:
+Layer 1 should describe broad market tradability/regime context with separate direction, trend quality, stability, risk/stress, transition risk, breadth, correlation/crowding, dispersion, liquidity pressure/support, coverage, and data quality semantics. It does not output alpha confidence, target state vectors, or trading instructions.
+
+The current output columns are implementation compatibility market-property factors, not proxy-dashboard factors:
 
 - `1_price_behavior_factor`
 - `1_trend_certainty_factor`
@@ -54,7 +56,7 @@ The current output columns are market-property factors, not proxy-dashboard fact
 
 When writing to SQL, the runtime wrapper preserves compact model-facing keys such as `1_trend_certainty_factor` as the physical column name and quotes numeric-leading identifiers where required. The support artifact builders are intentionally generic: explainability stores reviewed per-factor context, while diagnostics stores row-level coverage/missingness/gating context. If a future model layer genuinely has no support artifact to write, the Layer naming contract does not require inventing one.
 
-Observable ETF ratios, returns, volatility, trend, correlation, credit/rate/dollar/commodity, and breadth signals are sensors. They support the market-property ontology but are not themselves the public output contract. `1_fundamental_strength_factor` is currently a broad-market participation proxy until true point-in-time fundamental evidence is added.
+Observable ETF ratios, returns, volatility, trend, correlation, credit/rate/dollar/commodity, and breadth signals are sensors. They support the market-property ontology but are not themselves the public output contract. `1_fundamental_strength_factor` is currently a broad-market participation proxy until true point-in-time fundamental evidence is added. New downstream contracts should prefer the V2.2 semantic split documented in `docs/02_layer_01_market_regime.md` and `docs/92_vector_taxonomy.md` rather than expanding dependence on ambiguous legacy factor names.
 
 
 ## Evidence map

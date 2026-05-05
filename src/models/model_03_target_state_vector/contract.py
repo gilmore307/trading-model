@@ -3,6 +3,9 @@ from __future__ import annotations
 
 from typing import Final
 
+LAYER3_PREPROCESSING_VECTOR: Final[str] = "anonymous_target_feature_vector"
+LAYER3_OUTPUT_STATE_VECTOR: Final[str] = "target_state_vector"
+
 STATE_VECTOR_BLOCKS: Final[tuple[str, ...]] = (
     "market_state_features",
     "sector_state_features",

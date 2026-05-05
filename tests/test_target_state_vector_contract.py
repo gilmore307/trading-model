@@ -18,6 +18,8 @@ CONTRACT_PATH = (
 
 class TargetStateVectorContractTests(unittest.TestCase):
     def test_v1_blocks_are_relationship_first(self) -> None:
+        self.assertEqual(contract.LAYER3_PREPROCESSING_VECTOR, "anonymous_target_feature_vector")
+        self.assertEqual(contract.LAYER3_OUTPUT_STATE_VECTOR, "target_state_vector")
         self.assertEqual(
             contract.STATE_VECTOR_BLOCKS,
             (
@@ -101,6 +103,8 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "mismatched state observation windows across market, sector, and target blocks",
             "treats positive direction as inherently better than negative direction",
             "Layer 4 alpha/direction confidence",
+            "anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector",
+            "target_state_vector` is the Layer 3 model output",
         }:
             self.assertIn(token, text)
 

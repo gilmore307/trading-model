@@ -12,8 +12,9 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `80_task.md` — current task state, queued work, blockers, and recently accepted work.
 - `81_decision.md` — ratified repository decisions.
 - `82_memory.md` — durable local continuity that does not fit narrower docs.
-- `90_system_model_architecture_rfc.md` — accepted current seven-layer model architecture and phased implementation route.
+- `90_system_model_architecture_rfc.md` — accepted current direction-neutral model architecture and phased implementation route.
 - `91_model_decomposition.md` — current nine-part model decomposition framework and layer-by-layer design breakdown.
+- `92_vector_taxonomy.md` — accepted vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing.
 
 Layer workflow and acceptance live in the numbered layer files. Add future layers as `04_layer_03_...`, `05_layer_04_...`, and so on before adding broad workflow prose.
 

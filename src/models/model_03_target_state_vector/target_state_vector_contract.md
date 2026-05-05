@@ -2,7 +2,9 @@
 
 Status: Draft V1 contract for review.
 
-This file owns the model-local Layer 3 target state-vector contract. Layer 3 is not a strategy-variant selector. It constructs an anonymous, point-in-time, direction-neutral tradability state vector that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context.
+This file owns the model-local Layer 3 target state-vector output contract. Layer 3 is not a strategy-variant selector. It constructs an anonymous, point-in-time, direction-neutral tradability state vector that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context.
+
+`docs/92_vector_taxonomy.md` owns the vocabulary distinction: `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector, while `target_state_vector` is the Layer 3 model output.
 
 ## Row identity
 
@@ -24,11 +26,11 @@ Required identity fields:
 | `sector_context_state_ref` | Layer 2 context row reference. |
 | `target_state_vector_ref` | Stable reference/hash for the model-facing state payload. |
 
-Routing/audit fields such as `audit_symbol_ref` and `routing_symbol_ref` must stay outside the model-facing vector.
+Routing/audit fields such as `audit_symbol_ref` and `routing_symbol_ref` must stay outside the model-facing vector. `target_candidate_id` is row identity only and must not be used as a fitting feature.
 
 ## V1 feature blocks
 
-V1 has four inspectable model-facing blocks. Each block may be stored as JSONB during research, but block names and field groups must remain stable enough for tests, diagnostics, and review.
+V1 `target_state_vector` has four inspectable model-facing output blocks. Each block may be stored as JSONB during research, but block names and field groups must remain stable enough for tests, diagnostics, and review. Derived embeddings/clusters may support diagnostics, but they must not replace these inspectable blocks as the primary contract.
 
 ### `market_state_features`
 

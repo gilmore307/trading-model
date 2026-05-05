@@ -2,25 +2,27 @@
 
 ## Why This Repository Exists
 
-The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the full seven-layer trading decision system:
+The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the direction-neutral trading decision system:
 
 1. MarketRegimeModel (`market_regime_model`);
 2. SectorContextModel (`sector_context_model`);
-3. TargetStateVectorModel (`target_state_vector_model`);
-4. TradeQualityModel (`trade_quality_model`);
-5. OptionExpressionModel (`option_expression_model`);
-6. EventOverlayModel (`event_overlay_model`);
+3. TargetStateVectorModel (`target_state_vector_model`), including anonymous target candidate construction as Layer 3 preprocessing;
+4. AlphaConfidenceModel (`alpha_confidence_model`);
+5. TradingProjectionModel (`trading_projection_model`);
+6. OptionExpressionModel (`option_expression_model`);
 7. PortfolioRiskModel (`portfolio_risk_model`).
+
+Event evidence remains an overlay/input to target-state, confidence, projection, expression, and risk work rather than a peer to the three core tradability layers.
 
 The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
 
 Current structural boundary:
 
 ```text
-broad market background -> sector/industry trend-stability background -> anonymized target-state work
+broad market tradability context -> sector/industry tradability context -> anonymized target tradability state vector -> confidence -> trading projection
 ```
 
-`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies sector/industry trend stability under each broad market state. `TargetStateVectorModel` and later layers evaluate anonymized target candidates with market and sector context, then map back to real symbols only for audit, routing, and decision records.
+`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Later confidence/projection/expression/risk layers may map back to real symbols only for audit, routing, and decision records.
 
 ## Related Systems
 
@@ -31,7 +33,7 @@ broad market background -> sector/industry trend-stability background -> anonymi
 | `trading-data` | Produces point-in-time data/source-evidence artifacts consumed by model research. |
 | `trading-storage` | Owns durable storage layout, retention, archive, backup, restore, and artifact placement rules. |
 | `trading-strategy` | May provide strategy-family definitions/backtest artifacts if kept separate; otherwise strategy-selection research can be model-local until boundaries are revisited. |
-| `trading-model` | Produces offline seven-layer model research outputs, validation evidence, and decision-record prototypes. |
+| `trading-model` | Produces offline direction-neutral model research outputs, validation evidence, and decision-record prototypes. |
 | `trading-execution` | Consumes promoted decisions/risk-approved orders for paper/live execution; broker mutation is not owned here. |
 | `trading-dashboard` | Presents already-produced outputs and evidence. |
 

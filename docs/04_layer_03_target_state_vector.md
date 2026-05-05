@@ -18,7 +18,7 @@ Layer 3 builds a point-in-time, direction-neutral tradability state vector that 
 
 Layer 3 owns:
 
-- anonymous target candidate state construction;
+- anonymous target candidate construction as preprocessing / sample organization, not as a separate model;
 - market-context, sector-context, and target-local feature fusion;
 - target state vector generation;
 - target-state labels for future return/risk/path/tradability relationship research, kept out of inference features;
@@ -39,7 +39,8 @@ Layer 3 does **not** own:
 ```text
 trading_model.model_01_market_regime       # broad market_context_state
 trading_model.model_02_sector_context      # sector_context_state / selected basket context
-anonymous_target_candidate_builder         # point-in-time anonymous candidate rows
+Layer 3 preprocessing: anonymous_target_candidate_builder
+                                           # point-in-time anonymous candidate rows and anonymous_target_feature_vector
 trading_data.source_03_target_state        # target-local bars, liquidity, quote/trade evidence
 trading_data.feature_03_target_state_vector
                                            # deterministic target-state feature surface
@@ -57,7 +58,9 @@ Detailed V1 contract:
 src/models/model_03_target_state_vector/target_state_vector_contract.md
 ```
 
-Layer 3 vectors must be explicitly decomposable into four model-facing blocks.
+Use `docs/92_vector_taxonomy.md` for vocabulary. `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector; `target_state_vector` is the Layer 3 model output.
+
+Layer 3 output state vectors must be explicitly decomposable into four model-facing blocks.
 
 | Block | Required role | Example evidence classes |
 |---|---|---|
@@ -68,7 +71,7 @@ Layer 3 vectors must be explicitly decomposable into four model-facing blocks.
 
 Layer 3 may also derive cross-block relational features when they are point-in-time and identity-safe:
 
-- target relative strength versus sector and market;
+- target residual direction / relative behavior versus sector and market;
 - target volatility versus sector and market;
 - target liquidity/cost versus sector peers or accepted universe reference;
 - target beta/correlation to market and sector;
@@ -187,4 +190,4 @@ A Layer 3 implementation is not accepted unless it proves:
 - liquidity/cost diagnostics identify states that are theoretically predictive but practically untradeable;
 - audit/routing metadata can map decisions back to real symbols without leaking identity into fitting vectors;
 - generated outputs, large artifacts, and credentials stay out of Git;
-- Layer 4/5 consumers, not Layer 3, own direction-confidence calibration, target/stop/action projection, position sizing, and final trading instructions.
+- Layer 4 Alpha / Confidence and Layer 5 Trading Projection consumers, not Layer 3, own direction-confidence calibration, target/stop/action projection, position sizing, and final trading instructions.
