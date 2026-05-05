@@ -24,7 +24,7 @@ Status: Accepted
 |---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | Broad market context state. |
 | 2 | `SectorContextModel` | `sector_context_model` | Market-state-conditioned sector/industry trend-stability state. |
-| 3 | `StrategySelectionModel` | `strategy_selection_model` | Strategy fit for anonymized target candidates. |
+| 3 | `TargetStateVectorModel` | `target_state_vector_model` | Market + sector + target state vector for anonymized target candidates. |
 | 4 | `TradeQualityModel` | `trade_quality_model` | Trade outcome quality, target/stop, MFE/MAE, and horizon. |
 | 5 | `OptionExpressionModel` | `option_expression_model` | Stock/ETF/long-call/long-put expression and option contract constraints. |
 | 6 | `EventOverlayModel` | `event_overlay_model` | Scheduled/breaking event risk and opportunity overlay across earlier layers and risk. |
@@ -46,10 +46,10 @@ MarketRegimeModel
 SectorContextModel
   -> sector_context_state
 
-anonymous target candidate builder + StrategySelectionModel
+anonymous target candidate builder + TargetStateVectorModel
   -> target_candidate_id
   -> anonymous_target_feature_vector
-  -> strategy_fit_state
+  -> target_state_vector
 
 TradeQualityModel
   -> trade_quality_state
@@ -68,8 +68,8 @@ Hard separation rules:
 
 - Layer 1 describes broad market state only.
 - Layer 2 describes sector/industry basket behavior under broad market state.
-- Layer 3 is the first strategy-aware target layer.
-- Final target/security choice must be strategy-aware.
+- Layer 3 is the first target-state layer.
+- Final target/security choice must be made downstream from accepted target-state evidence, not from raw identity.
 - Model-facing fitting rows for target work must anonymize ticker/company identity.
 - Real symbols may remain in audit/routing metadata and decision records, but not in model-facing identity features.
 
@@ -190,14 +190,14 @@ Status: Accepted
 
 ETF holdings and `stock_etf_exposure` are not core inputs to Layer 2 sector behavior modeling. Layer 2 should learn ETF/basket conditional behavior from price/relative-strength/volatility/correlation/tradability/event evidence under similar market backgrounds.
 
-After Layer 2 selects or prioritizes sector/industry baskets, the anonymous target candidate builder may use ETF holdings and `stock_etf_exposure` to transmit selected baskets into a stock candidate universe. Layer 3 strategy fitting must still consume anonymous target feature vectors rather than raw ticker/company identity.
+After Layer 2 selects or prioritizes sector/industry baskets, the anonymous target candidate builder may use ETF holdings and `stock_etf_exposure` to transmit selected baskets into a stock candidate universe. Layer 3 target-state construction must still consume anonymous target feature vectors rather than raw ticker/company identity.
 
-## D008 - Strategy fitting must use anonymous target candidates
+## D008 - Target fitting must use anonymous target candidates
 
 Date: 2026-05-02
 Status: Accepted
 
-`StrategySelectionModel` and later target-aware layers may evaluate target candidates only through model-facing anonymous features.
+`TargetStateVectorModel` and later target-aware layers may evaluate target candidates only through model-facing anonymous features.
 
 Allowed in model-facing fitting vectors:
 
@@ -261,12 +261,12 @@ Rules:
 Date: 2026-05-02
 Status: Accepted
 
-The boundary between `SectorContextModel` and `StrategySelectionModel` is a Layer 3 anonymous target candidate builder, not a peer model layer and not direct ticker-aware strategy fitting.
+The boundary between `SectorContextModel` and `TargetStateVectorModel` is a Layer 3 anonymous target candidate builder, not a peer model layer and not direct ticker-aware target-state fitting.
 
 The model-local V1 contract is owned by:
 
 ```text
-src/models/model_03_strategy_selection/anonymous_target_candidate_builder/target_candidate_builder_contract.md
+src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md
 ```
 
 The builder expands Layer 2 selected/prioritized sector or industry baskets into target candidates using point-in-time ETF holdings, `stock_etf_exposure`, target-local behavior, liquidity/tradability, event/risk, cost, optionability, and quality evidence.
@@ -336,3 +336,18 @@ model_dataset_snapshot
 `model_promotion_metric` owns the measured promotion scores. The surrounding dataset/evaluation tables own the context that makes those scores reviewable: the frozen data snapshot, point-in-time split windows, label/horizon construction, and the specific evaluation run that produced the metrics.
 
 Agent or human promotion review should therefore receive a candidate evidence package rooted in `model_promotion_candidate` and backed by `model_eval_run`, including metric values plus thresholds, baseline comparison, split-stability evidence, leakage/no-future checks, and dataset/label provenance. Missing real-data evaluation, thresholds, baseline/stability/leakage evidence, or dataset/label context is grounds to defer promotion rather than approve.
+
+## D016 - Layer 3 reset to TargetStateVectorModel
+
+Date: 2026-05-04
+Status: Accepted
+
+Layer 3 is reset from strategy-family/variant selection to `TargetStateVectorModel`.
+
+The active Layer 3 purpose is to construct an anonymous target state vector from three inspectable blocks:
+
+1. Layer 1 market state;
+2. Layer 2 sector/industry state;
+3. target-local board/tape/liquidity state.
+
+Layer 3 must focus on finding the relationship between target market state and future tradeable outcomes. Strategy-family and parameter-variant grids are frozen as legacy research and must not be expanded as the active Layer 3 boundary. Strategy/variant selection may return later only as a downstream layer or probe after target-state relationships are accepted.

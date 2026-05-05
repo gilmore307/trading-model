@@ -6,7 +6,7 @@ The trading platform is split across multiple repositories so each major respons
 
 1. MarketRegimeModel (`market_regime_model`);
 2. SectorContextModel (`sector_context_model`);
-3. StrategySelectionModel (`strategy_selection_model`);
+3. TargetStateVectorModel (`target_state_vector_model`);
 4. TradeQualityModel (`trade_quality_model`);
 5. OptionExpressionModel (`option_expression_model`);
 6. EventOverlayModel (`event_overlay_model`);
@@ -17,10 +17,10 @@ The repository turns point-in-time data artifacts and strategy/event evidence in
 Current structural boundary:
 
 ```text
-broad market background -> sector/industry trend-stability background -> anonymized strategy-aware target work
+broad market background -> sector/industry trend-stability background -> anonymized target-state work
 ```
 
-`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies sector/industry trend stability under each broad market state. `StrategySelectionModel` and later layers evaluate anonymized target candidates with market and sector context, then map back to real symbols only for audit, routing, and decision records.
+`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies sector/industry trend stability under each broad market state. `TargetStateVectorModel` and later layers evaluate anonymized target candidates with market and sector context, then map back to real symbols only for audit, routing, and decision records.
 
 ## Related Systems
 

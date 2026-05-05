@@ -190,4 +190,4 @@ V1 acceptance must show:
 3. ETF holdings and `stock_etf_exposure` are not used as Layer 2 core behavior-model inputs;
 4. inferred attributes stable enough across chronological refits to be useful;
 5. trend-stability separation versus a market-context-free baseline;
-6. downstream anonymous target generation can consume selected Layer 2 baskets, use holdings/exposure evidence to build stock candidates, and then anonymize candidates without raw company/ticker identity leakage in strategy fitting.
+6. downstream anonymous target generation can consume selected Layer 2 baskets, use holdings/exposure evidence to build stock candidates, and then anonymize candidates without raw company/ticker identity leakage in target-state fitting.

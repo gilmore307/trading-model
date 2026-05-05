@@ -1,7 +1,7 @@
 # anonymous target candidate builder V1 contract
 
 This file owns the first model-local contract for the boundary between
-`sector_context_state` and `StrategySelectionModel` target-aware fitting.
+`sector_context_state` and `TargetStateVectorModel` target-state fitting.
 
 The builder is part of Layer 3, not a separate model layer. It is the point-in-time preparation
 sub-boundary that expands selected sector/industry baskets into anonymous target
@@ -81,7 +81,6 @@ Allowed inputs:
 - target-local point-in-time price, trend, volatility, liquidity, spread, gap,
   borrow/shortability, optionability, abnormal-activity, and event-risk evidence;
 - provider/source quality and freshness diagnostics as quality evidence;
-- strategy-library eligibility facts that do not encode historical symbol wins.
 
 Disallowed inputs:
 
@@ -102,12 +101,11 @@ sector_context_state selected/watch baskets
   -> eligibility and duplicate-collapse rules
   -> anonymous_target_feature_vector assembly
   -> anonymity/leakage checks
-  -> StrategySelectionModel input rows
+  -> TargetStateVectorModel input rows
 ```
 
 Layer 2 may admit or prioritize baskets. The builder expands those baskets into
-target candidates. Strategy-aware final target selection starts only after Layer
-3 evaluates anonymous target candidates.
+target candidates. Target-state modeling starts only after Layer 3 receives anonymous target candidates; trade or strategy selection belongs downstream.
 
 ## Model-facing feature vector blocks
 
@@ -119,7 +117,7 @@ than one opaque scalar.
 | `target_behavior_vector` | Target-local price/trend/momentum/reversal/chop/volatility shape. |
 | `target_liquidity_tradability_vector` | Volume, spread, capacity, borrow/shortability, optionability, and slippage diagnostics. |
 | `sector_context_projection_vector` | Layer 2 sector/industry context values projected onto the candidate without exposing ticker identity. |
-| `market_context_projection_vector` | Layer 1 broad market context values relevant to target and strategy fitting. |
+| `market_context_projection_vector` | Layer 1 broad market context values relevant to target-state fitting. |
 | `exposure_transmission_vector` | Holdings/exposure-derived strength, concentration, and confidence after selected basket transmission. |
 | `event_risk_context_vector` | Scheduled/breaking event density, abnormal activity, gap/jump risk, and source-priority context. |
 | `cost_and_constraint_vector` | Cost, tradability, data constraints, option-chain availability, and no-trade diagnostics. |
@@ -166,5 +164,5 @@ V1 acceptance must show:
 4. model-facing vectors exclude raw ticker/company identity and direct symbol-derived categorical features;
 5. audit/routing metadata can recover the real symbol without being joined into fitting vectors;
 6. duplicate candidates from multiple sector/industry baskets collapse or remain multi-source with explicit reason codes;
-7. generated candidates improve downstream StrategySelectionModel evaluation versus a sector-only or market-only baseline;
+7. generated candidates improve downstream TargetStateVectorModel evaluation versus market-only and market+sector baselines;
 8. anonymity checks catch accidental identity leakage before promotion.

@@ -1,13 +1,13 @@
 # model_03_strategy_selection
 
-Contract-first workspace for `StrategySelectionModel` / Layer 3.
+Legacy frozen Layer 3 research workspace.
 
-Layer 3 scores which standalone strategy family and parameter-neighborhood variant fits an anonymous target candidate under current market and sector context. It does not own final entry/exit prices, option contract selection, position size, execution policy, or portfolio allocation.
+This package contains the earlier `StrategySelectionModel` strategy-family/variant experiment. Layer 3 has been reset to `TargetStateVectorModel`, whose active contract lives in:
 
-Key files:
+```text
+src/models/model_03_target_state_vector/
+src/models/model_03_target_state_vector/anonymous_target_candidate_builder/
+docs/04_layer_03_target_state_vector.md
+```
 
-- `anonymous_target_candidate_builder/target_candidate_builder_contract.md` — Layer 3 candidate-preparation identity/anonymity contract that turns Layer 2 sector context into anonymous target candidates.
-- `families/` — importable numbered per-family strategy specs; `family_spec_common.py` owns shared primitives and `family_01_*` through `family_10_*` follow first evaluation order, with deterministic variant expansion and stable spec hashes.
-- `strategy_family_catalog.md` — reviewed strategy-family summary, suitable trading periods, parameter gradients, variant counts, and implementation notes.
-
-Current status: active standalone family specs are implemented for one-by-one evaluation. Layer 3 strategy selection features, including per-bar strategy variant simulation, should be produced by `trading-data` as `feature_03_strategy_selection` from `trading-manager` requests; this package consumes those features for oracle construction, lifecycle review, model selection, and promotion evidence.
+Do not expand strategy-family variants or promote this package as the active Layer 3 boundary unless a later accepted architecture explicitly reopens strategy selection as a downstream layer.

@@ -308,12 +308,12 @@ Controls:
 
 ### 9. Decision deployment
 
-Layer 2 output feeds downstream target and strategy work:
+Layer 2 output feeds downstream target-state work:
 
 ```text
 sector_context_state
   -> anonymous target candidate builder
-  -> StrategySelectionModel
+  -> TargetStateVectorModel
   -> TradeQualityModel
   -> OptionExpressionModel
   -> PortfolioRiskModel
@@ -328,7 +328,7 @@ Status: Layer 3 sub-boundary; contract-first; implementation pending.
 Contract owner:
 
 ```text
-src/models/model_03_strategy_selection/anonymous_target_candidate_builder/target_candidate_builder_contract.md
+src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md
 ```
 
 Purpose: create anonymous model-facing candidate rows for Layer 3 from Layer 2 selected/prioritized sector baskets while preserving real symbol references for audit/routing only.
@@ -358,25 +358,25 @@ metadata:
 
 The candidate builder may use ETF holdings and `stock_etf_exposure` to transmit Layer 2 selected sector/industry baskets into stock candidates. The model-facing vector may include target behavior, liquidity/tradability, market context, sector context, event/risk context, exposure transmission, cost, optionability, and quality evidence. It must exclude raw ticker/company identity and must not let `target_candidate_id` become a categorical fitting feature.
 
-V1 acceptance must prove point-in-time construction, no Layer 2 holdings leakage, recoverable audit/routing metadata, duplicate-candidate handling, and anonymity checks before StrategySelectionModel consumes candidates.
+V1 acceptance must prove point-in-time construction, no Layer 2 holdings leakage, recoverable audit/routing metadata, duplicate-candidate handling, and anonymity checks before TargetStateVectorModel consumes candidates.
 
-## Layer 3: StrategySelectionModel
+## Layer 3: TargetStateVectorModel
 
-Status: draft candidate-preparation plus strategy-family/variant contract pending review.
+Status: reset draft contract for target state-vector construction.
 
 Contract owner:
 
 ```text
-docs/04_layer_03_strategy_selection.md
+docs/04_layer_03_target_state_vector.md
 ```
 
-Must compose strategy components for anonymous target candidates. It should output strategy family, strategy variant, directional/horizon/setup attributes, fit scores, disabled-strategy reasons, parameter-neighborhood stability, and robustness evidence. It must not output final entry/exit prices, option contracts, position sizes, execution policy, or portfolio allocation.
+Must construct an anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence. It should output inspectable market, sector, target, and cross-state feature blocks plus state embedding/cluster diagnostics. It must not select strategy families, expand parameter variants, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
 
 ## Layer 4: TradeQualityModel
 
 Status: decomposition pending.
 
-Must estimate trade outcome quality, expected move, target/stop, MFE/MAE, and holding horizon under selected strategy context.
+Must estimate trade outcome quality, expected move, target/stop, MFE/MAE, and holding horizon under accepted upstream target-state context.
 
 ## Layer 5: OptionExpressionModel
 

@@ -9,7 +9,7 @@ Owner intent: keep the model stack direct, point-in-time, and current-route auth
 point-in-time data foundation
   -> MarketRegimeModel
   -> SectorContextModel
-  -> anonymous target candidate builder + StrategySelectionModel
+  -> anonymous target candidate builder + TargetStateVectorModel
   -> TradeQualityModel
   -> OptionExpressionModel
   -> EventOverlayModel
@@ -22,14 +22,14 @@ The stack separates three different questions:
 ```text
 broad market background
   -> market-context-conditioned sector/industry background
-  -> strategy-aware anonymous target subject
+  -> target-state anonymous target subject
 ```
 
 This separation is mandatory:
 
 - Layer 1 does not choose sectors, ETFs, stocks, or strategies.
 - Layer 2 does not choose final stocks or strategy parameters.
-- Layer 3 is the first strategy-aware target layer.
+- Layer 3 is the first target-state layer.
 - Real ticker/company identity is audit/routing metadata, not a fitting feature.
 
 ## Canonical Layers
@@ -38,7 +38,7 @@ This separation is mandatory:
 |---|---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | `market_context_state` | Broad market-property state keyed by `available_time`. |
 | 2 | `SectorContextModel` | `sector_context_model` | `sector_context_state` | Sector/industry trend-stability and inferred basket attributes under market context. |
-| 3 | `StrategySelectionModel` | `strategy_selection_model` | `strategy_fit_state` | Composite strategy fit for anonymous target candidates. |
+| 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_state_vector` | Market + sector + target state vector for anonymous target candidates. |
 | 4 | `TradeQualityModel` | `trade_quality_model` | `trade_quality_state` | Signal quality, outcome distribution, target/stop, MFE/MAE, and holding horizon. |
 | 5 | `OptionExpressionModel` | `option_expression_model` | `expression_state` | Stock/ETF/long-call/long-put expression and option-contract constraints. |
 | 6 | `EventOverlayModel` | `event_overlay_model` | `event_overlay_state` | Event risk/opportunity adjustments across earlier layers and the risk gate. |
@@ -236,12 +236,12 @@ optional 2_sector_selection_parameter
 
 ## Layer 3 candidate preparation: Anonymous Target Candidate Builder
 
-The target candidate builder is part of Layer 3. It creates strategy-aware candidate rows from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
+The target candidate builder is part of Layer 3. It creates anonymous target candidate rows from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
 
 The current model-local contract is:
 
 ```text
-src/models/model_03_strategy_selection/anonymous_target_candidate_builder/target_candidate_builder_contract.md
+src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md
 ```
 
 Conceptual fields:
@@ -259,11 +259,11 @@ The builder may use ETF holdings and `stock_etf_exposure` to transmit selected s
 
 Model-facing vectors must exclude raw ticker/company identity and memorized symbol labels. `target_candidate_id` is a row key only, not a categorical fitting feature.
 
-## Layer 3: StrategySelectionModel
+## Layer 3: TargetStateVectorModel
 
-`StrategySelectionModel` composes and weights strategy components for anonymous target candidates. It should compare strategy fit under market/sector/target context rather than choosing one historical champion variant.
+`TargetStateVectorModel` constructs the target's current tradable state from three inspectable blocks: Layer 1 market state, Layer 2 sector state, and anonymous target-local tape/liquidity/behavior state. It should learn which target board/tape states have stable forward trading relationships after controlling for market and sector context.
 
-It outputs strategy availability, strategy fit, component weights, parameter neighborhoods, disabled-strategy reasons, and robustness evidence.
+It outputs target state vectors, cross-state relationship features, state embeddings/clusters, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target state vectors. It does not select strategy variants.
 
 ## Layer 4: TradeQualityModel
 
@@ -301,7 +301,7 @@ tradeable_time
 market_context_state_ref
 sector_context_state_ref
 target_candidate_id
-strategy_fit_state_ref
+target_state_vector_ref
 trade_quality_state_ref
 expression_state_ref
 event_overlay_state_ref

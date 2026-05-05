@@ -6,7 +6,7 @@ It owns point-in-time model research, validation, decision-record prototypes, an
 
 1. MarketRegimeModel (`market_regime_model`);
 2. SectorContextModel (`sector_context_model`);
-3. StrategySelectionModel (`strategy_selection_model`);
+3. TargetStateVectorModel (`target_state_vector_model`);
 4. TradeQualityModel (`trade_quality_model`);
 5. OptionExpressionModel (`option_expression_model`);
 6. EventOverlayModel (`event_overlay_model`);
@@ -25,9 +25,9 @@ MarketRegimeModel
 SectorContextModel
   -> sector_context_state
 
-anonymous target candidate builder + StrategySelectionModel
+anonymous target candidate builder + TargetStateVectorModel
   -> anonymous_target_feature_vector
-  -> strategy_fit_state
+  -> target_state_vector
 
 TradeQualityModel -> OptionExpressionModel -> EventOverlayModel -> PortfolioRiskModel
 ```
@@ -49,8 +49,9 @@ Current implementation packages:
 src/models/                           Model-specific packages and layer-boundary contracts.
 src/models/model_01_market_regime/    MarketRegimeModel V1 generator, evaluation, config, and evidence map.
 src/models/model_02_sector_context/ SectorContextModel V1 sector-context contract.
-src/models/model_03_strategy_selection/ StrategySelectionModel draft contract and Layer 3 catalogs.
-src/models/model_03_strategy_selection/anonymous_target_candidate_builder/ Candidate-preparation sub-boundary.
+src/models/model_03_target_state_vector/ TargetStateVectorModel draft contract and Layer 3 state-vector workspace.
+src/models/model_03_target_state_vector/anonymous_target_candidate_builder/ Candidate-preparation sub-boundary.
+src/models/model_03_strategy_selection/ Legacy frozen strategy-selection research workspace.
 src/model_governance/common/          Shared SQL, database-url, and `psql` helpers.
 src/model_governance/evaluation/      Dataset/evaluation evidence schema helpers.
 src/model_governance/promotion/       Promotion lifecycle rows, schema, persistence, activation, and agent review helpers.
@@ -81,6 +82,7 @@ docs/
   01_context.md
   02_layer_01_market_regime.md
   03_layer_02_sector_context.md
+  04_layer_03_target_state_vector.md
   80_task.md
   81_decision.md
   82_memory.md

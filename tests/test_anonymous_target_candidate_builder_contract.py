@@ -9,7 +9,7 @@ CONTRACT_PATH = (
     REPO_ROOT
     / "src"
     / "models"
-    / "model_03_strategy_selection"
+    / "model_03_target_state_vector"
     / "anonymous_target_candidate_builder"
     / "target_candidate_builder_contract.md"
 )
