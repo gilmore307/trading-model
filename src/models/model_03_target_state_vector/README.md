@@ -2,7 +2,7 @@
 
 Contract-first workspace for `TargetStateVectorModel` / Layer 3.
 
-Layer 3 has been reset from strategy-family/variant selection to direction-neutral target state-vector construction. Layer 3 preprocessing first produces anonymous target candidates and `anonymous_target_feature_vector` inputs; `TargetStateVectorModel` then fuses market state, sector state, and anonymous target-local state into the point-in-time `target_state_vector` used by later layers. Signed current-state direction, tradability, transition risk, noise, liquidity/cost, and row quality remain separate; Layer 3 does not output alpha confidence, position size, or final trade action.
+Layer 3 is direction-neutral target state-vector construction. Layer 3 preprocessing first produces anonymous target candidates and `anonymous_target_feature_vector` inputs; `TargetStateVectorModel` then fuses market state, sector state, and anonymous target-local state into the point-in-time `target_state_vector` used by later layers. Signed current-state direction, tradability, transition risk, noise, liquidity/cost, and row quality remain separate; Layer 3 does not output alpha confidence, position size, or final trade action.
 
 Key files:
 
@@ -17,4 +17,3 @@ This package should own future importable implementation for:
 - target-state labels and baseline comparisons;
 - evaluation evidence for market-only, market+sector, and market+sector+target state vectors.
 
-Legacy strategy-family/variant code remains under `model_03_strategy_selection/` as frozen research history and compatibility material only.

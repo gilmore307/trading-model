@@ -99,7 +99,7 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "target_candidate_id` as a categorical feature",
             "forward returns, realized PnL, or future bar outcomes in inference features",
             "audit/routing metadata into the model-facing vector",
-            "optimizes strategy variants before state/outcome relationships are accepted",
+            "optimizes downstream action variants before state/outcome relationships are accepted",
             "mismatched state observation windows across market, sector, and target blocks",
             "treats positive direction as inherently better than negative direction",
             "Layer 4 alpha/direction confidence",

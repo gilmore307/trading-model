@@ -268,7 +268,7 @@ Model-facing vectors must exclude raw ticker/company identity and memorized symb
 
 `TargetStateVectorModel` constructs the target's current direction-neutral tradable state from three inspectable blocks: Layer 1 market state, Layer 2 sector state, and anonymous target-local tape/liquidity/behavior state. It should learn which target board/tape states have stable forward path/tradability relationships after controlling for market and sector context.
 
-It outputs target state vectors, signed current-state direction evidence, direction-neutral tradability scores, cross-state relationship features, state embeddings/clusters, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target state vectors. It does not select strategy variants, output alpha confidence, size positions, or treat positive direction as inherently better than negative direction.
+It outputs target state vectors, signed current-state direction evidence, direction-neutral tradability scores, cross-state relationship features, state embeddings/clusters, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target state vectors. It does not select downstream action variants, output alpha confidence, size positions, or treat positive direction as inherently better than negative direction.
 
 ## Layer 4: Alpha / Confidence Model
 

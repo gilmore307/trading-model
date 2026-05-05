@@ -24,7 +24,7 @@
 4. **Layer 3 TargetStateVectorModel contract design**
    - Review `docs/04_layer_03_target_state_vector.md` before implementation.
    - Keep Layer 3 direction evidence, tradability, transition risk, noise, liquidity/cost, and state quality separate; do not output alpha confidence or position instructions.
-   - Freeze the old strategy-family/variant taxonomy as legacy research; do not expand it as active Layer 3 work.
+   - Keep retired action/variant research out of active Layer 3 work.
    - Do not promote shared Layer 3 fields or statuses through `trading-manager` until the target state-vector contract is accepted.
 
 ## Queued Tasks
@@ -48,7 +48,7 @@
 
 ## Recently Accepted
 
-- Layer 3 has been reset from strategy-family/variant selection to `TargetStateVectorModel`; the active purpose is market + sector + target state-vector construction before trade/strategy decisions.
+- Layer 3 is `TargetStateVectorModel`; the active purpose is market + sector + target state-vector construction before trade/action decisions.
 - Current V2.2 architecture is `MarketRegimeModel -> SectorContextModel -> TargetStateVectorModel`, with anonymous target candidate construction inside Layer 3 preprocessing, followed by Alpha/Confidence and Trading Projection layers.
 - `docs/92_vector_taxonomy.md` owns the accepted distinction between feature surfaces, feature vectors, states, state vectors, scalar scores, diagnostics, explainability, and labels/outcomes.
 - Layer 1 outputs only broad `market_context_state`; current market-property factors are compatibility fields pending V2.2 semantic migration.

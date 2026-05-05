@@ -44,7 +44,7 @@ class SectorContextContractTests(unittest.TestCase):
 
         for forbidden_boundary in {
             "final selected stock symbols",
-            "strategy family choice",
+            "downstream action choice",
             "option contract",
             "future returns or realized PnL",
             "hand-written sector labels used as input truth",

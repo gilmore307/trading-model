@@ -346,7 +346,7 @@ Agent or human promotion review should therefore receive a candidate evidence pa
 Date: 2026-05-04
 Status: Accepted
 
-Layer 3 is reset from strategy-family/variant selection to `TargetStateVectorModel`.
+Layer 3 is `TargetStateVectorModel`.
 
 The active Layer 3 purpose is to construct an anonymous target state vector from three inspectable blocks:
 

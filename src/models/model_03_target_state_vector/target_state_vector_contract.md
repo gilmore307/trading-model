@@ -100,7 +100,7 @@ The first contract uses a sparse, reviewable window set rather than many strateg
 
 These windows are a synchronization contract, not merely a target-local calculation detail. `market_state_features`, `sector_state_features`, and `target_state_features` must always declare and use the same `state_observation_windows` for a row. `cross_state_features` may only compare values whose source blocks share the same window label.
 
-Use these as state-observation windows for trailing return, volatility, volume, and relative-strength summaries. They are not strategy variants and should not multiply a variant universe. Add windows only after evidence shows a missing state relationship between accepted endpoints, and add the window to market, sector, target, and cross-state handling together.
+Use these as state-observation windows for trailing return, volatility, volume, and relative-strength summaries. They are not downstream action variants and should not multiply a variant universe. Add windows only after evidence shows a missing state relationship between accepted endpoints, and add the window to market, sector, target, and cross-state handling together.
 
 ## Direction-neutral score families
 
@@ -155,6 +155,6 @@ Reject a state-vector build if it:
 - collapses market, sector, target, and cross-state blocks into an uninspectable blob;
 - emits mismatched state observation windows across market, sector, and target blocks;
 - evaluates only against an all-regime aggregate without market/sector-conditioned and long-bias/short-bias review;
-- optimizes strategy variants before state/outcome relationships are accepted;
+- optimizes downstream action variants before state/outcome relationships are accepted;
 - treats positive direction as inherently better than negative direction;
 - trains Layer 4/5 consumers on in-sample fitted direction-confidence outputs from Layer 3.

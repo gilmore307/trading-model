@@ -2,7 +2,7 @@
 
 Status: Accepted direction-neutral tradability boundary; implementation contract pending.
 
-Layer 3 is reset from strategy-family/variant selection to target state-vector construction. The previous strategy-family/variant work is frozen as a legacy experiment and must not be expanded until the new target-state boundary is accepted.
+Layer 3 is target state-vector construction. Earlier action/variant Layer 3 work is retired and must not be used as the active Layer 3 boundary.
 
 ## Purpose
 
@@ -10,9 +10,9 @@ Layer 3 is reset from strategy-family/variant selection to target state-vector c
 
 > Given the broad market state, sector/industry state, and a single anonymous target's own tape/liquidity behavior, what is the target's current tradable market state?
 
-Layer 3 should find the relationship between **target board/tape state** and future trading outcomes. It should not begin by choosing a strategy variant. A detailed variant grid is not useful unless its variables are connected to market/sector/target state conditions.
+Layer 3 should find the relationship between **target board/tape state** and future trading outcomes. It should not begin by choosing a downstream action variant.
 
-Layer 3 builds a point-in-time, direction-neutral tradability state vector that later layers may use to estimate direction confidence, trade quality, strategy/expression fit, and portfolio risk. Layer 3 does not output position size or final action.
+Layer 3 builds a point-in-time, direction-neutral tradability state vector that later layers may use to estimate direction confidence, trading projection, expression fit, and portfolio risk. Layer 3 does not output position size or final action.
 
 ## Boundary reset
 
@@ -27,8 +27,8 @@ Layer 3 owns:
 
 Layer 3 does **not** own:
 
-- strategy family selection;
-- parameter variant expansion/pruning;
+- strategy selection;
+- parameter expansion/pruning;
 - exact entry/exit orders;
 - option DTE, strike, delta, premium, IV/Greeks, or contract ID;
 - direction-confidence calibration, position size, portfolio weight, hedge ratio, or execution policy;
@@ -47,8 +47,6 @@ trading_data.feature_03_target_state_vector
 -> TargetStateVectorModel
 -> trading_model.model_03_target_state_vector
 ```
-
-The existing `source_03_strategy_selection` and `feature_03_strategy_selection` names are legacy implementation artifacts. They may be reused temporarily during migration only if the request explicitly marks them as compatibility paths. New contracts should use target-state names.
 
 ## Core state-vector components
 
@@ -137,7 +135,7 @@ Context alignment should not collapse signed direction and quality. Prefer separ
 
 ## Labels and learning objective
 
-Layer 3 labels should describe future target-state outcomes, not strategy variant wins.
+Layer 3 labels should describe future target-state outcomes, not downstream strategy/action wins.
 
 Initial label families:
 
@@ -150,7 +148,7 @@ Initial label families:
 | Liquidity/tradability | Whether the target remained tradeable after costs/spreads/volume constraints. |
 | State transition | Which target state usually follows this state. |
 
-These labels should be evaluated across multiple horizons, but horizon choices are label axes, not strategy variants. If signed labels use an orientation sign, the sign must come from deterministic point-in-time state evidence or an out-of-sample upstream prediction, never from the same fitted target being evaluated.
+These labels should be evaluated across multiple horizons, but horizon choices are label axes, not a variant universe. If signed labels use an orientation sign, the sign must come from deterministic point-in-time state evidence or an out-of-sample upstream prediction, never from the same fitted target being evaluated.
 
 ## Relationship-first research questions
 
@@ -163,19 +161,14 @@ Layer 3 review should ask:
 5. Which market/sector states make a target-local pattern useful or useless?
 6. Does adding target state improve direction-neutral tradability/path outcomes versus market-only and market+sector baselines?
 
-## Migration from legacy strategy-variant work
+## Implementation order
 
-Legacy assets under `src/models/model_03_strategy_selection/` and `trading-data` `feature_03_strategy_selection` are frozen. They may be useful later as downstream probes or diagnostic labels, but they are no longer the Layer 3 source of truth.
-
-Migration order:
-
-1. Freeze strategy-family/variant expansion.
-2. Promote this Layer 3 target-state contract.
-3. Add `model_03_target_state_vector` package and tests.
-4. Add `trading-data` source/feature target-state request boundary.
-5. Build baseline target-state vectors from bars/liquidity plus Layer 1/2 refs.
-6. Add forward state/outcome labels and market-only / sector-only baselines.
-7. Only after state/outcome relationships are accepted, revisit strategy/variant selection as a later layer or downstream decision surface.
+1. Keep this Layer 3 target-state contract as the source of truth.
+2. Keep `model_03_target_state_vector` package and tests aligned with this contract.
+3. Add the `trading-data` source/feature target-state request boundary.
+4. Build baseline target-state vectors from bars/liquidity plus Layer 1/2 refs.
+5. Add forward state/outcome labels and market-only / sector-only baselines.
+6. Only after state/outcome relationships are accepted, design downstream action/expression consumers outside Layer 3.
 
 ## Acceptance gates
 

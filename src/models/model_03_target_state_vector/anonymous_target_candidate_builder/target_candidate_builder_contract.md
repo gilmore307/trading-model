@@ -17,7 +17,7 @@ The anonymous target candidate builder answers:
 > identity to model fitting?
 
 It may create stock or ETF target candidates, but it does not choose a final
-trade, strategy family, entry timing, option contract, size, or portfolio
+trade, downstream action family, entry timing, option contract, size, or portfolio
 allocation.
 
 ## Row identity
@@ -154,7 +154,7 @@ The builder must not output:
 
 - final selected stock symbols as model-facing fields;
 - company names, ticker strings, CIKs, FIGIs, ISINs, or exchange-specific identity fields in the fitting vector;
-- strategy family choice or strategy parameters;
+- downstream action choice or action parameters;
 - entry time, entry price, stop, target, or holding-period instruction;
 - option contract, DTE, delta, strike, premium, or Greeks selection;
 - portfolio size, exposure, execution policy, or kill-switch instruction;

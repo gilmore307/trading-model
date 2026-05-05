@@ -187,7 +187,7 @@ The following do not belong in `sector_context_state` V1:
 - final stock weights;
 - final ETF/sector allocation weights;
 - entry time, entry price, stop, target, or holding-period instruction;
-- strategy family choice or strategy parameters;
+- downstream action choice or action parameters;
 - option contract, DTE, delta, strike, premium, or Greeks selection;
 - portfolio size, exposure, execution policy, or kill-switch instruction;
 - future returns or realized PnL;

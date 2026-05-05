@@ -32,7 +32,7 @@ broad market tradability context -> sector/industry tradability context -> anony
 | `trading-manager` control plane | Owns orchestration, lifecycle, scheduling, retries, requests, and promotion routing. |
 | `trading-data` | Produces point-in-time data/source-evidence artifacts consumed by model research. |
 | `trading-storage` | Owns durable storage layout, retention, archive, backup, restore, and artifact placement rules. |
-| `trading-strategy` | May provide strategy-family definitions/backtest artifacts if kept separate; otherwise strategy-selection research can be model-local until boundaries are revisited. |
+| `trading-strategy` | May provide downstream action/expression research artifacts if kept separate; Layer 3 remains target-state construction, not action selection. |
 | `trading-model` | Produces offline direction-neutral model research outputs, validation evidence, and decision-record prototypes. |
 | `trading-execution` | Consumes promoted decisions/risk-approved orders for paper/live execution; broker mutation is not owned here. |
 | `trading-dashboard` | Presents already-produced outputs and evidence. |

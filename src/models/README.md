@@ -9,6 +9,5 @@ Current packages:
 - `model_01_market_regime/` — `MarketRegimeModel` V1 broad market-context state implementation.
 - `model_02_sector_context/` — `SectorContextModel` V1 contract-first package for sector/industry context state.
 - `model_03_target_state_vector/` — Layer 3 package containing anonymous target candidate preprocessing contracts plus `TargetStateVectorModel` target state-vector output contracts.
-- `model_03_strategy_selection/` — legacy frozen strategy-selection research workspace; do not expand as active Layer 3.
 
 Shared governance/promotion helpers stay outside this directory in `src/model_governance/`.
