@@ -247,11 +247,11 @@ trading_model.model_02_sector_context_diagnostics
 
 The V1 field contract is owned by `src/models/model_02_sector_context/sector_context_state_contract.md`.
 
-Primary output keeps only the narrow downstream dependency surface: identity, trend/context stability state, downstream sector handoff, and eligibility/quality summary. Observed behavior, inferred attributes, conditional behavior internals, contributing evidence, and reason-code detail belong to `model_02_sector_context_explainability`. Liquidity/spread/optionability, event/gap/volatility/correlation stress, freshness/missingness, baseline comparison, refit stability, and no-future-leak evidence belong to `model_02_sector_context_diagnostics`.
+Primary output keeps only the narrow downstream dependency surface: identity, signed sector direction evidence, direction-neutral trend/tradability state, separate handoff state and handoff bias, and eligibility/quality summary. Observed behavior, inferred attributes, conditional behavior internals, contributing evidence, and reason-code detail belong to `model_02_sector_context_explainability`. Liquidity/spread/optionability, event/gap/volatility/correlation stress, freshness/missingness, baseline comparison, refit stability, and no-future-leak evidence belong to `model_02_sector_context_diagnostics`.
 
 When persisted to SQL, `2_*` model-facing keys remain the physical column names. SQL writers should quote numeric-leading identifiers where required instead of creating `layer02_*` aliases.
 
-The target is clean, persistent, understandable sector/industry trend behavior under market context, not highest future return and not final stock selection. Layer 2 may select/prioritize sector baskets for downstream candidate construction, but it does not expand them into stock candidates.
+The target is clean, persistent, understandable, direction-neutral sector/industry tradability behavior under market context, not highest future return, long-only strength, and not final stock selection. Layer 2 may select/prioritize sector baskets for downstream candidate construction, including stable short-bias contexts, but it does not expand them into stock candidates.
 
 ### 4. Model mapping
 
@@ -319,7 +319,7 @@ sector_context_state
   -> PortfolioRiskModel
 ```
 
-It may provide selected/prioritized sector basket handoff state, but stock-universe construction waits for the anonymous target candidate builder.
+It may provide selected/prioritized sector basket handoff state and a separate `long_bias` / `short_bias` / `neutral` / `mixed` handoff bias, but stock-universe construction waits for the anonymous target candidate builder.
 
 ## Layer 3 candidate preparation: Anonymous Target Candidate Builder
 
@@ -356,7 +356,7 @@ metadata:
   source_stock_etf_exposure_ref
 ```
 
-The candidate builder may use ETF holdings and `stock_etf_exposure` to transmit Layer 2 selected sector/industry baskets into stock candidates. The model-facing vector may include target behavior, liquidity/tradability, market context, sector context, event/risk context, exposure transmission, cost, optionability, and quality evidence. It must exclude raw ticker/company identity and must not let `target_candidate_id` become a categorical fitting feature.
+The candidate builder may use ETF holdings and `stock_etf_exposure` to transmit Layer 2 selected/watch sector/industry baskets into stock candidates. The model-facing vector may include target behavior, liquidity/tradability, anonymous structural buckets, market context, sector context, event/risk context, exposure transmission, cost, optionability, and quality evidence. It must exclude raw ticker/company identity, stable identity-surrogate bucket combinations, and must not let `target_candidate_id` become a categorical fitting feature.
 
 V1 acceptance must prove point-in-time construction, no Layer 2 holdings leakage, recoverable audit/routing metadata, duplicate-candidate handling, and anonymity checks before TargetStateVectorModel consumes candidates.
 
@@ -370,7 +370,7 @@ Contract owner:
 docs/04_layer_03_target_state_vector.md
 ```
 
-Must construct an anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence. It should output inspectable market, sector, target, and cross-state feature blocks plus state embedding/cluster diagnostics. It must not select strategy families, expand parameter variants, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
+Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence. It should output inspectable market, sector, target, and cross-state feature blocks plus state embedding/cluster diagnostics. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, and row reliability must remain separate. It must not select strategy families, expand parameter variants, output alpha/direction confidence, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
 
 ## Layer 4: TradeQualityModel
 

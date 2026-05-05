@@ -21,35 +21,35 @@ MARKET_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
 
 SECTOR_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
     "sector_context_state",
-    "sector_relative_strength_state",
-    "sector_trend_stability_state",
+    "sector_relative_direction_state",
+    "sector_trend_quality_stability_state",
     "sector_volatility_state",
     "sector_breadth_dispersion_state",
     "sector_liquidity_tradability_state",
 )
 
 TARGET_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
-    "target_return_shape",
-    "target_trend_momentum_state",
+    "target_direction_return_shape",
+    "target_trend_quality_state",
     "target_volatility_range_state",
     "target_gap_jump_state",
     "target_volume_activity_state",
-    "target_liquidity_cost_state",
+    "target_liquidity_tradability_state",
     "target_vwap_location_state",
     "target_session_position_state",
     "target_data_quality_state",
 )
 
 CROSS_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
-    "target_vs_market_strength",
-    "target_vs_sector_strength",
+    "target_vs_market_residual_direction",
+    "target_vs_sector_residual_direction",
     "target_vs_market_volatility",
     "target_vs_sector_volatility",
     "target_market_beta_correlation",
     "target_sector_beta_correlation",
     "sector_confirmation_state",
     "idiosyncratic_residual_state",
-    "relative_liquidity_cost_state",
+    "relative_liquidity_tradability_state",
 )
 
 SYNCHRONIZED_STATE_WINDOWS: Final[tuple[str, ...]] = (
@@ -65,6 +65,19 @@ LABEL_HORIZONS: Final[tuple[str, ...]] = (
     "15min",
     "60min",
     "390min",
+)
+
+DIRECTION_NEUTRAL_SCORE_FAMILIES: Final[tuple[str, ...]] = (
+    "3_target_direction_score_<window>",
+    "3_target_trend_quality_score_<window>",
+    "3_target_path_stability_score_<window>",
+    "3_target_noise_score_<window>",
+    "3_target_transition_risk_score_<window>",
+    "3_target_liquidity_tradability_score",
+    "3_context_direction_alignment_score_<window>",
+    "3_context_support_quality_score_<window>",
+    "3_tradability_score_<window>",
+    "3_state_quality_score",
 )
 
 BASELINE_LADDER: Final[tuple[str, ...]] = (

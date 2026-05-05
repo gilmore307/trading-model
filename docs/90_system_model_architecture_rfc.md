@@ -261,15 +261,15 @@ Model-facing vectors must exclude raw ticker/company identity and memorized symb
 
 ## Layer 3: TargetStateVectorModel
 
-`TargetStateVectorModel` constructs the target's current tradable state from three inspectable blocks: Layer 1 market state, Layer 2 sector state, and anonymous target-local tape/liquidity/behavior state. It should learn which target board/tape states have stable forward trading relationships after controlling for market and sector context.
+`TargetStateVectorModel` constructs the target's current direction-neutral tradable state from three inspectable blocks: Layer 1 market state, Layer 2 sector state, and anonymous target-local tape/liquidity/behavior state. It should learn which target board/tape states have stable forward path/tradability relationships after controlling for market and sector context.
 
-It outputs target state vectors, cross-state relationship features, state embeddings/clusters, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target state vectors. It does not select strategy variants.
+It outputs target state vectors, signed current-state direction evidence, direction-neutral tradability scores, cross-state relationship features, state embeddings/clusters, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target state vectors. It does not select strategy variants, output alpha confidence, size positions, or treat positive direction as inherently better than negative direction.
 
 ## Layer 4: TradeQualityModel
 
-`TradeQualityModel` estimates whether a candidate signal is worth trading. It owns outcome distribution, expected move, target/stop, MFE/MAE, holding horizon, and trade-quality score.
+`TradeQualityModel` estimates whether a candidate signal is worth trading. It owns downstream direction-confidence/trade-quality calibration, outcome distribution, expected move, target/stop, MFE/MAE, holding horizon, and trade-quality score.
 
-It should model more than direction; it should model payoff shape and adverse/favorable excursion under the selected strategy context.
+It should model more than direction; it should model payoff shape and adverse/favorable excursion under the selected strategy context. Any `[-1, 1]` direction-confidence output belongs here or in a later downstream consumer, not in Layer 3 state-vector construction.
 
 ## Layer 5: OptionExpressionModel
 

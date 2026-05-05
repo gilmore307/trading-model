@@ -6,9 +6,9 @@ Current status: contract-first; implementation pending.
 
 Boundary:
 
-- Input: Layer 2 selected/prioritized `sector_context_state` rows, point-in-time ETF holdings / `stock_etf_exposure` evidence, target-local behavior/liquidity/event/cost evidence, and references to `market_context_state`.
+- Input: Layer 2 selected/watch `sector_context_state` rows with separate handoff bias, point-in-time ETF holdings / `stock_etf_exposure` evidence, target-local behavior/liquidity/event/cost evidence, anonymous structural buckets, and references to `market_context_state`.
 - Output: anonymous candidate rows keyed by `available_time + target_candidate_id` with a model-facing `anonymous_target_feature_vector`.
-- Metadata: real symbol/company/routing references stay in audit/routing metadata, not model-facing fitting vectors.
+- Metadata: real symbol/company/routing references stay in audit/routing metadata, not model-facing fitting vectors; structural bucket combinations must be checked so they do not become identity surrogates.
 - Downstream: `TargetStateVectorModel` and later target-aware layers consume anonymous features, not raw ticker identity.
 
 Files:

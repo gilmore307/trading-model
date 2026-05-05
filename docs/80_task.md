@@ -7,18 +7,21 @@
    - Review every Feature 01 addition as primary, diagnostic, quality, evaluation-only, or intentionally unused evidence.
    - Mature stability/usefulness evaluation for `market_context_state` against downstream baselines.
 
-2. **Layer 2 contract refinement**
-   - Keep `src/models/model_02_sector_context/sector_context_state_contract.md` aligned with implementation.
+2. **Layer 2 direction-neutral contract migration**
+   - Keep `src/models/model_02_sector_context/sector_context_state_contract.md` aligned with the accepted direction-neutral target contract.
+   - Migrate legacy deterministic fields toward separate direction, trend quality, transition risk, tradability, handoff bias, coverage, and data-quality semantics before promotion.
    - Keep ETF/sector attributes inferred from evidence.
    - Keep `stock_etf_exposure` as downstream candidate-construction evidence, not Layer 2 core behavior modeling.
 
 3. **Layer 3 anonymous target candidate builder contract maturation**
    - Keep `src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md` aligned with Layer 2 handoff and Layer 3 fitting needs.
    - Preserve the separation between model-facing anonymous vectors and audit/routing symbol metadata.
+   - Add anonymity checks for structural bucket combinations so liquidity/cost/volatility/beta buckets do not become ticker identity surrogates.
    - Define implementation/evaluation shape before promoting any fields through `trading-manager`.
 
 4. **Layer 3 TargetStateVectorModel contract design**
    - Review `docs/04_layer_03_target_state_vector.md` before implementation.
+   - Keep Layer 3 direction evidence, tradability, transition risk, noise, liquidity/cost, and state quality separate; do not output alpha confidence or position instructions.
    - Freeze the old strategy-family/variant taxonomy as legacy research; do not expand it as active Layer 3 work.
    - Do not promote shared Layer 3 fields or statuses through `trading-manager` until the target state-vector contract is accepted.
 
@@ -46,8 +49,8 @@
 - Current architecture is `MarketRegimeModel -> SectorContextModel -> anonymous target candidate builder + TargetStateVectorModel -> TradeQualityModel -> OptionExpressionModel -> EventOverlayModel -> PortfolioRiskModel`.
 - Layer 1 outputs only broad `market_context_state` from current market-property factors.
 - Layer 1 must not pre-label ETF/sector behavior or rank sectors/ETFs/stocks.
-- Layer 2 outputs sector/industry trend-stability and inferred basket attributes as `sector_context_state`.
-- `src/models/model_02_sector_context/sector_context_state_contract.md` owns the current Layer 2 V1 field contract.
+- Layer 2 contract semantics are direction-neutral: signed sector direction is separate from trend quality, tradability, transition risk, state quality, and handoff bias.
+- `src/models/model_02_sector_context/sector_context_state_contract.md` owns the current Layer 2 direction-neutral target contract; the deterministic implementation still needs migration before promotion.
 - Layer 2 does not choose final stocks in V1.
 - `src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md` owns the current anonymous candidate-builder V1 contract.
 - Target-state fitting starts downstream through anonymous target candidates.

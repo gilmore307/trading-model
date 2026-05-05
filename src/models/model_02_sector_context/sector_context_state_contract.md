@@ -1,10 +1,10 @@
 # sector_context_state V1 contract
 
-This file owns the first `SectorContextModel` V1 output contract for `sector_context_state`. It is model-local until implementation/evaluation prove which fields should be registered as shared terms.
+This file owns the direction-neutral `SectorContextModel` output contract target for `sector_context_state`. It is model-local until implementation/evaluation prove which fields should be registered as shared terms. The existing deterministic V1 implementation may carry legacy compatibility fields until migration; this contract defines the next dependency surface for new downstream work.
 
 ## Purpose
 
-Layer 2 answers: for each eligible sector/industry equity ETF basket, what is its market-context-conditioned trend-stability state and inferred basket attribute profile at `available_time`?
+Layer 2 answers: for each eligible sector/industry equity ETF basket, what is its market-context-conditioned direction-neutral tradability state at `available_time`? It separates signed direction evidence from trend quality, stability, transition risk, liquidity/cost, and state reliability.
 
 It may mark which sector/industry baskets are suitable for downstream candidate construction. It does **not** answer which final stock to buy, which strategy to run, which option contract to trade, or how much portfolio risk to allocate.
 
@@ -48,16 +48,21 @@ Layer 2 must not copy Layer 1 market-property factor names into ETF style fields
 
 ## `model_02_sector_context` output fields
 
-The primary output is intentionally narrow: identity, trend/context stability state, downstream sector handoff, and eligibility/quality summary.
+The primary output is intentionally narrow: identity, direction-neutral sector tradability state, downstream sector handoff, and eligibility/quality summary.
 
-### Trend-stability state
+### Direction-neutral tradability state
 
 | Field | Type | Meaning |
 |---|---|---|
-| `2_trend_stability_score` | float/null | Overall stability of tradable trend behavior. |
-| `2_trend_certainty_score` | float/null | Confidence/certainty in the trend-stability reading. |
-| `2_context_conditioned_stability_score` | float/null | Trend-stability score after conditioning on market context. |
-| `2_selection_readiness_score` | float/null | Readiness for downstream anonymous target generation; not a final selection. |
+| `2_sector_relative_direction_score` | float/null | Signed current sector-vs-market direction evidence. Positive = relative long bias, negative = relative short bias; sign is not quality and is not weight. |
+| `2_sector_trend_quality_score` | float/null | Clarity and structural quality of the sector trend regardless of long/short sign. |
+| `2_sector_trend_stability_score` | float/null | Persistence/smoothness of sector trend behavior and resistance to whipsaw. |
+| `2_sector_transition_risk_score` | float/null | Risk that the sector state is switching, decaying, or becoming invalid. Higher means more transition risk. |
+| `2_market_context_support_score` | float/null | Direction-aware current market-context support for the sector state; signed support is allowed but must not become a quality proxy by itself. |
+| `2_sector_breadth_confirmation_score` | float/null | Internal/peer confirmation that the sector move is not isolated to a few large weights. |
+| `2_sector_dispersion_crowding_score` | float/null | Dispersion/crowding pressure that can make the sector harder to trade. Higher means more pressure/risk. |
+| `2_sector_liquidity_tradability_score` | float/null | Basket/candidate-pool liquidity, spread, and capacity support for downstream use. |
+| `2_sector_tradability_score` | float/null | Direction-neutral combined tradability score. High means the sector context is cleaner and easier to hand off, whether long-biased or short-biased. |
 
 ### Downstream sector handoff
 
@@ -66,6 +71,7 @@ Layer 2 may identify sector/industry baskets suitable for downstream anonymous t
 | Field | Type | Meaning |
 |---|---|---|
 | `2_sector_handoff_state` | text/null | One of `selected`, `watch`, `blocked`, or `insufficient_data`. |
+| `2_sector_handoff_bias` | text/null | One of `long_bias`, `short_bias`, `neutral`, or `mixed`; separate from handoff state. |
 | `2_sector_handoff_rank` | integer/null | Optional rank among sector/industry baskets for candidate-builder priority; not a portfolio weight. |
 | `2_sector_handoff_reason_codes` | text/null | Stable reason codes explaining why the basket is selected, watched, or blocked. |
 
@@ -75,8 +81,14 @@ Layer 2 may identify sector/industry baskets suitable for downstream anonymous t
 |---|---|---|
 | `2_eligibility_state` | text | One of `eligible`, `watch`, `excluded`, or `insufficient_data`. |
 | `2_eligibility_reason_codes` | text/null | Semicolon-separated stable reason codes for watch/excluded/insufficient rows. |
-| `2_state_quality_score` | float/null | Overall reliability of the produced `sector_context_state` row. |
+| `2_state_quality_score` | float/null | Reliability of the produced state row; not a tradability/opportunity score. |
+| `2_coverage_score` | float/null | Evidence completeness/coverage summary; not trend certainty. |
+| `2_data_quality_score` | float/null | Input freshness/reliability summary that may gate handoff. |
 | `2_evidence_count` | integer/null | Count of usable evidence fields/families contributing to the row. |
+
+`2_sector_handoff_state` and `2_sector_handoff_bias` must stay separate. A stable weak sector can be `selected` with `short_bias`; a rising sector with high noise or transition risk can be `watch` or `blocked` with `long_bias`.
+
+Legacy names such as `2_trend_certainty_score` and `2_selection_readiness_score` are compatibility fields for the existing deterministic implementation only. New contracts should use `2_coverage_score` / `2_state_quality_score` for reliability and `2_sector_tradability_score` for direction-neutral handoff quality.
 
 ## `model_02_sector_context_explainability` fields
 
@@ -161,7 +173,7 @@ Diagnostics owns acceptance, monitoring, and gating evidence. These fields may g
 
 | Field | Type | Meaning |
 |---|---|---|
-| `2_data_quality_score` | float/null | Input coverage/freshness/reliability summary. |
+| `2_diagnostic_data_quality_score` | float/null | Optional diagnostics-only data-quality detail when the primary `2_data_quality_score` needs decomposition. |
 
 Diagnostics may also include coverage/freshness/missingness detail, baseline comparison, rolling/refit stability, chronological split evidence, and no-future-leak checks once implementation proves the concrete shape.
 
@@ -190,4 +202,5 @@ V1 acceptance must show:
 3. ETF holdings and `stock_etf_exposure` are not used as Layer 2 core behavior-model inputs;
 4. inferred attributes stable enough across chronological refits to be useful;
 5. trend-stability separation versus a market-context-free baseline;
-6. downstream anonymous target generation can consume selected Layer 2 baskets, use holdings/exposure evidence to build stock candidates, and then anonymize candidates without raw company/ticker identity leakage in target-state fitting.
+6. downstream anonymous target generation can consume selected/watch Layer 2 baskets and the separate `2_sector_handoff_bias`, use holdings/exposure evidence to build stock candidates, and then anonymize candidates without raw company/ticker identity leakage in target-state fitting;
+7. long-biased and short-biased sector contexts are evaluated separately with direction-neutral metrics, so stable downtrends are not treated as failed states by construction.

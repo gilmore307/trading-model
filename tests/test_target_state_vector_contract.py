@@ -27,10 +27,12 @@ class TargetStateVectorContractTests(unittest.TestCase):
                 "cross_state_features",
             ),
         )
-        self.assertIn("target_vs_market_strength", contract.CROSS_STATE_FEATURE_GROUPS)
-        self.assertIn("target_vs_sector_strength", contract.CROSS_STATE_FEATURE_GROUPS)
+        self.assertIn("target_vs_market_residual_direction", contract.CROSS_STATE_FEATURE_GROUPS)
+        self.assertIn("target_vs_sector_residual_direction", contract.CROSS_STATE_FEATURE_GROUPS)
         self.assertIn("sector_confirmation_state", contract.CROSS_STATE_FEATURE_GROUPS)
         self.assertIn("idiosyncratic_residual_state", contract.CROSS_STATE_FEATURE_GROUPS)
+        self.assertIn("3_target_direction_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
+        self.assertIn("3_tradability_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
 
     def test_v1_uses_sparse_state_windows_not_strategy_variants(self) -> None:
         self.assertEqual(contract.SYNCHRONIZED_STATE_WINDOWS, ("5min", "15min", "60min", "390min"))
@@ -63,13 +65,15 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "sector_state_features",
             "target_state_features",
             "cross_state_features",
-            "target_return_shape",
+            "target_direction_return_shape",
             "target_volatility_range_state",
-            "target_liquidity_cost_state",
-            "target_vs_market_strength",
-            "target_vs_sector_strength",
+            "target_liquidity_tradability_state",
+            "target_vs_market_residual_direction",
+            "target_vs_sector_residual_direction",
             "sector_confirmation_state",
             "idiosyncratic_residual_state",
+            "3_target_direction_score_<window>",
+            "3_context_support_quality_score_<window>",
         }
         for token in required_tokens:
             self.assertIn(token, text)
@@ -95,6 +99,8 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "audit/routing metadata into the model-facing vector",
             "optimizes strategy variants before state/outcome relationships are accepted",
             "mismatched state observation windows across market, sector, and target blocks",
+            "treats positive direction as inherently better than negative direction",
+            "Layer 4 alpha/direction confidence",
         }:
             self.assertIn(token, text)
 

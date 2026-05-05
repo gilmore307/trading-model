@@ -80,12 +80,14 @@ Allowed inputs:
   selected sector/industry baskets into stock candidates;
 - target-local point-in-time price, trend, volatility, liquidity, spread, gap,
   borrow/shortability, optionability, abnormal-activity, and event-risk evidence;
+- anonymous structural buckets such as liquidity/dollar-volume bucket, spread/cost bucket, volatility/ATR bucket, price/market-cap bucket, beta-to-market/sector bucket, sector-exposure-strength bucket, and borrow-cost/shortability bucket where applicable;
 - provider/source quality and freshness diagnostics as quality evidence;
 
 Disallowed inputs:
 
 - raw ticker or company identity as model-facing features;
 - memorized symbol-specific winner/loser labels;
+- stable categorical encodings that let the model recover ticker/company identity through a back door;
 - future returns or realized PnL as production fields;
 - post-event explanations unavailable at `available_time`;
 - final strategy, option-contract, size, or portfolio decisions.
@@ -116,6 +118,7 @@ than one opaque scalar.
 |---|---|
 | `target_behavior_vector` | Target-local price/trend/momentum/reversal/chop/volatility shape. |
 | `target_liquidity_tradability_vector` | Volume, spread, capacity, borrow/shortability, optionability, and slippage diagnostics. |
+| `target_structural_bucket_vector` | Anonymous point-in-time liquidity, cost, volatility, price/market-cap, beta, sector-exposure, and borrow-cost buckets. |
 | `sector_context_projection_vector` | Layer 2 sector/industry context values projected onto the candidate without exposing ticker identity. |
 | `market_context_projection_vector` | Layer 1 broad market context values relevant to target-state fitting. |
 | `exposure_transmission_vector` | Holdings/exposure-derived strength, concentration, and confidence after selected basket transmission. |
@@ -125,6 +128,9 @@ than one opaque scalar.
 
 These block names are model-local until implementation/evaluation proves which
 fields should be promoted through `trading-manager`.
+
+
+Bucket fields must be timestamp-local or reviewed-window-local where possible. They may describe trade structure, liquidity, cost, volatility, and exposure shape, but they must not become long-lived symbol identity surrogates. `target_candidate_id` and bucket combinations must be covered by anonymity/leakage checks before promotion.
 
 ## Eligibility and handoff fields
 
@@ -161,8 +167,9 @@ V1 acceptance must show:
 1. every candidate row is point-in-time and keyed by evidence available at or before `available_time`;
 2. Layer 2 selected/prioritized baskets are the source of sector transmission;
 3. ETF holdings and `stock_etf_exposure` are used only at this candidate-builder boundary, not as Layer 2 core behavior inputs;
-4. model-facing vectors exclude raw ticker/company identity and direct symbol-derived categorical features;
+4. model-facing vectors exclude raw ticker/company identity, direct symbol-derived categorical features, and stable bucket combinations that re-identify a ticker;
 5. audit/routing metadata can recover the real symbol without being joined into fitting vectors;
 6. duplicate candidates from multiple sector/industry baskets collapse or remain multi-source with explicit reason codes;
 7. generated candidates improve downstream TargetStateVectorModel evaluation versus market-only and market+sector baselines;
-8. anonymity checks catch accidental identity leakage before promotion.
+8. anonymity checks catch accidental identity leakage before promotion;
+9. long-bias and short-bias candidate generation are both evaluated so stable downtrend candidates are not discarded only because their direction is negative.

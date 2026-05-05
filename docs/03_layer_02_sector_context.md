@@ -1,6 +1,6 @@
 # Layer 02 - SectorContextModel
 
-This file records the current `trading-model` contract for Layer 2.
+This file records the direction-neutral `trading-model` contract target for Layer 2. The current deterministic implementation may carry legacy compatibility fields until the next implementation migration; new downstream contracts should use the direction-neutral terms below.
 
 ## Input
 
@@ -42,7 +42,7 @@ trading_model.model_02_sector_context_diagnostics
 
 ## `model_02_sector_context` - output
 
-The primary output is the narrow, stable downstream contract. It contains identity, trend/context stability state, downstream sector handoff, and eligibility/quality summary fields:
+The primary output is the narrow, stable downstream contract. It contains identity, direction-neutral trend/tradability state, downstream sector handoff, and eligibility/quality summary fields:
 
 ```text
 available_time
@@ -50,24 +50,46 @@ sector_or_industry_symbol
 model_id
 model_version
 market_context_state_ref
-2_trend_stability_score
-2_trend_certainty_score
-2_context_conditioned_stability_score
-2_selection_readiness_score
+2_sector_relative_direction_score
+2_sector_trend_quality_score
+2_sector_trend_stability_score
+2_sector_transition_risk_score
+2_market_context_support_score
+2_sector_breadth_confirmation_score
+2_sector_dispersion_crowding_score
+2_sector_liquidity_tradability_score
+2_sector_tradability_score
 2_sector_handoff_state
+2_sector_handoff_bias
 2_sector_handoff_rank
 2_sector_handoff_reason_codes
 2_eligibility_state
 2_eligibility_reason_codes
 2_state_quality_score
+2_coverage_score
+2_data_quality_score
 2_evidence_count
 ```
+
+`2_sector_relative_direction_score` is signed current sector-context direction evidence. Positive values indicate relative long bias and negative values indicate relative short bias; the sign is not a quality judgment and must not be interpreted as portfolio weight.
+
+`2_sector_tradability_score` is direction-neutral. It represents how clean, stable, liquid, low-noise, and low-transition-risk the sector context is for downstream anonymous target construction. It replaces legacy `2_selection_readiness_score` semantics for new contracts.
+
+`2_state_quality_score`, `2_coverage_score`, and `2_data_quality_score` describe reliability/completeness of the produced state row. They are not opportunity scores and must not be blended silently with tradability or direction.
 
 Allowed `2_sector_handoff_state` values are:
 
 ```text
 selected | watch | blocked | insufficient_data
 ```
+
+Allowed `2_sector_handoff_bias` values are:
+
+```text
+long_bias | short_bias | neutral | mixed
+```
+
+`2_sector_handoff_state` and `2_sector_handoff_bias` must stay separate. A stable weak sector can be `selected` with `short_bias`; a fast rising but noisy sector can be `watch` or `blocked` with `long_bias`.
 
 ## `model_02_sector_context_explainability` - explainability
 
@@ -101,13 +123,14 @@ Layer 2 changes are acceptable when they:
 - keep Layer 1 context from becoming sector, ETF, stock, strategy, option, or portfolio selection by itself;
 - exclude ETF holdings and `stock_etf_exposure` from core Layer 2 behavior modeling unless a later accepted contract moves that boundary;
 - preserve `model_02_sector_context` as the narrow downstream sector-context output and keep explainability/diagnostics as support surfaces;
+- keep sector direction, trend quality, transition risk, tradability, state quality, and handoff bias as separate semantics rather than collapsing them into a single readiness score;
 - route new shared names, statuses, fields, handoff states, or reason-code vocabularies through `trading-manager/scripts/` before cross-repository dependence.
 
 ## Production promotion
 
 `model_02_sector_context` must not become a production-hard downstream dependency until it has a reviewed promotion candidate backed by real-data evaluation evidence. Promotion evidence must include explicit thresholds, metric values, baseline comparison, split/refit stability, sector handoff quality, and no-future-leak checks. Fixture/local dry-run evidence should defer.
 
-Current real-data status: the Layer 2 real-data evaluation path is operational and persisted governance evidence can be written, but the latest promotion review is deferred rather than approved because the configured baseline/stability gates did not all pass. The model is therefore implementation-complete for the V1 path but not production-promoted as a hard downstream dependency.
+Current real-data status: the legacy Layer 2 real-data evaluation path is operational and persisted governance evidence can be written, but the latest promotion review is deferred rather than approved because the configured baseline/stability gates did not all pass. The legacy V1 path is implementation-complete but not production-promoted as a hard downstream dependency. The direction-neutral contract above requires a later implementation/evaluation migration before promotion.
 
 Current Layer 2 verification covers the V1 deterministic generator, SQL physical-artifact writers, promotion evidence builders, and contract boundary checks:
 

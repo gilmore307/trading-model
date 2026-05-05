@@ -351,3 +351,27 @@ The active Layer 3 purpose is to construct an anonymous target state vector from
 3. target-local board/tape/liquidity state.
 
 Layer 3 must focus on finding the relationship between target market state and future tradeable outcomes. Strategy-family and parameter-variant grids are frozen as legacy research and must not be expanded as the active Layer 3 boundary. Strategy/variant selection may return later only as a downstream layer or probe after target-state relationships are accepted.
+
+## D017 - Three-state model uses direction-neutral tradability semantics
+
+Date: 2026-05-05
+Status: Accepted contract direction
+
+The Market/Sector/Target state stack should rank state tradability, not long-only strength. Direction is a signed state property; positive direction is not inherently better than negative direction.
+
+Layer 2 `SectorContextModel` must separate:
+
+- signed sector direction evidence;
+- trend quality and stability;
+- transition/noise/crowding risk;
+- liquidity/tradability;
+- row reliability, coverage, and data quality;
+- `2_sector_handoff_state` from `2_sector_handoff_bias`.
+
+A sector can therefore be `selected` with `short_bias` when its downtrend state is clean, stable, liquid, and low-transition-risk. Conversely, a rising sector can be watched or blocked when it is noisy, fragile, crowded, illiquid, or poorly evidenced.
+
+Layer 3 `TargetStateVectorModel` must make the same separation for anonymous target candidates. `3_target_direction_score_<window>` is current-state direction evidence only. It is not alpha confidence, not position size, and not a trading action. `3_tradability_score_<window>` is direction-neutral and must be validated on long-bias and short-bias cases separately.
+
+Signed labels may be used for direction-neutral evaluation, but the orientation sign must come from deterministic point-in-time state evidence or from an out-of-sample upstream prediction. It must not be derived from the same fitted target being evaluated.
+
+Layer 4/5 consumers own direction-confidence calibration, target/stop/action projection, position sizing, and final trading instructions. Layer 3 remains a state-vector model.

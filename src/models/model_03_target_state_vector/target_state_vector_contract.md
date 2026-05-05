@@ -2,7 +2,7 @@
 
 Status: Draft V1 contract for review.
 
-This file owns the model-local Layer 3 target state-vector contract. Layer 3 is not a strategy-variant selector. It constructs an anonymous, point-in-time state vector that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context.
+This file owns the model-local Layer 3 target state-vector contract. Layer 3 is not a strategy-variant selector. It constructs an anonymous, point-in-time, direction-neutral tradability state vector that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context.
 
 ## Row identity
 
@@ -37,7 +37,7 @@ Inherited or projected from Layer 1. Layer 3 may copy references and normalized 
 | Field group | Meaning |
 |---|---|
 | `market_regime_state` | Current broad market regime/state id or score bundle. |
-| `market_trend_state` | Broad trend direction/strength from accepted Layer 1 factors. |
+| `market_trend_state` | Broad trend direction, trend quality, and transition-risk context from accepted Layer 1 factors. |
 | `market_volatility_state` | Broad realized/implied/range volatility state where available. |
 | `market_breadth_state` | Broad participation/breadth context when accepted by Layer 1. |
 | `market_liquidity_stress_state` | Broad liquidity/stress/cost context when available. |
@@ -50,8 +50,8 @@ Inherited or projected from Layer 2 for the sector/industry basket that admitted
 | Field group | Meaning |
 |---|---|
 | `sector_context_state` | Current Layer 2 sector/industry state id or score bundle. |
-| `sector_relative_strength_state` | Sector-vs-market relative strength and rotation context. |
-| `sector_trend_stability_state` | Sector trend stability/chop/dispersion context. |
+| `sector_relative_direction_state` | Signed sector-vs-market direction evidence and handoff bias from accepted Layer 2 state. |
+| `sector_trend_quality_stability_state` | Sector trend quality, stability, chop/noise, and transition-risk context. |
 | `sector_volatility_state` | Sector volatility and volatility-vs-market context. |
 | `sector_breadth_dispersion_state` | Sector internal participation and dispersion when available. |
 | `sector_liquidity_tradability_state` | Basket liquidity/optionability/cost context when available. |
@@ -62,12 +62,12 @@ Computed from anonymous target-local point-in-time evidence. V1 uses completed b
 
 | Field group | Meaning |
 |---|---|
-| `target_return_shape` | Trailing return shape across reviewed short/intraday/day windows. |
-| `target_trend_momentum_state` | Trend direction, slope, moving-average alignment, and momentum persistence. |
-| `target_volatility_range_state` | ATR%, realized volatility, intraday range, range location, compression/expansion. |
+| `target_direction_return_shape` | Signed current-state direction evidence and trailing return shape across reviewed short/intraday/day windows. |
+| `target_trend_quality_state` | Trend direction sign, structural quality, slope, moving-average/VWAP alignment, and momentum persistence. |
+| `target_volatility_range_state` | ATR%, realized volatility, intraday range, range location, compression/expansion, and transition-risk pressure. |
 | `target_gap_jump_state` | Opening/overnight/session gap, jump, and abnormal bar movement evidence. |
 | `target_volume_activity_state` | Volume, dollar-volume, relative volume, and abnormal activity. |
-| `target_liquidity_cost_state` | Spread, quote coverage, capacity, slippage proxy, and tradeability diagnostics. |
+| `target_liquidity_tradability_state` | Spread, quote coverage, capacity, slippage proxy, borrow/shortability where applicable, and tradeability diagnostics. |
 | `target_vwap_location_state` | Distance from VWAP/session anchors and mean-reversion pressure context. |
 | `target_session_position_state` | Time-of-day/session-progress context for intraday state interpretation. |
 | `target_data_quality_state` | Coverage, freshness, missingness, and source-quality diagnostics. |
@@ -78,15 +78,15 @@ Derived relationship features. These are the main reason Layer 3 exists: they de
 
 | Field group | Meaning |
 |---|---|
-| `target_vs_market_strength` | Target return/trend strength relative to broad market context. |
-| `target_vs_sector_strength` | Target return/trend strength relative to its admitting sector/industry context. |
+| `target_vs_market_residual_direction` | Beta-adjusted target direction/residual behavior relative to broad market context. |
+| `target_vs_sector_residual_direction` | Beta-adjusted target direction/residual behavior relative to admitting sector/industry context. |
 | `target_vs_market_volatility` | Target volatility/range expansion relative to broad market volatility. |
 | `target_vs_sector_volatility` | Target volatility/range expansion relative to sector volatility. |
 | `target_market_beta_correlation` | Rolling beta/correlation to accepted market reference where enough history exists. |
 | `target_sector_beta_correlation` | Rolling beta/correlation to accepted sector reference where enough history exists. |
-| `sector_confirmation_state` | Whether target movement is sector-confirmed, sector-divergent, or idiosyncratic. |
+| `sector_confirmation_state` | Whether target movement is sector-confirmed, sector-divergent, or idiosyncratic; keep signed direction alignment separate from support quality. |
 | `idiosyncratic_residual_state` | Residual target movement after market/sector adjustment. |
-| `relative_liquidity_cost_state` | Target tradability/cost relative to accepted sector or universe reference. |
+| `relative_liquidity_tradability_state` | Target tradability/cost relative to accepted sector or universe reference. |
 
 ## V1 synchronized state windows
 
@@ -100,14 +100,33 @@ These windows are a synchronization contract, not merely a target-local calculat
 
 Use these as state-observation windows for trailing return, volatility, volume, and relative-strength summaries. They are not strategy variants and should not multiply a variant universe. Add windows only after evidence shows a missing state relationship between accepted endpoints, and add the window to market, sector, target, and cross-state handling together.
 
+## Direction-neutral score families
+
+Layer 3 outputs may include scalar summaries inside block payloads, but these score families must not be conflated:
+
+| Score family | Range | Contract meaning |
+|---|---|---|
+| `3_target_direction_score_<window>` | [-1, 1] | Signed current-state direction evidence. Positive/negative are long/short state signs, not quality and not position. |
+| `3_target_trend_quality_score_<window>` | [0, 1] | Clarity/structure of the target trend state independent of sign. |
+| `3_target_path_stability_score_<window>` | [0, 1] | Smoothness and persistence of the state path; higher means fewer whipsaws. |
+| `3_target_noise_score_<window>` | [0, 1] | Bar-to-bar chop, wick/noise, abnormal jumps, and execution-disruptive path noise. Higher means worse noise. |
+| `3_target_transition_risk_score_<window>` | [0, 1] | Risk that current state is switching, decaying, crowded, or otherwise fragile. Higher means more risk. |
+| `3_target_liquidity_tradability_score` | [0, 1] | Liquidity/spread/capacity/borrow support for practical execution. |
+| `3_context_direction_alignment_score_<window>` | [-1, 1] | Signed target/sector/market direction alignment. |
+| `3_context_support_quality_score_<window>` | [0, 1] | Direction-neutral support quality from sector/market/peer context. |
+| `3_tradability_score_<window>` | [0, 1] | Direction-neutral state tradability. Stable short states can score highly. |
+| `3_state_quality_score` | [0, 1] | Reliability/completeness of the produced state vector, not opportunity. |
+
+`3_target_direction_score_<window>` is not Layer 4 alpha/direction confidence. Direction-confidence calibration, target/stop/action projection, and position sizing belong to downstream consumers.
+
 ## V1 label families
 
-Labels are training/evaluation-only outputs. They must never be joined into inference feature vectors.
+Labels are training/evaluation-only outputs. They must never be joined into inference feature vectors. If a signed label uses direction orientation, the orientation must come from deterministic point-in-time state evidence or an out-of-sample upstream prediction, never from the same fitted target being evaluated.
 
 | Label family | Initial horizons | Role |
 |---|---|---|
-| `forward_return_distribution` | 15min, 60min, 390min | Future return distribution from the state. |
-| `forward_path_risk` | 15min, 60min, 390min | MFE/MAE, chop, gap, and adverse excursion after the state. |
+| `signed_forward_return_distribution` | 15min, 60min, 390min | Direction-neutral future return distribution using deterministic point-in-time orientation, not fitted alpha confidence. |
+| `forward_path_risk` | 15min, 60min, 390min | MFE/MAE, chop, sign flips, gap, and adverse excursion after the state. |
 | `directional_persistence` | 15min, 60min, 390min | Whether direction persists after market/sector adjustment. |
 | `reversion_pressure` | 15min, 60min, 390min | Whether stretched target states revert toward target/sector/market anchors. |
 | `liquidity_tradability_outcome` | 15min, 60min | Whether the state remains tradeable after spreads, volume, and coverage gates. |
@@ -121,7 +140,7 @@ Layer 3 evaluation must compare these feature sets under identical labels and sp
 2. `market_sector_baseline` — Layer 1 + Layer 2 blocks.
 3. `market_sector_target_vector` — Layer 1 + Layer 2 + target + cross-state blocks.
 
-A V1 model is not accepted just because target features improve aggregate return prediction. It must show split-stable improvement for at least one reviewed forward outcome and must preserve liquidity/cost diagnostics so theoretically predictive but practically untradeable states can be identified.
+A V1 model is not accepted just because target features improve aggregate return prediction or long-only outcomes. It must show split-stable improvement for at least one reviewed direction-neutral forward path/tradability outcome and must preserve liquidity/cost diagnostics so theoretically predictive but practically untradeable states can be identified.
 
 ## Rejection rules
 
@@ -133,5 +152,7 @@ Reject a state-vector build if it:
 - mixes audit/routing metadata into the model-facing vector;
 - collapses market, sector, target, and cross-state blocks into an uninspectable blob;
 - emits mismatched state observation windows across market, sector, and target blocks;
-- evaluates only against an all-regime aggregate without market/sector-conditioned review;
-- optimizes strategy variants before state/outcome relationships are accepted.
+- evaluates only against an all-regime aggregate without market/sector-conditioned and long-bias/short-bias review;
+- optimizes strategy variants before state/outcome relationships are accepted;
+- treats positive direction as inherently better than negative direction;
+- trains Layer 4/5 consumers on in-sample fitted direction-confidence outputs from Layer 3.
