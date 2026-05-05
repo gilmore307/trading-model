@@ -52,12 +52,14 @@ CROSS_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
     "relative_liquidity_cost_state",
 )
 
-TRAILING_STATE_WINDOWS: Final[tuple[str, ...]] = (
+SYNCHRONIZED_STATE_WINDOWS: Final[tuple[str, ...]] = (
     "5min",
     "15min",
     "60min",
     "390min",
 )
+
+TRAILING_STATE_WINDOWS: Final[tuple[str, ...]] = SYNCHRONIZED_STATE_WINDOWS
 
 LABEL_HORIZONS: Final[tuple[str, ...]] = (
     "15min",
@@ -91,3 +93,5 @@ FORBIDDEN_MODEL_FACING_FIELDS: Final[tuple[str, ...]] = (
     "realized_pnl",
     "strategy_variant",
 )
+
+STATE_WINDOW_SYNC_POLICY: Final[str] = "market_sector_target_blocks_must_share_identical_observation_windows"

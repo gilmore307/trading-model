@@ -33,7 +33,12 @@ class TargetStateVectorContractTests(unittest.TestCase):
         self.assertIn("idiosyncratic_residual_state", contract.CROSS_STATE_FEATURE_GROUPS)
 
     def test_v1_uses_sparse_state_windows_not_strategy_variants(self) -> None:
-        self.assertEqual(contract.TRAILING_STATE_WINDOWS, ("5min", "15min", "60min", "390min"))
+        self.assertEqual(contract.SYNCHRONIZED_STATE_WINDOWS, ("5min", "15min", "60min", "390min"))
+        self.assertEqual(contract.TRAILING_STATE_WINDOWS, contract.SYNCHRONIZED_STATE_WINDOWS)
+        self.assertEqual(
+            contract.STATE_WINDOW_SYNC_POLICY,
+            "market_sector_target_blocks_must_share_identical_observation_windows",
+        )
         self.assertEqual(contract.LABEL_HORIZONS, ("15min", "60min", "390min"))
         self.assertEqual(
             contract.BASELINE_LADDER,
@@ -89,6 +94,7 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "forward returns, realized PnL, or future bar outcomes in inference features",
             "audit/routing metadata into the model-facing vector",
             "optimizes strategy variants before state/outcome relationships are accepted",
+            "mismatched state observation windows across market, sector, and target blocks",
         }:
             self.assertIn(token, text)
 
