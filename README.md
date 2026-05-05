@@ -6,11 +6,13 @@ It owns point-in-time model research, validation, decision-record prototypes, an
 
 1. MarketRegimeModel (`market_regime_model`);
 2. SectorContextModel (`sector_context_model`);
-3. TargetStateVectorModel (`target_state_vector_model`);
-4. TradeQualityModel (`trade_quality_model`);
-5. OptionExpressionModel (`option_expression_model`);
-6. EventOverlayModel (`event_overlay_model`);
+3. TargetStateVectorModel (`target_state_vector_model`), including anonymous target candidate construction as Layer 3 preprocessing;
+4. AlphaConfidenceModel (`alpha_confidence_model`);
+5. TradingProjectionModel (`trading_projection_model`);
+6. OptionExpressionModel (`option_expression_model`);
 7. PortfolioRiskModel (`portfolio_risk_model`).
+
+Event evidence remains an overlay/input to target-state, confidence, projection, expression, and risk work rather than a peer model layer.
 
 It does not own raw source acquisition, live/paper order placement, broker/account mutation, global registry authority, generated runtime artifacts committed to Git, or secrets.
 
@@ -29,10 +31,12 @@ anonymous target candidate builder + TargetStateVectorModel
   -> anonymous_target_feature_vector
   -> target_state_vector
 
-TradeQualityModel -> OptionExpressionModel -> EventOverlayModel -> PortfolioRiskModel
+AlphaConfidenceModel -> TradingProjectionModel -> OptionExpressionModel -> PortfolioRiskModel
+
+Event overlays feed target-state, confidence, projection, expression, and risk decisions as point-in-time evidence.
 ```
 
-Layer 1 describes broad market state only. Layer 2 describes sector/industry trend stability and inferred basket attributes under that market state. Layer 3+ evaluates anonymous target candidates; ticker/company identity stays in audit/routing metadata, not in model-facing fitting vectors.
+Layer 1 describes broad market state only. Layer 2 describes sector/industry direction-neutral tradability and inferred basket attributes under that market state. Layer 3 constructs anonymous target state vectors; Layer 4+ maps target state into confidence, offline projection, expression, and risk decisions. Ticker/company identity stays in audit/routing metadata, not in model-facing fitting vectors.
 
 ## Top-Level Structure
 
