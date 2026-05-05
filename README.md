@@ -47,7 +47,7 @@ Current implementation packages:
 
 ```text
 src/models/                           Model-specific packages and layer-boundary contracts.
-src/models/model_01_market_regime/    MarketRegimeModel V1 generator, evaluation, config, and evidence map.
+src/models/model_01_market_regime/    MarketRegimeModel V2.2 generator, evaluation, config, and evidence map.
 src/models/model_02_sector_context/ SectorContextModel V1 sector-context contract.
 src/models/model_03_target_state_vector/ TargetStateVectorModel draft contract and Layer 3 state-vector workspace.
 src/models/model_03_target_state_vector/anonymous_target_candidate_builder/ Candidate-preparation sub-boundary.

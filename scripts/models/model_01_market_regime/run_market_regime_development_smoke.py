@@ -284,7 +284,7 @@ def _create_explainability_table(database_url: str) -> list[str]:
 
 
 def _create_diagnostics_table(database_url: str) -> list[str]:
-    columns = ["available_time", "present_factor_count", "missing_factor_count", "data_quality_score", "diagnostic_payload_json"]
+    columns = ["available_time", "present_state_output_count", "missing_state_output_count", "data_quality_score", "diagnostic_payload_json"]
     _run_psql(
         database_url,
         f"""
@@ -292,8 +292,8 @@ def _create_diagnostics_table(database_url: str) -> list[str]:
         DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, DIAGNOSTICS_TABLE)};
         CREATE TABLE {_qualified(MODEL_SCHEMA, DIAGNOSTICS_TABLE)} (
           {_ident('available_time')} TIMESTAMPTZ PRIMARY KEY,
-          {_ident('present_factor_count')} INTEGER NOT NULL,
-          {_ident('missing_factor_count')} INTEGER NOT NULL,
+          {_ident('present_state_output_count')} INTEGER NOT NULL,
+          {_ident('missing_state_output_count')} INTEGER NOT NULL,
           {_ident('data_quality_score')} DOUBLE PRECISION,
           {_ident('diagnostic_payload_json')} JSONB NOT NULL
         );

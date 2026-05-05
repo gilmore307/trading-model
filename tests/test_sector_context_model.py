@@ -67,11 +67,12 @@ class SectorContextModelTests(unittest.TestCase):
         return [
             {
                 "available_time": "2026-01-02T16:00:00-05:00",
-                "1_price_behavior_factor": 0.4,
-                "1_trend_certainty_factor": 0.3,
-                "1_capital_flow_factor": 0.2,
-                "1_risk_stress_factor": -0.1,
-                "1_transition_pressure": 0.1,
+                "1_market_direction_score": 0.4,
+                "1_market_trend_quality_score": 0.3,
+                "1_market_liquidity_support_score": 0.2,
+                "1_market_stability_score": 0.25,
+                "1_market_risk_stress_score": -0.1,
+                "1_market_transition_risk_score": 0.1,
             }
         ]
 

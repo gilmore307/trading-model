@@ -1,22 +1,45 @@
 # model_01_market_regime
 
-MarketRegimeModel V1 broad market-context state builder.
+MarketRegimeModel V2.2 broad market-context state builder.
 
 Boundary:
 
 - Input: rows from `trading_data.feature_01_market_regime`.
 - Primary output: rows for `trading_model.model_01_market_regime`.
-- Optional support outputs: rows for `trading_model.model_01_market_regime_explainability` and `trading_model.model_01_market_regime_diagnostics`.
+- Support outputs: rows for `trading_model.model_01_market_regime_explainability` and `trading_model.model_01_market_regime_diagnostics`.
 - Row key: `available_time`; explainability is keyed by `(available_time, factor_name)`.
 - No clustering, hard state labels, supervised regime labels, provider calls, or durable writes in the pure generator.
 
 Runtime SQL reads/writes are isolated in `scripts/generate_model_01_market_regime.py`.
 
-## Config
+## Output contract
 
-`config/factor_specs.toml` owns factor membership, signal directions, reducer choices, and standardization defaults.
+Layer 1 describes broad market tradability/regime context with separate direction, trend quality, stability, risk/stress, transition risk, breadth, correlation/crowding, dispersion, liquidity pressure/support, coverage, and data-quality semantics. It does not output alpha confidence, target state vectors, selected sectors, selected securities, option contracts, position sizes, or trading instructions.
 
-`evidence_map.md` owns the reviewed evidence-role contract for current Layer 1 signals and downstream usefulness checks.
+Current primary output columns:
+
+- `available_time`
+- `1_market_direction_score`
+- `1_market_direction_strength_score`
+- `1_market_trend_quality_score`
+- `1_market_stability_score`
+- `1_market_risk_stress_score`
+- `1_market_transition_risk_score`
+- `1_breadth_participation_score`
+- `1_correlation_crowding_score`
+- `1_dispersion_opportunity_score`
+- `1_market_liquidity_pressure_score`
+- `1_market_liquidity_support_score`
+- `1_coverage_score`
+- `1_data_quality_score`
+
+When writing to SQL, the runtime wrapper preserves compact model-facing keys such as `1_market_trend_quality_score` as physical column names and quotes numeric-leading identifiers where required. Explainability stores reviewed semantic-output context; diagnostics stores row-level coverage, missingness, and gating context.
+
+## Config and internal signal groups
+
+`config/factor_specs.toml` owns internal signal-group membership, signal directions, reducer choices, and standardization defaults. These groups are implementation evidence reducers, not the public downstream output contract.
+
+`evidence_map.md` owns the reviewed evidence-role contract for Layer 1 signals and downstream usefulness checks.
 
 Supported group forms:
 
@@ -35,41 +58,15 @@ Supported aggregations:
 
 Standardization defaults are currently `lookback = 120`, `min_history = 20`, `std_floor = 1e-8`, `z_clip = 5.0`, and `min_signal_coverage = 0.5`. Groups may override `min_history`, `std_floor`, or `z_clip`; correlation/volatility/low-frequency groups deliberately use longer minimum histories.
 
-
-## V2.2 market-tradability semantics
-
-Layer 1 should describe broad market tradability/regime context with separate direction, trend quality, stability, risk/stress, transition risk, breadth, correlation/crowding, dispersion, liquidity pressure/support, coverage, and data quality semantics. It does not output alpha confidence, target state vectors, or trading instructions.
-
-The current output columns are implementation compatibility market-property factors, not proxy-dashboard factors:
-
-- `1_price_behavior_factor`
-- `1_trend_certainty_factor`
-- `1_capital_flow_factor`
-- `1_sentiment_factor`
-- `1_valuation_pressure_factor`
-- `1_fundamental_strength_factor`
-- `1_macro_environment_factor`
-- `1_market_structure_factor`
-- `1_risk_stress_factor`
-- `1_transition_pressure`
-- `1_data_quality_score`
-
-When writing to SQL, the runtime wrapper preserves compact model-facing keys such as `1_trend_certainty_factor` as the physical column name and quotes numeric-leading identifiers where required. The support artifact builders are intentionally generic: explainability stores reviewed per-factor context, while diagnostics stores row-level coverage/missingness/gating context. If a future model layer genuinely has no support artifact to write, the Layer naming contract does not require inventing one.
-
-Observable ETF ratios, returns, volatility, trend, correlation, credit/rate/dollar/commodity, and breadth signals are sensors. They support the market-property ontology but are not themselves the public output contract. `1_fundamental_strength_factor` is currently a broad-market participation proxy until true point-in-time fundamental evidence is added. New downstream contracts should prefer the V2.2 semantic split documented in `docs/02_layer_01_market_regime.md` and `docs/92_vector_taxonomy.md` rather than expanding dependence on ambiguous legacy factor names.
-
-
 ## Evidence map
 
-The current Layer 1 feature payload has 857 logical feature keys after moving sector/industry rotation pairs and sector-observation aggregates to `feature_02_sector_context` and pruning raw ratio moving-average levels and standalone SHY return/trend keys, while the expanded factor specification owns all 857 signal columns. This is an ownership baseline, not a claim that the factor ontology is final.
+The current Layer 1 feature payload has 857 logical feature keys after moving sector/industry rotation pairs and sector-observation aggregates to `feature_02_sector_context` and pruning raw ratio moving-average levels and standalone SHY return/trend keys, while the internal signal specification owns all 857 signal columns. This is an ownership baseline, not a claim that every reducer is promotion-ready.
 
-See `evidence_map.md` for the current feature-to-factor evidence map, evidence-role vocabulary, intentionally unused evidence, quality evidence, and market-context usefulness checks. Future feature additions must either map to a reviewed primary/diagnostic/quality/evaluation role or be removed rather than silently expanding the payload.
-
+See `evidence_map.md` for the current feature-to-output evidence map, evidence-role vocabulary, intentionally unused evidence, quality evidence, and market-context usefulness checks. Future feature additions must either map to a reviewed primary/diagnostic/quality/evaluation role or be removed rather than silently expanding the payload.
 
 ## Sector rotation boundary
 
-Sector/industry rotation, sector leadership, and sector-vs-sector relative strength belong to `SectorContextModel`. Model 1 may use market-wide breadth, concentration, crowding, correlation, and fragility evidence, but it should not output a sector rotation factor or candidate-facing sector leadership conclusion.
-
+Sector/industry rotation, sector leadership, and sector-vs-sector relative strength belong to `SectorContextModel`. Model 1 may use market-wide breadth, concentration, crowding, correlation, and fragility evidence, but it must not output a sector rotation factor or candidate-facing sector leadership conclusion.
 
 ## Cross-asset proxy boundary
 

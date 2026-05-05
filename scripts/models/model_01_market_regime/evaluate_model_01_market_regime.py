@@ -71,16 +71,18 @@ def _fixture_rows() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
         model_rows.append(
             {
                 "available_time": available_time,
-                "1_price_behavior_factor": trend / 1.5,
-                "1_trend_certainty_factor": trend,
-                "1_capital_flow_factor": stress / 3,
-                "1_sentiment_factor": trend,
-                "1_valuation_pressure_factor": stress / 4,
-                "1_fundamental_strength_factor": trend / 2,
-                "1_macro_environment_factor": stress / 5,
-                "1_market_structure_factor": stress / 2,
-                "1_risk_stress_factor": stress,
-                "1_transition_pressure": abs(trend) / 10,
+                "1_market_direction_score": trend / 1.5,
+                "1_market_direction_strength_score": abs(trend / 1.5),
+                "1_market_trend_quality_score": trend,
+                "1_market_stability_score": (trend - stress) / 2,
+                "1_market_risk_stress_score": stress,
+                "1_market_transition_risk_score": abs(trend) / 10,
+                "1_breadth_participation_score": trend / 2,
+                "1_correlation_crowding_score": stress / 2,
+                "1_dispersion_opportunity_score": (trend / 2 - abs(stress / 2)) / 2,
+                "1_market_liquidity_pressure_score": stress / 2,
+                "1_market_liquidity_support_score": (trend - stress) / 2,
+                "1_coverage_score": 1.0,
                 "1_data_quality_score": 1.0,
             }
         )

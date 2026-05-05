@@ -39,18 +39,20 @@ class MarketRegimeModelTests(unittest.TestCase):
         self.assertEqual(len(rows), 65)
         mature = rows[-1]
         self.assertEqual(mature["available_time"], _row(65)["snapshot_time"])
-        self.assertGreater(mature["1_price_behavior_factor"], 0)
-        self.assertGreater(mature["1_trend_certainty_factor"], 0)
-        self.assertGreater(mature["1_capital_flow_factor"], 0)
-        self.assertGreater(mature["1_sentiment_factor"], 0)
-        self.assertGreater(mature["1_valuation_pressure_factor"], 0)
-        self.assertGreater(mature["1_fundamental_strength_factor"], 0)
-        self.assertGreater(mature["1_macro_environment_factor"], 0)
-        self.assertGreater(mature["1_market_structure_factor"], 0)
-        self.assertGreater(mature["1_risk_stress_factor"], 0)
-        self.assertGreater(mature["1_data_quality_score"], 0)
-        self.assertLessEqual(mature["1_data_quality_score"], 1)
-        self.assertIsNotNone(mature["1_transition_pressure"])
+        self.assertGreater(mature["1_market_direction_score"], 0)
+        self.assertGreater(mature["1_market_direction_strength_score"], 0)
+        self.assertGreater(mature["1_market_trend_quality_score"], 0)
+        self.assertIsNotNone(mature["1_market_stability_score"])
+        self.assertGreater(mature["1_market_risk_stress_score"], 0)
+        self.assertIsNotNone(mature["1_market_transition_risk_score"])
+        self.assertGreater(mature["1_breadth_participation_score"], 0)
+        self.assertGreater(mature["1_correlation_crowding_score"], 0)
+        self.assertIsNotNone(mature["1_dispersion_opportunity_score"])
+        self.assertIsNotNone(mature["1_market_liquidity_pressure_score"])
+        self.assertIsNotNone(mature["1_market_liquidity_support_score"])
+        self.assertGreater(mature["1_coverage_score"], 0)
+        self.assertLessEqual(mature["1_coverage_score"], 1)
+        self.assertEqual(mature["1_data_quality_score"], mature["1_coverage_score"])
         for forbidden in {"state_id", "state_probability_0", "state_confidence"}:
             self.assertNotIn(forbidden, mature)
 
@@ -64,18 +66,18 @@ class MarketRegimeModelTests(unittest.TestCase):
     def test_rolling_standardization_does_not_use_current_or_future_rows(self) -> None:
         rows = generator.generate_rows([_row(index) for index in range(1, 62)], lookback=120)
 
-        # The first sixty rows cannot score trend certainty because the long-horizon
-        # market-property group requires sixty prior observations; the sixty-first
-        # row is compared only to prior rows and becomes positive.
-        self.assertIsNone(rows[0]["1_trend_certainty_factor"])
-        self.assertIsNone(rows[59]["1_trend_certainty_factor"])
-        self.assertGreater(rows[60]["1_trend_certainty_factor"], 0)
+        # The first sixty rows cannot score market trend quality because the
+        # long-horizon trend evidence group requires sixty prior observations;
+        # the sixty-first row is compared only to prior rows and becomes positive.
+        self.assertIsNone(rows[0]["1_market_trend_quality_score"])
+        self.assertIsNone(rows[59]["1_market_trend_quality_score"])
+        self.assertGreater(rows[60]["1_market_trend_quality_score"], 0)
 
     def test_evidence_map_tracks_factor_config_and_roles(self) -> None:
         evidence_map = EVIDENCE_MAP_PATH.read_text(encoding="utf-8")
 
-        for spec in generator.load_factor_specs():
-            self.assertIn(f"`{spec.name}`", evidence_map)
+        for column in generator.STATE_OUTPUT_COLUMNS:
+            self.assertIn(f"`{column}`", evidence_map)
         for role in {
             "Primary evidence",
             "Diagnostic evidence",
@@ -148,16 +150,16 @@ class MarketRegimeModelTests(unittest.TestCase):
 
         self.assertEqual(
             {row["factor_name"] for row in explainability_rows},
-            set(generator.FACTOR_COLUMNS),
+            set(generator.STATE_OUTPUT_COLUMNS),
         )
         self.assertTrue(all(row["available_time"] == model_rows[-1]["available_time"] for row in explainability_rows))
-        self.assertIn("signal_count", explainability_rows[0]["explanation_payload_json"])
+        self.assertIn("semantic_contract", explainability_rows[0]["explanation_payload_json"])
         self.assertEqual(len(diagnostics_rows), 1)
         self.assertEqual(
-            diagnostics_rows[0]["present_factor_count"] + diagnostics_rows[0]["missing_factor_count"],
-            len(generator.FACTOR_COLUMNS),
+            diagnostics_rows[0]["present_state_output_count"] + diagnostics_rows[0]["missing_state_output_count"],
+            len(generator.STATE_OUTPUT_COLUMNS),
         )
-        self.assertIn("missing_factor_columns", diagnostics_rows[0]["diagnostic_payload_json"])
+        self.assertIn("missing_state_output_columns", diagnostics_rows[0]["diagnostic_payload_json"])
 
     def test_sql_writer_uses_model_table_and_columns(self) -> None:
         class FakeCursor:
@@ -170,14 +172,14 @@ class MarketRegimeModelTests(unittest.TestCase):
         cursor = FakeCursor()
         sql_runner.write_model_rows_sql(
             cursor,
-            [{"available_time": "2026-01-02T10:00:00-05:00", "1_trend_certainty_factor": 0.5}],
+            [{"available_time": "2026-01-02T10:00:00-05:00", "1_market_trend_quality_score": 0.5}],
             target_schema="trading_model",
             target_table="model_01_market_regime",
         )
 
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime"', joined_sql)
-        self.assertIn('ADD COLUMN IF NOT EXISTS "1_trend_certainty_factor" DOUBLE PRECISION', joined_sql)
+        self.assertIn('ADD COLUMN IF NOT EXISTS "1_market_trend_quality_score" DOUBLE PRECISION', joined_sql)
         self.assertIn('ON CONFLICT ("available_time") DO UPDATE SET', joined_sql)
 
 
@@ -196,7 +198,7 @@ class MarketRegimeModelTests(unittest.TestCase):
             [
                 {
                     "available_time": available_time,
-                    "factor_name": "1_price_behavior_factor",
+                    "factor_name": "1_market_direction_score",
                     "factor_value": 0.25,
                     "explanation_payload_json": {"signal_count": 3},
                 }
@@ -209,10 +211,10 @@ class MarketRegimeModelTests(unittest.TestCase):
             [
                 {
                     "available_time": available_time,
-                    "present_factor_count": 9,
-                    "missing_factor_count": 0,
+                    "present_state_output_count": 9,
+                    "missing_state_output_count": 0,
                     "data_quality_score": 1.0,
-                    "diagnostic_payload_json": {"missing_factor_columns": []},
+                    "diagnostic_payload_json": {"missing_state_output_columns": []},
                 }
             ],
             target_schema="trading_model",

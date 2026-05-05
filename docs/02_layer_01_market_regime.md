@@ -1,6 +1,6 @@
 # Layer 01 - MarketRegimeModel
 
-This file records the V2.2 direction-neutral market tradability/regime contract target for Layer 1. The current implementation may carry legacy market-property factor fields until a reviewed migration changes the physical output; new downstream contracts should use the semantic split below.
+This file records the active V2.2 direction-neutral market tradability/regime contract for Layer 1.
 
 ## Input
 
@@ -10,6 +10,8 @@ trading_data.feature_01_market_regime
 
 Layer 1 consumes broad-market and cross-asset evidence only. Sector/industry rotation, sector/industry ETF leadership, ETF holdings, selected securities, strategies, option contracts, portfolio actions, and future-return labels are excluded from production construction.
 
+The upstream shared CSVs use `model_layer = layer_01_market_regime` to mark rows available to Layer 1 feature construction. Rows scoped to `layer_02_sector_context` belong to Layer 2 even when they live in the same static CSV asset.
+
 ## Stage flow
 
 ```mermaid
@@ -18,7 +20,7 @@ flowchart LR
     feature["trading_data.feature_01_market_regime<br/>deterministic Layer 1 feature surface"]
     model["MarketRegimeModel<br/>Layer 1 model logic"]
     output["trading_model.model_01_market_regime<br/>primary market_context_state"]
-    explain["trading_model.model_01_market_regime_explainability<br/>human-review factor attribution"]
+    explain["trading_model.model_01_market_regime_explainability<br/>human-review state attribution"]
     diagnostics["trading_model.model_01_market_regime_diagnostics<br/>acceptance and gating evidence"]
     downstream["Layer 2+ conditioning context<br/>not sector/security selection"]
 
@@ -38,9 +40,9 @@ trading_model.model_01_market_regime_diagnostics
 
 ## `model_01_market_regime` - output
 
-The primary output is the narrow, stable downstream contract. It is keyed by `available_time` and describes whether the broad market / cross-asset background is clear, stable, low-transition-risk, liquid enough, and able to support downstream trading.
+The primary output is the narrow downstream contract. It is keyed by `available_time` and describes whether the broad market / cross-asset background is clear, stable, low-transition-risk, liquid enough, and able to support downstream trading.
 
-V2.2 target semantic fields:
+Current fields:
 
 ```text
 available_time
@@ -63,27 +65,9 @@ available_time
 
 `1_market_trend_quality_score`, `1_market_stability_score`, `1_market_transition_risk_score`, `1_market_liquidity_pressure_score`, `1_market_liquidity_support_score`, `1_coverage_score`, and `1_data_quality_score` must remain separate. Market tradability should not collapse direction, trend clarity, risk stress, liquidity pressure, coverage, and data quality into one ambiguous readiness field.
 
-Current compatibility fields:
-
-```text
-1_price_behavior_factor
-1_trend_certainty_factor
-1_capital_flow_factor
-1_sentiment_factor
-1_valuation_pressure_factor
-1_fundamental_strength_factor
-1_macro_environment_factor
-1_market_structure_factor
-1_risk_stress_factor
-1_transition_pressure
-1_data_quality_score
-```
-
-These compatibility fields should be interpreted/migrated toward the V2.2 semantic families. For example, `1_price_behavior_factor` should split into direction and price-action strength evidence; `1_trend_certainty_factor` should split trend quality from coverage; `1_fundamental_strength_factor` is currently a breadth/participation proxy, not issuer fundamentals.
-
 ## `model_01_market_regime_explainability` - explainability
 
-Explainability owns human-review detail that should not become a hard downstream dependency. The current generic SQL artifact is optional but, when written, uses one row per `(available_time, factor_name)` with:
+Explainability owns human-review detail that should not become a hard downstream dependency. It uses one row per `(available_time, factor_name)` with:
 
 ```text
 available_time
@@ -92,16 +76,16 @@ factor_value
 explanation_payload_json
 ```
 
-`explanation_payload_json` owns factor attribution context such as aggregation, reducer, required coverage, reviewed signal counts, evidence-role references, config/factor-spec references, and future accepted reason-code detail.
+`factor_name` stores the public state-output name being explained. `explanation_payload_json` owns semantic contract metadata, source signal-group references, signal counts, evidence-role references, config references, and future accepted reason-code detail.
 
 ## `model_01_market_regime_diagnostics` - diagnostics
 
-Diagnostics owns acceptance, monitoring, and gating evidence. The current generic SQL artifact is optional but, when written, uses one row per `available_time` with:
+Diagnostics owns acceptance, monitoring, and gating evidence. It uses one row per `available_time` with:
 
 ```text
 available_time
-present_factor_count
-missing_factor_count
+present_state_output_count
+missing_state_output_count
 data_quality_score
 diagnostic_payload_json
 ```

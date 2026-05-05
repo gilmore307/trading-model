@@ -82,7 +82,7 @@ Hard separation rules:
 Date: 2026-05-01
 Status: Accepted
 
-`MarketRegimeModel` V1 outputs a continuous point-in-time broad market-property vector keyed by `available_time`.
+`MarketRegimeModel` V2.2 outputs a continuous point-in-time broad `market_context_state` keyed by `available_time`.
 
 The physical output table is:
 
@@ -90,31 +90,27 @@ The physical output table is:
 trading_model.model_01_market_regime
 ```
 
-The downstream conceptual view is:
+Current model-facing state score keys:
 
 ```text
-market_context_state
-```
-
-Current model-facing factor keys:
-
-```text
-1_price_behavior_factor
-1_trend_certainty_factor
-1_capital_flow_factor
-1_sentiment_factor
-1_valuation_pressure_factor
-1_fundamental_strength_factor
-1_macro_environment_factor
-1_market_structure_factor
-1_risk_stress_factor
-1_transition_pressure
+1_market_direction_score
+1_market_direction_strength_score
+1_market_trend_quality_score
+1_market_stability_score
+1_market_risk_stress_score
+1_market_transition_risk_score
+1_breadth_participation_score
+1_correlation_crowding_score
+1_dispersion_opportunity_score
+1_market_liquidity_pressure_score
+1_market_liquidity_support_score
+1_coverage_score
 1_data_quality_score
 ```
 
-Docs, model-facing payloads, and physical SQL columns use the same compact `1_*` contract. SQL writers quote numeric-leading identifiers where required instead of creating `layer01_*` aliases.
+Docs, model-facing payloads, and physical SQL columns use the same compact `1_*` contract. SQL writers quote numeric-leading identifiers where required instead of creating `layer01_*` aliases. Old `1_*_factor` groups remain model-local signal groups and explainability/evidence sources, not public downstream output fields.
 
-Layer 1 must not output sector rankings, ETF rankings, stock candidates, strategy labels, or pre-assigned ETF/sector behavior classes.
+Layer 1 must not output sector rankings, ETF rankings, stock candidates, strategy labels, option contracts, position/portfolio actions, future-return labels, or pre-assigned ETF/sector behavior classes.
 
 ETF/sector labels such as `growth`, `defensive`, `cyclical`, `inflation_sensitive`, or `safe_haven` are not Layer 1 facts. If useful, they are Layer 2 posterior interpretations inferred from point-in-time behavior, holdings, and market-state-conditioned trend stability.
 
@@ -123,9 +119,9 @@ ETF/sector labels such as `growth`, `defensive`, `cyclical`, `inflation_sensitiv
 Date: 2026-05-02
 Status: Accepted
 
-Layer 1 structure is settled for V1. Remaining Layer 1 work is evidence and evaluation maturation, not boundary redesign.
+Layer 1 structure is settled for V2.2. Remaining Layer 1 work is evidence depth and real-sample promotion review, not boundary redesign.
 
-For each market-property factor, maintain `src/models/model_01_market_regime/evidence_map.md` as the feature-to-factor evidence map classifying feature families as:
+For each internal signal group and public state score, maintain `src/models/model_01_market_regime/evidence_map.md` as the feature-to-state evidence map classifying feature families as:
 
 - primary evidence;
 - diagnostic evidence;
@@ -142,7 +138,7 @@ Layer 1 evaluation must test:
 - usefulness for `OptionExpressionModel` contract constraints;
 - usefulness for `PortfolioRiskModel` risk, sizing, execution-style, exit, and kill-switch policy.
 
-A `market_context_state` alias/view may wrap the current factor columns for downstream readability without changing the core physical fields.
+`market_context_state` is the accepted downstream semantic surface for current Layer 1 state-score fields.
 
 ## D006 - Layer 2 is sector/industry trend-stability, not final stock selection
 
@@ -255,8 +251,8 @@ Model-facing output vectors and output fields must carry their layer owner in th
 
 Rules:
 
-- Layer 1 model-facing output keys use compact `1_*` names, for example `1_trend_certainty_factor`.
-- Layer 2 model-facing output keys use compact `2_*` names, for example `2_sector_conditional_behavior_vector` and `2_trend_stability_score`.
+- Layer 1 model-facing output keys use compact `1_*` names, for example `1_market_trend_quality_score`.
+- Layer 2 model-facing output keys use compact `2_*` names, for example `2_sector_context_state` and `2_sector_tradability_score`.
 - Deterministic data evidence fields from `trading-data` do not receive model-layer prefixes merely because a model consumes them.
 - Docs, model-facing payloads, and physical SQL columns use the same compact names. SQL writers should quote numeric-leading identifiers where required instead of storing semantic aliases such as `layer01_*` or `layer02_*`.
 
@@ -399,4 +395,4 @@ Anonymous target candidate construction is Layer 3 preprocessing and sample orga
 
 `anonymous_target_feature_vector` is the Layer 3 model-facing input vector produced by preprocessing. `target_state_vector` is the Layer 3 model output. Audit/routing metadata, including real symbol references, remains outside model-facing vectors.
 
-Layer 1 should migrate toward V2.2 market-tradability semantics: market direction, direction strength, trend quality, stability, risk stress, transition risk, breadth participation, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality. Current `1_*_factor` fields remain implementation compatibility fields until a reviewed code/SQL migration replaces them.
+Layer 1 now uses V2.2 market-tradability semantics: market direction, direction strength, trend quality, stability, risk stress, transition risk, breadth participation, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality. Current `1_*_factor` names are model-local signal groups and evidence sources only; the public downstream contract is the `market_context_state` score set.

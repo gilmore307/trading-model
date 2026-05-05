@@ -2,10 +2,10 @@
 
 ## Active Tasks
 
-1. **Layer 1 V2.2 semantic migration planning**
+1. **Layer 1 V2.2 evidence and promotion review**
    - Keep `src/models/model_01_market_regime/evidence_map.md` aligned with `config/factor_specs.toml` and the V2.2 market-tradability semantic split.
    - Review every Feature 01 addition as primary, diagnostic, quality, evaluation-only, or intentionally unused evidence.
-   - Plan migration from legacy factor fields toward separate market direction, direction strength, trend quality, stability, risk stress, transition risk, breadth, correlation/crowding, dispersion, liquidity pressure/support, coverage, and data-quality semantics.
+   - Keep public outputs limited to the accepted `market_context_state` score fields: direction, direction strength, trend quality, stability, risk stress, transition risk, breadth, correlation/crowding, dispersion, liquidity pressure/support, coverage, and data quality.
    - Mature stability/usefulness evaluation for `market_context_state` against downstream baselines.
 
 2. **Layer 2 direction-neutral contract migration**
@@ -38,8 +38,8 @@
 
 ## Open Gaps
 
-- Exact mature evidence definitions for each Layer 1 factor beyond the current V1 family-level map.
-- Exact `market_context_state` alias/view implementation, if any.
+- Real-sample promotion evidence for Layer 1 beyond fixture-scale dry runs.
+- Exact downstream SQL alias/view implementation for `market_context_state`, if a physical alias is needed beyond `trading_model.model_01_market_regime`.
 - Exact implementation/evaluation shape for producing `trading_model.model_02_sector_context` rows.
 - Exact implementation/evaluation shape for producing anonymous target candidate rows.
 - Exact artifact/manifest/ready-signal/request contracts for promoted model artifacts.
@@ -51,7 +51,7 @@
 - Layer 3 is `TargetStateVectorModel`; the active purpose is market + sector + target state-vector construction before trade/action decisions.
 - Current V2.2 architecture is `MarketRegimeModel -> SectorContextModel -> TargetStateVectorModel`, with anonymous target candidate construction inside Layer 3 preprocessing, followed by Alpha/Confidence and Trading Projection layers.
 - `docs/92_vector_taxonomy.md` owns the accepted distinction between feature surfaces, feature vectors, states, state vectors, scalar scores, diagnostics, explainability, and labels/outcomes.
-- Layer 1 outputs only broad `market_context_state`; current market-property factors are compatibility fields pending V2.2 semantic migration.
+- Layer 1 outputs only broad `market_context_state`; old market-property factor names are model-local signal groups and evidence sources, not active downstream output fields.
 - Layer 1 must not pre-label ETF/sector behavior or rank sectors/ETFs/stocks.
 - Layer 2 contract semantics are direction-neutral: signed sector direction is separate from trend quality, tradability, transition risk, state quality, and handoff bias.
 - `src/models/model_02_sector_context/sector_context_state_contract.md` owns the current Layer 2 direction-neutral target contract; the deterministic implementation still needs migration before promotion.
@@ -60,6 +60,6 @@
 - `anonymous_target_feature_vector` is the Layer 3 model-facing input vector; `target_state_vector` is the Layer 3 model output.
 - Model-facing target state vectors must exclude ticker/company identity.
 - `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only.
-- `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-factor evidence-role contract.
+- `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-state evidence-role contract.
 - Promotion decisions can now be durably persisted through `review_market_regime_promotion.py --write-decision`; accepted approval decisions insert `model_promotion_activation` and activate the reviewed config via `model_config_version.config_status = active`, while deferred/rejected decisions leave the active config unchanged.
 - MarketRegimeModel evaluation summaries now expose real metric values, explicit promotion thresholds, baseline comparison, split-stability evidence, and no-future-leak checks; the default path remains dry-run, while `evaluate_model_01_market_regime.py --from-database` performs a read-only SQL evaluation feed.

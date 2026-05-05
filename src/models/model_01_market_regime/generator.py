@@ -1,10 +1,11 @@
-"""Continuous MarketRegimeModel V1 state-vector generator.
+"""Continuous MarketRegimeModel V2.2 market-context state generator.
 
 The generator converts point-in-time rows from
 ``trading_data.feature_01_market_regime`` into the model output table
-``trading_model.model_01_market_regime``. V1 intentionally avoids clustering,
-hard state ids, supervised labels, and human-readable regime labels. The primary
-output is a bounded continuous market-condition vector keyed by ``available_time``.
+``trading_model.model_01_market_regime``. The generator intentionally avoids
+clustering, hard state ids, supervised labels, and human-readable regime labels.
+The primary output is a bounded direction-neutral tradability/context vector
+keyed by ``available_time``.
 
 Factor membership, signal direction, reducer choice, and standardization
 thresholds live in ``config/factor_specs.toml`` so the model contract can evolve
@@ -272,12 +273,43 @@ class RollingZScore:
 
 STANDARDIZATION = load_standardization_config()
 FACTOR_SPECS = load_factor_specs()
-FACTOR_COLUMNS = [spec.name for spec in FACTOR_SPECS]
-OUTPUT_COLUMNS = ["available_time", *FACTOR_COLUMNS, "1_transition_pressure", "1_data_quality_score"]
+INTERNAL_SIGNAL_GROUP_COLUMNS = [spec.name for spec in FACTOR_SPECS]
+STATE_OUTPUT_COLUMNS = [
+    "1_market_direction_score",
+    "1_market_direction_strength_score",
+    "1_market_trend_quality_score",
+    "1_market_stability_score",
+    "1_market_risk_stress_score",
+    "1_market_transition_risk_score",
+    "1_breadth_participation_score",
+    "1_correlation_crowding_score",
+    "1_dispersion_opportunity_score",
+    "1_market_liquidity_pressure_score",
+    "1_market_liquidity_support_score",
+    "1_coverage_score",
+    "1_data_quality_score",
+]
+TRANSITION_BASIS_COLUMNS = [column for column in STATE_OUTPUT_COLUMNS if column not in {"1_market_transition_risk_score", "1_coverage_score", "1_data_quality_score"}]
+OUTPUT_COLUMNS = ["available_time", *STATE_OUTPUT_COLUMNS]
 EXPLAINABILITY_TABLE = "model_01_market_regime_explainability"
 DIAGNOSTICS_TABLE = "model_01_market_regime_diagnostics"
 SPEC_BY_NAME = {spec.name: spec for spec in FACTOR_SPECS}
 SIGNAL_COLUMNS = sorted({signal.column for spec in FACTOR_SPECS for signal in spec.signals})
+SEMANTIC_SOURCE_FACTORS = {
+    "1_market_direction_score": ("1_price_behavior_factor",),
+    "1_market_direction_strength_score": ("1_price_behavior_factor",),
+    "1_market_trend_quality_score": ("1_trend_certainty_factor",),
+    "1_market_stability_score": ("1_trend_certainty_factor", "1_risk_stress_factor"),
+    "1_market_risk_stress_score": ("1_risk_stress_factor",),
+    "1_market_transition_risk_score": tuple(),
+    "1_breadth_participation_score": ("1_fundamental_strength_factor",),
+    "1_correlation_crowding_score": ("1_market_structure_factor",),
+    "1_dispersion_opportunity_score": ("1_fundamental_strength_factor", "1_market_structure_factor"),
+    "1_market_liquidity_pressure_score": ("1_capital_flow_factor", "1_valuation_pressure_factor", "1_risk_stress_factor"),
+    "1_market_liquidity_support_score": ("1_capital_flow_factor", "1_sentiment_factor", "1_risk_stress_factor"),
+    "1_coverage_score": tuple(),
+    "1_data_quality_score": tuple(),
+}
 
 
 def generate_rows(
@@ -291,13 +323,13 @@ def generate_rows(
     rows = sorted(feature_rows, key=_row_available_time)
     scaler = RollingZScore(lookback=lookback, min_history=min_history, std_floor=std_floor, z_clip=z_clip)
     output_rows: list[dict[str, Any]] = []
-    previous_factors: dict[str, float] | None = None
+    previous_state_values: dict[str, float] | None = None
 
     for feature_row in rows:
-        output = generate_row(feature_row, scaler=scaler, previous_factors=previous_factors)
+        output = generate_row(feature_row, scaler=scaler, previous_state_values=previous_state_values)
         output_rows.append(output)
         scaler.update(feature_row, SIGNAL_COLUMNS)
-        previous_factors = {column: output[column] for column in FACTOR_COLUMNS if output.get(column) is not None}
+        previous_state_values = {column: output[column] for column in TRANSITION_BASIS_COLUMNS if output.get(column) is not None}
 
     return output_rows
 
@@ -306,7 +338,7 @@ def generate_row(
     feature_row: Mapping[str, Any],
     *,
     scaler: RollingZScore,
-    previous_factors: Mapping[str, float] | None = None,
+    previous_state_values: Mapping[str, float] | None = None,
 ) -> dict[str, Any]:
     output: dict[str, Any] = {"available_time": _row_available_time(feature_row).isoformat()}
     factor_values: dict[str, float] = {}
@@ -316,13 +348,58 @@ def generate_row(
     for spec in FACTOR_SPECS:
         factor, eligible_columns = _factor_value(spec, feature_row, scaler)
         eligible_signal_columns.update(eligible_columns)
-        output[spec.name] = factor
         if factor is not None:
             factor_values[spec.name] = factor
 
-    output["1_transition_pressure"] = _transition_pressure(factor_values, previous_factors)
-    output["1_data_quality_score"] = len(eligible_signal_columns) / total_signals if total_signals else None
+    coverage = len(eligible_signal_columns) / total_signals if total_signals else None
+    semantic_values = _semantic_values(factor_values, coverage_score=coverage)
+    transition = _transition_pressure(
+        {column: value for column, value in semantic_values.items() if column in TRANSITION_BASIS_COLUMNS and value is not None},
+        previous_state_values,
+    )
+    semantic_values["1_market_transition_risk_score"] = transition
+    output.update(semantic_values)
     return output
+
+
+def _average_optional(values: Sequence[float | None]) -> float | None:
+    clean = [value for value in values if value is not None]
+    return mean(clean) if clean else None
+
+
+def _neg(value: float | None) -> float | None:
+    return None if value is None else -value
+
+
+def _abs(value: float | None) -> float | None:
+    return None if value is None else abs(value)
+
+
+def _semantic_values(base: Mapping[str, float], *, coverage_score: float | None) -> dict[str, float | None]:
+    price = _safe_float(base.get("1_price_behavior_factor"))
+    trend = _safe_float(base.get("1_trend_certainty_factor"))
+    capital_flow = _safe_float(base.get("1_capital_flow_factor"))
+    sentiment = _safe_float(base.get("1_sentiment_factor"))
+    valuation = _safe_float(base.get("1_valuation_pressure_factor"))
+    breadth = _safe_float(base.get("1_fundamental_strength_factor"))
+    structure = _safe_float(base.get("1_market_structure_factor"))
+    risk = _safe_float(base.get("1_risk_stress_factor"))
+
+    return {
+        "1_market_direction_score": price,
+        "1_market_direction_strength_score": _abs(price),
+        "1_market_trend_quality_score": trend,
+        "1_market_stability_score": _average_optional([trend, _neg(risk)]),
+        "1_market_risk_stress_score": risk,
+        "1_market_transition_risk_score": None,
+        "1_breadth_participation_score": breadth,
+        "1_correlation_crowding_score": structure,
+        "1_dispersion_opportunity_score": _average_optional([breadth, _neg(_abs(structure))]),
+        "1_market_liquidity_pressure_score": _average_optional([capital_flow, valuation, risk]),
+        "1_market_liquidity_support_score": _average_optional([_neg(capital_flow), sentiment, _neg(risk)]),
+        "1_coverage_score": coverage_score,
+        "1_data_quality_score": coverage_score,
+    }
 
 
 def _factor_value(spec: FactorSpec, row: Mapping[str, Any], scaler: RollingZScore) -> tuple[float | None, set[str]]:
@@ -403,21 +480,22 @@ def build_explainability_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[d
         available_time = str(model_row.get("available_time") or "").strip()
         if not available_time:
             raise ValueError("model row available_time is required for explainability rows")
-        for spec in FACTOR_SPECS:
-            factor_value = _safe_float(model_row.get(spec.name))
+        for column in STATE_OUTPUT_COLUMNS:
+            factor_value = _safe_float(model_row.get(column))
+            source_factors = SEMANTIC_SOURCE_FACTORS.get(column, tuple())
+            source_specs = [SPEC_BY_NAME[name] for name in source_factors if name in SPEC_BY_NAME]
             rows.append(
                 {
                     "available_time": available_time,
-                    "factor_name": spec.name,
+                    "factor_name": column,
                     "factor_value": factor_value,
                     "explanation_payload_json": {
                         "artifact": EXPLAINABILITY_TABLE,
-                        "factor_name": spec.name,
+                        "factor_name": column,
                         "factor_value": factor_value,
-                        "aggregation": spec.aggregation,
-                        "reducer": next((name for name, reducer in REDUCERS.items() if reducer is spec.reducer), "custom"),
-                        "min_signal_coverage": spec.min_signal_coverage,
-                        "signal_count": len(spec.signals),
+                        "semantic_contract": "market_context_state_v2_2",
+                        "source_factor_names": list(source_factors),
+                        "source_signal_count": sum(len(spec.signals) for spec in source_specs),
                         "eligible_when_factor_value_present": factor_value is not None,
                         "dependency_policy": "human_review_only_not_downstream_contract",
                     },
@@ -434,21 +512,21 @@ def build_diagnostics_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[dict
         available_time = str(model_row.get("available_time") or "").strip()
         if not available_time:
             raise ValueError("model row available_time is required for diagnostics rows")
-        present_factors = [column for column in FACTOR_COLUMNS if _safe_float(model_row.get(column)) is not None]
-        missing_factors = [column for column in FACTOR_COLUMNS if column not in present_factors]
+        present_state_outputs = [column for column in STATE_OUTPUT_COLUMNS if _safe_float(model_row.get(column)) is not None]
+        missing_state_outputs = [column for column in STATE_OUTPUT_COLUMNS if column not in present_state_outputs]
         data_quality_score = _safe_float(model_row.get("1_data_quality_score"))
         rows.append(
             {
                 "available_time": available_time,
-                "present_factor_count": len(present_factors),
-                "missing_factor_count": len(missing_factors),
+                "present_state_output_count": len(present_state_outputs),
+                "missing_state_output_count": len(missing_state_outputs),
                 "data_quality_score": data_quality_score,
                 "diagnostic_payload_json": {
                     "artifact": DIAGNOSTICS_TABLE,
-                    "present_factor_columns": present_factors,
-                    "missing_factor_columns": missing_factors,
-                    "factor_column_count": len(FACTOR_COLUMNS),
-                    "transition_pressure": _safe_float(model_row.get("1_transition_pressure")),
+                    "present_state_output_columns": present_state_outputs,
+                    "missing_state_output_columns": missing_state_outputs,
+                    "state_output_column_count": len(STATE_OUTPUT_COLUMNS),
+                    "transition_pressure": _safe_float(model_row.get("1_market_transition_risk_score")),
                     "data_quality_score": data_quality_score,
                     "acceptance_scope": "freshness_missingness_coverage_and_no_future_leak_review",
                     "dependency_policy": "gating_and_monitoring_not_downstream_prediction_contract",

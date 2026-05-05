@@ -29,9 +29,11 @@ def _rows() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
         models.append(
             {
                 "available_time": timestamp,
-                "1_trend_certainty_factor": (index - 4) / 10,
-                "1_sentiment_factor": (index - 4) / 10,
-                "1_risk_stress_factor": (4 - index) / 10,
+                "1_market_direction_score": (index - 4) / 10,
+                "1_market_trend_quality_score": (index - 4) / 10,
+                "1_market_risk_stress_score": (4 - index) / 10,
+                "1_market_liquidity_support_score": (index - 4) / 12,
+                "1_coverage_score": 1.0,
                 "1_data_quality_score": 1.0,
             }
         )
@@ -105,7 +107,7 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
                 "minimum_split_count": 1,
                 "minimum_pair_count": 1,
                 "minimum_coverage": 0,
-                "minimum_factor_abs_pearson": 0,
+                "minimum_state_output_abs_pearson": 0,
                 "minimum_baseline_improvement_abs": -2,
                 "minimum_stability_sign_consistency": 0,
                 "maximum_stability_correlation_range": 2,

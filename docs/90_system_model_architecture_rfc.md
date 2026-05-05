@@ -106,7 +106,7 @@ Conceptual downstream output:
 market_context_state
 ```
 
-V2.2 target semantic fields:
+Active semantic fields:
 
 ```text
 available_time
@@ -125,7 +125,7 @@ available_time
 1_data_quality_score
 ```
 
-The current implementation still carries legacy market-property factor fields until a reviewed migration changes the physical contract. Those fields should be treated as compatibility inputs to the V2.2 semantic split, not as a reason to preserve ambiguous downstream semantics.
+Downstream layers should depend on these public state fields rather than implementation-local signal-group names.
 
 ### Inputs
 
@@ -154,17 +154,17 @@ ETF/sector behavior attributes belong to Layer 2 as posterior evidence-backed in
 
 ### Method
 
-V1 is simple and auditable:
+The Layer 1 generator is simple and auditable:
 
 ```text
 rolling/expanding scaler
   -> per-signal z-score with reviewed sign direction
-  -> factor-level reducer
-  -> bounded continuous market-property factors
-  -> 1_transition_pressure + 1_data_quality_score
+  -> internal signal-group reducers
+  -> public V2.2 market-context state scores
+  -> explainability + diagnostics support artifacts
 ```
 
-No clustering, HMM state, hard state id, or human-readable regime label is required for V1.
+No clustering, HMM state, hard state id, or human-readable regime label is required.
 
 ### Evidence maturation
 

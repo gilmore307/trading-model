@@ -26,17 +26,19 @@ DEFAULT_SOURCE_KEY = "SOURCE_01_MARKET_REGIME"
 DEFAULT_FEATURE_KEY = "FEATURE_01_MARKET_REGIME"
 DEFAULT_DRY_RUN_WRITE_POLICY = "no_database_write"
 DEFAULT_DATABASE_READ_WRITE_POLICY = "database_read_only_pending_governance_persistence"
-FACTOR_COLUMNS = (
-    "1_price_behavior_factor",
-    "1_trend_certainty_factor",
-    "1_capital_flow_factor",
-    "1_sentiment_factor",
-    "1_valuation_pressure_factor",
-    "1_fundamental_strength_factor",
-    "1_macro_environment_factor",
-    "1_market_structure_factor",
-    "1_risk_stress_factor",
-    "1_transition_pressure",
+STATE_OUTPUT_COLUMNS = (
+    "1_market_direction_score",
+    "1_market_direction_strength_score",
+    "1_market_trend_quality_score",
+    "1_market_stability_score",
+    "1_market_risk_stress_score",
+    "1_market_transition_risk_score",
+    "1_breadth_participation_score",
+    "1_correlation_crowding_score",
+    "1_dispersion_opportunity_score",
+    "1_market_liquidity_pressure_score",
+    "1_market_liquidity_support_score",
+    "1_coverage_score",
     "1_data_quality_score",
 )
 
@@ -47,7 +49,7 @@ DEFAULT_PROMOTION_THRESHOLDS: dict[str, float] = {
     "minimum_split_count": 3.0,
     "minimum_pair_count": 30.0,
     "minimum_coverage": 0.80,
-    "minimum_factor_abs_pearson": 0.03,
+    "minimum_state_output_abs_pearson": 0.03,
     "minimum_baseline_improvement_abs": 0.00,
     "minimum_stability_sign_consistency": 0.66,
     "maximum_stability_correlation_range": 1.50,
@@ -323,7 +325,7 @@ def build_eval_metrics(
     splits: Sequence[Mapping[str, Any]],
     *,
     eval_run_id: str,
-    factor_columns: Sequence[str] = FACTOR_COLUMNS,
+    state_output_columns: Sequence[str] = STATE_OUTPUT_COLUMNS,
     write_policy: str = DEFAULT_DRY_RUN_WRITE_POLICY,
 ) -> list[dict[str, Any]]:
     model_by_time = {_iso(_row_time(row, preferred="available_time")): row for row in model_rows}
@@ -349,7 +351,7 @@ def build_eval_metrics(
         )
         for (label_name, target_symbol, horizon), grouped_labels in label_groups.items():
             labels_in_split = [label for label in grouped_labels if split_start <= _parse_time(label["available_time"]) <= split_end]
-            for factor in factor_columns:
+            for factor in state_output_columns:
                 pairs: list[tuple[float, float]] = []
                 for label in labels_in_split:
                     model_row = model_by_time.get(str(label["available_time"]))
@@ -481,7 +483,7 @@ def build_baseline_improvement_metrics(
         elif metric.get("metric_name") == "baseline_pearson_correlation":
             baseline_max[key] = max(baseline_max.get(key, 0.0), abs(value))
     output: list[dict[str, Any]] = []
-    for key, factor_value in factor_max.items():
+    for key, state_output_value in factor_max.items():
         baseline_value = baseline_max.get(key)
         if baseline_value is None:
             continue
@@ -493,8 +495,8 @@ def build_baseline_improvement_metrics(
                 label_name=label_name or None,
                 target_symbol=target_symbol,
                 horizon=horizon or None,
-                metric_name="factor_max_abs_pearson_correlation",
-                metric_value=factor_value,
+                metric_name="state_output_max_abs_pearson_correlation",
+                metric_value=state_output_value,
                 payload={"metric_family": "baseline_comparison"},
                 write_policy=write_policy,
             )
@@ -520,7 +522,7 @@ def build_baseline_improvement_metrics(
                 target_symbol=target_symbol,
                 horizon=horizon or None,
                 metric_name="baseline_improvement_abs",
-                metric_value=factor_value - baseline_value,
+                metric_value=state_output_value - baseline_value,
                 payload={"metric_family": "baseline_comparison"},
                 write_policy=write_policy,
             )
@@ -824,7 +826,7 @@ def evaluate_promotion_thresholds(artifacts: EvaluationArtifacts, thresholds: Ma
 
     pair_min = metric_values.get("pair_count", {}).get("min", 0.0)
     coverage_min = metric_values.get("coverage", {}).get("min", 0.0)
-    factor_corr_max = max((abs(float(metric.get("metric_value"))) for metric in artifacts.eval_metrics if metric.get("metric_name") == "pearson_correlation" and _safe_float(metric.get("metric_value")) is not None), default=0.0)
+    state_output_corr_max = max((abs(float(metric.get("metric_value"))) for metric in artifacts.eval_metrics if metric.get("metric_name") == "pearson_correlation" and _safe_float(metric.get("metric_value")) is not None), default=0.0)
     improvement_min = metric_values.get("baseline_improvement_abs", {}).get("min", -1_000_000_000.0)
     stability_sign_min = metric_values.get("split_stability_sign_consistency", {}).get("min", 0.0)
     stability_range_max = metric_values.get("split_stability_correlation_range", {}).get("max", 1_000_000_000.0)
@@ -832,7 +834,7 @@ def evaluate_promotion_thresholds(artifacts: EvaluationArtifacts, thresholds: Ma
 
     add("minimum_pair_count", pair_min, thresholds["minimum_pair_count"], pair_min >= thresholds["minimum_pair_count"], ">=")
     add("minimum_coverage", coverage_min, thresholds["minimum_coverage"], coverage_min >= thresholds["minimum_coverage"], ">=")
-    add("minimum_factor_abs_pearson", factor_corr_max, thresholds["minimum_factor_abs_pearson"], factor_corr_max >= thresholds["minimum_factor_abs_pearson"], ">=")
+    add("minimum_state_output_abs_pearson", state_output_corr_max, thresholds["minimum_state_output_abs_pearson"], state_output_corr_max >= thresholds["minimum_state_output_abs_pearson"], ">=")
     add("minimum_baseline_improvement_abs", improvement_min, thresholds["minimum_baseline_improvement_abs"], improvement_min >= thresholds["minimum_baseline_improvement_abs"], ">=")
     add("minimum_stability_sign_consistency", stability_sign_min, thresholds["minimum_stability_sign_consistency"], stability_sign_min >= thresholds["minimum_stability_sign_consistency"], ">=")
     add("maximum_stability_correlation_range", stability_range_max, thresholds["maximum_stability_correlation_range"], stability_range_max <= thresholds["maximum_stability_correlation_range"], "<=")

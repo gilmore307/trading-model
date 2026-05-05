@@ -56,7 +56,7 @@ market_context_state
 
 Layer 1 should be described as broad market/cross-asset state, not as sector selection and not as a target vector.
 
-V2.2 target market-tradability semantics should separate:
+The active market-tradability state separates:
 
 ```text
 1_market_direction_score
@@ -74,7 +74,7 @@ V2.2 target market-tradability semantics should separate:
 1_data_quality_score
 ```
 
-The current implementation still uses legacy broad market-property factor names until a reviewed migration changes the physical contract. During migration, docs should treat the old fields as implementation compatibility fields and map them to the V2.2 semantic families rather than expanding downstream dependence on the legacy names.
+New downstream work should depend on these public state fields, not on implementation-local signal-group names.
 
 ## Layer 2 vocabulary
 

@@ -42,7 +42,7 @@ Layer-owned fields use compact `1_*`, `2_*`, ... prefixes consistently across do
 
 ## Layer 1: MarketRegimeModel
 
-Status: accepted V1 contract.
+Status: accepted V2.2 contract.
 
 ### 1. Data
 
@@ -64,13 +64,13 @@ Evidence roles:
 
 | Role | Meaning |
 |---|---|
-| primary evidence | Directly supports a market-property factor and participates in construction. |
-| diagnostic evidence | Explains, stress-tests, or sanity-checks a factor without directly driving it. |
+| primary evidence | Directly supports a public market-context state score and participates in construction. |
+| diagnostic evidence | Explains, stress-tests, or sanity-checks a state score without directly driving it. |
 | quality evidence | Supports coverage, freshness, reliability, or `1_data_quality_score`. |
 | evaluation-only evidence | Used only after output construction to test usefulness. |
 | intentionally unused evidence | Excluded with a documented reason. |
 
-V2.2 feature groups should map toward separate market-tradability semantic families:
+Layer 1 feature groups map to separate market-tradability semantic families:
 
 ```text
 1_market_direction_score
@@ -88,13 +88,13 @@ V2.2 feature groups should map toward separate market-tradability semantic famil
 1_data_quality_score
 ```
 
-The current implementation still uses legacy `1_*_factor` fields. Until a reviewed migration changes the physical contract, those fields remain compatibility outputs and should be interpreted through the V2.2 semantic split. SQL writers should quote numeric-leading identifiers where required instead of creating `layer01_*` aliases.
+SQL writers should quote numeric-leading identifiers where required instead of creating `layer01_*` aliases.
 
-Layer 1 evidence maturation means maintaining the feature-to-factor evidence map in `src/models/model_01_market_regime/evidence_map.md`. It does not mean adding sector/ETF/stock conclusions to Layer 1.
+Layer 1 evidence maturation means maintaining the feature-to-state evidence map in `src/models/model_01_market_regime/evidence_map.md`. It does not mean adding sector/ETF/stock conclusions to Layer 1.
 
 ### 3. Prediction target
 
-V1 has no supervised target and no required regime label. The conceptual target is current broad-market tradability/regime state: direction evidence, trend quality, stability, risk/stress, transition risk, breadth, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality.
+Layer 1 has no supervised construction target and no required regime label. The conceptual target is current broad-market tradability/regime state: direction evidence, trend quality, stability, risk/stress, transition risk, breadth, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality.
 
 Physical artifacts:
 
@@ -104,7 +104,7 @@ trading_model.model_01_market_regime_explainability
 trading_model.model_01_market_regime_diagnostics
 ```
 
-The primary output carries the narrow downstream market-context state. Reviewed per-factor attribution context, evidence-role refs, and config/factor spec refs belong to `model_01_market_regime_explainability`; detailed source-contribution and bucket-score rows may be added there only when a reviewed implementation needs them. Missingness/freshness, minimum-history, standardization, z-score clipping, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness, baseline comparison, and no-future-leak checks belong to `model_01_market_regime_diagnostics`.
+The primary output carries the narrow downstream market-context state. Reviewed per-state attribution context, evidence-role refs, and config refs belong to `model_01_market_regime_explainability`; detailed source-contribution and bucket-score rows may be added there only when a reviewed implementation needs them. Missingness/freshness, minimum-history, standardization, z-score clipping, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness, baseline comparison, and no-future-leak checks belong to `model_01_market_regime_diagnostics`.
 
 Conceptual output:
 
@@ -116,26 +116,26 @@ Future returns may be used only as evaluation labels.
 
 ### 4. Model mapping
 
-Current V1 mapping:
+Current mapping:
 
 ```text
 rolling/expanding point-in-time scaler
   -> per-signal z-score with clipping/floors
   -> reviewed sign direction
-  -> factor-level reducer
-  -> bounded continuous factor values
-  -> 1_transition_pressure + 1_data_quality_score
+  -> internal signal-group reducers
+  -> public market-context state scores
+  -> explainability + diagnostics support artifacts
 ```
 
 No current or future row may fit the scaler for the row being scored.
 
 ### 5. Loss / error measure
 
-V1 is unsupervised. Wrongness is reviewed through:
+Layer 1 construction is unsupervised. Wrongness is reviewed through:
 
 - leakage/timestamp violations;
 - missing or low signal coverage;
-- factor instability under rolling/expanding refits;
+- state-score instability under rolling/expanding refits;
 - unintuitive sign behavior against reviewed evidence;
 - weak explanatory value for Layer 2 sector trend stability;
 - weak usefulness for option-expression constraints or portfolio-risk policy.

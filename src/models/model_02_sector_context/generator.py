@@ -195,13 +195,16 @@ def _market_context_score(row: Mapping[str, Any] | None) -> float | None:
 
     if row is None:
         return None
+    risk_stress = _safe_float(row.get("1_market_risk_stress_score"))
+    transition_risk = _safe_float(row.get("1_market_transition_risk_score"))
     supportive = _average(
         [
-            _safe_float(row.get("1_price_behavior_factor")),
-            _safe_float(row.get("1_trend_certainty_factor")),
-            _safe_float(row.get("1_capital_flow_factor")),
-            -_safe_float(row.get("1_risk_stress_factor")) if _safe_float(row.get("1_risk_stress_factor")) is not None else None,
-            -_safe_float(row.get("1_transition_pressure")) if _safe_float(row.get("1_transition_pressure")) is not None else None,
+            _safe_float(row.get("1_market_direction_score")),
+            _safe_float(row.get("1_market_trend_quality_score")),
+            _safe_float(row.get("1_market_liquidity_support_score")),
+            _safe_float(row.get("1_market_stability_score")),
+            -risk_stress if risk_stress is not None else None,
+            -transition_risk if transition_risk is not None else None,
         ]
     )
     return supportive

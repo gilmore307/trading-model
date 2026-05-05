@@ -195,19 +195,19 @@ def write_diagnostics_rows_sql(
         f"""
         CREATE TABLE IF NOT EXISTS {qualified_table} (
           "available_time" TIMESTAMPTZ PRIMARY KEY,
-          "present_factor_count" INTEGER NOT NULL,
-          "missing_factor_count" INTEGER NOT NULL,
+          "present_state_output_count" INTEGER NOT NULL,
+          "missing_state_output_count" INTEGER NOT NULL,
           "data_quality_score" DOUBLE PRECISION,
           "diagnostic_payload_json" JSONB NOT NULL
         )
         """
     )
     insert_sql = f"""
-        INSERT INTO {qualified_table} ("available_time", "present_factor_count", "missing_factor_count", "data_quality_score", "diagnostic_payload_json")
+        INSERT INTO {qualified_table} ("available_time", "present_state_output_count", "missing_state_output_count", "data_quality_score", "diagnostic_payload_json")
         VALUES (%s, %s, %s, %s, %s::jsonb)
         ON CONFLICT ("available_time") DO UPDATE SET
-          "present_factor_count" = EXCLUDED."present_factor_count",
-          "missing_factor_count" = EXCLUDED."missing_factor_count",
+          "present_state_output_count" = EXCLUDED."present_state_output_count",
+          "missing_state_output_count" = EXCLUDED."missing_state_output_count",
           "data_quality_score" = EXCLUDED."data_quality_score",
           "diagnostic_payload_json" = EXCLUDED."diagnostic_payload_json"
     """
@@ -216,8 +216,8 @@ def write_diagnostics_rows_sql(
             insert_sql,
             [
                 row.get("available_time"),
-                row.get("present_factor_count"),
-                row.get("missing_factor_count"),
+                row.get("present_state_output_count"),
+                row.get("missing_state_output_count"),
                 row.get("data_quality_score"),
                 json.dumps(row.get("diagnostic_payload_json", {}), sort_keys=True),
             ],

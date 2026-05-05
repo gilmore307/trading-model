@@ -1,8 +1,10 @@
-# MarketRegimeModel V1 factor specification.
+# MarketRegimeModel internal signal-group specification.
 #
-# This file owns factor membership, signal direction, reducer choice, and
-# standardization defaults. The Python generator owns only point-in-time rolling
-# standardization and execution mechanics.
+# This file owns implementation evidence-group membership, signal direction,
+# reducer choice, and standardization defaults. The Python generator owns only
+# point-in-time rolling standardization and execution mechanics. These internal
+# group names are mapped into the public V2.2 market-context output contract by
+# generator.py.
 #
 # Supported reducers:
 # - bounded_mean: tanh(mean(zscores) / 2)
@@ -16,12 +18,12 @@
 # - columns = ["exact_column_name", ...]
 # - symbols = ["spy", ...] plus suffixes = ["return_20d", ...]
 #
-# direction = 1 means higher raw signal increases the factor.
-# direction = -1 means higher raw signal decreases the factor.
+# direction = 1 means higher raw signal increases the internal group score.
+# direction = -1 means higher raw signal decreases the internal group score.
 #
-# V1.3 expresses Layer 1 output as market-property factors rather than
-# proxy-dashboard factors while keeping sector/industry rotation out of Model 1. Generated data should have an explicit owner: used by
-# a factor, retained as diagnostic/quality/evaluation evidence, or removed.
+# Generated data should have an explicit owner: mapped to the public Layer 1
+# market-context state, retained as diagnostic/quality/evaluation evidence, or
+# removed.
 
 [standardization]
 lookback = 120
