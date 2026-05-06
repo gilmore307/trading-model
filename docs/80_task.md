@@ -28,9 +28,13 @@
 - Exact downstream SQL alias/view implementation for `market_context_state`, if a physical alias is needed beyond `trading_model.model_01_market_regime`.
 - Accepted production promotion for V2.2 `trading_model.model_02_sector_context` rows remains blocked by real-sample baseline/stability gates; latest review is durably deferred, not approved.
 - Production-scale Layer 3 real-data evidence and accepted promotion decision for `model_03_target_state_vector`.
+- Whether legacy strategy-selection research returns later as a downstream layer or remains archived as model-local research history.
+
+## Deferred Until Manager Phase
+
 - Exact artifact/manifest/ready-signal/request contracts for promoted model artifacts.
 - Exact storage path/reference requirements for model evaluation and promotion artifacts.
-- Whether legacy strategy-selection research returns later as a downstream layer or remains archived as model-local research history.
+- These shared contracts stay deferred until all model layers are designed and the `trading-manager` development phase begins; model work should continue with local/offline evidence and avoid prematurely registering durable manager/storage interfaces.
 
 ## Recently Accepted
 

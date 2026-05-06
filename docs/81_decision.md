@@ -396,3 +396,12 @@ Anonymous target candidate construction is Layer 3 preprocessing and sample orga
 `anonymous_target_feature_vector` is the Layer 3 model-facing input vector produced by preprocessing. `target_state_vector` is the Layer 3 model output. Audit/routing metadata, including real symbol references, remains outside model-facing vectors.
 
 Layer 1 now uses V2.2 market-tradability semantics: market direction, direction strength, trend quality, stability, risk stress, transition risk, breadth participation, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality. Current `1_*_factor` names are model-local signal groups and evidence sources only; the public downstream contract is the `market_context_state` score set.
+
+## D019 - Durable manager/storage contracts are deferred until the full model stack is designed
+
+Date: 2026-05-06
+Status: Accepted
+
+State-vector semantics and model-local outputs may continue to mature inside `trading-model`, but final artifact, manifest, ready-signal, request, durable receipt, shared storage root, and SQL/storage destination contracts wait until all model layers are designed and `trading-manager` development begins.
+
+This keeps Layer 1-7 model design from being constrained by premature manager/storage interface decisions. Registry state-vector values remain reviewed naming/semantic references; they do not by themselves finalize durable manager/storage contracts.
