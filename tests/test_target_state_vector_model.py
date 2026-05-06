@@ -19,7 +19,7 @@ def _feature_row(index: int) -> dict:
         "target_candidate_id": "tcand_001",
         "market_context_state_ref": "mkt_001",
         "sector_context_state_ref": "sec_001",
-        "target_state_vector_version": "target_state_vector_v1",
+        "target_context_state_version": "target_context_state_v1",
         "market_state_features": {"state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows", "market_return_15min": 0.001},
         "sector_state_features": {"state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows", "sector_return_15min": 0.002},
         "target_state_features": {
@@ -47,7 +47,7 @@ class TargetStateVectorModelTests(unittest.TestCase):
         self.assertIn("3_target_state_persistence_score_15min", row)
         self.assertIn("3_target_exhaustion_risk_score_15min", row)
         self.assertIn("3_tradability_score_15min", row)
-        self.assertIn("target_state_vector", row)
+        self.assertIn("target_context_state", row)
         self.assertNotIn("alpha_confidence", row)
         self.assertNotIn("position_size", row)
         self.assertNotIn("final_action", row)
@@ -61,7 +61,7 @@ class TargetStateVectorModelTests(unittest.TestCase):
         metric_names = {row["metric_name"] for row in artifacts.eval_metrics}
         self.assertIn("abs_corr:market_only_baseline", metric_names)
         self.assertIn("abs_corr:market_sector_baseline", metric_names)
-        self.assertIn("abs_corr:market_sector_target_vector", metric_names)
+        self.assertIn("abs_corr:market_sector_target_context", metric_names)
         self.assertIn("threshold:minimum_feature_rows", metric_names)
         summary = evaluation.summarize_threshold_results(artifacts.eval_metrics)
         self.assertEqual(summary["promotion_gate_state"], "blocked")

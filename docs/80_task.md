@@ -8,11 +8,11 @@ Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence
 
 ## Queued Tasks
 
-- Complete nine-part decompositions for Layers 4-7.
-- Define first label horizons and confidence/EV/risk defaults for `AlphaConfidenceModel`.
-- Define first trading-action and target-exposure projection defaults for `TradingProjectionModel`.
-- Define how `OptionExpressionModel` V1 uses market context for DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade policy.
-- Define event standard/version semantics for abnormal activity and event-memory evidence as overlays/inputs.
+- Complete nine-part decompositions for Layers 5-7 after the Layer 4 event route.
+- Define first label horizons and confidence/EV/risk defaults for Layer 5 `AlphaConfidenceModel`.
+- Define first trading-action and target-exposure projection defaults for Layer 6 `TradingProjectionModel`.
+- Define how Layer 7 expression/final-action work uses market/event context for DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade policy.
+- Define event standard/version semantics for abnormal activity and event-memory evidence as Layer 4 model inputs.
 - Define final unified decision-record shape and promote it through `trading-manager` when stable.
 
 ## Open Gaps
@@ -35,7 +35,7 @@ These are promotion/production-readiness gaps. They do not reopen the accepted L
 
 - Layer 1-3 model-design closeout is accepted for the current phase: MarketRegimeModel, SectorContextModel, and TargetStateVectorModel have reviewed contracts, deterministic local implementations/evaluation scaffolds, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.
 - Layer 3 is `TargetStateVectorModel`; the active purpose is market + sector + target state-vector construction before trade/action decisions.
-- Current V2.2 architecture is `MarketRegimeModel -> SectorContextModel -> TargetStateVectorModel`, with anonymous target candidate construction inside Layer 3 preprocessing, followed by Alpha/Confidence and Trading Projection layers.
+- Current V2.2 architecture is `MarketRegimeModel -> SectorContextModel -> TargetStateVectorModel -> EventOverlayModel -> AlphaConfidenceModel -> TradingProjectionModel -> expression/final-action boundary`, with anonymous target candidate construction inside Layer 3 preprocessing.
 - `docs/92_vector_taxonomy.md` owns the accepted distinction between feature surfaces, feature vectors, states, state vectors, scalar scores, diagnostics, explainability, and labels/outcomes.
 - Layer 1 outputs only broad `market_context_state`; old market-property factor names are model-local signal groups and evidence sources, not active downstream output fields.
 - Layer 1 must not pre-label ETF/sector behavior or rank sectors/ETFs/stocks.
@@ -47,9 +47,10 @@ These are promotion/production-readiness gaps. They do not reopen the accepted L
 - `src/models/model_03_target_state_vector/anonymous_target_candidate_builder/builder.py` implements anonymous candidate rows and identity-safety checks for `anonymous_target_feature_vector`.
 - `src/models/model_03_target_state_vector/generator.py` implements deterministic `model_03_target_state_vector` rows from `feature_03_target_state_vector` blocks with signed direction separated from tradability, transition/noise risk, liquidity, and state quality.
 - `src/models/model_03_target_state_vector/evaluation.py` and `scripts/models/model_03_target_state_vector/` implement the Layer 3 baseline-ladder evidence path; fixture/local review must defer until real-data gates pass.
-- `anonymous_target_feature_vector` is the Layer 3 model-facing input vector; `target_state_vector` is the Layer 3 model output.
-- Model-facing target state vectors must exclude ticker/company identity.
-- `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only.
+- `anonymous_target_feature_vector` is the Layer 3 model-facing input vector; `target_context_state` is the Layer 3 conceptual model output.
+- Model-facing target context/state vectors must exclude ticker/company identity.
+- Layer 4 is now `EventOverlayModel`, consuming point-in-time event evidence from `source_04_event_overlay` and outputting `event_context_vector` before alpha confidence.
+- `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only, now inside the Layer 7 expression/final-action boundary.
 - `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-state evidence-role contract.
 - Promotion decisions can now be durably persisted through `review_market_regime_promotion.py --write-decision`; accepted approval decisions insert `model_promotion_activation` and activate the reviewed config via `model_config_version.config_status = active`, while deferred/rejected decisions leave the active config unchanged.
 - MarketRegimeModel evaluation summaries now expose real metric values, explicit promotion thresholds, baseline comparison, split-stability evidence, and no-future-leak checks; the default path remains dry-run, while `evaluate_model_01_market_regime.py --from-database` performs a read-only SQL evaluation feed.

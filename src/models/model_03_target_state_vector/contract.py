@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Final
 
 LAYER3_PREPROCESSING_VECTOR: Final[str] = "anonymous_target_feature_vector"
-LAYER3_OUTPUT_STATE_VECTOR: Final[str] = "target_state_vector"
+LAYER3_OUTPUT_STATE_VECTOR: Final[str] = "target_context_state"
 
 STATE_VECTOR_BLOCKS: Final[tuple[str, ...]] = (
     "market_state_features",
@@ -95,17 +95,17 @@ DIRECTION_NEUTRAL_SCORE_FAMILIES: Final[tuple[str, ...]] = (
 BASELINE_LADDER: Final[tuple[str, ...]] = (
     "market_only_baseline",
     "market_sector_baseline",
-    "market_sector_target_vector",
+    "market_sector_target_context",
 )
 
 MODEL_FACING_IDENTITY_FIELDS: Final[tuple[str, ...]] = (
     "available_time",
     "tradeable_time",
     "target_candidate_id",
-    "target_state_vector_version",
+    "target_context_state_version",
     "market_context_state_ref",
     "sector_context_state_ref",
-    "target_state_vector_ref",
+    "target_context_state_ref",
 )
 
 FORBIDDEN_MODEL_FACING_FIELDS: Final[tuple[str, ...]] = (

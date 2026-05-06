@@ -12,7 +12,7 @@ Layer 3 is target state-vector construction. Earlier action/variant Layer 3 work
 
 Layer 3 should find the relationship between **target board/tape state** and future trading outcomes. It should not begin by choosing a downstream action variant.
 
-Layer 3 builds a point-in-time, direction-neutral tradability state vector that later layers may use to estimate direction confidence, trading projection, expression fit, and portfolio risk. Layer 3 does not output position size or final action.
+Layer 3 builds a point-in-time, direction-neutral `target_context_state` that later layers may use for event context, direction confidence, trading projection, and expression/final-action handoff. Layer 3 does not output position size or final action.
 
 ## Boundary reset
 
@@ -20,7 +20,7 @@ Layer 3 owns:
 
 - anonymous target candidate construction as preprocessing / sample organization, not as a separate model;
 - market-context, sector-context, and target-local feature fusion;
-- target state vector generation;
+- target context/state-vector generation;
 - target-state labels for future return/risk/path/tradability relationship research, kept out of inference features;
 - state-cluster / embedding / regime evidence for a single target candidate;
 - acceptance evidence that state vectors explain future tradeable outcomes better than market-only or sector-only baselines.
@@ -56,9 +56,9 @@ Detailed V1 contract:
 src/models/model_03_target_state_vector/target_state_vector_contract.md
 ```
 
-Use `docs/92_vector_taxonomy.md` for vocabulary. `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector; `target_state_vector` is the Layer 3 model output.
+Use `docs/92_vector_taxonomy.md` for vocabulary. `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual output. Historical implementation paths still use `model_03_target_state_vector`.
 
-Layer 3 output state vectors must be explicitly decomposable into four model-facing blocks.
+Layer 3 output context/state vectors must be explicitly decomposable into four model-facing blocks.
 
 | Block | Required role | Example evidence classes |
 |---|---|---|
@@ -94,8 +94,8 @@ tradeable_time
 target_candidate_id
 market_context_state_ref
 sector_context_state_ref
-3_target_state_vector_id
-3_target_state_vector_ref
+3_target_context_state_id
+3_target_context_state_ref
 ```
 
 Model-facing payload groups:
@@ -126,7 +126,7 @@ source_stock_etf_exposure_ref
 
 Layer 3 score families must stay separated:
 
-- `3_target_direction_score_<window>` is signed current-state direction evidence. It is not Layer 4 alpha confidence and is not a position instruction.
+- `3_target_direction_score_<window>` is signed current-state direction evidence. It is not Layer 5 alpha confidence and is not a position instruction.
 - `3_target_direction_strength_score_<window>` is absolute direction evidence strength; high can describe either a clean long context or a clean short context.
 - `3_target_trend_quality_score_<window>` and `3_target_path_stability_score_<window>` describe whether the state has a clean tradable structure.
 - `3_target_state_persistence_score_<window>` describes state/trend age and persistence support without direction sign.
@@ -171,7 +171,7 @@ The first deterministic scaffold is implemented:
 
 - `src/models/model_03_target_state_vector/anonymous_target_candidate_builder/` builds anonymous candidate rows and checks that `anonymous_target_feature_vector` excludes raw ticker/company identity.
 - `src/models/model_03_target_state_vector/generator.py` consumes `feature_03_target_state_vector` rows and emits `model_03_target_state_vector` rows with signed target direction, direction-neutral trend/path/tradability, transition/noise risk, liquidity, state quality, embedding, cluster, and diagnostics separated.
-- `src/models/model_03_target_state_vector/evaluation.py` builds fixture/local promotion evidence over the accepted baseline ladder: market-only, market+sector, and market+sector+target vector, using direction-neutral path tradability labels rather than only forward return.
+- `src/models/model_03_target_state_vector/evaluation.py` builds fixture/local promotion evidence over the accepted baseline ladder: market-only, market+sector, and market+sector+target context, using direction-neutral path tradability labels rather than only forward return.
 - `scripts/models/model_03_target_state_vector/` contains generate/evaluate/review wrappers. Local/fixture review remains conservative and defers unless real-data evidence, thresholds, split stability, and leakage gates are reviewed and accepted.
 
 ## Implementation order
@@ -196,4 +196,4 @@ A Layer 3 implementation is not accepted unless it proves:
 - liquidity/cost diagnostics identify states that are theoretically predictive but practically untradeable;
 - audit/routing metadata can map decisions back to real symbols without leaking identity into fitting vectors;
 - generated outputs, large artifacts, and credentials stay out of Git;
-- Layer 4 Alpha / Confidence and Layer 5 Trading Projection consumers, not Layer 3, own direction-confidence calibration, target/stop/action projection, position sizing, and final trading instructions.
+- Layer 4 EventOverlayModel owns event context; Layer 5 AlphaConfidenceModel and later consumers, not Layer 3, own direction-confidence calibration, target/stop/action projection, position sizing, expression, and final trading instructions.

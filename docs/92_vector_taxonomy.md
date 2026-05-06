@@ -157,7 +157,7 @@ TargetStateVectorModel
 Conceptual output:
 
 ```text
-target_state_vector
+target_context_state
 ```
 
 Physical promoted artifact:
@@ -166,7 +166,7 @@ Physical promoted artifact:
 trading_model.model_03_target_state_vector
 ```
 
-The Layer 3 output state vector consists of four inspectable blocks:
+The Layer 3 conceptual output keeps the historical `TargetStateVectorModel` implementation name, but downstream prose should call the state payload `target_context_state` so it aligns with `market_context_state` and `sector_context_state`. It consists of four inspectable blocks:
 
 ```text
 market_state_features
@@ -176,6 +176,46 @@ cross_state_features
 ```
 
 Embedding and cluster outputs may exist as derived representation or diagnostics-supporting outputs, but they must not replace the four inspectable blocks as the primary contract.
+
+## Layer 4 event vocabulary
+
+Layer 4 model:
+
+```text
+EventOverlayModel
+```
+
+Conceptual output:
+
+```text
+event_context_vector
+```
+
+Future physical promoted artifact:
+
+```text
+trading_model.model_04_event_overlay
+```
+
+Primary input source:
+
+```text
+trading_data.source_04_event_overlay
+```
+
+The Layer 4 event vector consists of seven inspectable blocks:
+
+```text
+event_timing_context
+event_scope_context
+event_type_context
+event_intensity_context
+event_directional_context
+event_risk_context
+event_quality_context
+```
+
+It is event context for downstream confidence. It is not alpha confidence, not a trading signal, and not final action.
 
 ## Label boundary
 
@@ -194,7 +234,7 @@ They are training/evaluation-only and must not be joined into:
 
 ```text
 anonymous_target_feature_vector
-target_state_vector
+target_context_state
 ```
 
 ## Clean V2.2 flow
@@ -219,9 +259,17 @@ market_context_state
 + sector_context_state
 + anonymous_target_feature_vector
   -> TargetStateVectorModel
-  -> target_state_vector
+  -> target_context_state
 
-target_state_vector
-  -> Alpha / Confidence Model
-  -> Trading Projection Model
+target_context_state
++ source_04_event_overlay evidence
+  -> EventOverlayModel
+  -> event_context_vector
+
+target_context_state
++ event_context_vector
+  -> AlphaConfidenceModel
+  -> alpha_confidence_vector
+  -> TradingProjectionModel
+  -> trading_signal_vector
 ```

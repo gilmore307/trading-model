@@ -6,7 +6,7 @@ This file owns the first model-local contract for the boundary between
 The builder is part of Layer 3, not a separate model layer. It is the point-in-time preprocessing and sample-organization
 sub-boundary that expands selected sector/industry baskets into anonymous target
 candidate rows while preserving real symbol references only for audit and
-routing. It produces `anonymous_target_feature_vector` inputs for `TargetStateVectorModel`; it does not produce the Layer 3 `target_state_vector` output.
+routing. It produces `anonymous_target_feature_vector` inputs for `TargetStateVectorModel`; it does not produce the Layer 3 `target_context_state` output.
 
 ## Purpose
 

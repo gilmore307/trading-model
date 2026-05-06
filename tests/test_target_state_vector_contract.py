@@ -19,7 +19,7 @@ CONTRACT_PATH = (
 class TargetStateVectorContractTests(unittest.TestCase):
     def test_v1_blocks_are_relationship_first(self) -> None:
         self.assertEqual(contract.LAYER3_PREPROCESSING_VECTOR, "anonymous_target_feature_vector")
-        self.assertEqual(contract.LAYER3_OUTPUT_STATE_VECTOR, "target_state_vector")
+        self.assertEqual(contract.LAYER3_OUTPUT_STATE_VECTOR, "target_context_state")
         self.assertEqual(
             contract.STATE_VECTOR_BLOCKS,
             (
@@ -52,7 +52,7 @@ class TargetStateVectorContractTests(unittest.TestCase):
             (
                 "market_only_baseline",
                 "market_sector_baseline",
-                "market_sector_target_vector",
+                "market_sector_target_context",
             ),
         )
 
@@ -65,7 +65,7 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "target_candidate_id",
             "market_context_state_ref",
             "sector_context_state_ref",
-            "target_state_vector_ref",
+            "target_context_state_ref",
             "market_state_features",
             "sector_state_features",
             "target_state_features",
@@ -110,9 +110,9 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "optimizes downstream action variants before state/outcome relationships are accepted",
             "mismatched state observation windows across market, sector, and target blocks",
             "treats positive direction as inherently better than negative direction",
-            "Layer 4 alpha/direction confidence",
+            "Layer 5 alpha/direction confidence",
             "anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector",
-            "target_state_vector` is the Layer 3 model output",
+            "target_context_state` is the Layer 3 conceptual model output",
         }:
             self.assertIn(token, text)
 

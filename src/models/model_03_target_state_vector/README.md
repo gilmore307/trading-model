@@ -2,11 +2,11 @@
 
 Contract-first workspace for `TargetStateVectorModel` / Layer 3.
 
-Layer 3 is direction-neutral target state-vector construction. Layer 3 preprocessing first produces anonymous target candidates and `anonymous_target_feature_vector` inputs; `TargetStateVectorModel` then fuses market state, sector state, and anonymous target-local state into the point-in-time `target_state_vector` used by later layers. Signed current-state direction, tradability, transition risk, noise, liquidity/cost, and row quality remain separate; Layer 3 does not output alpha confidence, position size, or final trade action.
+Layer 3 is direction-neutral target context/state-vector construction. Layer 3 preprocessing first produces anonymous target candidates and `anonymous_target_feature_vector` inputs; `TargetStateVectorModel` then fuses market state, sector state, and anonymous target-local state into the point-in-time `target_context_state` used by later layers. Signed current-state direction, tradability, transition risk, noise, liquidity/cost, and row quality remain separate; Layer 3 does not output event context, alpha confidence, position size, or final trade action.
 
 Key files:
 
-- `target_state_vector_contract.md` — V1 state-vector row identity, feature blocks, trailing windows, label families, baseline ladder, and rejection rules.
+- `target_state_vector_contract.md` — V1 target-context/state-vector row identity, feature blocks, trailing windows, label families, baseline ladder, and rejection rules.
 - `contract.py` — importable constants for the V1 block names, feature groups, label horizons, and baseline ladder.
 - `anonymous_target_candidate_builder/` — candidate-preparation sub-boundary that creates anonymous target candidates before state-vector construction.
 

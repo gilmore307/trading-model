@@ -9,12 +9,12 @@ It owns point-in-time model research, training/evaluation workflows, model-local
 1. MarketRegimeModel (`market_regime_model`);
 2. SectorContextModel (`sector_context_model`);
 3. TargetStateVectorModel (`target_state_vector_model`), including anonymous target candidate construction as Layer 3 preprocessing;
-4. AlphaConfidenceModel (`alpha_confidence_model`);
-5. TradingProjectionModel (`trading_projection_model`);
-6. OptionExpressionModel (`option_expression_model`);
-7. PortfolioRiskModel (`portfolio_risk_model`).
+4. EventOverlayModel (`event_overlay_model`);
+5. AlphaConfidenceModel (`alpha_confidence_model`);
+6. TradingProjectionModel (`trading_projection_model`);
+7. OptionExpression / Final Action boundary (expression/action work remains offline and broker mutation stays outside this repository).
 
-Event evidence remains in scope as an overlay/input to target-state, confidence, projection, expression, and risk work rather than a peer to the three core tradability layers.
+Event evidence is now an explicit Layer 4 context model before alpha confidence. It remains offline research and does not become live execution authority.
 
 The repository does **not** place live orders. It produces offline research artifacts, model outputs, decision-record prototypes, validation evidence, and contract proposals for downstream systems.
 
@@ -24,10 +24,9 @@ The repository does **not** place live orders. It produces offline research arti
 - Market-state/regime discovery from market-only features.
 - Market-state-conditioned sector/industry trend-stability modeling: identifying which sector/industry baskets are easiest to trade under each broad market environment, using sector/industry rotation, liquidity, optionability, and event exclusions. Holdings/exposure evidence is downstream candidate-builder input after Layer 2 selects/prioritizes sector baskets.
 - Anonymous target-candidate and target state-vector research that combines broad market, sector/industry, and target-local state without memorizing ticker identity.
-- Alpha/confidence research that maps target-state vectors to long/short direction confidence, expected value, risk, and uncertainty.
+- Event-context research that turns scheduled events, news, filings, macro releases, and abnormal activity into `event_context_vector` inputs before confidence; alpha/confidence research that maps target context plus event context to long/short direction confidence, expected value, risk, and uncertainty.
 - Trading-projection research that maps confidence plus position/cost/risk context to offline target actions and target exposure.
-- Option expression selection research using option-chain snapshots, market-state background, liquidity, IV, Greeks, and conservative fill assumptions.
-- Event evidence research for scheduled events, breaking news shocks, pre-event abnormal activity, and historical event-impact memory as overlays/inputs to model layers.
+- Option expression / final-action research using option-chain snapshots, market-state background, liquidity, IV, Greeks, and conservative fill assumptions.
 - Portfolio risk, sizing, exposure, execution-gate, execution-style, exit-rule, and kill-switch research logic using market-state background plus portfolio reality.
 - Unified candidate-trade decision-record prototypes for audit, attribution, replay, and retraining.
 - Model-local tests, fixtures, reproducibility evidence, and acceptance gates.

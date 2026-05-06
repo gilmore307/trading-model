@@ -1,10 +1,10 @@
-# Target state vector V1 contract
+# Target context state V1 contract
 
 Status: Accepted V1 contract; deterministic implementation/evaluation scaffold complete; production promotion pending real-data evidence and accepted review.
 
-This file owns the model-local Layer 3 target state-vector output contract. Layer 3 is not a strategy-variant selector. It constructs an anonymous, point-in-time, direction-neutral tradability state vector that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context.
+This file owns the model-local Layer 3 target context/state-vector output contract. Layer 3 is not a strategy-variant selector. It constructs anonymous, point-in-time, direction-neutral `target_context_state` that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context.
 
-`docs/92_vector_taxonomy.md` owns the vocabulary distinction: `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector, while `target_state_vector` is the Layer 3 model output.
+`docs/92_vector_taxonomy.md` owns the vocabulary distinction: `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector, while `target_context_state` is the Layer 3 conceptual model output.
 
 ## Row identity
 
@@ -21,16 +21,16 @@ Required identity fields:
 | `available_time` | When all input evidence for the state row is available. |
 | `tradeable_time` | Earliest realistic time a downstream decision may trade from this state. |
 | `target_candidate_id` | Opaque anonymous candidate key; never a categorical fitting feature. |
-| `target_state_vector_version` | Reviewed V1 contract/config version. |
+| `target_context_state_version` | Reviewed V1 contract/config version. |
 | `market_context_state_ref` | Layer 1 context row reference. |
 | `sector_context_state_ref` | Layer 2 context row reference. |
-| `target_state_vector_ref` | Stable reference/hash for the model-facing state payload. |
+| `target_context_state_ref` | Stable reference/hash for the model-facing state payload. |
 
 Routing/audit fields such as `audit_symbol_ref` and `routing_symbol_ref` must stay outside the model-facing vector. `target_candidate_id` is row identity only and must not be used as a fitting feature.
 
 ## V1 feature blocks
 
-V1 `target_state_vector` has four inspectable model-facing output blocks. Each block may be stored as JSONB during research, but block names and field groups must remain stable enough for tests, diagnostics, and review. Derived embeddings/clusters may support diagnostics, but they must not replace these inspectable blocks as the primary contract.
+V1 `target_context_state` has four inspectable model-facing output blocks. Each block may be stored as JSONB during research, but block names and field groups must remain stable enough for tests, diagnostics, and review. Derived embeddings/clusters may support diagnostics, but they must not replace these inspectable blocks as the primary contract.
 
 ### `market_state_features`
 
@@ -130,7 +130,7 @@ Layer 3 outputs may include scalar summaries inside block payloads, but these sc
 | `3_tradability_score_<window>` | [0, 1] | Direction-neutral state tradability. Stable short states can score highly. It combines direction strength, trend quality, path stability, context support, liquidity, persistence, data quality, and inverted noise/transition/exhaustion risk; it must never mean “suitable long.” |
 | `3_state_quality_score` | [0, 1] | Reliability/completeness of the produced state vector, not opportunity. |
 
-`3_target_direction_score_<window>` is not Layer 4 alpha/direction confidence. Direction-confidence calibration, target/stop/action projection, and position sizing belong to downstream consumers.
+`3_target_direction_score_<window>` is not Layer 5 alpha/direction confidence. Event context, direction-confidence calibration, target/stop/action projection, and position sizing belong to downstream consumers.
 
 ## V1 label families
 
@@ -151,7 +151,7 @@ Layer 3 evaluation must compare these feature sets under identical labels and sp
 
 1. `market_only_baseline` — Layer 1 block only.
 2. `market_sector_baseline` — Layer 1 + Layer 2 blocks.
-3. `market_sector_target_vector` — Layer 1 + Layer 2 + target + cross-state blocks.
+3. `market_sector_target_context` — Layer 1 + Layer 2 + target + cross-state blocks.
 
 A V1 model is not accepted just because target features improve aggregate return prediction or long-only outcomes. It must show split-stable improvement for at least one reviewed direction-neutral forward path/tradability outcome and must preserve liquidity/cost diagnostics so theoretically predictive but practically untradeable states can be identified. Preferred tradability validation buckets compare `3_tradability_score_<window>` against MFE/MAE balance, path efficiency, first-target-before-stop behavior, direction flip count, state-transition rate, and spread/liquidity degradation rather than only forward return.
 
@@ -168,4 +168,4 @@ Reject a state-vector build if it:
 - evaluates only against an all-regime aggregate without market/sector-conditioned and long-bias/short-bias review;
 - optimizes downstream action variants before state/outcome relationships are accepted;
 - treats positive direction as inherently better than negative direction;
-- trains Layer 4/5 consumers on in-sample fitted direction-confidence outputs from Layer 3.
+- trains Layer 4/5/6 consumers on in-sample fitted direction-confidence outputs from Layer 3.

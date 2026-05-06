@@ -7,22 +7,22 @@ The trading platform is split across multiple repositories so each major respons
 1. MarketRegimeModel (`market_regime_model`);
 2. SectorContextModel (`sector_context_model`);
 3. TargetStateVectorModel (`target_state_vector_model`), including anonymous target candidate construction as Layer 3 preprocessing;
-4. AlphaConfidenceModel (`alpha_confidence_model`);
-5. TradingProjectionModel (`trading_projection_model`);
-6. OptionExpressionModel (`option_expression_model`);
-7. PortfolioRiskModel (`portfolio_risk_model`).
+4. EventOverlayModel (`event_overlay_model`);
+5. AlphaConfidenceModel (`alpha_confidence_model`);
+6. TradingProjectionModel (`trading_projection_model`);
+7. OptionExpression / Final Action boundary (expression/action work remains offline and broker mutation stays outside this repository).
 
-Event evidence remains an overlay/input to target-state, confidence, projection, expression, and risk work rather than a peer to the three core tradability layers.
+Event evidence is now an explicit Layer 4 context model before alpha confidence.
 
 The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
 
 Current structural boundary:
 
 ```text
-broad market tradability context -> sector/industry tradability context -> anonymized target tradability state vector -> confidence -> trading projection
+broad market tradability context -> sector/industry tradability context -> anonymized target context -> event context -> confidence -> trading projection -> expression/final action handoff
 ```
 
-`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Later confidence/projection/expression/risk layers may map back to real symbols only for audit, routing, and decision records.
+`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Layer 4 `EventOverlayModel` adds event context before confidence. Later confidence/projection/expression layers may map back to real symbols only for audit, routing, and decision records.
 
 ## Related Systems
 

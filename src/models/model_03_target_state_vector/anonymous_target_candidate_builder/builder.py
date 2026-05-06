@@ -128,7 +128,7 @@ def build_candidate_rows(
     market_context_rows: Iterable[Mapping[str, Any]] = (),
     candidate_builder_version: str = BUILDER_VERSION,
     anonymity_min_bucket_k: int = 2,
-    id_salt: str = "target_state_vector_v1",
+    id_salt: str = "target_context_state_v1",
 ) -> list[dict[str, Any]]:
     """Build anonymous target candidate rows.
 
@@ -155,7 +155,7 @@ def build_candidates(
     market_context_rows: Iterable[Mapping[str, Any]] = (),
     candidate_builder_version: str = BUILDER_VERSION,
     anonymity_min_bucket_k: int = 2,
-    id_salt: str = "target_state_vector_v1",
+    id_salt: str = "target_context_state_v1",
 ) -> CandidateBuildResult:
     sectors = [_normalize_sector_row(row) for row in sector_context_rows]
     sectors = [row for row in sectors if row.get("2_sector_handoff_state") in ALLOWED_SECTOR_HANDOFF_STATES]

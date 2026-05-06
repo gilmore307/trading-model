@@ -24,13 +24,13 @@ Status: Accepted; revised by V2.2 on 2026-05-05
 |---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | Broad market tradability/regime context state. |
 | 2 | `SectorContextModel` | `sector_context_model` | Market-context-conditioned sector/industry tradability context. |
-| 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target state vector for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
-| 4 | `AlphaConfidenceModel` | `alpha_confidence_model` | Target-state vector to long/short direction confidence, expected value, risk, and uncertainty. |
-| 5 | `TradingProjectionModel` | `trading_projection_model` | Confidence plus position/cost/risk context to offline target action and target exposure. |
-| 6 | `OptionExpressionModel` | `option_expression_model` | Stock/ETF/long-call/long-put expression and option contract constraints. |
-| 7 | `PortfolioRiskModel` | `portfolio_risk_model` | Final offline portfolio risk, sizing, execution-style, exit, and kill-switch gate. |
+| 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target context for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
+| 4 | `EventOverlayModel` | `event_overlay_model` | Point-in-time `event_context_vector` before alpha confidence. |
+| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Target context plus event context to long/short direction confidence, expected value, risk, and uncertainty. |
+| 6 | `TradingProjectionModel` | `trading_projection_model` | Confidence plus position/cost/risk context to offline trading intent / target projection. |
+| 7 | `OptionExpression / Final Action` | `option_expression_model` / final-action boundary | Expression selection and final offline action handoff. |
 
-Event evidence remains an overlay/input to target-state, confidence, projection, expression, and risk work. Live/paper order placement remains outside this repository and no layer should be renamed `ExecutionModel`.
+Live/paper order placement remains outside this repository and no layer should be renamed live `ExecutionModel`.
 
 ## D003 - Current structure separates market, sector, and target work
 
@@ -50,22 +50,19 @@ TargetStateVectorModel
   -> Layer 3 preprocessing: anonymous target candidate builder
   -> target_candidate_id
   -> anonymous_target_feature_vector
-  -> target_state_vector
+  -> target_context_state
+
+EventOverlayModel
+  -> event_context_vector
 
 AlphaConfidenceModel
-  -> alpha_confidence_state
+  -> alpha_confidence_vector
 
 TradingProjectionModel
-  -> trading_projection_state
+  -> trading_signal_vector
 
-OptionExpressionModel
-  -> expression_state
-
-Event evidence overlay
-  -> event/risk inputs to Layer 3+ and portfolio risk
-
-PortfolioRiskModel
-  -> portfolio_risk_state / final offline risk gate
+OptionExpression / Final Action boundary
+  -> expression_vector / final offline verdict
 ```
 
 Hard separation rules:
@@ -136,7 +133,7 @@ Layer 1 evaluation must test:
 - responsiveness to real market transitions;
 - explanatory value for Layer 2 sector trend-stability calibration;
 - usefulness for `OptionExpressionModel` contract constraints;
-- usefulness for `PortfolioRiskModel` risk, sizing, execution-style, exit, and kill-switch policy.
+- usefulness for downstream reviewed trading-projection, expression, risk, exit, and kill-switch policy without turning Layer 1 into an action model.
 
 `market_context_state` is the accepted downstream semantic surface for current Layer 1 state-score fields.
 
@@ -374,7 +371,7 @@ Layer 3 `TargetStateVectorModel` must make the same separation for anonymous tar
 
 Signed labels may be used for direction-neutral evaluation, but the orientation sign must come from deterministic point-in-time state evidence or from an out-of-sample upstream prediction. It must not be derived from the same fitted target being evaluated.
 
-Layer 4/5 consumers own direction-confidence calibration, target/stop/action projection, position sizing, and final trading instructions. Layer 3 remains a state-vector model.
+Layer 4 owns event context; Layer 5+ consumers own direction-confidence calibration, target/stop/action projection, position sizing, expression, and final trading instructions. Layer 3 remains a state/context model.
 
 ## D018 - Vector taxonomy and Layer 3 preprocessing boundary
 
@@ -386,14 +383,14 @@ The V2.2 three-layer tradability design uses a strict vocabulary split:
 - `feature_*` surfaces are deterministic point-in-time inputs owned by `trading-data`.
 - `*_feature_vector` values are model-facing input vectors.
 - `*_state` values are narrow current-state model outputs.
-- `*_state_vector` is reserved for an accepted block-structured state output such as Layer 3 `target_state_vector`.
+- `*_state_vector` is reserved for an accepted block-structured state output such as Layer 3 `target_context_state`.
 - `*_score` fields are scalar dimensions and must not silently combine direction, quality, tradability, confidence, and position size.
 - `*_diagnostics` and `*_explainability` are support surfaces unless promoted separately.
 - `*_label` / `*_outcome` values are training/evaluation-only and must never enter inference vectors.
 
 Anonymous target candidate construction is Layer 3 preprocessing and sample organization. It is not a separate model, not a fourth layer, not Layer 2.5, and not a peer to `TargetStateVectorModel`.
 
-`anonymous_target_feature_vector` is the Layer 3 model-facing input vector produced by preprocessing. `target_state_vector` is the Layer 3 model output. Audit/routing metadata, including real symbol references, remains outside model-facing vectors.
+`anonymous_target_feature_vector` is the Layer 3 model-facing input vector produced by preprocessing. `target_context_state` is the Layer 3 conceptual model output. Audit/routing metadata, including real symbol references, remains outside model-facing vectors.
 
 Layer 1 now uses V2.2 market-tradability semantics: market direction, direction strength, trend quality, stability, risk stress, transition risk, breadth participation, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality. Current `1_*_factor` names are model-local signal groups and evidence sources only; the public downstream contract is the `market_context_state` score set.
 
@@ -405,3 +402,28 @@ Status: Accepted
 State-vector semantics and model-local outputs may continue to mature inside `trading-model`, but final artifact, manifest, ready-signal, request, durable receipt, shared storage root, and SQL/storage destination contracts wait until all model layers are designed and `trading-manager` development begins.
 
 This keeps Layer 1-7 model design from being constrained by premature manager/storage interface decisions. Registry state-vector values remain reviewed naming/semantic references; they do not by themselves finalize durable manager/storage contracts.
+
+## D020 - EventOverlayModel is Layer 4 before alpha confidence
+
+Date: 2026-05-06
+Status: Accepted
+
+Layer 4 is `EventOverlayModel` with canonical model id `event_overlay_model` and conceptual output `event_context_vector`.
+
+This moves event modeling before alpha confidence instead of treating event evidence as an after-the-fact overlay. The reason is structural: scheduled events, breaking news, filings, macro releases, and abnormal activity change the reliability, path risk, reversal risk, gap risk, liquidity disruption, and tradability of any alpha estimate. `AlphaConfidenceModel` must see event context at inference time.
+
+Current layer order:
+
+```text
+market_context_state
+  -> sector_context_state
+  -> target_context_state
+  -> event_context_vector
+  -> alpha_confidence_vector
+  -> trading_signal_vector
+  -> expression_vector / final_action
+```
+
+Layer 4 consumes point-in-time event evidence such as `source_04_event_overlay`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, source priority, scope, references, and point-in-time availability.
+
+Layer 4 must not emit alpha confidence, buy/sell/hold, position size, option contract, strike, DTE, delta, final action, or execution instruction. Those remain downstream responsibilities.

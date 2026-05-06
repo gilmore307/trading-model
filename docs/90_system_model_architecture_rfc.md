@@ -11,10 +11,10 @@ point-in-time data foundation
   -> SectorContextModel
   -> TargetStateVectorModel
      (Layer 3 preprocessing includes anonymous target candidate construction)
-  -> Alpha / Confidence Model
-  -> Trading Projection Model
-  -> OptionExpressionModel
-  -> PortfolioRiskModel
+  -> EventOverlayModel
+  -> AlphaConfidenceModel
+  -> TradingProjectionModel
+  -> OptionExpression / Final Action boundary
   -> unified decision record / downstream execution handoff
 ```
 
@@ -39,13 +39,13 @@ This separation is mandatory:
 |---|---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | `market_context_state` | Direction-neutral broad market tradability/regime state keyed by `available_time`. |
 | 2 | `SectorContextModel` | `sector_context_model` | `sector_context_state` | Direction-neutral sector/industry tradability context under market context. |
-| 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_state_vector` | Direction-neutral market + sector + target state vector for anonymous target candidates; includes candidate construction as preprocessing. |
-| 4 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_state` | Target-state vector to long/short direction confidence, expected value, risk, and uncertainty. |
-| 5 | `TradingProjectionModel` | `trading_projection_model` | `trading_projection_state` | Confidence plus position/cost/risk context to offline target action and target exposure. |
-| 6 | `OptionExpressionModel` | `option_expression_model` | `expression_state` | Stock/ETF/long-call/long-put expression and option-contract constraints. |
-| 7 | `PortfolioRiskModel` | `portfolio_risk_model` | `portfolio_risk_state` | Final offline risk, sizing, exposure, execution-style, exit, and kill-switch gate. |
+| 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
+| 4 | `EventOverlayModel` | `event_overlay_model` | `event_context_vector` | Point-in-time event context, event risk, event direction bias, and event-quality evidence before alpha confidence. |
+| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Target context plus event context to long/short direction confidence, expected value, risk, and uncertainty. |
+| 6 | `TradingProjectionModel` | `trading_projection_model` | `trading_signal_vector` | Confidence plus position/cost/risk context to offline trading intent / target projection. |
+| 7 | `OptionExpression / Final Action` | `option_expression_model` / final-action boundary | `expression_vector` / `final_action` | Expression selection and final offline action handoff; broker mutation remains outside `trading-model`. |
 
-Do not call Layer 7 `ExecutionModel`; broker mutation and live/paper order placement are outside `trading-model`.
+Do not treat Layer 7 as live execution. Broker mutation and live/paper order placement are outside `trading-model`.
 
 ## Model Artifact Rule
 
@@ -59,7 +59,7 @@ model_NN_<layer_slug>_diagnostics
 
 The primary output is the narrow downstream dependency contract. Explainability owns human-review internals. Diagnostics owns acceptance, monitoring, and gating evidence. Layer-owned fields use compact `1_*`, `2_*`, ... names in docs, model-facing payloads, and SQL physical columns; SQL writers quote numeric-leading names when needed rather than storing `layer01_*` / `layer02_*` aliases.
 
-`docs/92_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_state_vector` is the Layer 3 model output.
+`docs/92_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual model output.
 
 ## Point-in-Time Rule
 
@@ -268,37 +268,35 @@ Model-facing vectors must exclude raw ticker/company identity and memorized symb
 
 `TargetStateVectorModel` constructs the target's current direction-neutral tradable state from three inspectable blocks: Layer 1 market state, Layer 2 sector state, and anonymous target-local tape/liquidity/behavior state. It should learn which target board/tape states have stable forward path/tradability relationships after controlling for market and sector context.
 
-It outputs target state vectors, signed current-state direction evidence, direction-neutral tradability scores, cross-state relationship features, state embeddings/clusters, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target state vectors. It does not select downstream action variants, output alpha confidence, size positions, or treat positive direction as inherently better than negative direction.
+It outputs `target_context_state`: signed current-state direction evidence, direction-neutral tradability scores, cross-state relationship features, optional derived representation diagnostics, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target context. It does not select downstream action variants, output alpha confidence, size positions, or treat positive direction as inherently better than negative direction.
 
-## Layer 4: Alpha / Confidence Model
+## Layer 4: EventOverlayModel
 
-`AlphaConfidenceModel` consumes `target_state_vector` and estimates long/short direction confidence in `[-1, 1]`, expected value, risk, and uncertainty. It is the first downstream layer allowed to convert direction-neutral state into directional confidence. It does not directly place orders.
+`EventOverlayModel` consumes `market_context_state`, `sector_context_state`, `target_context_state`, and point-in-time `source_04_event_overlay` evidence. It outputs `event_context_vector`: event presence, timing/proximity, intensity, direction bias, uncertainty, gap/reversal/liquidity disruption risk, contagion risk, and event-quality context.
 
-## Layer 5: Trading Projection Model
+It is now a peer model layer before alpha confidence, not an after-the-fact overlay. It does not output alpha confidence, trading signals, option contracts, or final actions.
 
-`TradingProjectionModel` consumes confidence, current/pending position state, costs, and risk budget to project an offline target action and target exposure. It owns the mapping from confidence to trade intent, not Layer 3.
+Contract owner:
 
-## Layer 6: OptionExpressionModel
+```text
+docs/05_layer_04_event_overlay.md
+```
 
-V1 supports direct stock/ETF comparison plus long call and long put option expressions only.
+## Layer 5: AlphaConfidenceModel
 
-It consumes option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, alpha/confidence state, trading-projection state, and market context.
+`AlphaConfidenceModel` consumes `target_context_state` plus `event_context_vector` and estimates long/short direction confidence in `[-1, 1]`, expected value, risk, and uncertainty. It is the first downstream layer allowed to convert direction-neutral target context into directional alpha confidence. It does not directly place orders.
 
-It outputs expression choice, contract constraints, no-trade filters, and expected expression quality. Multi-leg structures are deferred.
+## Layer 6: TradingProjectionModel
 
-## Event evidence overlay
+`TradingProjectionModel` consumes confidence, current/pending position state, costs, and risk budget to project offline trading intent / target exposure. It owns the mapping from confidence to trading intent, not Layer 3 or Layer 4.
 
-The prior architecture reserved an event overlay stage. Under V2.2, event risk remains an overlay used by Layer 3 preprocessing, Alpha/Confidence, Trading Projection, Option Expression, and Portfolio Risk rather than a peer to the three core tradability layers.
+## Layer 7: OptionExpression / Final Action Boundary
 
-Event evidence adjusts earlier layers and final risk based on scheduled events, breaking news, abnormal activity, event memory, earnings concentration, macro windows, and event-driven no-trade states.
+V1 expression work supports direct stock/ETF comparison plus long call and long put option expressions only.
 
-It is an overlay/input family, not a separate fourth core tradability layer.
+It consumes option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, alpha-confidence vector, trading-signal/trading-projection state, event context, and market context.
 
-## PortfolioRiskModel
-
-`PortfolioRiskModel` is the final offline risk gate. It uses candidate context, market context, sector context, event overlays, and portfolio state to approve, reject, resize, delay, or alter the trade plan.
-
-It may model execution-style policy, but actual orders remain outside `trading-model`.
+It outputs expression choice, contract constraints, no-trade filters, expected expression quality, and final offline action handoff. Multi-leg structures and live broker mutation are deferred/out of scope.
 
 ## Unified Decision Record
 
@@ -310,12 +308,11 @@ tradeable_time
 market_context_state_ref
 sector_context_state_ref
 target_candidate_id
-target_state_vector_ref
-alpha_confidence_state_ref
-trading_projection_state_ref
-expression_state_ref
-event_evidence_refs
-portfolio_risk_state_ref
+target_context_state_ref
+event_context_vector_ref
+alpha_confidence_vector_ref
+trading_signal_vector_ref
+expression_vector_ref
 audit/routing metadata
 final offline verdict
 ```

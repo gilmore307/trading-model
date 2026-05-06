@@ -318,10 +318,10 @@ Layer 2 output feeds downstream target-state work:
 sector_context_state
   -> TargetStateVectorModel
      (Layer 3 preprocessing: anonymous target candidate builder)
-  -> Alpha / Confidence Model
-  -> Trading Projection Model
-  -> OptionExpressionModel
-  -> PortfolioRiskModel
+  -> EventOverlayModel
+  -> AlphaConfidenceModel
+  -> TradingProjectionModel
+  -> OptionExpression / Final Action boundary
 ```
 
 It may provide selected/prioritized sector basket handoff state and a separate `long_bias` / `short_bias` / `neutral` / `mixed` handoff bias, but stock-universe construction waits for the anonymous target candidate builder.
@@ -375,34 +375,34 @@ Contract owner:
 docs/04_layer_03_target_state_vector.md
 ```
 
-Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence prepared by Layer 3 preprocessing. The primary `target_state_vector` output consists of four inspectable blocks: `market_state_features`, `sector_state_features`, `target_state_features`, and `cross_state_features`. Embedding/cluster outputs may be derived representations, but they must not replace the inspectable blocks. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, and row reliability must remain separate. It must not select strategy families, expand parameter variants, output alpha/direction confidence, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
+Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence prepared by Layer 3 preprocessing. The primary `target_context_state` output consists of four inspectable blocks: `market_state_features`, `sector_state_features`, `target_state_features`, and `cross_state_features`. Embedding/cluster outputs may be derived representations, but they must not replace the inspectable blocks. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, and row reliability must remain separate. It must not select strategy families, expand parameter variants, output alpha/direction confidence, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
 
-## Layer 4: Alpha / Confidence Model
+## Layer 4: EventOverlayModel
 
-Status: decomposition pending.
+Status: accepted design route; deterministic model implementation pending.
 
-Must convert `target_state_vector` into long/short direction confidence, expected value, risk, and uncertainty. Direction confidence in `[-1, 1]` belongs here, not in Layer 3.
+Contract owner:
 
-## Layer 5: Trading Projection Model
+```text
+docs/05_layer_04_event_overlay.md
+```
 
-Status: decomposition pending.
+Must convert point-in-time event evidence into `event_context_vector` before alpha confidence is estimated. It consumes market, sector, and target context plus visible event rows, then describes event presence, timing, scope, intensity, direction bias, uncertainty, gap/reversal/liquidity disruption risk, contagion risk, and evidence quality. It must preserve event timing and source priority and must not use post-event outcomes as inference inputs.
 
-Must convert confidence, position state, cost, and risk budget into offline target action and target exposure. Real broker mutation remains outside `trading-model`.
-
-## Layer 6: OptionExpressionModel
-
-Status: decomposition pending.
-
-V1 is direct stock/ETF comparison plus long call / long put only. It must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market-context constraints.
-
-## Event evidence overlay
+## Layer 5: AlphaConfidenceModel
 
 Status: decomposition pending.
 
-Must preserve event timing and source priority. Event evidence can adjust Layer 3 preprocessing, Alpha/Confidence, Trading Projection, Option Expression, and Portfolio Risk based on scheduled events, breaking news, abnormal activity, and event-memory evidence. It is an overlay/input family, not a separate core tradability layer.
+Must convert `target_context_state` plus `event_context_vector` into long/short direction confidence, expected value, risk, and uncertainty. Direction confidence in `[-1, 1]` belongs here, not in Layer 3 or Layer 4.
 
-## PortfolioRiskModel
+## Layer 6: TradingProjectionModel
 
 Status: decomposition pending.
 
-Final offline risk gate for exposure, sizing, execution-style policy, exit lifecycle, drawdown state, correlation, liquidity, and kill-switch behavior. It does not place orders.
+Must convert confidence, position state, cost, and risk budget into offline trading intent / target exposure. Real broker mutation remains outside `trading-model`.
+
+## Layer 7: OptionExpression / Final Action Boundary
+
+Status: decomposition pending.
+
+V1 expression work is direct stock/ETF comparison plus long call / long put only. It must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, alpha-confidence context, and market-context constraints. Final action remains an offline handoff; it does not place orders.

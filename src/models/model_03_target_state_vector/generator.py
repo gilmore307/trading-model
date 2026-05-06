@@ -1,7 +1,7 @@
 """Deterministic TargetStateVectorModel V1 generator.
 
 Consumes point-in-time ``feature_03_target_state_vector`` rows and emits the
-accepted Layer 3 model output shape. The generator keeps signed current target
+accepted Layer 3 target_context_state model output shape. The generator keeps signed current target
 direction separate from direction-neutral tradability, transition/noise risk,
 liquidity, and state quality. It does not output alpha confidence, position
 size, strategy/action variants, option contracts, or execution instructions.
@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 ET = ZoneInfo("America/New_York")
 MODEL_ID = "target_state_vector_model"
-MODEL_VERSION = "target_state_vector_v1_contract"
+MODEL_VERSION = "target_context_state_v1_contract"
 PRIMARY_TABLE = "model_03_target_state_vector"
 STATE_WINDOWS = ("5min", "15min", "60min", "390min")
 JSON_BLOCKS = ("market_state_features", "sector_state_features", "target_state_features", "cross_state_features")
@@ -43,7 +43,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     target_candidate_id = str(row.get("target_candidate_id") or "").strip()
     if not target_candidate_id:
         raise ValueError("target_candidate_id is required")
-    target_state_vector_ref = _stable_id("tsv", target_candidate_id, available_time, model_version)
+    target_context_state_ref = _stable_id("tcs", target_candidate_id, available_time, model_version)
     score_payload = _score_payload(target, market, sector, cross)
     diagnostics = _diagnostics(row, target, market, sector, cross, score_payload)
     output = {
@@ -54,9 +54,9 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "model_version": model_version,
         "market_context_state_ref": row.get("market_context_state_ref"),
         "sector_context_state_ref": row.get("sector_context_state_ref"),
-        "target_state_vector_ref": target_state_vector_ref,
+        "target_context_state_ref": target_context_state_ref,
         **score_payload,
-        "target_state_vector": {
+        "target_context_state": {
             "market_state_features": market,
             "sector_state_features": sector,
             "target_state_features": target,
