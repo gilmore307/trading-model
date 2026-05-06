@@ -10,10 +10,12 @@ Key files:
 - `contract.py` — importable constants for the V1 block names, feature groups, label horizons, and baseline ladder.
 - `anonymous_target_candidate_builder/` — candidate-preparation sub-boundary that creates anonymous target candidates before state-vector construction.
 
-This package should own future importable implementation for:
+Current importable implementation:
 
-- target state-vector schema helpers;
-- feature block validation;
-- target-state labels and baseline comparisons;
-- evaluation evidence for market-only, market+sector, and market+sector+target state vectors.
+- `anonymous_target_candidate_builder/builder.py` — builds anonymous target candidate rows and validates that the model-facing `anonymous_target_feature_vector` excludes raw identity and downstream action/label leakage.
+- `generator.py` — turns `feature_03_target_state_vector` rows into `model_03_target_state_vector` rows with separated signed direction, direction-neutral tradability, transition/noise risk, liquidity, state quality, embedding, cluster, and diagnostics.
+- `evaluation.py` — builds local/fixture promotion evidence over the accepted baseline ladder: market-only, market+sector, and market+sector+target vector.
+- `config/promotion_thresholds.toml` — production promotion threshold defaults for real-data review.
+
+Local/fixture evidence is useful for contract tests but must defer production promotion until real-data evaluation, split stability, baseline improvement, leakage checks, and reviewed approval are all present.
 

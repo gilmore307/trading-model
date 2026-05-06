@@ -328,7 +328,7 @@ It may provide selected/prioritized sector basket handoff state and a separate `
 
 ### Layer 3 preprocessing: Anonymous Target Candidate Builder
 
-Status: Layer 3 preprocessing sub-boundary; contract-first; implementation pending. It is not a separate model layer and must not be represented as a peer to `TargetStateVectorModel`.
+Status: Layer 3 preprocessing sub-boundary; contract plus first deterministic implementation complete. It is not a separate model layer and must not be represented as a peer to `TargetStateVectorModel`.
 
 Contract owner:
 
@@ -363,11 +363,11 @@ metadata:
 
 The candidate builder may use ETF holdings and `stock_etf_exposure` to transmit Layer 2 selected/watch sector/industry baskets into stock candidates. The model-facing `anonymous_target_feature_vector` may include target behavior, liquidity/tradability, anonymous structural buckets, market context, sector context, event/risk context, exposure transmission, cost, optionability, and quality evidence. It is a Layer 3 input feature vector, not the Layer 3 output state vector. It must exclude raw ticker/company identity, stable identity-surrogate bucket combinations, and must not let `target_candidate_id` become a categorical fitting feature.
 
-V1 acceptance must prove point-in-time construction, no Layer 2 holdings leakage, recoverable audit/routing metadata, duplicate-candidate handling, and anonymity checks before TargetStateVectorModel consumes candidates.
+V1 acceptance must prove point-in-time construction, no Layer 2 holdings leakage, recoverable audit/routing metadata, duplicate-candidate handling, and anonymity checks before TargetStateVectorModel consumes candidates. The current `builder.py` implementation provides deterministic row construction and recursive identity/downstream-field leakage checks; production maturity still depends on real-data evaluation.
 
 ## Layer 3: TargetStateVectorModel
 
-Status: reset draft contract for target state-vector construction.
+Status: accepted target state-vector contract with deterministic implementation/evaluation scaffold complete; production promotion pending real-data evidence and accepted review.
 
 Contract owner:
 

@@ -1,0 +1,12 @@
+# TargetStateVectorModel production promotion thresholds.
+minimum_feature_rows = 252.0
+minimum_model_rows = 252.0
+minimum_eval_labels = 200.0
+minimum_split_count = 3.0
+minimum_baseline_ladder_step_count = 3.0
+minimum_target_vs_market_sector_improvement_abs = 0.0
+minimum_target_vs_market_improvement_abs = 0.0
+minimum_split_stability_sign_consistency = 0.66
+maximum_stability_correlation_range = 1.50
+maximum_leakage_violation_count = 0.0
+minimum_identity_leakage_violation_count = 0.0

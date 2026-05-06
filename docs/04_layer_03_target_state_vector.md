@@ -1,6 +1,6 @@
 # Layer 03 - TargetStateVectorModel
 
-Status: Accepted direction-neutral tradability boundary; implementation contract pending.
+Status: Accepted direction-neutral tradability boundary; deterministic implementation/evaluation scaffold complete; production promotion pending real-data evidence and accepted review.
 
 Layer 3 is target state-vector construction. Earlier action/variant Layer 3 work is retired and must not be used as the active Layer 3 boundary.
 
@@ -161,13 +161,22 @@ Layer 3 review should ask:
 5. Which market/sector states make a target-local pattern useful or useless?
 6. Does adding target state improve direction-neutral tradability/path outcomes versus market-only and market+sector baselines?
 
+## Current implementation status
+
+The first deterministic scaffold is implemented:
+
+- `src/models/model_03_target_state_vector/anonymous_target_candidate_builder/` builds anonymous candidate rows and checks that `anonymous_target_feature_vector` excludes raw ticker/company identity.
+- `src/models/model_03_target_state_vector/generator.py` consumes `feature_03_target_state_vector` rows and emits `model_03_target_state_vector` rows with signed target direction, direction-neutral trend/path/tradability, transition/noise risk, liquidity, state quality, embedding, cluster, and diagnostics separated.
+- `src/models/model_03_target_state_vector/evaluation.py` builds fixture/local promotion evidence over the accepted baseline ladder: market-only, market+sector, and market+sector+target vector.
+- `scripts/models/model_03_target_state_vector/` contains generate/evaluate/review wrappers. Local/fixture review remains conservative and defers unless real-data evidence, thresholds, split stability, and leakage gates are reviewed and accepted.
+
 ## Implementation order
 
 1. Keep this Layer 3 target-state contract as the source of truth.
 2. Keep `model_03_target_state_vector` package and tests aligned with this contract.
-3. Add the `trading-data` source/feature target-state request boundary.
-4. Build baseline target-state vectors from bars/liquidity plus Layer 1/2 refs.
-5. Add forward state/outcome labels and market-only / sector-only baselines.
+3. Keep the `trading-data` source/feature target-state request boundary aligned with `source_03_target_state` and `feature_03_target_state_vector`.
+4. Mature baseline target-state vectors from bars/liquidity plus Layer 1/2 refs against real database evidence.
+5. Mature forward state/outcome labels and market-only / sector-only baselines with split stability.
 6. Only after state/outcome relationships are accepted, design downstream action/expression consumers outside Layer 3.
 
 ## Acceptance gates
