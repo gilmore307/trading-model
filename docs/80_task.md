@@ -2,16 +2,9 @@
 
 ## Active Tasks
 
-1. **Layer 1 V2.2 evidence and promotion review**
-   - Keep `src/models/model_01_market_regime/evidence_map.md` aligned with `config/factor_specs.toml` and the V2.2 market-tradability semantic split.
-   - Review every Feature 01 addition as primary, diagnostic, quality, evaluation-only, or intentionally unused evidence.
-   - Keep public outputs limited to the accepted `market_context_state` score fields: direction, direction strength, trend quality, stability, risk stress, transition risk, breadth, correlation/crowding, dispersion, liquidity pressure/support, coverage, and data quality.
-   - Mature stability/usefulness evaluation for `market_context_state` against downstream baselines.
+- None for the Layer 1-3 model-design closeout.
 
-2. **Layer 3 real-data evaluation and promotion review**
-   - Use the implemented `TargetStateVectorModel` generator/evaluation scaffold to run real `feature_03_target_state_vector` evidence when the data surface has enough rows.
-   - Production promotion remains blocked until market-only, market+sector, and market+sector+target-vector baselines, split stability, and leakage checks pass under reviewed real-data evidence.
-   - Keep local/fixture review conservative: defer unless explicitly reviewed and backed by production-scale evidence.
+Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence paths, docs, and registry score naming are accepted for the current model-design phase. Real-sample promotion evidence remains a later production-readiness gap, not an active blocker for closing the first three layer designs.
 
 ## Queued Tasks
 
@@ -30,6 +23,8 @@
 - Production-scale Layer 3 real-data evidence and accepted promotion decision for `model_03_target_state_vector`.
 - Whether legacy strategy-selection research returns later as a downstream layer or remains archived as model-local research history.
 
+These are promotion/production-readiness gaps. They do not reopen the accepted Layer 1-3 model contracts for the current design phase.
+
 ## Deferred Until Manager Phase
 
 - Exact artifact/manifest/ready-signal/request contracts for promoted model artifacts.
@@ -38,6 +33,7 @@
 
 ## Recently Accepted
 
+- Layer 1-3 model-design closeout is accepted for the current phase: MarketRegimeModel, SectorContextModel, and TargetStateVectorModel have reviewed contracts, deterministic local implementations/evaluation scaffolds, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.
 - Layer 3 is `TargetStateVectorModel`; the active purpose is market + sector + target state-vector construction before trade/action decisions.
 - Current V2.2 architecture is `MarketRegimeModel -> SectorContextModel -> TargetStateVectorModel`, with anonymous target candidate construction inside Layer 3 preprocessing, followed by Alpha/Confidence and Trading Projection layers.
 - `docs/92_vector_taxonomy.md` owns the accepted distinction between feature surfaces, feature vectors, states, state vectors, scalar scores, diagnostics, explainability, and labels/outcomes.
