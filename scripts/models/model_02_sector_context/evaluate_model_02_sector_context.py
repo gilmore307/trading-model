@@ -69,17 +69,26 @@ def _fixture_rows() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
                     "relative_strength_return": strength,
                 }
             )
-            readiness = 0.7 if symbol == "XLK" else 0.2
+            tradability = 0.7 if symbol == "XLK" else 0.2
+            direction = 0.6 if symbol == "XLK" else -0.6
             model_rows.append(
                 {
                     "available_time": available_time,
                     "sector_or_industry_symbol": symbol,
-                    "2_trend_stability_score": readiness - 0.1,
-                    "2_trend_certainty_score": 0.9,
-                    "2_context_conditioned_stability_score": readiness,
-                    "2_selection_readiness_score": readiness,
+                    "2_sector_relative_direction_score": direction,
+                    "2_sector_trend_quality_score": tradability,
+                    "2_sector_trend_stability_score": tradability,
+                    "2_sector_transition_risk_score": 0.1,
+                    "2_market_context_support_score": 0.2,
+                    "2_sector_breadth_confirmation_score": 0.8,
+                    "2_sector_dispersion_crowding_score": 0.1,
+                    "2_sector_liquidity_tradability_score": None,
+                    "2_sector_tradability_score": tradability,
                     "2_sector_handoff_state": "selected" if symbol == "XLK" else "blocked",
+                    "2_sector_handoff_bias": "long_bias" if direction > 0 else "short_bias",
                     "2_state_quality_score": 0.95,
+                    "2_coverage_score": 0.95,
+                    "2_data_quality_score": 0.95,
                 }
             )
     return feature_rows, model_rows

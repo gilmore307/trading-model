@@ -1,6 +1,6 @@
 # sector_context_state V1 contract
 
-This file owns the direction-neutral `SectorContextModel` output contract target for `sector_context_state`. It is model-local until implementation/evaluation prove which fields should be registered as shared terms. The existing deterministic V1 implementation may carry legacy compatibility fields until migration; this contract defines the next dependency surface for new downstream work.
+This file owns the direction-neutral `SectorContextModel` output contract for `sector_context_state`. The V2.2 deterministic implementation, SQL writer, evaluation path, and registry surfaces now use this field set as the active dependency surface for new downstream work.
 
 ## Purpose
 
@@ -88,7 +88,7 @@ Layer 2 may identify sector/industry baskets suitable for downstream anonymous t
 
 `2_sector_handoff_state` and `2_sector_handoff_bias` must stay separate. A stable weak sector can be `selected` with `short_bias`; a rising sector with high noise or transition risk can be `watch` or `blocked` with `long_bias`.
 
-Legacy names such as `2_trend_certainty_score` and `2_selection_readiness_score` are compatibility fields for the existing deterministic implementation only. New contracts should use `2_coverage_score` / `2_state_quality_score` for reliability and `2_sector_tradability_score` for direction-neutral handoff quality.
+Legacy names such as `2_trend_certainty_score` and `2_selection_readiness_score` are retired from the active V2.2 deterministic output. New contracts use `2_coverage_score` / `2_state_quality_score` for reliability and `2_sector_tradability_score` for direction-neutral handoff quality.
 
 ## `model_02_sector_context_explainability` fields
 

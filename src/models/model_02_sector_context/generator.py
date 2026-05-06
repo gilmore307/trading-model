@@ -40,16 +40,24 @@ IDENTITY_COLUMNS = [
     "market_context_state_ref",
 ]
 PRIMARY_SCORE_COLUMNS = [
-    "2_trend_stability_score",
-    "2_trend_certainty_score",
-    "2_context_conditioned_stability_score",
-    "2_selection_readiness_score",
+    "2_sector_relative_direction_score",
+    "2_sector_trend_quality_score",
+    "2_sector_trend_stability_score",
+    "2_sector_transition_risk_score",
+    "2_market_context_support_score",
+    "2_sector_breadth_confirmation_score",
+    "2_sector_dispersion_crowding_score",
+    "2_sector_liquidity_tradability_score",
+    "2_sector_tradability_score",
     "2_sector_handoff_state",
+    "2_sector_handoff_bias",
     "2_sector_handoff_rank",
     "2_sector_handoff_reason_codes",
     "2_eligibility_state",
     "2_eligibility_reason_codes",
     "2_state_quality_score",
+    "2_coverage_score",
+    "2_data_quality_score",
     "2_evidence_count",
 ]
 OUTPUT_COLUMNS = [*IDENTITY_COLUMNS, *PRIMARY_SCORE_COLUMNS]
@@ -166,6 +174,18 @@ def _bounded(value: float | None, *, scale: float = 1.0) -> float | None:
     return math.tanh(value / scale)
 
 
+def _clip01(value: float | None) -> float | None:
+    if value is None:
+        return None
+    return max(0.0, min(1.0, value))
+
+
+def _magnitude(value: float | None) -> float | None:
+    if value is None:
+        return None
+    return min(abs(value), 1.0)
+
+
 def _average(values: Iterable[float | None]) -> float | None:
     clean = [value for value in values if value is not None]
     return mean(clean) if clean else None
@@ -261,8 +281,8 @@ def generate_rows(
     """Generate primary ``model_02_sector_context`` rows."""
 
     provisional = [_generate_primary_row(group, model_version=model_version) for group in _sector_groups(feature_rows, market_context_rows)]
-    ranked = [row for row in provisional if _safe_float(row.get("2_selection_readiness_score")) is not None and row.get("2_sector_handoff_state") in {"selected", "watch"}]
-    ranked.sort(key=lambda row: (_safe_float(row.get("2_selection_readiness_score")) or -999.0), reverse=True)
+    ranked = [row for row in provisional if _safe_float(row.get("2_sector_tradability_score")) is not None and row.get("2_sector_handoff_state") in {"selected", "watch"}]
+    ranked.sort(key=lambda row: (_safe_float(row.get("2_sector_tradability_score")) or -999.0), reverse=True)
     ranks = {(row["available_time"], row["sector_or_industry_symbol"]): rank for rank, row in enumerate(ranked, start=1)}
     for row in provisional:
         key = (row["available_time"], row["sector_or_industry_symbol"])
@@ -276,51 +296,121 @@ def _generate_primary_row(group: SectorGroup, *, model_version: str) -> dict[str
     total_evidence = len(feature_rows) * len(FEATURE_EVIDENCE_COLUMNS)
     quality = _quality_score(evidence_count, total_evidence)
 
-    trend_values = [_safe_float(row.get("relative_strength_ma_alignment_score")) for row in feature_rows]
-    trend_values.extend(_safe_float(row.get(column)) for row in feature_rows for column in ("relative_strength_distance_to_ma20", "relative_strength_slope_20d", "relative_strength_return"))
-    trend_stability = _bounded(_average(trend_values), scale=0.08)
-    trend_certainty = quality
-
-    market_support = _market_context_score(group.market_context_row)
-    conditioned = _average([trend_stability, _bounded(market_support, scale=1.0)]) if market_support is not None else trend_stability
+    rel_return_score = _bounded(_average([_safe_float(row.get("relative_strength_return")) for row in feature_rows]), scale=0.04)
+    distance_score = _bounded(
+        _average(
+            _safe_float(row.get(column))
+            for row in feature_rows
+            for column in (
+                "relative_strength_distance_to_ma20",
+                "relative_strength_distance_to_ma50",
+                "relative_strength_distance_to_ma200",
+            )
+        ),
+        scale=0.08,
+    )
+    slope_score = _bounded(
+        _average(_safe_float(row.get(column)) for row in feature_rows for column in ("relative_strength_slope_20d", "relative_strength_slope_50d")),
+        scale=0.04,
+    )
+    alignment_score = _bounded(_average([_safe_float(row.get("relative_strength_ma_alignment_score")) for row in feature_rows]), scale=1.0)
+    sector_direction = _average([rel_return_score, distance_score, slope_score, alignment_score])
 
     vol_penalty = _average([abs((_safe_float(row.get("relative_strength_realized_vol_20d_ratio")) or 1.0) - 1.0) for row in feature_rows if _safe_float(row.get("relative_strength_realized_vol_20d_ratio")) is not None])
     volatility_adjustment = None if vol_penalty is None else max(0.0, 1.0 - min(vol_penalty, 1.0))
-    readiness = _average([conditioned, trend_certainty, volatility_adjustment])
+    corr_change = _average([_safe_float(row.get("relative_strength_return_corr_20d_60d_change")) for row in feature_rows])
+    transition_risk = _clip01(_average([_magnitude(corr_change), None if volatility_adjustment is None else 1.0 - volatility_adjustment]))
 
-    handoff_state, eligibility_state, reason_codes = _states(readiness, quality, evidence_count)
+    trend_quality = _clip01(_average([_magnitude(rel_return_score), _magnitude(distance_score), _magnitude(slope_score), _magnitude(alignment_score), volatility_adjustment]))
+    trend_stability = _clip01(_average([_magnitude(alignment_score), volatility_adjustment, None if transition_risk is None else 1.0 - transition_risk]))
+
+    market_context = _bounded(_market_context_score(group.market_context_row), scale=1.0)
+    market_context_support = None if sector_direction is None or market_context is None else sector_direction * market_context
+
+    summary = group.summary_row or {}
+    breadth = _clip01(_average([_safe_float(summary.get(column)) for column in ("sector_observation_positive_return_1d_pct", "sector_observation_positive_return_5d_pct", "sector_observation_above_ma20_pct", "sector_observation_above_ma50_pct")]))
+    dispersion_raw = _average([_safe_float(summary.get("sector_observation_distance_to_ma20_dispersion")), _safe_float(summary.get("sector_observation_return_20d_dispersion"))])
+    dispersion_crowding = _clip01(None if dispersion_raw is None else dispersion_raw / 0.10)
+    liquidity_tradability = None
+    coverage = quality
+    data_quality = quality
+    state_quality = _clip01(_average([coverage, data_quality, None if transition_risk is None else 1.0 - transition_risk]))
+    sector_tradability = _clip01(
+        _average(
+            [
+                trend_quality,
+                trend_stability,
+                None if transition_risk is None else 1.0 - transition_risk,
+                breadth,
+                None if dispersion_crowding is None else 1.0 - dispersion_crowding,
+                liquidity_tradability,
+                state_quality,
+            ]
+        )
+    )
+
+    handoff_bias = _handoff_bias(sector_direction)
+    handoff_state, eligibility_state, reason_codes = _states(sector_tradability, quality, transition_risk, evidence_count, handoff_bias)
     return {
         "available_time": group.available_time,
         "sector_or_industry_symbol": group.symbol,
         "model_id": MODEL_ID,
         "model_version": model_version,
         "market_context_state_ref": _market_context_ref(group.market_context_row, group.available_time),
-        "2_trend_stability_score": trend_stability,
-        "2_trend_certainty_score": trend_certainty,
-        "2_context_conditioned_stability_score": conditioned,
-        "2_selection_readiness_score": readiness,
+        "2_sector_relative_direction_score": sector_direction,
+        "2_sector_trend_quality_score": trend_quality,
+        "2_sector_trend_stability_score": trend_stability,
+        "2_sector_transition_risk_score": transition_risk,
+        "2_market_context_support_score": market_context_support,
+        "2_sector_breadth_confirmation_score": breadth,
+        "2_sector_dispersion_crowding_score": dispersion_crowding,
+        "2_sector_liquidity_tradability_score": liquidity_tradability,
+        "2_sector_tradability_score": sector_tradability,
         "2_sector_handoff_state": handoff_state,
+        "2_sector_handoff_bias": handoff_bias,
         "2_sector_handoff_rank": None,
         "2_sector_handoff_reason_codes": ";".join(reason_codes),
         "2_eligibility_state": eligibility_state,
         "2_eligibility_reason_codes": ";".join(reason_codes),
-        "2_state_quality_score": quality,
+        "2_state_quality_score": state_quality,
+        "2_coverage_score": coverage,
+        "2_data_quality_score": data_quality,
         "2_evidence_count": evidence_count,
     }
 
 
-def _states(readiness: float | None, quality: float | None, evidence_count: int) -> tuple[str, str, list[str]]:
+def _handoff_bias(sector_direction: float | None) -> str:
+    if sector_direction is None:
+        return "mixed"
+    if sector_direction >= 0.15:
+        return "long_bias"
+    if sector_direction <= -0.15:
+        return "short_bias"
+    return "neutral"
+
+
+def _states(tradability: float | None, quality: float | None, transition_risk: float | None, evidence_count: int, handoff_bias: str) -> tuple[str, str, list[str]]:
     reasons: list[str] = []
-    if evidence_count <= 0 or readiness is None or quality is None:
+    if evidence_count <= 0 or tradability is None or quality is None:
         return "insufficient_data", "insufficient_data", ["2_INSUFFICIENT_POINT_IN_TIME_EVIDENCE"]
     if quality < 0.25:
         reasons.append("2_LOW_EVIDENCE_COVERAGE")
         return "insufficient_data", "insufficient_data", reasons
-    if readiness >= 0.55:
-        return "selected", "eligible", ["2_CONTEXT_CONDITIONED_TREND_READY"]
-    if readiness >= 0.35:
-        return "watch", "watch", ["2_CONTEXT_CONDITIONED_TREND_WATCH"]
-    reasons.append("2_CONTEXT_CONDITIONED_TREND_BLOCKED")
+    if transition_risk is not None and transition_risk >= 0.75:
+        reasons.append("2_HIGH_TRANSITION_RISK")
+        return "blocked", "excluded", reasons
+    bias_reason = {
+        "long_bias": "2_LONG_BIAS",
+        "short_bias": "2_SHORT_BIAS",
+        "neutral": "2_NEUTRAL_BIAS",
+        "mixed": "2_MIXED_BIAS",
+    }.get(handoff_bias, "2_MIXED_BIAS")
+    if tradability >= 0.55:
+        return "selected", "eligible", ["2_DIRECTION_NEUTRAL_TRADABILITY_SELECTED", bias_reason]
+    if tradability >= 0.35:
+        return "watch", "watch", ["2_DIRECTION_NEUTRAL_TRADABILITY_WATCH", bias_reason]
+    reasons.append("2_DIRECTION_NEUTRAL_TRADABILITY_BLOCKED")
+    reasons.append(bias_reason)
     return "blocked", "excluded", reasons
 
 

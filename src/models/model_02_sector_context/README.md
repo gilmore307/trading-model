@@ -1,8 +1,8 @@
 # model_02_sector_context
 
-`SectorContextModel` V1 package boundary.
+`SectorContextModel` V2.2 package boundary.
 
-Current status: V1 deterministic generator and SQL writer implemented for the accepted three-artifact contract.
+Current status: direction-neutral deterministic generator, SQL writer, evaluation path, and registry-backed field contract implemented for the accepted three-artifact contract.
 
 Boundary:
 
@@ -20,4 +20,4 @@ Files:
 
 Runtime SQL writes are isolated in `scripts/models/model_02_sector_context/generate_model_02_sector_context.py`.
 
-Promotion evidence is built by `evaluation.py` and `scripts/models/model_02_sector_context/evaluate_model_02_sector_context.py`. Promotion review is handled by `scripts/models/model_02_sector_context/review_sector_context_promotion.py`; fixture/local evidence should defer until real database evaluation evidence clears explicit thresholds, baseline/stability checks, sector handoff quality, and no-future-leak gates.
+Promotion evidence is built by `evaluation.py` and `scripts/models/model_02_sector_context/evaluate_model_02_sector_context.py`. Promotion review is handled by `scripts/models/model_02_sector_context/review_sector_context_promotion.py`; fixture/local evidence should defer until real database evaluation evidence clears explicit direction-neutral thresholds, baseline/stability checks, long/short sector handoff quality, selected absolute-path relationship, and no-future-leak gates.

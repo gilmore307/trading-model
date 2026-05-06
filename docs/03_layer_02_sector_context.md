@@ -1,6 +1,6 @@
 # Layer 02 - SectorContextModel
 
-This file records the direction-neutral `trading-model` contract target for Layer 2. The current deterministic implementation may carry legacy compatibility fields until the next implementation migration; new downstream contracts should use the direction-neutral terms below.
+This file records the active direction-neutral `trading-model` contract and implementation target for Layer 2. The deterministic implementation, SQL writer, evaluation path, and registry surfaces now use the direction-neutral terms below.
 
 ## Input
 
@@ -73,7 +73,7 @@ market_context_state_ref
 
 `2_sector_relative_direction_score` is signed current sector-context direction evidence. Positive values indicate relative long bias and negative values indicate relative short bias; the sign is not a quality judgment and must not be interpreted as portfolio weight.
 
-`2_sector_tradability_score` is direction-neutral. It represents how clean, stable, liquid, low-noise, and low-transition-risk the sector context is for downstream anonymous target construction. It replaces legacy `2_selection_readiness_score` semantics for new contracts.
+`2_sector_tradability_score` is direction-neutral. It represents how clean, stable, liquid, low-noise, and low-transition-risk the sector context is for downstream anonymous target construction. It replaces legacy `2_selection_readiness_score` semantics in the active implementation.
 
 `2_state_quality_score`, `2_coverage_score`, and `2_data_quality_score` describe reliability/completeness of the produced state row. They are not opportunity scores and must not be blended silently with tradability or direction.
 
@@ -130,13 +130,13 @@ Layer 2 changes are acceptable when they:
 
 `model_02_sector_context` must not become a production-hard downstream dependency until it has a reviewed promotion candidate backed by real-data evaluation evidence. Promotion evidence must include explicit thresholds, metric values, baseline comparison, split/refit stability, sector handoff quality, and no-future-leak checks. Fixture/local dry-run evidence should defer.
 
-Current real-data status: the legacy Layer 2 real-data evaluation path is operational and persisted governance evidence can be written, but the latest promotion review is deferred rather than approved because the configured baseline/stability gates did not all pass. The legacy V1 path is implementation-complete but not production-promoted as a hard downstream dependency. The direction-neutral contract above requires a later implementation/evaluation migration before promotion.
+Current real-data status: fresh V2.2 `model_02_sector_context` rows were generated from database `feature_02_sector_context` plus `model_01_market_regime` rows, real promotion evidence was built, and promotion review was persisted as **deferred**, not approved. Handoff gates passed (`selected_bias_alignment_rate=0.5543`, `selected_abs_label_lift_vs_blocked=0.00849`, no leakage violations), but production promotion remains blocked by baseline/stability gates (`minimum_baseline_improvement_abs=-0.2988`, `maximum_stability_correlation_range=1.5602`, `minimum_stability_sign_consistency=0.3333`). Fixture/local dry-run evidence must defer.
 
-Current Layer 2 verification covers the V1 deterministic generator, SQL physical-artifact writers, promotion evidence builders, and contract boundary checks:
+Current Layer 2 verification covers the V2.2 deterministic generator, SQL physical-artifact writers, direction-neutral promotion evidence builders, and contract boundary checks:
 
 ```bash
 git diff --check
 python3 -m compileall -q src scripts tests
 PYTHONPATH=src python3 -m unittest tests.test_sector_context_contract tests.test_sector_context_model tests.test_sector_context_evaluation
-rg -n "source_02_sector_context|layer02_|SecuritySelectionModel|security_selection" docs src scripts tests
+rg -n "source_02_sector_context|layer02_|SecuritySelectionModel|security_selection|2_selection_readiness_score|2_trend_certainty_score|2_context_conditioned_stability_score" docs src scripts tests
 ```

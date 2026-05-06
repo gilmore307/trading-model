@@ -21,6 +21,7 @@ TEXT_COLUMNS = {
     "model_version",
     "market_context_state_ref",
     "2_sector_handoff_state",
+    "2_sector_handoff_bias",
     "2_sector_handoff_reason_codes",
     "2_eligibility_state",
     "2_eligibility_reason_codes",

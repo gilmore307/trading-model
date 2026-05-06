@@ -35,17 +35,24 @@ def _rows() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
                     "relative_strength_return": bias + index / 1000,
                 }
             )
-            readiness = 0.7 if symbol == "XLK" else 0.2
+            tradability = 0.7 if symbol == "XLK" else 0.2
             models.append(
                 {
                     "available_time": timestamp,
                     "sector_or_industry_symbol": symbol,
-                    "2_trend_stability_score": readiness,
-                    "2_trend_certainty_score": 0.9,
-                    "2_context_conditioned_stability_score": readiness,
-                    "2_selection_readiness_score": readiness,
+                    "2_sector_relative_direction_score": 0.6 if symbol == "XLK" else -0.6,
+                    "2_sector_trend_quality_score": tradability,
+                    "2_sector_trend_stability_score": tradability,
+                    "2_sector_transition_risk_score": 0.1,
+                    "2_market_context_support_score": 0.2,
+                    "2_sector_breadth_confirmation_score": 0.8,
+                    "2_sector_dispersion_crowding_score": 0.1,
+                    "2_sector_tradability_score": tradability,
                     "2_sector_handoff_state": "selected" if symbol == "XLK" else "blocked",
+                    "2_sector_handoff_bias": "long_bias" if symbol == "XLK" else "short_bias",
                     "2_state_quality_score": 1.0,
+                    "2_coverage_score": 1.0,
+                    "2_data_quality_score": 1.0,
                 }
             )
     return features, models
@@ -109,13 +116,16 @@ class SectorContextEvaluationTests(unittest.TestCase):
                 "maximum_stability_correlation_range": 1_000_000_000,
                 "maximum_leakage_violation_count": 0,
                 "minimum_selected_count": 1,
-                "minimum_selected_positive_rate": 0,
-                "minimum_selected_average_label": -1,
+                "minimum_selected_bias_alignment_rate": 0,
+                "minimum_selected_average_abs_label": 0,
+                "minimum_selected_abs_label_lift_vs_blocked": -1,
             },
         )
 
         self.assertIn("handoff_summary", summary)
         self.assertIn("selected_count", summary["handoff_summary"])
+        self.assertIn("selected_bias_alignment_rate", summary["handoff_summary"])
+        self.assertIn("selected_average_abs_label", summary["handoff_summary"])
         self.assertIn("threshold_results", summary)
         self.assertTrue(summary["promotion_evidence_ready"])
 

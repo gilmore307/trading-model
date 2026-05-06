@@ -28,12 +28,26 @@ DEFAULT_DRY_RUN_WRITE_POLICY = "no_database_write"
 DEFAULT_DATABASE_READ_WRITE_POLICY = "database_read_only_pending_governance_persistence"
 SUMMARY_CANDIDATE = "SECTOR_OBSERVATION_UNIVERSE"
 FACTOR_COLUMNS = (
-    "2_trend_stability_score",
-    "2_trend_certainty_score",
-    "2_context_conditioned_stability_score",
-    "2_selection_readiness_score",
+    "2_sector_relative_direction_score",
+    "2_sector_trend_quality_score",
+    "2_sector_trend_stability_score",
+    "2_sector_transition_risk_score",
+    "2_market_context_support_score",
+    "2_sector_breadth_confirmation_score",
+    "2_sector_dispersion_crowding_score",
+    "2_sector_tradability_score",
     "2_state_quality_score",
+    "2_coverage_score",
+    "2_data_quality_score",
 )
+SIGNED_LABEL_FACTOR_COLUMNS = {
+    "2_sector_relative_direction_score",
+    "2_market_context_support_score",
+}
+RISK_LABEL_FACTOR_COLUMNS = {
+    "2_sector_transition_risk_score",
+    "2_sector_dispersion_crowding_score",
+}
 
 DEFAULT_PROMOTION_THRESHOLDS: dict[str, float] = {
     "minimum_feature_rows": 252.0,
@@ -48,8 +62,9 @@ DEFAULT_PROMOTION_THRESHOLDS: dict[str, float] = {
     "maximum_stability_correlation_range": 1.50,
     "maximum_leakage_violation_count": 0.0,
     "minimum_selected_count": 5.0,
-    "minimum_selected_positive_rate": 0.50,
-    "minimum_selected_average_label": 0.0,
+    "minimum_selected_bias_alignment_rate": 0.50,
+    "minimum_selected_average_abs_label": 0.0,
+    "minimum_selected_abs_label_lift_vs_blocked": 0.0,
 }
 
 
@@ -347,23 +362,42 @@ def build_eval_metrics(
         for (label_name, symbol, horizon), group in grouped.items():
             for factor in factor_columns:
                 pairs: list[tuple[float, float]] = []
+                label_transform = _label_transform_for_factor(factor)
                 for label in group:
                     model_row = model_by_key.get((str(label["available_time"]), symbol))
                     if model_row is None:
                         continue
                     factor_value = _safe_float(model_row.get(factor))
-                    label_value = _safe_float(label.get("label_value"))
+                    label_value = _transformed_label_value(_safe_float(label.get("label_value")), factor)
                     if factor_value is None or label_value is None:
                         continue
                     pairs.append((factor_value, label_value))
                 if not pairs:
                     continue
-                metrics.append(_metric_row(eval_run_id, split.get("split_id"), label_name=label_name, target_symbol=symbol, horizon=horizon, factor_name=factor, metric_name="pair_count", metric_value=float(len(pairs)), payload={"metric_family": "metric_value"}, write_policy=write_policy))
-                metrics.append(_metric_row(eval_run_id, split.get("split_id"), label_name=label_name, target_symbol=symbol, horizon=horizon, factor_name=factor, metric_name="coverage", metric_value=len(pairs) / len(group) if group else 0.0, payload={"metric_family": "metric_value"}, write_policy=write_policy))
+                metrics.append(_metric_row(eval_run_id, split.get("split_id"), label_name=label_name, target_symbol=symbol, horizon=horizon, factor_name=factor, metric_name="pair_count", metric_value=float(len(pairs)), payload={"metric_family": "metric_value", "label_transform": label_transform}, write_policy=write_policy))
+                metrics.append(_metric_row(eval_run_id, split.get("split_id"), label_name=label_name, target_symbol=symbol, horizon=horizon, factor_name=factor, metric_name="coverage", metric_value=len(pairs) / len(group) if group else 0.0, payload={"metric_family": "metric_value", "label_transform": label_transform}, write_policy=write_policy))
                 correlation = _correlation([left for left, _right in pairs], [right for _left, right in pairs])
                 if correlation is not None:
                     metrics.append(_metric_row(eval_run_id, split.get("split_id"), label_name=label_name, target_symbol=symbol, horizon=horizon, factor_name=factor, metric_name="pearson_correlation", metric_value=correlation, payload={"metric_family": "model_factor"}, write_policy=write_policy))
     return metrics
+
+
+def _label_transform_for_factor(factor: str) -> str:
+    if factor in SIGNED_LABEL_FACTOR_COLUMNS:
+        return "signed_label"
+    if factor in RISK_LABEL_FACTOR_COLUMNS:
+        return "negative_absolute_label"
+    return "absolute_label"
+
+
+def _transformed_label_value(label_value: float | None, factor: str) -> float | None:
+    if label_value is None:
+        return None
+    if factor in SIGNED_LABEL_FACTOR_COLUMNS:
+        return label_value
+    if factor in RISK_LABEL_FACTOR_COLUMNS:
+        return -abs(label_value)
+    return abs(label_value)
 
 
 def build_baseline_metrics(
@@ -453,6 +487,10 @@ def build_handoff_metrics(model_rows: Sequence[Mapping[str, Any]], labels: Seque
     selected_values: list[float] = []
     watch_values: list[float] = []
     blocked_values: list[float] = []
+    selected_alignment_checks = 0
+    selected_alignment_passes = 0
+    selected_long_bias_count = 0
+    selected_short_bias_count = 0
     for label in labels:
         model_row = model_by_key.get((str(label["available_time"]), str(label["target_symbol"])))
         if model_row is None:
@@ -461,18 +499,37 @@ def build_handoff_metrics(model_rows: Sequence[Mapping[str, Any]], labels: Seque
         if value is None:
             continue
         state = str(model_row.get("2_sector_handoff_state") or "")
+        bias = str(model_row.get("2_sector_handoff_bias") or "")
         if state == "selected":
             selected_values.append(value)
+            if bias == "long_bias":
+                selected_long_bias_count += 1
+                selected_alignment_checks += 1
+                if value > 0:
+                    selected_alignment_passes += 1
+            elif bias == "short_bias":
+                selected_short_bias_count += 1
+                selected_alignment_checks += 1
+                if value < 0:
+                    selected_alignment_passes += 1
         elif state == "watch":
             watch_values.append(value)
         elif state in {"blocked", "insufficient_data"}:
             blocked_values.append(value)
+    selected_abs = [abs(value) for value in selected_values]
+    watch_abs = [abs(value) for value in watch_values]
+    blocked_abs = [abs(value) for value in blocked_values]
+    selected_average_abs = mean(selected_abs) if selected_abs else 0.0
+    blocked_average_abs = mean(blocked_abs) if blocked_abs else 0.0
     output = [
         _metric_row(eval_run_id, None, metric_name="selected_count", metric_value=float(len(selected_values)), payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
-        _metric_row(eval_run_id, None, metric_name="selected_average_label", metric_value=mean(selected_values) if selected_values else 0.0, payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
-        _metric_row(eval_run_id, None, metric_name="selected_positive_rate", metric_value=(sum(1 for value in selected_values if value > 0) / len(selected_values)) if selected_values else 0.0, payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
-        _metric_row(eval_run_id, None, metric_name="watch_average_label", metric_value=mean(watch_values) if watch_values else 0.0, payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
-        _metric_row(eval_run_id, None, metric_name="blocked_average_label", metric_value=mean(blocked_values) if blocked_values else 0.0, payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
+        _metric_row(eval_run_id, None, metric_name="selected_long_bias_count", metric_value=float(selected_long_bias_count), payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
+        _metric_row(eval_run_id, None, metric_name="selected_short_bias_count", metric_value=float(selected_short_bias_count), payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
+        _metric_row(eval_run_id, None, metric_name="selected_bias_alignment_rate", metric_value=(selected_alignment_passes / selected_alignment_checks) if selected_alignment_checks else 0.0, payload={"metric_family": "sector_handoff", "alignment_checks": selected_alignment_checks}, write_policy=write_policy),
+        _metric_row(eval_run_id, None, metric_name="selected_average_abs_label", metric_value=selected_average_abs, payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
+        _metric_row(eval_run_id, None, metric_name="watch_average_abs_label", metric_value=mean(watch_abs) if watch_abs else 0.0, payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
+        _metric_row(eval_run_id, None, metric_name="blocked_average_abs_label", metric_value=blocked_average_abs, payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
+        _metric_row(eval_run_id, None, metric_name="selected_abs_label_lift_vs_blocked", metric_value=selected_average_abs - blocked_average_abs, payload={"metric_family": "sector_handoff"}, write_policy=write_policy),
     ]
     return output
 
@@ -578,7 +635,7 @@ def summarize_artifacts(artifacts: EvaluationArtifacts, *, thresholds: Mapping[s
         "threshold_results": threshold_results,
         "baseline_summary": _metric_family_summary(artifacts.eval_metrics, ("baseline_pearson_correlation", "baseline_improvement_abs")),
         "stability_summary": _metric_family_summary(artifacts.eval_metrics, ("split_stability_sign_consistency", "split_stability_correlation_range")),
-        "handoff_summary": _metric_family_summary(artifacts.eval_metrics, ("selected_count", "selected_average_label", "selected_positive_rate", "watch_average_label", "blocked_average_label")),
+        "handoff_summary": _metric_family_summary(artifacts.eval_metrics, ("selected_count", "selected_long_bias_count", "selected_short_bias_count", "selected_bias_alignment_rate", "selected_average_abs_label", "watch_average_abs_label", "blocked_average_abs_label", "selected_abs_label_lift_vs_blocked")),
         "leakage_summary": _metric_family_summary(artifacts.eval_metrics, ("no_future_leak_violation_count", "model_label_alignment_missing_count", "chronological_split_overlap_violation_count", "total_leakage_violation_count")),
         "promotion_evidence_ready": all(result["passed"] for result in threshold_results.values()),
         "snapshot_id": artifacts.dataset_snapshot["snapshot_id"],
@@ -626,8 +683,9 @@ def evaluate_promotion_thresholds(artifacts: EvaluationArtifacts, thresholds: Ma
     stability_range_max = metric_values.get("split_stability_correlation_range", {}).get("max", 1_000_000_000.0)
     leakage_max = metric_values.get("total_leakage_violation_count", {}).get("max", 1_000_000_000.0)
     selected_count = metric_values.get("selected_count", {}).get("max", 0.0)
-    selected_positive_rate = metric_values.get("selected_positive_rate", {}).get("max", 0.0)
-    selected_average_label = metric_values.get("selected_average_label", {}).get("max", -1_000_000_000.0)
+    selected_bias_alignment_rate = metric_values.get("selected_bias_alignment_rate", {}).get("max", 0.0)
+    selected_average_abs_label = metric_values.get("selected_average_abs_label", {}).get("max", -1_000_000_000.0)
+    selected_abs_label_lift = metric_values.get("selected_abs_label_lift_vs_blocked", {}).get("max", -1_000_000_000.0)
     add("minimum_pair_count", pair_min, thresholds["minimum_pair_count"], pair_min >= thresholds["minimum_pair_count"], ">=")
     add("minimum_coverage", coverage_min, thresholds["minimum_coverage"], coverage_min >= thresholds["minimum_coverage"], ">=")
     add("minimum_factor_abs_pearson", factor_corr_max, thresholds["minimum_factor_abs_pearson"], factor_corr_max >= thresholds["minimum_factor_abs_pearson"], ">=")
@@ -636,6 +694,7 @@ def evaluate_promotion_thresholds(artifacts: EvaluationArtifacts, thresholds: Ma
     add("maximum_stability_correlation_range", stability_range_max, thresholds["maximum_stability_correlation_range"], stability_range_max <= thresholds["maximum_stability_correlation_range"], "<=")
     add("maximum_leakage_violation_count", leakage_max, thresholds["maximum_leakage_violation_count"], leakage_max <= thresholds["maximum_leakage_violation_count"], "<=")
     add("minimum_selected_count", selected_count, thresholds["minimum_selected_count"], selected_count >= thresholds["minimum_selected_count"], ">=")
-    add("minimum_selected_positive_rate", selected_positive_rate, thresholds["minimum_selected_positive_rate"], selected_positive_rate >= thresholds["minimum_selected_positive_rate"], ">=")
-    add("minimum_selected_average_label", selected_average_label, thresholds["minimum_selected_average_label"], selected_average_label >= thresholds["minimum_selected_average_label"], ">=")
+    add("minimum_selected_bias_alignment_rate", selected_bias_alignment_rate, thresholds["minimum_selected_bias_alignment_rate"], selected_bias_alignment_rate >= thresholds["minimum_selected_bias_alignment_rate"], ">=")
+    add("minimum_selected_average_abs_label", selected_average_abs_label, thresholds["minimum_selected_average_abs_label"], selected_average_abs_label >= thresholds["minimum_selected_average_abs_label"], ">=")
+    add("minimum_selected_abs_label_lift_vs_blocked", selected_abs_label_lift, thresholds["minimum_selected_abs_label_lift_vs_blocked"], selected_abs_label_lift >= thresholds["minimum_selected_abs_label_lift_vs_blocked"], ">=")
     return checks
