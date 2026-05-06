@@ -1,6 +1,6 @@
 # Target state vector V1 contract
 
-Status: Draft V1 contract for review.
+Status: Accepted V1 contract; deterministic implementation/evaluation scaffold complete; production promotion pending real-data evidence and accepted review.
 
 This file owns the model-local Layer 3 target state-vector output contract. Layer 3 is not a strategy-variant selector. It constructs an anonymous, point-in-time, direction-neutral tradability state vector that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context.
 
