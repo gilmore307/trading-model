@@ -58,15 +58,18 @@ The primary output is intentionally narrow: identity, direction-neutral sector t
 | `2_sector_trend_quality_score` | float/null | Clarity and structural quality of the sector trend regardless of long/short sign. |
 | `2_sector_trend_stability_score` | float/null | Persistence/smoothness of sector trend behavior and resistance to whipsaw. |
 | `2_sector_transition_risk_score` | float/null | Risk that the sector state is switching, decaying, or becoming invalid. Higher means more transition risk. |
-| `2_market_context_support_score` | float/null | Direction-aware current market-context support for the sector state; signed support is allowed but must not become a quality proxy by itself. |
+| `2_market_context_support_score` | float/null | Direction-aware current market-context support for the sector state. Weak-market + weak-sector can support a short-bias context; this is not a bullish-market proxy. |
 | `2_sector_breadth_confirmation_score` | float/null | Internal/peer confirmation that the sector move is not isolated to a few large weights. |
-| `2_sector_dispersion_crowding_score` | float/null | Dispersion/crowding pressure that can make the sector harder to trade. Higher means more pressure/risk. |
+| `2_sector_internal_dispersion_score` | float/null | Sector internal dispersion/fragmentation evidence. Higher means the basket is less clean as a handoff context. |
+| `2_sector_crowding_risk_score` | float/null | Sector crowding/co-movement pressure. Higher means more one-factor/crowding risk. |
 | `2_sector_liquidity_tradability_score` | float/null | Basket/candidate-pool liquidity, spread, and capacity support for downstream use. |
 | `2_sector_tradability_score` | float/null | Direction-neutral combined tradability score. High means the sector context is cleaner and easier to hand off, whether long-biased or short-biased. |
 
 ### Downstream sector handoff
 
 Layer 2 may identify sector/industry baskets suitable for downstream anonymous target construction. It does not use ETF holdings to choose stocks. ETF holdings and `stock_etf_exposure` belong to the downstream candidate builder / Layer 3 input-preparation boundary.
+
+`2_sector_handoff_state`, `2_sector_handoff_bias`, `2_sector_handoff_rank`, eligibility fields, and reason codes are routing/audit fields. They may filter, prioritize, group, or explain candidate construction, but they are not the raw numeric sector-state evidence that a downstream model should blindly learn as ordinary features.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -104,7 +107,7 @@ Explainability owns behavior and attribution detail for human review. These fiel
 | `2_volatility_adjusted_trend_score` | float/null | Trend strength adjusted for realized volatility/chop. |
 | `2_breadth_participation_score` | float/null | Breadth/participation support inside the basket or comparable sector universe. |
 | `2_dispersion_score` | float/null | Cross-component dispersion; high dispersion weakens clean basket interpretation. |
-| `2_market_correlation_score` | float/null | Current co-movement with broad market context. |
+| `2_market_correlation_score` | float/null | Current co-movement with broad market context and crowding-risk support. |
 | `2_chop_score` | float/null | Sideways/noisy behavior diagnostic. Higher means less clean trend behavior. |
 
 ### Inferred attribute block
@@ -203,4 +206,5 @@ V1 acceptance must show:
 4. inferred attributes stable enough across chronological refits to be useful;
 5. trend-stability separation versus a market-context-free baseline;
 6. downstream anonymous target generation can consume selected/watch Layer 2 baskets and the separate `2_sector_handoff_bias`, use holdings/exposure evidence to build stock candidates, and then anonymize candidates without raw company/ticker identity leakage in target-state fitting;
-7. long-biased and short-biased sector contexts are evaluated separately with direction-neutral metrics, so stable downtrends are not treated as failed states by construction.
+7. long-biased and short-biased sector contexts are evaluated separately with direction-neutral metrics, so stable downtrends are not treated as failed states by construction;
+8. selected, watch, blocked, and neutral/blocked control samples remain available for research/evaluation so Layer 3 and later consumers do not train only on preselected sector states.

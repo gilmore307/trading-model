@@ -64,8 +64,10 @@ Layer 3 output state vectors must be explicitly decomposable into four model-fac
 |---|---|---|
 | `market_state_features` | Describe the current broad environment inherited from Layer 1. | market direction state, trend quality, volatility/risk state, transition risk, trend breadth, liquidity stress, correlation/risk-on-risk-off background. |
 | `sector_state_features` | Describe the target's sector/industry context inherited from Layer 2. | sector relative direction, trend quality/stability, transition risk, basket liquidity/tradability, handoff state, handoff bias, sector-vs-market relative state. |
-| `target_state_features` | Describe the anonymous target's own board/tape condition. | target state direction, trend quality, path stability/noise, transition risk, volatility, ATR%, gap, range location, volume/dollar-volume, spread/liquidity, VWAP distance, session position, abnormal activity. |
+| `target_state_features` | Describe the anonymous target's own board/tape condition. | target state direction, trend quality, path stability/noise, trend/state age, direction flip frequency, exhaustion/decay, transition risk, volatility, ATR%, gap, range location, volume/dollar-volume, spread/liquidity, VWAP distance, session phase, peer tradability ranks, optional shortability and event-risk overlays, abnormal activity. |
 | `cross_state_features` | Describe the target's relationship to market and sector state. | beta-adjusted target-vs-sector/market residual direction, relative trend quality, volatility ratios, beta/correlation, sector-confirmed/divergent movement, idiosyncratic residual state, context support. |
+
+Opaque unresolved source/feature mapping identifiers are retained exactly for future review: `/implied/range`, `/stress/cost`, `/optionability/cost`. They are not interpreted as active provider contracts yet.
 
 Layer 3 may also derive cross-block relational features when they are point-in-time and identity-safe:
 
@@ -125,10 +127,12 @@ source_stock_etf_exposure_ref
 Layer 3 score families must stay separated:
 
 - `3_target_direction_score_<window>` is signed current-state direction evidence. It is not Layer 4 alpha confidence and is not a position instruction.
+- `3_target_direction_strength_score_<window>` is absolute direction evidence strength; high can describe either a clean long context or a clean short context.
 - `3_target_trend_quality_score_<window>` and `3_target_path_stability_score_<window>` describe whether the state has a clean tradable structure.
-- `3_target_transition_risk_score_<window>` and `3_target_noise_score_<window>` describe failure/whipsaw risk and should usually reduce handoff quality.
+- `3_target_state_persistence_score_<window>` describes state/trend age and persistence support without direction sign.
+- `3_target_transition_risk_score_<window>`, `3_target_exhaustion_risk_score_<window>`, and `3_target_noise_score_<window>` describe failure/whipsaw/late-trend risk and should usually reduce handoff quality.
 - `3_target_liquidity_tradability_score` describes execution friendliness and cost pressure.
-- `3_tradability_score_<window>` is direction-neutral; stable downtrends can score highly when quality, stability, liquidity, and context support are strong.
+- `3_tradability_score_<window>` is direction-neutral; stable downtrends can score highly when direction strength, quality, stability, persistence, liquidity, and context support are strong while noise, transition risk, and exhaustion risk are low.
 - `3_state_quality_score`, coverage, and data-quality diagnostics describe reliability of the state row, not opportunity.
 
 Context alignment should not collapse signed direction and quality. Prefer separate current-state fields such as `3_context_direction_alignment_score_<window>` for signed alignment and `3_context_support_quality_score_<window>` for direction-neutral support quality.
@@ -142,7 +146,7 @@ Initial label families:
 | Label family | Purpose |
 |---|---|
 | Signed forward return distribution | Direction-neutral outcome using a deterministic point-in-time state orientation; not model-fitted alpha confidence. |
-| Forward volatility / path risk | Whether the state led to smooth movement, chop, gap risk, or adverse excursion. |
+| Forward volatility / path risk | Whether the state led to smooth movement, MFE/MAE balance, path efficiency, direction flips, chop, gap risk, or adverse excursion. |
 | Directional persistence | Whether current-state direction persisted after market/sector adjustment. |
 | Reversion pressure | Whether stretched states reverted toward local/sector/market anchors. |
 | Liquidity/tradability | Whether the target remained tradeable after costs/spreads/volume constraints. |
@@ -167,7 +171,7 @@ The first deterministic scaffold is implemented:
 
 - `src/models/model_03_target_state_vector/anonymous_target_candidate_builder/` builds anonymous candidate rows and checks that `anonymous_target_feature_vector` excludes raw ticker/company identity.
 - `src/models/model_03_target_state_vector/generator.py` consumes `feature_03_target_state_vector` rows and emits `model_03_target_state_vector` rows with signed target direction, direction-neutral trend/path/tradability, transition/noise risk, liquidity, state quality, embedding, cluster, and diagnostics separated.
-- `src/models/model_03_target_state_vector/evaluation.py` builds fixture/local promotion evidence over the accepted baseline ladder: market-only, market+sector, and market+sector+target vector.
+- `src/models/model_03_target_state_vector/evaluation.py` builds fixture/local promotion evidence over the accepted baseline ladder: market-only, market+sector, and market+sector+target vector, using direction-neutral path tradability labels rather than only forward return.
 - `scripts/models/model_03_target_state_vector/` contains generate/evaluate/review wrappers. Local/fixture review remains conservative and defers unless real-data evidence, thresholds, split stability, and leakage gates are reviewed and accepted.
 
 ## Implementation order

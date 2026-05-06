@@ -84,27 +84,37 @@ def _score_payload(target: Mapping[str, Any], market: Mapping[str, Any], sector:
     for window in STATE_WINDOWS:
         suffix = _suffix(window)
         direction = _return_for_window(target, window)
+        direction_score = _bounded(direction, scale=0.05)
+        direction_strength = None if direction_score is None else abs(direction_score)
         trend_quality = _trend_quality(target, window, direction)
         stability = _path_stability(target, window)
         noise = 1.0 - stability if stability is not None else None
         transition_risk = _transition_risk(target, cross, window, noise)
+        persistence = _state_persistence(target, window)
+        exhaustion_risk = _exhaustion_risk(target, window)
         alignment = _context_alignment(cross, direction)
         support = _context_support(cross, market, sector, direction)
-        tradability = _average([
+        tradability = _geometric_score([
+            direction_strength,
             trend_quality,
             stability,
             liquidity,
             support,
             _invert01(noise),
             _invert01(transition_risk),
+            persistence,
+            _invert01(exhaustion_risk),
             state_quality,
         ])
         payload.update({
-            f"3_target_direction_score_{suffix}": _bounded(direction, scale=0.05),
+            f"3_target_direction_score_{suffix}": direction_score,
+            f"3_target_direction_strength_score_{suffix}": direction_strength,
             f"3_target_trend_quality_score_{suffix}": trend_quality,
             f"3_target_path_stability_score_{suffix}": stability,
             f"3_target_noise_score_{suffix}": noise,
             f"3_target_transition_risk_score_{suffix}": transition_risk,
+            f"3_target_state_persistence_score_{suffix}": persistence,
+            f"3_target_exhaustion_risk_score_{suffix}": exhaustion_risk,
             f"3_context_direction_alignment_score_{suffix}": alignment,
             f"3_context_support_quality_score_{suffix}": support,
             f"3_tradability_score_{suffix}": tradability,
@@ -172,6 +182,11 @@ def _trend_quality(target: Mapping[str, Any], window: str, direction: float | No
 
 
 def _path_stability(target: Mapping[str, Any], window: str) -> float | None:
+    trend_state = target.get("target_trend_quality_state")
+    if isinstance(trend_state, Mapping):
+        explicit = _safe_float(trend_state.get(f"path_stability_{window}") or trend_state.get("path_stability_score"))
+        if explicit is not None:
+            return _clip01(explicit)
     volatility_state = target.get("target_volatility_range_state")
     vol = None
     if isinstance(volatility_state, Mapping):
@@ -195,8 +210,24 @@ def _transition_risk(target: Mapping[str, Any], cross: Mapping[str, Any], window
     if explicit is not None:
         return _clip01(explicit)
     residual = abs(_safe_float(cross.get("idiosyncratic_residual_state")) or 0.0)
-    parts = [noise, min(residual / 0.08, 1.0) if residual else None]
+    parts = [noise, min(residual / 0.08, 1.0) if residual else None, _exhaustion_risk(target, window)]
     return _average(parts)
+
+
+def _state_persistence(target: Mapping[str, Any], window: str) -> float | None:
+    state = target.get("target_trend_age_state")
+    if not isinstance(state, Mapping):
+        return None
+    explicit = _safe_float(state.get(f"state_persistence_score_{window}") or state.get("state_persistence_score"))
+    return _clip01(explicit)
+
+
+def _exhaustion_risk(target: Mapping[str, Any], window: str) -> float | None:
+    state = target.get("target_exhaustion_decay_state")
+    if not isinstance(state, Mapping):
+        return None
+    explicit = _safe_float(state.get(f"late_trend_risk_score_{window}") or state.get("late_trend_risk_score"))
+    return _clip01(explicit)
 
 
 def _liquidity_score(target: Mapping[str, Any]) -> float | None:
@@ -257,11 +288,18 @@ def _diagnostics(row: Mapping[str, Any], target: Mapping[str, Any], market: Mapp
         "identity_leakage_check": "passed",
         "downstream_action_fields_present": sorted(FORBIDDEN_OUTPUT_FIELDS & set(row)),
         "score_fields_present": sorted(key for key, value in scores.items() if value is not None),
+        "field_semantics_policy": {
+            "direction_scores": "signed_direction_only_not_quality_or_size",
+            "tradability_scores": "direction_neutral_high_is_good_path_and_execution_cleanliness",
+            "risk_noise_scores": "direction_neutral_high_is_bad",
+            "target_state_embedding": "research_only_not_primary_model_feature",
+            "state_cluster_id": "research_only_not_primary_model_feature",
+        },
     }
 
 
 def _embedding(scores: Mapping[str, Any]) -> list[float]:
-    keys = ["3_target_direction_score_15min", "3_target_trend_quality_score_15min", "3_target_path_stability_score_15min", "3_target_transition_risk_score_15min", "3_target_liquidity_tradability_score", "3_context_support_quality_score_15min", "3_tradability_score_15min", "3_state_quality_score"]
+    keys = ["3_target_direction_score_15min", "3_target_direction_strength_score_15min", "3_target_trend_quality_score_15min", "3_target_path_stability_score_15min", "3_target_transition_risk_score_15min", "3_target_state_persistence_score_15min", "3_target_exhaustion_risk_score_15min", "3_target_liquidity_tradability_score", "3_context_support_quality_score_15min", "3_tradability_score_15min", "3_state_quality_score"]
     return [round(_safe_float(scores.get(key)) or 0.0, 8) for key in keys]
 
 
@@ -331,6 +369,18 @@ def _invert01(value: float | None) -> float | None:
 def _average(values: Iterable[float | None]) -> float | None:
     clean = [value for value in values if value is not None]
     return mean(clean) if clean else None
+
+
+def _geometric_score(values: Iterable[float | None]) -> float | None:
+    clean = [_clip01(value) for value in values if value is not None]
+    if not clean:
+        return None
+    # Multiplicative direction-neutral tradability: one badly failing component
+    # should drag the state down more than a simple arithmetic average would.
+    product = 1.0
+    for value in clean:
+        product *= max(value or 0.0, 1e-9)
+    return product ** (1.0 / len(clean))
 
 
 def _safe_float(value: Any) -> float | None:

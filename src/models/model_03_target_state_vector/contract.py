@@ -32,14 +32,20 @@ SECTOR_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
 )
 
 TARGET_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
+    "target_price_state",
     "target_direction_return_shape",
     "target_trend_quality_state",
+    "target_trend_age_state",
+    "target_exhaustion_decay_state",
     "target_volatility_range_state",
     "target_gap_jump_state",
     "target_volume_activity_state",
     "target_liquidity_tradability_state",
     "target_vwap_location_state",
     "target_session_position_state",
+    "target_peer_rank_state",
+    "target_shortability_state",
+    "target_event_risk_state",
     "target_data_quality_state",
 )
 
@@ -72,10 +78,13 @@ LABEL_HORIZONS: Final[tuple[str, ...]] = (
 
 DIRECTION_NEUTRAL_SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "3_target_direction_score_<window>",
+    "3_target_direction_strength_score_<window>",
     "3_target_trend_quality_score_<window>",
     "3_target_path_stability_score_<window>",
     "3_target_noise_score_<window>",
     "3_target_transition_risk_score_<window>",
+    "3_target_state_persistence_score_<window>",
+    "3_target_exhaustion_risk_score_<window>",
     "3_target_liquidity_tradability_score",
     "3_context_direction_alignment_score_<window>",
     "3_context_support_quality_score_<window>",

@@ -64,15 +64,23 @@ Computed from anonymous target-local point-in-time evidence. V1 uses completed b
 
 | Field group | Meaning |
 |---|---|
+| `target_price_state` | Current completed-bar price anchors used for path labels/evaluation; no future bars. |
 | `target_direction_return_shape` | Signed current-state direction evidence and trailing return shape across reviewed short/intraday/day windows. |
-| `target_trend_quality_state` | Trend direction sign, structural quality, slope, moving-average/VWAP alignment, and momentum persistence. |
+| `target_trend_quality_state` | Trend direction sign, structural quality, slope, moving-average/VWAP alignment, path stability, and momentum persistence. |
+| `target_trend_age_state` | Trend/state age, time since last direction flip, flip count, and persistence evidence. |
+| `target_exhaustion_decay_state` | Momentum decay, volume exhaustion, volatility exhaustion, trend-slope decay, and late-trend risk evidence. |
 | `target_volatility_range_state` | ATR%, realized volatility, intraday range, range location, compression/expansion, and transition-risk pressure. |
 | `target_gap_jump_state` | Opening/overnight/session gap, jump, and abnormal bar movement evidence. |
 | `target_volume_activity_state` | Volume, dollar-volume, relative volume, and abnormal activity. |
 | `target_liquidity_tradability_state` | Spread, quote coverage, capacity, slippage proxy, borrow/shortability where applicable, and tradeability diagnostics. |
 | `target_vwap_location_state` | Distance from VWAP/session anchors and mean-reversion pressure context. |
-| `target_session_position_state` | Time-of-day/session-progress context for intraday state interpretation. |
+| `target_session_position_state` | Time-of-day/session-progress context for intraday state interpretation: minutes since open/to close, session phase, opening/midday/closing flags, distance to open/VWAP, and range position. |
+| `target_peer_rank_state` | Cross-sectional ranks inside the point-in-time peer/candidate pool for tradability qualities, not raw strength. |
+| `target_shortability_state` | Optional shortability/borrow/locate evidence; may be null until a reviewed source exists and must not imply position sizing. |
+| `target_event_risk_state` | Optional scheduled/news/halt/macro event-risk overlay evidence; may be null until reviewed event sources exist. |
 | `target_data_quality_state` | Coverage, freshness, missingness, and source-quality diagnostics. |
+
+Opaque unresolved source/feature mapping identifiers retained for future review: `/implied/range`, `/stress/cost`, `/optionability/cost`. Do not rewrite these identifiers or infer provider semantics until the corresponding source contracts are reviewed.
 
 ### `cross_state_features`
 
@@ -109,14 +117,17 @@ Layer 3 outputs may include scalar summaries inside block payloads, but these sc
 | Score family | Range | Contract meaning |
 |---|---|---|
 | `3_target_direction_score_<window>` | [-1, 1] | Signed current-state direction evidence. Positive/negative are long/short state signs, not quality and not position. |
+| `3_target_direction_strength_score_<window>` | [0, 1] | Absolute current direction evidence strength. High can describe either clean long or clean short state evidence. |
 | `3_target_trend_quality_score_<window>` | [0, 1] | Clarity/structure of the target trend state independent of sign. |
 | `3_target_path_stability_score_<window>` | [0, 1] | Smoothness and persistence of the state path; higher means fewer whipsaws. |
 | `3_target_noise_score_<window>` | [0, 1] | Bar-to-bar chop, wick/noise, abnormal jumps, and execution-disruptive path noise. Higher means worse noise. |
 | `3_target_transition_risk_score_<window>` | [0, 1] | Risk that current state is switching, decaying, crowded, or otherwise fragile. Higher means more risk. |
+| `3_target_state_persistence_score_<window>` | [0, 1] | Direction-neutral persistence/age support for the current state, separate from direction sign. |
+| `3_target_exhaustion_risk_score_<window>` | [0, 1] | Direction-neutral late-trend/exhaustion/decay risk. Higher means worse risk. |
 | `3_target_liquidity_tradability_score` | [0, 1] | Liquidity/spread/capacity/borrow support for practical execution. |
 | `3_context_direction_alignment_score_<window>` | [-1, 1] | Signed target/sector/market direction alignment. |
 | `3_context_support_quality_score_<window>` | [0, 1] | Direction-neutral support quality from sector/market/peer context. |
-| `3_tradability_score_<window>` | [0, 1] | Direction-neutral state tradability. Stable short states can score highly. |
+| `3_tradability_score_<window>` | [0, 1] | Direction-neutral state tradability. Stable short states can score highly. It combines direction strength, trend quality, path stability, context support, liquidity, persistence, data quality, and inverted noise/transition/exhaustion risk; it must never mean “suitable long.” |
 | `3_state_quality_score` | [0, 1] | Reliability/completeness of the produced state vector, not opportunity. |
 
 `3_target_direction_score_<window>` is not Layer 4 alpha/direction confidence. Direction-confidence calibration, target/stop/action projection, and position sizing belong to downstream consumers.
@@ -142,7 +153,7 @@ Layer 3 evaluation must compare these feature sets under identical labels and sp
 2. `market_sector_baseline` — Layer 1 + Layer 2 blocks.
 3. `market_sector_target_vector` — Layer 1 + Layer 2 + target + cross-state blocks.
 
-A V1 model is not accepted just because target features improve aggregate return prediction or long-only outcomes. It must show split-stable improvement for at least one reviewed direction-neutral forward path/tradability outcome and must preserve liquidity/cost diagnostics so theoretically predictive but practically untradeable states can be identified.
+A V1 model is not accepted just because target features improve aggregate return prediction or long-only outcomes. It must show split-stable improvement for at least one reviewed direction-neutral forward path/tradability outcome and must preserve liquidity/cost diagnostics so theoretically predictive but practically untradeable states can be identified. Preferred tradability validation buckets compare `3_tradability_score_<window>` against MFE/MAE balance, path efficiency, first-target-before-stop behavior, direction flip count, state-transition rate, and spread/liquidity degradation rather than only forward return.
 
 ## Rejection rules
 

@@ -130,6 +130,8 @@ class SectorContextModelTests(unittest.TestCase):
         self.assertIn('PRIMARY KEY ("available_time", "sector_or_industry_symbol")', joined_sql)
         self.assertIn('"2_sector_handoff_state" TEXT', joined_sql)
         self.assertIn('"2_sector_handoff_bias" TEXT', joined_sql)
+        self.assertIn('"2_sector_internal_dispersion_score" DOUBLE PRECISION', joined_sql)
+        self.assertIn('"2_sector_crowding_risk_score" DOUBLE PRECISION', joined_sql)
         self.assertIn('"2_sector_tradability_score" DOUBLE PRECISION', joined_sql)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_02_sector_context_explainability"', joined_sql)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_02_sector_context_diagnostics"', joined_sql)

@@ -46,7 +46,8 @@ PRIMARY_SCORE_COLUMNS = [
     "2_sector_transition_risk_score",
     "2_market_context_support_score",
     "2_sector_breadth_confirmation_score",
-    "2_sector_dispersion_crowding_score",
+    "2_sector_internal_dispersion_score",
+    "2_sector_crowding_risk_score",
     "2_sector_liquidity_tradability_score",
     "2_sector_tradability_score",
     "2_sector_handoff_state",
@@ -325,12 +326,18 @@ def _generate_primary_row(group: SectorGroup, *, model_version: str) -> dict[str
     trend_stability = _clip01(_average([_magnitude(alignment_score), volatility_adjustment, None if transition_risk is None else 1.0 - transition_risk]))
 
     market_context = _bounded(_market_context_score(group.market_context_row), scale=1.0)
+    # Direction-aware but not long-only: weak-market + weak-sector can be
+    # supportive for a short-bias sector context, while strong-market + weak-
+    # sector is a headwind. The value is support for the current sector state,
+    # not a bullish-market quality proxy.
     market_context_support = None if sector_direction is None or market_context is None else sector_direction * market_context
 
     summary = group.summary_row or {}
     breadth = _clip01(_average([_safe_float(summary.get(column)) for column in ("sector_observation_positive_return_1d_pct", "sector_observation_positive_return_5d_pct", "sector_observation_above_ma20_pct", "sector_observation_above_ma50_pct")]))
     dispersion_raw = _average([_safe_float(summary.get("sector_observation_distance_to_ma20_dispersion")), _safe_float(summary.get("sector_observation_return_20d_dispersion"))])
-    dispersion_crowding = _clip01(None if dispersion_raw is None else dispersion_raw / 0.10)
+    internal_dispersion = _clip01(None if dispersion_raw is None else dispersion_raw / 0.10)
+    corr = _average([_safe_float(row.get("relative_strength_return_corr_20d")) for row in feature_rows])
+    crowding_risk = _clip01(abs(corr)) if corr is not None else None
     liquidity_tradability = None
     coverage = quality
     data_quality = quality
@@ -342,7 +349,8 @@ def _generate_primary_row(group: SectorGroup, *, model_version: str) -> dict[str
                 trend_stability,
                 None if transition_risk is None else 1.0 - transition_risk,
                 breadth,
-                None if dispersion_crowding is None else 1.0 - dispersion_crowding,
+                None if internal_dispersion is None else 1.0 - internal_dispersion,
+                None if crowding_risk is None else 1.0 - crowding_risk,
                 liquidity_tradability,
                 state_quality,
             ]
@@ -363,7 +371,8 @@ def _generate_primary_row(group: SectorGroup, *, model_version: str) -> dict[str
         "2_sector_transition_risk_score": transition_risk,
         "2_market_context_support_score": market_context_support,
         "2_sector_breadth_confirmation_score": breadth,
-        "2_sector_dispersion_crowding_score": dispersion_crowding,
+        "2_sector_internal_dispersion_score": internal_dispersion,
+        "2_sector_crowding_risk_score": crowding_risk,
         "2_sector_liquidity_tradability_score": liquidity_tradability,
         "2_sector_tradability_score": sector_tradability,
         "2_sector_handoff_state": handoff_state,

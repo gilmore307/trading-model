@@ -25,6 +25,9 @@ def _feature_row(index: int) -> dict:
         "target_state_features": {
             "state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows",
             "target_direction_return_shape": {"return_5min": ret, "return_15min": ret * 2, "return_60min": ret * 3, "return_390min": ret * 4},
+            "target_trend_quality_state": {"trend_quality_15min": 0.8, "path_stability_15min": 0.9},
+            "target_trend_age_state": {"state_persistence_score_15min": 0.7},
+            "target_exhaustion_decay_state": {"late_trend_risk_score_15min": 0.1},
             "target_volatility_range_state": {"realized_vol_15min": 0.02},
             "target_liquidity_tradability_state": {"spread_bps": 5, "dollar_volume": 1_000_000},
         },
@@ -40,12 +43,16 @@ class TargetStateVectorModelTests(unittest.TestCase):
         row = rows[0]
         self.assertEqual(row["model_id"], "target_state_vector_model")
         self.assertIn("3_target_direction_score_15min", row)
+        self.assertIn("3_target_direction_strength_score_15min", row)
+        self.assertIn("3_target_state_persistence_score_15min", row)
+        self.assertIn("3_target_exhaustion_risk_score_15min", row)
         self.assertIn("3_tradability_score_15min", row)
         self.assertIn("target_state_vector", row)
         self.assertNotIn("alpha_confidence", row)
         self.assertNotIn("position_size", row)
         self.assertNotIn("final_action", row)
         self.assertEqual(row["state_quality_diagnostics"]["identity_leakage_check"], "passed")
+        self.assertEqual(row["state_quality_diagnostics"]["field_semantics_policy"]["target_state_embedding"], "research_only_not_primary_model_feature")
 
     def test_evaluation_builds_baseline_ladder_and_defers_small_fixture_thresholds(self) -> None:
         feature_rows = [_feature_row(index) for index in range(8)]

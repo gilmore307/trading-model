@@ -34,6 +34,9 @@ class TargetStateVectorContractTests(unittest.TestCase):
         self.assertIn("sector_confirmation_state", contract.CROSS_STATE_FEATURE_GROUPS)
         self.assertIn("idiosyncratic_residual_state", contract.CROSS_STATE_FEATURE_GROUPS)
         self.assertIn("3_target_direction_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
+        self.assertIn("3_target_direction_strength_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
+        self.assertIn("3_target_state_persistence_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
+        self.assertIn("3_target_exhaustion_risk_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
         self.assertIn("3_tradability_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
 
     def test_v1_uses_sparse_state_windows_not_strategy_variants(self) -> None:
@@ -67,15 +70,20 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "sector_state_features",
             "target_state_features",
             "cross_state_features",
+            "target_price_state",
             "target_direction_return_shape",
+            "target_trend_age_state",
+            "target_exhaustion_decay_state",
             "target_volatility_range_state",
             "target_liquidity_tradability_state",
+            "target_peer_rank_state",
             "target_vs_market_residual_direction",
             "target_vs_sector_residual_direction",
             "sector_confirmation_state",
             "idiosyncratic_residual_state",
             "3_target_direction_score_<window>",
             "3_context_support_quality_score_<window>",
+            "MFE/MAE balance",
         }
         for token in required_tokens:
             self.assertIn(token, text)

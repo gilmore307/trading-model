@@ -159,8 +159,16 @@ def _eval_labels(rows: Sequence[Mapping[str, Any]], *, snapshot_id: str, model_i
                     if signed_return is None:
                         continue
                 current_time = _iso(_row_time(row))
-                label = {"feature_available_time": current_time, "signed_forward_return": signed_return, "absolute_forward_return": abs(signed_return), "future_tradeable_path_label": abs(signed_return)}
-                labels.append({"label_id": _stable_id("mdlbl", snapshot_id, candidate, current_time, horizon), "snapshot_id": snapshot_id, "model_id": model_id, "target_symbol": candidate, "label_name": "future_target_tradeable_path", "label_horizon": horizon, "label_available_time": _iso(_row_time(future)), "label_value": signed_return, "label_payload_json": label})
+                path_rows = candidate_rows[index : index + steps + 1]
+                path_metrics = _future_path_metrics(path_rows, signed_return=signed_return)
+                label = {
+                    "feature_available_time": current_time,
+                    "signed_forward_return": signed_return,
+                    "absolute_forward_return": abs(signed_return),
+                    "future_tradeable_path_label": path_metrics.get("future_tradeable_path_label"),
+                    **path_metrics,
+                }
+                labels.append({"label_id": _stable_id("mdlbl", snapshot_id, candidate, current_time, horizon), "snapshot_id": snapshot_id, "model_id": model_id, "target_symbol": candidate, "label_name": "future_target_tradeable_path", "label_horizon": horizon, "label_available_time": _iso(_row_time(future)), "label_value": label["future_tradeable_path_label"], "label_payload_json": label})
     return labels
 
 
@@ -214,7 +222,9 @@ def _promotion_metrics(features: Sequence[Mapping[str, Any]], models: Sequence[M
 
 
 def _pair(feature: Mapping[str, Any], model: Mapping[str, Any], label: Mapping[str, Any]) -> dict[str, float]:
-    label_abs = abs(_safe_float(label.get("label_value")) or 0.0)
+    payload = _coerce_payload(label.get("label_payload_json"))
+    label_path = _safe_float(payload.get("future_tradeable_path_label")) if isinstance(payload, Mapping) else None
+    label_abs = label_path if label_path is not None else abs(_safe_float(label.get("label_value")) or 0.0)
     market = abs(_market_direction(feature) or 0.0)
     sector = abs(_sector_direction(feature) or 0.0)
     target = _safe_float(model.get("3_tradability_score_15min")) or abs(_safe_float(model.get("3_target_direction_score_15min")) or 0.0)
@@ -250,6 +260,11 @@ def _split_pairs(pairs: Sequence[Mapping[str, float]]) -> list[list[Mapping[str,
         return [list(ordered)]
     n = len(ordered)
     return [list(ordered[: max(1, n // 3)]), list(ordered[max(1, n // 3) : max(2, 2 * n // 3)]), list(ordered[max(2, 2 * n // 3) :])]
+
+
+def _average(values: Iterable[float | None]) -> float | None:
+    clean = [value for value in values if value is not None]
+    return mean(clean) if clean else None
 
 
 def _corr(xs: Sequence[float], ys: Sequence[float]) -> float | None:
@@ -296,6 +311,45 @@ def _target_return(row: Mapping[str, Any], horizon: str) -> float | None:
         if isinstance(shape, Mapping):
             return _safe_float(shape.get(f"return_{horizon}"))
     return None
+
+
+def _future_path_metrics(path_rows: Sequence[Mapping[str, Any]], *, signed_return: float) -> dict[str, float | int | None]:
+    closes = [_target_close(row) for row in path_rows]
+    clean = [value for value in closes if value is not None]
+    if len(clean) < 2 or clean[0] == 0:
+        fallback = min(abs(signed_return) / 0.05, 1.0)
+        return {
+            "future_tradeable_path_label": fallback,
+            "path_efficiency_score": None,
+            "mfe_mae_balance_score": None,
+            "direction_flip_count": None,
+            "direction_flip_penalty_score": None,
+            "max_favorable_excursion": None,
+            "max_adverse_excursion": None,
+        }
+    start = clean[0]
+    orientation = 1 if signed_return >= 0 else -1
+    oriented = [orientation * (value / start - 1.0) for value in clean]
+    mfe = max(oriented)
+    mae = abs(min(oriented))
+    increments = [clean[pos] / clean[pos - 1] - 1.0 for pos in range(1, len(clean)) if clean[pos - 1] != 0]
+    total_abs = sum(abs(value) for value in increments)
+    path_efficiency = None if total_abs == 0 else min(abs(signed_return) / total_abs, 1.0)
+    mfe_mae_balance = None if (mfe + mae) == 0 else max(0.0, min(mfe / (mfe + mae), 1.0))
+    signs = [1 if value > 0 else -1 if value < 0 else 0 for value in increments]
+    nonzero = [sign for sign in signs if sign]
+    flips = sum(1 for left, right in zip(nonzero, nonzero[1:]) if left != right)
+    flip_penalty = 1.0 - min(flips / max(len(nonzero) - 1, 1), 1.0) if nonzero else None
+    label = _average([path_efficiency, mfe_mae_balance, flip_penalty])
+    return {
+        "future_tradeable_path_label": label,
+        "path_efficiency_score": path_efficiency,
+        "mfe_mae_balance_score": mfe_mae_balance,
+        "direction_flip_count": flips,
+        "direction_flip_penalty_score": flip_penalty,
+        "max_favorable_excursion": mfe,
+        "max_adverse_excursion": mae,
+    }
 
 
 def _first_numeric(value: Any, keys: Sequence[str]) -> float | None:

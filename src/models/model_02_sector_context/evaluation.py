@@ -34,7 +34,8 @@ FACTOR_COLUMNS = (
     "2_sector_transition_risk_score",
     "2_market_context_support_score",
     "2_sector_breadth_confirmation_score",
-    "2_sector_dispersion_crowding_score",
+    "2_sector_internal_dispersion_score",
+    "2_sector_crowding_risk_score",
     "2_sector_tradability_score",
     "2_state_quality_score",
     "2_coverage_score",
@@ -46,7 +47,8 @@ SIGNED_LABEL_FACTOR_COLUMNS = {
 }
 RISK_LABEL_FACTOR_COLUMNS = {
     "2_sector_transition_risk_score",
-    "2_sector_dispersion_crowding_score",
+    "2_sector_internal_dispersion_score",
+    "2_sector_crowding_risk_score",
 }
 
 DEFAULT_PROMOTION_THRESHOLDS: dict[str, float] = {

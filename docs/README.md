@@ -15,6 +15,7 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `90_system_model_architecture_rfc.md` — accepted current direction-neutral model architecture and phased implementation route.
 - `91_model_decomposition.md` — current nine-part model decomposition framework and layer-by-layer design breakdown.
 - `92_vector_taxonomy.md` — accepted vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing.
+- `93_state_vector_feature_registry.md` — accepted semantic guardrails for Layer 1/2/3 state-vector direction, quality, risk, liquidity, routing, diagnostics, and research-only fields.
 
 Layer workflow and acceptance live in the numbered layer files. Add future layers as `04_layer_03_...`, `05_layer_04_...`, and so on before adding broad workflow prose.
 

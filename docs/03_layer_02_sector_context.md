@@ -56,7 +56,8 @@ market_context_state_ref
 2_sector_transition_risk_score
 2_market_context_support_score
 2_sector_breadth_confirmation_score
-2_sector_dispersion_crowding_score
+2_sector_internal_dispersion_score
+2_sector_crowding_risk_score
 2_sector_liquidity_tradability_score
 2_sector_tradability_score
 2_sector_handoff_state
@@ -72,6 +73,10 @@ market_context_state_ref
 ```
 
 `2_sector_relative_direction_score` is signed current sector-context direction evidence. Positive values indicate relative long bias and negative values indicate relative short bias; the sign is not a quality judgment and must not be interpreted as portfolio weight.
+
+`2_market_context_support_score` is direction-aware support for the current sector state, not a bullish-market proxy. A weak market can support a weak/short-bias sector state.
+
+`2_sector_internal_dispersion_score` and `2_sector_crowding_risk_score` are separate because dispersion/fragmentation and one-factor crowding are different risks.
 
 `2_sector_tradability_score` is direction-neutral. It represents how clean, stable, liquid, low-noise, and low-transition-risk the sector context is for downstream anonymous target construction. It replaces legacy `2_selection_readiness_score` semantics in the active implementation.
 
@@ -90,6 +95,8 @@ long_bias | short_bias | neutral | mixed
 ```
 
 `2_sector_handoff_state` and `2_sector_handoff_bias` must stay separate. A stable weak sector can be `selected` with `short_bias`; a fast rising but noisy sector can be `watch` or `blocked` with `long_bias`.
+
+Handoff, eligibility, rank, and reason-code fields are routing/audit outputs, not ordinary raw evidence fields. Research/evaluation should preserve selected, watch, blocked, and neutral/blocked control samples so downstream training does not learn only from preselected states.
 
 ## `model_02_sector_context_explainability` - explainability
 

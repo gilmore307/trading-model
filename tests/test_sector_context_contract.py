@@ -22,6 +22,8 @@ class SectorContextContractTests(unittest.TestCase):
             "`2_sector_trend_quality_score`",
             "`2_sector_trend_stability_score`",
             "`2_sector_transition_risk_score`",
+            "`2_sector_internal_dispersion_score`",
+            "`2_sector_crowding_risk_score`",
             "`2_sector_tradability_score`",
             "`2_conditional_beta_score`",
             "`2_directional_coupling_score`",
@@ -58,6 +60,8 @@ class SectorContextContractTests(unittest.TestCase):
         self.assertIn("positive = upside-favorable capture; negative = downside-heavy capture", contract)
         self.assertIn("A stable weak sector can be `selected` with `short_bias`", contract)
         self.assertIn("stable downtrends are not treated as failed states", contract)
+        self.assertIn("routing/audit fields", contract)
+        self.assertIn("selected, watch, blocked, and neutral/blocked control samples", contract)
 
 
 if __name__ == "__main__":
