@@ -8,7 +8,7 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `01_context.md` — why the repository exists, related systems, environment assumptions, and dependencies.
 - `02_layer_01_market_regime.md` — Layer 1 workflow, inputs, outputs, explainability, diagnostics, and acceptance gates.
 - `03_layer_02_sector_context.md` — Layer 2 workflow, inputs, outputs, explainability, diagnostics, and acceptance gates.
-- `04_layer_03_target_state_vector.md` — draft Layer 3 target state-vector contract, market/sector/target feature blocks, labels, diagnostics, and acceptance gates.
+- `04_layer_03_target_state_vector.md` — accepted Layer 3 target state-vector contract, deterministic scaffold status, market/sector/target feature blocks, labels, diagnostics, and acceptance gates.
 - `80_task.md` — current task state, queued work, blockers, and recently accepted work.
 - `81_decision.md` — ratified repository decisions.
 - `82_memory.md` — durable local continuity that does not fit narrower docs.
