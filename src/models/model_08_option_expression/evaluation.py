@@ -14,6 +14,16 @@ LABEL_FIELDS = {
     "premium_stop_hit_before_target_label_390min",
     "option_spread_adjusted_return_390min",
     "selected_contract_regret_vs_best_candidate_390min",
+    "realized_option_mid_return_390min",
+    "realized_option_bid_exit_return_390min",
+    "realized_option_spread_cost_390min",
+    "realized_iv_change_390min",
+    "realized_theta_decay_390min",
+    "realized_delta_path_exposure_390min",
+    "underlying_target_hit_but_option_lost_label_390min",
+    "option_no_expression_opportunity_cost_390min",
+    "option_expression_avoided_loss_value_390min",
+    "candidate_contract_utility_curve_390min",
 }
 
 

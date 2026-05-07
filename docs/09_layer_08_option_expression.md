@@ -46,6 +46,26 @@ target_context_state
 event_context_vector
 position_projection_vector
 current option position / premium risk context
+pending option exposure / pending option orders
+option quote snapshot references
+```
+
+Layer 8 must carry the exact quote/snapshot identity used for replay:
+
+```text
+option_chain_snapshot_ref
+option_quote_available_time
+underlying_quote_snapshot_ref
+underlying_reference_price
+```
+
+Pending option context should be included to avoid duplicate plans:
+
+```text
+pending_option_orders
+pending_option_premium_exposure
+pending_option_fill_probability_estimate
+pending_option_cancellable_state
 ```
 
 Option candidates must be timestamped contract observations. They may include:
@@ -68,6 +88,22 @@ ask_price / ask
 mid_price / mid
 volume
 open_interest
+contract_multiplier
+exercise_style
+settlement_type
+is_weekly
+is_monthly
+is_adjusted_contract
+last_trade_time
+quote_age_seconds
+bid_size
+ask_size
+spread_abs
+spread_pct_mid
+intrinsic_value
+extrinsic_value
+breakeven_price
+theoretical_value
 ```
 
 Future realized option returns, target/stop outcomes, and best-contract hindsight are evaluation labels only and must not be present in inference rows.
@@ -92,8 +128,10 @@ Resolved fields:
 8_resolved_expression_type
 8_resolved_option_right
 8_resolved_dominant_horizon
-8_resolved_contract_ref
+8_resolved_selected_contract_ref
+8_resolved_contract_fit_score
 8_resolved_expression_confidence_score
+8_resolved_no_option_reason_codes
 8_resolved_reason_codes
 ```
 
@@ -147,6 +185,7 @@ selected_expression_type
 selected_option_right
 dominant_horizon
 selected_contract
+option_chain_snapshot_ref
 contract_constraints
 premium_risk_plan
 underlying_thesis_ref
@@ -169,7 +208,8 @@ It implements:
 
 - Layer 7 bullish thesis -> long-call candidate search;
 - Layer 7 bearish thesis or no-direct-short bearish thesis -> long-put candidate search;
-- no-option-expression policy blocks;
+- Layer 7 `maintain` / `no_trade`, policy blocks, or pending option exposure -> `no_option_expression`;
+- hard filters for right, bid/ask/mid, DTE range, stale quote age, volume/open interest, spread, and adjusted-contract exclusion;
 - DTE / delta / Greeks / IV / liquidity / reward-risk scoring;
 - offline label join helpers and leakage assertions.
 
@@ -178,6 +218,21 @@ Fixture tests live in:
 ```text
 tests/test_option_expression_model.py
 ```
+
+## V1 DTE / delta policy
+
+V1 uses conservative ranges rather than exact DTE points:
+
+```text
+5min / 15min thesis -> preferred_dte_range = 3-7, no 0DTE
+60min / same-session thesis -> preferred_dte_range = 7-14
+390min / one-session thesis -> preferred_dte_range = 7-21
+multi-day thesis -> preferred_dte_range = 21-45
+```
+
+V1 avoids deep OTM lottery contracts. Preferred absolute delta starts around `0.35-0.65`; future learned contract-fit models may adjust this by path quality, expected move, IV, liquidity, and theta pressure.
+
+Layer 7 target/range fields should constrain moneyness: bullish call strikes should not sit far above `target_price_high`; bearish put strikes should not sit far below `target_price_low`.
 
 ## Labels and evaluation
 
@@ -194,14 +249,25 @@ target_premium_hit_before_stop_label_390min
 premium_stop_hit_before_target_label_390min
 option_spread_adjusted_return_390min
 selected_contract_regret_vs_best_candidate_390min
+realized_option_mid_return_<horizon>
+realized_option_bid_exit_return_<horizon>
+realized_option_spread_cost_<horizon>
+realized_iv_change_<horizon>
+realized_theta_decay_<horizon>
+realized_delta_path_exposure_<horizon>
+underlying_target_hit_but_option_lost_label_<horizon>
+option_no_expression_opportunity_cost_<horizon>
+option_expression_avoided_loss_value_<horizon>
+candidate_contract_utility_curve_<horizon>
 ```
 
 Evaluation must prove that Layer 8 improves option-expression outcomes versus simpler baselines:
 
 1. no option expression;
-2. naive ATM nearest-expiration call/put from Layer 7 direction;
-3. fixed-delta/fixed-DTE expression;
-4. Layer 8 full contract-fit and risk-aware expression.
+2. underlying-only Layer 7 expression;
+3. naive ATM nearest-expiration call/put from Layer 7 direction;
+4. fixed-delta/fixed-DTE expression;
+5. Layer 8 full contract-fit and risk-aware expression.
 
 Promotion remains deferred until real point-in-time option feeds, calibration, leakage controls, baseline improvement, and stability evidence pass review.
 

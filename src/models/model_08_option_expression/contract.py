@@ -28,8 +28,10 @@ RESOLVED_FIELD_FAMILIES: Final[tuple[str, ...]] = (
     "8_resolved_expression_type",
     "8_resolved_option_right",
     "8_resolved_dominant_horizon",
-    "8_resolved_contract_ref",
+    "8_resolved_selected_contract_ref",
+    "8_resolved_contract_fit_score",
     "8_resolved_expression_confidence_score",
+    "8_resolved_no_option_reason_codes",
     "8_resolved_reason_codes",
 )
 

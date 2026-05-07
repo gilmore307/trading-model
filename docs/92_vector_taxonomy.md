@@ -459,7 +459,7 @@ Core Layer 8 score families:
 - `8_option_fill_quality_score_<horizon>` — `[0, 1]`, high-is-good conservative fill-quality estimate.
 - `8_option_expression_confidence_score_<horizon>` — `[0, 1]`, calibrated confidence in the offline option-expression plan.
 
-Resolved Layer 8 fields such as `8_resolved_expression_type`, `8_resolved_option_right`, `8_resolved_dominant_horizon`, `8_resolved_contract_ref`, and `8_resolved_reason_codes` summarize the selected expression and do not send orders.
+Resolved Layer 8 fields such as `8_resolved_expression_type`, `8_resolved_option_right`, `8_resolved_dominant_horizon`, `8_resolved_selected_contract_ref`, `8_resolved_contract_fit_score`, `8_resolved_no_option_reason_codes`, and `8_resolved_reason_codes` summarize the selected expression and do not send orders.
 
 ## Label boundary
 

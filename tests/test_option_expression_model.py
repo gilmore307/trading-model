@@ -31,10 +31,12 @@ class OptionExpressionModelTests(unittest.TestCase):
 
         self.assertEqual(output["8_resolved_expression_type"], "long_call")
         self.assertEqual(output["8_resolved_option_right"], "call")
-        self.assertEqual(output["8_resolved_contract_ref"], "AAPL_CALL_GOOD")
+        self.assertEqual(output["8_resolved_selected_contract_ref"], "AAPL_CALL_GOOD")
         self.assertGreater(output["8_option_expression_confidence_score_390min"], 0.0)
         self.assertGreater(output["8_option_contract_fit_score_390min"], 0.0)
         self.assertEqual(plan["selected_contract"]["contract_ref"], "AAPL_CALL_GOOD")
+        self.assertIn("preferred_dte_range", plan["contract_constraints"])
+        self.assertEqual(plan["contract_constraints"]["allow_0dte"], False)
         self.assertIn("point_in_time_contract_candidate_selected", plan["reason_codes"])
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
@@ -57,7 +59,7 @@ class OptionExpressionModelTests(unittest.TestCase):
 
         self.assertEqual(output["8_resolved_expression_type"], "long_put")
         self.assertEqual(output["8_resolved_option_right"], "put")
-        self.assertEqual(output["8_resolved_contract_ref"], "AAPL_PUT_GOOD")
+        self.assertEqual(output["8_resolved_selected_contract_ref"], "AAPL_PUT_GOOD")
         self.assertLess(output["8_option_expression_direction_score_390min"], 0.0)
         self.assert_no_forbidden_terms(output)
 
@@ -65,9 +67,18 @@ class OptionExpressionModelTests(unittest.TestCase):
         output = generate_rows([_base_row(option_expression_policy={"allow_option_expression": "false"})])[0]
 
         self.assertEqual(output["8_resolved_expression_type"], "no_option_expression")
-        self.assertIsNone(output["8_resolved_contract_ref"])
+        self.assertIsNone(output["8_resolved_selected_contract_ref"])
         self.assertEqual(output["8_option_expression_eligibility_score_390min"], 0.0)
         self.assertIn("option_expression_policy_blocked", output["option_expression_plan"]["reason_codes"])
+
+    def test_maintain_and_pending_option_exposure_do_not_create_overlay(self) -> None:
+        maintain_output = generate_rows([_base_row(underlying_action_plan={"planned_underlying_action_type": "maintain", "action_side": "long", "dominant_horizon": "390min", "handoff_to_layer_8": _handoff()})])[0]
+        pending_output = generate_rows([_base_row(pending_option_premium_exposure=250.0, pending_option_fill_probability_estimate=0.75)])[0]
+
+        self.assertEqual(maintain_output["8_resolved_expression_type"], "no_option_expression")
+        self.assertIn("underlying_action_maintain", maintain_output["8_resolved_no_option_reason_codes"])
+        self.assertEqual(pending_output["8_resolved_expression_type"], "no_option_expression")
+        self.assertIn("pending_option_exposure_detected", pending_output["8_resolved_no_option_reason_codes"])
 
     def test_labels_are_offline_and_join_by_plan_ref(self) -> None:
         output = generate_rows([_base_row()])[0]
@@ -115,6 +126,10 @@ def _base_row(**overrides: object) -> dict[str, object]:
         "option_contract_candidates": [
             {
                 "contract_ref": "AAPL_CALL_GOOD",
+                "quote_snapshot_ref": "qs_call_good",
+                "quote_age_seconds": 12,
+                "strike": 102,
+                "contract_multiplier": 100,
                 "right": "call",
                 "expiration": "2026-05-15",
                 "dte": 8,
@@ -126,6 +141,8 @@ def _base_row(**overrides: object) -> dict[str, object]:
                 "iv_rank": 0.45,
                 "bid": 2.40,
                 "ask": 2.55,
+                "bid_size": 30,
+                "ask_size": 25,
                 "volume": 1200,
                 "open_interest": 6500,
             },
@@ -145,6 +162,10 @@ def _base_row(**overrides: object) -> dict[str, object]:
             },
             {
                 "contract_ref": "AAPL_PUT_GOOD",
+                "quote_snapshot_ref": "qs_put_good",
+                "quote_age_seconds": 15,
+                "strike": 98,
+                "contract_multiplier": 100,
                 "right": "put",
                 "expiration": "2026-05-15",
                 "dte": 8,
