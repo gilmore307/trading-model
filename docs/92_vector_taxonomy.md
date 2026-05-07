@@ -203,7 +203,21 @@ Primary input source:
 trading_data.source_04_event_overlay
 ```
 
-The Layer 4 event vector consists of seven inspectable blocks:
+The Layer 4 event vector is a point-in-time overlay on the accepted state stack:
+
+```text
+market_context_state
++ sector_context_state
++ target_context_state
++ source_04_event_overlay
++ event_detail_artifacts
++ scope_mapping_metadata
++ sensitivity_metadata
+  -> EventOverlayModel
+  -> event_context_vector
+```
+
+It consists of auditable event encoding, context matching, and overlay scoring blocks:
 
 ```text
 event_timing_context
@@ -213,9 +227,38 @@ event_intensity_context
 event_directional_context
 event_risk_context
 event_quality_context
+event_impact_scope_context
 ```
 
-It is event context for downstream confidence. It is not alpha confidence, not a trading signal, and not final action.
+Accepted V1 score-family horizons are `5min`, `15min`, `60min`, and `390min`. V1 separates core event risk/quality families from impact-scope families:
+
+```text
+4_event_presence_score_<horizon>
+4_event_timing_proximity_score_<horizon>
+4_event_intensity_score_<horizon>
+4_event_direction_bias_score_<horizon>
+4_event_context_alignment_score_<horizon>
+4_event_uncertainty_score_<horizon>
+4_event_gap_risk_score_<horizon>
+4_event_reversal_risk_score_<horizon>
+4_event_liquidity_disruption_score_<horizon>
+4_event_contagion_risk_score_<horizon>
+4_event_context_quality_score_<horizon>
+4_event_market_impact_score_<horizon>
+4_event_sector_impact_score_<horizon>
+4_event_industry_impact_score_<horizon>
+4_event_theme_factor_impact_score_<horizon>
+4_event_peer_group_impact_score_<horizon>
+4_event_symbol_impact_score_<horizon>
+4_event_microstructure_impact_score_<horizon>
+4_event_scope_confidence_score_<horizon>
+4_event_scope_escalation_risk_score_<horizon>
+4_event_target_relevance_score_<horizon>
+```
+
+`4_event_dominant_impact_scope_<horizon>` may exist as a model-local enum audit/debug field, but it is not a scalar score family.
+
+It is event context only. It is not alpha confidence, not a trading signal, not position sizing, not expression selection, and not final action.
 
 ## Label boundary
 

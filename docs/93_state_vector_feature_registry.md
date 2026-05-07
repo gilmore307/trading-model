@@ -1,8 +1,8 @@
 # State Vector Feature Semantics Registry
 
-Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields.
+Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields and Layer 4 event-context score families.
 
-This registry prevents the state-vector system from mixing direction, quality, risk, routing, diagnostics, and research-only payloads.
+This registry prevents the state/context-vector system from mixing direction, quality, risk, scope, routing, diagnostics, and research-only payloads.
 
 Canonical implementation:
 
@@ -40,3 +40,48 @@ src/models/state_vector_feature_registry.py
 - spread/liquidity degradation.
 
 Stable short states can score highly when direction strength, trend quality, path stability, context support, liquidity, persistence, and quality are strong while noise, transition risk, and exhaustion risk are low.
+
+## Layer 4 event-context score semantics
+
+Layer 4 `event_context_vector` values must keep these axes separate:
+
+```text
+event presence != event intensity
+event intensity != impact scope
+impact scope != direction
+direction bias != alpha
+event risk != trade action
+```
+
+Accepted Layer 4 scalar event-context score values use the `4_` prefix and `<horizon>` suffix for horizon-aware families. Enum-like audit fields may share the horizon suffix in model-local contracts, but they are not `state_vector_value` registry rows.
+
+Core risk/quality families:
+
+- `4_event_presence_score_<horizon>` — `[0, 1]`, event presence, not good/bad by itself.
+- `4_event_timing_proximity_score_<horizon>` — `[0, 1]`, closer to a sensitive event window.
+- `4_event_intensity_score_<horizon>` — `[0, 1]`, stronger information shock/attention.
+- `4_event_direction_bias_score_<horizon>` — `[-1, 1]`, target-conditioned positive/negative event bias; not alpha confidence.
+- `4_event_context_alignment_score_<horizon>` — `[-1, 1]`, event supports/conflicts with current `target_context_state`.
+- `4_event_uncertainty_score_<horizon>` — `[0, 1]`, high-is-bad information uncertainty.
+- `4_event_gap_risk_score_<horizon>` — `[0, 1]`, high-is-bad jump/gap risk.
+- `4_event_reversal_risk_score_<horizon>` — `[0, 1]`, high-is-bad current-path reversal risk.
+- `4_event_liquidity_disruption_score_<horizon>` — `[0, 1]`, high-is-bad spread/depth/slippage disruption risk.
+- `4_event_contagion_risk_score_<horizon>` — `[0, 1]`, high-is-bad cross-scope transmission risk.
+- `4_event_context_quality_score_<horizon>` — `[0, 1]`, high-is-good evidence quality.
+
+Impact-scope families:
+
+- `4_event_market_impact_score_<horizon>`
+- `4_event_sector_impact_score_<horizon>`
+- `4_event_industry_impact_score_<horizon>`
+- `4_event_theme_factor_impact_score_<horizon>`
+- `4_event_peer_group_impact_score_<horizon>`
+- `4_event_symbol_impact_score_<horizon>`
+- `4_event_microstructure_impact_score_<horizon>`
+- `4_event_scope_confidence_score_<horizon>`
+- `4_event_scope_escalation_risk_score_<horizon>`
+- `4_event_target_relevance_score_<horizon>`
+
+Model-local audit/debug field:
+
+- `4_event_dominant_impact_scope_<horizon>` — enum/routing/audit family; not a scalar score registry value; use carefully as model evidence and prefer numeric scope scores when fitting.

@@ -2,9 +2,9 @@
 
 ## Active Tasks
 
-- None for the Layer 1-3 model-design closeout.
+- None for the Layer 1-4 model-design documentation/registry pass.
 
-Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence paths, docs, and registry score naming are accepted for the current model-design phase. Real-sample promotion evidence remains a later production-readiness gap, not an active blocker for closing the first three layer designs.
+Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence paths, docs, and registry score naming are accepted for the current model-design phase. Layer 4 EventOverlayModel now has an accepted V1 event-context vector contract route; deterministic implementation remains pending. Real-sample promotion evidence remains a later production-readiness gap, not an active blocker for closing the first three layer designs.
 
 ## Queued Tasks
 
@@ -12,7 +12,7 @@ Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence
 - Define first label horizons and confidence/EV/risk defaults for Layer 5 `AlphaConfidenceModel`.
 - Define first trading-action and target-exposure projection defaults for Layer 6 `TradingProjectionModel`.
 - Define how Layer 7 expression/final-action work uses market/event context for DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade policy.
-- Define event standard/version semantics for abnormal activity and event-memory evidence as Layer 4 model inputs.
+- Implement Layer 4 deterministic EventEncoder / EventContextMatcher / EventOverlayScorer scaffold after the accepted event-context vector contract.
 - Define final unified decision-record shape and promote it through `trading-manager` when stable.
 
 ## Open Gaps
@@ -49,7 +49,7 @@ These are promotion/production-readiness gaps. They do not reopen the accepted L
 - `src/models/model_03_target_state_vector/evaluation.py` and `scripts/models/model_03_target_state_vector/` implement the Layer 3 baseline-ladder evidence path; fixture/local review must defer until real-data gates pass.
 - `anonymous_target_feature_vector` is the Layer 3 model-facing input vector; `target_context_state` is the Layer 3 conceptual model output.
 - Model-facing target context/state vectors must exclude ticker/company identity.
-- Layer 4 is now `EventOverlayModel`, consuming point-in-time event evidence from `source_04_event_overlay` and outputting `event_context_vector` before alpha confidence.
+- Layer 4 is now `EventOverlayModel`, consuming point-in-time event evidence from `source_04_event_overlay`, event detail artifacts, upstream `market_context_state` / `sector_context_state` / `target_context_state` references, and scope/sensitivity metadata to output `event_context_vector`.
 - `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only, now inside the Layer 7 expression/final-action boundary.
 - `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-state evidence-role contract.
 - Promotion decisions can now be durably persisted through `review_market_regime_promotion.py --write-decision`; accepted approval decisions insert `model_promotion_activation` and activate the reviewed config via `model_config_version.config_status = active`, while deferred/rejected decisions leave the active config unchanged.
