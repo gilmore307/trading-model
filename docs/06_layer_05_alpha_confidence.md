@@ -14,7 +14,7 @@ Layer 5 answers:
 - How reliable and calibrated is this judgment?
 - Is the expected residual return actually target-specific, or mostly market/sector beta?
 - Is the forward path likely to be tradeable, or likely to reverse/draw down first?
-- Is the alpha good enough to hand to Layer 6 for trading-signal/projection work?
+- Is the alpha good enough to hand to Layer 6 for position-projection work?
 
 Layer 5 does **not** answer trading-intent, exposure, position-size, option-contract, order-routing, or execution questions. It must not emit buy/sell/hold, final action, target exposure, account-risk allocation, option symbol, strike, DTE, delta, order type, or broker mutation fields.
 
@@ -57,7 +57,7 @@ base_alpha_vector
   -> alpha_confidence_vector            # final adjusted output
 ```
 
-Layer 6 should consume the final adjusted `alpha_confidence_vector` by default. It may retain refs to base diagnostics for explanation, but it must not treat base and adjusted values as two competing trading signals.
+Layer 6 should consume the final adjusted `alpha_confidence_vector` by default. It may retain refs to base diagnostics for explanation, but it must not treat base and adjusted values as competing target-position projections.
 
 ## Inputs
 
@@ -285,9 +285,9 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 | `5_path_quality_score_<horizon>` | `[0, 1]` | direction-conditioned | path is smoother, more persistent, and easier to trade |
 | `5_reversal_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | alpha direction is more likely to be interrupted/reversed; high-is-bad |
 | `5_drawdown_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | adverse excursion/MAE risk is higher; high-is-bad |
-| `5_alpha_tradability_score_<horizon>` | `[0, 1]` | alpha-level | alpha is more suitable to hand to Layer 6 for trading projection |
+| `5_alpha_tradability_score_<horizon>` | `[0, 1]` | alpha-level | alpha is more suitable to hand to Layer 6 for position projection |
 
-`5_alpha_tradability_score_<horizon>` is still not a trade instruction. It is only the Layer 5 judgment that the alpha is worth downstream trading-signal mapping.
+`5_alpha_tradability_score_<horizon>` is still not a trade instruction. It is only the Layer 5 judgment that the alpha is worth downstream position-projection mapping.
 
 ## No-edge and null policy
 
