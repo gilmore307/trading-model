@@ -307,7 +307,7 @@ Default no-edge policy:
 5_alpha_tradability_score_<horizon> = low
 ```
 
-A zero direction estimate is not a hold instruction. Layer 6 decides offline trading intent/exposure after costs, risk budget, current/pending position state, and no-trade policy are reviewed.
+A zero direction estimate is not a hold instruction. Layer 6 projects target holding state and exposure after costs, risk budget, current/pending position state, and no-trade policy are reviewed.
 
 ## Labels and outcomes
 

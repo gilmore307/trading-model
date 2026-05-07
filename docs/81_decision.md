@@ -27,7 +27,7 @@ Status: Accepted; revised by V2.2 on 2026-05-05
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target context for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
 | 4 | `EventOverlayModel` | `event_overlay_model` | Point-in-time `event_context_vector` before alpha confidence. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack plus event correction to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
-| 6 | `TradingProjectionModel` | `trading_projection_model` | Confidence plus position/cost/risk context to offline trading intent / target projection. |
+| 6 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
 | 7 | `OptionExpression / Final Action` | `option_expression_model` / final-action boundary | Expression selection and final offline action handoff. |
 
 Live/paper order placement remains outside this repository and no layer should be renamed live `ExecutionModel`.
@@ -58,8 +58,8 @@ EventOverlayModel
 AlphaConfidenceModel
   -> alpha_confidence_vector
 
-TradingProjectionModel
-  -> trading_signal_vector
+PositionProjectionModel
+  -> position_projection_vector
 
 OptionExpression / Final Action boundary
   -> expression_vector / final offline verdict
@@ -420,7 +420,7 @@ market_context_state
   -> target_context_state
   -> event_context_vector
   -> alpha_confidence_vector
-  -> trading_signal_vector
+  -> position_projection_vector
   -> expression_vector / final_action
 ```
 
@@ -456,6 +456,44 @@ alpha confidence != option expression
 alpha confidence != final action
 ```
 
-Layer 5 must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns offline trading projection and target exposure. Layer 7 owns expression/final-action boundaries.
+Layer 5 must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns position projection and target exposure state. Layer 7 owns expression/final-action boundaries.
 
 Layer 5 V1 uses the synchronized `5min`, `15min`, `60min`, and `390min` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.
+
+
+## D022 - PositionProjectionModel is Layer 6 target holding-state boundary
+
+Date: 2026-05-07
+Status: Accepted
+
+Layer 6 is `PositionProjectionModel` with canonical model id `position_projection_model` and conceptual output `position_projection_vector`.
+
+Layer 6 maps final adjusted Layer 5 alpha confidence to projected target holding state under current account/portfolio context. It consumes `alpha_confidence_vector`, current position state, pending position state, point-in-time position-level friction, portfolio exposure context, risk-budget context, and policy gates.
+
+The accepted V1 core output families are:
+
+```text
+6_target_position_bias_score_<horizon>
+6_target_exposure_score_<horizon>
+6_current_position_alignment_score_<horizon>
+6_position_gap_score_<horizon>
+6_position_gap_magnitude_score_<horizon>
+6_expected_position_utility_score_<horizon>
+6_cost_to_adjust_position_score_<horizon>
+6_risk_budget_fit_score_<horizon>
+6_position_state_stability_score_<horizon>
+6_projection_confidence_score_<horizon>
+```
+
+Layer 6 uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose handoff summary fields such as dominant projection horizon, horizon conflict state, resolved target exposure, resolved position gap, resolution confidence, and reason codes so Layer 7 does not re-solve horizon conflicts.
+
+Accepted invariants:
+
+```text
+target exposure != order quantity
+position gap != execution instruction
+projection confidence != alpha confidence
+position projection vector != final action
+```
+
+Layer 6 must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate broker/account state. Layer 7 owns expression choice and final offline action handoff; live/paper broker mutation remains outside `trading-model`.

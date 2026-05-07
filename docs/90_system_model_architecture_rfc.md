@@ -13,7 +13,7 @@ point-in-time data foundation
      (Layer 3 preprocessing includes anonymous target candidate construction)
   -> EventOverlayModel
   -> AlphaConfidenceModel
-  -> TradingProjectionModel
+  -> PositionProjectionModel
   -> OptionExpression / Final Action boundary
   -> unified decision record / downstream execution handoff
 ```
@@ -42,7 +42,7 @@ This separation is mandatory:
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
 | 4 | `EventOverlayModel` | `event_overlay_model` | `event_context_vector` | Point-in-time event context, event risk, event direction bias, and event-quality evidence before alpha confidence. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Reviewed state stack plus event correction to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
-| 6 | `TradingProjectionModel` | `trading_projection_model` | `trading_signal_vector` | Confidence plus position/cost/risk context to offline trading intent / target projection. |
+| 6 | `PositionProjectionModel` | `position_projection_model` | `position_projection_vector` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
 | 7 | `OptionExpression / Final Action` | `option_expression_model` / final-action boundary | `expression_vector` / `final_action` | Expression selection and final offline action handoff; broker mutation remains outside `trading-model`. |
 
 Do not treat Layer 7 as live execution. Broker mutation and live/paper order placement are outside `trading-model`.
@@ -292,15 +292,21 @@ Contract owner:
 docs/06_layer_05_alpha_confidence.md
 ```
 
-## Layer 6: TradingProjectionModel
+## Layer 6: PositionProjectionModel
 
-`TradingProjectionModel` consumes confidence, current/pending position state, costs, and risk budget to project offline trading intent / target exposure. It owns the mapping from confidence to trading intent, not Layer 3 or Layer 4.
+`PositionProjectionModel` consumes the final adjusted `alpha_confidence_vector`, current/pending position state, position-level friction, portfolio exposure context, risk-budget context, and point-in-time policy gates to project `position_projection_vector`: target position bias, target exposure, current-position alignment, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, position-state stability, and projection confidence.
+
+It owns the mapping from alpha confidence to target holding state. It does not output buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, or mutate broker/account state. Contract owner:
+
+```text
+docs/07_layer_06_position_projection.md
+```
 
 ## Layer 7: OptionExpression / Final Action Boundary
 
 V1 expression work supports direct stock/ETF comparison plus long call and long put option expressions only.
 
-It consumes option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, alpha-confidence vector, trading-signal/trading-projection state, event context, and market context.
+It consumes option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, `position_projection_vector`, alpha-confidence refs, event context, and market context.
 
 It outputs expression choice, contract constraints, no-trade filters, expected expression quality, and final offline action handoff. Multi-leg structures and live broker mutation are deferred/out of scope.
 
@@ -317,7 +323,7 @@ target_candidate_id
 target_context_state_ref
 event_context_vector_ref
 alpha_confidence_vector_ref
-trading_signal_vector_ref
+position_projection_vector_ref
 expression_vector_ref
 audit/routing metadata
 final offline verdict

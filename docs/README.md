@@ -11,6 +11,7 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `04_layer_03_target_state_vector.md` — accepted Layer 3 target-context/state-vector contract, deterministic scaffold status, market/sector/target feature blocks, labels, diagnostics, and acceptance gates.
 - `05_layer_04_event_overlay.md` — accepted Layer 4 EventOverlayModel design route and V1 `event_context_vector` shape, core score families, labels, baselines, and boundaries.
 - `06_layer_05_alpha_confidence.md` — accepted Layer 5 AlphaConfidenceModel design route, base/unadjusted diagnostics policy, final adjusted 9×4 `alpha_confidence_vector` shape, labels, baselines, and boundaries.
+- `07_layer_06_position_projection.md` — accepted Layer 6 PositionProjectionModel design route, alpha-to-position projection boundary, V1 `position_projection_vector` score families, handoff summary, labels, baselines, and invariants.
 - `80_task.md` — current task state, queued work, blockers, and recently accepted work.
 - `81_decision.md` — ratified repository decisions.
 - `82_memory.md` — durable local continuity that does not fit narrower docs.
@@ -19,6 +20,6 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `92_vector_taxonomy.md` — accepted vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing.
 - `93_state_vector_feature_registry.md` — accepted semantic guardrails for Layer 1/2/3 state-vector, Layer 4 event-context, and Layer 5 alpha-confidence score direction, quality, risk, scope, liquidity, routing, diagnostics, and research-only fields.
 
-Layer workflow and acceptance live in the numbered layer files. Add future layers as `04_layer_03_...`, `05_layer_04_...`, `06_layer_05_...`, and so on before adding broad workflow prose.
+Layer workflow and acceptance live in the numbered layer files. Add future layers as numbered layer files before adding broad workflow prose.
 
 Do not place generated data, artifacts, notebooks, logs, credentials, or implementation outputs in this directory.

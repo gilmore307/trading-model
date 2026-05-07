@@ -1,6 +1,6 @@
 # State Vector Feature Semantics Registry
 
-Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 4 event-context score families, and Layer 5 alpha-confidence score families.
+Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 4 event-context score families, Layer 5 alpha-confidence score families, and Layer 6 position-projection score families.
 
 This registry prevents the state/context-vector system from mixing direction, quality, risk, scope, routing, diagnostics, and research-only payloads.
 
@@ -112,6 +112,37 @@ Core final adjusted alpha-confidence families:
 - `5_path_quality_score_<horizon>` — `[0, 1]`, high-is-good expected path smoothness/tradability.
 - `5_reversal_risk_score_<horizon>` — `[0, 1]`, high-is-bad risk that the alpha direction is interrupted or reversed.
 - `5_drawdown_risk_score_<horizon>` — `[0, 1]`, high-is-bad adverse excursion / MAE / drawdown risk.
-- `5_alpha_tradability_score_<horizon>` — `[0, 1]`, alpha-level suitability for Layer 6 trading projection; not a trading signal.
+- `5_alpha_tradability_score_<horizon>` — `[0, 1]`, alpha-level suitability for Layer 6 position projection; not a target exposure, position gap, or operation.
 
 Base/unadjusted `5_base_*` fields are diagnostics for Layer 1/2/3-only attribution and are not registered as core Layer 6-facing `state_vector_value` rows.
+
+## Layer 6 position-projection score semantics
+
+Layer 6 `position_projection_vector` values must keep these axes separate:
+
+```text
+alpha confidence != target exposure
+target position bias != buy/sell
+target exposure != order quantity
+position gap != execution instruction
+position gap magnitude != urgency
+cost to adjust position != no-trade action
+risk budget fit != final approval
+projection confidence != alpha confidence
+position projection vector != final action
+```
+
+Accepted Layer 6 scalar position-projection score values use the `6_` prefix and `<horizon>` suffix for horizon-aware families. Buy/sell/hold/open/close/reverse, instrument selection, option-chain fields, strike/DTE/Greeks, order routing, and execution outputs are not `state_vector_value` rows for Layer 6.
+
+Core final position-projection families:
+
+- `6_target_position_bias_score_<horizon>` — `[-1, 1]`, signed target holding-direction bias; not a buy/sell/hold operation.
+- `6_target_exposure_score_<horizon>` — `[-1, 1]`, normalized abstract target risk exposure; not shares, contracts, or order quantity.
+- `6_current_position_alignment_score_<horizon>` — `[0, 1]`, high-is-good alignment between current plus pending exposure and projected target state.
+- `6_position_gap_score_<horizon>` — `[-1, 1]`, target exposure minus effective current exposure; not an execution instruction.
+- `6_position_gap_magnitude_score_<horizon>` — `[0, 1]`, absolute normalized target-current exposure gap; not urgency by itself.
+- `6_expected_position_utility_score_<horizon>` — `[-1, 1]`, expected risk-adjusted net utility of the projected target holding state.
+- `6_cost_to_adjust_position_score_<horizon>` — `[0, 1]`, high-is-bad relative cost pressure to close the position gap.
+- `6_risk_budget_fit_score_<horizon>` — `[0, 1]`, high-is-good compatibility with current risk budget and portfolio constraints.
+- `6_position_state_stability_score_<horizon>` — `[0, 1]`, high-is-good stability of the projected target holding state across alpha, horizon, cost, risk, and pending-order uncertainty.
+- `6_projection_confidence_score_<horizon>` — `[0, 1]`, confidence in the Layer 6 alpha-to-position mapping; separate from Layer 5 alpha confidence.

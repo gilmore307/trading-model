@@ -182,7 +182,7 @@ model_01_market_regime
   -> market_context_state
   -> Layer 2 sector tradability conditioning
   -> Layer 3 target-state context
-  -> alpha/confidence and trading-projection constraints
+  -> alpha/confidence and position-projection constraints
   -> option-expression constraints
   -> portfolio-risk policy
   -> decision-record audit context
@@ -320,7 +320,7 @@ sector_context_state
      (Layer 3 preprocessing: anonymous target candidate builder)
   -> EventOverlayModel
   -> AlphaConfidenceModel
-  -> TradingProjectionModel
+  -> PositionProjectionModel
   -> OptionExpression / Final Action boundary
 ```
 
@@ -401,14 +401,142 @@ docs/06_layer_05_alpha_confidence.md
 
 Must convert reviewed Layer 1/2/3 state evidence plus `event_context_vector` correction into the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/unadjusted alpha from Layer 1/2/3 is retained as diagnostics only; the adjusted vector is the default Layer 6-facing output. Directional alpha belongs here, not in Layer 3 or Layer 4. It must not project target exposure, select option contracts, size positions, emit final actions, or mutate broker/account state.
 
-## Layer 6: TradingProjectionModel
+## Layer 6: PositionProjectionModel
 
-Status: decomposition pending.
+Status: accepted design route; deterministic model implementation pending.
 
-Must convert confidence, position state, cost, and risk budget into offline trading intent / target exposure. Real broker mutation remains outside `trading-model`.
+Contract owner:
+
+```text
+docs/07_layer_06_position_projection.md
+```
+
+### 1. Data
+
+Primary inputs:
+
+```text
+alpha_confidence_vector                 # Layer 5 final adjusted output
+current_position_state                  # point-in-time current abstract exposure
+pending_position_state                  # point-in-time pending exposure / fill probability
+position_level_friction_context          # spread/slippage/fee/turnover/liquidity capacity
+portfolio_exposure_context               # gross/net/sector/single-name exposure state
+risk_budget_context                      # limits, drawdown, volatility budget, kill-switch state
+point-in-time policy gates
+```
+
+Expression-specific costs such as borrow, financing, and option-expression cost may be diagnostics or soft hints only. Layer 6 must not choose or reject a specific expression/instrument.
+
+### 2. Features
+
+`X` is keyed by:
+
+```text
+available_time + target_candidate_id + account_or_portfolio_context_ref
+```
+
+Core feature blocks:
+
+```text
+alpha_confidence_vector
+current_position_state
+pending_position_state
+effective_current_exposure              # current + pending * fill_probability
+position_level_friction_context
+risk_budget_context
+portfolio_exposure_context
+policy_gate_context
+```
+
+`effective_current_exposure` is a model-local construct used to avoid repeated projection when pending exposure already covers the target. It is not an order instruction.
+
+### 3. Prediction target
+
+Conceptual output:
+
+```text
+position_projection_vector
+```
+
+Planned physical artifacts:
+
+```text
+trading_model.model_06_position_projection
+trading_model.model_06_position_projection_explainability
+trading_model.model_06_position_projection_diagnostics
+```
+
+The primary output keeps the narrow Layer 7-facing target holding-state projection: target position bias, target exposure, current-position alignment, signed position gap, gap magnitude, expected position utility, cost-to-adjust pressure, risk-budget fit, position-state stability, and projection confidence.
+
+Handoff summary fields may expose dominant projection horizon, horizon conflict state, resolved target exposure, resolved position gap, resolution confidence, and reason codes. Diagnostics own raw alpha-to-position priors, effective exposure calculations, and risk/cost reason-code detail.
+
+### 4. Model mapping
+
+V1 mapping should begin as an auditable scaffold:
+
+```text
+final adjusted alpha confidence
+  -> raw target position prior
+  -> effective current exposure calculation
+  -> position gap projection
+  -> cost-to-adjust and risk-budget evaluation
+  -> horizon conflict resolution
+  -> position_projection_vector
+```
+
+### 5. Loss / error measure
+
+Evaluate wrongness through cost-aware, risk-adjusted position utility, not raw return alone:
+
+- realized position utility by horizon;
+- current-position hold utility;
+- flat-position utility;
+- target-position-vs-current-position lift;
+- realized cost to adjust position;
+- risk-budget breach and drawdown under projected position;
+- regret versus the best candidate exposure in a reviewed exposure grid.
+
+### 6. Training / parameter update
+
+Layer 6 should prefer a candidate-exposure utility curve rather than directly fitting one hindsight-best target exposure:
+
+```text
+Q(position_context, candidate_exposure) -> net utility
+```
+
+Candidate exposure grids may start with `-1.00, -0.75, -0.50, -0.25, 0.00, +0.25, +0.50, +0.75, +1.00`. All current/pending/cost/risk states must be simulated or recorded point-in-time. Overlapping horizons require purge/embargo.
+
+### 7. Validation / usefulness
+
+Layer 6 must prove incremental value over current-position unchanged, flat-position, Layer 5 alpha-only exposure mapping, fixed exposure by confidence, cost-blind projection, risk-budget-blind projection, simple horizon averaging, highest-confidence-horizon, and full PositionProjectionModel baselines.
+
+Validation must check utility monotonicity, turnover reduction, cost-pressure usefulness, risk-budget-breach reduction, gap correctness using effective exposure, horizon-resolution value, and no-future-leak evidence.
+
+### 8. Overfitting control
+
+Controls:
+
+- separate inference features from future utility labels;
+- avoid learning from strategy-generated historical positions as if they covered all possible exposures;
+- train/evaluate candidate exposure utility curves across chronological splits;
+- keep expression-specific option-chain features out of Layer 6;
+- use bounded normalized exposures and reviewed risk-budget gates;
+- require baseline and leakage evidence before promotion.
+
+### 9. Decision deployment
+
+Layer 6 output feeds Layer 7 expression/final-action work:
+
+```text
+position_projection_vector
+  -> OptionExpression / Final Action boundary
+  -> expression_vector / final offline action handoff
+```
+
+It must not output buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, size orders, route orders, or mutate broker/account state.
 
 ## Layer 7: OptionExpression / Final Action Boundary
 
 Status: decomposition pending.
 
-V1 expression work is direct stock/ETF comparison plus long call / long put only. It must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, alpha-confidence context, and market-context constraints. Final action remains an offline handoff; it does not place orders.
+V1 expression work is direct stock/ETF comparison plus long call / long put only. It must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, position-projection context, and market-context constraints. Final action remains an offline handoff; it does not place orders.

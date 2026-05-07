@@ -319,6 +319,81 @@ Accepted V1 score-family horizons are `5min`, `15min`, `60min`, and `390min`. V1
 
 Base/unadjusted `5_base_*` values are diagnostics for audit/research/event attribution, not the default Layer 6-facing contract. The adjusted vector is alpha confidence only: not target exposure, not position sizing, not option expression, not execution, and not final action.
 
+
+## Layer 6 position-projection vocabulary
+
+Layer 6 model:
+
+```text
+PositionProjectionModel
+```
+
+Conceptual output:
+
+```text
+position_projection_vector
+```
+
+Future physical promoted artifact:
+
+```text
+trading_model.model_06_position_projection
+```
+
+Primary model inputs:
+
+```text
+alpha_confidence_vector                 # Layer 5 final adjusted output
+current_position_state
+pending_position_state
+position_level_friction_context
+portfolio_exposure_context
+risk_budget_context
+point-in-time policy gates
+```
+
+The Layer 6 position-projection vector is the account/portfolio-state-aware target holding-state layer:
+
+```text
+alpha_confidence_vector
++ current_position_state
++ pending_position_state
++ position-level friction context
++ risk-budget / portfolio exposure context
+  -> PositionProjectionModel
+  -> position_projection_vector
+```
+
+Accepted V1 score-family horizons are `5min`, `15min`, `60min`, and `390min`. V1 exposes exactly 10 core score families per horizon:
+
+```text
+6_target_position_bias_score_<horizon>
+6_target_exposure_score_<horizon>
+6_current_position_alignment_score_<horizon>
+6_position_gap_score_<horizon>
+6_position_gap_magnitude_score_<horizon>
+6_expected_position_utility_score_<horizon>
+6_cost_to_adjust_position_score_<horizon>
+6_risk_budget_fit_score_<horizon>
+6_position_state_stability_score_<horizon>
+6_projection_confidence_score_<horizon>
+```
+
+Layer 6 may also expose handoff summary fields for Layer 7:
+
+```text
+6_dominant_projection_horizon
+6_horizon_conflict_state
+6_resolved_target_exposure_score
+6_resolved_position_gap_score
+6_projection_resolution_confidence_score
+6_horizon_resolution_reason_codes
+```
+
+`6_target_exposure_score_<horizon>` is abstract normalized risk exposure, not shares/contracts/order quantity. `6_position_gap_score_<horizon>` is target exposure minus effective current exposure, where effective current exposure includes pending exposure adjusted by fill probability. It is not an execution instruction.
+
+Layer 6 is position projection only: not buy/sell/hold, not open/close/reverse, not instrument selection, not option-chain reading, not strike/DTE/Greeks, not execution, and not final action.
+
 ## Label boundary
 
 Layer 3 labels/outcomes may include:
@@ -372,6 +447,6 @@ target_context_state
 + event_context_vector
   -> AlphaConfidenceModel
   -> alpha_confidence_vector
-  -> TradingProjectionModel
-  -> trading_signal_vector
+  -> PositionProjectionModel
+  -> position_projection_vector
 ```
