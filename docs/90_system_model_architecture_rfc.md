@@ -41,7 +41,7 @@ This separation is mandatory:
 | 2 | `SectorContextModel` | `sector_context_model` | `sector_context_state` | Direction-neutral sector/industry tradability context under market context. |
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
 | 4 | `EventOverlayModel` | `event_overlay_model` | `event_context_vector` | Point-in-time event context, event risk, event direction bias, and event-quality evidence before alpha confidence. |
-| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Target context plus event context to long/short direction confidence, expected value, risk, and uncertainty. |
+| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Reviewed state stack plus event correction to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
 | 6 | `TradingProjectionModel` | `trading_projection_model` | `trading_signal_vector` | Confidence plus position/cost/risk context to offline trading intent / target projection. |
 | 7 | `OptionExpression / Final Action` | `option_expression_model` / final-action boundary | `expression_vector` / `final_action` | Expression selection and final offline action handoff; broker mutation remains outside `trading-model`. |
 
@@ -284,7 +284,7 @@ docs/05_layer_04_event_overlay.md
 
 ## Layer 5: AlphaConfidenceModel
 
-`AlphaConfidenceModel` consumes `target_context_state` plus `event_context_vector` and estimates `alpha_confidence_vector`: long/short direction confidence in `[-1, 1]`, direction strength, expected return/value, downside/tail/path risk, uncertainty, context support, event adjustment, and calibration quality. It is the first downstream layer allowed to convert direction-neutral target context and event context into directional alpha confidence. It does not project target exposure, choose expression/option contracts, size positions, or place orders.
+`AlphaConfidenceModel` consumes the reviewed Layer 1/2/3 state stack and uses `event_context_vector` as a correction layer to estimate the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/unadjusted alpha from Layer 1/2/3 is retained as diagnostics only; the adjusted vector is the default Layer 6-facing output. It does not project target exposure, choose expression/option contracts, size positions, or place orders.
 
 Contract owner:
 

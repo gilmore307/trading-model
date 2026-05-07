@@ -93,8 +93,8 @@ Layer 5 `alpha_confidence_vector` values must keep these axes separate:
 ```text
 target direction evidence != alpha confidence
 event direction bias != alpha confidence
-confidence != expected value
-expected value != target exposure
+confidence != expected residual return
+expected residual return != target exposure
 risk != no-trade instruction
 alpha confidence != option expression
 alpha confidence != final action
@@ -102,16 +102,16 @@ alpha confidence != final action
 
 Accepted Layer 5 scalar alpha-confidence score values use the `5_` prefix and `<horizon>` suffix for horizon-aware families. Action/routing fields, position sizing, account-risk allocations, option-contract choices, and final verdicts are not `state_vector_value` rows for Layer 5.
 
-Core alpha-confidence families:
+Core final adjusted alpha-confidence families:
 
-- `5_alpha_direction_confidence_score_<horizon>` — `[-1, 1]`, calibrated long/short alpha confidence; not a buy/sell/hold action.
-- `5_alpha_direction_strength_score_<horizon>` — `[0, 1]`, absolute confidence strength regardless of direction sign.
-- `5_alpha_expected_return_score_<horizon>` — signed normalized forward-return expectation before trading projection.
-- `5_alpha_expected_value_score_<horizon>` — signed normalized risk/uncertainty-adjusted alpha value before account-specific costs, expression, and sizing.
-- `5_alpha_downside_risk_score_<horizon>` — `[0, 1]`, high-is-bad adverse path/loss risk.
-- `5_alpha_tail_risk_score_<horizon>` — `[0, 1]`, high-is-bad extreme adverse outcome risk.
-- `5_alpha_path_stability_score_<horizon>` — `[0, 1]`, high-is-good expected path smoothness/tradability.
-- `5_alpha_uncertainty_score_<horizon>` — `[0, 1]`, high-is-bad confidence unreliability.
-- `5_alpha_context_support_score_<horizon>` — `[0, 1]`, high-is-good market/sector/target/event support coherence.
-- `5_alpha_event_adjustment_score_<horizon>` — `[-1, 1]`, event-driven positive/negative confidence adjustment relative to no-event baseline.
-- `5_alpha_calibration_quality_score_<horizon>` — `[0, 1]`, high-is-good reliability/calibration quality for this context/horizon.
+- `5_alpha_direction_score_<horizon>` — `[-1, 1]`, signed long/short alpha direction; not a buy/sell/hold action.
+- `5_alpha_strength_score_<horizon>` — `[0, 1]`, absolute alpha strength regardless of direction sign.
+- `5_expected_return_score_<horizon>` — `[-1, 1]`, standardized residual expected return after market/sector baseline adjustment.
+- `5_alpha_confidence_score_<horizon>` — `[0, 1]`, model confidence in the alpha judgment.
+- `5_signal_reliability_score_<horizon>` — `[0, 1]`, historical out-of-sample reliability for similar signals.
+- `5_path_quality_score_<horizon>` — `[0, 1]`, high-is-good expected path smoothness/tradability.
+- `5_reversal_risk_score_<horizon>` — `[0, 1]`, high-is-bad risk that the alpha direction is interrupted or reversed.
+- `5_drawdown_risk_score_<horizon>` — `[0, 1]`, high-is-bad adverse excursion / MAE / drawdown risk.
+- `5_alpha_tradability_score_<horizon>` — `[0, 1]`, alpha-level suitability for Layer 6 trading projection; not a trading signal.
+
+Base/unadjusted `5_base_*` fields are diagnostics for Layer 1/2/3-only attribution and are not registered as core Layer 6-facing `state_vector_value` rows.

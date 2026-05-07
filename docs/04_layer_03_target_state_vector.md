@@ -12,7 +12,7 @@ Layer 3 is target state-vector construction. Earlier action/variant Layer 3 work
 
 Layer 3 should find the relationship between **target board/tape state** and future trading outcomes. It should not begin by choosing a downstream action variant.
 
-Layer 3 builds a point-in-time, direction-neutral `target_context_state` that later layers may use for event context, direction confidence, trading projection, and expression/final-action handoff. Layer 3 does not output position size or final action.
+Layer 3 builds a point-in-time, direction-neutral `target_context_state` that later layers may use for event context, alpha confidence, trading projection, and expression/final-action handoff. Layer 3 does not output position size or final action.
 
 ## Boundary reset
 

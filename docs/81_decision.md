@@ -26,7 +26,7 @@ Status: Accepted; revised by V2.2 on 2026-05-05
 | 2 | `SectorContextModel` | `sector_context_model` | Market-context-conditioned sector/industry tradability context. |
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target context for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
 | 4 | `EventOverlayModel` | `event_overlay_model` | Point-in-time `event_context_vector` before alpha confidence. |
-| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Target context plus event context to long/short direction confidence, expected value, risk, and uncertainty. |
+| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack plus event correction to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
 | 6 | `TradingProjectionModel` | `trading_projection_model` | Confidence plus position/cost/risk context to offline trading intent / target projection. |
 | 7 | `OptionExpression / Final Action` | `option_expression_model` / final-action boundary | Expression selection and final offline action handoff. |
 
@@ -428,27 +428,34 @@ Layer 4 consumes point-in-time event evidence such as `source_04_event_overlay`,
 
 Layer 4 must not emit alpha confidence, buy/sell/hold, position size, option contract, strike, DTE, delta, final action, or execution instruction. Those remain downstream responsibilities.
 
-## D021 - AlphaConfidenceModel is Layer 5 confidence and EV boundary
+## D021 - AlphaConfidenceModel is Layer 5 adjusted alpha-confidence boundary
 
 Date: 2026-05-07
 Status: Accepted
 
 Layer 5 is `AlphaConfidenceModel` with canonical model id `alpha_confidence_model` and conceptual output `alpha_confidence_vector`.
 
-Layer 5 consumes `target_context_state` and `event_context_vector` and is the first layer allowed to convert the accepted direction-neutral state/context stack into calibrated long/short alpha confidence. It owns confidence, expected return/value, risk, uncertainty, event adjustment, context support, and calibration quality.
+Layer 5 consumes the reviewed Layer 1/2/3 state stack and uses `event_context_vector` as a correction layer. It is the first layer allowed to convert accepted point-in-time state/context evidence into horizon-aware alpha judgment. It owns alpha direction, alpha strength, expected residual return, alpha confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability.
+
+Layer 5 keeps two output tiers separate:
+
+- base/unadjusted alpha diagnostics from Layer 1/2/3 only, for research, audit, and event-adjustment attribution;
+- final adjusted `alpha_confidence_vector`, which is the only default Layer 6-facing Layer 5 output.
 
 Layer 5 must keep these boundaries explicit:
 
 ```text
 target direction evidence != alpha confidence
 event direction bias != alpha confidence
-confidence != expected value
-expected value != target exposure
+confidence != expected residual return
+expected residual return != target exposure
 risk != no-trade instruction
+base alpha != final adjusted alpha
+alpha tradability != trading signal
 alpha confidence != option expression
 alpha confidence != final action
 ```
 
 Layer 5 must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns offline trading projection and target exposure. Layer 7 owns expression/final-action boundaries.
 
-Layer 5 V1 uses the synchronized `5min`, `15min`, `60min`, and `390min` horizons for accepted alpha-confidence score families. Future changes to horizon grids require evaluation evidence and registry review.
+Layer 5 V1 uses the synchronized `5min`, `15min`, `60min`, and `390min` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.

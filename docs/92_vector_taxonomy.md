@@ -283,36 +283,41 @@ trading_model.model_05_alpha_confidence
 Primary model inputs:
 
 ```text
-target_context_state
+market_context_state
+sector_context_state
+target_context_state / target_state_vector
 event_context_vector
+point-in-time quality/calibration evidence
 ```
 
-The Layer 5 alpha-confidence vector is the calibrated directional opportunity layer after target state and event context:
+The Layer 5 alpha-confidence vector is the calibrated directional opportunity layer after target state and event correction:
 
 ```text
-target_context_state
+Layer 1/2/3 state stack
+  -> base_alpha_vector                 # diagnostic / unadjusted
+
+base_alpha_vector
 + event_context_vector
++ quality/calibration/path-risk controls
   -> AlphaConfidenceModel
-  -> alpha_confidence_vector
+  -> alpha_confidence_vector           # final adjusted output
 ```
 
-Accepted V1 score-family horizons are `5min`, `15min`, `60min`, and `390min`. V1 separates confidence, expected return/value, risk, uncertainty, context support, event adjustment, and calibration quality:
+Accepted V1 score-family horizons are `5min`, `15min`, `60min`, and `390min`. V1 exposes exactly 9 final adjusted score families per horizon:
 
 ```text
-5_alpha_direction_confidence_score_<horizon>
-5_alpha_direction_strength_score_<horizon>
-5_alpha_expected_return_score_<horizon>
-5_alpha_expected_value_score_<horizon>
-5_alpha_downside_risk_score_<horizon>
-5_alpha_tail_risk_score_<horizon>
-5_alpha_path_stability_score_<horizon>
-5_alpha_uncertainty_score_<horizon>
-5_alpha_context_support_score_<horizon>
-5_alpha_event_adjustment_score_<horizon>
-5_alpha_calibration_quality_score_<horizon>
+5_alpha_direction_score_<horizon>
+5_alpha_strength_score_<horizon>
+5_expected_return_score_<horizon>
+5_alpha_confidence_score_<horizon>
+5_signal_reliability_score_<horizon>
+5_path_quality_score_<horizon>
+5_reversal_risk_score_<horizon>
+5_drawdown_risk_score_<horizon>
+5_alpha_tradability_score_<horizon>
 ```
 
-It is alpha confidence only. It is not target exposure, not position sizing, not option expression, not execution, and not final action.
+Base/unadjusted `5_base_*` values are diagnostics for audit/research/event attribution, not the default Layer 6-facing contract. The adjusted vector is alpha confidence only: not target exposure, not position sizing, not option expression, not execution, and not final action.
 
 ## Label boundary
 

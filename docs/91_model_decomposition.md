@@ -375,7 +375,7 @@ Contract owner:
 docs/04_layer_03_target_state_vector.md
 ```
 
-Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence prepared by Layer 3 preprocessing. The primary `target_context_state` output consists of four inspectable blocks: `market_state_features`, `sector_state_features`, `target_state_features`, and `cross_state_features`. Embedding/cluster outputs may be derived representations, but they must not replace the inspectable blocks. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, and row reliability must remain separate. It must not select strategy families, expand parameter variants, output alpha/direction confidence, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
+Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence prepared by Layer 3 preprocessing. The primary `target_context_state` output consists of four inspectable blocks: `market_state_features`, `sector_state_features`, `target_state_features`, and `cross_state_features`. Embedding/cluster outputs may be derived representations, but they must not replace the inspectable blocks. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, and row reliability must remain separate. It must not select strategy families, expand parameter variants, output alpha confidence, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
 
 ## Layer 4: EventOverlayModel
 
@@ -399,7 +399,7 @@ Contract owner:
 docs/06_layer_05_alpha_confidence.md
 ```
 
-Must convert `target_context_state` plus `event_context_vector` into `alpha_confidence_vector`: calibrated long/short direction confidence, direction strength, expected return/value, downside/tail/path risk, uncertainty, context support, event adjustment, and calibration quality. Direction confidence in `[-1, 1]` belongs here, not in Layer 3 or Layer 4. It must not project target exposure, select option contracts, size positions, emit final actions, or mutate broker/account state.
+Must convert reviewed Layer 1/2/3 state evidence plus `event_context_vector` correction into the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/unadjusted alpha from Layer 1/2/3 is retained as diagnostics only; the adjusted vector is the default Layer 6-facing output. Directional alpha belongs here, not in Layer 3 or Layer 4. It must not project target exposure, select option contracts, size positions, emit final actions, or mutate broker/account state.
 
 ## Layer 6: TradingProjectionModel
 

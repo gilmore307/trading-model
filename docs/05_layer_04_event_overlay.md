@@ -472,7 +472,7 @@ event risk != trade action
 Layer 4 must not:
 
 - emit `buy`, `sell`, or `hold`;
-- emit alpha confidence or expected value;
+- emit alpha confidence, expected residual return, or Layer 5 final adjusted alpha values;
 - emit position size or final target exposure;
 - choose option contract, strike, DTE, delta, or expression;
 - mutate broker/account state;
