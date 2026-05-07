@@ -391,9 +391,15 @@ Must convert point-in-time event evidence into `event_context_vector` before alp
 
 ## Layer 5: AlphaConfidenceModel
 
-Status: decomposition pending.
+Status: accepted design route; deterministic model implementation pending.
 
-Must convert `target_context_state` plus `event_context_vector` into long/short direction confidence, expected value, risk, and uncertainty. Direction confidence in `[-1, 1]` belongs here, not in Layer 3 or Layer 4.
+Contract owner:
+
+```text
+docs/06_layer_05_alpha_confidence.md
+```
+
+Must convert `target_context_state` plus `event_context_vector` into `alpha_confidence_vector`: calibrated long/short direction confidence, direction strength, expected return/value, downside/tail/path risk, uncertainty, context support, event adjustment, and calibration quality. Direction confidence in `[-1, 1]` belongs here, not in Layer 3 or Layer 4. It must not project target exposure, select option contracts, size positions, emit final actions, or mutate broker/account state.
 
 ## Layer 6: TradingProjectionModel
 

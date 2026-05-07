@@ -2,14 +2,14 @@
 
 ## Active Tasks
 
-- None for the Layer 1-4 model-design documentation/registry pass.
+- Continue Layer 5 `AlphaConfidenceModel` after the accepted design route: define deterministic label/evaluation scaffolding and first confidence-calibration evidence path.
 
-Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence paths, docs, and registry score naming are accepted for the current model-design phase. Layer 4 EventOverlayModel now has an accepted V1 event-context vector contract route; deterministic implementation remains pending. Real-sample promotion evidence remains a later production-readiness gap, not an active blocker for closing the first three layer designs.
+Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence paths, docs, and registry score naming are accepted for the current model-design phase. Layer 4 EventOverlayModel and Layer 5 AlphaConfidenceModel now have accepted V1 vector contract routes; deterministic implementation remains pending. Real-sample promotion evidence remains a later production-readiness gap, not an active blocker for closing the accepted layer designs.
 
 ## Queued Tasks
 
-- Complete nine-part decompositions for Layers 5-7 after the Layer 4 event route.
-- Define first label horizons and confidence/EV/risk defaults for Layer 5 `AlphaConfidenceModel`.
+- Complete nine-part decompositions for Layers 6-7 after the Layer 5 confidence route.
+- Implement first label horizons and confidence/EV/risk evaluation scaffold for Layer 5 `AlphaConfidenceModel`.
 - Define first trading-action and target-exposure projection defaults for Layer 6 `TradingProjectionModel`.
 - Define how Layer 7 expression/final-action work uses market/event context for DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade policy.
 - Implement Layer 4 deterministic EventEncoder / EventContextMatcher / EventOverlayScorer scaffold after the accepted event-context vector contract.
@@ -50,6 +50,7 @@ These are promotion/production-readiness gaps. They do not reopen the accepted L
 - `anonymous_target_feature_vector` is the Layer 3 model-facing input vector; `target_context_state` is the Layer 3 conceptual model output.
 - Model-facing target context/state vectors must exclude ticker/company identity.
 - Layer 4 is now `EventOverlayModel`, consuming point-in-time event evidence from `source_04_event_overlay`, event detail artifacts, upstream `market_context_state` / `sector_context_state` / `target_context_state` references, and scope/sensitivity metadata to output `event_context_vector`.
+- Layer 5 is now `AlphaConfidenceModel`, consuming `target_context_state` plus `event_context_vector` to output `alpha_confidence_vector` with calibrated direction confidence, expected return/value, risk, uncertainty, event adjustment, context support, and calibration quality.
 - `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only, now inside the Layer 7 expression/final-action boundary.
 - `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-state evidence-role contract.
 - Promotion decisions can now be durably persisted through `review_market_regime_promotion.py --write-decision`; accepted approval decisions insert `model_promotion_activation` and activate the reviewed config via `model_config_version.config_status = active`, while deferred/rejected decisions leave the active config unchanged.

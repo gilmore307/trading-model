@@ -284,7 +284,13 @@ docs/05_layer_04_event_overlay.md
 
 ## Layer 5: AlphaConfidenceModel
 
-`AlphaConfidenceModel` consumes `target_context_state` plus `event_context_vector` and estimates long/short direction confidence in `[-1, 1]`, expected value, risk, and uncertainty. It is the first downstream layer allowed to convert direction-neutral target context into directional alpha confidence. It does not directly place orders.
+`AlphaConfidenceModel` consumes `target_context_state` plus `event_context_vector` and estimates `alpha_confidence_vector`: long/short direction confidence in `[-1, 1]`, direction strength, expected return/value, downside/tail/path risk, uncertainty, context support, event adjustment, and calibration quality. It is the first downstream layer allowed to convert direction-neutral target context and event context into directional alpha confidence. It does not project target exposure, choose expression/option contracts, size positions, or place orders.
+
+Contract owner:
+
+```text
+docs/06_layer_05_alpha_confidence.md
+```
 
 ## Layer 6: TradingProjectionModel
 

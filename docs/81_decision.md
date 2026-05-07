@@ -427,3 +427,28 @@ market_context_state
 Layer 4 consumes point-in-time event evidence such as `source_04_event_overlay`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, source priority, scope, references, and point-in-time availability.
 
 Layer 4 must not emit alpha confidence, buy/sell/hold, position size, option contract, strike, DTE, delta, final action, or execution instruction. Those remain downstream responsibilities.
+
+## D021 - AlphaConfidenceModel is Layer 5 confidence and EV boundary
+
+Date: 2026-05-07
+Status: Accepted
+
+Layer 5 is `AlphaConfidenceModel` with canonical model id `alpha_confidence_model` and conceptual output `alpha_confidence_vector`.
+
+Layer 5 consumes `target_context_state` and `event_context_vector` and is the first layer allowed to convert the accepted direction-neutral state/context stack into calibrated long/short alpha confidence. It owns confidence, expected return/value, risk, uncertainty, event adjustment, context support, and calibration quality.
+
+Layer 5 must keep these boundaries explicit:
+
+```text
+target direction evidence != alpha confidence
+event direction bias != alpha confidence
+confidence != expected value
+expected value != target exposure
+risk != no-trade instruction
+alpha confidence != option expression
+alpha confidence != final action
+```
+
+Layer 5 must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns offline trading projection and target exposure. Layer 7 owns expression/final-action boundaries.
+
+Layer 5 V1 uses the synchronized `5min`, `15min`, `60min`, and `390min` horizons for accepted alpha-confidence score families. Future changes to horizon grids require evaluation evidence and registry review.

@@ -260,6 +260,60 @@ Accepted V1 score-family horizons are `5min`, `15min`, `60min`, and `390min`. V1
 
 It is event context only. It is not alpha confidence, not a trading signal, not position sizing, not expression selection, and not final action.
 
+## Layer 5 alpha-confidence vocabulary
+
+Layer 5 model:
+
+```text
+AlphaConfidenceModel
+```
+
+Conceptual output:
+
+```text
+alpha_confidence_vector
+```
+
+Future physical promoted artifact:
+
+```text
+trading_model.model_05_alpha_confidence
+```
+
+Primary model inputs:
+
+```text
+target_context_state
+event_context_vector
+```
+
+The Layer 5 alpha-confidence vector is the calibrated directional opportunity layer after target state and event context:
+
+```text
+target_context_state
++ event_context_vector
+  -> AlphaConfidenceModel
+  -> alpha_confidence_vector
+```
+
+Accepted V1 score-family horizons are `5min`, `15min`, `60min`, and `390min`. V1 separates confidence, expected return/value, risk, uncertainty, context support, event adjustment, and calibration quality:
+
+```text
+5_alpha_direction_confidence_score_<horizon>
+5_alpha_direction_strength_score_<horizon>
+5_alpha_expected_return_score_<horizon>
+5_alpha_expected_value_score_<horizon>
+5_alpha_downside_risk_score_<horizon>
+5_alpha_tail_risk_score_<horizon>
+5_alpha_path_stability_score_<horizon>
+5_alpha_uncertainty_score_<horizon>
+5_alpha_context_support_score_<horizon>
+5_alpha_event_adjustment_score_<horizon>
+5_alpha_calibration_quality_score_<horizon>
+```
+
+It is alpha confidence only. It is not target exposure, not position sizing, not option expression, not execution, and not final action.
+
 ## Label boundary
 
 Layer 3 labels/outcomes may include:
