@@ -1,6 +1,6 @@
 # Layer 04 - EventOverlayModel
 
-Status: accepted Layer 4 design route; deterministic model implementation pending.
+Status: accepted Layer 4 design route; deterministic V1 scaffold implemented in `src/models/model_04_event_overlay/`.
 
 ## Purpose
 
@@ -489,8 +489,8 @@ Layer 4 must not:
 
 ## V1 implementation route
 
-1. **V1.0 event registry and time replay**: preserve `event_id`, `canonical_event_id`, `dedup_status`, `source_priority`, `coverage_reason`, `covered_by_event_id`, category, scope, `available_time`, reference, dedup/revision policy, and point-in-time replay.
-2. **V1.1 EventEncoder**: emit presence, timing proximity, intensity, direction bias, uncertainty, and quality.
-3. **V1.2 context matching**: add target relevance, context alignment, gap/reversal/liquidity/contagion risk.
-4. **V1.3 impact scope vector**: add market/sector/industry/theme/peer/symbol/microstructure impact, scope confidence, escalation risk, and dominant impact scope.
-5. **V1.4 evaluation**: compare against no-event, count, proximity, abnormal-activity, native-scope, and impact-scope baselines with walk-forward leakage checks.
+1. **V1.0 event registry and time replay**: preserve `event_id`, `canonical_event_id`, `dedup_status`, `source_priority`, `coverage_reason`, `covered_by_event_id`, category, scope, `available_time`, reference, dedup/revision policy, and point-in-time replay. **Done for local fixture rows.**
+2. **V1.1 EventEncoder**: emit presence, timing proximity, intensity, direction bias, uncertainty, and quality. **Done in deterministic scaffold.**
+3. **V1.2 context matching**: add target relevance, context alignment, gap/reversal/liquidity/contagion risk. **Done in deterministic scaffold.**
+4. **V1.3 impact scope vector**: add market/sector/industry/theme/peer/symbol/microstructure impact, scope confidence, escalation risk, and dominant impact scope. **Done in deterministic scaffold.**
+5. **V1.4 evaluation**: compare against no-event, count, proximity, abnormal-activity, native-scope, and impact-scope baselines with walk-forward leakage checks. **Offline label/leakage helpers exist; baseline proof remains promotion work.**

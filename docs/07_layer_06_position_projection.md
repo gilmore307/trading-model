@@ -1,6 +1,6 @@
 # Layer 06 - PositionProjectionModel
 
-Status: accepted Layer 6 design route; deterministic model implementation pending.
+Status: accepted Layer 6 design route; deterministic V1 scaffold implemented in `src/models/model_06_position_projection/`.
 
 ## Purpose
 
@@ -521,8 +521,8 @@ Layer 6 invariants:
 
 ## V1 implementation route
 
-1. **V1.0 contract and boundary**: document `PositionProjectionModel`, `position_projection_vector`, inputs, outputs, handoff summary, diagnostics, and invariants.
-2. **V1.1 deterministic scaffold**: implement a transparent alpha-to-position projection before training a broad model.
-3. **V1.2 evaluation labels**: add cost-aware position utility labels, candidate exposure utility curves, current-vs-flat-vs-target utility, risk-budget breach labels, and turnover penalty labels.
-4. **V1.3 learned utility model**: train `Q(position_context, candidate_exposure) -> net utility` with chronological splits, purge/embargo, and no-leakage checks.
-5. **V1.4 horizon resolver**: implement resolved projection summary and prove it beats simple horizon averaging, fixed-horizon, and highest-confidence-horizon baselines.
+1. **V1.0 contract and boundary**: document `PositionProjectionModel`, `position_projection_vector`, inputs, outputs, handoff summary, diagnostics, and invariants. **Done.**
+2. **V1.1 deterministic scaffold**: implement a transparent alpha-to-position projection before training a broad model. **Done for local fixture rows.**
+3. **V1.2 evaluation labels**: add cost-aware position utility labels, candidate exposure utility curves, current-vs-flat-vs-target utility, risk-budget breach labels, and turnover penalty labels. **Offline label/leakage helpers exist.**
+4. **V1.3 learned utility model**: train `Q(position_context, candidate_exposure) -> net utility` with chronological splits, purge/embargo, and no-leakage checks. **Pending later promotion work.**
+5. **V1.4 horizon resolver**: implement resolved projection summary and prove it beats simple horizon averaging, fixed-horizon, and highest-confidence-horizon baselines. **Deterministic resolver exists; baseline proof remains later promotion work.**

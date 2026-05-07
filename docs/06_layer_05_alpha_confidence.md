@@ -1,6 +1,6 @@
 # Layer 05 - AlphaConfidenceModel
 
-Status: accepted Layer 5 design route; deterministic model implementation pending.
+Status: accepted Layer 5 design route; deterministic V1 scaffold implemented in `src/models/model_05_alpha_confidence/`.
 
 ## Purpose
 
@@ -409,8 +409,8 @@ Layer 5 must not:
 
 ## V1 implementation route
 
-1. **V1.0 base alpha from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics.
-2. **V1.1 final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability.
-3. **V1.2 EventAdjustmentLayer**: connect `event_context_vector` only as a correction layer with diagnostics and constrained override mode.
-4. **V1.3 baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence.
-5. **V1.4 calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path.
+1. **V1.0 base alpha from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics. **Done in deterministic scaffold for fixture rows.**
+2. **V1.1 final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. **Done in deterministic scaffold.**
+3. **V1.2 EventAdjustmentLayer**: connect `event_context_vector` only as a correction layer with diagnostics and constrained override mode. **Done in deterministic scaffold.**
+4. **V1.3 baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence. **Done in deterministic scaffold.**
+5. **V1.4 calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path. **Offline label/leakage helpers exist; calibrated promotion evidence remains later work.**
