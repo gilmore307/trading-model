@@ -46,6 +46,7 @@ market_context_state_ref
 sector_context_state_ref
 target_context_state_ref
 source_04_event_overlay rows visible by available_time
+canonical-event and dedup metadata visible by available_time
 event_detail_artifact references visible by available_time
 scope_mapping_metadata visible by available_time
 sensitivity_metadata visible by available_time
@@ -63,6 +64,11 @@ Current SQL overview fields:
 
 ```text
 event_id
+canonical_event_id
+dedup_status
+source_priority
+coverage_reason
+covered_by_event_id
 event_time
 available_time
 information_role_type
@@ -77,9 +83,11 @@ reference_type
 reference
 ```
 
-The table is intentionally light. It indexes visible events and points to details; it does not store full news text, SEC filings, detector payloads, model scores, labels, or trade recommendations.
+The table is intentionally light. It indexes visible event/evidence rows, records canonical-event deduplication status, and points to details; it does not store full news text, SEC filings, browser/agent analysis transcripts, detector payloads, model scores, labels, or trade recommendations.
 
-Future extensions such as `event_native_scope_type`, `declared_scope_type`, `industry_type`, `theme_tags`, revision ids, and source update timestamps require separate migration and registry review before they become active schema.
+Deduplication is part of the event-quality contract. Official SEC/exchange/company/regulatory disclosures should become canonical events when they cover the same underlying fact pattern as derivative news coverage. News rows that merely summarize the official event should use `dedup_status=covered_by_canonical_event`, `canonical_event_id`/`covered_by_event_id` pointing to the official row, and should not contribute another independent event-presence count or alpha factor. Such rows may still support attention, propagation, confirmation/conflict, or quality context. News rows may become `new_information` only when browser/agent analysis of the provided article/filing links finds genuinely new point-in-time information not already represented by the canonical event.
+
+Future extensions such as `event_native_scope_type`, `declared_scope_type`, `industry_type`, `theme_tags`, revision ids, source update timestamps, and structured analysis-report links require separate migration and registry review before they become active schema.
 
 ### Input B - event detail artifacts
 
@@ -481,7 +489,7 @@ Layer 4 must not:
 
 ## V1 implementation route
 
-1. **V1.0 event registry and time replay**: preserve `event_id`, category, scope, `available_time`, reference, dedup/revision policy, and point-in-time replay.
+1. **V1.0 event registry and time replay**: preserve `event_id`, `canonical_event_id`, `dedup_status`, `source_priority`, `coverage_reason`, `covered_by_event_id`, category, scope, `available_time`, reference, dedup/revision policy, and point-in-time replay.
 2. **V1.1 EventEncoder**: emit presence, timing proximity, intensity, direction bias, uncertainty, and quality.
 3. **V1.2 context matching**: add target relevance, context alignment, gap/reversal/liquidity/contagion risk.
 4. **V1.3 impact scope vector**: add market/sector/industry/theme/peer/symbol/microstructure impact, scope confidence, escalation risk, and dominant impact scope.

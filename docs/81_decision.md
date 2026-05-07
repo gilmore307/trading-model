@@ -424,7 +424,7 @@ market_context_state
   -> expression_vector / final_action
 ```
 
-Layer 4 consumes point-in-time event evidence such as `source_04_event_overlay`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, source priority, scope, references, and point-in-time availability.
+Layer 4 consumes point-in-time event evidence such as `source_04_event_overlay`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
 
 Layer 4 must not emit alpha confidence, buy/sell/hold, position size, option contract, strike, DTE, delta, final action, or execution instruction. Those remain downstream responsibilities.
 
