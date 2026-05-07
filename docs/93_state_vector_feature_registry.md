@@ -181,3 +181,35 @@ Core Layer 7 score families:
 - `7_underlying_action_confidence_score_<horizon>` — `[0, 1]`, calibrated confidence in the offline direct-underlying action thesis.
 
 Model-local plan/handoff fields include `7_resolved_underlying_action_type`, `7_resolved_action_side`, `7_resolved_dominant_horizon`, `7_resolved_trade_eligibility_score`, `7_resolved_trade_intensity_score`, `7_resolved_entry_quality_score`, `7_resolved_action_confidence_score`, and `7_resolved_reason_codes`. They summarize the plan and do not send orders.
+
+## Layer 8 option-expression score semantics
+
+Layer 8 `option_expression_plan` and `expression_vector` values must keep these axes separate:
+
+```text
+underlying action plan != option expression
+option expression != broker order
+contract_ref != broker order id
+selected_contract != send order
+contract constraints != route / time-in-force
+premium risk plan != account mutation
+expression confidence != final approval
+Layer 8 offline plan != live execution
+```
+
+Accepted Layer 8 score families use the `8_` prefix and `<horizon>` suffix for horizon-aware scalar scores. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
+
+Core Layer 8 score families:
+
+- `8_option_expression_eligibility_score_<horizon>` — `[0, 1]`, high-is-good option-expression admissibility.
+- `8_option_expression_direction_score_<horizon>` — `[-1, 1]`, signed expression direction; positive call-side/bullish, negative put-side/bearish, near zero no-option expression.
+- `8_option_contract_fit_score_<horizon>` — `[0, 1]`, high-is-good selected contract fit.
+- `8_option_liquidity_fit_score_<horizon>` — `[0, 1]`, high-is-good option spread/volume/open-interest fit.
+- `8_option_iv_fit_score_<horizon>` — `[0, 1]`, high-is-good IV/IV-rank fit.
+- `8_option_greek_fit_score_<horizon>` — `[0, 1]`, high-is-good delta/Greek fit.
+- `8_option_reward_risk_score_<horizon>` — `[0, 1]`, high-is-good premium reward/risk quality.
+- `8_option_theta_risk_score_<horizon>` — `[0, 1]`, high-is-bad theta-decay pressure.
+- `8_option_fill_quality_score_<horizon>` — `[0, 1]`, high-is-good conservative fill-quality estimate.
+- `8_option_expression_confidence_score_<horizon>` — `[0, 1]`, calibrated confidence in the offline option-expression plan.
+
+Model-local resolved fields include `8_resolved_expression_type`, `8_resolved_option_right`, `8_resolved_dominant_horizon`, `8_resolved_contract_ref`, `8_resolved_expression_confidence_score`, and `8_resolved_reason_codes`. They summarize the selected expression and do not send orders.

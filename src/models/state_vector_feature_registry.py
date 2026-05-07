@@ -94,6 +94,16 @@ STATE_VECTOR_FEATURE_SEMANTICS: Final[tuple[FeatureSemantics, ...]] = (
     FeatureSemantics("7_underlying_liquidity_fit_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "liquidity", "good", "model_facing", "Direct-underlying liquidity/spread fit for the planned adjustment."),
     FeatureSemantics("7_underlying_holding_time_fit_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "quality", "good", "model_facing", "Compatibility between planned holding time and alpha/projection/path evidence."),
     FeatureSemantics("7_underlying_action_confidence_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "quality", "good", "model_facing", "Calibrated confidence in the complete offline direct-underlying action thesis."),
+    FeatureSemantics("8_option_expression_eligibility_score_<horizon>", "layer_08_option_expression", "float", "[0, 1]", "quality", "good", "model_facing", "Option-expression admissibility after Layer 7 thesis, policy, option-chain, liquidity, IV, and risk constraints; not order approval."),
+    FeatureSemantics("8_option_expression_direction_score_<horizon>", "layer_08_option_expression", "float", "[-1, 1]", "direction", "signed", "model_facing", "Signed option-expression direction; positive call-side/bullish, negative put-side/bearish, near zero no-option expression."),
+    FeatureSemantics("8_option_contract_fit_score_<horizon>", "layer_08_option_expression", "float", "[0, 1]", "quality", "good", "model_facing", "Overall fit of selected option contract candidate to Layer 7 path thesis and option-expression constraints."),
+    FeatureSemantics("8_option_liquidity_fit_score_<horizon>", "layer_08_option_expression", "float", "[0, 1]", "liquidity", "good", "model_facing", "Option bid/ask, volume, and open-interest fit; high is more liquid/fillable under conservative assumptions."),
+    FeatureSemantics("8_option_iv_fit_score_<horizon>", "layer_08_option_expression", "float", "[0, 1]", "quality", "good", "model_facing", "Implied-volatility and IV-rank fit for the selected expression; high means IV is acceptable for premium risk."),
+    FeatureSemantics("8_option_greek_fit_score_<horizon>", "layer_08_option_expression", "float", "[0, 1]", "quality", "good", "model_facing", "Delta/Greek fit for expressing the Layer 7 underlying path thesis without crossing into execution."),
+    FeatureSemantics("8_option_reward_risk_score_<horizon>", "layer_08_option_expression", "float", "[0, 1]", "quality", "good", "model_facing", "Premium-adjusted reward/risk quality for the offline option expression."),
+    FeatureSemantics("8_option_theta_risk_score_<horizon>", "layer_08_option_expression", "float", "[0, 1]", "risk", "bad", "model_facing", "Theta-decay pressure for the option expression; high is worse."),
+    FeatureSemantics("8_option_fill_quality_score_<horizon>", "layer_08_option_expression", "float", "[0, 1]", "quality", "good", "model_facing", "Conservative fill-quality estimate from spread/liquidity evidence; not a route or order type."),
+    FeatureSemantics("8_option_expression_confidence_score_<horizon>", "layer_08_option_expression", "float", "[0, 1]", "quality", "good", "model_facing", "Calibrated confidence in the offline option-expression plan; not final approval or execution authorization."),
 )
 
 

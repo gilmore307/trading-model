@@ -571,3 +571,40 @@ underlying action plan != live execution
 ```
 
 Layer 7 must not emit broker order fields, order type, route, time-in-force, send/cancel/replace flags, broker order ids, option strike/DTE/delta/Greeks, specific option contract refs, or broker/account mutations. Layer 8 owns option expression. `trading-execution` owns broker-order lifecycle.
+
+## D015 - Layer 8 OptionExpressionModel owns offline option expression only
+
+Accepted.
+
+Layer 8 is `OptionExpressionModel` (`option_expression_model`) and its implementation surface is `model_08_option_expression`.
+
+It consumes Layer 7 `underlying_action_plan` / `underlying_action_vector` handoff plus point-in-time option-chain context and outputs:
+
+```text
+option_expression_plan
+expression_vector
+```
+
+V1 expression types are:
+
+```text
+long_call
+long_put
+no_option_expression
+```
+
+V1 may select a point-in-time option contract reference and contract constraints for the expression. This is model output, not a broker order.
+
+Accepted invariants:
+
+```text
+option expression != broker order
+contract_ref != broker order id
+selected_contract != send order
+contract constraints != route / time-in-force
+premium risk plan != account mutation
+expression confidence != final approval
+Layer 8 offline plan != live execution
+```
+
+Layer 8 must not emit broker order type, route, time-in-force, send/cancel/replace flags, final order quantity, broker order ids, or account mutation fields. Multi-leg structures are deferred beyond V1. `trading-execution` remains the owner of live/paper broker mutation.

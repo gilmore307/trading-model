@@ -318,9 +318,15 @@ docs/08_layer_07_underlying_action.md
 
 ## Layer 8: OptionExpressionModel
 
-V1 option-expression work is deferred until after Layer 7. It should consume Layer 7 underlying price-path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, and market context.
+`OptionExpressionModel` consumes Layer 7 underlying price-path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, and market context to produce `option_expression_plan` and `expression_vector`.
 
-It should output option-expression choice, contract constraints, expected expression quality, and option action plan fields without placing orders. Multi-leg structures and live broker mutation remain deferred/out of scope.
+It owns long-call / long-put / no-option-expression selection, selected point-in-time contract references, contract constraints, premium-risk diagnostics, and expression-confidence scores. V1 is single-leg long calls/puts only. Multi-leg structures remain deferred.
+
+It does not emit broker order type, route, time-in-force, final order quantity, send/cancel/replace flags, broker order ids, or account mutation. Contract owner:
+
+```text
+docs/09_layer_08_option_expression.md
+```
 
 ## Unified Decision Record
 

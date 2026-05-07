@@ -20,6 +20,10 @@ class StateVectorFeatureRegistryTests(unittest.TestCase):
         self.assertEqual(by_field["7_underlying_adverse_risk_score_<horizon>"].high_value_meaning, "bad")
         self.assertEqual(by_field["7_underlying_trade_intensity_score_<horizon>"].score_class, "intensity")
         self.assertEqual(by_field["7_underlying_action_confidence_score_<horizon>"].feature_use, "model_facing")
+        self.assertEqual(by_field["8_option_expression_direction_score_<horizon>"].high_value_meaning, "signed")
+        self.assertEqual(by_field["8_option_theta_risk_score_<horizon>"].high_value_meaning, "bad")
+        self.assertEqual(by_field["8_option_liquidity_fit_score_<horizon>"].score_class, "liquidity")
+        self.assertEqual(by_field["8_option_expression_confidence_score_<horizon>"].feature_use, "model_facing")
 
     def test_layer_two_dispersion_and_crowding_are_split(self) -> None:
         by_field = registry.semantics_by_field()

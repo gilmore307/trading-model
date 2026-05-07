@@ -661,6 +661,8 @@ Layer 7 remains offline: no order type, no route, no time-in-force, no send/canc
 
 ## Layer 8: OptionExpressionModel
 
-Status: decomposition pending after Layer 7.
+Status: deterministic scaffold implemented for the current model-design phase.
 
-V1 option-expression work should use Layer 7 underlying path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, position-projection context, and market-context constraints. It should choose option expression and contract constraints without placing orders. Direct broker mutation remains outside `trading-model`.
+Layer 8 uses Layer 7 underlying path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, position-projection context, and market-context constraints. It outputs `option_expression_plan` / `expression_vector` and may choose long-call, long-put, or no-option expression plus a point-in-time selected contract reference and constraints.
+
+Layer 8 remains offline: no broker order type, no route, no time-in-force, no send/cancel/replace flag, no broker order id, no final order quantity, and no broker/account mutation. V1 does not construct multi-leg spreads.
