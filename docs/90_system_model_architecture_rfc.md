@@ -14,7 +14,8 @@ point-in-time data foundation
   -> EventOverlayModel
   -> AlphaConfidenceModel
   -> PositionProjectionModel
-  -> OptionExpression / Final Action boundary
+  -> UnderlyingActionModel
+  -> OptionExpressionModel
   -> unified decision record / downstream execution handoff
 ```
 
@@ -43,9 +44,10 @@ This separation is mandatory:
 | 4 | `EventOverlayModel` | `event_overlay_model` | `event_context_vector` | Point-in-time event context, event risk, event direction bias, and event-quality evidence before alpha confidence. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Reviewed state stack plus event correction to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
 | 6 | `PositionProjectionModel` | `position_projection_model` | `position_projection_vector` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
-| 7 | `OptionExpression / Final Action` | `option_expression_model` / final-action boundary | `expression_vector` / `final_action` | Expression selection and final offline action handoff; broker mutation remains outside `trading-model`. |
+| 7 | `UnderlyingActionModel` | `underlying_action_model` | `underlying_action_plan` / `underlying_action_vector` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and Layer 8 underlying-path handoff. |
+| 8 | `OptionExpressionModel` | `option_expression_model` | `option_expression_plan` / `expression_vector` | Option-expression selection from Layer 7 underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
 
-Do not treat Layer 7 as live execution. Broker mutation and live/paper order placement are outside `trading-model`.
+Do not treat Layer 7 or Layer 8 as live execution. Broker mutation and live/paper order placement are outside `trading-model`.
 
 ## Model Artifact Rule
 
@@ -302,13 +304,23 @@ It owns the mapping from alpha confidence to target holding state. It does not o
 docs/07_layer_06_position_projection.md
 ```
 
-## Layer 7: OptionExpression / Final Action Boundary
+## Layer 7: UnderlyingActionModel
 
-V1 expression work supports direct stock/ETF comparison plus long call and long put option expressions only.
+`UnderlyingActionModel` consumes `position_projection_vector`, alpha-confidence refs, current/pending direct-underlying exposure, quote/liquidity state, risk-budget context, and policy gates to produce `underlying_action_plan` and `underlying_action_vector`.
 
-It consumes option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, `position_projection_vector`, alpha-confidence refs, event context, and market context.
+It owns the direct stock/ETF planned action thesis: planned action type, planned exposure change, entry plan, target price/range, stop, thesis invalidation, time-stop, reward/risk, and side-neutral price-path assumptions for Layer 8. Its planned action types are offline plan values such as `open_long`, `increase_long`, `reduce_long`, `close_long`, `open_short`, `increase_short`, `reduce_short`, `cover_short`, `maintain`, and `no_trade`.
 
-It outputs expression choice, contract constraints, no-trade filters, expected expression quality, and final offline action handoff. Multi-leg structures and live broker mutation are deferred/out of scope.
+It does not emit broker order fields, order type, route, time-in-force, send/cancel/replace instructions, broker order ids, option strike/DTE/delta/Greeks, or account mutations. Contract owner:
+
+```text
+docs/08_layer_07_underlying_action.md
+```
+
+## Layer 8: OptionExpressionModel
+
+V1 option-expression work is deferred until after Layer 7. It should consume Layer 7 underlying price-path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, and market context.
+
+It should output option-expression choice, contract constraints, expected expression quality, and option action plan fields without placing orders. Multi-leg structures and live broker mutation remain deferred/out of scope.
 
 ## Unified Decision Record
 
@@ -324,9 +336,12 @@ target_context_state_ref
 event_context_vector_ref
 alpha_confidence_vector_ref
 position_projection_vector_ref
+underlying_action_plan_ref
+underlying_action_vector_ref
+option_expression_plan_ref
 expression_vector_ref
 audit/routing metadata
-final offline verdict
+offline execution handoff
 ```
 
 The exact shared record contract must be promoted through `trading-manager` before cross-repository dependence.

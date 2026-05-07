@@ -321,7 +321,8 @@ sector_context_state
   -> EventOverlayModel
   -> AlphaConfidenceModel
   -> PositionProjectionModel
-  -> OptionExpression / Final Action boundary
+  -> UnderlyingActionModel
+  -> OptionExpressionModel
 ```
 
 It may provide selected/prioritized sector basket handoff state and a separate `long_bias` / `short_bias` / `neutral` / `mixed` handoff bias, but stock-universe construction waits for the anonymous target candidate builder.
@@ -525,18 +526,141 @@ Controls:
 
 ### 9. Decision deployment
 
-Layer 6 output feeds Layer 7 expression/final-action work:
+Layer 6 output feeds Layer 7 direct-underlying action planning:
 
 ```text
 position_projection_vector
-  -> OptionExpression / Final Action boundary
-  -> expression_vector / final offline action handoff
+  -> UnderlyingActionModel
+  -> underlying_action_plan / underlying_action_vector
 ```
 
 It must not output buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, size orders, route orders, or mutate broker/account state.
 
-## Layer 7: OptionExpression / Final Action Boundary
+## Layer 7: UnderlyingActionModel
 
-Status: decomposition pending.
+Status: accepted design route; deterministic model implementation pending.
 
-V1 expression work is direct stock/ETF comparison plus long call / long put only. It must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, position-projection context, and market-context constraints. Final action remains an offline handoff; it does not place orders.
+### 1. Purpose
+
+Layer 7 maps current state, final adjusted alpha confidence, and Layer 6 target holding-state projection into a direct stock/ETF offline action thesis. It answers whether direct underlying expression is eligible, which planned underlying action type applies, how much exposure the offline plan should adjust, and what entry/target/stop/time thesis defines the trade idea.
+
+It outputs `underlying_action_plan` and `underlying_action_vector`; it does not output broker orders, order routing, live execution instructions, or option contracts.
+
+### 2. Inputs
+
+Primary inputs:
+
+```text
+alpha_confidence_vector
+position_projection_vector
+current_underlying_position_state
+pending_underlying_order_state
+underlying_quote_state
+underlying_liquidity_state
+underlying_borrow_state
+risk_budget_state
+policy_gate_state
+```
+
+Layer 7 must use effective current underlying exposure:
+
+```text
+effective_current_underlying_exposure
+= current_underlying_exposure
+  + pending_underlying_exposure * pending_fill_probability_estimate
+```
+
+### 3. Output contract
+
+The V1 score/vector output exposes these per-horizon score families:
+
+```text
+7_underlying_trade_eligibility_score_<horizon>
+7_underlying_action_direction_score_<horizon>
+7_underlying_trade_intensity_score_<horizon>
+7_underlying_entry_quality_score_<horizon>
+7_underlying_expected_return_score_<horizon>
+7_underlying_adverse_risk_score_<horizon>
+7_underlying_reward_risk_score_<horizon>
+7_underlying_liquidity_fit_score_<horizon>
+7_underlying_holding_time_fit_score_<horizon>
+7_underlying_action_confidence_score_<horizon>
+```
+
+Resolved plan fields include planned action type, action side, dominant horizon, trade eligibility, trade intensity, entry quality, action confidence, and reason codes.
+
+### 4. Planned action policy
+
+V1 planned action types are `open_long`, `increase_long`, `reduce_long`, `close_long`, `open_short`, `increase_short`, `reduce_short`, `cover_short`, `maintain`, `no_trade`, and `bearish_underlying_path_but_no_short_allowed`.
+
+`maintain` means an existing state remains aligned or adjustment is not worth the cost. `no_trade` means no new direct-underlying operation should be initiated. Opposite-exposure reversal should be represented with conservative reason codes such as `opposite_exposure_detected` and `close_then_reassess_candidate`, not automatic one-step reversal.
+
+### 5. Gate and sizing route
+
+Layer 7 splits hard gates from soft gates. Hard gates include halt, kill switch, risk-budget hard block, liquidity hard fail, trading restriction, direct-short borrow failure, event hard block, and missing required point-in-time state. Soft gates compress action intensity or change entry style.
+
+Planned exposure fields separate target state from current planned action:
+
+```text
+target_underlying_exposure_score
+current_underlying_exposure_score
+pending_adjusted_underlying_exposure_score
+effective_current_underlying_exposure_score
+underlying_exposure_gap_score
+planned_incremental_exposure_score
+planned_notional_usd
+planned_quantity
+```
+
+`planned_quantity` is a pre-execution suggestion, not final order size.
+
+### 6. Entry, price path, and risk plan
+
+Layer 7 emits side-neutral entry and risk fields:
+
+```text
+expected_entry_price
+worst_acceptable_entry_price
+do_not_chase_price
+entry_price_limit_direction
+expected_target_price
+target_price_low
+target_price_high
+expected_favorable_move_pct
+expected_adverse_move_pct
+partial_take_profit_price
+take_profit_price
+stop_loss_price
+thesis_invalidation_price
+time_stop_minutes
+reward_risk_ratio
+```
+
+Stop and take-profit prices are thesis fields, not broker stop/limit orders.
+
+### 7. Layer 8 handoff
+
+Layer 7 hands Layer 8 an underlying path thesis: direction, expected entry, target/range, stop, holding time, path quality, reversal risk, drawdown risk, favorable/adverse move, and entry assumption. It must not emit option symbol, right, strike, DTE, expiration, delta, Greeks, or specific contract refs.
+
+### 8. Evaluation
+
+Layer 7 labels evaluate plan quality, not raw direction accuracy: target-before-stop, stop-before-target, MFE/MAE, entry fill probability, entry-plan regret, action-type regret, no-trade opportunity cost, bad-trade avoidance, slippage/spread-adjusted return, and realized reward/risk.
+
+### 9. Decision deployment
+
+Layer 7 feeds Layer 8 and execution-side review:
+
+```text
+underlying_action_plan
+  -> OptionExpressionModel
+  -> option_expression_plan / expression_vector
+  -> trading-execution review and broker-order lifecycle
+```
+
+Layer 7 remains offline: no order type, no route, no time-in-force, no send/cancel/replace flag, no broker order id, no broker/account mutation.
+
+## Layer 8: OptionExpressionModel
+
+Status: decomposition pending after Layer 7.
+
+V1 option-expression work should use Layer 7 underlying path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, position-projection context, and market-context constraints. It should choose option expression and contract constraints without placing orders. Direct broker mutation remains outside `trading-model`.

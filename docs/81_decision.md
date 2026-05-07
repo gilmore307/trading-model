@@ -28,7 +28,8 @@ Status: Accepted; revised by V2.2 on 2026-05-05
 | 4 | `EventOverlayModel` | `event_overlay_model` | Point-in-time `event_context_vector` before alpha confidence. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack plus event correction to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
 | 6 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
-| 7 | `OptionExpression / Final Action` | `option_expression_model` / final-action boundary | Expression selection and final offline action handoff. |
+| 7 | `UnderlyingActionModel` | `underlying_action_model` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and Layer 8 handoff. |
+| 8 | `OptionExpressionModel` | `option_expression_model` | Option-expression selection from Layer 7 underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
 
 Live/paper order placement remains outside this repository and no layer should be renamed live `ExecutionModel`.
 
@@ -61,8 +62,11 @@ AlphaConfidenceModel
 PositionProjectionModel
   -> position_projection_vector
 
-OptionExpression / Final Action boundary
-  -> expression_vector / final offline verdict
+UnderlyingActionModel
+  -> underlying_action_plan / underlying_action_vector
+
+OptionExpressionModel
+  -> option_expression_plan / expression_vector
 ```
 
 Hard separation rules:
@@ -227,6 +231,8 @@ Status: Accepted
 V1 must not choose debit spreads, calendars, diagonals, straddles, strangles, condors, butterflies, ratio spreads, or naked short options.
 
 The model must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market-context constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade filters.
+
+Layer numbering update: this decision is preserved as future Layer 8 `OptionExpressionModel` context after Layer 7 `UnderlyingActionModel`. It is no longer the current Layer 7 boundary.
 
 ## D010 - Model governance and promotion evidence stay model-local until accepted
 
@@ -401,7 +407,7 @@ Status: Accepted
 
 State-vector semantics and model-local outputs may continue to mature inside `trading-model`, but final artifact, manifest, ready-signal, request, durable receipt, shared storage root, and SQL/storage destination contracts wait until all model layers are designed and `trading-manager` development begins.
 
-This keeps Layer 1-7 model design from being constrained by premature manager/storage interface decisions. Registry state-vector values remain reviewed naming/semantic references; they do not by themselves finalize durable manager/storage contracts.
+This keeps Layer 1-8 model design from being constrained by premature manager/storage interface decisions. Registry state-vector values remain reviewed naming/semantic references; they do not by themselves finalize durable manager/storage contracts.
 
 ## D020 - EventOverlayModel is Layer 4 before alpha confidence
 
@@ -421,7 +427,8 @@ market_context_state
   -> event_context_vector
   -> alpha_confidence_vector
   -> position_projection_vector
-  -> expression_vector / final_action
+  -> underlying_action_plan / underlying_action_vector
+  -> option_expression_plan / expression_vector
 ```
 
 Layer 4 consumes point-in-time event evidence such as `source_04_event_overlay`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
@@ -456,7 +463,7 @@ alpha confidence != option expression
 alpha confidence != final action
 ```
 
-Layer 5 must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns position projection and target exposure state. Layer 7 owns expression/final-action boundaries.
+Layer 5 must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns position projection and target exposure state. Layer 7 owns planned direct-underlying action. Layer 8 owns option expression.
 
 Layer 5 V1 uses the synchronized `5min`, `15min`, `60min`, and `390min` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.
 
@@ -496,4 +503,71 @@ projection confidence != alpha confidence
 position projection vector != final action
 ```
 
-Layer 6 must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate broker/account state. Layer 7 owns expression choice and final offline action handoff; live/paper broker mutation remains outside `trading-model`.
+Layer 6 must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate broker/account state. Layer 7 owns planned direct-underlying action thesis; Layer 8 owns option expression; live/paper broker mutation remains outside `trading-model`.
+
+## D023 - UnderlyingActionModel is Layer 7 planned direct-underlying action boundary
+
+Date: 2026-05-07
+Status: Accepted
+
+Layer 7 is `UnderlyingActionModel` with canonical model id `underlying_action_model` and primary output `underlying_action_plan`. Its score/vector output is `underlying_action_vector`.
+
+Layer 7 converts current state, final adjusted alpha confidence, and Layer 6 target holding-state projection into a direct stock/ETF offline action thesis. It consumes `alpha_confidence_vector`, `position_projection_vector`, current/pending underlying exposure, underlying quote/liquidity/borrow state, risk-budget context, and point-in-time policy gates.
+
+The accepted V1 score families are:
+
+```text
+7_underlying_trade_eligibility_score_<horizon>
+7_underlying_action_direction_score_<horizon>
+7_underlying_trade_intensity_score_<horizon>
+7_underlying_entry_quality_score_<horizon>
+7_underlying_expected_return_score_<horizon>
+7_underlying_adverse_risk_score_<horizon>
+7_underlying_reward_risk_score_<horizon>
+7_underlying_liquidity_fit_score_<horizon>
+7_underlying_holding_time_fit_score_<horizon>
+7_underlying_action_confidence_score_<horizon>
+```
+
+Layer 7 uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose resolved plan fields such as `7_resolved_underlying_action_type`, action side, dominant horizon, trade eligibility, trade intensity, entry quality, action confidence, and reason codes so Layer 8 does not re-solve the direct-underlying thesis.
+
+Accepted planned action types are:
+
+```text
+open_long
+increase_long
+reduce_long
+close_long
+open_short
+increase_short
+reduce_short
+cover_short
+maintain
+no_trade
+bearish_underlying_path_but_no_short_allowed
+```
+
+`maintain` and `no_trade` are distinct. `maintain` means an existing state is still aligned or not worth adjusting; `no_trade` means no new direct-underlying operation should be initiated.
+
+Layer 7 must use effective current underlying exposure:
+
+```text
+effective_current_underlying_exposure
+= current_underlying_exposure
+  + pending_underlying_exposure * pending_fill_probability_estimate
+```
+
+Accepted invariants:
+
+```text
+planned underlying action != broker order
+planned quantity != final order quantity
+entry plan != order type
+stop_loss_price != broker stop order
+take_profit_price != broker limit order
+underlying price-path thesis != guaranteed outcome
+underlying action plan != option expression
+underlying action plan != live execution
+```
+
+Layer 7 must not emit broker order fields, order type, route, time-in-force, send/cancel/replace flags, broker order ids, option strike/DTE/delta/Greeks, specific option contract refs, or broker/account mutations. Layer 8 owns option expression. `trading-execution` owns broker-order lifecycle.

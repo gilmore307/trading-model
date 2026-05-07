@@ -394,6 +394,41 @@ Layer 6 may also expose handoff summary fields for Layer 7:
 
 Layer 6 is position projection only: not buy/sell/hold, not open/close/reverse, not instrument selection, not option-chain reading, not strike/DTE/Greeks, not execution, and not final action.
 
+## Layer 7 underlying-action plan semantics
+
+Layer 7 `underlying_action_plan` and `underlying_action_vector` values must keep these axes separate:
+
+```text
+alpha confidence != planned underlying action
+position gap != trade instruction
+target exposure != planned quantity
+planned quantity != broker order quantity
+trade eligibility != final approval
+entry plan != order type
+stop_loss_price != broker stop order
+take_profit_price != broker limit order
+underlying price-path thesis != guaranteed outcome
+underlying action plan != option expression
+underlying action plan != live execution
+```
+
+Accepted Layer 7 score families use the `7_` prefix and `<horizon>` suffix for horizon-aware families. Planned action types, resolved plan fields, reason codes, entry/target/stop prices, quantities, and Layer 8 handoff fields are plan payload fields, not broker-order fields.
+
+Core Layer 7 score families:
+
+- `7_underlying_trade_eligibility_score_<horizon>` — `[0, 1]`, high-is-good direct-underlying trade eligibility.
+- `7_underlying_action_direction_score_<horizon>` — `[-1, 1]`, signed planned direct-underlying side; positive long-side, negative short-side, near zero maintain/no-trade.
+- `7_underlying_trade_intensity_score_<horizon>` — `[0, 1]`, high-is-more planned adjustment intensity after confidence/risk/cost compression.
+- `7_underlying_entry_quality_score_<horizon>` — `[0, 1]`, high-is-good entry quality for the plan.
+- `7_underlying_expected_return_score_<horizon>` — `[-1, 1]`, signed favorable direct-underlying return quality.
+- `7_underlying_adverse_risk_score_<horizon>` — `[0, 1]`, high-is-bad adverse move / stop-risk pressure.
+- `7_underlying_reward_risk_score_<horizon>` — `[0, 1]`, high-is-good reward/risk quality.
+- `7_underlying_liquidity_fit_score_<horizon>` — `[0, 1]`, high-is-good direct-underlying liquidity/spread fit.
+- `7_underlying_holding_time_fit_score_<horizon>` — `[0, 1]`, high-is-good compatibility between planned holding time and the signal/projection horizon.
+- `7_underlying_action_confidence_score_<horizon>` — `[0, 1]`, calibrated confidence in the offline direct-underlying action thesis.
+
+Resolved Layer 7 fields such as `7_resolved_underlying_action_type`, `7_resolved_action_side`, `7_resolved_dominant_horizon`, and `7_resolved_reason_codes` summarize the chosen plan for Layer 8 and execution-side review. They do not send orders.
+
 ## Label boundary
 
 Layer 3 labels/outcomes may include:
@@ -447,6 +482,15 @@ target_context_state
 + event_context_vector
   -> AlphaConfidenceModel
   -> alpha_confidence_vector
+
+alpha_confidence_vector
++ current/pending position context
++ risk/cost context
   -> PositionProjectionModel
   -> position_projection_vector
+
+position_projection_vector
++ underlying quote/liquidity/risk-policy context
+  -> UnderlyingActionModel
+  -> underlying_action_plan / underlying_action_vector
 ```

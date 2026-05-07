@@ -16,6 +16,10 @@ class StateVectorFeatureRegistryTests(unittest.TestCase):
         self.assertEqual(by_field["3_target_noise_score_<window>"].high_value_meaning, "bad")
         self.assertEqual(by_field["2_sector_handoff_state"].feature_use, "routing_only")
         self.assertEqual(by_field["target_state_embedding"].feature_use, "research_only")
+        self.assertEqual(by_field["7_underlying_action_direction_score_<horizon>"].high_value_meaning, "signed")
+        self.assertEqual(by_field["7_underlying_adverse_risk_score_<horizon>"].high_value_meaning, "bad")
+        self.assertEqual(by_field["7_underlying_trade_intensity_score_<horizon>"].score_class, "intensity")
+        self.assertEqual(by_field["7_underlying_action_confidence_score_<horizon>"].feature_use, "model_facing")
 
     def test_layer_two_dispersion_and_crowding_are_split(self) -> None:
         by_field = registry.semantics_by_field()

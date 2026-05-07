@@ -10,7 +10,10 @@ The trading platform is split across multiple repositories so each major respons
 4. EventOverlayModel (`event_overlay_model`);
 5. AlphaConfidenceModel (`alpha_confidence_model`);
 6. PositionProjectionModel (`position_projection_model`);
-7. OptionExpression / Final Action boundary (expression/action work remains offline and broker mutation stays outside this repository).
+7. UnderlyingActionModel (`underlying_action_model`);
+8. OptionExpressionModel (`option_expression_model`) / option-expression boundary.
+
+Layer 7 and Layer 8 plans remain offline and broker mutation stays outside this repository.
 
 Event evidence is now an explicit Layer 4 context model before alpha confidence.
 
@@ -19,10 +22,10 @@ The repository turns point-in-time data artifacts and strategy/event evidence in
 Current structural boundary:
 
 ```text
-broad market tradability context -> sector/industry tradability context -> anonymized target context -> event context -> confidence -> position projection -> expression/final action handoff
+broad market tradability context -> sector/industry tradability context -> anonymized target context -> event context -> confidence -> position projection -> underlying action plan -> option expression handoff
 ```
 
-`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Layer 4 `EventOverlayModel` adds event context before confidence. Later confidence/projection/expression layers may map back to real symbols only for audit, routing, and decision records.
+`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Layer 4 `EventOverlayModel` adds event context before confidence. Later confidence/projection/action/expression layers may map back to real symbols only for audit, routing, and decision records.
 
 ## Related Systems
 
@@ -32,7 +35,7 @@ broad market tradability context -> sector/industry tradability context -> anony
 | `trading-manager` control plane | Owns orchestration, lifecycle, scheduling, retries, requests, and promotion routing. |
 | `trading-data` | Produces point-in-time data/source-evidence artifacts consumed by model research. |
 | `trading-storage` | Owns durable storage layout, retention, archive, backup, restore, and artifact placement rules. |
-| `trading-strategy` | May provide downstream action/expression research artifacts if kept separate; Layer 3 remains target-state construction, not action selection. |
+| `trading-strategy` | May provide downstream action/expression research artifacts if revived; active strategy translation now lives in Layer 7/8 inside `trading-model` until a separate owner is explicitly restored. |
 | `trading-model` | Produces offline direction-neutral model research outputs, validation evidence, and decision-record prototypes. |
 | `trading-execution` | Consumes promoted decisions/risk-approved orders for paper/live execution; broker mutation is not owned here. |
 | `trading-dashboard` | Presents already-produced outputs and evidence. |
@@ -42,7 +45,7 @@ broad market tradability context -> sector/industry tradability context -> anony
 Potential external interfaces include:
 
 - `trading-data` artifacts and manifests for market data, option-chain snapshots, macro/event evidence, ETF holdings, and source availability.
-- Strategy definitions/backtest outputs, either model-local during research or from `trading-strategy` if that repository remains the strategy owner.
+- Strategy/action research outputs, model-local during current Layer 7/8 development or from `trading-strategy` only if that repository is explicitly revived as owner.
 - Event evidence and event-cluster artifacts once accepted.
 - Storage artifact references from `trading-storage`.
 - Shared registry fields/contracts from `trading-manager`.

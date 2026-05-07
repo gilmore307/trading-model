@@ -2,16 +2,15 @@
 
 ## Active Tasks
 
-- Continue Layer 6 `PositionProjectionModel` after the accepted contract: define deterministic alpha-to-position scaffold, effective-current-exposure calculation, candidate-exposure utility labels, and first horizon-resolution evidence path.
+- Implement deterministic scaffold for Layer 7 `UnderlyingActionModel`: effective-current-underlying-exposure calculation, hard/soft gates, planned action resolver, planned exposure sizing, entry/target/stop/time-stop builders, and first plan-quality label path.
 
-Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence paths, docs, and registry score naming are accepted for the current model-design phase. Layer 4 EventOverlayModel, Layer 5 AlphaConfidenceModel, and Layer 6 PositionProjectionModel now have accepted V1 vector contract routes; deterministic implementation remains pending. Real-sample promotion evidence remains a later production-readiness gap, not an active blocker for closing the accepted layer designs.
+Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence paths, docs, and registry score naming are accepted for the current model-design phase. Layer 4 EventOverlayModel, Layer 5 AlphaConfidenceModel, Layer 6 PositionProjectionModel, and Layer 7 UnderlyingActionModel now have accepted V1 vector/plan contract routes; deterministic implementation remains pending for Layers 4-7. Real-sample promotion evidence remains a later production-readiness gap, not an active blocker for closing the accepted layer designs.
 
 ## Queued Tasks
 
-- Complete nine-part decomposition for Layer 7 after the Layer 6 position-projection route.
 - Implement first label horizons and confidence/EV/risk evaluation scaffold for Layer 5 `AlphaConfidenceModel`.
 - Implement first target-position projection defaults for Layer 6 `PositionProjectionModel`.
-- Define how Layer 7 expression/final-action work uses market/event context for DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade policy.
+- Define Layer 8 `OptionExpressionModel` after Layer 7: how the option-expression layer uses Layer 7 target/stop/holding-time/path assumptions plus market/event context for DTE, delta/moneyness, IV/vega/theta tolerance, and no-option-trade policy.
 - Implement Layer 4 deterministic EventEncoder / EventContextMatcher / EventOverlayScorer scaffold after the accepted event-context vector contract.
 - Define final unified decision-record shape and promote it through `trading-manager` when stable.
 
@@ -35,7 +34,7 @@ These are promotion/production-readiness gaps. They do not reopen the accepted L
 
 - Layer 1-3 model-design closeout is accepted for the current phase: MarketRegimeModel, SectorContextModel, and TargetStateVectorModel have reviewed contracts, deterministic local implementations/evaluation scaffolds, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.
 - Layer 3 is `TargetStateVectorModel`; the active purpose is market + sector + target state-vector construction before trade/action decisions.
-- Current V2.2 architecture is `MarketRegimeModel -> SectorContextModel -> TargetStateVectorModel -> EventOverlayModel -> AlphaConfidenceModel -> PositionProjectionModel -> expression/final-action boundary`, with anonymous target candidate construction inside Layer 3 preprocessing.
+- Current V2.2 architecture is `MarketRegimeModel -> SectorContextModel -> TargetStateVectorModel -> EventOverlayModel -> AlphaConfidenceModel -> PositionProjectionModel -> UnderlyingActionModel -> OptionExpressionModel`, with anonymous target candidate construction inside Layer 3 preprocessing.
 - `docs/92_vector_taxonomy.md` owns the accepted distinction between feature surfaces, feature vectors, states, state vectors, scalar scores, diagnostics, explainability, and labels/outcomes.
 - Layer 1 outputs only broad `market_context_state`; old market-property factor names are model-local signal groups and evidence sources, not active downstream output fields.
 - Layer 1 must not pre-label ETF/sector behavior or rank sectors/ETFs/stocks.
@@ -52,7 +51,8 @@ These are promotion/production-readiness gaps. They do not reopen the accepted L
 - Layer 4 is now `EventOverlayModel`, consuming point-in-time event evidence from `source_04_event_overlay`, event detail artifacts, upstream `market_context_state` / `sector_context_state` / `target_context_state` references, and scope/sensitivity metadata to output `event_context_vector`.
 - Layer 5 is now `AlphaConfidenceModel`, consuming the reviewed Layer 1/2/3 state stack plus `event_context_vector` correction to output the final adjusted `alpha_confidence_vector` with alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Base/unadjusted Layer 1/2/3 alpha is diagnostic-only.
 - Layer 6 is now `PositionProjectionModel`, consuming final adjusted alpha plus current/pending position, position-level friction, portfolio exposure, and risk-budget context to output `position_projection_vector`; it maps alpha to projected target holding state, not buy/sell/hold operations.
-- `OptionExpressionModel` V1 remains direct stock/ETF comparison plus long call / long put only, now inside the Layer 7 expression/final-action boundary.
+- Layer 7 is now `UnderlyingActionModel`, consuming Layer 5/6 state plus point-in-time underlying quote/liquidity/current-pending exposure/risk-policy context to output `underlying_action_plan` and `underlying_action_vector`; it maps target exposure to planned direct stock/ETF action thesis, not broker orders.
+- `OptionExpressionModel` is now deferred to Layer 8. It should use Layer 7 underlying price-path assumptions plus option-chain evidence for option expression and contract constraints, not live execution.
 - `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-state evidence-role contract.
 - Promotion decisions can now be durably persisted through `review_market_regime_promotion.py --write-decision`; accepted approval decisions insert `model_promotion_activation` and activate the reviewed config via `model_config_version.config_status = active`, while deferred/rejected decisions leave the active config unchanged.
 - MarketRegimeModel evaluation summaries now expose real metric values, explicit promotion thresholds, baseline comparison, split-stability evidence, and no-future-leak checks; the default path remains dry-run, while `evaluate_model_01_market_regime.py --from-database` performs a read-only SQL evaluation feed.

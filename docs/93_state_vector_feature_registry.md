@@ -1,8 +1,8 @@
 # State Vector Feature Semantics Registry
 
-Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 4 event-context score families, Layer 5 alpha-confidence score families, and Layer 6 position-projection score families.
+Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 4 event-context score families, Layer 5 alpha-confidence score families, Layer 6 position-projection score families, and Layer 7 underlying-action score families.
 
-This registry prevents the state/context-vector system from mixing direction, quality, risk, scope, routing, diagnostics, and research-only payloads.
+This registry prevents the state/context/action-vector system from mixing direction, quality, risk, scope, routing, diagnostics, plan fields, execution fields, and research-only payloads.
 
 Canonical implementation:
 
@@ -146,3 +146,38 @@ Core final position-projection families:
 - `6_risk_budget_fit_score_<horizon>` — `[0, 1]`, high-is-good compatibility with current risk budget and portfolio constraints.
 - `6_position_state_stability_score_<horizon>` — `[0, 1]`, high-is-good stability of the projected target holding state across alpha, horizon, cost, risk, and pending-order uncertainty.
 - `6_projection_confidence_score_<horizon>` — `[0, 1]`, confidence in the Layer 6 alpha-to-position mapping; separate from Layer 5 alpha confidence.
+
+## Layer 7 underlying-action score semantics
+
+Layer 7 `underlying_action_plan` and `underlying_action_vector` values must keep these axes separate:
+
+```text
+alpha confidence != planned underlying action
+position gap != trade instruction
+target exposure != planned quantity
+planned quantity != broker order quantity
+trade eligibility != final approval
+entry plan != order type
+stop_loss_price != broker stop order
+take_profit_price != broker limit order
+underlying price-path thesis != guaranteed outcome
+underlying action plan != option expression
+underlying action plan != live execution
+```
+
+Accepted Layer 7 score families use the `7_` prefix and `<horizon>` suffix for horizon-aware families. Planned action types, resolved handoff fields, reason codes, entry/target/stop prices, quantities, and Layer 8 handoff fields are plan payload fields, not broker-order fields.
+
+Core Layer 7 score families:
+
+- `7_underlying_trade_eligibility_score_<horizon>` — `[0, 1]`, high-is-good direct-underlying trade eligibility after hard/soft gates.
+- `7_underlying_action_direction_score_<horizon>` — `[-1, 1]`, signed direct-underlying planned side; positive long-side, negative short-side, near zero maintain/no-trade.
+- `7_underlying_trade_intensity_score_<horizon>` — `[0, 1]`, high-is-more planned adjustment intensity after confidence, risk, cost, stability, and liquidity compression.
+- `7_underlying_entry_quality_score_<horizon>` — `[0, 1]`, high-is-good planned entry quality.
+- `7_underlying_expected_return_score_<horizon>` — `[-1, 1]`, signed favorable direct-underlying return quality.
+- `7_underlying_adverse_risk_score_<horizon>` — `[0, 1]`, high-is-bad adverse move / stop-risk pressure.
+- `7_underlying_reward_risk_score_<horizon>` — `[0, 1]`, high-is-good reward/risk quality.
+- `7_underlying_liquidity_fit_score_<horizon>` — `[0, 1]`, high-is-good direct-underlying liquidity/spread fit.
+- `7_underlying_holding_time_fit_score_<horizon>` — `[0, 1]`, high-is-good compatibility between planned holding time and horizon/path evidence.
+- `7_underlying_action_confidence_score_<horizon>` — `[0, 1]`, calibrated confidence in the offline direct-underlying action thesis.
+
+Model-local plan/handoff fields include `7_resolved_underlying_action_type`, `7_resolved_action_side`, `7_resolved_dominant_horizon`, `7_resolved_trade_eligibility_score`, `7_resolved_trade_intensity_score`, `7_resolved_entry_quality_score`, `7_resolved_action_confidence_score`, and `7_resolved_reason_codes`. They summarize the plan and do not send orders.

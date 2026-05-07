@@ -15,7 +15,7 @@ Layer 6 answers:
 - Are costs, liquidity, concentration, drawdown state, and risk budget compatible with the target exposure?
 - Which horizon should dominate the handoff when per-horizon projections conflict?
 
-Layer 6 does **not** answer buy/sell/hold, open/close/reverse, instrument choice, option-contract choice, order type, routing, or live/paper execution questions. It projects target position state only. Layer 7 owns expression choice and final offline action handoff; broker mutation remains outside `trading-model`.
+Layer 6 does **not** answer buy/sell/hold, open/close/reverse, instrument choice, option-contract choice, order type, routing, or live/paper execution questions. It projects target position state only. Layer 7 owns the direct-underlying planned action thesis; Layer 8 owns option expression. Broker mutation remains outside `trading-model`.
 
 ## Position and input chain
 
@@ -33,12 +33,12 @@ alpha_confidence_vector
   -> position_projection_vector
 ```
 
-Layer 5 asks whether adjusted alpha exists. Layer 6 maps that adjusted alpha to target holding state under current account/portfolio context. Layer 7 maps the projected holding state to an expression/final-action boundary.
+Layer 5 asks whether adjusted alpha exists. Layer 6 maps that adjusted alpha to target holding state under current account/portfolio context. Layer 7 maps the projected holding state to a planned direct-underlying action thesis.
 
 ```text
 Layer 5: alpha confidence
 Layer 6: projected target position state
-Layer 7: expression / final offline action boundary
+Layer 7: direct-underlying planned action boundary
 ```
 
 ## Names
@@ -209,7 +209,7 @@ routing_destination
 broker_order_id
 ```
 
-These belong to Layer 7 expression/final-action work or execution-side repositories.
+These belong to Layer 7 underlying-action work, Layer 8 option-expression work, or execution-side repositories.
 
 ## Internal structure
 
@@ -364,7 +364,7 @@ This means the projection is clearly long-biased but only supports a small long 
 
 ## Handoff summary fields
 
-Layer 6 may expose a resolved summary for Layer 7 so expression selection does not re-solve horizon conflicts:
+Layer 6 may expose a resolved summary for Layer 7 so underlying-action planning does not re-solve horizon conflicts:
 
 ```text
 6_dominant_projection_horizon
@@ -375,7 +375,7 @@ Layer 6 may expose a resolved summary for Layer 7 so expression selection does n
 6_horizon_resolution_reason_codes
 ```
 
-These fields summarize the projected target holding state. They do not choose instrument, contract, order type, or final action.
+These fields summarize the projected target holding state. They do not choose instrument, contract, order type, underlying action, or final execution.
 
 ## Diagnostics and explainability fields
 

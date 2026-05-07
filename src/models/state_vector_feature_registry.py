@@ -1,16 +1,27 @@
 """Reviewed state-vector feature semantics registry.
 
 The registry is intentionally small and explicit: it records the semantic class of
-shared Layer 1/2/3 score fields so generator, evaluation, docs, and registry
-migrations do not let direction, quality, risk, routing, diagnostics, and
-research-only fields blur together.
+reviewed shared score fields so generator, evaluation, docs, and registry
+migrations do not let direction, quality, risk, action intensity, routing,
+diagnostics, and research-only fields blur together.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Final, Literal
 
-ScoreClass = Literal["direction", "direction_strength", "quality", "risk", "liquidity", "routing", "diagnostic", "research"]
+ScoreClass = Literal[
+    "direction",
+    "direction_strength",
+    "expected_return",
+    "intensity",
+    "quality",
+    "risk",
+    "liquidity",
+    "routing",
+    "diagnostic",
+    "research",
+]
 FeatureUse = Literal["model_facing", "routing_only", "diagnostic_only", "research_only"]
 HighValueMeaning = Literal["signed", "good", "bad", "count", "category", "identifier", "payload"]
 
@@ -73,6 +84,16 @@ STATE_VECTOR_FEATURE_SEMANTICS: Final[tuple[FeatureSemantics, ...]] = (
     FeatureSemantics("3_evidence_count", "layer_03_target_state_vector", "integer", "count", "diagnostic", "count", "diagnostic_only", "Usable evidence count."),
     FeatureSemantics("target_state_embedding", "layer_03_target_state_vector", "array<float>", "derived", "research", "payload", "research_only", "Research/diagnostic embedding; not first-version primary model input."),
     FeatureSemantics("state_cluster_id", "layer_03_target_state_vector", "text", "derived", "research", "identifier", "research_only", "Research/diagnostic cluster id; must be fit/assigned walk-forward if promoted."),
+    FeatureSemantics("7_underlying_trade_eligibility_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "quality", "good", "model_facing", "Direct-underlying trade eligibility after hard/soft gates; not final approval or a broker order."),
+    FeatureSemantics("7_underlying_action_direction_score_<horizon>", "layer_07_underlying_action", "float", "[-1, 1]", "direction", "signed", "model_facing", "Signed planned direct-underlying side; positive long-side, negative short-side, near zero maintain/no_trade."),
+    FeatureSemantics("7_underlying_trade_intensity_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "intensity", "good", "model_facing", "Planned adjustment intensity after confidence, risk, cost, stability, and liquidity compression; not final order quantity."),
+    FeatureSemantics("7_underlying_entry_quality_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "quality", "good", "model_facing", "Side-neutral planned entry quality; entry plan is not broker order type."),
+    FeatureSemantics("7_underlying_expected_return_score_<horizon>", "layer_07_underlying_action", "float", "[-1, 1]", "expected_return", "signed", "model_facing", "Signed favorable direct-underlying return quality after context adjustment."),
+    FeatureSemantics("7_underlying_adverse_risk_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "risk", "bad", "model_facing", "Expected adverse move / stop-risk pressure; high is worse."),
+    FeatureSemantics("7_underlying_reward_risk_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "quality", "good", "model_facing", "Reward/risk quality of the offline direct-underlying thesis."),
+    FeatureSemantics("7_underlying_liquidity_fit_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "liquidity", "good", "model_facing", "Direct-underlying liquidity/spread fit for the planned adjustment."),
+    FeatureSemantics("7_underlying_holding_time_fit_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "quality", "good", "model_facing", "Compatibility between planned holding time and alpha/projection/path evidence."),
+    FeatureSemantics("7_underlying_action_confidence_score_<horizon>", "layer_07_underlying_action", "float", "[0, 1]", "quality", "good", "model_facing", "Calibrated confidence in the complete offline direct-underlying action thesis."),
 )
 
 

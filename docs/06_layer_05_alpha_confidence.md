@@ -393,6 +393,7 @@ expected return != target exposure
 path quality != execution quality
 risk != no-trade instruction
 alpha tradability != trading signal
+alpha confidence != planned underlying action
 alpha confidence != option expression
 alpha confidence != final action
 ```

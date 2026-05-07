@@ -12,7 +12,10 @@ It owns point-in-time model research, training/evaluation workflows, model-local
 4. EventOverlayModel (`event_overlay_model`);
 5. AlphaConfidenceModel (`alpha_confidence_model`);
 6. PositionProjectionModel (`position_projection_model`);
-7. OptionExpression / Final Action boundary (expression/action work remains offline and broker mutation stays outside this repository).
+7. UnderlyingActionModel (`underlying_action_model`);
+8. OptionExpressionModel (`option_expression_model`) / option-expression boundary.
+
+Layer 7 and Layer 8 action/expression work remains offline and broker mutation stays outside this repository.
 
 Event evidence is now an explicit Layer 4 context model before alpha confidence. It remains offline research and does not become live execution authority.
 
@@ -26,7 +29,8 @@ The repository does **not** place live orders. It produces offline research arti
 - Anonymous target-candidate and target state-vector research that combines broad market, sector/industry, and target-local state without memorizing ticker identity.
 - Event-context research that turns scheduled events, news, filings, macro releases, and abnormal activity into `event_context_vector` inputs before alpha confidence; alpha/confidence research that maps reviewed Layer 1/2/3 state plus event correction into adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha-level tradability.
 - Position-projection research that maps final adjusted alpha plus current/pending position, position-level friction, portfolio exposure, and risk-budget context to projected target holding state and target exposure; it does not output buy/sell/hold operations.
-- Option expression / final-action research using option-chain snapshots, market-state background, liquidity, IV, Greeks, and conservative fill assumptions.
+- Underlying-action research that maps position projection into planned direct stock/ETF action plans, planned exposure changes, entry/target/stop/time-stop assumptions, and underlying price-path theses without producing broker orders.
+- Option-expression research using Layer 7 underlying price-path assumptions plus option-chain snapshots, market-state background, liquidity, IV, Greeks, and conservative fill assumptions; option expression remains offline and does not place orders.
 - Portfolio risk, sizing, exposure, execution-gate, execution-style, exit-rule, and kill-switch research logic using market-state background plus portfolio reality.
 - Unified candidate-trade decision-record prototypes for audit, attribution, replay, and retraining.
 - Model-local tests, fixtures, reproducibility evidence, and acceptance gates.
