@@ -1,6 +1,6 @@
 # Layer 07 - UnderlyingActionModel
 
-Status: accepted Layer 7 design route; deterministic model implementation pending.
+Status: accepted Layer 7 design route; deterministic scaffold implemented in `src/models/model_07_underlying_action/`; production validation pending.
 
 ## Purpose
 
@@ -742,13 +742,17 @@ Layer 7 must not:
 
 ## V1 implementation route
 
-1. Add deterministic `model_07_underlying_action` scaffold using Layer 5/6 fixture vectors, quote/liquidity fixtures, and risk/policy fixtures.
-2. Implement effective-current-underlying-exposure calculation with pending fill probability.
-3. Implement hard-gate/soft-gate decision trace and planned action resolver.
-4. Implement entry, price-path, risk-plan, and Layer 8 handoff builders.
-5. Add fixture tests for maintain vs no_trade, pending-exposure avoidance, side-neutral price fields, and no order-field leakage.
-6. Build local evaluation labels for target-before-stop, entry fill probability, action regret, no-trade opportunity cost, and bad-trade avoidance.
-7. Promote shared names through `trading-manager` before cross-repository dependence.
+Current local scaffold status:
+
+1. Deterministic `model_07_underlying_action` scaffold exists using Layer 5/6 fixture vectors, quote/liquidity fixtures, and risk/policy fixtures.
+2. Effective-current-underlying-exposure calculation with pending fill probability is implemented.
+3. Hard-gate/soft-gate decision trace and planned action resolver are implemented.
+4. Entry, price-path, risk-plan, and Layer 8 handoff builders are implemented.
+5. Fixture tests cover maintain vs no_trade, pending-exposure avoidance, side-neutral price fields, conservative opposite-exposure handling, and no order/option-field leakage.
+6. Local evaluation-label helper covers target-before-stop, entry fill probability, no-trade opportunity/avoidance, slippage/spread-adjusted return, and realized reward/risk.
+7. Shared names were promoted through `trading-manager` before cross-repository dependence.
+
+Remaining implementation hardening is real-data calibration/evaluation, not contract-definition work.
 
 ## Acceptance gates
 

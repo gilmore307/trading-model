@@ -2,9 +2,9 @@
 
 ## Active Tasks
 
-- Implement deterministic scaffold for Layer 7 `UnderlyingActionModel`: effective-current-underlying-exposure calculation, hard/soft gates, planned action resolver, planned exposure sizing, entry/target/stop/time-stop builders, and first plan-quality label path.
+- Harden Layer 7 `UnderlyingActionModel` beyond the local deterministic scaffold: connect real point-in-time feature/evaluation feeds, calibrate plan-quality labels, and prove baseline improvement before any production promotion.
 
-Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence paths, docs, and registry score naming are accepted for the current model-design phase. Layer 4 EventOverlayModel, Layer 5 AlphaConfidenceModel, Layer 6 PositionProjectionModel, and Layer 7 UnderlyingActionModel now have accepted V1 vector/plan contract routes; deterministic implementation remains pending for Layers 4-7. Real-sample promotion evidence remains a later production-readiness gap, not an active blocker for closing the accepted layer designs.
+Layer 1-3 design, deterministic implementation scaffolds, fixture/local evidence paths, docs, and registry score naming are accepted for the current model-design phase. Layer 4 EventOverlayModel, Layer 5 AlphaConfidenceModel, and Layer 6 PositionProjectionModel have accepted V1 vector contract routes with deterministic implementation still pending; Layer 7 UnderlyingActionModel now also has a local deterministic scaffold. Real-sample promotion evidence remains a later production-readiness gap, not an active blocker for closing the accepted layer designs.
 
 ## Queued Tasks
 
@@ -51,7 +51,7 @@ These are promotion/production-readiness gaps. They do not reopen the accepted L
 - Layer 4 is now `EventOverlayModel`, consuming point-in-time event evidence from `source_04_event_overlay`, event detail artifacts, upstream `market_context_state` / `sector_context_state` / `target_context_state` references, and scope/sensitivity metadata to output `event_context_vector`.
 - Layer 5 is now `AlphaConfidenceModel`, consuming the reviewed Layer 1/2/3 state stack plus `event_context_vector` correction to output the final adjusted `alpha_confidence_vector` with alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Base/unadjusted Layer 1/2/3 alpha is diagnostic-only.
 - Layer 6 is now `PositionProjectionModel`, consuming final adjusted alpha plus current/pending position, position-level friction, portfolio exposure, and risk-budget context to output `position_projection_vector`; it maps alpha to projected target holding state, not buy/sell/hold operations.
-- Layer 7 is now `UnderlyingActionModel`, consuming Layer 5/6 state plus point-in-time underlying quote/liquidity/current-pending exposure/risk-policy context to output `underlying_action_plan` and `underlying_action_vector`; it maps target exposure to planned direct stock/ETF action thesis, not broker orders.
+- Layer 7 is now `UnderlyingActionModel`, consuming Layer 5/6 state plus point-in-time underlying quote/liquidity/current-pending exposure/risk-policy context to output `underlying_action_plan` and `underlying_action_vector`; it maps target exposure to planned direct stock/ETF action thesis, not broker orders. Local deterministic scaffold and fixture tests are implemented in `src/models/model_07_underlying_action/`.
 - `OptionExpressionModel` is now deferred to Layer 8. It should use Layer 7 underlying price-path assumptions plus option-chain evidence for option expression and contract constraints, not live execution.
 - `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-state evidence-role contract.
 - Promotion decisions can now be durably persisted through `review_market_regime_promotion.py --write-decision`; accepted approval decisions insert `model_promotion_activation` and activate the reviewed config via `model_config_version.config_status = active`, while deferred/rejected decisions leave the active config unchanged.
