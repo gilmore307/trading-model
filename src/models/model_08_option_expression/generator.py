@@ -42,6 +42,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     policy = _payload(row, "option_expression_policy")
     pending = _pending_option_context(row)
     candidates = _candidate_rows(row)
+    replay_context = _replay_context(row)
 
     direction = _underlying_direction(underlying_plan, handoff)
     expression_type, option_right = _expression_type(direction, underlying_plan, policy, pending)
@@ -78,7 +79,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
                 f"8_option_expression_confidence_score_{suffix}": payload["expression_confidence_score"],
             }
         )
-    reason_codes = _reason_codes(expression_type, selected, dominant, candidates, option_right, policy, underlying_plan, pending)
+    reason_codes = _reason_codes(expression_type, selected, dominant, scored_candidates, option_right, policy, underlying_plan, pending)
     no_option_reason_codes = [code for code in reason_codes if expression_type == "no_option_expression"]
     resolved_payload = {
         "8_resolved_expression_type": expression_type,
@@ -99,10 +100,11 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "model_version": model_version,
         "underlying_action_plan_ref": row.get("underlying_action_plan_ref") or underlying_plan.get("underlying_action_plan_ref"),
         "option_expression_plan_ref": expression_plan_ref,
-        "option_chain_snapshot_ref": row.get("option_chain_snapshot_ref") or row.get("option_chain_snapshot_id"),
-        "option_quote_available_time": row.get("option_quote_available_time") or row.get("option_chain_available_time"),
-        "underlying_quote_snapshot_ref": row.get("underlying_quote_snapshot_ref") or row.get("underlying_quote_snapshot_id"),
-        "underlying_reference_price": row.get("underlying_reference_price"),
+        "option_chain_snapshot_ref": replay_context["option_chain_snapshot_ref"],
+        "option_quote_available_time": replay_context["option_quote_available_time"],
+        "underlying_quote_snapshot_ref": replay_context["underlying_quote_snapshot_ref"],
+        "underlying_reference_price": replay_context["underlying_reference_price"],
+        "pending_option_exposure_context": pending,
         **score_payload,
         **resolved_payload,
         "expression_vector": {**score_payload, **resolved_payload},
@@ -110,7 +112,11 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "selected_expression_type": expression_type,
             "selected_option_right": option_right,
             "dominant_horizon": dominant_horizon,
-            "option_chain_snapshot_ref": row.get("option_chain_snapshot_ref") or row.get("option_chain_snapshot_id"),
+            "option_chain_snapshot_ref": replay_context["option_chain_snapshot_ref"],
+            "option_quote_available_time": replay_context["option_quote_available_time"],
+            "underlying_quote_snapshot_ref": replay_context["underlying_quote_snapshot_ref"],
+            "underlying_reference_price": replay_context["underlying_reference_price"],
+            "replay_context": replay_context,
             "selected_contract": _selected_contract_payload(selected),
             "contract_constraints": _contract_constraints(option_right, handoff, policy),
             "premium_risk_plan": _premium_risk_plan(selected, handoff, dominant, policy),
@@ -120,7 +126,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "diagnostics": {
                 "candidate_count_before_filter": len(candidates),
                 "candidate_count_after_filter": len(eligible_candidates),
-                "pending_option_context": pending,
+                "pending_option_exposure_context": pending,
                 "no_future_label_used": True,
                 "scored_candidates": scored_candidates,
                 "horizon_scores": horizon_payloads,
@@ -196,6 +202,8 @@ def _score_candidate(
     min_volume = _first_float(policy, "min_volume") or 0.0
     min_open_interest = _first_float(policy, "min_open_interest") or 0.0
     max_quote_age = _first_float(policy, "max_quote_age_seconds") or 300.0
+    min_abs_delta = _first_float(policy, "min_abs_delta", "min_option_abs_delta") or 0.35
+    max_abs_delta = _first_float(policy, "max_abs_delta", "max_option_abs_delta") or 0.65
     min_dte, max_dte = _preferred_dte_range(float(handoff.get("expected_holding_time_minutes") or 390.0))
     target_dte = _target_dte(float(handoff.get("expected_holding_time_minutes") or 390.0))
     dte_fit = _triangular_fit(dte, target_dte, max((max_dte - min_dte) / 2.0, 3.0))
@@ -213,25 +221,39 @@ def _score_candidate(
     contract_fit = _clip01(0.22 * dte_fit + 0.20 * greek_fit + 0.20 * liquidity_fit + 0.14 * iv_fit + 0.14 * reward_risk + 0.10 * fill_quality)
     adjusted = _truthy(candidate.get("is_adjusted_contract") or candidate.get("adjusted_contract"))
     quote_fresh = quote_age_seconds is None or quote_age_seconds <= max_quote_age
-    eligible = (
-        right == required_right
-        and bid > 0
-        and ask > 0
-        and mid > 0
-        and spread_pct <= max_spread_pct
-        and min_dte <= dte <= max_dte
-        and volume >= min_volume
-        and open_interest >= min_open_interest
-        and quote_fresh
-        and not adjusted
-    )
+    strike = _first_float(candidate, "strike")
+    target_range_ok = _target_range_ok(required_right, strike, handoff)
+    hard_filter_fail_reason_codes: list[str] = []
+    if right != required_right:
+        hard_filter_fail_reason_codes.append("option_right_mismatch")
+    if bid <= 0 or ask <= 0 or mid <= 0:
+        hard_filter_fail_reason_codes.append("non_positive_quote")
+    if ask < bid:
+        hard_filter_fail_reason_codes.append("crossed_or_invalid_quote")
+    if spread_pct > max_spread_pct:
+        hard_filter_fail_reason_codes.append("spread_too_wide")
+    if not min_dte <= dte <= max_dte:
+        hard_filter_fail_reason_codes.append("dte_outside_v1_policy_range")
+    if not min_abs_delta <= abs(delta) <= max_abs_delta:
+        hard_filter_fail_reason_codes.append("delta_outside_v1_policy_range")
+    if volume < min_volume:
+        hard_filter_fail_reason_codes.append("volume_below_minimum")
+    if open_interest < min_open_interest:
+        hard_filter_fail_reason_codes.append("open_interest_below_minimum")
+    if not quote_fresh:
+        hard_filter_fail_reason_codes.append("stale_option_quote")
+    if adjusted:
+        hard_filter_fail_reason_codes.append("adjusted_contract_excluded_v1")
+    if not target_range_ok:
+        hard_filter_fail_reason_codes.append("strike_outside_underlying_target_range")
+    eligible = not hard_filter_fail_reason_codes
     return {
         "contract_ref": str(candidate.get("contract_ref") or candidate.get("option_contract_ref") or candidate.get("symbol") or "").strip() or _stable_id("contract", right, dte, delta, mid),
         "option_right": right,
         "quote_snapshot_ref": candidate.get("quote_snapshot_ref") or candidate.get("option_quote_snapshot_ref"),
         "quote_available_time": candidate.get("quote_available_time") or candidate.get("option_quote_available_time"),
         "expiration": candidate.get("expiration"),
-        "strike": _round_optional(_first_float(candidate, "strike")),
+        "strike": _round_optional(strike),
         "moneyness": _round_optional(_first_float(candidate, "moneyness")),
         "contract_multiplier": _round_optional(_first_float(candidate, "contract_multiplier")),
         "exercise_style": candidate.get("exercise_style"),
@@ -271,6 +293,7 @@ def _score_candidate(
         "reward_risk_score": round(reward_risk, 6),
         "contract_fit_score": round(contract_fit if eligible else contract_fit * 0.25, 6),
         "eligible": eligible,
+        "hard_filter_fail_reason_codes": hard_filter_fail_reason_codes,
     }
 
 
@@ -336,6 +359,14 @@ def _selected_contract_payload(selected: Mapping[str, Any] | None) -> dict[str, 
         "option_right",
         "expiration",
         "strike",
+        "moneyness",
+        "contract_multiplier",
+        "exercise_style",
+        "settlement_type",
+        "is_weekly",
+        "is_monthly",
+        "is_adjusted_contract",
+        "last_trade_time",
         "dte",
         "delta",
         "gamma",
@@ -351,7 +382,12 @@ def _selected_contract_payload(selected: Mapping[str, Any] | None) -> dict[str, 
         "volume",
         "open_interest",
         "spread_abs",
+        "spread_pct",
         "spread_pct_mid",
+        "intrinsic_value",
+        "extrinsic_value",
+        "breakeven_price",
+        "theoretical_value",
         "quote_age_seconds",
     )
     return {key: selected.get(key) for key in keys}
@@ -362,6 +398,8 @@ def _contract_constraints(option_right: str, handoff: Mapping[str, Any], policy:
     target_dte = _target_dte(holding)
     target_delta = _target_delta(handoff, {})
     min_dte, max_dte = _preferred_dte_range(holding)
+    min_abs_delta = _first_float(policy, "min_abs_delta", "min_option_abs_delta") or 0.35
+    max_abs_delta = _first_float(policy, "max_abs_delta", "max_option_abs_delta") or 0.65
     return {
         "allowed_option_right": option_right,
         "target_dte": target_dte if option_right != "none" else None,
@@ -369,8 +407,8 @@ def _contract_constraints(option_right: str, handoff: Mapping[str, Any], policy:
         "min_dte": min_dte if option_right != "none" else None,
         "max_dte": max_dte if option_right != "none" else None,
         "target_abs_delta": target_delta if option_right != "none" else None,
-        "min_abs_delta": 0.35 if option_right != "none" else None,
-        "max_abs_delta": 0.65 if option_right != "none" else None,
+        "min_abs_delta": min_abs_delta if option_right != "none" else None,
+        "max_abs_delta": max_abs_delta if option_right != "none" else None,
         "max_spread_pct_mid": _score(policy, "max_option_spread_pct", "max_spread_pct_mid", default=0.18),
         "min_volume": _first_float(policy, "min_volume") or 0.0,
         "min_open_interest": _first_float(policy, "min_open_interest") or 0.0,
@@ -411,7 +449,7 @@ def _premium_risk_plan(selected: Mapping[str, Any] | None, handoff: Mapping[str,
     }
 
 
-def _reason_codes(expression_type: str, selected: Mapping[str, Any] | None, dominant: Mapping[str, Any], candidates: Sequence[Mapping[str, Any]], option_right: str, policy: Mapping[str, Any], underlying_plan: Mapping[str, Any], pending: Mapping[str, Any]) -> list[str]:
+def _reason_codes(expression_type: str, selected: Mapping[str, Any] | None, dominant: Mapping[str, Any], scored_candidates: Sequence[Mapping[str, Any]], option_right: str, policy: Mapping[str, Any], underlying_plan: Mapping[str, Any], pending: Mapping[str, Any]) -> list[str]:
     reasons: list[str] = []
     action_type = str(underlying_plan.get("planned_underlying_action_type") or "").lower()
     if expression_type == "no_option_expression":
@@ -424,7 +462,7 @@ def _reason_codes(expression_type: str, selected: Mapping[str, Any] | None, domi
         reasons.append(f"{expression_type}_selected")
     if selected is None and option_right != "none":
         reasons.append("no_eligible_option_contract_candidate")
-    if not candidates:
+    if not scored_candidates:
         reasons.append("missing_option_chain_candidates")
     if dominant.get("theta_risk_score", 0.0) >= 0.65:
         reasons.append("theta_risk_pressure")
@@ -432,11 +470,20 @@ def _reason_codes(expression_type: str, selected: Mapping[str, Any] | None, domi
         reasons.append("iv_fit_downgrade")
     if str(policy.get("option_expression_allowed") or policy.get("allow_option_expression") or "true").lower() in {"false", "0", "no", "blocked"}:
         reasons.append("option_expression_policy_blocked")
-    if candidates and selected is None and expression_type == "no_option_expression":
+    if scored_candidates and selected is None and expression_type == "no_option_expression":
         reasons.append("no_contract_passed_hard_filter")
+        reasons.extend(_candidate_filter_reason_summary(scored_candidates))
     if selected is not None:
         reasons.append("point_in_time_contract_candidate_selected")
     return _dedupe(reasons)
+
+
+def _candidate_filter_reason_summary(scored_candidates: Sequence[Mapping[str, Any]]) -> list[str]:
+    reasons: list[str] = []
+    for candidate in scored_candidates:
+        for reason in candidate.get("hard_filter_fail_reason_codes") or []:
+            reasons.append(str(reason))
+    return reasons
 
 
 def _preferred_dte_range(holding_minutes: float) -> tuple[int, int]:
@@ -465,6 +512,19 @@ def _target_delta(handoff: Mapping[str, Any], event: Mapping[str, Any]) -> float
     return _clip01(0.40 + 0.15 * path_quality + 0.10 * event_gap)
 
 
+def _target_range_ok(required_right: str, strike: float | None, handoff: Mapping[str, Any]) -> bool:
+    if strike is None:
+        return True
+    entry = _first_float(handoff, "expected_entry_price", "entry_price_assumption")
+    target_low = _first_float(handoff, "target_price_low")
+    target_high = _first_float(handoff, "target_price_high", "expected_target_price")
+    if required_right == "call" and entry is not None and target_high is not None and target_high > entry:
+        return strike <= target_high
+    if required_right == "put" and entry is not None and target_low is not None and target_low < entry:
+        return strike >= target_low
+    return True
+
+
 def _iv_rank_ceiling(market: Mapping[str, Any], event: Mapping[str, Any], policy: Mapping[str, Any]) -> float:
     explicit = _first_float(policy, "iv_rank_ceiling", "max_iv_rank")
     if explicit is not None:
@@ -487,6 +547,15 @@ def _triangular_fit(value: float, target: float, half_width: float) -> float:
     if half_width <= 0:
         return 0.0
     return _clip01(1.0 - abs(value - target) / half_width)
+
+
+def _replay_context(row: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "option_chain_snapshot_ref": row.get("option_chain_snapshot_ref") or row.get("option_chain_snapshot_id"),
+        "option_quote_available_time": row.get("option_quote_available_time") or row.get("option_chain_available_time"),
+        "underlying_quote_snapshot_ref": row.get("underlying_quote_snapshot_ref") or row.get("underlying_quote_snapshot_id"),
+        "underlying_reference_price": row.get("underlying_reference_price"),
+    }
 
 
 def _pending_option_context(row: Mapping[str, Any]) -> dict[str, Any]:

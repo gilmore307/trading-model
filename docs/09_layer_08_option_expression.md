@@ -186,6 +186,10 @@ selected_option_right
 dominant_horizon
 selected_contract
 option_chain_snapshot_ref
+option_quote_available_time
+underlying_quote_snapshot_ref
+underlying_reference_price
+replay_context
 contract_constraints
 premium_risk_plan
 underlying_thesis_ref
@@ -209,8 +213,8 @@ It implements:
 - Layer 7 bullish thesis -> long-call candidate search;
 - Layer 7 bearish thesis or no-direct-short bearish thesis -> long-put candidate search;
 - Layer 7 `maintain` / `no_trade`, policy blocks, or pending option exposure -> `no_option_expression`;
-- hard filters for right, bid/ask/mid, DTE range, stale quote age, volume/open interest, spread, and adjusted-contract exclusion;
-- DTE / delta / Greeks / IV / liquidity / reward-risk scoring;
+- hard filters for right, bid/ask/mid, DTE range, preferred absolute delta range, stale quote age, volume/open interest, spread, adjusted-contract exclusion, and target-range moneyness guardrails;
+- DTE / delta / Greeks / IV / liquidity / reward-risk scoring with per-candidate hard-filter reason codes;
 - offline label join helpers and leakage assertions.
 
 Fixture tests live in:
@@ -232,7 +236,7 @@ multi-day thesis -> preferred_dte_range = 21-45
 
 V1 avoids deep OTM lottery contracts. Preferred absolute delta starts around `0.35-0.65`; future learned contract-fit models may adjust this by path quality, expected move, IV, liquidity, and theta pressure.
 
-Layer 7 target/range fields should constrain moneyness: bullish call strikes should not sit far above `target_price_high`; bearish put strikes should not sit far below `target_price_low`.
+Layer 7 target/range fields constrain moneyness when the target range is directionally coherent: bullish call strikes may not sit above `target_price_high`; bearish put strikes may not sit below `target_price_low`. Candidates outside the guardrail carry `strike_outside_underlying_target_range` and cannot be selected in V1.
 
 ## Labels and evaluation
 
