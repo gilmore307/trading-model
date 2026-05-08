@@ -1,7 +1,7 @@
 # Model Decomposition Framework
 
-Status: current design spine
-Owner intent: every model layer must have the same reviewable nine-part decomposition before implementation or promotion expands.
+Status: accepted Layers 1-8 design spine; model-design phase closed
+Owner intent: every model layer must keep the same reviewable nine-part decomposition before production promotion expands.
 
 ## Nine-Part Structure
 
@@ -42,7 +42,7 @@ Layer-owned fields use compact `1_*`, `2_*`, ... prefixes consistently across do
 
 ## Layer 1: MarketRegimeModel
 
-Status: accepted V2.2 contract.
+Status: accepted V2.2 contract with deterministic implementation/evaluation path; production promotion remains evidence-gated.
 
 ### 1. Data
 
@@ -192,7 +192,7 @@ It must not directly rank sectors, ETFs, or stocks and must not pre-assign ETF/s
 
 ## Layer 2: SectorContextModel
 
-Status: accepted design route; implementation pending.
+Status: accepted direction-neutral contract with deterministic implementation/evaluation path; production promotion remains evidence-gated.
 
 Layer 2 V1 is an ETF/sector attribute discovery and direction-neutral sector/industry tradability-context model. It is not a stock selector and not a hand-written sector-style classifier.
 
@@ -380,7 +380,7 @@ Must construct a direction-neutral anonymous target state vector by fusing Layer
 
 ## Layer 4: EventOverlayModel
 
-Status: accepted design route; deterministic model implementation pending.
+Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
 Contract owner:
 
@@ -392,7 +392,7 @@ Must convert point-in-time event evidence into `event_context_vector` before alp
 
 ## Layer 5: AlphaConfidenceModel
 
-Status: accepted design route; deterministic model implementation pending.
+Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
 Contract owner:
 
@@ -404,7 +404,7 @@ Must convert reviewed Layer 1/2/3 state evidence plus `event_context_vector` cor
 
 ## Layer 6: PositionProjectionModel
 
-Status: accepted design route; deterministic model implementation pending.
+Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
 Contract owner:
 
@@ -538,7 +538,7 @@ It must not output buy/sell/hold/open/close/reverse, choose instruments, read op
 
 ## Layer 7: UnderlyingActionModel
 
-Status: accepted design route; deterministic model implementation pending.
+Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
 ### 1. Purpose
 
@@ -661,7 +661,7 @@ Layer 7 remains offline: no order type, no route, no time-in-force, no send/canc
 
 ## Layer 8: OptionExpressionModel
 
-Status: deterministic scaffold implemented for the current model-design phase.
+Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
 Layer 8 uses Layer 7 underlying path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, position-projection context, and market-context constraints. It outputs `option_expression_plan` / `expression_vector` and may choose long-call, long-put, or no-option expression plus a point-in-time selected contract reference and constraints.
 

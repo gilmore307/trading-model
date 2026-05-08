@@ -21,7 +21,8 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `91_model_decomposition.md` — current nine-part model decomposition framework and layer-by-layer design breakdown.
 - `92_vector_taxonomy.md` — accepted vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing.
 - `93_state_vector_feature_registry.md` — accepted semantic guardrails for Layer 1/2/3 state-vector, Layer 4 event-context, Layer 5 alpha-confidence, Layer 6 position-projection, Layer 7 underlying-action, and Layer 8 option-expression score direction, quality, risk, scope, liquidity, routing, diagnostics, and research-only fields.
+- `94_model_stack_closeout.md` — accepted repository closeout for the Layers 1-8 model-design phase, no-Layer-9 boundary, remaining production-hardening work, and verification receipt.
 
-Layer workflow and acceptance live in the numbered layer files. Add future layers as numbered layer files before adding broad workflow prose.
+Layer workflow and acceptance live in the numbered layer files. Do not add a future model layer unless an explicit architecture revision reopens the stack; post-Layer-8 execution belongs outside `trading-model`.
 
 Do not place generated data, artifacts, notebooks, logs, credentials, or implementation outputs in this directory.

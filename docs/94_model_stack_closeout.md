@@ -1,0 +1,60 @@
+# Model Stack Closeout
+
+Status: accepted model-design closeout for Layers 1-8
+Date: 2026-05-07
+
+## Closeout scope
+
+`trading-model` has a complete accepted local deterministic scaffold for the current offline model stack:
+
+| Layer | Model | Output | Closeout state |
+|---|---|---|---|
+| 1 | `MarketRegimeModel` | `market_context_state` | accepted V2.2 contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
+| 2 | `SectorContextModel` | `sector_context_state` | accepted direction-neutral contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
+| 3 | `TargetStateVectorModel` | `target_context_state` | accepted direction-neutral target-state contract, anonymous candidate preprocessing, deterministic implementation/evaluation scaffold |
+| 4 | `EventOverlayModel` | `event_context_vector` | accepted V1 scaffold and fixture tests |
+| 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted adjusted-alpha V1 scaffold and fixture tests |
+| 6 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold and fixture tests |
+| 7 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold and fixture tests |
+| 8 | `OptionExpressionModel` | `option_expression_plan` / `expression_vector` | accepted offline option-expression scaffold and fixture tests |
+
+This closes the model-design phase. It does not approve production promotion.
+
+## Boundary closeout
+
+There is no accepted Layer 9 inside `trading-model`.
+
+After Layer 8, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
+
+Layer 7 and Layer 8 may produce offline plans and model confidence. They must not emit execution instructions or broker/account mutations.
+
+## Current deferred work
+
+The remaining work is production hardening, not model-stack design:
+
+- wire real point-in-time inference/evaluation feeds for every promoted layer;
+- calibrate labels and thresholds on chronological splits;
+- prove baseline improvement and stability;
+- persist promotion evidence and accepted review decisions through the manager/storage paths;
+- define exact unified decision-record artifact contracts in the next manager/control-plane phase;
+- keep shared names and durable contracts routed through `trading-manager/scripts/registry/`.
+
+## Verification receipt
+
+Latest closeout verification for this closeout:
+
+```text
+trading-model: PYTHONPATH=src python3 -m unittest discover tests -> 94 tests OK
+trading-manager: PYTHONPATH=src python3 -m unittest discover tests -> 35 tests OK
+trading-manager: python3 scripts/registry/apply_registry_migrations.py --dry-run -> no pending migrations
+git diff --check clean in both repositories
+```
+
+Latest relevant pushed commits before the final closeout-doc commit:
+
+```text
+trading-model  34f8cd0 Tighten layer eight candidate filters
+trading-manager 633c2cb Register layer eight candidate filter policy
+```
+
+After this closeout document lands, `trading-model` should be treated as structurally closed for the accepted Layers 1-8 model-design phase. Future changes should be scoped as production hardening, evidence/promotion work, bug fixes, or explicitly accepted architecture revisions.

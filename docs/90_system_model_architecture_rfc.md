@@ -1,6 +1,6 @@
 # Direction-Neutral Trading Model Architecture
 
-Status: accepted current route
+Status: accepted current route; Layers 1-8 model-design phase closed
 Owner intent: keep the model stack direct, point-in-time, and current-route authoritative.
 
 ## Architecture Summary
@@ -47,7 +47,7 @@ This separation is mandatory:
 | 7 | `UnderlyingActionModel` | `underlying_action_model` | `underlying_action_plan` / `underlying_action_vector` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and Layer 8 underlying-path handoff. |
 | 8 | `OptionExpressionModel` | `option_expression_model` | `option_expression_plan` / `expression_vector` | Option-expression selection from Layer 7 underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
 
-Do not treat Layer 7 or Layer 8 as live execution. Broker mutation and live/paper order placement are outside `trading-model`.
+Do not treat Layer 7 or Layer 8 as live execution. Broker mutation and live/paper order placement are outside `trading-model`. There is no accepted Layer 9 inside this repository; post-Layer-8 work crosses into downstream review / execution-owned boundaries.
 
 ## Model Artifact Rule
 

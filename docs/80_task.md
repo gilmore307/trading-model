@@ -2,13 +2,12 @@
 
 ## Active Tasks
 
-- Define final unified decision-record shape now that Layers 1-8 have accepted local deterministic scaffolds; promote shared names through `trading-manager` only when stable.
-
-Layer 1-8 design, deterministic implementation scaffolds, fixture/local evidence paths, docs, and registry score naming are accepted for the current model-design phase. Layer 4 EventOverlayModel, Layer 5 AlphaConfidenceModel, Layer 6 PositionProjectionModel, Layer 7 UnderlyingActionModel, and Layer 8 OptionExpressionModel now have local deterministic scaffolds. Real-sample promotion evidence remains a later production-readiness gap, not an active blocker for closing the accepted layer designs.
+No active model-design tasks remain. Layers 1-8 are structurally closed for the accepted local deterministic scaffold phase; see `docs/94_model_stack_closeout.md`.
 
 ## Queued Tasks
 
-- Harden Layer 7 `UnderlyingActionModel` and Layer 8 `OptionExpressionModel` beyond local deterministic scaffolds: connect real point-in-time feature/evaluation feeds, calibrate labels, and prove baseline improvement before any production promotion.
+- Production hardening for Layers 1-8: connect real point-in-time inference/evaluation feeds, calibrate labels, prove baseline improvement, and persist accepted promotion evidence before any production promotion.
+- Define exact unified decision-record artifact contracts in the next manager/control-plane phase. Promote shared names through `trading-manager` only when stable.
 
 ## Open Gaps
 
@@ -24,10 +23,12 @@ These are promotion/production-readiness gaps. They do not reopen the accepted L
 
 - Exact artifact/manifest/ready-signal/request contracts for promoted model artifacts.
 - Exact storage path/reference requirements for model evaluation and promotion artifacts.
-- These shared contracts stay deferred until all model layers are designed and the `trading-manager` development phase begins; model work should continue with local/offline evidence and avoid prematurely registering durable manager/storage interfaces.
+- Exact unified decision-record artifact contracts and execution-side handoff contracts.
+- These shared contracts stay deferred to the `trading-manager` / control-plane phase; `trading-model` must avoid prematurely registering durable manager/storage/execution interfaces.
 
 ## Recently Accepted
 
+- Repository model-stack closeout is accepted for the current design phase: Layers 1-8 now have accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture evidence. There is no accepted Layer 9 inside `trading-model`; post-Layer-8 execution remains outside this repository.
 - Layer 1-3 model-design closeout is accepted for the current phase: MarketRegimeModel, SectorContextModel, and TargetStateVectorModel have reviewed contracts, deterministic local implementations/evaluation scaffolds, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.
 - Layer 3 is `TargetStateVectorModel`; the active purpose is market + sector + target state-vector construction before trade/action decisions.
 - Current V2.2 architecture is `MarketRegimeModel -> SectorContextModel -> TargetStateVectorModel -> EventOverlayModel -> AlphaConfidenceModel -> PositionProjectionModel -> UnderlyingActionModel -> OptionExpressionModel`, with anonymous target candidate construction inside Layer 3 preprocessing.

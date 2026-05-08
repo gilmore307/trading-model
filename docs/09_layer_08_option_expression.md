@@ -1,5 +1,7 @@
 # Layer 8 — OptionExpressionModel
 
+Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
+
 `OptionExpressionModel` consumes the Layer 7 `underlying_action_plan` / `underlying_action_vector` handoff plus point-in-time option-chain context to produce an offline `option_expression_plan` and `expression_vector`.
 
 It is the first layer that may select option expression and contract constraints. It is still not live execution.
