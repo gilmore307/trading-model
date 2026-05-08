@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import scripts.models.model_03_target_state_vector.review_target_state_vector_production_substrate as production_substrate
 from models.model_03_target_state_vector import evaluation, generator
 from models.model_03_target_state_vector.anonymous_target_candidate_builder import builder
 
@@ -66,6 +67,34 @@ class TargetStateVectorModelTests(unittest.TestCase):
         summary = evaluation.summarize_threshold_results(artifacts.eval_metrics)
         self.assertEqual(summary["promotion_gate_state"], "blocked")
         self.assertIn("minimum_feature_rows", summary["failed_thresholds"])
+
+    def test_production_substrate_conversion_matches_governance_persistence_shape(self) -> None:
+        feature_rows = [_feature_row(index) for index in range(30)]
+        model_rows = generator.generate_rows(feature_rows)
+        artifacts = evaluation.build_evaluation_artifacts(
+            feature_rows=feature_rows,
+            model_rows=model_rows,
+            purpose="production_promotion_evaluation",
+            request_status="completed",
+            write_policy="database_persisted_production_eval_substrate",
+            evidence_source="real_database_evaluation",
+        )
+
+        persistence_rows = production_substrate.to_persistence_artifacts(artifacts)
+        summary = production_substrate.build_summary(
+            feature_rows=feature_rows,
+            model_rows=model_rows,
+            artifacts=artifacts,
+            persistence_rows=persistence_rows,
+        )
+
+        self.assertEqual(persistence_rows["model_eval_run"][0]["run_name"], "production_promotion_evaluation")
+        self.assertIn("horizon", persistence_rows["model_eval_label"][0])
+        self.assertIn("factor_name", persistence_rows["model_promotion_metric"][0])
+        self.assertEqual(summary["write_policy"], "database_persisted_production_eval_substrate")
+        self.assertEqual(summary["evidence_source"], "real_database_evaluation")
+        self.assertEqual(summary["calibration_summary"], None)
+        self.assertEqual(summary["upstream_dependency_status"]["model_01_market_regime"], "deferred_after_real_evaluation")
 
     def test_candidate_builder_keeps_symbol_in_metadata_not_model_vector(self) -> None:
         rows = builder.build_candidate_rows(

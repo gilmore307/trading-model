@@ -671,3 +671,16 @@ Chentong clarified that Layers 3-8 should follow the same promotion principle as
 `review_layers_03_08_promotion_closeout.py` is now the accepted Layer 3-8 closeout entrypoint. It builds blocked evaluation artifacts, creates promotion candidates, calls `openclaw agent` for strict review, persists deferred decisions, and never activates configs for deferred/rejected outcomes.
 
 Current reviewed decisions are Layer 3 `mpdec_d8e027dd9b5aa939`, Layer 4 `mpdec_76b07ea01a3f525b`, Layer 5 `mpdec_9c3e19d6559ef55b`, Layer 6 `mpdec_b118232e76fae092`, Layer 7 `mpdec_fabc9c709149a698`, and Layer 8 `mpdec_e7448aaab1334345`.
+
+## D033 - Layer 3 production-evaluation substrate is present but not promotable
+
+Date: 2026-05-08
+Status: Accepted
+
+A follow-up closeout run created a real Layer 3 production-evaluation substrate instead of leaving Layer 3 only in the generic missing-substrate bucket.
+
+Layer 3 now has `576` PostgreSQL feature rows in `trading_data.feature_03_target_state_vector`, `576` generated model rows in `trading_model.model_03_target_state_vector`, `1604` future-target-tradeable-path labels, snapshot `mdsnap_9b7c3bd598114c7c`, eval run `mdevrun_327616bb447ceb5b`, candidate `mpcand_1b077bca49a18dbf`, and reviewer-agent decision `mpdec_70fef0f31847cc1c`.
+
+The measured Layer 3 thresholds passed, but promotion remains deferred because Layer 1 and Layer 2 are not production-approved/active upstream dependencies and Layer 3 calibration evidence is still missing. The proposed config `mcfg_582101fd83b5fbee` must not activate from this deferred decision.
+
+`review_target_state_vector_production_substrate.py` is the accepted reproducible entrypoint for rebuilding the Layer 3 substrate and review package. Layers 4-8 remain blocked on missing real production evaluation surfaces and labels; they must not be promoted from the blocked closeout receipts.
