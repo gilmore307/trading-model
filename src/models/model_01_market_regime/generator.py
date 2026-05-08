@@ -18,13 +18,32 @@ import tomllib
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from statistics import mean, pstdev
 from typing import Any, Callable, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 ET = ZoneInfo("America/New_York")
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config" / "factor_specs.toml"
 SUPPORTED_AGGREGATIONS = {"flat", "bucketed_mean"}
+
+
+def _mean(values: Iterable[float]) -> float:
+    if isinstance(values, Sequence):
+        if not values:
+            raise ValueError("mean requires at least one value")
+        return sum(values) / len(values)
+    items = list(values)
+    if not items:
+        raise ValueError("mean requires at least one value")
+    return sum(items) / len(items)
+
+
+def _pstdev(values: Iterable[float]) -> float:
+    if not isinstance(values, Sequence):
+        values = list(values)
+    if len(values) < 1:
+        raise ValueError("pstdev requires at least one value")
+    center = sum(values) / len(values)
+    return math.sqrt(sum((value - center) ** 2 for value in values) / len(values))
 
 
 def _safe_float(value: Any) -> float | None:
@@ -56,13 +75,13 @@ def _row_available_time(row: Mapping[str, Any]) -> datetime:
 def _bounded(values: Sequence[float]) -> float | None:
     if not values:
         return None
-    return math.tanh(mean(values) / 2.0)
+    return math.tanh(_mean(values) / 2.0)
 
 
 def _bounded_abs(values: Sequence[float]) -> float | None:
     if not values:
         return None
-    return math.tanh(mean(abs(value) for value in values) / 2.0)
+    return math.tanh(_mean(abs(value) for value in values) / 2.0)
 
 
 REDUCERS: dict[str, Callable[[Sequence[float]], float | None]] = {
@@ -252,11 +271,11 @@ class RollingZScore:
         min_history = signal.min_history if signal.min_history is not None else self.min_history
         if len(values) < min_history:
             return None
-        sigma = pstdev(values)
+        sigma = _pstdev(values)
         std_floor = signal.std_floor if signal.std_floor is not None else self.std_floor
         if sigma < std_floor:
             return 0.0
-        raw_z = (value - mean(values)) / sigma
+        raw_z = (value - _mean(values)) / sigma
         z_clip = signal.z_clip if signal.z_clip is not None else self.z_clip
         return max(-z_clip, min(z_clip, raw_z))
 
@@ -364,7 +383,7 @@ def generate_row(
 
 def _average_optional(values: Sequence[float | None]) -> float | None:
     clean = [value for value in values if value is not None]
-    return mean(clean) if clean else None
+    return _mean(clean) if clean else None
 
 
 def _neg(value: float | None) -> float | None:
@@ -435,7 +454,7 @@ def _bucketed_factor_value(spec: FactorSpec, row: Mapping[str, Any], scaler: Rol
             adjusted.append(zscore)
             eligible_columns.add(signal.column)
         if _coverage(len(adjusted), len(signals)) >= (spec.min_signal_coverage or 1.0):
-            bucket_values.append(mean(adjusted))
+            bucket_values.append(_mean(adjusted))
     if _coverage(len(bucket_values), len(bucket_signals)) < (spec.min_signal_coverage or 1.0):
         return None, eligible_columns
     return spec.reducer(bucket_values), eligible_columns
@@ -463,7 +482,7 @@ def _transition_pressure(current: Mapping[str, float], previous: Mapping[str, fl
     deltas = [abs(value - previous[name]) for name, value in current.items() if name in previous]
     if not deltas:
         return None
-    return math.tanh(mean(deltas) * 2.0)
+    return math.tanh(_mean(deltas) * 2.0)
 
 
 def build_explainability_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:

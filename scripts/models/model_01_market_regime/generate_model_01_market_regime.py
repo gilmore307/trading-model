@@ -195,11 +195,40 @@ def write_diagnostics_rows_sql(
         f"""
         CREATE TABLE IF NOT EXISTS {qualified_table} (
           "available_time" TIMESTAMPTZ PRIMARY KEY,
-          "present_state_output_count" INTEGER NOT NULL,
-          "missing_state_output_count" INTEGER NOT NULL,
+          "present_state_output_count" INTEGER,
+          "missing_state_output_count" INTEGER,
           "data_quality_score" DOUBLE PRECISION,
-          "diagnostic_payload_json" JSONB NOT NULL
+          "diagnostic_payload_json" JSONB NOT NULL DEFAULT '{{}}'::jsonb
         )
+        """
+    )
+    cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS \"present_state_output_count\" INTEGER")
+    cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS \"missing_state_output_count\" INTEGER")
+    cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS \"data_quality_score\" DOUBLE PRECISION")
+    cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS \"diagnostic_payload_json\" JSONB NOT NULL DEFAULT '{{}}'::jsonb")
+    schema_literal = target_schema.replace("'", "''")
+    table_literal = target_table.replace("'", "''")
+    cursor.execute(
+        f"""
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = '{schema_literal}'
+              AND table_name = '{table_literal}'
+              AND column_name = 'present_factor_count'
+          ) THEN
+            ALTER TABLE {qualified_table} ALTER COLUMN "present_factor_count" DROP NOT NULL;
+          END IF;
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = '{schema_literal}'
+              AND table_name = '{table_literal}'
+              AND column_name = 'missing_factor_count'
+          ) THEN
+            ALTER TABLE {qualified_table} ALTER COLUMN "missing_factor_count" DROP NOT NULL;
+          END IF;
+        END $$
         """
     )
     insert_sql = f"""

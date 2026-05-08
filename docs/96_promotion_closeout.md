@@ -13,8 +13,8 @@ The closeout pass moved promotion from a framework-only state into concrete curr
 
 | Layer | Model | Evidence source | Evaluation receipt | Decision receipt | Result | Activation |
 |---:|---|---|---|---|---|---|
-| 1 | `model_01_market_regime` | PostgreSQL read-only: `trading_data.feature_01_market_regime` + `trading_model.model_01_market_regime` | `mdevrun_1d00f2757982bd63` / `mdsnap_dc61e0e823ca4850` | `mpdec_d743cb5dbc8159f2` for candidate `mpcand_b79411e80a774787` | deferred | none |
-| 2 | `model_02_sector_context` | PostgreSQL read-only: `trading_data.feature_02_sector_context` + `trading_model.model_02_sector_context` | `mdevrun_00c81e53569941df` / `mdsnap_fa3982c8d482017f` | `mpdec_3ab83ea1f423326d` for candidate `mpcand_a6044e72162553f9` | deferred | none |
+| 1 | `model_01_market_regime` | PostgreSQL read-only: regenerated `trading_data.feature_01_market_regime` + `trading_model.model_01_market_regime` | `mdevrun_1f36fd090ec5dc03` / `mdsnap_141ef99ca8da5875` | `mpdec_fb175b8c8a6b7bbf` for candidate `mpcand_5256bbfb6a02e85d` | deferred after repair: data completeness fixed, but baseline/coverage/stability still fail | none |
+| 2 | `model_02_sector_context` | PostgreSQL read-only: regenerated `trading_data.feature_02_sector_context` + `trading_model.model_02_sector_context` | `mdevrun_696127b7faef4cac` / `mdsnap_04b65eabc7ed9410` | `mpdec_03cd8113817e7cd9` for candidate `mpcand_680b51bc7afb02bd` | deferred after repair: coverage passes, but baseline/lift gates still fail | none |
 | 3 | `model_03_target_state_vector` | PostgreSQL production-eval substrate: `trading_data.feature_03_target_state_vector` + generated `trading_model.model_03_target_state_vector` | `mdevrun_327616bb447ceb5b` / `mdsnap_9b7c3bd598114c7c` | `mpdec_70fef0f31847cc1c` for candidate `mpcand_1b077bca49a18dbf` | deferred: real substrate present, but upstream L1/L2 approvals and calibration evidence missing | none |
 | 4 | `model_04_event_overlay` | formal closeout blocker: missing production event-overlay eval run / calibrated labels | `mdevrun_closeout_l04_no_eval_substrate_20260508` / `mdsnap_closeout_l04_no_eval_substrate_20260508` | `mpdec_76b07ea01a3f525b` for candidate `mpcand_6ab73401f22ab057` | deferred: no production eval substrate | none |
 | 5 | `model_05_alpha_confidence` | formal closeout blocker: missing production adjusted-alpha eval run / calibrated labels | `mdevrun_closeout_l05_no_eval_substrate_20260508` / `mdsnap_closeout_l05_no_eval_substrate_20260508` | `mpdec_9c3e19d6559ef55b` for candidate `mpcand_72289e5cc95ae2d5` | deferred: no production eval substrate | none |
@@ -26,27 +26,29 @@ This is the current honest closeout: every layer has a persisted current promoti
 
 ## Layer 1 decision evidence
 
-`model_01_market_regime` read real database rows and persisted the generated governance artifacts plus a deferred promotion decision.
+`model_01_market_regime` read real database rows and persisted the generated governance artifacts plus a deferred promotion decision. A follow-up repair regenerated the stale Layer 1 feature/model tables, raising the evaluation sample to `3275` feature rows, `3275` model rows, and `6472` labels. The stale row-count and leakage failures were removed, but the model still did not satisfy promotion gates.
 
-Key failing gates:
+Latest failing gates after repair:
 
-- baseline improvement failed: minimum observed `baseline_improvement_abs = -0.6660030004362388`, threshold `>= 0.0`;
-- leakage/alignment failed: `total_leakage_violation_count = 6`, threshold `<= 0`;
-- model row count failed: `130`, threshold `>= 252`;
-- stability evidence was absent / failed: `minimum_stability_sign_consistency = 0.0`, threshold `>= 0.66`.
+- baseline improvement failed: `minimum_baseline_improvement_abs = -0.35178356856387916`, threshold `>= 0.0`;
+- coverage failed: `minimum_coverage = 0.6497695852534562`, threshold `>= 0.8`;
+- split sign stability failed: `minimum_stability_sign_consistency = 0.3333333333333333`, threshold `>= 0.66`.
+
+Passing gates after repair included leakage (`0` violations), split count, feature/model row counts, label count, pair count, correlation range, and state-output absolute Pearson. The remaining failures are therefore treated as current evidence/behavior blockers, not as permission to lower thresholds.
 
 Because the decision was deferred, no config activation was allowed or performed.
 
 ## Layer 2 decision evidence
 
-`model_02_sector_context` read real database rows and persisted the generated governance artifacts plus a deferred promotion decision.
+`model_02_sector_context` read real database rows and persisted the generated governance artifacts plus a deferred promotion decision. A follow-up repair regenerated Layer 2 features/model rows after source-fetch and generator optimizations. The latest evaluation used `104800` feature rows, `81875` model rows, and `198322` labels.
 
-Key failing gates:
+Latest failing gates after repair:
 
-- baseline improvement failed: minimum observed `baseline_improvement_abs = -0.29879136549850716`, threshold `>= 0.0`;
-- split sign stability failed: minimum observed `split_stability_sign_consistency = 0.3333333333333333`, threshold `>= 0.66`.
+- baseline improvement failed: `minimum_baseline_improvement_abs = -0.6002657404367061`, threshold `>= 0.0`;
+- selected-vs-blocked lift failed: `minimum_selected_abs_label_lift_vs_blocked = -0.005092477576509518`, threshold `>= 0.0`;
+- split sign stability failed: `minimum_stability_sign_consistency = 0.3333333333333333`, threshold `>= 0.66`.
 
-Positive evidence existed for row counts, coverage, leakage, selected count, and handoff metrics, but the failed baseline/stability gates still force deferral. Because the decision was deferred, no config activation was allowed or performed.
+Positive evidence existed for row counts, coverage (`0.8743002544529263` against `>= 0.8`), leakage, selected count, factor correlation, and handoff metrics, but the failed baseline/lift/stability gates still force deferral. Because the decision was deferred, no config activation was allowed or performed.
 
 ## Layer 3 follow-up production-eval substrate
 

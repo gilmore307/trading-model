@@ -17,11 +17,32 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from datetime import datetime
-from statistics import mean
 from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 ET = ZoneInfo("America/New_York")
+
+
+def _mean(values: Iterable[float]) -> float:
+    if isinstance(values, Sequence):
+        if not values:
+            raise ValueError("mean requires at least one value")
+        return sum(values) / len(values)
+    items = list(values)
+    if not items:
+        raise ValueError("mean requires at least one value")
+    return sum(items) / len(items)
+
+
+def _pstdev(values: Iterable[float]) -> float:
+    if not isinstance(values, Sequence):
+        values = list(values)
+    if len(values) < 1:
+        raise ValueError("pstdev requires at least one value")
+    center = sum(values) / len(values)
+    return math.sqrt(sum((value - center) ** 2 for value in values) / len(values))
+
+
 MODEL_ID = "sector_context_model"
 MODEL_VERSION = "sector_context_model_v1_contract"
 PRIMARY_TABLE = "model_02_sector_context"
@@ -189,7 +210,7 @@ def _magnitude(value: float | None) -> float | None:
 
 def _average(values: Iterable[float | None]) -> float | None:
     clean = [value for value in values if value is not None]
-    return mean(clean) if clean else None
+    return _mean(clean) if clean else None
 
 
 def _quality_score(present: int, total: int) -> float | None:

@@ -684,3 +684,16 @@ Layer 3 now has `576` PostgreSQL feature rows in `trading_data.feature_03_target
 The measured Layer 3 thresholds passed, but promotion remains deferred because Layer 1 and Layer 2 are not production-approved/active upstream dependencies and Layer 3 calibration evidence is still missing. The proposed config `mcfg_582101fd83b5fbee` must not activate from this deferred decision.
 
 `review_target_state_vector_production_substrate.py` is the accepted reproducible entrypoint for rebuilding the Layer 3 substrate and review package. Layers 4-8 remain blocked on missing real production evaluation surfaces and labels; they must not be promoted from the blocked closeout receipts.
+
+## D034 - Layer 1/2 repair fixed stale data completeness but did not justify promotion
+
+Date: 2026-05-08
+Status: Accepted
+
+A follow-up Layer 1/2 gate repair found and fixed a stale feature-generation problem before re-reviewing promotion. The repair regenerated `feature_01_market_regime`, `feature_02_sector_context`, `model_01_market_regime`, and `model_02_sector_context` from real PostgreSQL source data instead of lowering thresholds.
+
+Latest Layer 1 evidence is snapshot `mdsnap_141ef99ca8da5875`, eval run `mdevrun_1f36fd090ec5dc03`, candidate `mpcand_5256bbfb6a02e85d`, and deferred decision `mpdec_fb175b8c8a6b7bbf`. The stale row-count and leakage failures are gone: the run used `3275` feature rows, `3275` model rows, and `6472` labels with `0` leakage violations. Promotion still fails baseline improvement, coverage, and split sign-stability gates.
+
+Latest Layer 2 evidence is snapshot `mdsnap_04b65eabc7ed9410`, eval run `mdevrun_696127b7faef4cac`, candidate `mpcand_680b51bc7afb02bd`, and deferred decision `mpdec_03cd8113817e7cd9`. The run used `104800` feature rows, `81875` model rows, and `198322` labels; coverage now passes at `0.8743002544529263`. Promotion still fails baseline improvement, selected-vs-blocked lift, and split sign-stability gates.
+
+These results are current negative evidence, not a reason to weaken gates. L1/L2 remain deferred, no activation rows are allowed, and downstream L3 promotion remains blocked on upstream approval plus calibration evidence.
