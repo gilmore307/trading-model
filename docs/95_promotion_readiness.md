@@ -48,12 +48,12 @@ Missing any required item means the review action is **defer**, not approve.
 |---:|---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_context_state` | deferred after real evaluation | persisted decision `mpdec_d743cb5dbc8159f2`; failed baseline, leakage/alignment, model-row-count, and stability gates |
 | 2 | `SectorContextModel` | `sector_context_state` | deferred after real evaluation | persisted decision `mpdec_3ab83ea1f423326d`; failed baseline-improvement and split-stability gates |
-| 3 | `TargetStateVectorModel` | `target_context_state` | blocked: no production eval run | no production SQL evidence table / eval run exists for current contract |
-| 4 | `EventOverlayModel` | `event_context_vector` | evidence pending | real point-in-time event overlay evidence and calibration |
-| 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | evidence pending | real adjusted-alpha calibration and baseline proof |
-| 6 | `PositionProjectionModel` | `position_projection_vector` | evidence pending | real position utility / risk-budget fit evidence |
-| 7 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | evidence pending | real offline action outcome, stop/invalidation, and cost evidence |
-| 8 | `OptionExpressionModel` | `option_expression_plan` / `expression_vector` | evidence pending | real option-chain replay, premium-risk, and expression baseline proof |
+| 3 | `TargetStateVectorModel` | `target_context_state` | deferred: no production eval substrate | persisted decision `mpdec_31899733788d324d`; no production SQL evidence table / eval run exists for current contract |
+| 4 | `EventOverlayModel` | `event_context_vector` | deferred: no production eval substrate | persisted decision `mpdec_c118afa20c4e9bf2`; no production event-overlay evaluation run or calibrated labels exist |
+| 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | deferred: no production eval substrate | persisted decision `mpdec_dc408c9914a4723a`; no production adjusted-alpha evaluation run or calibrated labels exist |
+| 6 | `PositionProjectionModel` | `position_projection_vector` | deferred: no production eval substrate | persisted decision `mpdec_7b9d7279fecfdf6a`; no production position-utility evaluation run or labels exist |
+| 7 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | deferred: no production eval substrate | persisted decision `mpdec_5e6e83b02ccda12e`; no production realized-action outcome evaluation run exists |
+| 8 | `OptionExpressionModel` | `option_expression_plan` / `expression_vector` | deferred: no production eval substrate | persisted decision `mpdec_90721592be6591c8`; no production option-chain replay evaluation run exists |
 
 No layer in this matrix is currently production-approved by this document.
 
@@ -81,7 +81,7 @@ If baseline improvement is not positive and stable on the reviewed split windows
 
 An accepted approval decision may activate a config only through the promotion activation path. Deferred or rejected decisions must never activate or move production pointers.
 
-The 2026-05-08 closeout pass persisted deferred decisions for Layers 1-2 and created no activation rows. See `96_promotion_closeout.md` for the current decision receipts.
+The 2026-05-08 closeout pass persisted deferred decisions for Layers 1-8 and created no activation rows. See `96_promotion_closeout.md` for the current decision receipts.
 
 ## Implementation hook
 

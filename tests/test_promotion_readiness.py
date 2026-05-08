@@ -15,7 +15,11 @@ class PromotionReadinessTests(unittest.TestCase):
 
         self.assertEqual(layers, list(range(1, 9)))
         self.assertTrue(all(row["design_status"] == "design_closed" for row in LAYER_PROMOTION_READINESS_MATRIX))
-        self.assertNotIn("production_approved", {row["production_promotion_status"] for row in LAYER_PROMOTION_READINESS_MATRIX})
+        statuses = {row["production_promotion_status"] for row in LAYER_PROMOTION_READINESS_MATRIX}
+        self.assertNotIn("production_approved", statuses)
+        self.assertIn("deferred_after_real_evaluation", statuses)
+        self.assertIn("deferred_no_production_eval_substrate", statuses)
+        self.assertTrue(all("mpdec_" in row["blocking_gap"] for row in LAYER_PROMOTION_READINESS_MATRIX))
 
     def test_missing_evidence_forces_defer(self) -> None:
         result = validate_promotion_evidence_package(

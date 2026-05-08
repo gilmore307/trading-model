@@ -657,6 +657,6 @@ Current closeout decisions:
 
 - Layer 1 `model_01_market_regime`: real database evaluation `mdevrun_1d00f2757982bd63` / snapshot `mdsnap_dc61e0e823ca4850` produced persisted deferred decision `mpdec_d743cb5dbc8159f2` for candidate `mpcand_b79411e80a774787`. Promotion is blocked by failed baseline, leakage/alignment, model-row-count, and stability gates.
 - Layer 2 `model_02_sector_context`: real database evaluation `mdevrun_00c81e53569941df` / snapshot `mdsnap_fa3982c8d482017f` produced persisted deferred decision `mpdec_3ab83ea1f423326d` for candidate `mpcand_a6044e72162553f9`. Promotion is blocked by failed baseline-improvement and split-stability gates.
-- Layers 3-8 have no current production evaluation run for their accepted contracts, so they are blocked before candidate/decision persistence rather than represented by fabricated promotion decisions.
+- Layers 3-8 have no current production evaluation substrate for their accepted contracts, so the closeout persisted formal blocked eval runs, `production_eval_run_available = 0` metrics, candidates, and deferred decisions: Layer 3 `mpdec_31899733788d324d`, Layer 4 `mpdec_c118afa20c4e9bf2`, Layer 5 `mpdec_dc408c9914a4723a`, Layer 6 `mpdec_7b9d7279fecfdf6a`, Layer 7 `mpdec_5e6e83b02ccda12e`, and Layer 8 `mpdec_90721592be6591c8`.
 
 Deferred decisions must not activate configs or create production pointers. No production activation happened during this closeout pass.
