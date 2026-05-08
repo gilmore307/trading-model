@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 import scripts.models.model_01_market_regime.review_market_regime_promotion as review_script
+import scripts.models.review_layers_03_08_promotion_closeout as layers_03_08_review_script
 from model_governance.agent_review import (
     build_decision_row_from_review,
     build_market_regime_promotion_prompt,
@@ -112,6 +113,56 @@ class AgentPromotionReviewTests(unittest.TestCase):
         review = validate_promotion_review(extract_json_object(review_script._extract_agent_text(stdout)))
 
         self.assertEqual(review["decision_type"], "defer")
+
+    def test_layers_03_08_agent_text_reads_top_level_openclaw_payloads(self) -> None:
+        stdout = json.dumps(
+            {
+                "payloads": [
+                    {
+                        "text": json.dumps(
+                            {
+                                "can_promote": False,
+                                "decision_type": "defer",
+                                "decision_status": "deferred",
+                                "confidence": 1.0,
+                                "reasons": ["missing production eval substrate"],
+                                "blockers": ["no production eval run"],
+                                "required_next_steps": ["create production eval run"],
+                                "evidence_checks": {"production_evaluation_substrate_present": False},
+                            }
+                        )
+                    }
+                ]
+            }
+        )
+
+        review = validate_promotion_review(extract_json_object(layers_03_08_review_script._extract_agent_text(stdout)))
+
+        self.assertEqual(review["decision_status"], "deferred")
+        self.assertFalse(review["evidence_checks"]["production_evaluation_substrate_present"])
+
+    def test_layers_03_08_dry_run_builds_blocked_artifacts_without_agent(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/models/review_layers_03_08_promotion_closeout.py",
+                "--layer",
+                "3",
+                "--dry-run",
+            ],
+            cwd=repo_root,
+            env={"PYTHONPATH": "src"},
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+
+        payload = json.loads(result.stdout)
+        receipt = payload["receipts"][0]
+        self.assertEqual(receipt["summary"]["run_status"], "blocked")
+        self.assertIn("Return ONLY one JSON object", receipt["agent_prompt"])
+        self.assertFalse(receipt["summary"]["promotion_evidence_ready"])
 
     def test_review_script_dry_run_does_not_invoke_agent(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]

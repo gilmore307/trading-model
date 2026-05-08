@@ -15,8 +15,8 @@ No active model-design tasks remain. Layers 1-8 are structurally closed for the 
 - Layer 1 has real database promotion evidence and persisted decision `mpdec_d743cb5dbc8159f2`, but promotion is deferred by failed baseline, leakage/alignment, model-row-count, and stability gates.
 - Exact downstream SQL alias/view implementation for `market_context_state`, if a physical alias is needed beyond `trading_model.model_01_market_regime`.
 - Accepted production promotion for V2.2 `trading_model.model_02_sector_context` rows remains blocked by real-sample baseline/stability gates; latest review is durably deferred, not approved.
-- Layer 3 has formal deferred decision `mpdec_31899733788d324d`; current blocker is no production SQL evidence table / real eval substrate for the current contract.
-- Layers 4-8 have formal deferred decisions, but current blockers remain missing production eval substrate: `mpdec_c118afa20c4e9bf2`, `mpdec_dc408c9914a4723a`, `mpdec_7b9d7279fecfdf6a`, `mpdec_5e6e83b02ccda12e`, and `mpdec_90721592be6591c8`.
+- Layer 3 has formal deferred decision `mpdec_d8e027dd9b5aa939`; current blocker is no production SQL evidence table / real eval substrate for the current contract.
+- Layers 4-8 have formal deferred decisions, but current blockers remain missing production eval substrate: `mpdec_76b07ea01a3f525b`, `mpdec_9c3e19d6559ef55b`, `mpdec_b118232e76fae092`, `mpdec_fabc9c709149a698`, and `mpdec_e7448aaab1334345`.
 - Whether legacy strategy-selection research returns later as a downstream layer or remains archived as model-local research history.
 
 These are promotion/production-readiness gaps. They do not reopen the accepted Layer 1-3 model contracts for the current design phase.
@@ -30,7 +30,7 @@ These are promotion/production-readiness gaps. They do not reopen the accepted L
 
 ## Recently Accepted
 
-- Promotion closeout decisions are recorded in `docs/96_promotion_closeout.md`: Layers 1-2 have real database evidence and persisted deferred decisions; Layers 3-8 now also have persisted blocked/deferred eval runs, metrics, candidates, and decisions proving no production eval substrate exists yet. No production activation occurred.
+- Promotion closeout decisions are recorded in `docs/96_promotion_closeout.md`: Layers 1-2 have real database evidence and persisted deferred decisions; Layers 3-8 now also have persisted blocked/deferred eval runs, metrics, candidates, and agent-reviewed decisions proving no production eval substrate exists yet. No production activation occurred.
 - Production-promotion readiness rules are accepted for Layers 1-8 in `docs/95_promotion_readiness.md`: every production approval requires dataset snapshot/split/labels/eval run/metrics/candidate/thresholds/baselines/stability/leakage/calibration/decision evidence. Current status remains deferred, not production-approved.
 - Repository model-stack closeout is accepted for the current design phase: Layers 1-8 now have accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture evidence. There is no accepted Layer 9 inside `trading-model`; post-Layer-8 execution remains outside this repository.
 - Layer 1-3 model-design closeout is accepted for the current phase: MarketRegimeModel, SectorContextModel, and TargetStateVectorModel have reviewed contracts, deterministic local implementations/evaluation scaffolds, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.

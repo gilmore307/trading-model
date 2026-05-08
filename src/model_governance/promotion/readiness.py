@@ -42,7 +42,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "output": "target_context_state",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
-        "blocking_gap": "persisted decision mpdec_31899733788d324d; no production SQL evidence table / eval run exists for current contract",
+        "blocking_gap": "persisted decision mpdec_d8e027dd9b5aa939; no production SQL evidence table / eval run exists for current contract",
     },
     {
         "layer": 4,
@@ -50,7 +50,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "output": "event_context_vector",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
-        "blocking_gap": "persisted decision mpdec_c118afa20c4e9bf2; no production event-overlay evaluation run or calibrated labels exist",
+        "blocking_gap": "persisted decision mpdec_76b07ea01a3f525b; no production event-overlay evaluation run or calibrated labels exist",
     },
     {
         "layer": 5,
@@ -58,7 +58,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "output": "alpha_confidence_vector",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
-        "blocking_gap": "persisted decision mpdec_dc408c9914a4723a; no production adjusted-alpha evaluation run or calibrated labels exist",
+        "blocking_gap": "persisted decision mpdec_9c3e19d6559ef55b; no production adjusted-alpha evaluation run or calibrated labels exist",
     },
     {
         "layer": 6,
@@ -66,7 +66,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "output": "position_projection_vector",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
-        "blocking_gap": "persisted decision mpdec_7b9d7279fecfdf6a; no production position-utility evaluation run or labels exist",
+        "blocking_gap": "persisted decision mpdec_b118232e76fae092; no production position-utility evaluation run or labels exist",
     },
     {
         "layer": 7,
@@ -74,7 +74,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "output": "underlying_action_plan",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
-        "blocking_gap": "persisted decision mpdec_5e6e83b02ccda12e; no production realized-action outcome evaluation run exists",
+        "blocking_gap": "persisted decision mpdec_fabc9c709149a698; no production realized-action outcome evaluation run exists",
     },
     {
         "layer": 8,
@@ -82,7 +82,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "output": "option_expression_plan",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
-        "blocking_gap": "persisted decision mpdec_90721592be6591c8; no production option-chain replay evaluation run exists",
+        "blocking_gap": "persisted decision mpdec_e7448aaab1334345; no production option-chain replay evaluation run exists",
     },
 )
 
