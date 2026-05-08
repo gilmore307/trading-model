@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate deterministic AlphaConfidenceModel rows from local JSON/JSONL inputs.
 
-This is a stable callable scaffold entrypoint. It supports fixture/local input
+This is a stable local entrypoint. It supports JSON/JSONL input
 and deliberately does not activate production promotion state.
 """
 from __future__ import annotations

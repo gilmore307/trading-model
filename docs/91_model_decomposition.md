@@ -370,10 +370,11 @@ V1 acceptance must prove point-in-time construction, no Layer 2 holdings leakage
 
 Status: accepted target state-vector contract with deterministic implementation/evaluation scaffold complete; production promotion pending real-data evidence and accepted review.
 
-Contract owner:
+Contract owners:
 
 ```text
 docs/04_layer_03_target_state_vector.md
+src/models/model_03_target_state_vector/target_state_vector_contract.md
 ```
 
 Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence prepared by Layer 3 preprocessing. The primary `target_context_state` output consists of four inspectable blocks: `market_state_features`, `sector_state_features`, `target_state_features`, and `cross_state_features`. Embedding/cluster outputs may be derived representations, but they must not replace the inspectable blocks. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, and row reliability must remain separate. It must not select strategy families, expand parameter variants, output alpha confidence, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.

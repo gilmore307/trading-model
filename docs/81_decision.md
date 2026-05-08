@@ -137,7 +137,7 @@ Layer 1 evaluation must test:
 - responsiveness to real market transitions;
 - explanatory value for Layer 2 sector trend-stability calibration;
 - usefulness for `OptionExpressionModel` contract constraints;
-- usefulness for downstream reviewed trading-projection, expression, risk, exit, and kill-switch policy without turning Layer 1 into an action model.
+- usefulness for downstream reviewed position projection, underlying-action thesis, option expression, and risk-policy handoff without turning Layer 1 into an action model.
 
 `market_context_state` is the accepted downstream semantic surface for current Layer 1 state-score fields.
 

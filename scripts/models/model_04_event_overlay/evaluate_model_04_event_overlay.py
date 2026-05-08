@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build local EventOverlayModel evaluation labels and summary evidence.
+"""Build local EventOverlayModel labels and evaluation summary.
 
 This entrypoint is intentionally local/fixture-safe. It checks inference rows for
 label leakage where the layer exposes a leakage checker, joins supplied outcome

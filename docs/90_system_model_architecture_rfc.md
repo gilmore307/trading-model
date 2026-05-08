@@ -190,7 +190,7 @@ Layer 1 must prove:
 - interpretability from supporting evidence;
 - explanatory value for Layer 2 sector trend-stability calibration;
 - usefulness for option-expression constraints;
-- usefulness for portfolio risk, sizing, execution-style, exit, and kill-switch policy;
+- usefulness for position projection, underlying-action thesis, option-expression constraints, and risk-policy handoff;
 - no hidden sector/ETF/stock/strategy selection.
 
 ## Layer 2: SectorContextModel

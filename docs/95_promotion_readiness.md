@@ -46,8 +46,8 @@ Missing any required item means the review action is **defer**, not approve.
 
 | Layer | Model | Output | Current production status | Blocking gap |
 |---:|---|---|---|---|
-| 1 | `MarketRegimeModel` | `market_context_state` | deferred after real evaluation | persisted decision `mpdec_d743cb5dbc8159f2`; failed baseline, leakage/alignment, model-row-count, and stability gates |
-| 2 | `SectorContextModel` | `sector_context_state` | deferred after real evaluation | persisted decision `mpdec_3ab83ea1f423326d`; failed baseline-improvement and split-stability gates |
+| 1 | `MarketRegimeModel` | `market_context_state` | deferred after real evaluation | latest persisted decision `mpdec_fb175b8c8a6b7bbf`; failed baseline, coverage, and split-stability gates |
+| 2 | `SectorContextModel` | `sector_context_state` | deferred after real evaluation | latest persisted decision `mpdec_03cd8113817e7cd9`; failed baseline/lift and split-stability gates |
 | 3 | `TargetStateVectorModel` | `target_context_state` | deferred after real production-eval substrate | persisted decision `mpdec_70fef0f31847cc1c`; upstream Layer 1/2 are not production-approved/active and Layer 3 calibration evidence is missing |
 | 4 | `EventOverlayModel` | `event_context_vector` | deferred: no production eval substrate | persisted decision `mpdec_76b07ea01a3f525b`; no production event-overlay evaluation run or calibrated labels exist |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | deferred: no production eval substrate | persisted decision `mpdec_9c3e19d6559ef55b`; no production adjusted-alpha evaluation run or calibrated labels exist |

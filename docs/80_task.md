@@ -13,14 +13,13 @@ No active model-design tasks remain. Layers 1-8 are structurally closed for the 
 
 ## Open Gaps
 
-- Layer 1 has real database promotion evidence and persisted decision `mpdec_d743cb5dbc8159f2`, but promotion is deferred by failed baseline, leakage/alignment, model-row-count, and stability gates.
+- Layer 1 has real database promotion evidence and latest persisted decision `mpdec_fb175b8c8a6b7bbf`, but promotion is deferred by failed baseline, coverage, and split-stability gates.
 - Exact downstream SQL alias/view implementation for `market_context_state`, if a physical alias is needed beyond `trading_model.model_01_market_regime`.
-- Accepted production promotion for V2.2 `trading_model.model_02_sector_context` rows remains blocked by real-sample baseline/stability gates; latest review is durably deferred, not approved.
+- Layer 2 has real database promotion evidence and latest persisted decision `mpdec_03cd8113817e7cd9`, but promotion is deferred by failed baseline/lift and split-stability gates.
 - Layer 3 now has real PostgreSQL substrate and persisted deferred decision `mpdec_70fef0f31847cc1c`; current blockers are upstream Layer 1/2 production approval/activation and Layer 3 calibration evidence, not missing substrate.
 - Layers 4-8 have formal deferred decisions, and current blockers remain missing production eval substrate: `mpdec_76b07ea01a3f525b`, `mpdec_9c3e19d6559ef55b`, `mpdec_b118232e76fae092`, `mpdec_fabc9c709149a698`, and `mpdec_e7448aaab1334345`.
-- Whether legacy strategy-selection research returns later as a downstream layer or remains archived as model-local research history.
 
-These are promotion/production-readiness gaps. They do not reopen the accepted Layer 1-3 model contracts for the current design phase.
+These are promotion/production-readiness gaps. They do not reopen the accepted Layer 1-8 model contracts for the current design phase.
 
 ## Deferred Beyond This Readiness Pass
 

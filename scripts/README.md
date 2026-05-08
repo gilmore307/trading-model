@@ -1,28 +1,43 @@
 # scripts
 
-Executable wrappers and operational entrypoints for `trading-model`.
+Executable entrypoints for `trading-model`.
 
 Directory boundary:
 
-- `models/` owns model-specific entrypoints, organized by model package.
-- `model_governance/` owns shared governance/development schema entrypoints that are not specific to one model.
+- `models/` owns model-specific entrypoints, organized by `model_NN_<slug>/`.
+- `model_governance/` owns shared governance/development schema entrypoints.
 
-Current model-specific entrypoints:
+Scripts are the runtime boundary. Reusable model logic belongs in `src/`; scripts may import `src/`, but `src/` must not import scripts.
 
-- `models/model_01_market_regime/generate_model_01_market_regime.py` reads `trading_data.feature_01_market_regime`, upserts the continuous state vector into `trading_model.model_01_market_regime`, and writes generic support artifacts to `trading_model.model_01_market_regime_explainability` and `trading_model.model_01_market_regime_diagnostics` by default.
-- `models/model_01_market_regime/evaluate_model_01_market_regime.py` runs the MarketRegimeModel evaluation harness. By default it uses fixture/local JSONL dry-run evidence; with `--from-database` it performs a read-only SQL evaluation over real `trading_data` / `trading_model` rows and emits promotion evidence with explicit threshold results.
-- `models/model_01_market_regime/run_market_regime_development_smoke.py` runs a deterministic development DB smoke test for `source_01_market_regime -> feature_01_market_regime -> model_01_market_regime -> evaluation`. It calls no providers and cleans its development tables by default.
-- `models/model_01_market_regime/review_market_regime_promotion.py` builds an evaluation-backed promotion candidate and asks an OpenClaw agent to review whether it can be promoted. By default it prints review/decision rows only; with `--write-decision` it can persist the reviewed evidence, config, candidate, and decision rows, and with `--activate-approved-config` it can activate only accepted approval decisions by inserting a `model_promotion_activation` event and marking the reviewed config active.
-- `models/model_02_sector_context/generate_model_02_sector_context.py` reads `trading_data.feature_02_sector_context` plus `trading_model.model_01_market_regime`, upserts the narrow `trading_model.model_02_sector_context` sector-context state output, and writes support artifacts to `trading_model.model_02_sector_context_explainability` and `trading_model.model_02_sector_context_diagnostics` by default.
-- `models/model_02_sector_context/evaluate_model_02_sector_context.py` builds SectorContextModel evaluation/promotion evidence. By default it uses fixture/local JSONL dry-run evidence; with `--from-database` it performs a read-only SQL evaluation over real Layer 2 feature/model rows.
-- `models/model_02_sector_context/review_sector_context_promotion.py` builds a SectorContextModel promotion candidate and asks an OpenClaw agent to review whether it can be promoted. Local fallback review is conservative and defers fixture/dry-run evidence.
-- `models/model_04_event_overlay/generate_model_04_event_overlay.py`, `evaluate_model_04_event_overlay.py`, and `review_event_overlay_promotion.py` provide local/fixture-safe EventOverlayModel generation, evaluation-label, and conservative review wrappers.
-- `models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py`, `evaluate_model_05_alpha_confidence.py`, and `review_alpha_confidence_promotion.py` provide local/fixture-safe AlphaConfidenceModel generation, evaluation-label, and conservative review wrappers.
-- `models/model_06_position_projection/generate_model_06_position_projection.py`, `evaluate_model_06_position_projection.py`, and `review_position_projection_promotion.py` provide local/fixture-safe PositionProjectionModel generation, evaluation-label, and conservative review wrappers.
-- `models/model_07_underlying_action/generate_model_07_underlying_action.py`, `evaluate_model_07_underlying_action.py`, and `review_underlying_action_promotion.py` provide local/fixture-safe UnderlyingActionModel generation, evaluation-label, and conservative review wrappers.
-- `models/model_08_option_expression/generate_model_08_option_expression.py`, `evaluate_model_08_option_expression.py`, and `review_option_expression_promotion.py` provide local/fixture-safe OptionExpressionModel generation, evaluation-label, and conservative review wrappers.
+## Model entrypoints
 
-Current shared governance entrypoints:
+- `models/model_01_market_regime/`
+  - `generate_model_01_market_regime.py` reads `trading_data.feature_01_market_regime`, writes `trading_model.model_01_market_regime`, and writes explainability/diagnostics support rows.
+  - `evaluate_model_01_market_regime.py` builds MarketRegimeModel evaluation evidence from fixture/local rows or read-only PostgreSQL rows with `--from-database`.
+  - `review_market_regime_promotion.py` builds an evaluation-backed promotion candidate and review decision; activation is possible only for accepted approval decisions through the explicit activation flag/path.
+  - `run_market_regime_development_smoke.py` runs a deterministic development DB smoke chain and cleans temporary tables by default.
+- `models/model_02_sector_context/`
+  - `generate_model_02_sector_context.py` reads Layer 2 features plus Layer 1 context and writes `trading_model.model_02_sector_context` plus support rows.
+  - `evaluate_model_02_sector_context.py` builds SectorContextModel evaluation evidence from fixture/local rows or read-only PostgreSQL rows with `--from-database`.
+  - `review_sector_context_promotion.py` builds a conservative promotion review decision.
+- `models/model_03_target_state_vector/`
+  - `generate_model_03_target_state_vector.py` generates `model_03_target_state_vector` rows from local/SQL-backed Layer 3 feature rows.
+  - `evaluate_model_03_target_state_vector.py` builds baseline-ladder evaluation evidence.
+  - `review_target_state_vector_promotion.py` reviews local/fixture evidence conservatively.
+  - `review_target_state_vector_production_substrate.py` reviews the real Layer 3 production-evaluation substrate when present.
+- `models/model_04_event_overlay/`
+  - `generate_model_04_event_overlay.py`, `evaluate_model_04_event_overlay.py`, and `review_event_overlay_promotion.py` are local JSON/JSONL-safe EventOverlayModel generation, evaluation-label, and conservative review entrypoints.
+- `models/model_05_alpha_confidence/`
+  - `generate_model_05_alpha_confidence.py`, `evaluate_model_05_alpha_confidence.py`, and `review_alpha_confidence_promotion.py` are local JSON/JSONL-safe AlphaConfidenceModel generation, evaluation-label, and conservative review entrypoints.
+- `models/model_06_position_projection/`
+  - `generate_model_06_position_projection.py`, `evaluate_model_06_position_projection.py`, and `review_position_projection_promotion.py` are local JSON/JSONL-safe PositionProjectionModel generation, evaluation-label, and conservative review entrypoints.
+- `models/model_07_underlying_action/`
+  - `generate_model_07_underlying_action.py`, `evaluate_model_07_underlying_action.py`, and `review_underlying_action_promotion.py` are local JSON/JSONL-safe UnderlyingActionModel generation, evaluation-label, and conservative review entrypoints.
+- `models/model_08_option_expression/`
+  - `generate_model_08_option_expression.py`, `evaluate_model_08_option_expression.py`, and `review_option_expression_promotion.py` are local JSON/JSONL-safe OptionExpressionModel generation, evaluation-label, and conservative review entrypoints.
+- `models/review_layers_03_08_promotion_closeout.py` persists explicit deferred/blocked promotion evidence for layers that lack production evaluation substrate. It must not activate configs.
 
-- `model_governance/ensure_model_governance_schema.py` creates the generic `trading_model` governance/evaluation/promotion tables through `psql`. Use `--dry-run` to print DDL without touching PostgreSQL.
+## Shared governance entrypoints
+
+- `model_governance/ensure_model_governance_schema.py` creates the generic `trading_model` governance/evaluation/promotion tables through `psql`; use `--dry-run` to print DDL without touching PostgreSQL.
 - `model_governance/clear_model_development_database.py` clears the `trading_model` development schema through `psql` after a development run. It requires an explicit confirmation token unless run with `--dry-run`.
