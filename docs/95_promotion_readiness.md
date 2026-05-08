@@ -48,7 +48,7 @@ Missing any required item means the review action is **defer**, not approve.
 |---:|---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_context_state` | deferred after real evaluation | persisted decision `mpdec_d743cb5dbc8159f2`; failed baseline, leakage/alignment, model-row-count, and stability gates |
 | 2 | `SectorContextModel` | `sector_context_state` | deferred after real evaluation | persisted decision `mpdec_3ab83ea1f423326d`; failed baseline-improvement and split-stability gates |
-| 3 | `TargetStateVectorModel` | `target_context_state` | deferred: no production eval substrate | persisted decision `mpdec_d8e027dd9b5aa939`; no production SQL evidence table / eval run exists for current contract |
+| 3 | `TargetStateVectorModel` | `target_context_state` | deferred after real production-eval substrate | persisted decision `mpdec_70fef0f31847cc1c`; upstream Layer 1/2 are not production-approved/active and Layer 3 calibration evidence is missing |
 | 4 | `EventOverlayModel` | `event_context_vector` | deferred: no production eval substrate | persisted decision `mpdec_76b07ea01a3f525b`; no production event-overlay evaluation run or calibrated labels exist |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | deferred: no production eval substrate | persisted decision `mpdec_9c3e19d6559ef55b`; no production adjusted-alpha evaluation run or calibrated labels exist |
 | 6 | `PositionProjectionModel` | `position_projection_vector` | deferred: no production eval substrate | persisted decision `mpdec_b118232e76fae092`; no production position-utility evaluation run or labels exist |
@@ -81,7 +81,7 @@ If baseline improvement is not positive and stable on the reviewed split windows
 
 An accepted approval decision may activate a config only through the promotion activation path. Deferred or rejected decisions must never activate or move production pointers.
 
-The 2026-05-08 closeout pass persisted deferred decisions for Layers 1-8 and created no activation rows. Layers 3-8 were routed through `scripts/models/review_layers_03_08_promotion_closeout.py`, which calls the reviewer agent before persisting decisions. See `96_promotion_closeout.md` for the current decision receipts.
+The 2026-05-08 closeout pass persisted deferred decisions for Layers 1-8 and created no activation rows. Layers 3-8 were first routed through `scripts/models/review_layers_03_08_promotion_closeout.py`, which calls the reviewer agent before persisting decisions. A follow-up Layer 3 substrate run then persisted real Layer 3 evaluation evidence and deferred decision `mpdec_70fef0f31847cc1c`; Layers 4-8 remain blocked for missing production eval substrate. See `96_promotion_closeout.md` for the current decision receipts.
 
 ## Implementation hook
 

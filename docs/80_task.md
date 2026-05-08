@@ -6,27 +6,28 @@ No active model-design tasks remain. Layers 1-8 are structurally closed for the 
 
 ## Queued Tasks
 
-- Build the missing production evaluation substrate for Layers 3-8 in dependency order: point-in-time datasets, labels, real evaluation metrics, baseline/stability/leakage/calibration evidence, and a rerun of the persisted promotion review path.
+- Build the missing production evaluation substrate for Layers 4-8 in dependency order: point-in-time datasets, labels, real evaluation metrics, baseline/stability/leakage/calibration evidence, and a rerun of the persisted promotion review path.
 - Remediate failed Layer 1-2 promotion gates, then rerun the persisted promotion review path before any activation.
-- Define exact unified decision-record artifact contracts in the next manager/control-plane phase. Promote shared names through `trading-manager` only when stable.
+- Re-review Layer 3 after Layer 1/2 are production-approved/active and Layer 3 calibration evidence is available.
+- Consume the manager/storage V1 handoff contracts once control-plane implementation exists; keep model artifacts model-owned until promoted through `trading-manager`.
 
 ## Open Gaps
 
 - Layer 1 has real database promotion evidence and persisted decision `mpdec_d743cb5dbc8159f2`, but promotion is deferred by failed baseline, leakage/alignment, model-row-count, and stability gates.
 - Exact downstream SQL alias/view implementation for `market_context_state`, if a physical alias is needed beyond `trading_model.model_01_market_regime`.
 - Accepted production promotion for V2.2 `trading_model.model_02_sector_context` rows remains blocked by real-sample baseline/stability gates; latest review is durably deferred, not approved.
-- Layer 3 has formal deferred decision `mpdec_d8e027dd9b5aa939`; current blocker is no production SQL evidence table / real eval substrate for the current contract.
-- Layers 4-8 have formal deferred decisions, but current blockers remain missing production eval substrate: `mpdec_76b07ea01a3f525b`, `mpdec_9c3e19d6559ef55b`, `mpdec_b118232e76fae092`, `mpdec_fabc9c709149a698`, and `mpdec_e7448aaab1334345`.
+- Layer 3 now has real PostgreSQL substrate and persisted deferred decision `mpdec_70fef0f31847cc1c`; current blockers are upstream Layer 1/2 production approval/activation and Layer 3 calibration evidence, not missing substrate.
+- Layers 4-8 have formal deferred decisions, and current blockers remain missing production eval substrate: `mpdec_76b07ea01a3f525b`, `mpdec_9c3e19d6559ef55b`, `mpdec_b118232e76fae092`, `mpdec_fabc9c709149a698`, and `mpdec_e7448aaab1334345`.
 - Whether legacy strategy-selection research returns later as a downstream layer or remains archived as model-local research history.
 
 These are promotion/production-readiness gaps. They do not reopen the accepted Layer 1-3 model contracts for the current design phase.
 
 ## Deferred Beyond This Readiness Pass
 
-- Exact artifact/manifest/ready-signal/request contracts for promoted model artifacts.
-- Exact storage path/reference requirements for model evaluation and promotion artifacts.
-- Exact unified decision-record artifact contracts beyond the mandatory risk-cap invariant.
-- These shared contracts stay in `trading-manager` / control-plane implementation; `trading-model` must avoid owning durable manager/storage/execution interfaces.
+- Physical manager/storage implementation for `manager_request_v1`, `run_manifest_v1`, `artifact_ref_v1`, and `ready_signal_v1`.
+- Exact SQL/storage path/reference migrations for production model evaluation and promotion artifacts.
+- Exact unified decision-record artifact implementation beyond the mandatory risk-cap invariant.
+- These shared contracts stay in `trading-manager` / `trading-storage` control-plane implementation; `trading-model` must avoid owning durable manager/storage/execution interfaces.
 
 ## Recently Accepted
 
