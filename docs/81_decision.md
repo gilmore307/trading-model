@@ -634,3 +634,14 @@ Layers 1-8 have accepted contracts, docs, local deterministic scaffolds/evaluati
 There is no accepted Layer 9 inside `trading-model`. After Layer 8, downstream work belongs to review / execution-owned boundaries: broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
 Remaining work is production hardening and control-plane integration, not new model-layer design: real point-in-time feeds, label calibration, baseline/stability proof, accepted promotion decisions, and exact unified decision-record / artifact contracts through `trading-manager`.
+
+## D017 - Layers 1-8 production promotion requires complete evidence packages
+
+Date: 2026-05-07
+Status: Accepted
+
+Closing the model-design phase does not approve production promotion for any layer.
+
+Every production promotion review for Layers 1-8 must use the complete evidence package defined in `docs/95_promotion_readiness.md`: dataset snapshot, chronological split, label refs, eval run, promotion metrics, promotion candidate, thresholds, baseline comparison, split stability, leakage/no-future checks, calibration report, and decision receipt.
+
+Missing evidence or failed gates require a deferred promotion decision. Deferred or rejected decisions must not activate configs or move production pointers. Approval can only be considered after the evidence package is complete and gates pass; activation still belongs to the reviewed promotion activation path.

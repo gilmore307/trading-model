@@ -6,6 +6,11 @@ from .agent_review import (
     extract_json_object,
     validate_promotion_review,
 )
+from .readiness import (
+    LAYER_PROMOTION_READINESS_MATRIX,
+    REQUIRED_PROMOTION_EVIDENCE_FIELDS,
+    validate_promotion_evidence_package,
+)
 from .rows import (
     CONFIG_VERSION_TABLE,
     PROMOTION_ACTIVATION_TABLE,
@@ -26,6 +31,8 @@ __all__ = [
     "PROMOTION_CANDIDATE_TABLE",
     "PROMOTION_DECISION_TABLE",
     "PROMOTION_ROLLBACK_TABLE",
+    "REQUIRED_PROMOTION_EVIDENCE_FIELDS",
+    "LAYER_PROMOTION_READINESS_MATRIX",
     "PROMOTION_TABLE_NAMES",
     "build_config_version_row",
     "build_decision_row_from_review",
@@ -36,5 +43,6 @@ __all__ = [
     "build_promotion_rollback_row",
     "create_promotion_schema_sql",
     "extract_json_object",
+    "validate_promotion_evidence_package",
     "validate_promotion_review",
 ]

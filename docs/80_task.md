@@ -6,7 +6,8 @@ No active model-design tasks remain. Layers 1-8 are structurally closed for the 
 
 ## Queued Tasks
 
-- Production hardening for Layers 1-8: connect real point-in-time inference/evaluation feeds, calibrate labels, prove baseline improvement, and persist accepted promotion evidence before any production promotion.
+- Execute production evidence for Layers 1-8 in dependency order: connect real point-in-time inference/evaluation feeds, calibrate labels, prove baseline improvement, and persist accepted promotion decisions before any production activation.
+- Use `docs/95_promotion_readiness.md` as the production-readiness checklist and status matrix for Layers 1-8.
 - Define exact unified decision-record artifact contracts in the next manager/control-plane phase. Promote shared names through `trading-manager` only when stable.
 
 ## Open Gaps
@@ -19,15 +20,16 @@ No active model-design tasks remain. Layers 1-8 are structurally closed for the 
 
 These are promotion/production-readiness gaps. They do not reopen the accepted Layer 1-3 model contracts for the current design phase.
 
-## Deferred Until Manager Phase
+## Deferred Beyond This Readiness Pass
 
 - Exact artifact/manifest/ready-signal/request contracts for promoted model artifacts.
 - Exact storage path/reference requirements for model evaluation and promotion artifacts.
-- Exact unified decision-record artifact contracts and execution-side handoff contracts.
-- These shared contracts stay deferred to the `trading-manager` / control-plane phase; `trading-model` must avoid prematurely registering durable manager/storage/execution interfaces.
+- Exact unified decision-record artifact contracts beyond the mandatory risk-cap invariant.
+- These shared contracts stay in `trading-manager` / control-plane implementation; `trading-model` must avoid owning durable manager/storage/execution interfaces.
 
 ## Recently Accepted
 
+- Production-promotion readiness rules are accepted for Layers 1-8 in `docs/95_promotion_readiness.md`: every production approval requires dataset snapshot/split/labels/eval run/metrics/candidate/thresholds/baselines/stability/leakage/calibration/decision evidence. Current status remains evidence-gated/deferred/pending, not production-approved.
 - Repository model-stack closeout is accepted for the current design phase: Layers 1-8 now have accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture evidence. There is no accepted Layer 9 inside `trading-model`; post-Layer-8 execution remains outside this repository.
 - Layer 1-3 model-design closeout is accepted for the current phase: MarketRegimeModel, SectorContextModel, and TargetStateVectorModel have reviewed contracts, deterministic local implementations/evaluation scaffolds, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.
 - Layer 3 is `TargetStateVectorModel`; the active purpose is market + sector + target state-vector construction before trade/action decisions.

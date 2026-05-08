@@ -33,6 +33,7 @@ Layer 7 and Layer 8 may produce offline plans and model confidence. They must no
 The remaining work is production hardening, not model-stack design:
 
 - wire real point-in-time inference/evaluation feeds for every promoted layer;
+- use `docs/95_promotion_readiness.md` as the required evidence checklist and status matrix;
 - calibrate labels and thresholds on chronological splits;
 - prove baseline improvement and stability;
 - persist promotion evidence and accepted review decisions through the manager/storage paths;
