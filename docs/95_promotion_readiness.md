@@ -46,9 +46,9 @@ Missing any required item means the review action is **defer**, not approve.
 
 | Layer | Model | Output | Current production status | Blocking gap |
 |---:|---|---|---|---|
-| 1 | `MarketRegimeModel` | `market_context_state` | evidence-gated | real-sample approval receipt beyond fixture/dry-run evidence |
-| 2 | `SectorContextModel` | `sector_context_state` | deferred | latest real-data review failed all required baseline/stability gates |
-| 3 | `TargetStateVectorModel` | `target_context_state` | evidence pending | production-scale target-state evidence and approval decision |
+| 1 | `MarketRegimeModel` | `market_context_state` | deferred after real evaluation | persisted decision `mpdec_d743cb5dbc8159f2`; failed baseline, leakage/alignment, model-row-count, and stability gates |
+| 2 | `SectorContextModel` | `sector_context_state` | deferred after real evaluation | persisted decision `mpdec_3ab83ea1f423326d`; failed baseline-improvement and split-stability gates |
+| 3 | `TargetStateVectorModel` | `target_context_state` | blocked: no production eval run | no production SQL evidence table / eval run exists for current contract |
 | 4 | `EventOverlayModel` | `event_context_vector` | evidence pending | real point-in-time event overlay evidence and calibration |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | evidence pending | real adjusted-alpha calibration and baseline proof |
 | 6 | `PositionProjectionModel` | `position_projection_vector` | evidence pending | real position utility / risk-budget fit evidence |
@@ -80,6 +80,8 @@ If baseline improvement is not positive and stable on the reviewed split windows
 ## Activation rule
 
 An accepted approval decision may activate a config only through the promotion activation path. Deferred or rejected decisions must never activate or move production pointers.
+
+The 2026-05-08 closeout pass persisted deferred decisions for Layers 1-2 and created no activation rows. See `96_promotion_closeout.md` for the current decision receipts.
 
 ## Implementation hook
 

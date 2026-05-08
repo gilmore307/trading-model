@@ -645,3 +645,18 @@ Closing the model-design phase does not approve production promotion for any lay
 Every production promotion review for Layers 1-8 must use the complete evidence package defined in `docs/95_promotion_readiness.md`: dataset snapshot, chronological split, label refs, eval run, promotion metrics, promotion candidate, thresholds, baseline comparison, split stability, leakage/no-future checks, calibration report, and decision receipt.
 
 Missing evidence or failed gates require a deferred promotion decision. Deferred or rejected decisions must not activate configs or move production pointers. Approval can only be considered after the evidence package is complete and gates pass; activation still belongs to the reviewed promotion activation path.
+
+## D031 - Promotion closeout records real deferrals before activation
+
+Date: 2026-05-08
+Status: Accepted
+
+The production-promotion closeout pass must not stop at a readiness framework. Where real database evidence exists, the evaluation artifacts and promotion decision must be persisted before the route is considered closed.
+
+Current closeout decisions:
+
+- Layer 1 `model_01_market_regime`: real database evaluation `mdevrun_1d00f2757982bd63` / snapshot `mdsnap_dc61e0e823ca4850` produced persisted deferred decision `mpdec_d743cb5dbc8159f2` for candidate `mpcand_b79411e80a774787`. Promotion is blocked by failed baseline, leakage/alignment, model-row-count, and stability gates.
+- Layer 2 `model_02_sector_context`: real database evaluation `mdevrun_00c81e53569941df` / snapshot `mdsnap_fa3982c8d482017f` produced persisted deferred decision `mpdec_3ab83ea1f423326d` for candidate `mpcand_a6044e72162553f9`. Promotion is blocked by failed baseline-improvement and split-stability gates.
+- Layers 3-8 have no current production evaluation run for their accepted contracts, so they are blocked before candidate/decision persistence rather than represented by fabricated promotion decisions.
+
+Deferred decisions must not activate configs or create production pointers. No production activation happened during this closeout pass.

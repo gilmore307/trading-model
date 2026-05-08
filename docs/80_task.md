@@ -6,16 +6,17 @@ No active model-design tasks remain. Layers 1-8 are structurally closed for the 
 
 ## Queued Tasks
 
-- Execute production evidence for Layers 1-8 in dependency order: connect real point-in-time inference/evaluation feeds, calibrate labels, prove baseline improvement, and persist accepted promotion decisions before any production activation.
-- Use `docs/95_promotion_readiness.md` as the production-readiness checklist and status matrix for Layers 1-8.
+- Build the missing production evaluation substrate for Layers 3-8 in dependency order: point-in-time datasets, labels, evaluation runs, metrics, candidates, and formal defer/approve decisions.
+- Remediate failed Layer 1-2 promotion gates, then rerun the persisted promotion review path before any activation.
 - Define exact unified decision-record artifact contracts in the next manager/control-plane phase. Promote shared names through `trading-manager` only when stable.
 
 ## Open Gaps
 
-- Real-sample promotion evidence for Layer 1 beyond fixture-scale dry runs.
+- Layer 1 has real database promotion evidence and persisted decision `mpdec_d743cb5dbc8159f2`, but promotion is deferred by failed baseline, leakage/alignment, model-row-count, and stability gates.
 - Exact downstream SQL alias/view implementation for `market_context_state`, if a physical alias is needed beyond `trading_model.model_01_market_regime`.
 - Accepted production promotion for V2.2 `trading_model.model_02_sector_context` rows remains blocked by real-sample baseline/stability gates; latest review is durably deferred, not approved.
-- Production-scale Layer 3 real-data evidence and accepted promotion decision for `model_03_target_state_vector`.
+- Production-scale Layer 3 real-data evidence and formal promotion decision for `model_03_target_state_vector`; current blocker is no production SQL evidence table / eval run for the current contract.
+- Production evaluation runs and formal promotion decisions for Layers 4-8.
 - Whether legacy strategy-selection research returns later as a downstream layer or remains archived as model-local research history.
 
 These are promotion/production-readiness gaps. They do not reopen the accepted Layer 1-3 model contracts for the current design phase.
@@ -29,7 +30,8 @@ These are promotion/production-readiness gaps. They do not reopen the accepted L
 
 ## Recently Accepted
 
-- Production-promotion readiness rules are accepted for Layers 1-8 in `docs/95_promotion_readiness.md`: every production approval requires dataset snapshot/split/labels/eval run/metrics/candidate/thresholds/baselines/stability/leakage/calibration/decision evidence. Current status remains evidence-gated/deferred/pending, not production-approved.
+- Promotion closeout decisions are recorded in `docs/96_promotion_closeout.md`: Layers 1-2 have real database evidence and persisted deferred decisions; Layers 3-8 are explicitly blocked on missing production evaluation substrate. No production activation occurred.
+- Production-promotion readiness rules are accepted for Layers 1-8 in `docs/95_promotion_readiness.md`: every production approval requires dataset snapshot/split/labels/eval run/metrics/candidate/thresholds/baselines/stability/leakage/calibration/decision evidence. Current status remains deferred/blocked, not production-approved.
 - Repository model-stack closeout is accepted for the current design phase: Layers 1-8 now have accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture evidence. There is no accepted Layer 9 inside `trading-model`; post-Layer-8 execution remains outside this repository.
 - Layer 1-3 model-design closeout is accepted for the current phase: MarketRegimeModel, SectorContextModel, and TargetStateVectorModel have reviewed contracts, deterministic local implementations/evaluation scaffolds, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.
 - Layer 3 is `TargetStateVectorModel`; the active purpose is market + sector + target state-vector construction before trade/action decisions.
