@@ -525,4 +525,12 @@ position_projection_vector
 + underlying quote/liquidity/risk-policy context
   -> UnderlyingActionModel
   -> underlying_action_plan / underlying_action_vector
+
+underlying_action_plan / underlying_action_vector
++ option_chain_snapshot / option candidate context
+  -> OptionExpressionModel
+  -> option_expression_plan / expression_vector
+
+option_expression_plan / expression_vector
+  -> downstream execution-owned broker/order lifecycle
 ```
