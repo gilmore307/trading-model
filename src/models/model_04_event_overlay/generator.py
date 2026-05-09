@@ -103,14 +103,29 @@ def _encode_event(event: Mapping[str, Any], decision_time: datetime, row: Mappin
     intensity = _event_intensity(event) * dedup_weight
     direction_bias = _clip_signed(_first_float(event, "direction_bias_score", "event_direction_bias_score", "surprise_score", "abnormal_return_score") or 0.0)
     uncertainty = _clip01(_first_float(event, "uncertainty_score", "revision_risk_score") if _first_float(event, "uncertainty_score", "revision_risk_score") is not None else (0.55 if dedup_status in {"conflicting", "revised"} else 0.25))
-    native_scope = str(event.get("event_native_scope_type") or event.get("scope_type") or _scope_from_category(event)).lower()
+    inferred_native_scope = _scope_from_category(event)
+    native_scope = str(
+        event.get("event_native_scope_type")
+        or (
+            inferred_native_scope
+            if inferred_native_scope in {"equity_abnormal_activity", "option_abnormal_activity", "price_action"}
+            else None
+        )
+        or event.get("scope_type")
+        or inferred_native_scope
+    ).lower()
     relevance = _target_relevance(event, row, native_scope)
     impact = {scope: _impact_score(event, native_scope, scope, relevance, intensity) for scope in SCOPE_KEYS}
     scope_confidence = _clip01(_first_float(event, "scope_confidence_score") if _first_float(event, "scope_confidence_score") is not None else (0.75 if native_scope != "unknown" else 0.35))
     escalation = _clip01(_first_float(event, "scope_escalation_risk_score") if _first_float(event, "scope_escalation_risk_score") is not None else max(impact["market"], impact["sector"], impact["theme_factor"]) * 0.5)
     gap_risk = _clip01(_first_float(event, "gap_risk_score") if _first_float(event, "gap_risk_score") is not None else intensity * (0.8 if abs_age_minutes <= 60 else 0.35))
     reversal_risk = _clip01(_first_float(event, "reversal_risk_score") if _first_float(event, "reversal_risk_score") is not None else uncertainty * max(intensity, 0.25))
-    liquidity_risk = _clip01(_first_float(event, "liquidity_disruption_score") if _first_float(event, "liquidity_disruption_score") is not None else intensity * (1.0 if native_scope in {"microstructure", "option_abnormal_activity", "equity_abnormal_activity"} else 0.35))
+    liquidity_risk = _clip01(
+        _first_float(event, "liquidity_disruption_score")
+        if _first_float(event, "liquidity_disruption_score") is not None
+        else intensity
+        * (1.0 if native_scope in {"microstructure", "option_abnormal_activity", "equity_abnormal_activity", "price_action"} else 0.35)
+    )
     contagion = _clip01(_first_float(event, "contagion_risk_score") if _first_float(event, "contagion_risk_score") is not None else max(impact["market"], impact["sector"], escalation) * intensity)
     quality = _clip01(_first_float(event, "event_context_quality_score", "quality_score") if _first_float(event, "event_context_quality_score", "quality_score") is not None else source_quality * (1.0 - uncertainty * 0.35))
     target_direction = _first_float(_payload(row, "target_context_state"), "3_target_direction_score_390min", "3_target_direction_score_60min") or 0.0
@@ -210,7 +225,10 @@ def _event_intensity(event: Mapping[str, Any]) -> float:
     category = str(event.get("event_category_type") or event.get("information_role_type") or "").lower()
     if any(term in category for term in ("earnings", "sec", "macro", "guidance", "m&a", "merger")):
         return 0.8
-    if any(term in category for term in ("abnormal", "breaking", "halt")):
+    if any(
+        term in category
+        for term in ("abnormal", "breaking", "halt", "price_action", "breakout", "breakdown", "sweep", "trap")
+    ):
         return 0.7
     if category:
         return 0.45
@@ -246,7 +264,7 @@ def _impact_score(event: Mapping[str, Any], native_scope: str, scope: str, relev
         base = 0.9
     if native_scope == "symbol" and scope in {"symbol", "peer_group", "sector"}:
         base = {"symbol": 1.0, "peer_group": 0.45, "sector": 0.25}[scope]
-    if native_scope in {"equity_abnormal_activity", "option_abnormal_activity"} and scope in {"symbol", "microstructure"}:
+    if native_scope in {"equity_abnormal_activity", "option_abnormal_activity", "price_action"} and scope in {"symbol", "microstructure"}:
         base = {"symbol": 0.8, "microstructure": 0.9}[scope]
     return _clip01(base * max(relevance, 0.25) * max(intensity, 0.25))
 
@@ -259,6 +277,8 @@ def _scope_from_category(event: Mapping[str, Any]) -> str:
         return "equity_abnormal_activity"
     if "option" in category:
         return "option_abnormal_activity"
+    if any(term in category for term in ("price_action", "breakout", "breakdown", "sweep", "trap")):
+        return "price_action"
     if "sec" in category or "filing" in category or event.get("symbol"):
         return "symbol"
     return "unknown"

@@ -690,3 +690,12 @@ Latest Layer 1 evidence fixed the stale row-count and leakage failures; promotio
 Latest Layer 2 evidence improved coverage; promotion still fails baseline improvement, selected-vs-blocked lift, and split sign-stability gates.
 
 These results are current negative evidence, not a reason to weaken gates. L1/L2 remain deferred, no activation rows are allowed, and downstream L3 promotion remains blocked on upstream approval plus calibration evidence.
+
+## D035 - Price-action false-breakout evidence stays inside EventOverlayModel
+
+Date: 2026-05-09
+Status: Accepted
+
+False breakouts, failed breakdowns, liquidity sweeps, bull traps, and bear traps are represented as Layer 4 `price_action` events consumed by `EventOverlayModel`.
+
+They are not a new Layer 9. At inference time they may affect event intensity, direction bias, reversal risk, liquidity-disruption risk, uncertainty, target relevance, and microstructure/symbol impact inside `event_context_vector`. Realized post-event follow-through/failure remains offline label evidence only and must not leak into inference features.

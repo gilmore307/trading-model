@@ -55,6 +55,33 @@ class EventOverlayModelTests(unittest.TestCase):
         self.assertEqual(vector["4_event_market_impact_score_390min"], 0.0)
         self.assertGreater(vector["4_event_context_quality_score_390min"], 0.0)
 
+    def test_price_action_event_maps_to_microstructure_reversal_risk(self) -> None:
+        row = _base_row(source_04_event_overlay=[
+            {
+                "event_id": "evt_false_breakout",
+                "canonical_event_id": "evt_false_breakout",
+                "dedup_status": "canonical",
+                "event_time": "2026-05-07T10:25:00-04:00",
+                "available_time": "2026-05-07T10:26:00-04:00",
+                "event_category_type": "price_action",
+                "scope_type": "symbol",
+                "symbol": "AAPL",
+                "event_intensity_score": 0.8,
+                "direction_bias_score": -0.6,
+                "target_relevance_score": 1.0,
+            }
+        ])
+
+        output = generate_rows([row])[0]
+        vector = output["event_context_vector"]
+        encoded = output["event_overlay_diagnostics"]["encoded_events"][0]
+
+        self.assertEqual(encoded["event_native_scope_type"], "price_action")
+        self.assertGreater(vector["4_event_microstructure_impact_score_15min"], 0.0)
+        self.assertGreater(vector["4_event_reversal_risk_score_15min"], 0.0)
+        assert_no_label_leakage(output)
+        self.assert_no_forbidden_terms(output)
+
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:
         output = generate_rows([_base_row()])[0]
         labels = build_event_overlay_labels(

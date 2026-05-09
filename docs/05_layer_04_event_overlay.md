@@ -96,7 +96,8 @@ The overview row can reference type-specific artifacts. These artifacts may incl
 - news artifact: headline, summary, full-text reference, source timestamps, source quality, topic/entity tags, novelty, confirmation/conflict, and revision metadata;
 - SEC filing artifact: form type, accepted time, filing URL/path, materiality, dilution, ownership-change, legal, guidance, or M&A risk scores;
 - macro calendar artifact: scheduled/release time, actual/consensus/previous values, surprise score, importance, revision, and asset-sensitivity maps;
-- equity abnormal activity artifact: abnormal return, volume, dollar volume, spread, volatility, gap, liquidity, range expansion, and VWAP-deviation evidence;
+- equity abnormal activity artifact: abnormal return, volume, dollar volume, spread, volatility, gap, liquidity, range expansion, VWAP-deviation evidence, and price-action event tokens such as false breakout, failed breakdown, liquidity sweep, bull trap, or bear trap;
+- price-action artifact: prior range high/low, breakout or breakdown excursion, close-back-inside evidence, upper/lower wick rejection, sweep/trap token, and detector threshold metadata;
 - option abnormal activity artifact: IV shock, skew change, term-structure shift, unusual volume, call/put imbalance, large trade, sweep/block indicators, OI change, option liquidity, spread widening, and dealer-flow context when reviewed.
 
 Artifacts must remain point-in-time versioned. A later article revision, later SEC interpretation, or post-event price reaction can be a training/evaluation label only; it cannot be an inference feature.
@@ -265,6 +266,7 @@ theme
 symbol
 sec_filing
 equity_abnormal_activity
+price_action
 option_abnormal_activity
 unknown
 ```

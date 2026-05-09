@@ -10,6 +10,14 @@ MODEL_VERSION: Final[str] = "event_context_vector_v1_contract"
 VECTOR_OUTPUT: Final[str] = "event_context_vector"
 HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
 HORIZON_MINUTES: Final[dict[str, int]] = {"5min": 5, "15min": 15, "60min": 60, "390min": 390}
+PRICE_ACTION_EVENT_TYPES: Final[tuple[str, ...]] = (
+    "false_breakout",
+    "false_breakdown",
+    "liquidity_sweep_high",
+    "liquidity_sweep_low",
+    "bull_trap",
+    "bear_trap",
+)
 CORE_SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "4_event_presence_score_<horizon>",
     "4_event_timing_proximity_score_<horizon>",
