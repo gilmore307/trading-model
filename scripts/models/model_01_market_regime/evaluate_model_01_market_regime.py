@@ -4,7 +4,7 @@
 By default this remains an isolated fixture/local-JSONL dry run. With
 ``--from-database`` it performs a read-only PostgreSQL fetch of feature and model
 rows, then builds promotion evidence without writing to the database. Promotion
-persistence remains owned by ``review_market_regime_promotion.py --write-decision``.
+manager-control-plane persistence remains owned by `trading-manager`.
 """
 from __future__ import annotations
 

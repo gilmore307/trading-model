@@ -1,47 +1,28 @@
-"""Promotion lifecycle helpers."""
+"""Promotion evidence helpers for model-side review artifacts."""
 
 from .agent_review import (
-    build_decision_row_from_review,
     build_market_regime_promotion_prompt,
+    build_review_artifact_from_review,
     extract_json_object,
     validate_promotion_review,
+)
+from .evidence import (
+    build_model_config_ref,
+    build_promotion_candidate_evidence,
 )
 from .readiness import (
     LAYER_PROMOTION_READINESS_MATRIX,
     REQUIRED_PROMOTION_EVIDENCE_FIELDS,
     validate_promotion_evidence_package,
 )
-from .rows import (
-    CONFIG_VERSION_TABLE,
-    PROMOTION_ACTIVATION_TABLE,
-    PROMOTION_CANDIDATE_TABLE,
-    PROMOTION_DECISION_TABLE,
-    PROMOTION_ROLLBACK_TABLE,
-    build_config_version_row,
-    build_promotion_activation_row,
-    build_promotion_candidate_row,
-    build_promotion_decision_row,
-    build_promotion_rollback_row,
-)
-from .schema import PROMOTION_TABLE_NAMES, create_promotion_schema_sql
 
 __all__ = [
-    "CONFIG_VERSION_TABLE",
-    "PROMOTION_ACTIVATION_TABLE",
-    "PROMOTION_CANDIDATE_TABLE",
-    "PROMOTION_DECISION_TABLE",
-    "PROMOTION_ROLLBACK_TABLE",
     "REQUIRED_PROMOTION_EVIDENCE_FIELDS",
     "LAYER_PROMOTION_READINESS_MATRIX",
-    "PROMOTION_TABLE_NAMES",
-    "build_config_version_row",
-    "build_decision_row_from_review",
     "build_market_regime_promotion_prompt",
-    "build_promotion_activation_row",
-    "build_promotion_candidate_row",
-    "build_promotion_decision_row",
-    "build_promotion_rollback_row",
-    "create_promotion_schema_sql",
+    "build_model_config_ref",
+    "build_promotion_candidate_evidence",
+    "build_review_artifact_from_review",
     "extract_json_object",
     "validate_promotion_evidence_package",
     "validate_promotion_review",

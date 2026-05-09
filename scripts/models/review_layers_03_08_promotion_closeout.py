@@ -2,10 +2,10 @@
 """Agent-reviewed production-promotion closeout for Layers 3-8.
 
 Layers 1-2 have real database evaluation paths. Layers 3-8 do not yet have
-production evaluation substrate for their accepted contracts. This script makes
-that blocker go through the same promotion path anyway: build blocked evaluation
-artifacts, create a promotion candidate, call a reviewer agent, persist the
-agent decision, and never activate deferred/rejected candidates.
+production evaluation substrate for their accepted contracts. This script builds
+blocked evaluation artifacts, creates model-side promotion candidate evidence,
+and calls a reviewer agent. Durable promotion decisions and activation remain in
+`trading-manager`.
 """
 from __future__ import annotations
 
@@ -17,9 +17,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from model_governance.promotion import build_config_version_row, build_promotion_candidate_row
-from model_governance.promotion.agent_review import build_decision_row_from_review, extract_json_object, validate_promotion_review
-from model_governance.promotion.persistence import database_url, render_promotion_persistence_sql, run_psql
+from model_governance.promotion import build_model_config_ref, build_promotion_candidate_evidence
+from model_governance.promotion.agent_review import build_review_artifact_from_review, extract_json_object, validate_promotion_review
 
 CLOSEOUT_DATE = "2026-05-08"
 CLOSEOUT_TS = "2026-05-08T00:00:00-04:00"
@@ -207,7 +206,7 @@ def build_summary(closeout: Mapping[str, Any], artifacts: Mapping[str, list[Mapp
         "blocking_gap": closeout["blocker"],
         "required_next_steps": list(closeout["required_next_steps"]),
         "metric_refs": [metric["metric_id"]],
-        "write_policy": "persist_blocked_decision_no_activation",
+        "write_policy": "model_side_review_artifact_only_manager_control_plane_required",
     }
 
 
@@ -215,7 +214,7 @@ def build_generic_promotion_prompt(*, closeout: Mapping[str, Any], evaluation_su
     evidence = {
         "closeout": dict(closeout),
         "evaluation_summary": dict(evaluation_summary),
-        "config_version": dict(config_version_row),
+        "model_config_ref": dict(config_version_row),
         "promotion_candidate": dict(promotion_candidate_row),
     }
     return (
@@ -226,7 +225,7 @@ def build_generic_promotion_prompt(*, closeout: Mapping[str, Any], evaluation_su
         "- Do not approve if production evaluation substrate is missing, if run_status is blocked, if metric_value_summary is missing or only reports production_eval_run_available=0, if labels/metrics/baselines/stability/leakage/calibration are absent, or if threshold_results fail.\n"
         "- Promotion requires a real production evaluation run, point-in-time dataset snapshot, labels, metrics, baseline comparison, split/refit stability, leakage checks, calibration evidence, and passing thresholds.\n"
         "- If evidence is insufficient, use decision_type='defer' and decision_status='deferred'.\n"
-        "- A review decision is not an active production pointer. Deferred/rejected decisions must not activate config.\n\n"
+        "- A model-side review artifact is not a durable manager decision or active production pointer. Deferred/rejected reviews must not activate config.\n\n"
         "Required JSON schema:\n"
         "{\n"
         "  \"can_promote\": boolean,\n"
@@ -291,7 +290,7 @@ def invoke_agent(*, prompt: str, openclaw_bin: str, agent: str | None, model: st
 def build_rows(closeout: Mapping[str, Any]) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any], dict[str, Any], dict[str, Any], str]:
     artifacts = build_blocked_evaluation_artifacts(closeout)
     summary = build_summary(closeout, artifacts)
-    config_row = build_config_version_row(
+    config_row = build_model_config_ref(
         model_id=str(closeout["model_id"]),
         model_version=str(closeout["model_id"]),
         config_hash=CONFIG_HASH,
@@ -299,9 +298,9 @@ def build_rows(closeout: Mapping[str, Any]) -> tuple[dict[str, list[dict[str, An
         status_detail="not eligible for production activation",
     )
     eval_run_id = artifacts["model_eval_run"][0]["eval_run_id"]
-    candidate_row = build_promotion_candidate_row(
+    candidate_row = build_promotion_candidate_evidence(
         model_id=str(closeout["model_id"]),
-        config_version_id=config_row["config_version_id"],
+        config_ref_id=config_row["config_ref_id"],
         eval_run_id=str(eval_run_id),
         proposed_by="agent_promotion_closeout_script",
         candidate_payload={"evaluation_summary": summary},
@@ -320,10 +319,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--layer", type=int, choices=[3, 4, 5, 6, 7, 8], help="Layer to review. Omit with --all.")
     parser.add_argument("--all", action="store_true", help="Review Layers 3-8.")
-    parser.add_argument("--dry-run", action="store_true", help="Print rows/prompt without invoking agent or writing SQL.")
-    parser.add_argument("--write-decision", action="store_true", help="Persist artifacts, candidate, and agent decision to PostgreSQL.")
-    parser.add_argument("--schema", default="trading_model")
-    parser.add_argument("--database-url", help="PostgreSQL URL. Defaults to OPENCLAW_DATABASE_URL or local secret file.")
+    parser.add_argument("--dry-run", action="store_true", help="Print evidence/prompt without invoking agent or writing manager-control-plane SQL.")
     parser.add_argument("--openclaw-bin", default="openclaw")
     parser.add_argument("--agent", default="trader")
     parser.add_argument("--model", help="Optional model override for openclaw agent --model.")
@@ -336,12 +332,10 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("provide --layer or --all")
     closeouts = [closeout_for_layer(layer) for layer in range(3, 9)] if args.all else [closeout_for_layer(int(args.layer))]
     receipts: list[dict[str, Any]] = []
-    sql_chunks: list[str] = []
-
     for closeout in closeouts:
         artifacts, summary, config_row, candidate_row, prompt = build_rows(closeout)
         if args.dry_run:
-            receipts.append({"closeout": closeout, "summary": summary, "config_version": config_row, "promotion_candidate": candidate_row, "agent_prompt": prompt})
+            receipts.append({"closeout": closeout, "summary": summary, "model_config_ref": config_row, "promotion_candidate": candidate_row, "agent_prompt": prompt})
             continue
         review = invoke_agent(
             prompt=prompt,
@@ -351,29 +345,14 @@ def main(argv: list[str] | None = None) -> int:
             thinking=args.thinking,
             timeout_seconds=args.timeout_seconds,
         )
-        decision_row = build_decision_row_from_review(
-            promotion_candidate_id=candidate_row["promotion_candidate_id"],
+        review_artifact = build_review_artifact_from_review(
+            candidate_ref=candidate_row["candidate_ref"],
             review=review,
-            decided_by="agent_promotion_reviewer",
+            reviewed_by="agent_promotion_reviewer",
         )
-        receipts.append({"closeout": closeout, "summary": summary, "config_version": config_row, "promotion_candidate": candidate_row, "agent_review": review, "promotion_decision": decision_row})
-        if args.write_decision:
-            sql_chunks.append(
-                render_promotion_persistence_sql(
-                    evaluation_artifacts=artifacts,
-                    config_version_row=config_row,
-                    promotion_candidate_row=candidate_row,
-                    promotion_decision_row=decision_row,
-                    schema=args.schema,
-                    include_schema_ddl=(len(sql_chunks) == 0),
-                    activate_approved_config=False,
-                )
-            )
+        receipts.append({"closeout": closeout, "summary": summary, "model_config_ref": config_row, "promotion_candidate": candidate_row, "agent_review": review, "promotion_review_artifact": review_artifact})
 
-    if args.write_decision and sql_chunks:
-        run_psql(database_url(args.database_url), "\n".join(sql_chunks))
-
-    output = {"receipts": receipts, "write_decision": bool(args.write_decision), "activation_attempted": False}
+    output = {"receipts": receipts, "manager_control_plane_required": True, "activation_attempted": False}
     rendered = json.dumps(output, indent=2, sort_keys=True, default=str)
     if args.output_json:
         args.output_json.parent.mkdir(parents=True, exist_ok=True)

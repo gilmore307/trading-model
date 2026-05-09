@@ -4,11 +4,12 @@
 This script is the reproducible form of the Layer 3 closeout follow-up: read
 point-in-time ``feature_03_target_state_vector`` rows from PostgreSQL, generate
 compact ``model_03_target_state_vector`` rows, persist the model table, build
-promotion-evaluation artifacts, ask the reviewer agent for a strict decision,
-and optionally persist the reviewed deferred/approved decision.
+promotion-evaluation artifacts, and ask the reviewer agent for a strict review
+artifact.
 
-It intentionally does not activate configs by default. Deferred/rejected
-reviews never activate configs.
+It does not persist manager-control-plane promotion decisions or activate
+configs. Durable decision, activation, and rollback ownership lives in
+`trading-manager`.
 """
 from __future__ import annotations
 
@@ -24,9 +25,8 @@ import psycopg
 from psycopg.rows import dict_row
 
 from model_governance.common.sql import database_url, quote_identifier
-from model_governance.promotion import build_config_version_row, build_promotion_candidate_row
-from model_governance.promotion.agent_review import extract_json_object, validate_promotion_review, build_decision_row_from_review
-from model_governance.promotion.persistence import render_promotion_persistence_sql, run_psql
+from model_governance.promotion import build_model_config_ref, build_promotion_candidate_evidence
+from model_governance.promotion.agent_review import extract_json_object, validate_promotion_review, build_review_artifact_from_review
 from models.model_03_target_state_vector import evaluation, generator
 
 DEFAULT_FEATURE_SCHEMA = "trading_data"
@@ -240,7 +240,7 @@ def build_review_prompt(summary: Mapping[str, Any], config_row: Mapping[str, Any
         "- Do not approve if upstream dependency models are not production-approved/active. Layer 3 depends on Layer 1 and Layer 2 production-approved states.\n"
         "- Do not approve if evidence has only local fixture rows, missing labels/metrics, failed thresholds, missing leakage checks, missing stability, or missing calibration.\n"
         "- If evidence is insufficient or upstream dependencies are deferred, use decision_type='defer' and decision_status='deferred'.\n"
-        "- A review decision is not an active production pointer. Deferred/rejected decisions must not activate config.\n\n"
+        "- A model-side review artifact is not a durable manager decision or active production pointer. Deferred/rejected reviews must not activate config.\n\n"
         "Required JSON schema:\n"
         "{\n  \"can_promote\": boolean,\n  \"decision_type\": \"approve\" | \"reject\" | \"defer\",\n  \"decision_status\": \"accepted\" | \"rejected\" | \"deferred\",\n  \"confidence\": number,\n  \"reasons\": [string],\n  \"blockers\": [string],\n  \"required_next_steps\": [string],\n  \"evidence_checks\": { string: boolean }\n}\n\n"
         "Evidence:\n"
@@ -298,9 +298,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--summary-output", type=Path)
     parser.add_argument("--artifacts-output", type=Path)
     parser.add_argument("--review-output", type=Path)
-    parser.add_argument("--dry-run", action="store_true", help="Build evidence and prompt but do not call agent or write governance rows.")
-    parser.add_argument("--write-decision", action="store_true", help="Persist evaluation artifacts, config, candidate, and reviewed decision.")
-    parser.add_argument("--activate-approved-config", action="store_true", help="Activate only if the review is an accepted approval. Deferred/rejected decisions never activate.")
+    parser.add_argument("--dry-run", action="store_true", help="Build evidence and prompt but do not call agent or write manager-control-plane rows.")
     parser.add_argument("--agent", default="trader")
     parser.add_argument("--model")
     parser.add_argument("--thinking", default="high")
@@ -322,15 +320,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     persistence_rows = to_persistence_artifacts(artifacts)
     summary = build_summary(feature_rows=feature_rows, model_rows=model_rows, artifacts=artifacts, persistence_rows=persistence_rows)
-    config_row = build_config_version_row(
+    config_row = build_model_config_ref(
         model_id=DEFAULT_MODEL_ID,
         model_version=DEFAULT_MODEL_VERSION,
         config_hash=args.config_hash,
         config_payload={"promotion_gate_source": str(args.summary_output or "generated_summary")},
     )
-    candidate_row = build_promotion_candidate_row(
+    candidate_row = build_promotion_candidate_evidence(
         model_id=DEFAULT_MODEL_ID,
-        config_version_id=config_row["config_version_id"],
+        config_ref_id=config_row["config_ref_id"],
         eval_run_id=summary["eval_run_id"],
         proposed_by=args.proposed_by,
         candidate_payload={"evaluation_summary": summary},
@@ -345,8 +343,8 @@ def main(argv: list[str] | None = None) -> int:
         args.artifacts_output.write_text(json.dumps(persistence_rows, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
 
     if args.dry_run:
-        print(json.dumps({"summary": summary, "config_version": config_row, "promotion_candidate": candidate_row, "agent_prompt": prompt}, indent=2, sort_keys=True, default=str))
-        print("DRY RUN ONLY: model rows were generated/persisted, but no agent review or promotion decision was written.")
+        print(json.dumps({"summary": summary, "model_config_ref": config_row, "promotion_candidate": candidate_row, "agent_prompt": prompt}, indent=2, sort_keys=True, default=str))
+        print("DRY RUN ONLY: model rows were generated/persisted, but no agent review or manager promotion request was written.")
         return 0
 
     review = invoke_agent(
@@ -357,28 +355,13 @@ def main(argv: list[str] | None = None) -> int:
         thinking=args.thinking,
         timeout_seconds=args.timeout_seconds,
     )
-    decision_row = build_decision_row_from_review(promotion_candidate_id=candidate_row["promotion_candidate_id"], review=review)
-    payload = {"config_version": config_row, "promotion_candidate": candidate_row, "agent_review": review, "promotion_decision": decision_row}
+    review_artifact = build_review_artifact_from_review(candidate_ref=candidate_row["candidate_ref"], review=review)
+    payload = {"model_config_ref": config_row, "promotion_candidate": candidate_row, "agent_review": review, "promotion_review_artifact": review_artifact}
     print(json.dumps(payload, indent=2, sort_keys=True, default=str))
     if args.review_output:
         args.review_output.parent.mkdir(parents=True, exist_ok=True)
         args.review_output.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
-
-    if args.write_decision:
-        sql = render_promotion_persistence_sql(
-            evaluation_artifacts=persistence_rows,
-            config_version_row=config_row,
-            promotion_candidate_row=candidate_row,
-            promotion_decision_row=decision_row,
-            schema=args.model_schema,
-            activate_approved_config=args.activate_approved_config,
-        )
-        run_psql(db_url, sql)
-        print(f"persisted promotion decision {decision_row['promotion_decision_id']} for candidate {candidate_row['promotion_candidate_id']}")
-        if args.activate_approved_config and review["can_promote"]:
-            print(f"activated config {config_row['config_version_id']}")
-        elif args.activate_approved_config:
-            print("activation skipped because decision was not an accepted approval")
+    print("REVIEW ARTIFACT ONLY: manager control-plane request/decision/activation must be handled in trading-manager.")
     return 0
 
 

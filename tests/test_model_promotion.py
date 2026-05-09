@@ -3,88 +3,76 @@ from __future__ import annotations
 import unittest
 
 from model_governance.promotion import (
-    build_config_version_row,
-    build_promotion_activation_row,
-    build_promotion_candidate_row,
-    build_promotion_decision_row,
-    build_promotion_rollback_row,
+    build_model_config_ref,
+    build_promotion_candidate_evidence,
+    build_review_artifact_from_review,
 )
 
 
-class ModelPromotionTests(unittest.TestCase):
-    def test_candidate_requires_config_version_and_eval_run(self) -> None:
-        config = build_config_version_row(
+class ModelPromotionEvidenceTests(unittest.TestCase):
+    def test_candidate_evidence_requires_config_ref_and_eval_run(self) -> None:
+        config = build_model_config_ref(
             model_id="market_regime_model",
             config_hash="factor-specs-v1",
             model_version="v1",
             config_payload={"source": "factor_specs.toml"},
         )
-        candidate = build_promotion_candidate_row(
+        candidate = build_promotion_candidate_evidence(
             model_id="market_regime_model",
-            config_version_id=config["config_version_id"],
+            config_ref_id=config["config_ref_id"],
             eval_run_id="mdevrun_001",
             candidate_payload={"minimum_coverage": 0.8},
         )
 
         self.assertEqual(candidate["model_id"], "market_regime_model")
-        self.assertEqual(candidate["config_version_id"], config["config_version_id"])
+        self.assertEqual(candidate["config_ref_id"], config["config_ref_id"])
         self.assertEqual(candidate["eval_run_id"], "mdevrun_001")
-        self.assertEqual(candidate["candidate_status"], "proposed")
+        self.assertIn("candidate_ref", candidate)
 
-    def test_promotion_rows_have_stable_ids(self) -> None:
-        first = build_config_version_row(model_id="market_regime_model", config_hash="abc")
-        second = build_config_version_row(model_id="market_regime_model", config_hash="abc")
+    def test_promotion_evidence_refs_have_stable_ids(self) -> None:
+        first = build_model_config_ref(model_id="market_regime_model", config_hash="abc")
+        second = build_model_config_ref(model_id="market_regime_model", config_hash="abc")
 
-        self.assertEqual(first["config_version_id"], second["config_version_id"])
+        self.assertEqual(first["config_ref_id"], second["config_ref_id"])
 
-    def test_decision_does_not_create_active_model_pointer(self) -> None:
-        decision = build_promotion_decision_row(
-            promotion_candidate_id="mpcand_001",
-            decision_type="approve",
-            decision_status="accepted",
-            decided_by="openclaw",
-            decision_payload={"thresholds_checked": True},
+    def test_review_artifact_does_not_create_active_model_pointer(self) -> None:
+        artifact = build_review_artifact_from_review(
+            candidate_ref="mpcandref_001",
+            review={
+                "can_promote": False,
+                "decision_type": "defer",
+                "decision_status": "deferred",
+                "confidence": 0.8,
+                "reasons": ["dev smoke only"],
+                "blockers": ["needs real metrics"],
+                "required_next_steps": ["run real eval"],
+                "evidence_checks": {"has_metrics": True},
+            },
         )
 
-        self.assertEqual(decision["promotion_candidate_id"], "mpcand_001")
-        self.assertNotIn("active_model_version", decision)
-        self.assertNotIn("production_pointer", decision)
+        self.assertEqual(artifact["candidate_ref"], "mpcandref_001")
+        self.assertEqual(artifact["decision_status"], "deferred")
+        self.assertTrue(artifact["manager_control_plane_required"])
+        self.assertNotIn("active_model_version", artifact)
+        self.assertNotIn("production_pointer", artifact)
+        self.assertNotIn("activation_id", artifact)
+        self.assertNotIn("rollback_id", artifact)
 
     def test_unsupported_decision_status_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
-            build_promotion_decision_row(
-                promotion_candidate_id="mpcand_001",
-                decision_type="approve",
-                decision_status="promoted",
+            build_review_artifact_from_review(
+                candidate_ref="mpcandref_001",
+                review={
+                    "can_promote": True,
+                    "decision_type": "approve",
+                    "decision_status": "promoted",
+                    "confidence": 0.8,
+                    "reasons": ["x"],
+                    "blockers": [],
+                    "required_next_steps": [],
+                    "evidence_checks": {"has_metrics": True},
+                },
             )
-
-    def test_activation_row_tracks_model_replacement_event(self) -> None:
-        activation = build_promotion_activation_row(
-            model_id="market_regime_model",
-            from_config_version_id="mcfg_old",
-            to_config_version_id="mcfg_new",
-            promotion_decision_id="mpdec_001",
-            activated_by="reviewer",
-        )
-
-        self.assertEqual(activation["model_id"], "market_regime_model")
-        self.assertEqual(activation["from_config_version_id"], "mcfg_old")
-        self.assertEqual(activation["to_config_version_id"], "mcfg_new")
-        self.assertEqual(activation["activation_status"], "activated")
-
-    def test_rollback_row_tracks_from_and_optional_to_config_versions(self) -> None:
-        rollback = build_promotion_rollback_row(
-            model_id="market_regime_model",
-            from_config_version_id="mcfg_current",
-            to_config_version_id="mcfg_previous",
-            promotion_decision_id="mpdec_001",
-            requested_by="openclaw",
-        )
-
-        self.assertEqual(rollback["rollback_status"], "requested")
-        self.assertEqual(rollback["from_config_version_id"], "mcfg_current")
-        self.assertEqual(rollback["to_config_version_id"], "mcfg_previous")
-        self.assertEqual(rollback["promotion_decision_id"], "mpdec_001")
 
 
 if __name__ == "__main__":

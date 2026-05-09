@@ -14,12 +14,12 @@ Scripts are the runtime boundary. Reusable model logic belongs in `src/`; script
 - `models/model_01_market_regime/`
   - `generate_model_01_market_regime.py` reads `trading_data.feature_01_market_regime`, writes `trading_model.model_01_market_regime`, and writes explainability/diagnostics support rows.
   - `evaluate_model_01_market_regime.py` builds MarketRegimeModel evaluation evidence from fixture/local rows or read-only PostgreSQL rows with `--from-database`.
-  - `review_market_regime_promotion.py` builds an evaluation-backed promotion candidate and review decision; activation is possible only for accepted approval decisions through the explicit activation flag/path.
+  - `review_market_regime_promotion.py` builds evaluation-backed promotion candidate evidence and a review artifact; manager-control-plane decision/activation stays in `trading-manager`.
   - `run_market_regime_development_smoke.py` runs a deterministic development DB smoke chain and cleans temporary tables by default.
 - `models/model_02_sector_context/`
   - `generate_model_02_sector_context.py` reads Layer 2 features plus Layer 1 context and writes `trading_model.model_02_sector_context` plus support rows.
   - `evaluate_model_02_sector_context.py` builds SectorContextModel evaluation evidence from fixture/local rows or read-only PostgreSQL rows with `--from-database`.
-  - `review_sector_context_promotion.py` builds a conservative promotion review decision.
+  - `review_sector_context_promotion.py` builds conservative promotion review evidence/artifacts.
 - `models/model_03_target_state_vector/`
   - `generate_model_03_target_state_vector.py` generates `model_03_target_state_vector` rows from local/SQL-backed Layer 3 feature rows.
   - `evaluate_model_03_target_state_vector.py` builds baseline-ladder evaluation evidence.
@@ -35,9 +35,9 @@ Scripts are the runtime boundary. Reusable model logic belongs in `src/`; script
   - `generate_model_07_underlying_action.py`, `evaluate_model_07_underlying_action.py`, and `review_underlying_action_promotion.py` are local JSON/JSONL-safe UnderlyingActionModel generation, evaluation-label, and conservative review entrypoints.
 - `models/model_08_option_expression/`
   - `generate_model_08_option_expression.py`, `evaluate_model_08_option_expression.py`, and `review_option_expression_promotion.py` are local JSON/JSONL-safe OptionExpressionModel generation, evaluation-label, and conservative review entrypoints.
-- `models/review_layers_03_08_promotion_closeout.py` persists explicit deferred/blocked promotion evidence for layers that lack production evaluation substrate. It must not activate configs.
+- `models/review_layers_03_08_promotion_closeout.py` emits explicit deferred/blocked promotion evidence artifacts for layers that lack production evaluation substrate. It must not activate configs or persist manager-control-plane decisions.
 
 ## Shared governance entrypoints
 
-- `model_governance/ensure_model_governance_schema.py` creates the generic `trading_model` governance/evaluation/promotion tables through `psql`; use `--dry-run` to print DDL without touching PostgreSQL.
+- `model_governance/ensure_model_governance_schema.py` creates generic `trading_model` model-evidence/evaluation tables through `psql`; use `--dry-run` to print DDL without touching PostgreSQL. Promotion decision/activation/rollback tables are not model-owned.
 - `model_governance/clear_model_development_database.py` clears the `trading_model` development schema through `psql` after a development run. It requires an explicit confirmation token unless run with `--dry-run`.

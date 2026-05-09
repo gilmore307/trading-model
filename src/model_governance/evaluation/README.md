@@ -11,4 +11,4 @@ This package owns schema helpers for reproducible evaluation evidence:
 - `model_eval_run`
 - `model_promotion_metric`
 
-It does not own model activation, rollback, human/agent promotion decisions, or production pointers. Those lifecycle concerns belong in `model_governance/promotion/`.
+It does not own model activation, rollback, durable promotion decisions, or production pointers. Those lifecycle concerns belong in `trading-manager`; model-side reviewer artifacts live in `model_governance/promotion/`.

@@ -234,16 +234,21 @@ The model must use timestamped option-chain snapshots, bid/ask, liquidity, IV, G
 
 Layer numbering update: this decision is preserved as future Layer 8 `OptionExpressionModel` context after Layer 7 `UnderlyingActionModel`. It is no longer the current Layer 7 boundary.
 
-## D010 - Model governance and promotion evidence stay model-local until accepted
+## D010 - Model governance and promotion evidence stay model-local until manager control-plane acceptance
 
 Date: 2026-05-01
+Status: Superseded by D036
+
+Model evaluation evidence may stay model-local until it is accepted by manager-owned control-plane review. Durable promotion decisions, activation, rollback, and production pointers are no longer model-owned.
+
+## D036 - Promotion decisions and activation belong to trading-manager
+
+Date: 2026-05-09
 Status: Accepted
 
-Model evaluation, config versions, promotion candidates, promotion decisions, rollback proposals, and active-pointer proposals are model-governance artifacts.
+`trading-model` owns model output generation, labels, evaluation computation, promotion metrics, candidate evidence packages, and reviewer artifacts.
 
-Current implementation provides dry-run/evidence-building paths first, plus an explicit durable persistence path for reviewed promotion decisions. `review_market_regime_promotion.py --write-decision` persists evaluation artifacts when supplied, config/candidate rows, and the promotion decision. `--activate-approved-config` activates only accepted approval decisions by inserting a `model_promotion_activation` event, marking the reviewed `model_config_version` row `active`, and retiring prior active configs for the same model. Deferred or rejected decisions must never change the active config.
-
-The current table-name terms are registered in `trading-manager`; concrete column-level registration can wait until real evaluation/promotion flows prove the schema.
+`trading-manager` owns the unified `model_promotion_review_v1` request path, durable review decisions, activation records, rollback references, and cross-layer production gates. Model-side review scripts must not persist manager-control-plane promotion rows or activate production pointers.
 
 ## D011 - Model output keys carry layer ownership prefixes
 
@@ -644,33 +649,21 @@ Closing the model-design phase does not approve production promotion for any lay
 
 Every production promotion review for Layers 1-8 must use the complete evidence package defined in `docs/95_promotion_readiness.md`: dataset snapshot, chronological split, label refs, eval run, promotion metrics, promotion candidate, thresholds, baseline comparison, split stability, leakage/no-future checks, calibration report, and decision receipt.
 
-Missing evidence or failed gates require a deferred promotion decision. Deferred or rejected decisions must not activate configs or move production pointers. Approval can only be considered after the evidence package is complete and gates pass; activation still belongs to the reviewed promotion activation path.
+Missing evidence or failed gates require a deferred promotion review. Deferred or rejected reviews must not activate configs or move production pointers. Approval can only be considered after the evidence package is complete and gates pass; durable decision and activation belong in `trading-manager`.
 
 ## D031 - Promotion closeout records real deferrals before activation
 
 Date: 2026-05-08
-Status: Accepted
+Status: Superseded by D036
 
-The production-promotion closeout pass must not stop at a readiness framework. Where real database evidence exists, the evaluation artifacts and promotion decision must be persisted before the route is considered closed. Where production evaluation substrate is missing, the blocker must still flow through the same promotion principle: build blocked evaluation artifacts, create a candidate, call the reviewer agent, persist the reviewed deferred decision, and do not activate.
-
-Current closeout decisions:
-
-- Layer 1 `model_01_market_regime`: real database evaluation `mdevrun_1d00f2757982bd63` / snapshot `mdsnap_dc61e0e823ca4850` produced persisted deferred decision `mpdec_d743cb5dbc8159f2` for candidate `mpcand_b79411e80a774787`. Promotion is blocked by failed baseline, leakage/alignment, model-row-count, and stability gates.
-- Layer 2 `model_02_sector_context`: real database evaluation `mdevrun_00c81e53569941df` / snapshot `mdsnap_fa3982c8d482017f` produced persisted deferred decision `mpdec_3ab83ea1f423326d` for candidate `mpcand_a6044e72162553f9`. Promotion is blocked by failed baseline-improvement and split-stability gates.
-- Layers 3-8 have no current production evaluation substrate for their accepted contracts, so `scripts/models/review_layers_03_08_promotion_closeout.py` persisted formal blocked eval runs, `production_eval_run_available = 0` metrics, candidates, and reviewer-agent deferred decisions: Layer 3 `mpdec_d8e027dd9b5aa939`, Layer 4 `mpdec_76b07ea01a3f525b`, Layer 5 `mpdec_9c3e19d6559ef55b`, Layer 6 `mpdec_b118232e76fae092`, Layer 7 `mpdec_fabc9c709149a698`, and Layer 8 `mpdec_e7448aaab1334345`.
-
-Deferred decisions must not activate configs or create production pointers. No production activation happened during this closeout pass.
+The useful part of this decision remains: production-promotion closeout must evaluate real evidence and must not activate on missing or failed gates. The implementation detail that `trading-model` persists durable promotion decisions is superseded. `trading-model` now emits model-side evidence/review artifacts; `trading-manager` owns durable review decisions and activation.
 
 ## D032 - Layers 3-8 blocked closeout must be agent-reviewed
 
 Date: 2026-05-08
-Status: Accepted
+Status: Superseded by D036
 
-Chentong clarified that Layers 3-8 should follow the same promotion principle as Layers 1-2: even when production evaluation substrate is missing, the closeout script must call the reviewer agent before persisting the final decision.
-
-`review_layers_03_08_promotion_closeout.py` is now the accepted Layer 3-8 closeout entrypoint. It builds blocked evaluation artifacts, creates promotion candidates, calls `openclaw agent` for strict review, persists deferred decisions, and never activates configs for deferred/rejected outcomes.
-
-Current reviewed decisions are Layer 3 `mpdec_d8e027dd9b5aa939`, Layer 4 `mpdec_76b07ea01a3f525b`, Layer 5 `mpdec_9c3e19d6559ef55b`, Layer 6 `mpdec_b118232e76fae092`, Layer 7 `mpdec_fabc9c709149a698`, and Layer 8 `mpdec_e7448aaab1334345`.
+Chentong clarified that Layers 3-8 should follow the same promotion principle as Layers 1-2: even when production evaluation substrate is missing, the closeout script must call the reviewer agent. The model-side closeout entrypoint now builds blocked evaluation artifacts and review artifacts only; durable deferred decisions belong in `trading-manager`.
 
 ## D033 - Layer 3 production-evaluation substrate is present but not promotable
 
@@ -679,9 +672,9 @@ Status: Accepted
 
 A follow-up closeout run created a real Layer 3 production-evaluation substrate instead of leaving Layer 3 only in the generic missing-substrate bucket.
 
-Layer 3 now has `576` PostgreSQL feature rows in `trading_data.feature_03_target_state_vector`, `576` generated model rows in `trading_model.model_03_target_state_vector`, `1604` future-target-tradeable-path labels, snapshot `mdsnap_9b7c3bd598114c7c`, eval run `mdevrun_327616bb447ceb5b`, candidate `mpcand_1b077bca49a18dbf`, and reviewer-agent decision `mpdec_70fef0f31847cc1c`.
+Layer 3 now has PostgreSQL feature rows in `trading_data.feature_03_target_state_vector`, generated model rows in `trading_model.model_03_target_state_vector`, future-target-tradeable-path labels, and reproducible evaluation evidence.
 
-The measured Layer 3 thresholds passed, but promotion remains deferred because Layer 1 and Layer 2 are not production-approved/active upstream dependencies and Layer 3 calibration evidence is still missing. The proposed config `mcfg_582101fd83b5fbee` must not activate from this deferred decision.
+The measured Layer 3 thresholds passed, but promotion remains deferred because Layer 1 and Layer 2 are not production-approved/active upstream dependencies and Layer 3 calibration evidence is still missing. No model-side review artifact may activate a config; activation belongs in `trading-manager`.
 
 `review_target_state_vector_production_substrate.py` is the accepted reproducible entrypoint for rebuilding the Layer 3 substrate and review package. Layers 4-8 remain blocked on missing real production evaluation surfaces and labels; they must not be promoted from the blocked closeout receipts.
 
@@ -692,8 +685,8 @@ Status: Accepted
 
 A follow-up Layer 1/2 gate repair found and fixed a stale feature-generation problem before re-reviewing promotion. The repair regenerated `feature_01_market_regime`, `feature_02_sector_context`, `model_01_market_regime`, and `model_02_sector_context` from real PostgreSQL source data instead of lowering thresholds.
 
-Latest Layer 1 evidence is snapshot `mdsnap_141ef99ca8da5875`, eval run `mdevrun_1f36fd090ec5dc03`, candidate `mpcand_5256bbfb6a02e85d`, and deferred decision `mpdec_fb175b8c8a6b7bbf`. The stale row-count and leakage failures are gone: the run used `3275` feature rows, `3275` model rows, and `6472` labels with `0` leakage violations. Promotion still fails baseline improvement, coverage, and split sign-stability gates.
+Latest Layer 1 evidence fixed the stale row-count and leakage failures; promotion still fails baseline improvement, coverage, and split sign-stability gates.
 
-Latest Layer 2 evidence is snapshot `mdsnap_04b65eabc7ed9410`, eval run `mdevrun_696127b7faef4cac`, candidate `mpcand_680b51bc7afb02bd`, and deferred decision `mpdec_03cd8113817e7cd9`. The run used `104800` feature rows, `81875` model rows, and `198322` labels; coverage now passes at `0.8743002544529263`. Promotion still fails baseline improvement, selected-vs-blocked lift, and split sign-stability gates.
+Latest Layer 2 evidence improved coverage; promotion still fails baseline improvement, selected-vs-blocked lift, and split sign-stability gates.
 
 These results are current negative evidence, not a reason to weaken gates. L1/L2 remain deferred, no activation rows are allowed, and downstream L3 promotion remains blocked on upstream approval plus calibration evidence.

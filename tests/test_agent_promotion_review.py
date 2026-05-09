@@ -10,12 +10,12 @@ from pathlib import Path
 import scripts.models.model_01_market_regime.review_market_regime_promotion as review_script
 import scripts.models.review_layers_03_08_promotion_closeout as layers_03_08_review_script
 from model_governance.agent_review import (
-    build_decision_row_from_review,
+    build_review_artifact_from_review,
     build_market_regime_promotion_prompt,
     extract_json_object,
     validate_promotion_review,
 )
-from model_governance.promotion import build_config_version_row, build_promotion_candidate_row
+from model_governance.promotion import build_model_config_ref, build_promotion_candidate_evidence
 
 
 class AgentPromotionReviewTests(unittest.TestCase):
@@ -28,10 +28,10 @@ class AgentPromotionReviewTests(unittest.TestCase):
         }
 
     def test_prompt_requires_strict_json_and_blocks_fixture_only_approval(self) -> None:
-        config = build_config_version_row(model_id="model_01_market_regime", config_hash="abc")
-        candidate = build_promotion_candidate_row(
+        config = build_model_config_ref(model_id="model_01_market_regime", config_hash="abc")
+        candidate = build_promotion_candidate_evidence(
             model_id="model_01_market_regime",
-            config_version_id=config["config_version_id"],
+            config_ref_id=config["config_ref_id"],
             eval_run_id="mdevrun_001",
         )
 
@@ -60,7 +60,7 @@ class AgentPromotionReviewTests(unittest.TestCase):
                 }
             )
 
-    def test_valid_review_builds_decision_row_without_active_pointer(self) -> None:
+    def test_valid_review_builds_artifact_without_active_pointer(self) -> None:
         review = validate_promotion_review(
             {
                 "can_promote": False,
@@ -73,12 +73,12 @@ class AgentPromotionReviewTests(unittest.TestCase):
                 "evidence_checks": {"has_metrics": True},
             }
         )
-        decision = build_decision_row_from_review(promotion_candidate_id="mpcand_001", review=review)
+        artifact = build_review_artifact_from_review(candidate_ref="mpcandref_001", review=review)
 
-        self.assertEqual(decision["decision_type"], "defer")
-        self.assertEqual(decision["decision_status"], "deferred")
-        self.assertNotIn("active_model_version", decision)
-        self.assertNotIn("production_pointer", decision)
+        self.assertEqual(artifact["decision_type"], "defer")
+        self.assertEqual(artifact["decision_status"], "deferred")
+        self.assertNotIn("active_model_version", artifact)
+        self.assertNotIn("production_pointer", artifact)
 
     def test_extract_json_object_tolerates_wrapped_output(self) -> None:
         parsed = extract_json_object('prefix {"can_promote": false, "decision_type": "defer"} suffix')
@@ -220,10 +220,10 @@ class AgentPromotionReviewTests(unittest.TestCase):
                 check=True,
             )
 
-        payload_text = result.stdout.split("\nREVIEW ONLY:", 1)[0]
+        payload_text = result.stdout.split("\nREVIEW ARTIFACT ONLY:", 1)[0]
         payload = json.loads(payload_text)
         self.assertFalse(payload["agent_review"]["can_promote"])
-        self.assertEqual(payload["promotion_decision"]["decision_type"], "defer")
+        self.assertEqual(payload["promotion_review_artifact"]["decision_type"], "defer")
 
 
 if __name__ == "__main__":

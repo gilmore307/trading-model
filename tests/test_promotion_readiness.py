@@ -19,7 +19,8 @@ class PromotionReadinessTests(unittest.TestCase):
         self.assertNotIn("production_approved", statuses)
         self.assertIn("deferred_after_real_evaluation", statuses)
         self.assertIn("deferred_no_production_eval_substrate", statuses)
-        self.assertTrue(all("mpdec_" in row["blocking_gap"] for row in LAYER_PROMOTION_READINESS_MATRIX))
+        self.assertTrue(all("mpdec_" not in row["blocking_gap"] for row in LAYER_PROMOTION_READINESS_MATRIX))
+        self.assertTrue(all("persisted decision" not in row["blocking_gap"] for row in LAYER_PROMOTION_READINESS_MATRIX))
 
     def test_missing_evidence_forces_defer(self) -> None:
         result = validate_promotion_evidence_package(

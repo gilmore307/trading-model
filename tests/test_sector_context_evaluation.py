@@ -157,7 +157,7 @@ class SectorContextEvaluationTests(unittest.TestCase):
         prompt = build_sector_context_promotion_prompt(
             evaluation_summary=summary,
             config_version_row={"model_id": "model_02_sector_context"},
-            promotion_candidate_row={"promotion_candidate_id": "candidate"},
+            promotion_candidate_row={"candidate_ref": "candidate"},
         )
 
         self.assertIn("SectorContextModel", prompt)
@@ -171,7 +171,7 @@ class SectorContextEvaluationTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             review = subprocess.run([sys.executable, str(REVIEW_SCRIPT), "--evaluation-summary-json", str(summary_path), "--local-fallback-review"], cwd=REPO_ROOT, env={"PYTHONPATH": "src"}, text=True, capture_output=True, check=False)
             self.assertEqual(review.returncode, 0, review.stderr)
-            payload = json.loads(review.stdout)
+            payload = json.loads(review.stdout.split("\nREVIEW ARTIFACT ONLY:", 1)[0])
             self.assertFalse(payload["agent_review"]["can_promote"])
             self.assertEqual(payload["agent_review"]["decision_status"], "deferred")
         finally:

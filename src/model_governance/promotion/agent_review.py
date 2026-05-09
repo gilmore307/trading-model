@@ -1,16 +1,14 @@
 """Agent-backed promotion review helpers.
 
 The functions in this module prepare evidence for a reviewer agent and validate
-that the agent returns a constrained promotion decision. They do not promote a
-model and do not write to PostgreSQL.
+that the agent returns a constrained review artifact. They do not promote a
+model, write to PostgreSQL, or create activation/rollback records.
 """
 from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
 from typing import Any
-
-from .rows import build_promotion_decision_row
 
 ALLOWED_DECISION_TYPES = {"approve", "reject", "defer"}
 ALLOWED_DECISION_STATUSES = {"accepted", "rejected", "deferred"}
@@ -180,19 +178,13 @@ def _string_list(value: Any, field: str) -> list[str]:
     return output
 
 
-def build_decision_row_from_review(
+def build_review_artifact_from_review(
     *,
-    promotion_candidate_id: str,
+    candidate_ref: str,
     review: Mapping[str, Any],
-    decided_by: str = "agent_promotion_reviewer",
+    reviewed_by: str = "agent_promotion_reviewer",
 ) -> dict[str, Any]:
-    """Convert a validated review payload into a promotion decision row."""
-    normalized = validate_promotion_review(review)
-    return build_promotion_decision_row(
-        promotion_candidate_id=promotion_candidate_id,
-        decision_type=normalized["decision_type"],
-        decision_status=normalized["decision_status"],
-        decided_by=decided_by,
-        decision_payload=normalized,
-        status_detail="; ".join(normalized["blockers"] or normalized["reasons"]),
-    )
+    """Convert a validated review payload into a model-side review artifact."""
+    from .evidence import build_review_artifact_from_review as build_artifact
+
+    return build_artifact(candidate_ref=candidate_ref, review=review, reviewed_by=reviewed_by)

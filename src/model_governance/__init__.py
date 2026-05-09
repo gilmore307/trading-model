@@ -1,18 +1,10 @@
-"""Shared model governance, evaluation, and promotion helpers."""
+"""Shared model governance and evaluation evidence helpers."""
 
 from .promotion import (
-    CONFIG_VERSION_TABLE,
-    PROMOTION_ACTIVATION_TABLE,
-    PROMOTION_CANDIDATE_TABLE,
-    PROMOTION_DECISION_TABLE,
-    PROMOTION_ROLLBACK_TABLE,
-    build_config_version_row,
-    build_decision_row_from_review,
     build_market_regime_promotion_prompt,
-    build_promotion_activation_row,
-    build_promotion_candidate_row,
-    build_promotion_decision_row,
-    build_promotion_rollback_row,
+    build_model_config_ref,
+    build_promotion_candidate_evidence,
+    build_review_artifact_from_review,
     extract_json_object,
     validate_promotion_review,
 )
@@ -24,20 +16,12 @@ from .schema import (
 )
 
 __all__ = [
-    "CONFIG_VERSION_TABLE",
     "DEFAULT_SCHEMA",
-    "PROMOTION_ACTIVATION_TABLE",
-    "PROMOTION_CANDIDATE_TABLE",
-    "PROMOTION_DECISION_TABLE",
-    "PROMOTION_ROLLBACK_TABLE",
     "TABLE_NAMES",
-    "build_config_version_row",
-    "build_decision_row_from_review",
     "build_market_regime_promotion_prompt",
-    "build_promotion_activation_row",
-    "build_promotion_candidate_row",
-    "build_promotion_decision_row",
-    "build_promotion_rollback_row",
+    "build_model_config_ref",
+    "build_promotion_candidate_evidence",
+    "build_review_artifact_from_review",
     "create_governance_schema_sql",
     "extract_json_object",
     "ensure_model_governance_schema",
