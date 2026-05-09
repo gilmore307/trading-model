@@ -49,7 +49,7 @@ Layer 3 has a real production-evaluation substrate for `feature_03_target_state_
 
 ## Layers 4-8 blockers
 
-Layers 4-8 remain explicit blockers, not informal TODOs:
+Layers 4-8 remain explicit blockers, not informal work items:
 
 - Layer 4 requires real event-overlay labels and production evaluation metrics.
 - Layer 5 requires calibrated adjusted-alpha outcomes.

@@ -2,31 +2,27 @@
 
 ## Active Tasks
 
-No active model-design tasks remain. Layers 1-8 are structurally closed for the accepted local deterministic scaffold phase; see `docs/94_model_stack_closeout.md`.
+- None for the historical-data training preparation boundary.
 
-## Queued Tasks
+Layers 1-8 are structurally closed for the accepted local deterministic scaffold phase; see `docs/94_model_stack_closeout.md`. The next work is evidence production during formal historical-training runs, not additional ad hoc repository work item cleanup.
 
-- Build the missing production evaluation substrate for Layers 4-8 in dependency order: point-in-time datasets, labels, real evaluation metrics, baseline/stability/leakage/calibration evidence, and manager-side `model_promotion_review_v1` requests.
-- Remediate failed Layer 1-2 promotion gates, then rerun model evidence generation and submit manager-side promotion review requests before any activation.
-- Re-review Layer 3 after Layer 1/2 are production-approved/active and Layer 3 calibration evidence is available.
-- Consume the manager/storage V1 handoff contracts once control-plane implementation exists; keep model artifacts model-owned until promoted through `trading-manager`.
+## Historical-Training Evidence Requirements
 
-## Open Gaps
+These are run/evidence requirements for promotion readiness, not open model-design work items:
 
-- Layer 1 has real database promotion evidence, but promotion remains deferred by failed baseline, coverage, and split-stability gates.
-- Exact downstream SQL alias/view implementation for `market_context_state`, if a physical alias is needed beyond `trading_model.model_01_market_regime`.
-- Layer 2 has real database promotion evidence, but promotion remains deferred by failed baseline/lift and split-stability gates.
-- Layer 3 now has real PostgreSQL substrate; current blockers are upstream Layer 1/2 production approval/activation and Layer 3 calibration evidence, not missing substrate.
-- Layers 4-8 have formal blocked/deferred model-side evidence artifacts, and current blockers remain missing production eval substrate.
+- Layer 1 and Layer 2 require remediated real-data evidence before any promotion approval can be considered.
+- Layer 3 requires upstream Layer 1/2 production approval or an explicitly reviewed offline-evidence exception, plus Layer 3 calibration evidence.
+- Layers 4-8 require point-in-time datasets, labels, real evaluation metrics, baseline/stability/leakage/calibration evidence, and manager-side `model_promotion_review_v1` requests.
+- Missing evidence or failed gates must remain deferred/rejected and must not create activation records or move production pointers.
 
-These are promotion/production-readiness gaps. They do not reopen the accepted Layer 1-8 model contracts for the current design phase.
+## Not Current Historical-Training Scope
 
-## Deferred Beyond This Readiness Pass
+These items are intentionally outside the current no-broker historical-training run and must not be treated as active repository work items:
 
-- Physical manager/storage implementation for `manager_request_v1`, `run_manifest_v1`, `artifact_ref_v1`, and `ready_signal_v1`.
-- Exact SQL/storage path/reference migrations for production model evaluation and promotion artifacts.
-- Exact unified decision-record artifact implementation beyond the mandatory risk-cap invariant.
-- These shared contracts stay in `trading-manager` / `trading-storage` control-plane implementation; `trading-model` must avoid owning durable manager/storage/execution interfaces.
+- broker/order/fill/account lifecycle;
+- production model activation without approved manager-side review decisions;
+- exact execution-owned unified decision-record artifacts beyond the current risk-cap invariant;
+- additional durable manager/storage interface ownership inside `trading-model`.
 
 ## Recently Accepted
 

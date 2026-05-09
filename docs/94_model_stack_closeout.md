@@ -28,17 +28,18 @@ After Layer 8, work crosses into downstream review / execution-owned boundaries.
 
 Layer 7 and Layer 8 may produce offline plans and model confidence. They must not emit execution instructions or broker/account mutations.
 
-## Current deferred work
+## Historical-training readiness classification
 
-The remaining work is production hardening, not model-stack design:
+There are no active model-stack design work items for the current no-broker historical-training preparation boundary. The next work is run/evidence production during formal historical-training passes:
 
-- wire real point-in-time inference/evaluation feeds for every promoted layer;
+- build point-in-time inference/evaluation datasets from accepted historical source routes;
 - use `docs/95_promotion_readiness.md` as the required evidence checklist and status matrix;
 - calibrate labels and thresholds on chronological splits;
-- prove baseline improvement and stability;
+- prove baseline improvement, stability, leakage safety, and calibration quality;
 - persist promotion evidence and accepted review decisions through the manager/storage paths;
-- define exact unified decision-record artifact contracts in the next manager/control-plane phase;
 - keep shared names and durable contracts routed through `trading-manager/scripts/registry/`.
+
+Execution-facing unified decision-record artifacts remain outside the current no-broker historical-training scope unless explicitly accepted later.
 
 ## Verification receipt
 
