@@ -615,6 +615,36 @@ Layer 8 offline plan != live execution
 
 Layer 8 must not emit broker order type, route, time-in-force, send/cancel/replace flags, final order quantity, broker order ids, or account mutation fields. Multi-leg structures are deferred beyond V1. `trading-execution` remains the owner of live/paper broker mutation.
 
+## D024A - Layer 8 historical option bucket defaults
+
+Date: 2026-05-10
+Status: Accepted
+
+Layer 8 historical option-expression bucket construction uses near-to-far listed expirations: current listed week first, then next listed week, then the following listed week, continuing outward only when coverage policy requires it.
+
+For each selected target, the strike bucket is the listed-strike corridor from current underlying reference price to Layer 7 target price plus three actual listed strike levels below the corridor and three actual listed strike levels above it. Example: current `95`, target `100`, one-dollar listed strikes -> scan strikes `92` through `103`.
+
+Historical model construction intentionally keeps illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, and otherwise extreme contracts in the candidate bucket so the model learns robustness and failure modes. These observations may score poorly, produce reason codes, or resolve to `no_option_expression`; they must not be removed at acquisition-time solely because they are extreme.
+
+V1 expression coverage remains single-leg only: `long_call`, `long_put`, or `no_option_expression`. Multi-leg spreads remain deferred beyond V1.
+
+## D024B - Promotion classifies artifacts; manager schedules lifecycle; storage executes lifecycle
+
+Date: 2026-05-10
+Status: Accepted
+
+Model promotion/evidence scripts may classify artifact retention intent. They may mark promoted model bodies and required lineage as permanent retention and may emit retention hints for regenerable intermediates. They must not call storage cleanup, compression, archive, SQL detach/drop, or deletion executors directly.
+
+The accepted boundary is:
+
+```text
+promotion classifies artifacts
+manager schedules lifecycle
+storage executes lifecycle
+```
+
+Lifecycle work caused by promotion must route through manager `storage_lifecycle_request_v1`; `trading-storage` owns protected-set checks, physical lifecycle execution, receipts, and tombstones.
+
 ## D025 - Layers 1-8 model-design closeout
 
 Date: 2026-05-07

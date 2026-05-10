@@ -20,7 +20,7 @@ Layer 8 does **not** own:
 
 - broker order type, route, time-in-force, send/cancel/replace flags, or broker order ids;
 - final order quantity, final approval, or account mutation;
-- multi-leg spread construction in V1;
+- multi-leg spread construction in V1; V1 historical option-expression coverage is single-leg only (`long_call`, `long_put`, or `no_option_expression`);
 - direct-underlying planned action resolution, which belongs to Layer 7;
 - real live/paper routing, which remains in `trading-execution`.
 
@@ -215,8 +215,8 @@ It implements:
 - Layer 7 bullish thesis -> long-call candidate search;
 - Layer 7 bearish thesis or no-direct-short bearish thesis -> long-put candidate search;
 - Layer 7 `maintain` / `no_trade`, policy blocks, or pending option exposure -> `no_option_expression`;
-- hard filters for right, bid/ask/mid, DTE range, preferred absolute delta range, stale quote age, volume/open interest, spread, adjusted-contract exclusion, and target-range moneyness guardrails;
-- DTE / delta / Greeks / IV / liquidity / reward-risk scoring with per-candidate hard-filter reason codes;
+- deterministic selection scoring for right, bid/ask/mid, DTE range, preferred absolute delta range, stale quote age, volume/open interest, spread, adjusted-contract handling, and target-range moneyness guardrails;
+- DTE / delta / Greeks / IV / liquidity / reward-risk scoring with per-candidate reason codes;
 - offline label join helpers and leakage assertions.
 
 Fixture tests live in:
@@ -225,9 +225,36 @@ Fixture tests live in:
 tests/test_option_expression_model.py
 ```
 
-## V1 DTE / delta policy
+## V1 option bucket policy
 
-V1 uses conservative ranges rather than exact DTE points:
+Historical model-construction buckets expand from near expirations to farther expirations: current listed week first, then next listed week, then the following listed week, continuing outward only when coverage policy requires it.
+
+For each selected target, the strike bucket is the listed-strike corridor from current underlying reference price to Layer 7 target price plus three listed strike levels below the corridor and three listed strike levels above it. Example:
+
+```text
+current_underlying_reference_price = 95
+target_price = 100
+listed strike spacing = 1
+candidate strike bucket = 92 through 103
+```
+
+The three-level rule uses actual listed strikes, not a fixed dollar amount. If listed strikes are five-dollar increments, use three listed increments outside the corridor.
+
+Historical bucket construction intentionally does not prefilter out illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, or otherwise extreme contracts. Those observations are useful for robustness and must remain available as features, labels, diagnostics, and reason codes. Selection/evaluation may score them poorly or resolve `no_option_expression`, but acquisition-time bucket construction should not hide them from the model.
+
+V1 expression coverage is single-leg only:
+
+```text
+long_call
+long_put
+no_option_expression
+```
+
+Multi-leg spreads remain deferred beyond V1.
+
+## V1 DTE / delta scoring policy
+
+V1 selection/scoring uses conservative ranges rather than exact DTE points:
 
 ```text
 5min / 15min thesis -> preferred_dte_range = 3-7, no 0DTE
@@ -236,9 +263,9 @@ V1 uses conservative ranges rather than exact DTE points:
 multi-day thesis -> preferred_dte_range = 21-45
 ```
 
-V1 avoids deep OTM lottery contracts. Preferred absolute delta starts around `0.35-0.65`; future learned contract-fit models may adjust this by path quality, expected move, IV, liquidity, and theta pressure.
+V1 selection/scoring penalizes deep OTM lottery contracts. Preferred absolute delta starts around `0.35-0.65`; future learned contract-fit models may adjust this by path quality, expected move, IV, liquidity, and theta pressure.
 
-Layer 7 target/range fields constrain moneyness when the target range is directionally coherent: bullish call strikes may not sit above `target_price_high`; bearish put strikes may not sit below `target_price_low`. Candidates outside the guardrail carry `strike_outside_underlying_target_range` and cannot be selected in V1.
+Layer 7 target/range fields constrain selected-contract scoring when the target range is directionally coherent: bullish call strikes above `target_price_high` and bearish put strikes below `target_price_low` carry `strike_outside_underlying_target_range`. They remain part of historical bucket evidence, but should not be selected by the deterministic V1 selector unless a reviewed exception policy says otherwise.
 
 ## Labels and evaluation
 

@@ -82,6 +82,16 @@ If baseline improvement is not positive and stable on the reviewed split windows
 
 An accepted approval may activate a config only through `trading-manager` manager-control-plane review and activation. Deferred or rejected reviews must never activate or move production pointers.
 
+Promotion evidence and activation helpers may classify artifact retention intent, but they must not call cleanup, compression, archive, SQL detach/drop, or deletion executors directly. The accepted boundary is:
+
+```text
+promotion classifies artifacts
+manager schedules lifecycle
+storage executes lifecycle
+```
+
+Approved/promoted model bodies and required lineage must be marked for permanent retention. Regenerable intermediates may receive retention hints, but lifecycle action must route through manager `storage_lifecycle_request_v1` and storage protected-set execution.
+
 The current closeout evidence creates no activation rows. Layers 3-8 route through `scripts/models/review_layers_03_08_promotion_closeout.py`, which builds blocked evidence and reviewer artifacts without persisting manager decisions. A follow-up Layer 3 substrate run can rebuild real Layer 3 evaluation evidence, but Layers 4-8 remain blocked for missing production eval substrate. See `96_promotion_closeout.md` for the current evidence receipt.
 
 ## Implementation hook
