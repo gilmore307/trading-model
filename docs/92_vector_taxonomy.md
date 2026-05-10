@@ -32,6 +32,7 @@ Direction-neutral tradability requires separating these score meanings across la
 | `*_liquidity_tradability_score` | `[0, 1]` | Spread, depth, capacity, borrow/shortability when applicable, and execution friendliness. |
 | `*_coverage_score` | `[0, 1]` | Evidence completeness. Not opportunity. |
 | `*_data_quality_score` | `[0, 1]` | Freshness, missingness, source quality, and reliability. Not opportunity. |
+| `*_missingness_reason` | string / diagnostic payload field | Explainable absence such as not-yet-listed history, provider no-data, insufficient minimum history, stale feed, or schema failure. Diagnostic only unless a layer explicitly promotes it. |
 | `*_tradability_score` | `[0, 1]` | Direction-neutral “how easy this state is to trade.” |
 
 The central rule is:

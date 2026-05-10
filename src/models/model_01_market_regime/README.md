@@ -35,6 +35,8 @@ Current primary output columns:
 
 When writing to SQL, the runtime wrapper preserves compact model-facing keys such as `1_market_trend_quality_score` as physical column names and quotes numeric-leading identifiers where required. Explainability stores reviewed semantic-output context; diagnostics stores row-level coverage, missingness, and gating context.
 
+Missing upstream observations are expected in historical training. A not-yet-listed symbol, a reviewed no-data provider response, or a signal below minimum-history requirements should lower coverage/data-quality diagnostics rather than crash model construction or fabricate bars. Promotion and downstream unlocks may still fail when coverage is insufficient.
+
 ## Config and internal signal groups
 
 `config/factor_specs.toml` owns internal signal-group membership, signal directions, reducer choices, and standardization defaults. These groups are implementation evidence reducers, not the public downstream output contract.

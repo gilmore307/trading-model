@@ -88,6 +88,22 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
         self.assertIn("coverage", metric_names)
         self.assertIn("pearson_correlation", metric_names)
 
+    def test_missing_model_values_reduce_coverage_without_crashing(self) -> None:
+        features, models = _rows()
+        for index, row in enumerate(models):
+            if index % 2 == 0:
+                row["1_market_direction_score"] = None
+
+        artifacts = build_evaluation_artifacts(feature_rows=features, model_rows=models)
+        coverage_values = [
+            metric["metric_value"]
+            for metric in artifacts.eval_metrics
+            if metric["metric_name"] == "coverage" and metric["factor_name"] == "1_market_direction_score"
+        ]
+
+        self.assertTrue(coverage_values)
+        self.assertTrue(any(0.0 < float(value) < 1.0 for value in coverage_values))
+
     def test_summary_advertises_no_database_write_policy(self) -> None:
         features, models = _rows()
         summary = summarize_artifacts(build_evaluation_artifacts(feature_rows=features, model_rows=models))
