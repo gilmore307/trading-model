@@ -33,3 +33,5 @@ credentials/
 .DS_Store
 .vscode/
 .idea/
+# Local runtime artifacts
+storage/runtime/
