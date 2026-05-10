@@ -577,9 +577,10 @@ underlying action plan != live execution
 
 Layer 7 must not emit broker order fields, order type, route, time-in-force, send/cancel/replace flags, broker order ids, option strike/DTE/delta/Greeks, specific option contract refs, or broker/account mutations. Layer 8 owns option expression. `trading-execution` owns broker-order lifecycle.
 
-## D015 - Layer 8 OptionExpressionModel owns offline option expression only
+## D024 - Layer 8 OptionExpressionModel owns offline option expression only
 
-Accepted.
+Date: 2026-05-07
+Status: Accepted
 
 Layer 8 is `OptionExpressionModel` (`option_expression_model`) and its implementation surface is `model_08_option_expression`.
 
@@ -614,7 +615,7 @@ Layer 8 offline plan != live execution
 
 Layer 8 must not emit broker order type, route, time-in-force, send/cancel/replace flags, final order quantity, broker order ids, or account mutation fields. Multi-leg structures are deferred beyond V1. `trading-execution` remains the owner of live/paper broker mutation.
 
-## D016 - Layers 1-8 model-design closeout
+## D025 - Layers 1-8 model-design closeout
 
 Date: 2026-05-07
 Status: Accepted
@@ -640,7 +641,7 @@ There is no accepted Layer 9 inside `trading-model`. After Layer 8, downstream w
 
 Remaining work is production hardening and control-plane integration, not new model-layer design: real point-in-time feeds, label calibration, baseline/stability proof, accepted promotion decisions, and exact unified decision-record / artifact contracts through `trading-manager`.
 
-## D017 - Layers 1-8 production promotion requires complete evidence packages
+## D026 - Layers 1-8 production promotion requires complete evidence packages
 
 Date: 2026-05-07
 Status: Accepted
@@ -700,7 +701,7 @@ False breakouts, failed breakdowns, liquidity sweeps, bull traps, and bear traps
 
 They are not a new Layer 9. At inference time they may affect event intensity, direction bias, reversal risk, liquidity-disruption risk, uncertainty, target relevance, and microstructure/symbol impact inside `event_context_vector`. Realized post-event follow-through/failure remains offline label evidence only and must not leak into inference features.
 
-## D021 - Historical training sampling may be broader than live routing
+## D037 - Historical training sampling may be broader than live routing
 
 Date: 2026-05-10
 Status: Accepted

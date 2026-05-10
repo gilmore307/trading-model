@@ -104,6 +104,7 @@ docs/93_state_vector_feature_registry.md
 docs/94_model_stack_closeout.md
 docs/95_promotion_readiness.md
 docs/96_promotion_closeout.md
+docs/97_historical_dataset_scope.md
 ```
 
 Layer workflow and acceptance live in the numbered layer files. Architecture and decomposition docs describe the current route, not historical detours.
