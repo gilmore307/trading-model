@@ -14,6 +14,8 @@ Layer 3 should find the relationship between **target board/tape state** and fut
 
 Layer 3 builds a point-in-time, direction-neutral `target_context_state` that later layers may use for event context, alpha confidence, position projection, underlying-action planning, and option-expression handoff. Layer 3 does not output position size, planned action, option expression, or final action.
 
+Historical training may sample a broader target universe than live routing. In live routing, Layer 3 candidates commonly come from Layer 2 selected/prioritized sector baskets. In historical training, Layer 3 may include anonymous targets from other sectors, industries, styles, market caps, liquidity tiers, and ETF/stock exposure paths so it can learn sector-confirmed, sector-divergent, strong-in-weak-sector, and weak-in-strong-sector behavior. Layer 2 context remains attached as point-in-time context; it is not an unconditional historical-training filter.
+
 ## Boundary reset
 
 Layer 3 owns:
@@ -164,6 +166,7 @@ Layer 3 review should ask:
 4. Which states are directionally persistent, mean-reverting, or noise/chop?
 5. Which market/sector states make a target-local pattern useful or useless?
 6. Does adding target state improve direction-neutral tradability/path outcomes versus market-only and market+sector baselines?
+7. Does the model remain useful both on broad historical target samples and under the narrower live-route candidate policy?
 
 ## Current implementation status
 
@@ -192,6 +195,7 @@ A Layer 3 implementation is not accepted unless it proves:
 - market, sector, target, and cross-state blocks are separately inspectable;
 - target-state labels are future-aware only in training/evaluation, never in inference features;
 - baselines compare market-only, market+sector, and market+sector+target vectors;
+- evaluation separates broad historical target-sample generalization from live-route simulation when the training sample includes targets outside Layer 2 selected/prioritized baskets;
 - state vectors improve at least one accepted direction-neutral forward path/tradability outcome relationship with split-stability evidence;
 - liquidity/cost diagnostics identify states that are theoretically predictive but practically untradeable;
 - audit/routing metadata can map decisions back to real symbols without leaking identity into fitting vectors;

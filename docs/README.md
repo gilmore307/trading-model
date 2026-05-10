@@ -24,6 +24,7 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `94_model_stack_closeout.md` — model-design closeout for Layers 1-8 and the no-Layer-9 boundary.
 - `95_promotion_readiness.md` — production-promotion readiness matrix and evidence checklist for Layers 1-8; no production approval implied.
 - `96_promotion_closeout.md` — current production-promotion closeout evidence receipt: real-evidence deferrals for Layers 1-3 and explicit production-evidence blockers for Layers 4-8; durable decisions/activation live in `trading-manager`.
+- `97_historical_dataset_scope.md` — accepted distinction between broad historical training sampling universes and narrower live inference routing universes, with per-layer dataset-scope guidance.
 
 Layer workflow and acceptance live in the numbered layer files. Do not add a future model layer unless an explicit architecture revision reopens the stack; post-Layer-8 execution belongs outside `trading-model`.
 

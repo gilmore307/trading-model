@@ -699,3 +699,14 @@ Status: Accepted
 False breakouts, failed breakdowns, liquidity sweeps, bull traps, and bear traps are represented as Layer 4 `price_action` events consumed by `EventOverlayModel`.
 
 They are not a new Layer 9. At inference time they may affect event intensity, direction bias, reversal risk, liquidity-disruption risk, uncertainty, target relevance, and microstructure/symbol impact inside `event_context_vector`. Realized post-event follow-through/failure remains offline label evidence only and must not leak into inference features.
+
+## D021 - Historical training sampling may be broader than live routing
+
+Date: 2026-05-10
+Status: Accepted
+
+Historical training dataset construction is allowed to use a broader point-in-time sampling universe than live inference routing. Live routing may narrow candidate flow through upstream model gates, but historical training should not blindly copy those gates when broader sampling is needed to learn robust relationships.
+
+Layer 3 is the critical example: live routing commonly sends targets from Layer 2 selected/prioritized sector baskets, while historical training may include anonymous targets from other sectors, industries, styles, market caps, liquidity tiers, and ETF/stock exposure paths. Each row must still carry point-in-time market and sector context, preserve identity-safety, and avoid future leakage.
+
+Promotion evidence should report both broad historical generalization and live-route simulation performance whenever the training sample universe is wider than the live routed universe.

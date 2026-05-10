@@ -63,6 +63,16 @@ The primary output is the narrow downstream dependency contract. Explainability 
 
 `docs/92_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual model output.
 
+## Historical Sampling vs Live Routing
+
+Historical training may use a broader point-in-time sampling universe than live inference routing. Live routing can be narrow because upstream layers gate or prioritize candidates; historical training should not copy those gates when doing so would remove useful contrast.
+
+The canonical policy lives in `docs/97_historical_dataset_scope.md`.
+
+Especially for Layer 3, live routing may send targets from Layer 2 selected/prioritized sector baskets, but historical training may sample targets across other sectors, industries, styles, market caps, and liquidity tiers. Layer 2 context must remain attached to each row as point-in-time context, but it does not have to be a hard historical-training filter.
+
+Promotion evidence should distinguish broad historical generalization from live-route simulation whenever a layer trains on a broader universe than it receives in live routing.
+
 ## Point-in-Time Rule
 
 At prediction time `t`, every model may use only data genuinely available before or at `t`.
@@ -235,7 +245,9 @@ Layer 2 primary output is `sector_context_state`, not a pile of peer vectors. In
 
 ### Layer 3 preprocessing: Anonymous Target Candidate Builder
 
-The target candidate builder is part of Layer 3 preprocessing. It is not a separate model, not a separate layer, and not a peer to `TargetStateVectorModel`. It creates anonymous target candidate rows from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
+The target candidate builder is part of Layer 3 preprocessing. It is not a separate model, not a separate layer, and not a peer to `TargetStateVectorModel`. In live routing, it creates anonymous target candidate rows from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
+
+For historical training, the builder may construct broader anonymous target samples across sectors beyond the Layer 2 baskets that would have been selected at that time. Those rows must still carry point-in-time `market_context_state_ref` and `sector_context_state_ref`, remain identity-safe for model fitting, and be evaluated separately for broad generalization versus live-route simulation.
 
 The current model-local contract is:
 
