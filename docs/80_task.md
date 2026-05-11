@@ -4,7 +4,7 @@
 
 - None for the historical-data training preparation boundary.
 
-Layers 1-8 are structurally closed for the accepted local deterministic scaffold phase; see `docs/94_model_stack_closeout.md`. The next work is evidence production during formal historical-training runs, not additional ad hoc repository work item cleanup.
+Layers 1-8 are structurally closed for the accepted local deterministic scaffold phase; see `docs/94_model_stack_closeout.md`. The model-side realtime decision handoff scaffold is now present for fixture/shadow routing from execution realtime feature snapshots into historical-model decision inputs; see `docs/98_realtime_decision_handoff.md`. The next work is evidence production during formal historical-training runs or explicitly approved live/shadow integration, not additional ad hoc repository work item cleanup.
 
 ## Historical-Training Evidence Requirements
 
@@ -26,6 +26,7 @@ These items are intentionally outside the current no-broker historical-training 
 
 ## Recently Accepted
 
+- Added `model_realtime_decision_route_plan_v1` and validation scaffold for `execution_model_decision_input_snapshot_v1` handoff from `trading-execution`. It maps Layer 1-8 input refs to reviewed generator entrypoints for fixture/shadow historical-model decision routing without running models, activating configs, constructing orders, or persisting manager decisions.
 - Promotion closeout evidence is recorded in `docs/96_promotion_closeout.md`: Layers 1-2 have real database evidence; Layers 3-8 have blocked/deferred eval evidence proving no production eval substrate exists yet. No production activation occurred, and durable decision/activation ownership is now in `trading-manager`.
 - Production-promotion readiness rules are accepted for Layers 1-8 in `docs/95_promotion_readiness.md`: every production approval requires dataset snapshot/split/labels/eval run/metrics/candidate/thresholds/baselines/stability/leakage/calibration/decision evidence. Current status remains deferred, not production-approved.
 - Repository model-stack closeout is accepted for the current design phase: Layers 1-8 now have accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture evidence. There is no accepted Layer 9 inside `trading-model`; post-Layer-8 execution remains outside this repository.

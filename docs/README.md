@@ -25,6 +25,7 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `95_promotion_readiness.md` — production-promotion readiness matrix and evidence checklist for Layers 1-8; no production approval implied.
 - `96_promotion_closeout.md` — current production-promotion closeout evidence receipt: real-evidence deferrals for Layers 1-3 and explicit production-evidence blockers for Layers 4-8; durable decisions/activation live in `trading-manager`.
 - `97_historical_dataset_scope.md` — accepted distinction between broad historical training sampling universes and narrower live inference routing universes, with per-layer dataset-scope guidance.
+- `98_realtime_decision_handoff.md` — model-side realtime decision input route-plan scaffold for fixture/shadow historical-model decision handoff; no production activation implied.
 
 Layer workflow and acceptance live in the numbered layer files. Do not add a future model layer unless an explicit architecture revision reopens the stack; post-Layer-8 execution belongs outside `trading-model`.
 

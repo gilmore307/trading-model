@@ -741,3 +741,14 @@ Historical training dataset construction is allowed to use a broader point-in-ti
 Layer 3 is the critical example: live routing commonly sends targets from Layer 2 selected/prioritized sector baskets, while historical training may include anonymous targets from other sectors, industries, styles, market caps, liquidity tiers, and ETF/stock exposure paths. Each row must still carry point-in-time market and sector context, preserve identity-safety, and avoid future leakage.
 
 Promotion evidence should report both broad historical generalization and live-route simulation performance whenever the training sample universe is wider than the live routed universe.
+
+## D038 - Realtime decision handoff is fixture/shadow routing only
+
+Date: 2026-05-11
+Status: Accepted
+
+Realtime execution inputs may enter `trading-model` through `execution_model_decision_input_snapshot_v1` only after `trading-execution` has packaged capture refs into realtime feature/model-input envelopes with historical dataset snapshot refs and frozen model config refs.
+
+`trading-model` accepts `model_realtime_decision_route_plan_v1` as the model-side route plan for fixture/shadow historical-model decision routing. The plan validates Layer 1-8 input coverage and maps each layer to its reviewed generator entrypoint, but it does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
+
+Production model activation, durable decision records, promotion approval, and execution authority remain manager/execution-owned gates, not implied by this handoff scaffold.
