@@ -43,6 +43,18 @@ The review package must include at minimum:
 
 Missing any required item means the review action is **defer**, not approve.
 
+## Realtime validation boundary
+
+Realtime data is an accepted forward evidence source only after it is captured as point-in-time shadow/forward-validation data with frozen model/config refs and mature labels. It is not a shortcut around the chronological historical split ladder.
+
+Promotion reviews should distinguish:
+
+1. historical broad-sample validation/test evidence;
+2. historical live-route simulation evidence;
+3. realtime shadow or forward-holdout evidence collected after the model/config was frozen.
+
+Realtime evidence becomes stronger as it accumulates untouched future rows, but early realtime windows are usually too short and label-delayed to prove baseline lift, split stability, calibration, and leakage safety by themselves. A candidate that lacks historical validation/test evidence must be deferred even if realtime capture is structurally connected.
+
 ## Promotion readiness matrix
 
 | Layer | Model | Output | Current production status | Blocking gap |
