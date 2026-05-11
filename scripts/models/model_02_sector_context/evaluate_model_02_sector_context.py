@@ -236,6 +236,7 @@ def main(argv: list[str] | None = None) -> int:
     payload = artifacts.as_table_rows() if args.print_artifacts else summarize_artifacts(artifacts, thresholds=thresholds)
     text = json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n"
     if args.output_json:
+        args.output_json.parent.mkdir(parents=True, exist_ok=True)
         args.output_json.write_text(text, encoding="utf-8")
         print(f"wrote evaluation artifacts to {args.output_json}")
     else:
