@@ -2,9 +2,9 @@
 
 ## Active Tasks
 
-- None for the historical-data training preparation boundary.
+- Promote-first model phase: concentrate current modeling effort on producing the first usable production-promotable model version. Start with Layer 1 `MarketRegimeModel` promotion-gate repair/evidence production because Layer 2 and Layer 3 depend on a stable approved Layer 1 foundation.
 
-Layers 1-8 are structurally closed for the accepted local deterministic scaffold phase; see `docs/94_model_stack_closeout.md`. The model-side realtime decision handoff scaffold is now present for fixture/shadow routing from execution realtime feature snapshots into historical-model decision inputs; see `docs/98_realtime_decision_handoff.md`. The next work is evidence production during formal historical-training runs or explicitly approved live/shadow integration, not additional ad hoc repository work item cleanup.
+Layers 1-8 are structurally closed for the accepted local deterministic scaffold phase; see `docs/94_model_stack_closeout.md`. Realtime decision handoff scaffolds remain accepted but are parked until at least one model has an approved/promotable version. The next work is historical evidence production, gate repair, calibration/baseline/stability/leakage evidence, and manager-side promotion review preparation — not realtime integration expansion or additional ad hoc repository cleanup.
 
 ## Historical-Training Evidence Requirements
 
@@ -17,8 +17,9 @@ These are run/evidence requirements for promotion readiness, not open model-desi
 
 ## Not Current Historical-Training Scope
 
-These items are intentionally outside the current no-broker historical-training run and must not be treated as active repository work items:
+These items are intentionally outside the current promote-first historical-training run and must not be treated as active repository work items:
 
+- realtime data/monitoring or live/shadow integration expansion before a model has an approved/promotable version;
 - broker/order/fill/account lifecycle;
 - production model activation without approved manager-side review decisions;
 - exact execution-owned unified decision-record artifacts beyond the current risk-cap invariant;
