@@ -215,6 +215,7 @@ It implements:
 - Layer 7 bullish thesis -> long-call candidate search;
 - Layer 7 bearish thesis or no-direct-short bearish thesis -> long-put candidate search;
 - Layer 7 `maintain` / `no_trade`, policy blocks, or pending option exposure -> `no_option_expression`;
+- reviewed no-provider/no-option database generation from completed Layer 7 rows when the manager gate review finds no active target chain;
 - deterministic selection scoring for right, bid/ask/mid, DTE range, preferred absolute delta range, stale quote age, volume/open interest, spread, adjusted-contract handling, and target-range moneyness guardrails;
 - DTE / delta / Greeks / IV / liquidity / reward-risk scoring with per-candidate reason codes;
 - offline label join helpers and leakage assertions.
