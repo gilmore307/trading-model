@@ -104,6 +104,18 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
         self.assertTrue(coverage_values)
         self.assertTrue(any(0.0 < float(value) < 1.0 for value in coverage_values))
 
+    def test_quality_outputs_are_not_counted_as_predictive_return_factors(self) -> None:
+        features, models = _rows()
+        artifacts = build_evaluation_artifacts(feature_rows=features, model_rows=models)
+        predictive_factor_names = {
+            metric["factor_name"]
+            for metric in artifacts.eval_metrics
+            if metric["metric_name"] in {"pair_count", "coverage", "pearson_correlation"}
+        }
+
+        self.assertNotIn("1_coverage_score", predictive_factor_names)
+        self.assertNotIn("1_data_quality_score", predictive_factor_names)
+
     def test_summary_advertises_no_database_write_policy(self) -> None:
         features, models = _rows()
         summary = summarize_artifacts(build_evaluation_artifacts(feature_rows=features, model_rows=models))

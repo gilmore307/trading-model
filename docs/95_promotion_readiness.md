@@ -59,7 +59,7 @@ Realtime evidence becomes stronger as it accumulates untouched future rows, but 
 
 | Layer | Model | Output | Current production status | Blocking gap |
 |---:|---|---|---|---|
-| 1 | `MarketRegimeModel` | `market_context_state` | deferred after real evaluation | failed baseline, coverage, and split-stability gates |
+| 1 | `MarketRegimeModel` | `market_context_state` | deferred after real evaluation | failed baseline, eval-label count, pair-count, and coverage gates; split-stability and leakage currently pass |
 | 2 | `SectorContextModel` | `sector_context_state` | deferred after real evaluation | failed baseline/lift and split-stability gates |
 | 3 | `TargetStateVectorModel` | `target_context_state` | deferred after real production-eval substrate | upstream Layer 1/2 are not production-approved/active and Layer 3 calibration evidence is missing |
 | 4 | `EventOverlayModel` | `event_context_vector` | deferred: no production eval substrate | no production event-overlay evaluation run or calibrated labels exist |

@@ -22,7 +22,7 @@ Durable promotion requests, review decisions, activation, rollback, and producti
 
 | Layer | Model | Evidence state | Current status | Activation |
 |---:|---|---|---|---|
-| 1 | `model_01_market_regime` | real PostgreSQL evaluation evidence exists | deferred: baseline/coverage/stability gates still fail | none |
+| 1 | `model_01_market_regime` | real PostgreSQL evaluation evidence exists | deferred: baseline, label-count, pair-count, and coverage gates still fail | none |
 | 2 | `model_02_sector_context` | real PostgreSQL evaluation evidence exists | deferred: baseline/lift/stability gates still fail | none |
 | 3 | `model_03_target_state_vector` | real PostgreSQL production-eval substrate exists | deferred: upstream Layer 1/2 approvals and Layer 3 calibration evidence missing | none |
 | 4 | `model_04_event_overlay` | missing production event-overlay eval run / calibrated labels | deferred: no production eval substrate | none |
@@ -35,7 +35,7 @@ Durable promotion requests, review decisions, activation, rollback, and producti
 
 Layer 1 and Layer 2 have real database evidence paths. The current evidence is useful negative evidence, not promotion approval:
 
-- Layer 1 data completeness/leakage repair succeeded, but baseline improvement, coverage, and split sign-stability gates still block promotion.
+- Layer 1 data completeness/leakage repair succeeded, and the current split-stability checks pass after excluding quality outputs from predictive-return factor scoring. Promotion is still blocked by baseline improvement (`-0.4488 < 0.0`), eval-label count (`72 < 200`), minimum pair count (`4 < 30`), and coverage (`0.20 < 0.80`).
 - Layer 2 coverage improved, but baseline improvement, selected-vs-blocked lift, and split sign-stability gates still block promotion.
 
 The model repo may regenerate these evidence packages, but durable review requests and decisions must be submitted through `trading-manager`.

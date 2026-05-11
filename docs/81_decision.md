@@ -716,7 +716,7 @@ Status: Accepted
 
 A follow-up Layer 1/2 gate repair found and fixed a stale feature-generation problem before re-reviewing promotion. The repair regenerated `feature_01_market_regime`, `feature_02_sector_context`, `model_01_market_regime`, and `model_02_sector_context` from real PostgreSQL source data instead of lowering thresholds.
 
-Latest Layer 1 evidence fixed the stale row-count and leakage failures; promotion still fails baseline improvement, coverage, and split sign-stability gates.
+Latest Layer 1 evidence fixed the stale row-count and leakage failures. A later scoring repair also excluded `1_coverage_score` and `1_data_quality_score` from predictive-return factor scoring, leaving split-stability passing; promotion still fails baseline improvement, eval-label count, pair-count, and coverage gates.
 
 Latest Layer 2 evidence improved coverage; promotion still fails baseline improvement, selected-vs-blocked lift, and split sign-stability gates.
 

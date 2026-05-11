@@ -128,8 +128,10 @@ PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_m
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/run_market_regime_development_smoke.py --help
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --help
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --dry-run
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --local-fallback-review --print-write-sql
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --local-fallback-review
 git diff --check
 ```
 
 Runtime SQL smoke tests require an explicitly configured PostgreSQL target and should not run as default unit tests.
+
+Current promotion-evidence scoring keeps `1_coverage_score` and `1_data_quality_score` as quality/gating evidence only; they must not be counted as predictive future-return factors when calculating Pearson, baseline-improvement, or split-stability promotion metrics. The latest read-only database summary remains deferred rather than promoted: baseline improvement, eval-label count, pair-count, and coverage gates fail, while leakage and split-stability checks pass.

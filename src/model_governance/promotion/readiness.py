@@ -26,7 +26,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "output": "market_context_state",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_after_real_evaluation",
-        "blocking_gap": "real evaluation failed baseline, coverage, and split-stability gates",
+        "blocking_gap": "real evaluation failed baseline, eval-label count, pair-count, and coverage gates; split-stability/leakage currently pass",
     },
     {
         "layer": 2,

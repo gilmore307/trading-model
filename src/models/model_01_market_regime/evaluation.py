@@ -41,6 +41,13 @@ STATE_OUTPUT_COLUMNS = (
     "1_coverage_score",
     "1_data_quality_score",
 )
+QUALITY_OUTPUT_COLUMNS = (
+    "1_coverage_score",
+    "1_data_quality_score",
+)
+PREDICTIVE_STATE_OUTPUT_COLUMNS = tuple(
+    column for column in STATE_OUTPUT_COLUMNS if column not in QUALITY_OUTPUT_COLUMNS
+)
 
 DEFAULT_PROMOTION_THRESHOLDS: dict[str, float] = {
     "minimum_feature_rows": 252.0,
@@ -325,7 +332,7 @@ def build_eval_metrics(
     splits: Sequence[Mapping[str, Any]],
     *,
     eval_run_id: str,
-    state_output_columns: Sequence[str] = STATE_OUTPUT_COLUMNS,
+    state_output_columns: Sequence[str] = PREDICTIVE_STATE_OUTPUT_COLUMNS,
     write_policy: str = DEFAULT_DRY_RUN_WRITE_POLICY,
 ) -> list[dict[str, Any]]:
     model_by_time = {_iso(_row_time(row, preferred="available_time")): row for row in model_rows}
@@ -766,6 +773,9 @@ def summarize_artifacts(artifacts: EvaluationArtifacts, *, thresholds: Mapping[s
     metric_names = sorted({str(row["metric_name"]) for row in artifacts.eval_metrics})
     threshold_values = {**DEFAULT_PROMOTION_THRESHOLDS, **dict(thresholds or {})}
     threshold_results = evaluate_promotion_thresholds(artifacts, threshold_values)
+    failed_thresholds = {
+        name: result for name, result in threshold_results.items() if not bool(result.get("passed"))
+    }
     metric_summary = summarize_metric_values(artifacts.eval_metrics)
     return {
         "write_policy": artifacts.eval_run.get("run_payload_json", {}).get("write_policy", DEFAULT_DRY_RUN_WRITE_POLICY),
@@ -777,10 +787,11 @@ def summarize_artifacts(artifacts: EvaluationArtifacts, *, thresholds: Mapping[s
         "metric_value_summary": metric_summary,
         "acceptance_thresholds": threshold_values,
         "threshold_results": threshold_results,
+        "failed_thresholds": failed_thresholds,
         "baseline_summary": _metric_family_summary(artifacts.eval_metrics, ("baseline_pearson_correlation", "baseline_improvement_abs")),
         "stability_summary": _metric_family_summary(artifacts.eval_metrics, ("split_stability_sign_consistency", "split_stability_correlation_range")),
         "leakage_summary": _metric_family_summary(artifacts.eval_metrics, ("no_future_leak_violation_count", "model_label_alignment_missing_count", "chronological_split_overlap_violation_count", "total_leakage_violation_count")),
-        "promotion_evidence_ready": all(result["passed"] for result in threshold_results.values()),
+        "promotion_evidence_ready": not failed_thresholds,
         "snapshot_id": artifacts.dataset_snapshot["snapshot_id"],
         "eval_run_id": artifacts.eval_run["eval_run_id"],
     }
