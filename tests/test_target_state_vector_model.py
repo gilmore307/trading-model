@@ -20,7 +20,7 @@ def _feature_row(index: int) -> dict:
         "target_candidate_id": "tcand_001",
         "market_context_state_ref": "mkt_001",
         "sector_context_state_ref": "sec_001",
-        "target_context_state_version": "target_context_state_v1",
+        "target_context_state_version": "target_context_state",
         "market_state_features": {"state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows", "market_return_15min": 0.001},
         "sector_state_features": {"state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows", "sector_return_15min": 0.002},
         "target_state_features": {

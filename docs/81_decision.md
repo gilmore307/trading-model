@@ -248,7 +248,7 @@ Status: Accepted
 
 `trading-model` owns model output generation, labels, evaluation computation, promotion metrics, candidate evidence packages, and reviewer artifacts.
 
-`trading-manager` owns the unified `model_promotion_review_v1` request path, durable review decisions, activation records, rollback references, and cross-layer production gates. Model-side review scripts must not persist manager-control-plane promotion rows or activate production pointers.
+`trading-manager` owns the unified `model_promotion_review` request path, durable review decisions, activation records, rollback references, and cross-layer production gates. Model-side review scripts must not persist manager-control-plane promotion rows or activate production pointers.
 
 ## D011 - Model output keys carry layer ownership prefixes
 
@@ -643,7 +643,7 @@ manager schedules lifecycle
 storage executes lifecycle
 ```
 
-Lifecycle work caused by promotion must route through manager `storage_lifecycle_request_v1`; `trading-storage` owns protected-set checks, physical lifecycle execution, receipts, and tombstones.
+Lifecycle work caused by promotion must route through manager `storage_lifecycle_request`; `trading-storage` owns protected-set checks, physical lifecycle execution, receipts, and tombstones.
 
 ## D025 - Layers 1-8 model-design closeout
 
@@ -747,8 +747,8 @@ Promotion evidence should report both broad historical generalization and live-r
 Date: 2026-05-11
 Status: Accepted
 
-Realtime execution inputs may enter `trading-model` through `execution_model_decision_input_snapshot_v1` only after `trading-execution` has packaged capture refs into realtime feature/model-input envelopes with historical dataset snapshot refs and frozen model config refs.
+Realtime execution inputs may enter `trading-model` through `execution_model_decision_input_snapshot` only after `trading-execution` has packaged capture refs into realtime feature/model-input envelopes with historical dataset snapshot refs and frozen model config refs.
 
-`trading-model` accepts `model_realtime_decision_route_plan_v1` as the model-side route plan for fixture/shadow historical-model decision routing. The plan validates Layer 1-8 input coverage and maps each layer to its reviewed generator entrypoint, but it does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
+`trading-model` accepts `model_realtime_decision_route_plan` as the model-side route plan for fixture/shadow historical-model decision routing. The plan validates Layer 1-8 input coverage and maps each layer to its reviewed generator entrypoint, but it does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
 
 Production model activation, durable decision records, promotion approval, and execution authority remain manager/execution-owned gates, not implied by this handoff scaffold.

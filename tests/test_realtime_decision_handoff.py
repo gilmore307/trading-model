@@ -26,7 +26,7 @@ def _decision_input_snapshot() -> dict[str, object]:
         ("layer_08_option_expression", "model_08_option_expression", "option_expression_plan"),
     ]
     return {
-        "contract_type": "execution_model_decision_input_snapshot_v1",
+        "contract_type": "execution_model_decision_input_snapshot",
         "decision_input_snapshot_id": "rtdecision_unit",
         "decision_time": "2026-05-11T13:30:00+00:00",
         "instrument_ref": "AAPL",
@@ -36,7 +36,7 @@ def _decision_input_snapshot() -> dict[str, object]:
         "realtime_feature_snapshot_ref": "realtime-feature-snapshot://rtfeat_unit",
         "layer_input_refs": [
             {
-                "contract_type": "execution_model_decision_layer_input_v1",
+                "contract_type": "execution_model_decision_layer_input",
                 "decision_input_snapshot_id": "rtdecision_unit",
                 "model_layer": layer,
                 "model_id": model_id,
@@ -66,7 +66,7 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
     def test_build_route_plan_maps_all_layers_to_generators(self) -> None:
         plan = build_realtime_decision_route_plan({"decision_input_snapshot": _decision_input_snapshot()})
 
-        self.assertEqual(plan["contract_type"], "model_realtime_decision_route_plan_v1")
+        self.assertEqual(plan["contract_type"], "model_realtime_decision_route_plan")
         self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_historical_model_decision_route")
         self.assertEqual(len(plan["layer_routes"]), 8)
         self.assertEqual(plan["provider_calls_performed"], 0)

@@ -35,7 +35,7 @@ DEFAULT_MODEL_SCHEMA = "trading_model"
 DEFAULT_MODEL_TABLE = "model_03_target_state_vector"
 DEFAULT_MODEL_ID = evaluation.DEFAULT_MODEL_ID
 DEFAULT_MODEL_VERSION = "model_03_target_state_vector"
-DEFAULT_CONFIG_HASH = "target_context_state_v1_contract_production_eval_20260508"
+DEFAULT_CONFIG_HASH = "target_context_state_contract_production_eval_20260508"
 JSON_MODEL_COLUMNS = {"target_context_state", "target_state_embedding", "state_quality_diagnostics"}
 TEXT_MODEL_COLUMNS = {
     "available_time",

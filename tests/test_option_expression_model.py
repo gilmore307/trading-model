@@ -90,7 +90,7 @@ class OptionExpressionModelTests(unittest.TestCase):
         output = generate_rows([row])[0]
 
         self.assertEqual(output["8_resolved_expression_type"], "no_option_expression")
-        self.assertIn("delta_outside_v1_policy_range", output["8_resolved_no_option_reason_codes"])
+        self.assertIn("delta_outside_policy_range", output["8_resolved_no_option_reason_codes"])
         self.assertIn("no_contract_passed_hard_filter", output["option_expression_plan"]["reason_codes"])
 
     def test_labels_are_offline_and_join_by_plan_ref(self) -> None:

@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 ET = ZoneInfo("America/New_York")
 MODEL_ID = "target_state_vector_model"
-MODEL_VERSION = "target_context_state_v1_contract"
+MODEL_VERSION = "target_context_state_contract"
 PRIMARY_TABLE = "model_03_target_state_vector"
 STATE_WINDOWS = ("5min", "15min", "60min", "390min")
 JSON_BLOCKS = ("market_state_features", "sector_state_features", "target_state_features", "cross_state_features")

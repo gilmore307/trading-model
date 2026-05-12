@@ -20,8 +20,8 @@ model_dataset_snapshot
   └─ model_eval_run
         └─ model_promotion_metric
               └─ promotion_candidate_evidence
-                    └─ model_promotion_review_v1 in trading-manager
-                          └─ review_decision_v1
+                    └─ model_promotion_review in trading-manager
+                          └─ review_decision
 ```
 
 The review package must include at minimum:
@@ -102,7 +102,7 @@ manager schedules lifecycle
 storage executes lifecycle
 ```
 
-Approved/promoted model bodies and required lineage must be marked for permanent retention. Regenerable intermediates may receive retention hints, but lifecycle action must route through manager `storage_lifecycle_request_v1` and storage protected-set execution.
+Approved/promoted model bodies and required lineage must be marked for permanent retention. Regenerable intermediates may receive retention hints, but lifecycle action must route through manager `storage_lifecycle_request` and storage protected-set execution.
 
 The current closeout evidence creates no activation rows. Layers 3-8 route through `scripts/models/review_layers_03_08_promotion_closeout.py`, which builds blocked evidence and reviewer artifacts without persisting manager decisions. A follow-up Layer 3 substrate run can rebuild real Layer 3 evaluation evidence, but Layers 4-8 remain blocked for missing production eval substrate. See `96_promotion_closeout.md` for the current evidence receipt.
 

@@ -6,7 +6,7 @@ from typing import Final
 MODEL_ID: Final[str] = "event_overlay_model"
 MODEL_LAYER: Final[str] = "layer_04_event_overlay"
 MODEL_SURFACE: Final[str] = "model_04_event_overlay"
-MODEL_VERSION: Final[str] = "event_context_vector_v1_contract"
+MODEL_VERSION: Final[str] = "event_context_vector_contract"
 VECTOR_OUTPUT: Final[str] = "event_context_vector"
 HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
 HORIZON_MINUTES: Final[dict[str, int]] = {"5min": 5, "15min": 15, "60min": 60, "390min": 390}

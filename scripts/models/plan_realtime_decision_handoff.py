@@ -12,9 +12,9 @@ from models.realtime_decision_handoff import build_realtime_decision_route_plan
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Build model_realtime_decision_route_plan_v1 from execution_model_decision_input_snapshot_v1."
+        description="Build model_realtime_decision_route_plan from execution_model_decision_input_snapshot."
     )
-    parser.add_argument("decision_input_snapshot", help="Path to execution_model_decision_input_snapshot_v1 JSON.")
+    parser.add_argument("decision_input_snapshot", help="Path to execution_model_decision_input_snapshot JSON.")
     parser.add_argument("--handoff-mode", choices=("fixture_replay", "shadow_monitoring"), default="shadow_monitoring")
     parser.add_argument("--route-plan-id")
     args = parser.parse_args()

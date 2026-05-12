@@ -18,7 +18,7 @@ from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 ET = ZoneInfo("America/New_York")
-BUILDER_VERSION = "anonymous_target_candidate_builder_v1_contract"
+BUILDER_VERSION = "anonymous_target_candidate_builder_contract"
 MODEL_FACING_VECTOR = "anonymous_target_feature_vector"
 ANONYMITY_PASS_STATES = {"pass", "watch", "fail"}
 ELIGIBILITY_STATES = {"eligible", "watch", "excluded", "insufficient_data"}
@@ -128,7 +128,7 @@ def build_candidate_rows(
     market_context_rows: Iterable[Mapping[str, Any]] = (),
     candidate_builder_version: str = BUILDER_VERSION,
     anonymity_min_bucket_k: int = 2,
-    id_salt: str = "target_context_state_v1",
+    id_salt: str = "target_context_state",
 ) -> list[dict[str, Any]]:
     """Build anonymous target candidate rows.
 
@@ -155,7 +155,7 @@ def build_candidates(
     market_context_rows: Iterable[Mapping[str, Any]] = (),
     candidate_builder_version: str = BUILDER_VERSION,
     anonymity_min_bucket_k: int = 2,
-    id_salt: str = "target_context_state_v1",
+    id_salt: str = "target_context_state",
 ) -> CandidateBuildResult:
     sectors = [_normalize_sector_row(row) for row in sector_context_rows]
     sectors = [row for row in sectors if row.get("2_sector_handoff_state") in ALLOWED_SECTOR_HANDOFF_STATES]

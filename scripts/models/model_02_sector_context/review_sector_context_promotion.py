@@ -24,7 +24,7 @@ from model_governance.promotion.agent_review import (
 
 DEFAULT_MODEL_ID = "model_02_sector_context"
 DEFAULT_MODEL_VERSION = "model_02_sector_context"
-DEFAULT_CONFIG_HASH = "sector_context_v1_contract"
+DEFAULT_CONFIG_HASH = "sector_context_contract"
 
 
 def _load_summary(path: Path) -> dict[str, Any]:

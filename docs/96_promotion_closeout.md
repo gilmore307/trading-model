@@ -16,7 +16,7 @@ No model layer is production-promoted by this closeout evidence.
 - candidate evidence packages;
 - reviewer artifacts.
 
-Durable promotion requests, review decisions, activation, rollback, and production pointers belong in `trading-manager` through the unified `model_promotion_review_v1` path.
+Durable promotion requests, review decisions, activation, rollback, and production pointers belong in `trading-manager` through the unified `model_promotion_review` path.
 
 ## Current readiness receipt
 

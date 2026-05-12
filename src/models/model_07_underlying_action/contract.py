@@ -6,7 +6,7 @@ from typing import Final
 MODEL_ID: Final[str] = "underlying_action_model"
 MODEL_LAYER: Final[str] = "layer_07_underlying_action"
 MODEL_SURFACE: Final[str] = "model_07_underlying_action"
-MODEL_VERSION: Final[str] = "underlying_action_plan_v1_contract"
+MODEL_VERSION: Final[str] = "underlying_action_plan_contract"
 PRIMARY_OUTPUT: Final[str] = "underlying_action_plan"
 VECTOR_OUTPUT: Final[str] = "underlying_action_vector"
 

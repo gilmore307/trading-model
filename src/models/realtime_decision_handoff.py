@@ -1,7 +1,7 @@
 """Realtime-to-model decision handoff planning.
 
 This module consumes the execution-side
-``execution_model_decision_input_snapshot_v1`` envelope and turns it into a
+``execution_model_decision_input_snapshot`` envelope and turns it into a
 model-side route plan for fixture/shadow historical-model decision routing. It
 validates shape and layer coverage only. It does not run model generators,
 activate production configs, persist outputs, call providers, or authorize
@@ -141,7 +141,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
     }
     present = {key for key, value in candidate.items() if value not in (None, "", [], {})}
     missing_fields = sorted(required - present)
-    contract_type_valid = candidate.get("contract_type") == "execution_model_decision_input_snapshot_v1"
+    contract_type_valid = candidate.get("contract_type") == "execution_model_decision_input_snapshot"
     decision_time_valid = _parse_time(candidate.get("decision_time")) is not None
     requested_actions = set(candidate.get("requested_actions") or [])
     forbidden_actions_present = sorted(requested_actions.intersection(FORBIDDEN_HANDOFF_ACTIONS))
@@ -183,7 +183,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
         and not missing_layers
     )
     return {
-        "contract_type": "model_realtime_decision_input_validation_v1",
+        "contract_type": "model_realtime_decision_input_validation",
         "decision_input_snapshot_id": candidate.get("decision_input_snapshot_id"),
         "valid": valid,
         "missing_fields": missing_fields,
@@ -235,7 +235,7 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
         metadata = _LAYER_METADATA[layer]
         routes.append(
             RealtimeDecisionLayerRoute(
-                contract_type="model_realtime_decision_layer_route_v1",
+                contract_type="model_realtime_decision_layer_route",
                 route_plan_id=route_plan_id,
                 model_layer=layer,
                 model_id=metadata["model_id"],
@@ -254,7 +254,7 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
 
     ready = validation["valid"] and len(routes) == len(MODEL_LAYER_ORDER)
     return {
-        "contract_type": "model_realtime_decision_route_plan_v1",
+        "contract_type": "model_realtime_decision_route_plan",
         "route_plan_id": route_plan_id,
         "decision_input_snapshot_id": snapshot.get("decision_input_snapshot_id"),
         "decision_time": snapshot.get("decision_time"),
@@ -291,7 +291,7 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
     }
     present = {key for key, value in candidate.items() if value not in (None, "", [], {})}
     missing_fields = sorted(required - present)
-    contract_type_valid = candidate.get("contract_type") == "model_realtime_decision_route_plan_v1"
+    contract_type_valid = candidate.get("contract_type") == "model_realtime_decision_route_plan"
     handoff_mode_valid = candidate.get("handoff_mode") in ACCEPTED_HANDOFF_MODES
     input_validation = candidate.get("input_validation") or {}
     input_valid = bool(input_validation.get("valid")) if isinstance(input_validation, Mapping) else False
@@ -326,7 +326,7 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
         and not missing_layers
     )
     return {
-        "contract_type": "model_realtime_decision_route_plan_validation_v1",
+        "contract_type": "model_realtime_decision_route_plan_validation",
         "route_plan_id": candidate.get("route_plan_id"),
         "valid": valid,
         "missing_fields": missing_fields,

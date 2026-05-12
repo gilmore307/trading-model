@@ -233,9 +233,9 @@ def _score_candidate(
     if spread_pct > max_spread_pct:
         hard_filter_fail_reason_codes.append("spread_too_wide")
     if not min_dte <= dte <= max_dte:
-        hard_filter_fail_reason_codes.append("dte_outside_v1_policy_range")
+        hard_filter_fail_reason_codes.append("dte_outside_policy_range")
     if not min_abs_delta <= abs(delta) <= max_abs_delta:
-        hard_filter_fail_reason_codes.append("delta_outside_v1_policy_range")
+        hard_filter_fail_reason_codes.append("delta_outside_policy_range")
     if volume < min_volume:
         hard_filter_fail_reason_codes.append("volume_below_minimum")
     if open_interest < min_open_interest:
@@ -243,7 +243,7 @@ def _score_candidate(
     if not quote_fresh:
         hard_filter_fail_reason_codes.append("stale_option_quote")
     if adjusted:
-        hard_filter_fail_reason_codes.append("adjusted_contract_excluded_v1")
+        hard_filter_fail_reason_codes.append("adjusted_contract_excluded")
     if not target_range_ok:
         hard_filter_fail_reason_codes.append("strike_outside_underlying_target_range")
     eligible = not hard_filter_fail_reason_codes

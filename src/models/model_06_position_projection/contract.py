@@ -6,7 +6,7 @@ from typing import Final
 MODEL_ID: Final[str] = "position_projection_model"
 MODEL_LAYER: Final[str] = "layer_06_position_projection"
 MODEL_SURFACE: Final[str] = "model_06_position_projection"
-MODEL_VERSION: Final[str] = "position_projection_vector_v1_contract"
+MODEL_VERSION: Final[str] = "position_projection_vector_contract"
 VECTOR_OUTPUT: Final[str] = "position_projection_vector"
 HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
 SCORE_FAMILIES: Final[tuple[str, ...]] = (

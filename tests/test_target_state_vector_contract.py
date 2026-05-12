@@ -17,7 +17,7 @@ CONTRACT_PATH = (
 
 
 class TargetStateVectorContractTests(unittest.TestCase):
-    def test_v1_blocks_are_relationship_first(self) -> None:
+    def test_blocks_are_relationship_first(self) -> None:
         self.assertEqual(contract.LAYER3_PREPROCESSING_VECTOR, "anonymous_target_feature_vector")
         self.assertEqual(contract.LAYER3_OUTPUT_STATE_VECTOR, "target_context_state")
         self.assertEqual(
@@ -39,7 +39,7 @@ class TargetStateVectorContractTests(unittest.TestCase):
         self.assertIn("3_target_exhaustion_risk_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
         self.assertIn("3_tradability_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
 
-    def test_v1_uses_sparse_state_windows_not_strategy_variants(self) -> None:
+    def test_uses_sparse_state_windows_not_strategy_variants(self) -> None:
         self.assertEqual(contract.SYNCHRONIZED_STATE_WINDOWS, ("5min", "15min", "60min", "390min"))
         self.assertEqual(contract.TRAILING_STATE_WINDOWS, contract.SYNCHRONIZED_STATE_WINDOWS)
         self.assertEqual(

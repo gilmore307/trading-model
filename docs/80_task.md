@@ -12,7 +12,7 @@ These are run/evidence requirements for promotion readiness, not open model-desi
 
 - Layer 1 and Layer 2 require remediated real-data evidence before any promotion approval can be considered.
 - Layer 3 requires upstream Layer 1/2 production approval or an explicitly reviewed offline-evidence exception, plus Layer 3 calibration evidence.
-- Layers 4-8 require point-in-time datasets, labels, real evaluation metrics, baseline/stability/leakage/calibration evidence, and manager-side `model_promotion_review_v1` requests.
+- Layers 4-8 require point-in-time datasets, labels, real evaluation metrics, baseline/stability/leakage/calibration evidence, and manager-side `model_promotion_review` requests.
 - Missing evidence or failed gates must remain deferred/rejected and must not create activation records or move production pointers.
 
 ## Not Current Historical-Training Scope
@@ -27,7 +27,7 @@ These items are intentionally outside the current promote-first historical-train
 
 ## Recently Accepted
 
-- Added `model_realtime_decision_route_plan_v1` and validation scaffold for `execution_model_decision_input_snapshot_v1` handoff from `trading-execution`. It maps Layer 1-8 input refs to reviewed generator entrypoints for fixture/shadow historical-model decision routing without running models, activating configs, constructing orders, or persisting manager decisions.
+- Added `model_realtime_decision_route_plan` and validation scaffold for `execution_model_decision_input_snapshot` handoff from `trading-execution`. It maps Layer 1-8 input refs to reviewed generator entrypoints for fixture/shadow historical-model decision routing without running models, activating configs, constructing orders, or persisting manager decisions.
 - Promotion closeout evidence is recorded in `docs/96_promotion_closeout.md`: Layers 1-2 have real database evidence; Layers 3-8 have blocked/deferred eval evidence proving no production eval substrate exists yet. No production activation occurred, and durable decision/activation ownership is now in `trading-manager`.
 - Production-promotion readiness rules are accepted for Layers 1-8 in `docs/95_promotion_readiness.md`: every production approval requires dataset snapshot/split/labels/eval run/metrics/candidate/thresholds/baselines/stability/leakage/calibration/decision evidence. Current status remains deferred, not production-approved.
 - Repository model-stack closeout is accepted for the current design phase: Layers 1-8 now have accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture evidence. There is no accepted Layer 9 inside `trading-model`; post-Layer-8 execution remains outside this repository.

@@ -5,7 +5,7 @@ Date: 2026-05-11
 
 ## Purpose
 
-Realtime execution capture can now produce `execution_model_decision_input_snapshot_v1` envelopes. `trading-model` needs a model-side entry boundary that accepts those envelopes for fixture/shadow routing into the historical model stack without accidentally activating production inference or execution.
+Realtime execution capture can now produce `execution_model_decision_input_snapshot` envelopes. `trading-model` needs a model-side entry boundary that accepts those envelopes for fixture/shadow routing into the historical model stack without accidentally activating production inference or execution.
 
 This document defines that boundary.
 
@@ -13,13 +13,13 @@ This document defines that boundary.
 
 ```text
 trading-execution realtime capture
-  -> realtime_feature_snapshot_v1
-  -> execution_model_decision_input_snapshot_v1
-  -> model_realtime_decision_route_plan_v1
+  -> realtime_feature_snapshot
+  -> execution_model_decision_input_snapshot
+  -> model_realtime_decision_route_plan
   -> fixture/shadow historical-model generation route
 ```
 
-`model_realtime_decision_route_plan_v1` is a route plan, not a model output. It validates that all Layer 1-8 input refs are present, maps each layer to its reviewed model generator entrypoint, and records the handoff mode.
+`model_realtime_decision_route_plan` is a route plan, not a model output. It validates that all Layer 1-8 input refs are present, maps each layer to its reviewed model generator entrypoint, and records the handoff mode.
 
 Accepted handoff modes:
 
@@ -28,7 +28,7 @@ Accepted handoff modes:
 
 ## Required input
 
-The model-side planner consumes an `execution_model_decision_input_snapshot_v1` object with:
+The model-side planner consumes an `execution_model_decision_input_snapshot` object with:
 
 - `decision_input_snapshot_id`
 - `decision_time`

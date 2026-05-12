@@ -44,7 +44,7 @@ def _pstdev(values: Iterable[float]) -> float:
 
 
 MODEL_ID = "sector_context_model"
-MODEL_VERSION = "sector_context_model_v1_contract"
+MODEL_VERSION = "sector_context_model_contract"
 PRIMARY_TABLE = "model_02_sector_context"
 EXPLAINABILITY_TABLE = "model_02_sector_context_explainability"
 DIAGNOSTICS_TABLE = "model_02_sector_context_diagnostics"

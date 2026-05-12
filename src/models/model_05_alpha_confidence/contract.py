@@ -6,7 +6,7 @@ from typing import Final
 MODEL_ID: Final[str] = "alpha_confidence_model"
 MODEL_LAYER: Final[str] = "layer_05_alpha_confidence"
 MODEL_SURFACE: Final[str] = "model_05_alpha_confidence"
-MODEL_VERSION: Final[str] = "alpha_confidence_vector_v1_contract"
+MODEL_VERSION: Final[str] = "alpha_confidence_vector_contract"
 VECTOR_OUTPUT: Final[str] = "alpha_confidence_vector"
 BASE_DIAGNOSTIC_OUTPUT: Final[str] = "base_alpha_vector"
 HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")

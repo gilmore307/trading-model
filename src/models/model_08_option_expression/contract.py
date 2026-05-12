@@ -6,7 +6,7 @@ from typing import Final
 MODEL_ID: Final[str] = "option_expression_model"
 MODEL_LAYER: Final[str] = "layer_08_option_expression"
 MODEL_SURFACE: Final[str] = "model_08_option_expression"
-MODEL_VERSION: Final[str] = "option_expression_plan_v1_contract"
+MODEL_VERSION: Final[str] = "option_expression_plan_contract"
 PRIMARY_OUTPUT: Final[str] = "option_expression_plan"
 VECTOR_OUTPUT: Final[str] = "expression_vector"
 HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
