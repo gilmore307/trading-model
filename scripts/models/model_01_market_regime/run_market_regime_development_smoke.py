@@ -28,8 +28,8 @@ from zoneinfo import ZoneInfo
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
 DEFAULT_TRADING_DATA_SRC = Path("/root/projects/trading-data/src")
-DEFAULT_UNIVERSE_CSV = Path("/root/projects/trading-storage/main/shared/layer_1_2_market_context_etf_universe.csv")
-DEFAULT_COMBINATIONS_CSV = Path("/root/projects/trading-storage/main/shared/layer_1_2_market_context_relative_strength_combinations.csv")
+DEFAULT_UNIVERSE_CSV = Path("/root/projects/trading-storage/main/shared/layer_01_02_market_context_etf_universe.csv")
+DEFAULT_COMBINATIONS_CSV = Path("/root/projects/trading-storage/main/shared/layer_01_02_market_context_relative_strength_combinations.csv")
 ET = ZoneInfo("America/New_York")
 
 SOURCE_SCHEMA = "trading_data"
