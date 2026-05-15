@@ -369,6 +369,19 @@ unknown
 
 Training/evaluation datasets may include realized future outcomes as labels. Inference rows and `event_risk_intervention / event_context_vector` must not include post-event outcomes, hindsight event interpretations, future source revisions, or future price/option paths.
 
+## Event-family scouting gate
+
+Raw news proximity and raw abnormal option flow are not enough to promote an event-risk input. Before Layer 8 uses an event family for model training or risk-intervention evidence, the family needs an `event_family_scouting_packet_v1` as defined in `docs/100_event_family_scouting.md`.
+
+The scouting packet must define the family, inclusion/exclusion rules, source precedence, lifecycle clocks, materiality/surprise rules, scope routing, abnormal-activity bridge rules, control design, forward labels, coverage gates, and early-stop criteria.
+
+Current accepted status from the option/news diagnostics:
+
+- standalone option abnormality: `deferred_low_signal`;
+- threshold-only strict option abnormality refinement: `deferred_low_signal`;
+- raw option abnormality + raw news proximity: `deferred_low_signal`;
+- earnings/guidance event family: `scouting` only, not promotion evidence.
+
 ## Event lifecycle contract
 
 Layer 8 must not treat scheduled catalysts and surprise events as the same training object.

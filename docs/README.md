@@ -32,3 +32,4 @@ Layer workflow and acceptance live in the numbered layer files. The active archi
 Do not place generated data, artifacts, notebooks, logs, credentials, or implementation outputs in this directory.
 
 - [99_activity_price_relationship_study.md](99_activity_price_relationship_study.md) — Cross-sectional proof study for abnormal activity versus future price/path outcomes before any EventActivityBridgeModel promotion.
+- [100_event_family_scouting.md](100_event_family_scouting.md) — Layer 8 event-family scouting contract, status values, early-stop rules, and current option/news amplifier findings.
