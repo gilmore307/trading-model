@@ -260,6 +260,8 @@ Important caveat: a call-buying surge is only directionally bullish when the sys
 
 Pilot evidence note: `/root/projects/trading-model/storage/option_direction_pilot_20260515_aapl/` contains a diagnostic AAPL one-date pilot using ThetaData option event timeline rows, Alpaca underlying daily bars, and ThetaData option OHLC snapshots. It validates the label shape but is not promotion evidence: one symbol/date/strike, duplicated same-day forward labels, no OI/skew/sweep/block context, and no calibrated direction confidence. The pilot also clarifies label policy: underlying directional returns are sign-adjusted by bullish/bearish hypothesis, while ask-side call/put option-contract payoff is measured as long-contract forward return and must not multiply put returns by the bearish sign.
 
+Cross-section pilot note: `/root/projects/trading-model/storage/option_direction_cross_section_20260515/` extends the diagnostic slice to NVDA, JPM, XOM, LLY, and RKLB on the same event date. The headline result is mixed: ask-side CALL evidence is more promising than ask-side PUT evidence, especially on symbol-weighted 10d outcomes, but neither direction can be treated as a universal rule. Ask-side PUT activity was weak as a stable bearish signal in this slice. The result reinforces that option direction needs OI/opening-vs-closing, skew/term-structure, sweep/block, and confidence filters before promotion.
+
 Directional proof metrics:
 
 ```text
