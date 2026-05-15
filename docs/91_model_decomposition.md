@@ -1,4 +1,8 @@
 # Model Decomposition Framework
+<!-- ACTIVE_LAYER_REORDER_NOTICE -->
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_04_event_overlay` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+<!-- /ACTIVE_LAYER_REORDER_NOTICE -->
+
 
 Status: accepted Layers 1-8 design spine; model-design phase closed
 Owner intent: every model layer must keep the same reviewable nine-part decomposition before production promotion expands.
@@ -386,7 +390,7 @@ Status: accepted V1 contract with deterministic scaffold complete for the curren
 Contract owner:
 
 ```text
-docs/05_layer_04_event_overlay.md
+docs/09_layer_08_event_risk_governor.md
 ```
 
 Must convert point-in-time event evidence into `event_context_vector` before alpha confidence is estimated. It consumes market, sector, and target context plus visible event rows, then describes event presence, timing, scope, intensity, direction bias, uncertainty, gap/reversal/liquidity disruption risk, contagion risk, and evidence quality. It must preserve event timing and source priority and must not use post-event outcomes as inference inputs.
@@ -398,7 +402,7 @@ Status: accepted V1 contract with deterministic scaffold complete for the curren
 Contract owner:
 
 ```text
-docs/06_layer_05_alpha_confidence.md
+docs/05_layer_04_alpha_confidence.md
 ```
 
 Must convert reviewed Layer 1/2/3 state evidence plus `event_context_vector` correction into the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/unadjusted alpha from Layer 1/2/3 is retained as diagnostics only; the adjusted vector is the default Layer 6-facing output. Directional alpha belongs here, not in Layer 3 or Layer 4. It must not project target exposure, select option contracts, size positions, emit final actions, or mutate broker/account state.
@@ -410,7 +414,7 @@ Status: accepted V1 contract with deterministic scaffold complete for the curren
 Contract owner:
 
 ```text
-docs/07_layer_06_position_projection.md
+docs/06_layer_05_position_projection.md
 ```
 
 ### 1. Data

@@ -12,11 +12,11 @@ Date: 2026-05-07
 | 1 | `MarketRegimeModel` | `market_context_state` | accepted V2.2 contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
 | 2 | `SectorContextModel` | `sector_context_state` | accepted direction-neutral contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
 | 3 | `TargetStateVectorModel` | `target_context_state` | accepted direction-neutral target-state contract, anonymous candidate preprocessing, deterministic implementation/evaluation scaffold |
-| 4 | `EventOverlayModel` | `event_context_vector` | accepted V1 scaffold and fixture tests |
-| 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted adjusted-alpha V1 scaffold and fixture tests |
-| 6 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold and fixture tests |
-| 7 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold and fixture tests |
-| 8 | `OptionExpressionModel` | `option_expression_plan` / `expression_vector` | accepted offline option-expression scaffold and fixture tests |
+| 4 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted base-alpha V1 scaffold; legacy physical surface `model_05_alpha_confidence` until migration |
+| 5 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; legacy physical surface `model_06_position_projection` until migration |
+| 6 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; legacy physical surface `model_07_underlying_action` until migration |
+| 7 | `TradingGuidanceModel / OptionExpressionModel` | `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted base trading-guidance boundary; V1 option-expression subset uses legacy physical surface `model_08_option_expression` until migration |
+| 8 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary; legacy event-overlay physical surface `model_04_event_overlay` until migration |
 
 This closes the model-design phase. It does not approve production promotion.
 
@@ -26,7 +26,7 @@ There is no accepted Layer 9 inside `trading-model`.
 
 After Layer 8, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
-Layer 7 and Layer 8 may produce offline plans and model confidence. They must not emit execution instructions or broker/account mutations.
+Layer 7 produces the base offline trading-guidance candidate. Layer 8 may intervene on that candidate for high-severity event risk by blocking new entries, capping exposure, reducing exposure, or nominating flatten/halt/human-review actions. Layer 8 still must not directly send broker orders or mutate accounts; execution risk-control owns any resulting broker action.
 
 ## Historical-training readiness classification
 

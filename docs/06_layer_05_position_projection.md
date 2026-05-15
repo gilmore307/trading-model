@@ -1,12 +1,21 @@
-# Layer 06 - PositionProjectionModel
+# Layer 05 — PositionProjectionModel
 
-Status: accepted Layer 6 design route; deterministic V1 scaffold implemented in `src/models/model_06_position_projection/`.
+<!-- ACTIVE_LAYER_REVISION -->
+Status: active architecture revision. Conceptual Layer 5; legacy implementation surface remains `src/models/model_06_position_projection/` until code/SQL surfaces are renamed.
+
+Active boundary: Layer 5 consumes `alpha_confidence_vector` plus point-in-time current/pending position, cost, exposure, and risk-budget context. It outputs `position_projection_vector`: target holding-state projection and abstract exposure gap, not execution instructions.
+
+Forbidden outputs: buy/sell/hold, option/instrument selection, route, time-in-force, final quantity, broker/account mutation. Layer 6 owns direct-underlying action thesis; Layer 7 owns trading-guidance/expression; Layer 8 owns event-risk intervention.
+<!-- /ACTIVE_LAYER_REVISION -->
+
+
+Status: accepted Layer 5 design route; deterministic V1 scaffold implemented in `src/models/model_06_position_projection/`.
 
 ## Purpose
 
-`PositionProjectionModel` is Layer 6. It consumes the final adjusted Layer 5 `alpha_confidence_vector` plus point-in-time current/pending position state, position-level friction, portfolio exposure context, risk-budget context, and policy gates to produce the `position_projection_vector`.
+`PositionProjectionModel` is Layer 5. It consumes the final adjusted Layer 4 `alpha_confidence_vector` plus point-in-time current/pending position state, position-level friction, portfolio exposure context, risk-budget context, and policy gates to produce the `position_projection_vector`.
 
-Layer 6 answers:
+Layer 5 answers:
 
 - What target holding/exposure state does the current alpha imply?
 - Is the current plus pending position already aligned with that target state?
@@ -15,7 +24,7 @@ Layer 6 answers:
 - Are costs, liquidity, concentration, drawdown state, and risk budget compatible with the target exposure?
 - Which horizon should dominate the handoff when per-horizon projections conflict?
 
-Layer 6 does **not** answer buy/sell/hold, open/close/reverse, instrument choice, option-contract choice, order type, routing, or live/paper execution questions. It projects target position state only. Layer 7 owns the direct-underlying planned action thesis; Layer 8 owns option expression. Broker mutation remains outside `trading-model`.
+Layer 5 does **not** answer buy/sell/hold, open/close/reverse, instrument choice, option-contract choice, order type, routing, or live/paper execution questions. It projects target position state only. Layer 6 owns the direct-underlying planned action thesis; Layer 7 owns trading guidance / option expression. Broker mutation remains outside `trading-model`.
 
 ## Position and input chain
 
@@ -33,12 +42,12 @@ alpha_confidence_vector
   -> position_projection_vector
 ```
 
-Layer 5 asks whether adjusted alpha exists. Layer 6 maps that adjusted alpha to target holding state under current account/portfolio context. Layer 7 maps the projected holding state to a planned direct-underlying action thesis.
+Layer 4 asks whether base alpha exists. Layer 5 maps that alpha to target holding state under current account/portfolio context. Layer 6 maps the projected holding state to a planned direct-underlying action thesis.
 
 ```text
-Layer 5: alpha confidence
-Layer 6: projected target position state
-Layer 7: direct-underlying planned action boundary
+Layer 4: alpha confidence
+Layer 4: projected target position state
+Layer 6: direct-underlying planned action boundary
 ```
 
 ## Names
@@ -52,7 +61,7 @@ Layer id: model_06_position_projection
 Conceptual output: position_projection_vector
 ```
 
-Avoid signal-model or signal-vector naming for Layer 6. `signal` language is too close to buy/sell/hold operations and blurs the accepted boundary.
+Avoid signal-model or signal-vector naming for Layer 4. `signal` language is too close to buy/sell/hold operations and blurs the accepted boundary.
 
 ## Inputs
 
@@ -77,9 +86,9 @@ state_version
 
 Training/evaluation inputs may include future outcomes as labels, but those labels must stay outside inference features.
 
-### Input A - Layer 5 final adjusted alpha
+### Input A - Layer 4 final adjusted alpha
 
-Layer 6 consumes the final adjusted `alpha_confidence_vector` by default:
+Layer 4 consumes the final adjusted `alpha_confidence_vector` by default:
 
 ```text
 5_alpha_direction_score_<horizon>
@@ -93,11 +102,11 @@ Layer 6 consumes the final adjusted `alpha_confidence_vector` by default:
 5_alpha_tradability_score_<horizon>
 ```
 
-Base/unadjusted Layer 5 `5_base_*` diagnostics may be retained as explainability refs, but they must not be treated as competing default trading inputs.
+Base/unadjusted Layer 4 `5_base_*` diagnostics may be retained as explainability refs, but they must not be treated as competing default trading inputs.
 
 ### Input B - current position state
 
-Layer 6 is the first model layer allowed to use current position state as an inference input. Eligible current-position evidence includes:
+Layer 4 is the first model layer allowed to use current position state as an inference input. Eligible current-position evidence includes:
 
 ```text
 current_position_direction
@@ -113,7 +122,7 @@ current_position_concentration_state
 
 ### Input C - pending position state
 
-Pending exposure must be included so Layer 6 does not repeatedly project already-covered adjustments:
+Pending exposure must be included so Layer 4 does not repeatedly project already-covered adjustments:
 
 ```text
 pending_exposure_direction
@@ -124,7 +133,7 @@ pending_order_cancellable_state
 pending_order_risk_state
 ```
 
-Layer 6 uses an effective exposure concept:
+Layer 4 uses an effective exposure concept:
 
 ```text
 effective_current_exposure
@@ -136,7 +145,7 @@ effective_current_exposure
 
 ### Input D - position-level friction context
 
-Layer 6 may use generic position-level friction that affects whether changing exposure is worthwhile:
+Layer 4 may use generic position-level friction that affects whether changing exposure is worthwhile:
 
 ```text
 spread_cost_estimate
@@ -150,7 +159,7 @@ liquidity_capacity_score
 
 ### Input E - expression-specific friction hints
 
-Expression-specific costs may be retained as soft context or diagnostics, but they must not cause Layer 6 to choose or reject a specific instrument:
+Expression-specific costs may be retained as soft context or diagnostics, but they must not cause Layer 4 to choose or reject a specific instrument:
 
 ```text
 borrow_cost_hint
@@ -158,7 +167,7 @@ financing_cost_hint
 option_expression_cost_hint
 ```
 
-Borrow and financing costs are especially boundary-sensitive. If Layer 6 models abstract risk exposure, poor stock borrow should not automatically zero short exposure because Layer 7 may express the same exposure through options.
+Borrow and financing costs are especially boundary-sensitive. If Layer 4 models abstract risk exposure, poor stock borrow should not automatically zero short exposure because Layer 6 may express the same exposure through options.
 
 ### Input F - risk budget and portfolio context
 
@@ -180,7 +189,7 @@ Risk gates may compress target exposure and reduce risk-budget fit. They do not 
 
 ## Inputs explicitly excluded
 
-Layer 6 inference must not use:
+Layer 4 inference must not use:
 
 ```text
 future returns
@@ -192,7 +201,7 @@ future broker execution result
 post-trade outcome labels
 ```
 
-Layer 6 also must not use expression-selection inputs as default model features:
+Layer 4 also must not use expression-selection inputs as default model features:
 
 ```text
 option_contract
@@ -209,11 +218,11 @@ routing_destination
 broker_order_id
 ```
 
-These belong to Layer 7 underlying-action work, Layer 8 option-expression work, or execution-side repositories.
+These belong to Layer 6 underlying-action work, Layer 8 option-expression work, or execution-side repositories.
 
 ## Internal structure
 
-Layer 6 V1 uses auditable submodules before any broad learned utility model:
+Layer 4 V1 uses auditable submodules before any broad learned utility model:
 
 ```text
 6A AlphaToPositionPrior
@@ -227,7 +236,7 @@ Layer 6 V1 uses auditable submodules before any broad learned utility model:
 
 ### 6A - AlphaToPositionPrior
 
-Converts final adjusted Layer 5 alpha into a raw target-position prior:
+Converts final adjusted Layer 4 alpha into a raw target-position prior:
 
 ```text
 alpha direction
@@ -251,7 +260,7 @@ Diagnostic fields may include:
 
 ### 6B - CurrentPositionStateEncoder
 
-Encodes current and pending exposure state so Layer 6 can decide whether the account is already close to the target state, overexposed, underexposed, or directionally conflicted.
+Encodes current and pending exposure state so Layer 4 can decide whether the account is already close to the target state, overexposed, underexposed, or directionally conflicted.
 
 ### 6C - PositionGapProjector
 
@@ -298,7 +307,7 @@ Model-local or handoff summary fields may include:
 6_horizon_resolution_reason_codes
 ```
 
-These are Layer 6 handoff summary fields, not final actions.
+These are Layer 4 handoff summary fields, not final actions.
 
 ### 6G - PositionProjectionComposer
 
@@ -306,7 +315,7 @@ Composes the final `position_projection_vector`: core per-horizon scores, handof
 
 ## V1 horizons
 
-Layer 6 V1 uses the same synchronized horizons as Layers 4 and 5:
+Layer 4 V1 uses the same synchronized horizons as Layers 4 and 5:
 
 ```text
 5min
@@ -349,7 +358,7 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 | `6_cost_to_adjust_position_score_<horizon>` | `[0, 1]` | high-is-bad | relative cost pressure for closing the position gap |
 | `6_risk_budget_fit_score_<horizon>` | `[0, 1]` | high-is-good | target exposure fits current risk budget and portfolio constraints |
 | `6_position_state_stability_score_<horizon>` | `[0, 1]` | high-is-good | target holding state is stable across alpha, horizon, cost, risk, and pending-order uncertainty |
-| `6_projection_confidence_score_<horizon>` | `[0, 1]` | high-is-good | Layer 6 confidence in the alpha-to-position mapping |
+| `6_projection_confidence_score_<horizon>` | `[0, 1]` | high-is-good | Layer 4 confidence in the alpha-to-position mapping |
 
 `6_target_position_bias_score_<horizon>` and `6_target_exposure_score_<horizon>` are deliberately separate. Bias says which way the position wants to lean; exposure says how large the normalized target holding state should be after risk/cost constraints.
 
@@ -364,7 +373,7 @@ This means the projection is clearly long-biased but only supports a small long 
 
 ## Handoff summary fields
 
-Layer 6 may expose a resolved summary for Layer 7 so underlying-action planning does not re-solve horizon conflicts:
+Layer 4 may expose a resolved summary for Layer 6 so underlying-action planning does not re-solve horizon conflicts:
 
 ```text
 6_dominant_projection_horizon
@@ -392,7 +401,7 @@ Diagnostic fields may include:
 6_projection_reason_codes
 ```
 
-Diagnostics explain why Layer 6 compressed or changed the raw alpha-to-position prior. Downstream production logic should not hard-depend on diagnostics without reviewed promotion.
+Diagnostics explain why Layer 4 compressed or changed the raw alpha-to-position prior. Downstream production logic should not hard-depend on diagnostics without reviewed promotion.
 
 ## No-position and aligned-position policy
 
@@ -420,7 +429,7 @@ Final approval, forced close, cancel, or do-not-trade action remains downstream.
 
 ## Training and evaluation route
 
-Layer 6 should avoid training only a single hindsight-best exposure target. Instead, prefer a candidate-exposure utility curve:
+Layer 4 should avoid training only a single hindsight-best exposure target. Instead, prefer a candidate-exposure utility curve:
 
 ```text
 Q(z_t, e) -> utility
@@ -443,7 +452,7 @@ Candidate exposure values may start as a reviewed discrete grid:
 -1.00, -0.75, -0.50, -0.25, 0.00, +0.25, +0.50, +0.75, +1.00
 ```
 
-At inference time, Layer 6 selects the target exposure with the best point-in-time estimated utility after constraints. The selected target exposure remains a target holding state, not an order quantity.
+At inference time, Layer 4 selects the target exposure with the best point-in-time estimated utility after constraints. The selected target exposure remains a target holding state, not an order quantity.
 
 ## Labels and outcomes
 
@@ -470,11 +479,11 @@ Labels must be materialized only in training/evaluation datasets and must not be
 
 ## Baselines and validation
 
-Layer 6 should prove incremental value over:
+Layer 4 should prove incremental value over:
 
 1. current-position unchanged baseline;
 2. flat-position baseline;
-3. Layer 5 alpha-only exposure mapping;
+3. Layer 4 alpha-only exposure mapping;
 4. fixed exposure by confidence baseline;
 5. cost-blind position projection;
 6. risk-budget-blind position projection;
@@ -495,7 +504,7 @@ Validation must separately check:
 
 ## Boundary rules and invariants
 
-Layer 6 must keep these semantics separate:
+Layer 4 must keep these semantics separate:
 
 ```text
 alpha confidence != target exposure
@@ -509,15 +518,15 @@ projection confidence != alpha confidence
 position projection vector != final action
 ```
 
-Layer 6 invariants:
+Layer 4 invariants:
 
 1. `6_target_exposure_score_<horizon>` is abstract target risk exposure, not shares, contracts, or order quantity.
 2. `6_position_gap_score_<horizon>` is the difference between target state and current/pending state, not an execution instruction.
-3. Layer 6 does not output buy/sell/hold/open/close/reverse.
-4. Layer 6 does not choose instrument, read option chains, or choose strike/DTE/Greeks.
-5. Layer 6 uses only point-in-time current/pending/cost/risk state.
-6. Layer 6 defaults to final adjusted Layer 5 alpha; base/unadjusted alpha is diagnostic-only.
-7. Layer 6 output may be compressed by risk policy, but final approval and operation remain downstream.
+3. Layer 4 does not output buy/sell/hold/open/close/reverse.
+4. Layer 4 does not choose instrument, read option chains, or choose strike/DTE/Greeks.
+5. Layer 4 uses only point-in-time current/pending/cost/risk state.
+6. Layer 4 defaults to final adjusted Layer 4 alpha; base/unadjusted alpha is diagnostic-only.
+7. Layer 4 output may be compressed by risk policy, but final approval and operation remain downstream.
 
 ## V1 implementation route
 

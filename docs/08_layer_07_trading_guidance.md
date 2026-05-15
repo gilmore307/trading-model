@@ -1,27 +1,38 @@
-# Layer 8 — OptionExpressionModel
+# Layer 07 — TradingGuidanceModel / OptionExpressionModel
+
+<!-- ACTIVE_LAYER_REVISION -->
+Status: active architecture revision. Conceptual Layer 7; V1 legacy implementation surface remains `src/models/model_08_option_expression/` as the option-expression subset until a dedicated TradingGuidanceModel migration is implemented.
+
+Active boundary: Layer 7 outputs the final **base trading guidance candidate** before event-risk intervention. It consumes Layer 6 underlying-action thesis, position/risk context, and optional point-in-time option-chain evidence. It may choose direct-underlying, option-expression, or no-trade/maintain guidance as an offline decision record.
+
+Allowed outputs: `trading_guidance_record`, `trading_guidance_vector`, optional `option_expression_plan` / `expression_vector`, selected contract references and constraints when option expression is used, reason codes, and replay refs. Forbidden outputs: broker order id, route, time-in-force, send/cancel/replace, final order quantity, or broker/account mutation.
+
+Layer 8 is allowed to intervene after this layer for high-severity event risk.
+<!-- /ACTIVE_LAYER_REVISION -->
+
 
 Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
-`OptionExpressionModel` consumes the Layer 7 `underlying_action_plan` / `underlying_action_vector` handoff plus point-in-time option-chain context to produce an offline `option_expression_plan` and `expression_vector`.
+`TradingGuidanceModel / OptionExpressionModel` consumes the Layer 6 `underlying_action_plan` / `underlying_action_vector` handoff plus point-in-time option-chain context to produce an offline `trading_guidance_record / option_expression_plan` and `trading_guidance_vector / expression_vector`.
 
 It is the first layer that may select option expression and contract constraints. It is still not live execution.
 
 ## Boundary
 
-Layer 8 owns:
+Layer 7 owns:
 
 - long-call, long-put, or no-option-expression selection;
 - option right, selected contract reference, and contract-fit diagnostics;
 - DTE, delta/moneyness, IV, vega/theta, spread/liquidity, fill-quality, and premium-risk constraints;
-- side-neutral use of Layer 7 path assumptions: entry price, target/range, stop, holding time, path quality, reversal risk, drawdown risk, and favorable/adverse move estimates;
+- side-neutral use of Layer 6 path assumptions: entry price, target/range, stop, holding time, path quality, reversal risk, drawdown risk, and favorable/adverse move estimates;
 - offline option-expression labels and promotion evidence.
 
-Layer 8 does **not** own:
+Layer 7 does **not** own:
 
 - broker order type, route, time-in-force, send/cancel/replace flags, or broker order ids;
 - final order quantity, final approval, or account mutation;
 - multi-leg spread construction in V1; V1 historical option-expression coverage is single-leg only (`long_call`, `long_put`, or `no_option_expression`);
-- direct-underlying planned action resolution, which belongs to Layer 7;
+- direct-underlying planned action resolution, which belongs to Layer 6;
 - real live/paper routing, which remains in `trading-execution`.
 
 ## Inputs
@@ -34,7 +45,7 @@ tradeable_time
 target_candidate_id
 underlying_action_plan_ref
 underlying_action_plan
-underlying_action_vector / Layer 7 resolved fields
+underlying_action_vector / Layer 6 resolved fields
 option_contract_candidates
 option_expression_policy
 ```
@@ -52,7 +63,7 @@ pending option exposure / pending option orders
 option quote snapshot references
 ```
 
-Layer 8 must carry the exact quote/snapshot identity used for replay:
+Layer 6 must carry the exact quote/snapshot identity used for replay:
 
 ```text
 option_chain_snapshot_ref
@@ -115,13 +126,13 @@ Future realized option returns, target/stop outcomes, and best-contract hindsigh
 Primary output:
 
 ```text
-option_expression_plan
+trading_guidance_record / option_expression_plan
 ```
 
 Vector output:
 
 ```text
-expression_vector
+trading_guidance_vector / expression_vector
 ```
 
 Resolved fields:
@@ -155,7 +166,7 @@ none
 
 ## Score families
 
-Layer 8 score families use the `8_` prefix and `<horizon>` suffix for horizon-aware scalar scores.
+Layer 6 score families use the `8_` prefix and `<horizon>` suffix for horizon-aware scalar scores.
 
 ```text
 8_option_expression_eligibility_score_<horizon>
@@ -172,7 +183,7 @@ Layer 8 score families use the `8_` prefix and `<horizon>` suffix for horizon-aw
 
 Semantics:
 
-- eligibility is high-is-good and means the option expression is admissible under Layer 7 thesis, policy, option-chain, liquidity, IV, and risk constraints;
+- eligibility is high-is-good and means the option expression is admissible under Layer 6 thesis, policy, option-chain, liquidity, IV, and risk constraints;
 - direction is signed: positive call-side/bullish expression, negative put-side/bearish expression, near zero no-option expression;
 - contract fit is high-is-good and summarizes DTE, delta/Greeks, IV, liquidity, fill quality, and reward/risk;
 - theta risk is high-is-bad;
@@ -180,7 +191,7 @@ Semantics:
 
 ## Plan payload
 
-`option_expression_plan` may include:
+`trading_guidance_record / option_expression_plan` may include:
 
 ```text
 selected_expression_type
@@ -212,10 +223,10 @@ src/models/model_08_option_expression/
 
 It implements:
 
-- Layer 7 bullish thesis -> long-call candidate search;
-- Layer 7 bearish thesis or no-direct-short bearish thesis -> long-put candidate search;
-- Layer 7 `maintain` / `no_trade`, policy blocks, or pending option exposure -> `no_option_expression`;
-- reviewed no-provider/no-option database generation from completed Layer 7 rows when the manager gate review finds no active target chain;
+- Layer 6 bullish thesis -> long-call candidate search;
+- Layer 6 bearish thesis or no-direct-short bearish thesis -> long-put candidate search;
+- Layer 6 `maintain` / `no_trade`, policy blocks, or pending option exposure -> `no_option_expression`;
+- reviewed no-provider/no-option database generation from completed Layer 6 rows when the manager gate review finds no active target chain;
 - deterministic selection scoring for right, bid/ask/mid, DTE range, preferred absolute delta range, stale quote age, volume/open interest, spread, adjusted-contract handling, and target-range moneyness guardrails;
 - DTE / delta / Greeks / IV / liquidity / reward-risk scoring with per-candidate reason codes;
 - offline label join helpers and leakage assertions.
@@ -230,7 +241,7 @@ tests/test_option_expression_model.py
 
 Historical model-construction buckets expand from near expirations to farther expirations: current listed week first, then next listed week, then the following listed week, continuing outward only when coverage policy requires it.
 
-For each selected target, the strike bucket is the listed-strike corridor from current underlying reference price to Layer 7 target price plus three listed strike levels below the corridor and three listed strike levels above it. Example:
+For each selected target, the strike bucket is the listed-strike corridor from current underlying reference price to Layer 6 target price plus three listed strike levels below the corridor and three listed strike levels above it. Example:
 
 ```text
 current_underlying_reference_price = 95
@@ -266,7 +277,7 @@ multi-day thesis -> preferred_dte_range = 21-45
 
 V1 selection/scoring penalizes deep OTM lottery contracts. Preferred absolute delta starts around `0.35-0.65`; future learned contract-fit models may adjust this by path quality, expected move, IV, liquidity, and theta pressure.
 
-Layer 7 target/range fields constrain selected-contract scoring when the target range is directionally coherent: bullish call strikes above `target_price_high` and bearish put strikes below `target_price_low` carry `strike_outside_underlying_target_range`. They remain part of historical bucket evidence, but should not be selected by the deterministic V1 selector unless a reviewed exception policy says otherwise.
+Layer 6 target/range fields constrain selected-contract scoring when the target range is directionally coherent: bullish call strikes above `target_price_high` and bearish put strikes below `target_price_low` carry `strike_outside_underlying_target_range`. They remain part of historical bucket evidence, but should not be selected by the deterministic V1 selector unless a reviewed exception policy says otherwise.
 
 ## Labels and evaluation
 
@@ -295,13 +306,13 @@ option_expression_avoided_loss_value_<horizon>
 candidate_contract_utility_curve_<horizon>
 ```
 
-Evaluation must prove that Layer 8 improves option-expression outcomes versus simpler baselines:
+Evaluation must prove that Layer 6 improves option-expression outcomes versus simpler baselines:
 
 1. no option expression;
-2. underlying-only Layer 7 expression;
-3. naive ATM nearest-expiration call/put from Layer 7 direction;
+2. underlying-only Layer 6 expression;
+3. naive ATM nearest-expiration call/put from Layer 6 direction;
 4. fixed-delta/fixed-DTE expression;
-5. Layer 8 full contract-fit and risk-aware expression.
+5. Layer 6 full contract-fit and risk-aware expression.
 
 Promotion remains deferred until real point-in-time option feeds, calibration, leakage controls, baseline improvement, and stability evidence pass review.
 
@@ -314,7 +325,7 @@ selected_contract != send order
 contract constraints != route / time-in-force
 premium risk plan != account mutation
 expression confidence != final approval
-Layer 8 offline plan != live execution
+Layer 6 offline plan != live execution
 ```
 
 `trading-execution` remains the owner of live/paper broker mutation.

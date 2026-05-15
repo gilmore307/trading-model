@@ -752,3 +752,24 @@ Realtime execution inputs may enter `trading-model` through `execution_model_dec
 `trading-model` accepts `model_realtime_decision_route_plan` as the model-side route plan for fixture/shadow historical-model decision routing. The plan validates Layer 1-8 input coverage and maps each layer to its reviewed generator entrypoint, but it does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
 
 Production model activation, durable decision records, promotion approval, and execution authority remain manager/execution-owned gates, not implied by this handoff scaffold.
+
+## D039 - Event intelligence moves to Layer 8 as event-risk governor
+
+Accepted: 2026-05-15
+
+The active conceptual model stack is revised so event intelligence is no longer a hard upstream input before AlphaConfidenceModel. Layers are now:
+
+1. MarketRegimeModel;
+2. SectorContextModel;
+3. TargetStateVectorModel;
+4. AlphaConfidenceModel;
+5. PositionProjectionModel;
+6. UnderlyingActionModel;
+7. TradingGuidanceModel / OptionExpressionModel;
+8. EventRiskGovernor / EventIntelligenceOverlay.
+
+Rationale: the base trading path should remain runnable without mature event interpretation, while event intelligence can continue expanding as a high-value side branch. Layer 7 produces the base offline trading-guidance candidate. Layer 8 may intervene after Layer 7 when high-risk point-in-time events are detected.
+
+Allowed Layer 8 intervention outputs include `block_new_entries`, `max_exposure_factor`, `reduce_exposure_to`, `flatten_position_candidate`, `halt_trading_candidate`, `human_review_required`, event refs, and evidence spans. Layer 8 may modify the decision/risk record consumed by execution risk-control, but it must not directly send broker orders or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence and an accepted execution risk policy or human review path.
+
+Physical implementation surfaces currently retain legacy names (`model_04_event_overlay`, `model_05_alpha_confidence`, `model_06_position_projection`, `model_07_underlying_action`, `model_08_option_expression`) until a dedicated implementation/SQL migration slice renames them. Active docs use the conceptual order above.

@@ -79,7 +79,7 @@ scripts/models/review_layers_03_08_promotion_closeout.py
 scripts/model_governance/
 ```
 
-Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Layer 4-8 scripts are local JSON/JSONL-safe entrypoints until production evaluation substrate exists. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
+Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Conceptual Layer 4-8 docs follow the active architecture revision; physical script paths may retain legacy numbering until a dedicated migration renames implementation surfaces. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
 
 ## Docs Spine
 
@@ -89,11 +89,11 @@ docs/01_context.md
 docs/02_layer_01_market_regime.md
 docs/03_layer_02_sector_context.md
 docs/04_layer_03_target_state_vector.md
-docs/05_layer_04_event_overlay.md
-docs/06_layer_05_alpha_confidence.md
-docs/07_layer_06_position_projection.md
-docs/08_layer_07_underlying_action.md
-docs/09_layer_08_option_expression.md
+docs/05_layer_04_alpha_confidence.md
+docs/06_layer_05_position_projection.md
+docs/07_layer_06_underlying_action.md
+docs/08_layer_07_trading_guidance.md
+docs/09_layer_08_event_risk_governor.md
 docs/80_task.md
 docs/81_decision.md
 docs/82_memory.md

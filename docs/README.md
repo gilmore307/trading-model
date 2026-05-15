@@ -9,11 +9,11 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `02_layer_01_market_regime.md` — Layer 1 MarketRegimeModel workflow, inputs, outputs, explainability, diagnostics, and acceptance gates.
 - `03_layer_02_sector_context.md` — Layer 2 SectorContextModel workflow, inputs, outputs, explainability, diagnostics, and acceptance gates.
 - `04_layer_03_target_state_vector.md` — Layer 3 TargetStateVectorModel contract, anonymous target candidate preprocessing, feature blocks, labels, diagnostics, and acceptance gates.
-- `05_layer_04_event_overlay.md` — Layer 4 EventOverlayModel contract and V1 `event_context_vector` shape, score families, labels, baselines, and boundaries.
-- `06_layer_05_alpha_confidence.md` — Layer 5 AlphaConfidenceModel contract, base-alpha diagnostics policy, adjusted `alpha_confidence_vector`, labels, baselines, and boundaries.
-- `07_layer_06_position_projection.md` — Layer 6 PositionProjectionModel contract, alpha-to-position boundary, `position_projection_vector`, labels, baselines, and invariants.
-- `08_layer_07_underlying_action.md` — Layer 7 UnderlyingActionModel contract, direct stock/ETF planned action boundary, `underlying_action_plan` / `underlying_action_vector`, labels, baselines, and invariants.
-- `09_layer_08_option_expression.md` — Layer 8 OptionExpressionModel contract, option-expression boundary, `option_expression_plan` / `expression_vector`, contract-fit scoring, labels, baselines, and invariants.
+- `05_layer_04_alpha_confidence.md` — Layer 4 AlphaConfidenceModel contract, base-alpha diagnostics policy, `alpha_confidence_vector`, labels, baselines, and boundaries.
+- `06_layer_05_position_projection.md` — Layer 5 PositionProjectionModel contract, alpha-to-position boundary, `position_projection_vector`, labels, baselines, and invariants.
+- `07_layer_06_underlying_action.md` — Layer 6 UnderlyingActionModel contract, direct stock/ETF planned action boundary, `underlying_action_plan` / `underlying_action_vector`, labels, baselines, and invariants.
+- `08_layer_07_trading_guidance.md` — Layer 7 TradingGuidanceModel / OptionExpressionModel contract, base trading-guidance boundary, optional option-expression plan/vector, labels, baselines, and invariants.
+- `09_layer_08_event_risk_governor.md` — Layer 8 EventRiskGovernor / EventIntelligenceOverlay contract, event-risk intervention status, evidence requirements, and broker-mutation boundary.
 - `80_task.md` — current task state, queued work, blockers, and recently accepted work.
 - `81_decision.md` — ratified repository decisions for the current route.
 - `82_memory.md` — durable local continuity that does not fit narrower docs.
@@ -27,6 +27,6 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `97_historical_dataset_scope.md` — accepted distinction between broad historical training sampling universes and narrower live inference routing universes, with per-layer dataset-scope guidance.
 - `98_realtime_decision_handoff.md` — model-side realtime decision input route-plan scaffold for fixture/shadow historical-model decision handoff; no production activation implied.
 
-Layer workflow and acceptance live in the numbered layer files. Do not add a future model layer unless an explicit architecture revision reopens the stack; post-Layer-8 execution belongs outside `trading-model`.
+Layer workflow and acceptance live in the numbered layer files. The active architecture revision moves event intelligence to Layer 8 after base trading guidance. Physical implementation paths may retain legacy layer numbers until dedicated code/SQL migration slices rename them. Do not add a future model layer unless an explicit architecture revision reopens the stack; post-Layer-8 execution belongs outside `trading-model`.
 
 Do not place generated data, artifacts, notebooks, logs, credentials, or implementation outputs in this directory.

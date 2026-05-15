@@ -1,4 +1,8 @@
 # Direction-Neutral Trading Model Architecture
+<!-- ACTIVE_LAYER_REORDER_NOTICE -->
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_04_event_overlay` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+<!-- /ACTIVE_LAYER_REORDER_NOTICE -->
+
 
 Status: accepted current route; Layers 1-8 model-design phase closed
 Owner intent: keep the model stack direct, point-in-time, and current-route authoritative.
@@ -293,7 +297,7 @@ It is now a peer model layer before alpha confidence, not an after-the-fact over
 Contract owner:
 
 ```text
-docs/05_layer_04_event_overlay.md
+docs/09_layer_08_event_risk_governor.md
 ```
 
 ## Layer 5: AlphaConfidenceModel
@@ -303,7 +307,7 @@ docs/05_layer_04_event_overlay.md
 Contract owner:
 
 ```text
-docs/06_layer_05_alpha_confidence.md
+docs/05_layer_04_alpha_confidence.md
 ```
 
 ## Layer 6: PositionProjectionModel
@@ -313,7 +317,7 @@ docs/06_layer_05_alpha_confidence.md
 It owns the mapping from alpha confidence to target holding state. It does not output buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, or mutate broker/account state. Contract owner:
 
 ```text
-docs/07_layer_06_position_projection.md
+docs/06_layer_05_position_projection.md
 ```
 
 ## Layer 7: UnderlyingActionModel
@@ -325,7 +329,7 @@ It owns the direct stock/ETF planned action thesis: planned action type, planned
 It does not emit broker order fields, order type, route, time-in-force, send/cancel/replace instructions, broker order ids, option strike/DTE/delta/Greeks, or account mutations. Contract owner:
 
 ```text
-docs/08_layer_07_underlying_action.md
+docs/07_layer_06_underlying_action.md
 ```
 
 ## Layer 8: OptionExpressionModel
@@ -337,7 +341,7 @@ It owns long-call / long-put / no-option-expression selection, selected point-in
 It does not emit broker order type, route, time-in-force, final order quantity, send/cancel/replace flags, broker order ids, or account mutation. Contract owner:
 
 ```text
-docs/09_layer_08_option_expression.md
+docs/08_layer_07_trading_guidance.md
 ```
 
 ## Unified Decision Record

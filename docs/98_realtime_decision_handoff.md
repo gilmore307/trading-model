@@ -1,4 +1,8 @@
 # Realtime Decision Handoff
+<!-- ACTIVE_LAYER_REORDER_NOTICE -->
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_04_event_overlay` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+<!-- /ACTIVE_LAYER_REORDER_NOTICE -->
+
 
 Status: accepted scaffold  
 Date: 2026-05-11

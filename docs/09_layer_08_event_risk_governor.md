@@ -1,12 +1,23 @@
-# Layer 04 - EventOverlayModel
+# Layer 08 — EventRiskGovernor / EventIntelligenceOverlay
 
-Status: accepted Layer 4 design route; deterministic V1 scaffold implemented in `src/models/model_04_event_overlay/`.
+<!-- ACTIVE_LAYER_REVISION -->
+Status: active architecture revision. Conceptual Layer 8; legacy event-overlay implementation surface remains `src/models/model_04_event_overlay/` and `source_04_event_overlay` until code/SQL surfaces are renamed.
+
+Active boundary: Layer 8 is the event-intelligence and event-risk governor after base trading guidance. It consumes standardized point-in-time event interpretations when available (`event_interpretation_v1`) plus event evidence refs, current context states, and the Layer 7 base trading guidance candidate.
+
+It may directly modify the decision/risk record consumed by execution risk-control: block new entries, cap exposure, reduce exposure, nominate flatten/clear candidates, halt trading candidates, or require human review. It must keep the base Layer 7 guidance and event-adjusted guidance side by side for audit.
+
+Forbidden boundary: Layer 8 must not directly send broker orders, choose routes/time-in-force, or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence plus accepted execution risk policy or human review path.
+<!-- /ACTIVE_LAYER_REVISION -->
+
+
+Status: accepted Layer 8 design route; deterministic V1 scaffold implemented in `src/models/model_04_event_overlay/`.
 
 ## Purpose
 
-`EventOverlayModel` is Layer 4. It converts point-in-time visible event evidence into an `event_context_vector` for the current market, sector, and target context.
+`EventRiskGovernor / EventOverlayModel` is Layer 8. It converts point-in-time visible event evidence into an `event_risk_intervention / event_context_vector` for the current market, sector, and target context.
 
-Layer 4 answers:
+Layer 8 answers:
 
 - Which events are visible at this decision time?
 - Are those events macro, sector, industry, theme, peer-group, symbol, or microstructure scoped?
@@ -15,11 +26,11 @@ Layer 4 answers:
 - Does the event raise uncertainty, gap risk, reversal risk, liquidity-disruption risk, or contagion risk?
 - How reliable, fresh, complete, and conflict-free is the event evidence?
 
-Layer 4 does **not** answer alpha, trade, expression, sizing, or execution questions. It must not emit buy/sell/hold, final action, position size, option contract, strike, DTE, delta, order instruction, or account-specific decision fields.
+Layer 8 does **not** answer alpha, trade, expression, sizing, or execution questions. It must not emit buy/sell/hold, final action, position size, option contract, strike, DTE, delta, order instruction, or account-specific decision fields.
 
 ## Position and input chain
 
-Layer 4 is an event-context overlay on top of the accepted state stack:
+Layer 8 is an event-context overlay on top of the accepted state stack:
 
 ```text
 market_context_state
@@ -29,11 +40,11 @@ market_context_state
 + event_detail_artifacts
 + scope_mapping_metadata
 + sensitivity_metadata
-  -> EventOverlayModel
-  -> event_context_vector
+  -> EventRiskGovernor / EventOverlayModel
+  -> event_risk_intervention / event_context_vector
 ```
 
-The upstream states are reviewed context inputs, not raw feature shortcuts. Layer 4 may use ticker/symbol identity for event matching, routing, and audit, but model-facing fitting vectors must keep raw ticker/company identity outside the payload.
+The upstream states are reviewed context inputs, not raw feature shortcuts. Layer 8 may use ticker/symbol identity for event matching, routing, and audit, but model-facing fitting vectors must keep raw ticker/company identity outside the payload.
 
 ## Inputs
 
@@ -104,7 +115,7 @@ Artifacts must remain point-in-time versioned. A later article revision, later S
 
 ### Input C - upstream context states
 
-Layer 4 consumes slim, reviewed state/context outputs:
+Layer 8 consumes slim, reviewed state/context outputs:
 
 ```text
 market_context_state_ref
@@ -112,11 +123,11 @@ sector_context_state_ref
 target_context_state_ref
 ```
 
-The relevant state information includes broad market risk/stability/liquidity context, sector trend/stability/liquidity/handoff context, and target direction/trend/path/noise/transition/liquidity/tradability context. Layer 4 uses these to decide whether an event is amplified, dampened, aligned, conflicting, or irrelevant for the current target.
+The relevant state information includes broad market risk/stability/liquidity context, sector trend/stability/liquidity/handoff context, and target direction/trend/path/noise/transition/liquidity/tradability context. Layer 8 uses these to decide whether an event is amplified, dampened, aligned, conflicting, or irrelevant for the current target.
 
 ### Input D - scope mapping and sensitivity metadata
 
-Layer 4 needs mapping metadata for event-to-target relevance:
+Layer 8 needs mapping metadata for event-to-target relevance:
 
 ```text
 target_internal_id_for_join
@@ -146,7 +157,7 @@ These fields are for join, routing, sensitivity, and audit. The model-facing vec
 
 ## Point-in-time rules
 
-Layer 4 is a high-leakage-risk layer. The primary visibility rule is:
+Layer 8 is a high-leakage-risk layer. The primary visibility rule is:
 
 ```text
 event_visible := event.available_time <= decision_available_time
@@ -180,11 +191,11 @@ stale_event
 unknown
 ```
 
-Training/evaluation datasets may include realized future outcomes as labels. Inference rows and `event_context_vector` must not include post-event outcomes, hindsight event interpretations, future source revisions, or future price/option paths.
+Training/evaluation datasets may include realized future outcomes as labels. Inference rows and `event_risk_intervention / event_context_vector` must not include post-event outcomes, hindsight event interpretations, future source revisions, or future price/option paths.
 
 ## Internal model structure
 
-Layer 4 V1 should be auditable and structured before any broad black-box event model. The internal route is:
+Layer 8 V1 should be auditable and structured before any broad black-box event model. The internal route is:
 
 ```text
 4A EventEncoder
@@ -229,7 +240,7 @@ event_scope_escalation_risk_score
 
 ### 4C - EventOverlayScorer
 
-Aggregates visible events into horizon-aware `event_context_vector` score families.
+Aggregates visible events into horizon-aware `event_risk_intervention / event_context_vector` score families.
 
 Typical scoring heads:
 
@@ -250,7 +261,7 @@ impact_scope_heads
 
 ## Event scope model
 
-Layer 4 must separate where an event originates from where it may have impact.
+Layer 8 must separate where an event originates from where it may have impact.
 
 ### Native scope
 
@@ -275,7 +286,7 @@ Native scope is not enough. An NVDA earnings event is native-symbol but may affe
 
 ### Impact scope vector
 
-Layer 4 should express impact by score family rather than one enum:
+Layer 8 should express impact by score family rather than one enum:
 
 ```text
 4_event_market_impact_score_<horizon>
@@ -294,7 +305,7 @@ Layer 4 should express impact by score family rather than one enum:
 Conceptual output:
 
 ```text
-event_context_vector
+event_risk_intervention / event_context_vector
 ```
 
 Future physical promoted model-output surface:
@@ -312,8 +323,8 @@ target_candidate_id | scope_key
 market_context_state_ref
 sector_context_state_ref
 target_context_state_ref
-event_context_vector
-event_context_vector_ref
+event_risk_intervention / event_context_vector
+event_risk_intervention / event_context_vector_ref
 score_payload
 diagnostics_ref
 ```
@@ -322,7 +333,7 @@ diagnostics_ref
 
 ## V1 horizons
 
-Layer 4 V1 uses the same synchronized context horizons unless later evaluation proves a different event-specific grid is needed:
+Layer 8 V1 uses the same synchronized context horizons unless later evaluation proves a different event-specific grid is needed:
 
 ```text
 5min
@@ -415,7 +426,7 @@ Default no-event policy:
 4_event_context_quality_score_<horizon> = neutral/high if event coverage is known complete, lower if event coverage is weak
 ```
 
-Background risk from Layer 1/2/3 must stay distinguishable from event-driven overlay risk. Layer 4 may condition event sensitivity on background state, but should not silently relabel broad market stress as event presence.
+Background risk from Layer 1/2/3 must stay distinguishable from event-driven overlay risk. Layer 8 may condition event sensitivity on background state, but should not silently relabel broad market stress as event presence.
 
 ## Labels and outcomes
 
@@ -445,11 +456,11 @@ sector_adjusted_post_event_return_<horizon>
 peer_adjusted_post_event_return_<horizon>
 ```
 
-Labels must be materialized only in training/evaluation datasets and must not be joined into `event_context_vector` at inference time.
+Labels must be materialized only in training/evaluation datasets and must not be joined into `event_risk_intervention / event_context_vector` at inference time.
 
 ## Baselines and validation
 
-Layer 4 should prove incremental value over:
+Layer 8 should prove incremental value over:
 
 1. no-event baseline: upstream context states only;
 2. simple event-count baseline;
@@ -457,7 +468,7 @@ Layer 4 should prove incremental value over:
 4. abnormal-activity-only baseline;
 5. native-scope-only baseline;
 6. impact-scope-vector baseline;
-7. full EventOverlayModel.
+7. full EventRiskGovernor / EventOverlayModel.
 
 Validation should check:
 
@@ -479,7 +490,7 @@ direction bias != alpha
 event risk != trade action
 ```
 
-Layer 4 must not:
+Layer 8 must not:
 
 - emit `buy`, `sell`, or `hold`;
 - emit alpha confidence, expected residual return, or Layer 5 final adjusted alpha values;
