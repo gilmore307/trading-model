@@ -171,6 +171,42 @@ Rules:
 - Signed average forward return must not be used as the main acceptance metric because positive and negative tradable moves can cancel out.
 - Direction labels are required for later model design, but they must be evaluated separately from direction-neutral tradability.
 
+## Abnormality Coverage Completion Gate
+
+The project must complete abnormality evidence coverage before treating any pilot as a directional conclusion. Partial slices are useful for debugging label shape, but they are not acceptance evidence.
+
+Coverage must include all accepted abnormal-activity families before judgment:
+
+```text
+price_action_pattern
+residual_market_structure_disturbance
+microstructure_liquidity_disruption
+option_derivatives_abnormality
+```
+
+For option-derived abnormality, coverage-complete means the study has point-in-time evidence for at least:
+
+```text
+call_put_side
+aggressor_or_quote_side
+ask_bid_touch_context
+sweep_or_block_context
+opening_or_closing_context
+open_interest_or_oi_change
+iv_level_and_change
+skew_direction
+term_structure_direction
+underlying_confirmation_or_divergence
+direction_confidence
+```
+
+Rules:
+
+- If any required abnormality family is missing, outputs must be labeled `diagnostic_only_abnormality_incomplete`.
+- Incomplete pilots may identify candidate hypotheses, data gaps, and label bugs, but must not produce a final bullish/bearish conclusion.
+- Directional judgment must wait until the abnormality set is complete enough to distinguish demand, hedging, closing flow, dealer inventory, volatility demand, and liquidity disturbance.
+- Cross-sectional testing begins after coverage is complete; simply adding more symbols with incomplete abnormality evidence does not solve the proof problem.
+
 ## Activity Direction Evidence
 
 Some abnormal activity has natural directional orientation. The study must preserve this orientation rather than treating every activity token as directionless.
@@ -260,7 +296,7 @@ Important caveat: a call-buying surge is only directionally bullish when the sys
 
 Pilot evidence note: `/root/projects/trading-model/storage/option_direction_pilot_20260515_aapl/` contains a diagnostic AAPL one-date pilot using ThetaData option event timeline rows, Alpaca underlying daily bars, and ThetaData option OHLC snapshots. It validates the label shape but is not promotion evidence: one symbol/date/strike, duplicated same-day forward labels, no OI/skew/sweep/block context, and no calibrated direction confidence. The pilot also clarifies label policy: underlying directional returns are sign-adjusted by bullish/bearish hypothesis, while ask-side call/put option-contract payoff is measured as long-contract forward return and must not multiply put returns by the bearish sign.
 
-Cross-section pilot note: `/root/projects/trading-model/storage/option_direction_cross_section_20260515/` extends the diagnostic slice to NVDA, JPM, XOM, LLY, and RKLB on the same event date. The headline result is mixed: ask-side CALL evidence is more promising than ask-side PUT evidence, especially on symbol-weighted 10d outcomes, but neither direction can be treated as a universal rule. Ask-side PUT activity was weak as a stable bearish signal in this slice. The result reinforces that option direction needs OI/opening-vs-closing, skew/term-structure, sweep/block, and confidence filters before promotion.
+Cross-section pilot note: `/root/projects/trading-model/storage/option_direction_cross_section_20260515/` extends the diagnostic slice to NVDA, JPM, XOM, LLY, and RKLB on the same event date. The headline result is mixed: ask-side CALL evidence is more promising than ask-side PUT evidence, especially on symbol-weighted 10d outcomes, but neither direction can be treated as a universal rule. Ask-side PUT activity was weak as a stable bearish signal in this slice. This remains `diagnostic_only_abnormality_incomplete`: it reinforces that option direction needs OI/opening-vs-closing, skew/term-structure, sweep/block, and confidence filters before judgment.
 
 Directional proof metrics:
 
@@ -314,6 +350,7 @@ The key acceptance question is not whether abnormal windows have a higher signed
 The proof gate can pass only if evidence shows:
 
 ```text
+abnormality_coverage_complete
 forward_price_path_relationship
 incremental_residual_value
 cross_sectional_non_story_stock_support
@@ -321,6 +358,8 @@ out_of_sample_stability
 leakage_controls_passed
 reviewed_failure_modes
 ```
+
+`abnormality_coverage_complete` must be evaluated before accepting direction or promotion evidence. Without it, the result remains a data-coverage diagnostic even if a pilot has attractive returns.
 
 A convincing result should identify where the signal works and where it does not. It does not need every sector and every activity class to work.
 
