@@ -751,3 +751,23 @@ Layer 8 must not:
 3. **V1.2 context matching**: add target relevance, context alignment, gap/reversal/liquidity/contagion risk. **Done in deterministic scaffold.**
 4. **V1.3 impact scope vector**: add market/sector/industry/theme/peer/symbol/microstructure impact, scope confidence, escalation risk, and dominant impact scope. **Done in deterministic scaffold.**
 5. **V1.4 evaluation**: compare against no-event, count, proximity, abnormal-activity, native-scope, and impact-scope baselines with walk-forward leakage checks. **Offline label/leakage helpers exist; baseline proof remains promotion work.**
+## Final go/no-go judgment — 2026-05-15
+
+The accepted judgment is recorded in `docs/102_event_layer_final_judgment.md`.
+
+Layer 8 is worth building as a bounded EventRiskGovernor / EventIntelligenceOverlay. It is not currently worth promoting as broad event alpha, standalone option abnormality alpha, or a separate `EventActivityBridgeModel`.
+
+Accepted active boundary:
+
+- preserve canonical event timelines, shell/result split, lifecycle clocks, and point-in-time availability;
+- consume reviewed event-family interpretations when available;
+- use abnormal activity and option flow as provenance, risk, and bridge evidence only unless a family-specific proof clears controls;
+- emit risk governance outputs such as uncertainty, review/block/cap/reduce/flatten hints, not broker orders or account mutation.
+
+Current status after the first canonical earnings/guidance scouting pass:
+
+- standalone option abnormality: `deferred_low_signal`;
+- strict option abnormality filters: `deferred_low_signal`;
+- raw option abnormality plus raw news proximity: `deferred_low_signal`;
+- earnings/guidance: `scouting`, with canonical shell/control route proven structurally but still underpowered;
+- EventRiskGovernor structural layer: `accepted_architecture`.

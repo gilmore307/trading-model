@@ -56,3 +56,11 @@ These items are intentionally outside the current promote-first historical-train
 - `src/models/model_01_market_regime/evidence_map.md` owns the current Layer 1 feature-to-state evidence-role contract.
 - Promotion review scripts now emit model-side evidence/review artifacts only and may classify artifact retention intent. Durable promotion requests, lifecycle scheduling, decisions, activation records, rollbacks, and production pointers are manager-control-plane work owned by `trading-manager`; storage physical lifecycle execution remains `trading-storage`-owned.
 - MarketRegimeModel evaluation summaries now expose real metric values, explicit promotion thresholds, baseline comparison, split-stability evidence, and no-future-leak checks; the default path remains dry-run, while `evaluate_model_01_market_regime.py --from-database` performs a read-only SQL evaluation feed.
+
+## Event-layer research closeout — 2026-05-15
+
+The abnormal-activity, option-direction, matched-control, raw-news, and canonical earnings/guidance scouting slice is closed for the current judgment pass.
+
+Accepted judgment: build/keep Layer 8 as a bounded EventRiskGovernor / EventIntelligenceOverlay, not as broad event alpha or standalone option abnormality. See `docs/102_event_layer_final_judgment.md`.
+
+Remaining future work is evidence expansion only: more earnings seasons, official SEC/company result/guidance interpretations, verified no-option-abnormality controls, and family-specific promotion gates before any `pilot_training` status.

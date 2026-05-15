@@ -397,3 +397,24 @@ If the study fails:
 - abnormal activity remains descriptive/provenance evidence;
 - no model-layer promotion;
 - retain useful event-review diagnostics only.
+
+## Canonical earnings/guidance scouting control pass — 2026-05-15
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_event_scouting_20260515/`
+
+This pass reran the event-risk amplifier question using canonical Nasdaq earnings-calendar shells instead of Alpaca headline-keyword `earnings_or_guidance_news` labels. It used 16 reviewed local `release_calendar.csv` artifacts for the three option-abnormality event dates plus all matched-control dates. The study itself made zero provider calls; calendar acquisition happened as a bounded source-data prerequisite in `trading-execution`.
+
+Results:
+
+- 10 target-symbol earnings-calendar shells were found across the event/control date range.
+- 9 of 152 abnormal option windows fell on canonical earnings-shell dates, all from 2 symbols (`CVX`, `XOM`) on `2026-05-01`.
+- All 152 abnormal windows had at least one verified non-earnings matched control after filtering same-symbol controls against Nasdaq calendar shells.
+- Canonical earnings-shell slice: `n=9`, `n_symbols=2`, 5d absolute-return delta about +1.03 percentage points, 5d path-range delta about +0.71 percentage points, both positive in 9/9 windows.
+- 10d/14d shell labels were unavailable or underpowered in the current matrix window, so the apparent 5d effect is diagnostic only.
+- Non-earnings option-abnormality windows remained weak at 10d: path-range delta about -0.16 percentage points and absolute-return delta about -0.65 percentage points versus verified non-earnings controls.
+
+Interpretation:
+
+- Canonical event-family separation improves the evidence shape: broad raw-news proximity was saturated, while verified calendar shells create a clean event/non-event split.
+- The earnings-shell slice is too small and too concentrated for promotion. It supports further event-family scouting, not activation.
+- The remaining blocker is not documentation; it is coverage/evidence. Next proof requires more earnings seasons, official result/guidance artifacts, and no-option-abnormality controls verified through option-event feeds.

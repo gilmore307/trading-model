@@ -315,3 +315,22 @@ Diagnostic predecessors:
 ## Current conclusion
 
 `earnings_guidance_event_family` is the first event family worth scouting because its raw-news diagnostic slice had a positive direction-neutral path signal. It is not yet promotion evidence. The next implementation task should build verified non-event/non-earnings controls and then rerun the option-abnormality amplifier test using the canonical shell/result rows instead of headline keywords.
+
+## Canonical scouting control pass — 2026-05-15
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_event_scouting_20260515/`
+
+A bounded canonical-calendar pass was run after the shell/result overview route was implemented. It used reviewed Nasdaq earnings-calendar `release_calendar.csv` artifacts for all tested option-abnormality dates and matched-control dates.
+
+Findings:
+
+- target-symbol calendar shells found: 10;
+- abnormal windows tested: 152;
+- abnormal windows on canonical earnings-shell dates: 9;
+- symbols in shell slice: 2 (`CVX`, `XOM`);
+- verified non-earnings controls available: 152/152 windows;
+- shell-slice 5d absolute-return delta: about +1.03 percentage points;
+- shell-slice 5d path-range delta: about +0.71 percentage points;
+- shell-slice 10d/14d evidence: unavailable or underpowered in the current matrix.
+
+Decision: this completes the first canonical shell/control scouting slice, but does not satisfy the minimum coverage gate. The family remains `scouting`. It should not advance to `pilot_training` until official result/guidance artifacts and verified no-option-abnormality controls are added across more earnings seasons.

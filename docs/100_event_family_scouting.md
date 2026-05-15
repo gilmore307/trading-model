@@ -146,3 +146,9 @@ This contract does not authorize:
 - option contract selection;
 - treating news sentiment as alpha;
 - treating post-event realized price moves as inference-time event facts.
+
+## Final event-layer judgment link
+
+The current go/no-go judgment is `docs/102_event_layer_final_judgment.md`.
+
+Event-family scouting remains the required path. The event layer is accepted structurally as a risk/intelligence overlay, but no event family currently has enough controlled evidence for active alpha promotion. Option abnormality, strict option filters, and raw-news proximity remain `deferred_low_signal`; earnings/guidance remains `scouting` after the canonical shell/control pass.
