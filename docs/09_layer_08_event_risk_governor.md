@@ -107,11 +107,31 @@ The overview row can reference type-specific artifacts. These artifacts may incl
 - news artifact: headline, summary, full-text reference, source timestamps, source quality, topic/entity tags, novelty, confirmation/conflict, and revision metadata;
 - SEC filing artifact: form type, accepted time, filing URL/path, materiality, dilution, ownership-change, legal, guidance, or M&A risk scores;
 - macro calendar artifact: scheduled/release time, actual/consensus/previous values, surprise score, importance, revision, and asset-sensitivity maps;
-- equity abnormal activity artifact: abnormal return, volume, dollar volume, spread, volatility, gap, liquidity, range expansion, VWAP-deviation evidence, and price-action event tokens such as false breakout, failed breakdown, liquidity sweep, bull trap, or bear trap;
+- equity abnormal activity artifact: residual/trigger evidence derived from point-in-time market data, with source refs and detector metadata, only when the anomaly is not already being consumed as an ordinary upstream bar/liquidity state feature;
 - price-action artifact: prior range high/low, breakout or breakdown excursion, close-back-inside evidence, upper/lower wick rejection, sweep/trap token, and detector threshold metadata;
 - option abnormal activity artifact: IV shock, skew change, term-structure shift, unusual volume, call/put imbalance, large trade, sweep/block indicators, OI change, option liquidity, spread widening, and dealer-flow context when reviewed.
 
 Artifacts must remain point-in-time versioned. A later article revision, later SEC interpretation, or post-event price reaction can be a training/evaluation label only; it cannot be an inference feature.
+
+### Abnormal-activity residual boundary
+
+Layer 8 abnormal-activity evidence must not double-count model-owned bars, volume, spread, liquidity, volatility, gap, VWAP, trend, or target-state features that already enter Layer 1-3/Layer 7 inputs.
+
+Accepted uses:
+
+- trigger/provenance evidence: a detector may explain why an event evidence row exists and point back to the bars/liquidity refs used to detect it;
+- residual event evidence: an anomaly remains material after conditioning on upstream market/sector/target state and is represented as an unexplained board/tape disturbance;
+- discrete price-action pattern evidence: false breakout, liquidity sweep, bull/bear trap, failed breakdown, or similar event-shaped behavior when represented as a compact token with refs rather than duplicated raw feature columns;
+- cross-source abnormal evidence not already consumed by the base stack, such as reviewed option-flow/IV/OI abnormalities or source-specific microstructure evidence.
+
+Forbidden uses:
+
+- re-emitting ordinary `equity_bar`, `equity_liquidity_bar`, or derived target-state values as a second independent event factor;
+- treating every high return/volume/spread z-score as a standalone event when the same information is already available in upstream state vectors;
+- using abnormal-activity detector thresholds as production labels or promotion gates without reviewed historical calibration;
+- allowing post-event realization to become an inference-time abnormality feature.
+
+Training implication: EventRiskGovernor must prove incremental value over upstream context states. Abnormal-activity-only baselines are diagnostic baselines, not proof that duplicated bars have new event value.
 
 ### Input C - upstream context states
 
@@ -549,7 +569,7 @@ Layer 8 should prove incremental value over:
 1. no-event baseline: upstream context states only;
 2. simple event-count baseline;
 3. scheduled-event proximity baseline;
-4. abnormal-activity-only baseline;
+4. residual abnormal-activity-only baseline, excluding bar/liquidity fields already represented in upstream context states;
 5. native-scope-only baseline;
 6. impact-scope-vector baseline;
 7. full EventRiskGovernor / EventOverlayModel.

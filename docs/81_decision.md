@@ -785,3 +785,13 @@ Accepted lifecycle classes are `scheduled_known_outcome_later`, `unscheduled_sur
 Scheduled-known catalysts such as earnings dates or macro releases may affect pre-event risk because the catalyst shell is visible before the result. Their result facts, beat/miss values, guidance, revisions, and realized market reaction are forbidden until visible through point-in-time release artifacts. Unscheduled surprise events have no specific pre-event event row; only already-visible background vulnerability or hazard priors may exist before the first credible source. Multi-stage events must preserve immutable stage/update refs instead of overwriting the original event.
 
 Training and evaluation must not mix scheduled-known and surprise events under the same label construction unless lifecycle type and phase are explicit features.
+
+## D041 - Abnormal activity must be residual to model-owned market data
+
+Accepted: 2026-05-15
+
+Layer 8 abnormal-activity evidence is not a second copy of bar-derived state. Bars, volume, spread, liquidity, volatility, gap, trend, VWAP distance, and target-state behavior already belong to Layer 1-3 / base guidance inputs when those fields are part of the accepted model stack.
+
+EventRiskGovernor may consume abnormal activity only as trigger/provenance evidence, residual unexplained board/tape disturbance after upstream context conditioning, discrete price-action pattern evidence, or cross-source abnormal evidence not otherwise consumed by the base path. It must not treat every high return/volume/spread z-score as an independent event factor when the same information is already available in upstream context states.
+
+Promotion evidence must prove incremental value over upstream context-state baselines; abnormal-activity-only baselines are diagnostic and cannot justify duplicated bars as event value.
