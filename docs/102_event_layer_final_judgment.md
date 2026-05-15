@@ -133,3 +133,11 @@ Artifact: `/root/projects/trading-model/storage/earnings_option_abnormality_spli
 The first earnings+option split check used only existing reviewed local artifacts. It found two option-covered canonical earnings rows, both with verified option abnormality, and zero verified earnings-without-option-abnormality controls.
 
 Judgment update: the earnings+option amplifier claim is still blocked. The next evidence requirement is not another model-layer expansion; it is acquisition or verification of matched earnings dates with no option abnormality under the same option-event standard.
+
+## Fourth itemized test — sampled no-option-abnormality controls
+
+Artifact: `/root/projects/trading-model/storage/earnings_option_no_abnormality_control_probe_20260515/`
+
+A bounded sampled-contract probe attempted to create earnings-without-option-abnormality controls for the canonical earnings set. It referenced 80 contract probes for the eight earnings rows not covered by the prior option matrix and found zero verified no sampled option-abnormality controls. Six newly probed earnings rows had verified option abnormality; two rows had partial contract coverage due ThetaData HTTP 472 but still emitted abnormality on successful sampled contracts.
+
+Judgment update: the earnings+option amplifier comparison remains blocked, not positive or negative. Continuing this route requires either broader-chain no-abnormality verification that actually yields clean controls, or a different control design; the EventRiskGovernor boundary does not expand.

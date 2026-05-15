@@ -407,3 +407,26 @@ Findings for the two covered rows:
 - direction-hypothesis rows were mixed, including bullish, bearish, put-selling/call-selling, and mixed/conflicting classes.
 
 Interpretation: the requested amplifier comparison remains blocked because the reviewed local option artifact has no earnings-without-option-abnormality control group. Do not claim an earnings+option amplifier edge until matched earnings dates with verified no-option-abnormality coverage are acquired or verified.
+
+## Sampled no-option-abnormality control probe
+
+Artifact: `/root/projects/trading-model/storage/earnings_option_no_abnormality_control_probe_20260515/`
+
+After the first split scout found no verified earnings-without-option-abnormality controls, a bounded contract-level probe sampled the remaining canonical earnings shells under the same option-event standard used by the option matrix.
+
+Scope:
+
+- canonical earnings shells: 10;
+- existing matrix-covered abnormal earnings rows: 2;
+- newly sampled earnings rows: 8;
+- sampled contracts for new rows: five candidate strikes × CALL/PUT = 80 provider-referenced probes;
+- sampled-contract verification only: this is not full-chain no-abnormality proof.
+
+Result:
+
+- verified no sampled option-abnormality controls: 0;
+- verified option abnormality from existing matrix: 2 earnings rows;
+- verified option abnormality from new sampled probes: 6 earnings rows;
+- partial contract coverage with verified option abnormality: 2 earnings rows (`PFE`, `RKLB`), because some sampled contracts returned ThetaData HTTP 472 while successful sampled contracts still emitted abnormality.
+
+Interpretation: the earnings+option amplifier comparison remains structurally blocked. The current sample did not produce a clean earnings-without-option-abnormality control group, so do not infer positive or negative amplifier value.

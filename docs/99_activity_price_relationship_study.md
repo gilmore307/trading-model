@@ -450,3 +450,13 @@ Artifact: `/root/projects/trading-model/storage/earnings_option_abnormality_spli
 A no-provider join between canonical 2026 earnings shells and the reviewed option-direction thorough matrix found only two option-covered earnings rows (`CVX`, `XOM` on `2026-05-01`). Both had verified option abnormality; none provided a verified no-option-abnormality earnings control.
 
 The amplifier comparison is therefore blocked rather than negative or positive. Existing evidence cannot distinguish earnings-with-option-abnormality from earnings-without-option-abnormality.
+
+## Itemized test 4 — sampled no-option-abnormality control probe
+
+Artifact: `/root/projects/trading-model/storage/earnings_option_no_abnormality_control_probe_20260515/`
+
+The follow-up sampled five candidate strikes and both CALL/PUT under the same option-event standard for earnings rows missing from the existing option matrix. The probe referenced 80 provider calls and the summarizing model study performed zero provider calls.
+
+Outcome: zero verified no sampled option-abnormality controls were found. Existing-matrix rows (`CVX`, `XOM`) remained verified abnormal; six newly probed rows were verified abnormal; `PFE` and `RKLB` had partial contract coverage due ThetaData HTTP 472 but still emitted abnormality on successful sampled contracts.
+
+This blocks the amplifier comparison. It does not prove option abnormality adds value around earnings; it only shows this sampled set did not produce the required clean counterfactual group.
