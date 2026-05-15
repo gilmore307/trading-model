@@ -121,7 +121,10 @@ Required next evidence for this family:
 - surprise/magnitude fields when consensus or prior guidance is point-in-time available;
 - option abnormality bridge relation typed as pre-event precursor, co-event reaction, or post-event absorption;
 - verified non-event and non-earnings controls;
+- verified no-option-abnormality controls before any earnings+option abnormality amplifier claim;
 - split stability across more dates, expiries, and symbols.
+
+Latest control update: `/root/projects/trading-model/storage/same_symbol_non_earnings_option_control_verification_20260515/` changed the blocked earnings-control search to same-symbol non-earnings option windows and still found zero verified no sampled option-abnormality controls across 24 candidates. This strengthens the block on option-abnormality amplifier promotion under the current high-emission option-event standard.
 
 Status: `scouting`.
 

@@ -141,3 +141,13 @@ Artifact: `/root/projects/trading-model/storage/earnings_option_no_abnormality_c
 A bounded sampled-contract probe attempted to create earnings-without-option-abnormality controls for the canonical earnings set. It referenced 80 contract probes for the eight earnings rows not covered by the prior option matrix and found zero verified no sampled option-abnormality controls. Six newly probed earnings rows had verified option abnormality; two rows had partial contract coverage due ThetaData HTTP 472 but still emitted abnormality on successful sampled contracts.
 
 Judgment update: the earnings+option amplifier comparison remains blocked, not positive or negative. Continuing this route requires either broader-chain no-abnormality verification that actually yields clean controls, or a different control design; the EventRiskGovernor boundary does not expand.
+
+## Fifth itemized test — same-symbol non-earnings option controls
+
+Artifact: `/root/projects/trading-model/storage/same_symbol_non_earnings_option_control_verification_20260515/`
+
+After the earnings-date sampled probe found zero clean controls, the next route changed control design: same-symbol non-earnings candidate windows from the existing local option matrix, excluding dates within ±3 calendar days of a same-symbol Nasdaq earnings shell.
+
+The study inspected 36 option-matrix symbol/date windows, found 24 same-symbol non-earnings candidates, and referenced 82 existing option-event completion receipts. It performed zero provider calls. Result: zero verified no sampled option-abnormality non-earnings controls; all 24 candidate windows still had verified option abnormality, with three partial-contract-coverage cases that nevertheless emitted abnormality on successful contracts.
+
+Judgment update: the earnings+option amplifier comparison remains blocked more strongly. The current option-event standard is too high-emission in the sampled liquid contracts to provide clean controls from either earnings dates or same-symbol non-earnings windows. Do not promote option-flow alpha or broaden EventRiskGovernor powers from this evidence. The cleaner next route is either a stricter abnormality definition with controls, or official company result/guidance interpretation for the event-alone family.

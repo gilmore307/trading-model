@@ -430,3 +430,27 @@ Result:
 - partial contract coverage with verified option abnormality: 2 earnings rows (`PFE`, `RKLB`), because some sampled contracts returned ThetaData HTTP 472 while successful sampled contracts still emitted abnormality.
 
 Interpretation: the earnings+option amplifier comparison remains structurally blocked. The current sample did not produce a clean earnings-without-option-abnormality control group, so do not infer positive or negative amplifier value.
+
+## Same-symbol non-earnings option-control verification
+
+Artifact: `/root/projects/trading-model/storage/same_symbol_non_earnings_option_control_verification_20260515/`
+
+After the earnings-date sampled probe found zero clean controls, the next bounded route changed the control design rather than overfitting the same earnings sample. It reused existing local option-event matrix receipts and classified same-symbol option windows by distance to the canonical Nasdaq earnings shell. Controls exclude dates within ±3 calendar days of a same-symbol earnings shell.
+
+Scope:
+
+- canonical earnings shells: 10;
+- option-matrix symbol/date windows inspected: 36;
+- same-symbol non-earnings candidate windows: 24;
+- existing option-event completion receipts referenced: 82;
+- provider calls performed by this study: 0;
+- no-option verification scope: sampled contract/date receipts only, not full-chain proof.
+
+Result:
+
+- verified no sampled option-abnormality non-earnings controls: 0;
+- verified same-symbol non-earnings option-abnormality windows: 24/24 candidate windows;
+- 21 candidate windows had full sampled-contract success with option abnormality;
+- 3 candidate windows had partial contract coverage but still emitted option abnormality on successful contracts.
+
+Direction-neutral labels are present for the candidate windows, but they are not promotion evidence because the clean no-option-abnormality control group is still absent. The result strengthens the block: under the current option-event standard, liquid sampled contracts emit abnormalities too frequently to supply clean controls from this local same-symbol matrix. The next route should either tighten the abnormality definition before another control search, or move back to event-alone official result/guidance interpretation where controls are already cleaner.
