@@ -206,6 +206,7 @@ Rules:
 - Incomplete pilots may identify candidate hypotheses, data gaps, and label bugs, but must not produce a final bullish/bearish conclusion.
 - Directional judgment must wait until the abnormality set is complete enough to distinguish demand, hedging, closing flow, dealer inventory, volatility demand, and liquidity disturbance.
 - Cross-sectional testing begins after coverage is complete; simply adding more symbols with incomplete abnormality evidence does not solve the proof problem.
+- `11_feed_thetadata_option_event_timeline` now emits explicit option-abnormality coverage fields for side, bid/ask touch, sweep/block, OI/opening-vs-closing, IV-change, skew, term structure, underlying confirmation/divergence, direction confidence, and missing-field status. Missing upstream evidence remains missing evidence; the feed must not fabricate coverage.
 
 ## Activity Direction Evidence
 
