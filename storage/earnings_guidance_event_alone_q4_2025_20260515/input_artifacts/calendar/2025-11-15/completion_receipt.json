@@ -1,0 +1,41 @@
+{
+  "bundle": "calendar_discovery",
+  "runs": [
+    {
+      "completed_at": "2026-05-15T15:24:52Z",
+      "error": {
+        "message": "calendar payload produced zero release events; provide format/url-specific adapter params",
+        "type": "CalendarDiscoveryError"
+      },
+      "output_dir": "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/calendar/2025-11-15/runs/calendar_2025-11-15",
+      "outputs": [],
+      "row_counts": {
+        "raw_calendar_payloads": 1
+      },
+      "run_id": "calendar_2025-11-15",
+      "started_at": "2026-05-15T15:24:52Z",
+      "status": "failed",
+      "steps": {
+        "clean": null,
+        "fetch": {
+          "details": {
+            "calendar_source": "nasdaq_earnings_calendar",
+            "discovered_candidates": 0,
+            "source_url": "https://api.nasdaq.com/api/calendar/earnings?date=2025-11-15"
+          },
+          "references": [
+            "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/calendar/2025-11-15/runs/calendar_2025-11-15/request_manifest.json"
+          ],
+          "row_counts": {
+            "raw_calendar_payloads": 1
+          },
+          "status": "succeeded",
+          "warnings": []
+        },
+        "save": null
+      },
+      "warnings": []
+    }
+  ],
+  "task_id": "nasdaq_earnings_calendar_2025-11-15"
+}

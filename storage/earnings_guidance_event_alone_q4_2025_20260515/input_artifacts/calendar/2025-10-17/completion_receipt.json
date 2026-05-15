@@ -1,0 +1,75 @@
+{
+  "bundle": "calendar_discovery",
+  "runs": [
+    {
+      "completed_at": "2026-05-15T15:24:13Z",
+      "error": null,
+      "output_dir": "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/calendar/2025-10-17/runs/calendar_2025-10-17",
+      "outputs": [
+        "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/calendar/2025-10-17/runs/calendar_2025-10-17/saved/release_calendar.csv"
+      ],
+      "row_counts": {
+        "release_calendar": 16
+      },
+      "run_id": "calendar_2025-10-17",
+      "started_at": "2026-05-15T15:24:13Z",
+      "status": "succeeded",
+      "steps": {
+        "clean": {
+          "details": {
+            "columns": [
+              "event_id",
+              "calendar_source",
+              "event_name",
+              "release_time",
+              "event_date",
+              "timezone",
+              "source_url",
+              "raw_summary"
+            ]
+          },
+          "references": [
+            "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/calendar/2025-10-17/runs/calendar_2025-10-17/cleaned/release_calendar.jsonl",
+            "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/calendar/2025-10-17/runs/calendar_2025-10-17/cleaned/schema.json"
+          ],
+          "row_counts": {
+            "release_calendar": 16
+          },
+          "status": "succeeded",
+          "warnings": []
+        },
+        "fetch": {
+          "details": {
+            "calendar_source": "nasdaq_earnings_calendar",
+            "discovered_candidates": 0,
+            "source_url": "https://api.nasdaq.com/api/calendar/earnings?date=2025-10-17"
+          },
+          "references": [
+            "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/calendar/2025-10-17/runs/calendar_2025-10-17/request_manifest.json"
+          ],
+          "row_counts": {
+            "raw_calendar_payloads": 1
+          },
+          "status": "succeeded",
+          "warnings": []
+        },
+        "save": {
+          "details": {
+            "atomic_write": true,
+            "format": "csv"
+          },
+          "references": [
+            "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/calendar/2025-10-17/runs/calendar_2025-10-17/saved/release_calendar.csv"
+          ],
+          "row_counts": {
+            "release_calendar": 16
+          },
+          "status": "succeeded",
+          "warnings": []
+        }
+      },
+      "warnings": []
+    }
+  ],
+  "task_id": "nasdaq_earnings_calendar_2025-10-17"
+}

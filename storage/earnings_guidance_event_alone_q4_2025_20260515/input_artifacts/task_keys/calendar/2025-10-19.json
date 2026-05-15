@@ -1,0 +1,9 @@
+{
+  "bundle": "calendar_discovery",
+  "output_root": "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/calendar/2025-10-19",
+  "params": {
+    "calendar_source": "nasdaq_earnings_calendar",
+    "date": "2025-10-19"
+  },
+  "task_id": "nasdaq_earnings_calendar_2025-10-19"
+}

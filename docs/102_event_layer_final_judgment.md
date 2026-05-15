@@ -107,3 +107,13 @@ Until then, event evidence can support review/risk context, not promoted trading
 4. Verify no-option-abnormality controls by querying option-event feeds for control dates.
 5. Re-run family-specific proof with direction-neutral path labels first and directional labels second.
 6. Only then consider `pilot_training` for the family; do not promote broad event alpha.
+
+## First itemized test after judgment — earnings/guidance event-alone
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/`
+
+The first one-by-one follow-up test examined canonical earnings/guidance scheduled shells alone, before option abnormality or result interpretation.
+
+Result: the Q4 2025 12-symbol slice showed positive direction-neutral path expansion versus same-symbol non-earnings controls: 5d path-range delta about +2.76 percentage points, 10d path-range delta about +2.17 percentage points, and 14d path-range delta about +1.23 percentage points. Directional return did not improve; 5d directional delta was about -1.69 percentage points.
+
+Judgment update: earnings/guidance remains the strongest family to continue, but the useful relationship is currently path/risk/volatility expansion, not direction. Status remains `scouting` until official result/guidance interpretations and no-option-abnormality controls are added.

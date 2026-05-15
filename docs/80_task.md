@@ -63,4 +63,6 @@ The abnormal-activity, option-direction, matched-control, raw-news, and canonica
 
 Accepted judgment: build/keep Layer 8 as a bounded EventRiskGovernor / EventIntelligenceOverlay, not as broad event alpha or standalone option abnormality. See `docs/102_event_layer_final_judgment.md`.
 
+First itemized follow-up completed: `/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/` tested 12 Q4 2025 canonical Nasdaq earnings shells against 36 same-symbol non-earnings controls. It showed direction-neutral path expansion, not directional alpha; earnings/guidance remains `scouting`.
+
 Remaining future work is evidence expansion only: more earnings seasons, official SEC/company result/guidance interpretations, verified no-option-abnormality controls, and family-specific promotion gates before any `pilot_training` status.

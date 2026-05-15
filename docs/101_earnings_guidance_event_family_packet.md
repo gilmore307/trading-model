@@ -334,3 +334,28 @@ Findings:
 - shell-slice 10d/14d evidence: unavailable or underpowered in the current matrix.
 
 Decision: this completes the first canonical shell/control scouting slice, but does not satisfy the minimum coverage gate. The family remains `scouting`. It should not advance to `pilot_training` until official result/guidance artifacts and verified no-option-abnormality controls are added across more earnings seasons.
+
+## Event-alone scheduled-shell scout — Q4 2025 slice
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/`
+
+A first event-alone test was run for the Q4 2025 earnings season slice using canonical Nasdaq earnings-calendar shells and daily Alpaca equity bars for 12 target symbols. The study code performs no provider calls; bounded prerequisite acquisition produced 32 successful Nasdaq calendar artifacts and 12 equity-bar artifacts.
+
+Scope:
+
+- symbols: `AAPL`, `MSFT`, `NVDA`, `AMD`, `JPM`, `XOM`, `CVX`, `LLY`, `PFE`, `COIN`, `TSLA`, `RKLB`;
+- event windows: 12;
+- same-symbol non-earnings controls: 36, three per event;
+- controls exclude dates within ±3 calendar days of a Nasdaq earnings shell for the same symbol;
+- official result/guidance interpretation is not included;
+- option-abnormality absence is not verified for controls.
+
+Findings versus controls:
+
+- 5d absolute-return delta: about +1.70 percentage points;
+- 5d path-range delta: about +2.76 percentage points, positive in 75% of events;
+- 10d path-range delta: about +2.17 percentage points, positive in 66.7% of events;
+- 14d path-range delta: about +1.23 percentage points, positive in 66.7% of events;
+- directional 5d delta was negative, about -1.69 percentage points.
+
+Interpretation: earnings calendar shells show a cleaner direction-neutral path-expansion relationship than the broad option-abnormality definition, but this is still scouting only. It supports continued family-specific testing, not alpha promotion. The next required test is official result/guidance interpretation, then earnings-with-option-abnormality versus earnings-without-option-abnormality.

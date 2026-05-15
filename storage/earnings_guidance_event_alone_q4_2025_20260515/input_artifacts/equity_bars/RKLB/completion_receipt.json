@@ -1,0 +1,62 @@
+{
+  "feed": "01_feed_alpaca_bars",
+  "runs": [
+    {
+      "completed_at": "2026-05-15T15:24:57Z",
+      "error": null,
+      "output_dir": "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/equity_bars/RKLB/runs/bars_RKLB",
+      "outputs": [
+        "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/equity_bars/RKLB/runs/bars_RKLB/saved/equity_bar.csv"
+      ],
+      "row_counts": {
+        "equity_bar": 78
+      },
+      "run_id": "bars_RKLB",
+      "started_at": "2026-05-15T15:24:56Z",
+      "status": "succeeded",
+      "steps": {
+        "clean": {
+          "details": {
+            "timezone": "America/New_York"
+          },
+          "references": [
+            "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/equity_bars/RKLB/runs/bars_RKLB/cleaned/equity_bar.jsonl",
+            "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/equity_bars/RKLB/runs/bars_RKLB/cleaned/schema.json"
+          ],
+          "row_counts": {
+            "equity_bar": 78
+          },
+          "status": "succeeded",
+          "warnings": []
+        },
+        "fetch": {
+          "details": {
+            "symbol": "RKLB"
+          },
+          "references": [
+            "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/equity_bars/RKLB/runs/bars_RKLB/request_manifest.json"
+          ],
+          "row_counts": {
+            "raw_bars_transient": 78
+          },
+          "status": "succeeded",
+          "warnings": []
+        },
+        "save": {
+          "details": {
+            "format": "csv"
+          },
+          "references": [
+            "/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/input_artifacts/equity_bars/RKLB/runs/bars_RKLB/saved/equity_bar.csv"
+          ],
+          "row_counts": {
+            "equity_bar": 78
+          },
+          "status": "succeeded",
+          "warnings": []
+        }
+      }
+    }
+  ],
+  "task_id": "alpaca_bars_RKLB_2025q4_earnings_scout"
+}

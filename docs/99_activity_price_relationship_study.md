@@ -418,3 +418,19 @@ Interpretation:
 - Canonical event-family separation improves the evidence shape: broad raw-news proximity was saturated, while verified calendar shells create a clean event/non-event split.
 - The earnings-shell slice is too small and too concentrated for promotion. It supports further event-family scouting, not activation.
 - The remaining blocker is not documentation; it is coverage/evidence. Next proof requires more earnings seasons, official result/guidance artifacts, and no-option-abnormality controls verified through option-event feeds.
+
+## Itemized test 1 — earnings/guidance scheduled-shell event-alone
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/`
+
+After the final event-layer judgment, the first itemized test isolated canonical earnings/guidance scheduled shells from option abnormality and raw-news proximity. The Q4 2025 12-symbol slice paired 12 earnings-shell events with 36 same-symbol non-earnings controls.
+
+Headline deltas versus controls:
+
+- 5d absolute forward return: +1.70 percentage points;
+- 5d path range: +2.76 percentage points;
+- 10d path range: +2.17 percentage points;
+- 14d path range: +1.23 percentage points;
+- 5d directional return: -1.69 percentage points.
+
+This supports the event-layer boundary already chosen: event evidence is currently more defensible as direction-neutral path/risk context than directional alpha.
