@@ -198,6 +198,66 @@ Directional evidence examples:
 | IV expansion without call/put/skew side | direction unknown | Often indicates path/risk expansion rather than direction. |
 | skew shift toward calls or puts | directional option evidence | Direction depends on skew definition and whether flow is buyer- or seller-initiated. |
 
+### Option Activity Direction Study
+
+Option activity must be handled as a directional-evidence study, not a generic volume spike. The same volume can mean different things depending on right, side, aggressor context, and whether the trade opens risk or closes/hedges risk.
+
+Minimum option-direction evidence fields:
+
+```text
+option_right
+trade_side_or_aggressor_side
+ask_touch_ratio
+bid_touch_ratio
+sweep_or_block_context
+trade_size
+trade_notional
+window_volume
+open_interest_change
+opening_or_closing_context
+iv_change
+skew_direction
+term_structure_direction
+direction_confidence
+```
+
+Initial option-direction hypotheses:
+
+```text
+ask_side_call_activity -> bullish_activity
+ask_side_put_activity -> bearish_activity
+bid_side_call_activity -> bearish_activity_or_call_selling
+bid_side_put_activity -> bullish_activity_or_put_selling
+call_put_ask_side_imbalance_positive -> bullish_activity
+call_put_ask_side_imbalance_negative -> bearish_activity
+iv_expansion_without_side -> unknown_direction_activity
+call_skew_richening -> bullish_activity_or_upside_demand
+put_skew_richening -> bearish_activity_or_downside_demand
+```
+
+Required option-direction comparisons:
+
+1. call ask-side events vs non-event option windows;
+2. put ask-side events vs non-event option windows;
+3. call/put ask-side imbalance buckets;
+4. IV-only expansion without side evidence;
+5. sweep/block events vs ordinary prints;
+6. opening-volume evidence vs ambiguous/closing-volume evidence;
+7. option-direction evidence confirmed by underlying move vs option/underlying divergence.
+
+The study should evaluate both underlying forward labels and option-forward labels when available:
+
+```text
+underlying_signed_directional_forward_return
+underlying_absolute_forward_return
+option_contract_signed_forward_return
+option_contract_absolute_forward_return
+implied_vol_forward_change
+skew_forward_change
+```
+
+Important caveat: a call-buying surge is only directionally bullish when the system has enough side/aggressor/opening evidence. Otherwise it is an option-activity path-expansion signal with `unknown_direction_activity` or `review_required` direction.
+
 Directional proof metrics:
 
 ```text
