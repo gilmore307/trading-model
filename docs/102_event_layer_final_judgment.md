@@ -117,3 +117,11 @@ The first one-by-one follow-up test examined canonical earnings/guidance schedul
 Result: the Q4 2025 12-symbol slice showed positive direction-neutral path expansion versus same-symbol non-earnings controls: 5d path-range delta about +2.76 percentage points, 10d path-range delta about +2.17 percentage points, and 14d path-range delta about +1.23 percentage points. Directional return did not improve; 5d directional delta was about -1.69 percentage points.
 
 Judgment update: earnings/guidance remains the strongest family to continue, but the useful relationship is currently path/risk/volatility expansion, not direction. Status remains `scouting` until official result/guidance interpretations and no-option-abnormality controls are added.
+
+## Second itemized test — official result-artifact scout
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_result_artifact_scout_q4_2025_20260515/`
+
+The next follow-up joined the Q4 2025 earnings shells to official SEC submission/companyfacts artifacts. All 12 events had an official SEC result artifact in the event window; 11 had partial XBRL metric-direction interpretation, while guidance interpretation remained missing.
+
+Judgment update: official SEC result artifacts strengthen the canonical event-family route, but simple reported-metric YoY direction is not enough for signed alpha. The event layer boundary remains risk/intelligence overlay first. Promotion still requires official guidance/result interpretation, consensus or accepted expectation baselines, verified option-abnormality controls, and family-specific stability evidence.

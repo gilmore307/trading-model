@@ -65,4 +65,6 @@ Accepted judgment: build/keep Layer 8 as a bounded EventRiskGovernor / EventInte
 
 First itemized follow-up completed: `/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/` tested 12 Q4 2025 canonical Nasdaq earnings shells against 36 same-symbol non-earnings controls. It showed direction-neutral path expansion, not directional alpha; earnings/guidance remains `scouting`.
 
-Remaining future work is evidence expansion only: more earnings seasons, official SEC/company result/guidance interpretations, verified no-option-abnormality controls, and family-specific promotion gates before any `pilot_training` status.
+Second itemized follow-up completed: `/root/projects/trading-model/storage/earnings_guidance_result_artifact_scout_q4_2025_20260515/` joined those shells to official SEC result artifacts. It found official result artifacts for all 12 events and partial XBRL metric-direction interpretation for 11 events, but no guidance interpretation and no signed-alpha proof.
+
+Remaining future work is evidence expansion only: more earnings seasons, official company release/exhibit/transcript guidance interpretations, verified no-option-abnormality controls, and family-specific promotion gates before any `pilot_training` status.

@@ -434,3 +434,11 @@ Headline deltas versus controls:
 - 5d directional return: -1.69 percentage points.
 
 This supports the event-layer boundary already chosen: event evidence is currently more defensible as direction-neutral path/risk context than directional alpha.
+
+## Itemized test 2 — earnings/guidance official result artifacts
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_result_artifact_scout_q4_2025_20260515/`
+
+The second itemized earnings/guidance test joined scheduled shells to official SEC submission/companyfacts artifacts. It found official result artifacts for all 12 Q4 2025 events and partial reported-metric interpretation for 11 events.
+
+The split by simple result direction remained too small and not directionally reliable: positive-result-score events had 5d path range about 11.1% and 5d directional hit rate 28.6%; negative-result-score events had 5d path range about 6.3% and 5d directional hit rate 33.3%. This continues to support event-risk/path context, not signed alpha.

@@ -359,3 +359,27 @@ Findings versus controls:
 - directional 5d delta was negative, about -1.69 percentage points.
 
 Interpretation: earnings calendar shells show a cleaner direction-neutral path-expansion relationship than the broad option-abnormality definition, but this is still scouting only. It supports continued family-specific testing, not alpha promotion. The next required test is official result/guidance interpretation, then earnings-with-option-abnormality versus earnings-without-option-abnormality.
+
+## Official result-artifact scout — Q4 2025 slice
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_result_artifact_scout_q4_2025_20260515/`
+
+A follow-up official-result slice joined the 12 Q4 2025 canonical earnings shells to local SEC submission/companyfacts artifacts. The study itself performs no provider calls; bounded prerequisite SEC acquisition produced 23 successful SEC artifacts and one failed/truncated JPM `sec_company_fact` artifact, which is recorded as missing/partial rather than fabricated.
+
+Scope:
+
+- event windows: 12;
+- official SEC result artifacts found: 12;
+- partial official result interpretations from SEC XBRL metric direction: 11;
+- guidance interpretations: 0;
+- reported-metric interpretation uses only simple YoY direction for revenue, net income, and diluted/basic EPS when available;
+- consensus beat/miss, guidance raise/cut, and management-commentary interpretation remain missing.
+
+Findings:
+
+- positive reported-result score bucket: 7 events, 5d path range about 11.1%, 10d path range about 14.6%, 5d directional hit rate 28.6%;
+- negative reported-result score bucket: 3 events, 5d path range about 6.3%, 10d path range about 8.5%, 5d directional hit rate 33.3%;
+- missing/flat score bucket: 2 events, very high path range but directionally negative in this tiny slice;
+- the result-score split is underpowered and not a signed-alpha result.
+
+Interpretation: SEC result artifacts improve canonical coverage and confirm that official result visibility can be joined point-in-time, but the current simple metric-direction split still supports risk/path context more than direction. The next required route is true guidance/result interpretation from official company release/exhibit/transcript artifacts plus verified no-option-abnormality controls.
