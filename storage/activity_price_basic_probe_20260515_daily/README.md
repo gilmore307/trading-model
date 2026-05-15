@@ -14,3 +14,5 @@ Outputs:
 2026-05-15 correction: Directional average forward return is not the primary proof metric because downside paths are tradable too. Added:
 - `absolute_move_group_stats.csv` — absolute forward returns and 5d tradeable-excursion proxy by group/activity token/bucket.
 - `absolute_move_per_symbol_delta.csv` — abnormal minus non-abnormal absolute-move deltas by symbol.
+
+2026-05-15 directionality note: Added `directional_proxy_stats.csv` for provisional price-derived directional proxies. This is diagnostic only; option-direction evidence such as call/put sweep imbalance requires option-side/aggressor fields and was not included in this daily bars-only probe.

@@ -839,3 +839,13 @@ The first activity-price proof metric must be direction-neutral. Since downside 
 Signed average forward return is a secondary diagnostic only. It must not be the primary acceptance metric because positive and negative tradable moves can cancel out and incorrectly make useful abnormal activity look weak.
 
 Directional classification, continuation/reversal inference, and trade expression belong to later model stages after the system proves that abnormal activity expands future price/path opportunity or risk.
+
+## D046 - Activity direction must be tested separately from path expansion
+
+Accepted: 2026-05-15
+
+After direction-neutral tradability is established, abnormal activity must also preserve and test directional orientation. Examples include call-buying or call-sweep surges as bullish evidence, put-buying or put-sweep surges as bearish evidence, positive/negative residual price moves, and high/low liquidity-sweep reversal patterns.
+
+Direction must come from point-in-time activity evidence, not future return labels. Option direction requires side/aggressor context when available because raw call or put volume can be hedging, closing, or inventory flow rather than directional demand.
+
+Directional proof metrics include `activity_direction_bias_score`, `activity_direction_confidence_score`, `signed_directional_forward_return`, `directional_hit_rate`, `opposite_direction_failure_rate`, and `mixed_direction_conflict_score`. Directional proof is a separate gate from absolute path-expansion proof.

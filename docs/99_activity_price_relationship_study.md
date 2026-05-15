@@ -151,10 +151,12 @@ forward_gap_or_jump_abs
 path_asymmetry
 ```
 
-Secondary directional labels:
+Required directional label families:
 
 ```text
+activity_direction_bias
 signed_forward_return
+signed_directional_forward_return
 forward_drawdown
 forward_reversal
 close_to_close_continuation
@@ -165,9 +167,54 @@ intraday_absorption_score
 Rules:
 
 - Primary activity-price proof should compare absolute forward moves and tradeable excursions between abnormal and non-abnormal windows.
-- Directional alpha comes later. A strong downside relationship is still useful if direction can be classified or hedged.
+- Directional alpha comes next. A strong downside relationship is useful if direction can be classified or hedged.
 - Signed average forward return must not be used as the main acceptance metric because positive and negative tradable moves can cancel out.
-- Direction labels remain important for later model design, but they are not the first gate.
+- Direction labels are required for later model design, but they must be evaluated separately from direction-neutral tradability.
+
+## Activity Direction Evidence
+
+Some abnormal activity has natural directional orientation. The study must preserve this orientation rather than treating every activity token as directionless.
+
+Accepted direction classes:
+
+```text
+bullish_activity
+bearish_activity
+neutral_activity
+mixed_or_conflicting_activity
+unknown_direction_activity
+```
+
+Directional evidence examples:
+
+| Evidence type | Typical direction | Notes |
+|---|---|---|
+| call volume / call sweep / ask-side call buying surge | bullish | Requires option side/aggressor confidence; call volume alone can be hedging. |
+| put volume / put sweep / ask-side put buying surge | bearish | Requires option side/aggressor confidence; put selling may be bullish, so quote side matters. |
+| positive residual return or positive gap | bullish proxy | Price-derived and must be controlled for same-window tautology. |
+| negative residual return or negative gap | bearish proxy | Price-derived and must be controlled for same-window tautology. |
+| liquidity sweep high / false breakout / bull trap | bearish reversal proxy | Must be empirically tested; not assumed. |
+| liquidity sweep low / false breakdown / bear trap | bullish reversal proxy | Must be empirically tested; not assumed. |
+| IV expansion without call/put/skew side | direction unknown | Often indicates path/risk expansion rather than direction. |
+| skew shift toward calls or puts | directional option evidence | Direction depends on skew definition and whether flow is buyer- or seller-initiated. |
+
+Directional proof metrics:
+
+```text
+activity_direction_bias_score
+activity_direction_confidence_score
+signed_directional_forward_return
+directional_hit_rate
+opposite_direction_failure_rate
+mixed_direction_conflict_score
+```
+
+Rules:
+
+- Direction must come from point-in-time activity evidence, not from future return labels.
+- Option direction must distinguish call vs put, buy vs sell/aggressor side when available, sweep/block context, and whether the activity is opening or closing/hedging flow.
+- If activity expands path but direction is weak, it can still be valuable for volatility, optionality, or risk-governor use.
+- Directional proof must be stratified by activity type; e.g. call-buying evidence should not be evaluated together with IV-only expansion.
 
 ## Controls
 
