@@ -151,3 +151,11 @@ After the earnings-date sampled probe found zero clean controls, the next route 
 The study inspected 36 option-matrix symbol/date windows, found 24 same-symbol non-earnings candidates, and referenced 82 existing option-event completion receipts. It performed zero provider calls. Result: zero verified no sampled option-abnormality non-earnings controls; all 24 candidate windows still had verified option abnormality, with three partial-contract-coverage cases that nevertheless emitted abnormality on successful contracts.
 
 Judgment update: the earnings+option amplifier comparison remains blocked more strongly. The current option-event standard is too high-emission in the sampled liquid contracts to provide clean controls from either earnings dates or same-symbol non-earnings windows. Do not promote option-flow alpha or broaden EventRiskGovernor powers from this evidence. The cleaner next route is either a stricter abnormality definition with controls, or official company result/guidance interpretation for the event-alone family.
+
+## Sixth itemized test — non-earnings option-standard saturation
+
+Artifact: `/root/projects/trading-model/storage/option_abnormality_non_earnings_saturation_20260515/`
+
+The reviewed option matrix already contained 34 same-symbol non-earnings symbol/date windows. Every one emitted complete option-abnormality events under the current standard, with at least 14 complete events per non-earnings symbol/date.
+
+Judgment update: this explains why clean earnings-without-option-abnormality controls could not be found. The current option-event standard is saturated in this sample and cannot support a no-abnormality control design. Earnings/guidance remains useful only as direction-neutral event-risk context; option abnormality remains provenance/risk evidence until the abnormality standard is revised and revalidated.

@@ -460,3 +460,11 @@ The follow-up sampled five candidate strikes and both CALL/PUT under the same op
 Outcome: zero verified no sampled option-abnormality controls were found. Existing-matrix rows (`CVX`, `XOM`) remained verified abnormal; six newly probed rows were verified abnormal; `PFE` and `RKLB` had partial contract coverage due ThetaData HTTP 472 but still emitted abnormality on successful sampled contracts.
 
 This blocks the amplifier comparison. It does not prove option abnormality adds value around earnings; it only shows this sampled set did not produce the required clean counterfactual group.
+
+## Itemized test 6 — option-standard saturation on non-earnings windows
+
+Artifact: `/root/projects/trading-model/storage/option_abnormality_non_earnings_saturation_20260515/`
+
+A no-provider diagnostic reused the reviewed complete-evidence option matrix. Of 36 symbol/date windows, 34 were not canonical earnings-shell dates. All 34 non-earnings windows still emitted complete option-abnormality events under the current standard; the minimum complete event count per non-earnings symbol/date was 14.
+
+This is now the controlling blocker for earnings+option amplifier testing. The current option-event standard is too saturated to produce clean no-abnormality controls in this sample. Before any amplifier retest, revise the abnormality definition or move to a broader control universe where no-abnormality coverage actually exists.

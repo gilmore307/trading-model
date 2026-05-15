@@ -454,3 +454,19 @@ Result:
 - 3 candidate windows had partial contract coverage but still emitted option abnormality on successful contracts.
 
 Direction-neutral labels are present for the candidate windows, but they are not promotion evidence because the clean no-option-abnormality control group is still absent. The result strengthens the block: under the current option-event standard, liquid sampled contracts emit abnormalities too frequently to supply clean controls from this local same-symbol matrix. The next route should either tighten the abnormality definition before another control search, or move back to event-alone official result/guidance interpretation where controls are already cleaner.
+
+## Option-standard saturation diagnosis
+
+Artifact: `/root/projects/trading-model/storage/option_abnormality_non_earnings_saturation_20260515/`
+
+A no-provider local study reused the reviewed complete-evidence option matrix and canonical earnings shells to test whether same-symbol non-earnings windows can produce clean no-option-abnormality controls under the current option-event standard.
+
+Scope:
+
+- reviewed option matrix symbol/date windows: 36;
+- canonical earnings-shell overlaps: 2;
+- same-symbol non-earnings windows: 34;
+- non-earnings verified no-abnormality windows: 0;
+- minimum complete option events per non-earnings symbol/date: 14.
+
+Conclusion: the current option-event standard is saturated for this control design. It emits complete option-abnormality events not only around earnings shells but across all reviewed non-earnings symbol/date windows in the sample. The next route is not more searching inside this sample; it is either a stricter abnormality standard or a different broader control universe before retesting earnings+option amplifier value.
