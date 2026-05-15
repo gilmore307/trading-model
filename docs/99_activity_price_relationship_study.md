@@ -299,6 +299,8 @@ Pilot evidence note: `/root/projects/trading-model/storage/option_direction_pilo
 
 Cross-section pilot note: `/root/projects/trading-model/storage/option_direction_cross_section_20260515/` extends the diagnostic slice to NVDA, JPM, XOM, LLY, and RKLB on the same event date. The headline result is mixed: ask-side CALL evidence is more promising than ask-side PUT evidence, especially on symbol-weighted 10d outcomes, but neither direction can be treated as a universal rule. Ask-side PUT activity was weak as a stable bearish signal in this slice. This remains `diagnostic_only_abnormality_incomplete`: it reinforces that option direction needs OI/opening-vs-closing, skew/term-structure, sweep/block, and confidence filters before judgment.
 
+Complete-coverage cross-section note: `/root/projects/trading-model/storage/option_direction_complete_coverage_cross_section_20260515/` reruns the diagnostic direction study after enabling real ThetaData OI/IV/skew/term/underlying auto-context enrichment. It emitted 239 events across AAPL, NVDA, JPM, XOM, LLY, and RKLB; 231 passed `abnormality_coverage_complete`, and all 60 auto-context endpoint requests succeeded with no hard blockers. In the complete-evidence subset, `bullish_activity` was positive on 10d/14d directional underlying labels and long-option payoffs, while `bearish_activity` remained weak/negative outside the 5d horizon. Ambiguous classes such as `mixed_or_conflicting_activity`, `bullish_activity_or_put_selling`, and `bearish_activity_or_call_selling` remain non-directional diagnostics. This is stronger than the incomplete pilot but still not promotion evidence because it is one event date and one expiration.
+
 Directional proof metrics:
 
 ```text

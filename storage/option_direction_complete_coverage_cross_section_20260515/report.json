@@ -1,0 +1,1670 @@
+{
+  "auto_context_request_count": 60,
+  "auto_context_success_count": 60,
+  "coverage_missing_field_counts": {
+    "iv_level_and_change": 8,
+    "skew_direction": 5,
+    "term_structure_direction": 5,
+    "underlying_confirmation_or_divergence": 8
+  },
+  "coverage_status_counts": {
+    "complete": 231,
+    "partial": 8
+  },
+  "direction_hypothesis_counts_all": {
+    "bearish_activity": 40,
+    "bearish_activity_or_call_selling": 29,
+    "bullish_activity": 51,
+    "bullish_activity_or_put_selling": 24,
+    "mixed_or_conflicting_activity": 95
+  },
+  "direction_hypothesis_counts_complete": {
+    "bearish_activity": 37,
+    "bearish_activity_or_call_selling": 28,
+    "bullish_activity": 49,
+    "bullish_activity_or_put_selling": 24,
+    "mixed_or_conflicting_activity": 93
+  },
+  "endpoint_hard_blockers": [],
+  "event_date": "2026-04-24",
+  "expiration": "2026-05-15",
+  "generated_at": "2026-05-15T08:24:34",
+  "group_stats": [
+    {
+      "avg_abs_underlying_fwd_10d": 0.10972980443773903,
+      "avg_abs_underlying_fwd_14d": 0.22539449252843996,
+      "avg_abs_underlying_fwd_1d": 0.02576104598018067,
+      "avg_abs_underlying_fwd_5d": 0.0310832338855127,
+      "avg_directional_underlying_fwd_10d": -0.10225853514230956,
+      "avg_directional_underlying_fwd_14d": -0.21724929984646257,
+      "avg_directional_underlying_fwd_1d": -0.018267900947253484,
+      "avg_directional_underlying_fwd_5d": 0.00447788663488467,
+      "avg_option_contract_long_fwd_10d": -0.6810122406238986,
+      "avg_option_contract_long_fwd_14d": -0.7937792006246518,
+      "avg_option_contract_long_fwd_1d": -0.15059978400654134,
+      "avg_option_contract_long_fwd_5d": -0.13303685083663452,
+      "avg_underlying_path_range_10d": 0.16647668138937075,
+      "avg_underlying_path_range_14d": 0.2823782379035832,
+      "avg_underlying_path_range_1d": 0.037063829710083755,
+      "avg_underlying_path_range_5d": 0.08856281911973747,
+      "direction_hypothesis": "bearish_activity",
+      "directional_underlying_hit_rate_10d": 0.175,
+      "directional_underlying_hit_rate_14d": 0.15,
+      "directional_underlying_hit_rate_1d": 0.3,
+      "directional_underlying_hit_rate_5d": 0.55,
+      "n_events": 40,
+      "n_symbols": 6,
+      "option_contract_long_hit_rate_10d": 0.175,
+      "option_contract_long_hit_rate_14d": 0.15,
+      "option_contract_long_hit_rate_1d": 0.275,
+      "option_contract_long_hit_rate_5d": 0.325,
+      "sample": "all_events"
+    },
+    {
+      "avg_abs_underlying_fwd_10d": 0.06545921930919944,
+      "avg_abs_underlying_fwd_14d": 0.10637719478550106,
+      "avg_abs_underlying_fwd_1d": 0.012249398481342735,
+      "avg_abs_underlying_fwd_5d": 0.0363893104335258,
+      "avg_directional_underlying_fwd_10d": null,
+      "avg_directional_underlying_fwd_14d": null,
+      "avg_directional_underlying_fwd_1d": null,
+      "avg_directional_underlying_fwd_5d": null,
+      "avg_option_contract_long_fwd_10d": 0.16567532959525672,
+      "avg_option_contract_long_fwd_14d": 0.9036491671067961,
+      "avg_option_contract_long_fwd_1d": -0.04827206649771839,
+      "avg_option_contract_long_fwd_5d": 0.4175326728788455,
+      "avg_underlying_path_range_10d": 0.11732909662251448,
+      "avg_underlying_path_range_14d": 0.15514115101271625,
+      "avg_underlying_path_range_1d": 0.023363721413887036,
+      "avg_underlying_path_range_5d": 0.07745606173559155,
+      "direction_hypothesis": "bearish_activity_or_call_selling",
+      "directional_underlying_hit_rate_10d": null,
+      "directional_underlying_hit_rate_14d": null,
+      "directional_underlying_hit_rate_1d": null,
+      "directional_underlying_hit_rate_5d": null,
+      "n_events": 29,
+      "n_symbols": 5,
+      "option_contract_long_hit_rate_10d": 0.4482758620689655,
+      "option_contract_long_hit_rate_14d": 0.4482758620689655,
+      "option_contract_long_hit_rate_1d": 0.3103448275862069,
+      "option_contract_long_hit_rate_5d": 0.9310344827586207,
+      "sample": "all_events"
+    },
+    {
+      "avg_abs_underlying_fwd_10d": 0.07148631377599449,
+      "avg_abs_underlying_fwd_14d": 0.14678321473711384,
+      "avg_abs_underlying_fwd_1d": 0.02424852979826016,
+      "avg_abs_underlying_fwd_5d": 0.03965698732385182,
+      "avg_directional_underlying_fwd_10d": 0.061913401224468825,
+      "avg_directional_underlying_fwd_14d": 0.14465375259803478,
+      "avg_directional_underlying_fwd_1d": 0.013149158593737033,
+      "avg_directional_underlying_fwd_5d": 0.0009636001542797101,
+      "avg_option_contract_long_fwd_10d": 0.6572411506412527,
+      "avg_option_contract_long_fwd_14d": 2.3381024686379805,
+      "avg_option_contract_long_fwd_1d": 0.21917782171521488,
+      "avg_option_contract_long_fwd_5d": -0.06534343835125453,
+      "avg_underlying_path_range_10d": 0.13043299622233853,
+      "avg_underlying_path_range_14d": 0.20205183952462222,
+      "avg_underlying_path_range_1d": 0.032196495908424466,
+      "avg_underlying_path_range_5d": 0.08939092682463455,
+      "direction_hypothesis": "bullish_activity",
+      "directional_underlying_hit_rate_10d": 0.8235294117647058,
+      "directional_underlying_hit_rate_14d": 0.9607843137254902,
+      "directional_underlying_hit_rate_1d": 0.5098039215686274,
+      "directional_underlying_hit_rate_5d": 0.5294117647058824,
+      "n_events": 51,
+      "n_symbols": 6,
+      "option_contract_long_hit_rate_10d": 0.8235294117647058,
+      "option_contract_long_hit_rate_14d": 0.8235294117647058,
+      "option_contract_long_hit_rate_1d": 0.5098039215686274,
+      "option_contract_long_hit_rate_5d": 0.5294117647058824,
+      "sample": "all_events"
+    },
+    {
+      "avg_abs_underlying_fwd_10d": 0.0961277011683168,
+      "avg_abs_underlying_fwd_14d": 0.18117803836878918,
+      "avg_abs_underlying_fwd_1d": 0.01999161635720846,
+      "avg_abs_underlying_fwd_5d": 0.031911400085302376,
+      "avg_directional_underlying_fwd_10d": null,
+      "avg_directional_underlying_fwd_14d": null,
+      "avg_directional_underlying_fwd_1d": null,
+      "avg_directional_underlying_fwd_5d": null,
+      "avg_option_contract_long_fwd_10d": -0.5859290992113803,
+      "avg_option_contract_long_fwd_14d": -0.7119611616477531,
+      "avg_option_contract_long_fwd_1d": -0.0779896552654692,
+      "avg_option_contract_long_fwd_5d": -0.35944800668741733,
+      "avg_underlying_path_range_10d": 0.14758687683924937,
+      "avg_underlying_path_range_14d": 0.23268672125206943,
+      "avg_underlying_path_range_1d": 0.030281001486273305,
+      "avg_underlying_path_range_5d": 0.0834752594690925,
+      "direction_hypothesis": "bullish_activity_or_put_selling",
+      "directional_underlying_hit_rate_10d": null,
+      "directional_underlying_hit_rate_14d": null,
+      "directional_underlying_hit_rate_1d": null,
+      "directional_underlying_hit_rate_5d": null,
+      "n_events": 24,
+      "n_symbols": 6,
+      "option_contract_long_hit_rate_10d": 0.2916666666666667,
+      "option_contract_long_hit_rate_14d": 0.20833333333333334,
+      "option_contract_long_hit_rate_1d": 0.375,
+      "option_contract_long_hit_rate_5d": 0.16666666666666666,
+      "sample": "all_events"
+    },
+    {
+      "avg_abs_underlying_fwd_10d": 0.10668637951555224,
+      "avg_abs_underlying_fwd_14d": 0.20451990671472275,
+      "avg_abs_underlying_fwd_1d": 0.017255625956691445,
+      "avg_abs_underlying_fwd_5d": 0.038448621067119486,
+      "avg_directional_underlying_fwd_10d": null,
+      "avg_directional_underlying_fwd_14d": null,
+      "avg_directional_underlying_fwd_1d": null,
+      "avg_directional_underlying_fwd_5d": null,
+      "avg_option_contract_long_fwd_10d": 0.08237836457574646,
+      "avg_option_contract_long_fwd_14d": 0.5936541423278956,
+      "avg_option_contract_long_fwd_1d": -0.010340682247118128,
+      "avg_option_contract_long_fwd_5d": -0.20401751671052656,
+      "avg_underlying_path_range_10d": 0.16931561049920762,
+      "avg_underlying_path_range_14d": 0.2611064338782881,
+      "avg_underlying_path_range_1d": 0.03282671769840896,
+      "avg_underlying_path_range_5d": 0.09303992972129746,
+      "direction_hypothesis": "mixed_or_conflicting_activity",
+      "directional_underlying_hit_rate_10d": null,
+      "directional_underlying_hit_rate_14d": null,
+      "directional_underlying_hit_rate_1d": null,
+      "directional_underlying_hit_rate_5d": null,
+      "n_events": 95,
+      "n_symbols": 6,
+      "option_contract_long_hit_rate_10d": 0.5368421052631579,
+      "option_contract_long_hit_rate_14d": 0.35789473684210527,
+      "option_contract_long_hit_rate_1d": 0.4631578947368421,
+      "option_contract_long_hit_rate_5d": 0.30526315789473685,
+      "sample": "all_events"
+    },
+    {
+      "avg_abs_underlying_fwd_10d": 0.11496619762149254,
+      "avg_abs_underlying_fwd_14d": 0.23666407126396433,
+      "avg_abs_underlying_fwd_1d": 0.02612981383566023,
+      "avg_abs_underlying_fwd_5d": 0.03105646927197339,
+      "avg_directional_underlying_fwd_10d": -0.10797275572277992,
+      "avg_directional_underlying_fwd_14d": -0.2293260598387595,
+      "avg_directional_underlying_fwd_1d": -0.018717106196879777,
+      "avg_directional_underlying_fwd_5d": 0.0048393186581078005,
+      "avg_option_contract_long_fwd_10d": -0.6968780189453875,
+      "avg_option_contract_long_fwd_14d": -0.813600558285541,
+      "avg_option_contract_long_fwd_1d": -0.15171602222297184,
+      "avg_option_contract_long_fwd_5d": -0.12764182230481746,
+      "avg_underlying_path_range_10d": 0.17263677143194806,
+      "avg_underlying_path_range_14d": 0.29445570331259646,
+      "avg_underlying_path_range_1d": 0.038015572520021614,
+      "avg_underlying_path_range_5d": 0.09014419454340727,
+      "direction_hypothesis": "bearish_activity",
+      "directional_underlying_hit_rate_10d": 0.16216216216216217,
+      "directional_underlying_hit_rate_14d": 0.13513513513513514,
+      "directional_underlying_hit_rate_1d": 0.2972972972972973,
+      "directional_underlying_hit_rate_5d": 0.5675675675675675,
+      "n_events": 37,
+      "n_symbols": 6,
+      "option_contract_long_hit_rate_10d": 0.16216216216216217,
+      "option_contract_long_hit_rate_14d": 0.13513513513513514,
+      "option_contract_long_hit_rate_1d": 0.2702702702702703,
+      "option_contract_long_hit_rate_5d": 0.32432432432432434,
+      "sample": "complete_evidence_only"
+    },
+    {
+      "avg_abs_underlying_fwd_10d": 0.06675615138402242,
+      "avg_abs_underlying_fwd_14d": 0.10924820701616507,
+      "avg_abs_underlying_fwd_1d": 0.012514193594368042,
+      "avg_abs_underlying_fwd_5d": 0.03676795050774521,
+      "avg_directional_underlying_fwd_10d": null,
+      "avg_directional_underlying_fwd_14d": null,
+      "avg_directional_underlying_fwd_1d": null,
+      "avg_directional_underlying_fwd_5d": null,
+      "avg_option_contract_long_fwd_10d": 0.20231519721849525,
+      "avg_option_contract_long_fwd_14d": 0.9483147784965827,
+      "avg_option_contract_long_fwd_1d": -0.04569314288296393,
+      "avg_option_contract_long_fwd_5d": 0.42168723907890754,
+      "avg_underlying_path_range_10d": 0.11869655150371275,
+      "avg_underlying_path_range_14d": 0.15785903640785032,
+      "avg_underlying_path_range_1d": 0.023428283842713154,
+      "avg_underlying_path_range_5d": 0.07837082380497358,
+      "direction_hypothesis": "bearish_activity_or_call_selling",
+      "directional_underlying_hit_rate_10d": null,
+      "directional_underlying_hit_rate_14d": null,
+      "directional_underlying_hit_rate_1d": null,
+      "directional_underlying_hit_rate_5d": null,
+      "n_events": 28,
+      "n_symbols": 5,
+      "option_contract_long_hit_rate_10d": 0.4642857142857143,
+      "option_contract_long_hit_rate_14d": 0.4642857142857143,
+      "option_contract_long_hit_rate_1d": 0.32142857142857145,
+      "option_contract_long_hit_rate_5d": 0.9285714285714286,
+      "sample": "complete_evidence_only"
+    },
+    {
+      "avg_abs_underlying_fwd_10d": 0.07204909893558752,
+      "avg_abs_underlying_fwd_14d": 0.14803848019377847,
+      "avg_abs_underlying_fwd_1d": 0.024161286468192662,
+      "avg_abs_underlying_fwd_5d": 0.0396297530881071,
+      "avg_directional_underlying_fwd_10d": 0.062085455259509766,
+      "avg_directional_underlying_fwd_14d": 0.14582210123269618,
+      "avg_directional_underlying_fwd_1d": 0.013128382126387178,
+      "avg_directional_underlying_fwd_5d": 0.001281547409631861,
+      "avg_option_contract_long_fwd_10d": 0.6432640441027281,
+      "avg_option_contract_long_fwd_14d": 2.3260918343975048,
+      "avg_option_contract_long_fwd_1d": 0.21763321233534044,
+      "avg_option_contract_long_fwd_5d": -0.062097870317768256,
+      "avg_underlying_path_range_10d": 0.1312618000657006,
+      "avg_underlying_path_range_14d": 0.2035037604510861,
+      "avg_underlying_path_range_1d": 0.032337427976924814,
+      "avg_underlying_path_range_5d": 0.08944098531809458,
+      "direction_hypothesis": "bullish_activity",
+      "directional_underlying_hit_rate_10d": 0.8163265306122449,
+      "directional_underlying_hit_rate_14d": 0.9591836734693877,
+      "directional_underlying_hit_rate_1d": 0.5102040816326531,
+      "directional_underlying_hit_rate_5d": 0.5306122448979592,
+      "n_events": 49,
+      "n_symbols": 6,
+      "option_contract_long_hit_rate_10d": 0.8163265306122449,
+      "option_contract_long_hit_rate_14d": 0.8163265306122449,
+      "option_contract_long_hit_rate_1d": 0.5102040816326531,
+      "option_contract_long_hit_rate_5d": 0.5306122448979592,
+      "sample": "complete_evidence_only"
+    },
+    {
+      "avg_abs_underlying_fwd_10d": 0.0961277011683168,
+      "avg_abs_underlying_fwd_14d": 0.18117803836878918,
+      "avg_abs_underlying_fwd_1d": 0.01999161635720846,
+      "avg_abs_underlying_fwd_5d": 0.031911400085302376,
+      "avg_directional_underlying_fwd_10d": null,
+      "avg_directional_underlying_fwd_14d": null,
+      "avg_directional_underlying_fwd_1d": null,
+      "avg_directional_underlying_fwd_5d": null,
+      "avg_option_contract_long_fwd_10d": -0.5859290992113803,
+      "avg_option_contract_long_fwd_14d": -0.7119611616477531,
+      "avg_option_contract_long_fwd_1d": -0.0779896552654692,
+      "avg_option_contract_long_fwd_5d": -0.35944800668741733,
+      "avg_underlying_path_range_10d": 0.14758687683924937,
+      "avg_underlying_path_range_14d": 0.23268672125206943,
+      "avg_underlying_path_range_1d": 0.030281001486273305,
+      "avg_underlying_path_range_5d": 0.0834752594690925,
+      "direction_hypothesis": "bullish_activity_or_put_selling",
+      "directional_underlying_hit_rate_10d": null,
+      "directional_underlying_hit_rate_14d": null,
+      "directional_underlying_hit_rate_1d": null,
+      "directional_underlying_hit_rate_5d": null,
+      "n_events": 24,
+      "n_symbols": 6,
+      "option_contract_long_hit_rate_10d": 0.2916666666666667,
+      "option_contract_long_hit_rate_14d": 0.20833333333333334,
+      "option_contract_long_hit_rate_1d": 0.375,
+      "option_contract_long_hit_rate_5d": 0.16666666666666666,
+      "sample": "complete_evidence_only"
+    },
+    {
+      "avg_abs_underlying_fwd_10d": 0.10798068336925068,
+      "avg_abs_underlying_fwd_14d": 0.2071332049340168,
+      "avg_abs_underlying_fwd_1d": 0.017319011284267313,
+      "avg_abs_underlying_fwd_5d": 0.038163853016001684,
+      "avg_directional_underlying_fwd_10d": null,
+      "avg_directional_underlying_fwd_14d": null,
+      "avg_directional_underlying_fwd_1d": null,
+      "avg_directional_underlying_fwd_5d": null,
+      "avg_option_contract_long_fwd_10d": 0.10319920167231124,
+      "avg_option_contract_long_fwd_14d": 0.6278188501712134,
+      "avg_option_contract_long_fwd_1d": -0.014848386914430455,
+      "avg_option_contract_long_fwd_5d": -0.20172410585251216,
+      "avg_underlying_path_range_10d": 0.17063003576522862,
+      "avg_underlying_path_range_14d": 0.26390184421951196,
+      "avg_underlying_path_range_1d": 0.033052096079564705,
+      "avg_underlying_path_range_5d": 0.09307980699973137,
+      "direction_hypothesis": "mixed_or_conflicting_activity",
+      "directional_underlying_hit_rate_10d": null,
+      "directional_underlying_hit_rate_14d": null,
+      "directional_underlying_hit_rate_1d": null,
+      "directional_underlying_hit_rate_5d": null,
+      "n_events": 93,
+      "n_symbols": 6,
+      "option_contract_long_hit_rate_10d": 0.5483870967741935,
+      "option_contract_long_hit_rate_14d": 0.3655913978494624,
+      "option_contract_long_hit_rate_1d": 0.45161290322580644,
+      "option_contract_long_hit_rate_5d": 0.3010752688172043,
+      "sample": "complete_evidence_only"
+    }
+  ],
+  "prior_context_date": "2026-04-23",
+  "promotion_boundary": "Diagnostic only: bounded one-date/one-expiry cross-section with complete-evidence filtering. Direction-neutral path expansion and directional proof remain separate; broader dates/symbols are required before model-layer promotion.",
+  "provider_summary": [
+    {
+      "date": "2026-04-24",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 443,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 593,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 792,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 224,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 158,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 455,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 399,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 610,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 201,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 95,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 19,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 19,
+          "put_events": 20,
+          "put_status": "succeeded",
+          "strike": 270
+        }
+      ],
+      "complete_event_counts": {
+        "CALL": 19,
+        "PUT": 19
+      },
+      "event_close": 271.06,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "stage": "selected",
+      "status": "succeeded",
+      "strike": 270,
+      "symbol": "AAPL"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 3658,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 2787,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 2532,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 1805,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 709,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 426,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 667,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 127,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 1304,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 723,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 19,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 19,
+          "put_events": 20,
+          "put_status": "succeeded",
+          "strike": 210
+        }
+      ],
+      "complete_event_counts": {
+        "CALL": 19,
+        "PUT": 19
+      },
+      "event_close": 208.27,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "stage": "selected",
+      "status": "succeeded",
+      "strike": 210,
+      "symbol": "NVDA"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 35,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 61,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 29,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 436,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 283,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 47,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 27,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 30,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 46,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 24,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 19,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 19,
+          "put_events": 20,
+          "put_status": "succeeded",
+          "strike": 310
+        }
+      ],
+      "complete_event_counts": {
+        "CALL": 19,
+        "PUT": 19
+      },
+      "event_close": 308.28,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "stage": "selected",
+      "status": "succeeded",
+      "strike": 310,
+      "symbol": "JPM"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 88,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 224,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 103,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 223,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 239,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 25,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 36,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 69,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 29,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 133,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 19,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 20,
+          "put_events": 20,
+          "put_status": "succeeded",
+          "strike": 150
+        }
+      ],
+      "complete_event_counts": {
+        "CALL": 19,
+        "PUT": 20
+      },
+      "event_close": 148.91,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "stage": "selected",
+      "status": "succeeded",
+      "strike": 150,
+      "symbol": "XOM"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 34,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 27,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 11,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 2,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 15,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 27,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 19,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 34,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 14,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 49,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 20,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 18,
+          "put_events": 19,
+          "put_status": "succeeded",
+          "strike": 880
+        }
+      ],
+      "complete_event_counts": {
+        "CALL": 20,
+        "PUT": 18
+      },
+      "event_close": 883.96,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 19
+      },
+      "stage": "selected",
+      "status": "succeeded",
+      "strike": 880,
+      "symbol": "LLY"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 78,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 116,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 153,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 414,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "CALL",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 34,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    },
+    {
+      "date": "2026-04-24",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 62,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    },
+    {
+      "date": "2026-04-27",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 48,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    },
+    {
+      "date": "2026-05-01",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 59,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    },
+    {
+      "date": "2026-05-08",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 390,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    },
+    {
+      "date": "2026-05-14",
+      "right": "PUT",
+      "row_counts": {
+        "active_option_ohlc_rows_transient": 20,
+        "option_bar": 1
+      },
+      "rows": 1,
+      "stage": "option_bar",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 20,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 20,
+          "put_events": 20,
+          "put_status": "succeeded",
+          "strike": 80
+        }
+      ],
+      "complete_event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "event_close": 79.68,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "stage": "selected",
+      "status": "succeeded",
+      "strike": 80,
+      "symbol": "RKLB"
+    }
+  ],
+  "schema": "option_direction_complete_coverage_cross_section_report_v1",
+  "source_runtime_root": "/root/projects/trading-data/storage/option_direction_complete_coverage_cross_section_20260515",
+  "status": "diagnostic_complete_coverage_cross_section_not_promotion_evidence",
+  "symbols": [
+    {
+      "attempts": [
+        {
+          "call_complete_events": 19,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 19,
+          "put_events": 20,
+          "put_status": "succeeded",
+          "strike": 270
+        }
+      ],
+      "cap_bucket": "mega_cap",
+      "complete_event_counts": {
+        "CALL": 19,
+        "PUT": 19
+      },
+      "event_close": 271.06,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "option_closes": {
+        "CALL": {
+          "2026-04-24": 8.2,
+          "2026-04-27": 6.25,
+          "2026-05-01": 12.05,
+          "2026-05-08": 23.65,
+          "2026-05-14": 28.2
+        },
+        "PUT": {
+          "2026-04-24": 6.84,
+          "2026-04-27": 8.44,
+          "2026-05-01": 1.66,
+          "2026-05-08": 0.22,
+          "2026-05-14": 0.03
+        }
+      },
+      "sector_bucket": "mega_technology_platform",
+      "selected_strike": 270,
+      "symbol": "AAPL",
+      "underlying_labels": {
+        "underlying_abs_fwd_10d": 0.0821220394008706,
+        "underlying_abs_fwd_14d": 0.10016232568435024,
+        "underlying_abs_fwd_1d": 0.01272780934110529,
+        "underlying_abs_fwd_5d": 0.03349811849774942,
+        "underlying_event_close": 271.06,
+        "underlying_fwd_10d": 0.0821220394008706,
+        "underlying_fwd_14d": 0.10016232568435024,
+        "underlying_fwd_1d": -0.01272780934110529,
+        "underlying_fwd_5d": 0.03349811849774942,
+        "underlying_mae_10d": -0.022098428392237968,
+        "underlying_mae_14d": -0.022098428392237968,
+        "underlying_mae_1d": -0.022098428392237968,
+        "underlying_mae_5d": -0.022098428392237968,
+        "underlying_mfe_10d": 0.08743451634324506,
+        "underlying_mfe_14d": 0.11016011215229105,
+        "underlying_mfe_1d": -0.009960894266951903,
+        "underlying_mfe_5d": 0.05961779679775714,
+        "underlying_path_range_10d": 0.1095329447354829,
+        "underlying_path_range_14d": 0.13225854054452896,
+        "underlying_path_range_1d": 0.01213753412528599,
+        "underlying_path_range_5d": 0.08171622518999495
+      }
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 19,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 19,
+          "put_events": 20,
+          "put_status": "succeeded",
+          "strike": 210
+        }
+      ],
+      "cap_bucket": "mega_cap",
+      "complete_event_counts": {
+        "CALL": 19,
+        "PUT": 19
+      },
+      "event_close": 208.27,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "option_closes": {
+        "CALL": {
+          "2026-04-24": 6.77,
+          "2026-04-27": 11.86,
+          "2026-05-01": 1.63,
+          "2026-05-08": 7.55,
+          "2026-05-14": 25.9
+        },
+        "PUT": {
+          "2026-04-24": 8.0,
+          "2026-04-27": 4.85,
+          "2026-05-01": 12.65,
+          "2026-05-08": 2.26,
+          "2026-05-14": 0.04
+        }
+      },
+      "sector_bucket": "mega_technology_semiconductor",
+      "selected_strike": 210,
+      "symbol": "NVDA",
+      "underlying_labels": {
+        "underlying_abs_fwd_10d": 0.033274115331060505,
+        "underlying_abs_fwd_14d": 0.13189609641330957,
+        "underlying_abs_fwd_1d": 0.04004417342872224,
+        "underlying_abs_fwd_5d": 0.04715033370144539,
+        "underlying_event_close": 208.27,
+        "underlying_fwd_10d": 0.033274115331060505,
+        "underlying_fwd_14d": 0.13189609641330957,
+        "underlying_fwd_1d": 0.04004417342872224,
+        "underlying_fwd_5d": -0.04715033370144539,
+        "underlying_mae_10d": -0.06496374897968982,
+        "underlying_mae_14d": -0.06496374897968982,
+        "underlying_mae_1d": -0.004273299082921289,
+        "underlying_mae_5d": -0.05353627502760838,
+        "underlying_mfe_10d": 0.04575791040476296,
+        "underlying_mfe_14d": 0.135737264128295,
+        "underlying_mfe_1d": 0.04107648725212454,
+        "underlying_mfe_5d": 0.04107648725212454,
+        "underlying_path_range_10d": 0.11072165938445287,
+        "underlying_path_range_14d": 0.20070101310798474,
+        "underlying_path_range_1d": 0.04534978633504582,
+        "underlying_path_range_5d": 0.09461276227973296
+      }
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 19,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 19,
+          "put_events": 20,
+          "put_status": "succeeded",
+          "strike": 310
+        }
+      ],
+      "cap_bucket": "mega_cap",
+      "complete_event_counts": {
+        "CALL": 19,
+        "PUT": 19
+      },
+      "event_close": 308.28,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "option_closes": {
+        "CALL": {
+          "2026-04-24": 6.5,
+          "2026-04-27": 8.2,
+          "2026-05-01": 8.41,
+          "2026-05-08": 1.33,
+          "2026-05-14": 0.06
+        },
+        "PUT": {
+          "2026-04-24": 7.5,
+          "2026-04-27": 5.62,
+          "2026-05-01": 4.33,
+          "2026-05-08": 9.22,
+          "2026-05-14": 10.07
+        }
+      },
+      "sector_bucket": "large_financial_bank",
+      "selected_strike": 310,
+      "symbol": "JPM",
+      "underlying_labels": {
+        "underlying_abs_fwd_10d": 0.020046710782405497,
+        "underlying_abs_fwd_14d": 0.02715064227325792,
+        "underlying_abs_fwd_1d": 0.01086674451797065,
+        "underlying_abs_fwd_5d": 0.013591540158297777,
+        "underlying_event_close": 308.28,
+        "underlying_fwd_10d": -0.020046710782405497,
+        "underlying_fwd_14d": -0.02715064227325792,
+        "underlying_fwd_1d": 0.01086674451797065,
+        "underlying_fwd_5d": 0.013591540158297777,
+        "underlying_mae_10d": -0.02523679771636167,
+        "underlying_mae_14d": -0.04129362916828849,
+        "underlying_mae_1d": -0.004541326067211582,
+        "underlying_mae_5d": -0.0055469054106656035,
+        "underlying_mfe_10d": 0.026015310756455357,
+        "underlying_mfe_14d": 0.026015310756455357,
+        "underlying_mfe_1d": 0.013948358635007096,
+        "underlying_mfe_5d": 0.025301673803036273,
+        "underlying_path_range_10d": 0.051252108472816964,
+        "underlying_path_range_14d": 0.06730893992474375,
+        "underlying_path_range_1d": 0.018489684702218727,
+        "underlying_path_range_5d": 0.030848579213701804
+      }
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 19,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 20,
+          "put_events": 20,
+          "put_status": "succeeded",
+          "strike": 150
+        }
+      ],
+      "cap_bucket": "large_cap",
+      "complete_event_counts": {
+        "CALL": 19,
+        "PUT": 20
+      },
+      "event_close": 148.91,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "option_closes": {
+        "CALL": {
+          "2026-04-24": 4.15,
+          "2026-04-27": 3.65,
+          "2026-05-01": 5.4,
+          "2026-05-08": 0.58,
+          "2026-05-14": 2.71
+        },
+        "PUT": {
+          "2026-04-24": 6.2,
+          "2026-04-27": 5.72,
+          "2026-05-01": 2.68,
+          "2026-05-08": 7.1,
+          "2026-05-14": 0.44
+        }
+      },
+      "sector_bucket": "large_energy_integrated",
+      "selected_strike": 150,
+      "symbol": "XOM",
+      "underlying_labels": {
+        "underlying_abs_fwd_10d": 0.029145121214156244,
+        "underlying_abs_fwd_14d": 0.02598885232690895,
+        "underlying_abs_fwd_1d": 0.004835135316634154,
+        "underlying_abs_fwd_5d": 0.025787388355382523,
+        "underlying_event_close": 148.91,
+        "underlying_fwd_10d": -0.029145121214156244,
+        "underlying_fwd_14d": 0.02598885232690895,
+        "underlying_fwd_1d": -0.004835135316634154,
+        "underlying_fwd_5d": 0.025787388355382523,
+        "underlying_mae_10d": -0.03350950238399042,
+        "underlying_mae_14d": -0.03350950238399042,
+        "underlying_mae_1d": -0.006311866227922902,
+        "underlying_mae_5d": -0.006311866227922902,
+        "underlying_mfe_10d": 0.045530857564972216,
+        "underlying_mfe_14d": 0.045530857564972216,
+        "underlying_mfe_1d": 0.015244107178832955,
+        "underlying_mfe_5d": 0.045530857564972216,
+        "underlying_path_range_10d": 0.07904035994896251,
+        "underlying_path_range_14d": 0.07904035994896251,
+        "underlying_path_range_1d": 0.02155597340675579,
+        "underlying_path_range_5d": 0.05184272379289501
+      }
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 20,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 18,
+          "put_events": 19,
+          "put_status": "succeeded",
+          "strike": 880
+        }
+      ],
+      "cap_bucket": "mega_cap",
+      "complete_event_counts": {
+        "CALL": 20,
+        "PUT": 18
+      },
+      "event_close": 883.96,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 19
+      },
+      "option_closes": {
+        "CALL": {
+          "2026-04-24": 44.52,
+          "2026-04-27": 35.03,
+          "2026-05-01": 85.72,
+          "2026-05-08": 72.0,
+          "2026-05-14": 128.8
+        },
+        "PUT": {
+          "2026-04-24": 39.49,
+          "2026-04-27": 44.9,
+          "2026-05-01": 3.35,
+          "2026-05-08": 0.94,
+          "2026-05-14": 0.03
+        }
+      },
+      "sector_bucket": "large_healthcare_pharma",
+      "selected_strike": 880,
+      "symbol": "LLY",
+      "underlying_labels": {
+        "underlying_abs_fwd_10d": 0.0729557898547446,
+        "underlying_abs_fwd_14d": 0.13885243676184444,
+        "underlying_abs_fwd_1d": 0.017749671930856636,
+        "underlying_abs_fwd_5d": 0.08978913072989725,
+        "underlying_event_close": 883.96,
+        "underlying_fwd_10d": 0.0729557898547446,
+        "underlying_fwd_14d": 0.13885243676184444,
+        "underlying_fwd_1d": -0.017749671930856636,
+        "underlying_fwd_5d": 0.08978913072989725,
+        "underlying_mae_10d": -0.037841078781845394,
+        "underlying_mae_14d": -0.037841078781845394,
+        "underlying_mae_1d": -0.018009864699760292,
+        "underlying_mae_5d": -0.037841078781845394,
+        "underlying_mfe_10d": 0.1272964840038011,
+        "underlying_mfe_14d": 0.15708968731616824,
+        "underlying_mfe_1d": 0.008193696547355023,
+        "underlying_mfe_5d": 0.11368161455269465,
+        "underlying_path_range_10d": 0.16513756278564642,
+        "underlying_path_range_14d": 0.19493076609801352,
+        "underlying_path_range_1d": 0.026203561247115294,
+        "underlying_path_range_5d": 0.15152269333454008
+      }
+    },
+    {
+      "attempts": [
+        {
+          "call_complete_events": 20,
+          "call_events": 20,
+          "call_status": "succeeded",
+          "put_complete_events": 20,
+          "put_events": 20,
+          "put_status": "succeeded",
+          "strike": 80
+        }
+      ],
+      "cap_bucket": "mid_cap_growth",
+      "complete_event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "event_close": 79.68,
+      "event_counts": {
+        "CALL": 20,
+        "PUT": 20
+      },
+      "option_closes": {
+        "CALL": {
+          "2026-04-24": 7.15,
+          "2026-04-27": 8.3,
+          "2026-05-01": 5.15,
+          "2026-05-08": 24.99,
+          "2026-05-14": 52.59
+        },
+        "PUT": {
+          "2026-04-24": 7.35,
+          "2026-04-27": 5.88,
+          "2026-05-01": 6.3,
+          "2026-05-08": 0.18,
+          "2026-05-14": 0.01
+        }
+      },
+      "sector_bucket": "small_mid_industrial_space",
+      "selected_strike": 80,
+      "symbol": "RKLB",
+      "underlying_labels": {
+        "underlying_abs_fwd_10d": 0.3236696787148594,
+        "underlying_abs_fwd_14d": 0.6635291164658634,
+        "underlying_abs_fwd_1d": 0.03275602409638556,
+        "underlying_abs_fwd_5d": 0.010918674698795261,
+        "underlying_event_close": 79.68,
+        "underlying_fwd_10d": 0.3236696787148594,
+        "underlying_fwd_14d": 0.6635291164658634,
+        "underlying_fwd_1d": 0.03275602409638556,
+        "underlying_fwd_5d": -0.010918674698795261,
+        "underlying_mae_10d": -0.07141064257028129,
+        "underlying_mae_14d": -0.07141064257028129,
+        "underlying_mae_1d": -0.03296310240963862,
+        "underlying_mae_5d": -0.07141064257028129,
+        "underlying_mfe_10d": 0.3255522088353413,
+        "underlying_mfe_14d": 0.671434487951807,
+        "underlying_mfe_1d": 0.03514056224899598,
+        "underlying_mfe_5d": 0.05158132530120474,
+        "underlying_path_range_10d": 0.3969628514056226,
+        "underlying_path_range_14d": 0.7428451305220884,
+        "underlying_path_range_1d": 0.06810366465863459,
+        "underlying_path_range_5d": 0.12299196787148607
+      }
+    }
+  ],
+  "term_structure_expiration": "2026-05-22"
+}
