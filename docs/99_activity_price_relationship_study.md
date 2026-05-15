@@ -258,6 +258,8 @@ skew_forward_change
 
 Important caveat: a call-buying surge is only directionally bullish when the system has enough side/aggressor/opening evidence. Otherwise it is an option-activity path-expansion signal with `unknown_direction_activity` or `review_required` direction.
 
+Pilot evidence note: `/root/projects/trading-model/storage/option_direction_pilot_20260515_aapl/` contains a diagnostic AAPL one-date pilot using ThetaData option event timeline rows, Alpaca underlying daily bars, and ThetaData option OHLC snapshots. It validates the label shape but is not promotion evidence: one symbol/date/strike, duplicated same-day forward labels, no OI/skew/sweep/block context, and no calibrated direction confidence. The pilot also clarifies label policy: underlying directional returns are sign-adjusted by bullish/bearish hypothesis, while ask-side call/put option-contract payoff is measured as long-contract forward return and must not multiply put returns by the bearish sign.
+
 Directional proof metrics:
 
 ```text
