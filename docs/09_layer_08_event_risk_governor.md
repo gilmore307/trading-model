@@ -117,12 +117,22 @@ Artifacts must remain point-in-time versioned. A later article revision, later S
 
 Layer 8 abnormal-activity evidence must not double-count model-owned bars, volume, spread, liquidity, volatility, gap, VWAP, trend, or target-state features that already enter Layer 1-3/Layer 7 inputs.
 
+Accepted abnormal-activity evidence categories:
+
+```text
+price_action_pattern
+residual_market_structure_disturbance
+microstructure_liquidity_disruption
+option_derivatives_abnormality
+```
+
 Accepted uses:
 
-- trigger/provenance evidence: a detector may explain why an event evidence row exists and point back to the bars/liquidity refs used to detect it;
-- residual event evidence: an anomaly remains material after conditioning on upstream market/sector/target state and is represented as an unexplained board/tape disturbance;
-- discrete price-action pattern evidence: false breakout, liquidity sweep, bull/bear trap, failed breakdown, or similar event-shaped behavior when represented as a compact token with refs rather than duplicated raw feature columns;
-- cross-source abnormal evidence not already consumed by the base stack, such as reviewed option-flow/IV/OI abnormalities or source-specific microstructure evidence.
+- `price_action_pattern`: false breakout, failed breakdown, liquidity sweep high/low, bull trap, bear trap, or similar event-shaped behavior represented as a compact token with refs rather than duplicated raw feature columns;
+- `residual_market_structure_disturbance`: an anomaly remains material after conditioning on upstream market/sector/peer/target state and is represented as unexplained board/tape disturbance;
+- `microstructure_liquidity_disruption`: spread widening, depth disappearance, one-sided prints, halt/pause/anomalous quoting, or liquidity-quality degradation outside broad-market liquidity context;
+- `option_derivatives_abnormality`: reviewed IV/skew/term-structure shock, unusual option volume, call/put imbalance, sweep/block evidence, OI change, or option liquidity disruption not already consumed by the base option-expression path;
+- trigger/provenance evidence: a detector may explain why an event evidence row exists and point back to the bars/liquidity/option refs used to detect it.
 
 Forbidden uses:
 
