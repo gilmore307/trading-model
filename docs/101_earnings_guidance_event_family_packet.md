@@ -310,8 +310,8 @@ Diagnostic predecessors:
 /root/projects/trading-model/storage/option_event_risk_amplifier_study_20260515/
 ```
 
-The current packet itself is documentation-only until canonical earnings/report event rows are materialized and interpreted.
+`trading-data` now supports materializing canonical overview rows for the first shell/result boundary: `calendar_discovery` `release_calendar.csv` rows from `nasdaq_earnings_calendar` become `earnings_guidance` scheduled-shell rows, and SEC 10-Q/10-K or earnings-related 8-K rows become `earnings_guidance` result-artifact rows. These are event-overview rows only; full interpretation and verified controls still remain future scouting work.
 
 ## Current conclusion
 
-`earnings_guidance_event_family` is the first event family worth scouting because its raw-news diagnostic slice had a positive direction-neutral path signal. It is not yet promotion evidence. The next implementation task should materialize canonical earnings event shells/results and build verified non-event/non-earnings controls before rerunning the option-abnormality amplifier test.
+`earnings_guidance_event_family` is the first event family worth scouting because its raw-news diagnostic slice had a positive direction-neutral path signal. It is not yet promotion evidence. The next implementation task should build verified non-event/non-earnings controls and then rerun the option-abnormality amplifier test using the canonical shell/result rows instead of headline keywords.
