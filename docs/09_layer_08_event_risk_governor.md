@@ -143,6 +143,66 @@ Forbidden uses:
 
 Training implication: EventRiskGovernor must prove incremental value over upstream context states. Abnormal-activity-only baselines are diagnostic baselines, not proof that duplicated bars have new event value.
 
+### Event-activity bridge contract
+
+Some raw news and narratives are difficult to standardize immediately. Layer 8 may convert them into an auditable `event_activity_bridge` when observable activity gives a cleaner point-in-time structure than semantic news classification alone.
+
+The bridge connects event evidence to price, flow, liquidity, option, and prediction-market behavior. It does not claim hidden knowledge; it records lead/lag, residual activity, and cross-market confirmation or divergence.
+
+Accepted relation types:
+
+```text
+pre_event_precursor
+co_event_reaction
+post_event_absorption
+event_activity_divergence
+unresolved_latent_hazard
+```
+
+Core bridge fields:
+
+```text
+linked_event_ref
+activity_evidence_refs
+activity_window
+event_window
+lead_lag_seconds
+residual_activity_score
+cross_market_confirmation_score
+option_confirmation_score
+prediction_market_confirmation_score
+explanation_status
+```
+
+Accepted `explanation_status` values:
+
+```text
+explained_by_known_event
+partially_explained
+unexplained
+later_explained
+review_required
+```
+
+Rules:
+
+- `pre_event_precursor`: abnormal activity appears before the linked event is publicly visible. This is latent-event hazard evidence, not proof that the future event was known.
+- `co_event_reaction`: abnormal activity appears at or near event visibility and measures immediate interpretation/attention.
+- `post_event_absorption`: abnormal activity after visibility reflects absorption, disagreement, delayed repricing, liquidity stress, or second-order interpretation.
+- `event_activity_divergence`: event and activity disagree, e.g. big news/no reaction, small news/large reaction, asset move/no news, or prediction-market odds move/no securities move.
+- `unresolved_latent_hazard`: activity remains unexplained point-in-time; if a later canonical event explains it, add a new `later_explained` bridge record rather than rewriting history.
+
+Prediction-market odds can be an activity leg. For Polymarket-style use, the bridge should preserve odds movement as `prediction_market_confirmation_score` or divergence evidence, not as a securities-only signal.
+
+Golden bridge cases:
+
+| Case | Relation type | Standardized bridge meaning |
+|---|---|---|
+| Option IV/volume rises before earnings/news | `pre_event_precursor` | Latent-event hazard increased before public result; do not claim the result was known. |
+| News appears and stock/option/odds move immediately | `co_event_reaction` | Event was visible and market behavior confirms attention/repricing. |
+| News appears but price/odds do not react | `event_activity_divergence` | Either priced-in, low relevance, low credibility, or market disagreement; requires interpretation/review. |
+| Asset/options/odds move first, canonical news appears later | `unresolved_latent_hazard` -> `later_explained` | Earlier activity may become retrospectively linked for training labels, but inference-time record remains point-in-time. |
+
 ### Input C - upstream context states
 
 Layer 8 consumes slim, reviewed state/context outputs:

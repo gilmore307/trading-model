@@ -795,3 +795,15 @@ Layer 8 abnormal-activity evidence is not a second copy of bar-derived state. Ba
 EventRiskGovernor may consume abnormal activity only as trigger/provenance evidence, residual unexplained board/tape disturbance after upstream context conditioning, discrete price-action pattern evidence, or cross-source abnormal evidence not otherwise consumed by the base path. It must not treat every high return/volume/spread z-score as an independent event factor when the same information is already available in upstream context states.
 
 Promotion evidence must prove incremental value over upstream context-state baselines; abnormal-activity-only baselines are diagnostic and cannot justify duplicated bars as event value.
+
+## D042 - Event-activity bridge connects hard news to standardized activity evidence
+
+Accepted: 2026-05-15
+
+Layer 8 may use `event_activity_bridge` to connect raw event evidence to price, liquidity, option, and prediction-market activity. This is the preferred path when a news artifact is difficult to standardize semantically but observable activity provides a stable point-in-time relationship.
+
+Accepted relation types are `pre_event_precursor`, `co_event_reaction`, `post_event_absorption`, `event_activity_divergence`, and `unresolved_latent_hazard`. Accepted explanation statuses are `explained_by_known_event`, `partially_explained`, `unexplained`, `later_explained`, and `review_required`.
+
+A pre-event bridge is latent-event hazard evidence, not proof of the future event. If later news explains earlier activity, training/evaluation may link them with `later_explained`, but the original inference-time bridge remains immutable and point-in-time.
+
+Prediction-market odds are an accepted future activity leg, so this contract can support Polymarket-style event-probability work without making the event layer securities-only.
