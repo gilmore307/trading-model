@@ -819,3 +819,13 @@ The proof must not be a tautology: price-derived abnormality cannot satisfy the 
 Required label families include `forward_return`, `forward_drawdown`, `forward_reversal`, `forward_volatility_expansion`, `forward_gap_or_jump`, and `path_asymmetry` across short and event-relevant horizons such as 5m, 30m, 1h, 1d, 5d, and 20d.
 
 If abnormal activity only describes the current move and does not improve forward labels after controls for market/sector/peer context, target state, ordinary bars/volume/liquidity/volatility, scheduled-event shells, time effects, and regime, it remains descriptive evidence and must not be promoted into a model layer.
+
+## D044 - Activity-price proof must be cross-sectional across size, sector, and event families
+
+Accepted: 2026-05-15
+
+The activity-price proof gate cannot be satisfied by one story stock such as RCAT. The project must run a cross-sectional study across company-size buckets, sector/theme buckets, and event families before promoting `event_activity_bridge` into a separate model layer.
+
+The study must compare all windows, abnormal windows, non-abnormal windows, event-only windows, event+abnormal windows, abnormal-without-visible-event windows, pre-event abnormal windows later explained by event, and event/activity divergence windows.
+
+Acceptance requires forward price/path relationship, incremental residual value after controls, cross-sectional non-story-stock support, out-of-sample stability, leakage controls, and reviewed failure modes. A useful result may be conditional; it does not require every sector or activity class to work.

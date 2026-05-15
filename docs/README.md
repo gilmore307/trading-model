@@ -30,3 +30,5 @@ This directory is the authoritative documentation spine for `trading-model`.
 Layer workflow and acceptance live in the numbered layer files. The active architecture revision moves event intelligence to Layer 8 after base trading guidance. Physical implementation paths may retain legacy layer numbers until dedicated code/SQL migration slices rename them. Do not add a future model layer unless an explicit architecture revision reopens the stack; post-Layer-8 execution belongs outside `trading-model`.
 
 Do not place generated data, artifacts, notebooks, logs, credentials, or implementation outputs in this directory.
+
+- [99_activity_price_relationship_study.md](99_activity_price_relationship_study.md) — Cross-sectional proof study for abnormal activity versus future price/path outcomes before any EventActivityBridgeModel promotion.
