@@ -136,26 +136,38 @@ Daily-only runs may use `1d`, `5d`, and `20d` first. Intraday runs should be add
 
 ## Forward Labels
 
-Required forward label families:
+The first proof question is direction-neutral tradability: whether abnormal activity is followed by larger absolute price/path displacement. Downside paths are tradable too, so average signed return is only a secondary diagnostic.
+
+Required direction-neutral label families:
 
 ```text
-forward_return
-forward_drawdown
-forward_reversal
+absolute_forward_return
+forward_path_range
+max_favorable_excursion
+max_adverse_excursion
+tradeable_excursion
 forward_volatility_expansion
-forward_gap_or_jump
+forward_gap_or_jump_abs
 path_asymmetry
 ```
 
-Recommended additional diagnostics:
+Secondary directional labels:
 
 ```text
-max_favorable_excursion
-max_adverse_excursion
+signed_forward_return
+forward_drawdown
+forward_reversal
 close_to_close_continuation
 open_gap_followthrough
 intraday_absorption_score
 ```
+
+Rules:
+
+- Primary activity-price proof should compare absolute forward moves and tradeable excursions between abnormal and non-abnormal windows.
+- Directional alpha comes later. A strong downside relationship is still useful if direction can be classified or hedged.
+- Signed average forward return must not be used as the main acceptance metric because positive and negative tradable moves can cancel out.
+- Direction labels remain important for later model design, but they are not the first gate.
 
 ## Controls
 
@@ -184,7 +196,7 @@ For each symbol/bucket/event family, compare:
 7. pre-event abnormal windows later explained by event;
 8. event/activity divergence windows.
 
-The key acceptance question is not whether abnormal windows are more volatile. It is whether specific activity classes improve forward path labels after controls.
+The key acceptance question is not whether abnormal windows have a higher signed average return. It is whether specific activity classes expand absolute forward paths or tradeable excursions after controls, and whether later stages can classify direction, reversal, continuation, or risk.
 
 ## Acceptance Standard
 

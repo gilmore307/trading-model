@@ -829,3 +829,13 @@ The activity-price proof gate cannot be satisfied by one story stock such as RCA
 The study must compare all windows, abnormal windows, non-abnormal windows, event-only windows, event+abnormal windows, abnormal-without-visible-event windows, pre-event abnormal windows later explained by event, and event/activity divergence windows.
 
 Acceptance requires forward price/path relationship, incremental residual value after controls, cross-sectional non-story-stock support, out-of-sample stability, leakage controls, and reviewed failure modes. A useful result may be conditional; it does not require every sector or activity class to work.
+
+## D045 - Activity-price proof is direction-neutral first
+
+Accepted: 2026-05-15
+
+The first activity-price proof metric must be direction-neutral. Since downside paths are tradable, abnormal activity should first be evaluated against absolute forward returns, forward path range, max favorable/adverse excursion, tradeable excursion, volatility expansion, absolute gap/jump, and path asymmetry.
+
+Signed average forward return is a secondary diagnostic only. It must not be the primary acceptance metric because positive and negative tradable moves can cancel out and incorrectly make useful abnormal activity look weak.
+
+Directional classification, continuation/reversal inference, and trade expression belong to later model stages after the system proves that abnormal activity expands future price/path opportunity or risk.
