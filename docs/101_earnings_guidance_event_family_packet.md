@@ -470,3 +470,20 @@ Scope:
 - minimum complete option events per non-earnings symbol/date: 14.
 
 Conclusion: the current option-event standard is saturated for this control design. It emits complete option-abnormality events not only around earnings shells but across all reviewed non-earnings symbol/date windows in the sample. The next route is not more searching inside this sample; it is either a stricter abnormality standard or a different broader control universe before retesting earnings+option amplifier value.
+
+## Official guidance readiness scout
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_readiness_scout_q4_2025_20260515/`
+
+A no-provider local scout consumed the official SEC result-artifact interpretation output and audited whether the current evidence is sufficient for signed earnings/guidance claims.
+
+Scope:
+
+- events: 12;
+- official result artifacts present: 12;
+- partial result-context rows: 11;
+- official company guidance interpretations: 0;
+- consensus or accepted expectation baselines: 0;
+- signed-direction-ready rows: 0.
+
+Conclusion: the event family still has partial point-in-time result context only. Official SEC result artifacts are useful for event-risk context, but guidance surprise, beat/miss, and signed-direction claims remain blocked until official company release/transcript guidance interpretation and expectation baselines are added.

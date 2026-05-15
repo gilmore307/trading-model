@@ -468,3 +468,11 @@ Artifact: `/root/projects/trading-model/storage/option_abnormality_non_earnings_
 A no-provider diagnostic reused the reviewed complete-evidence option matrix. Of 36 symbol/date windows, 34 were not canonical earnings-shell dates. All 34 non-earnings windows still emitted complete option-abnormality events under the current standard; the minimum complete event count per non-earnings symbol/date was 14.
 
 This is now the controlling blocker for earnings+option amplifier testing. The current option-event standard is too saturated to produce clean no-abnormality controls in this sample. Before any amplifier retest, revise the abnormality definition or move to a broader control universe where no-abnormality coverage actually exists.
+
+## Itemized test 7 — official guidance readiness
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_readiness_scout_q4_2025_20260515/`
+
+A no-provider readiness audit consumed the official result-artifact scout output. All 12 events had official SEC result artifacts, 11 had partial point-in-time result context, but none had official guidance interpretation or expectation baselines.
+
+This blocks signed earnings/guidance claims. The current evidence can support direction-neutral event-risk context; it cannot support beat/miss, guidance raise/cut, or directional alpha until official company guidance artifacts and expectation baselines are present.

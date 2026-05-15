@@ -159,3 +159,11 @@ Artifact: `/root/projects/trading-model/storage/option_abnormality_non_earnings_
 The reviewed option matrix already contained 34 same-symbol non-earnings symbol/date windows. Every one emitted complete option-abnormality events under the current standard, with at least 14 complete events per non-earnings symbol/date.
 
 Judgment update: this explains why clean earnings-without-option-abnormality controls could not be found. The current option-event standard is saturated in this sample and cannot support a no-abnormality control design. Earnings/guidance remains useful only as direction-neutral event-risk context; option abnormality remains provenance/risk evidence until the abnormality standard is revised and revalidated.
+
+## Seventh itemized test — official guidance readiness
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_readiness_scout_q4_2025_20260515/`
+
+The readiness scout found official SEC result artifacts for all 12 Q4 2025 earnings events and partial result context for 11, but found zero official guidance interpretations, zero expectation baselines, and zero signed-direction-ready rows.
+
+Judgment update: earnings/guidance remains useful as direction-neutral event-risk context only. The next acceptable evidence route is official company release/exhibit/transcript guidance interpretation plus consensus or accepted expectation baselines. Do not infer signed alpha from SEC result artifacts alone.
