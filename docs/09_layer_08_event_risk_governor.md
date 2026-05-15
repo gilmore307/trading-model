@@ -203,6 +203,63 @@ Golden bridge cases:
 | News appears but price/odds do not react | `event_activity_divergence` | Either priced-in, low relevance, low credibility, or market disagreement; requires interpretation/review. |
 | Asset/options/odds move first, canonical news appears later | `unresolved_latent_hazard` -> `later_explained` | Earlier activity may become retrospectively linked for training labels, but inference-time record remains point-in-time. |
 
+### Activity-price relationship proof gate
+
+Before `event_activity_bridge` can be promoted into a separate model layer or used as risk-intervention evidence, the project must first prove that abnormal activity has a stable relationship to subsequent price/path outcomes.
+
+This proof is not satisfied by showing that price-derived activity is correlated with the same price window. It must be point-in-time and forward-looking.
+
+Required proof levels:
+
+```text
+contemporaneous_association
+forward_price_path_relationship
+incremental_residual_value
+cross_market_confirmation_value
+out_of_sample_stability
+```
+
+Minimum label families:
+
+```text
+forward_return
+forward_drawdown
+forward_reversal
+forward_volatility_expansion
+forward_gap_or_jump
+path_asymmetry
+```
+
+Required horizons should include short and event-relevant windows, for example:
+
+```text
+5m
+30m
+1h
+1d
+5d
+20d
+```
+
+Controls/baselines:
+
+- market, sector, and peer return context;
+- already-modeled target-state features;
+- ordinary bars/volume/liquidity/volatility features;
+- scheduled-event calendar shells;
+- time-of-day/day-of-week/month effects;
+- broad-market liquidity and volatility regime.
+
+Evidence rules:
+
+- Price-action abnormality must prove incremental forward relationship beyond the price features used to detect it.
+- Option/derivatives abnormality should be tested both alone and after controlling for underlying price/volume/liquidity state.
+- Microstructure abnormality must distinguish liquidity-quality deterioration from ordinary high-volume trading.
+- Residual market-structure disturbance must condition on market, sector, peer, and target-state context before claiming residual value.
+- Prediction-market activity, once added, must be tested both as confirmation and as divergence evidence against securities activity.
+
+Promotion rule: if abnormal activity only explains the current move but does not improve forward price/path labels out of sample, it remains descriptive evidence and must not become an `EventActivityBridgeModel` layer input for risk intervention.
+
 ### Input C - upstream context states
 
 Layer 8 consumes slim, reviewed state/context outputs:

@@ -807,3 +807,15 @@ Accepted relation types are `pre_event_precursor`, `co_event_reaction`, `post_ev
 A pre-event bridge is latent-event hazard evidence, not proof of the future event. If later news explains earlier activity, training/evaluation may link them with `later_explained`, but the original inference-time bridge remains immutable and point-in-time.
 
 Prediction-market odds are an accepted future activity leg, so this contract can support Polymarket-style event-probability work without making the event layer securities-only.
+
+## D043 - Abnormal activity must prove forward price/path relationship before model-layer promotion
+
+Accepted: 2026-05-15
+
+Before `event_activity_bridge` becomes a separate model layer or risk-intervention input, abnormal activity must prove a stable point-in-time relationship to subsequent price/path outcomes.
+
+The proof must not be a tautology: price-derived abnormality cannot satisfy the gate by correlating with the same price window used to detect it. Required proof levels are `contemporaneous_association`, `forward_price_path_relationship`, `incremental_residual_value`, `cross_market_confirmation_value`, and `out_of_sample_stability`.
+
+Required label families include `forward_return`, `forward_drawdown`, `forward_reversal`, `forward_volatility_expansion`, `forward_gap_or_jump`, and `path_asymmetry` across short and event-relevant horizons such as 5m, 30m, 1h, 1d, 5d, and 20d.
+
+If abnormal activity only describes the current move and does not improve forward labels after controls for market/sector/peer context, target state, ordinary bars/volume/liquidity/volatility, scheduled-event shells, time effects, and regime, it remains descriptive evidence and must not be promoted into a model layer.
