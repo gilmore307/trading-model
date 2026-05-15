@@ -111,6 +111,8 @@ The first promising family slice is `earnings_or_guidance_news` from the event-r
 
 This is not enough for promotion. It is enough to justify `scouting` status for a dedicated earnings/guidance event-family packet.
 
+The dedicated packet is `docs/101_earnings_guidance_event_family_packet.md`.
+
 Required next evidence for this family:
 
 - canonical earnings calendar / report source precedence rather than headline-only detection;

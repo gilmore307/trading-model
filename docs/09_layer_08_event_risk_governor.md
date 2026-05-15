@@ -380,7 +380,7 @@ Current accepted status from the option/news diagnostics:
 - standalone option abnormality: `deferred_low_signal`;
 - threshold-only strict option abnormality refinement: `deferred_low_signal`;
 - raw option abnormality + raw news proximity: `deferred_low_signal`;
-- earnings/guidance event family: `scouting` only, not promotion evidence.
+- earnings/guidance event family: `scouting` only, not promotion evidence; packet details live in `docs/101_earnings_guidance_event_family_packet.md`.
 
 ## Event lifecycle contract
 

@@ -33,3 +33,4 @@ Do not place generated data, artifacts, notebooks, logs, credentials, or impleme
 
 - [99_activity_price_relationship_study.md](99_activity_price_relationship_study.md) — Cross-sectional proof study for abnormal activity versus future price/path outcomes before any EventActivityBridgeModel promotion.
 - [100_event_family_scouting.md](100_event_family_scouting.md) — Layer 8 event-family scouting contract, status values, early-stop rules, and current option/news amplifier findings.
+- [101_earnings_guidance_event_family_packet.md](101_earnings_guidance_event_family_packet.md) — `earnings_guidance_event_family` scouting packet, canonical source precedence, lifecycle rules, controls, labels, and early-stop gates.
