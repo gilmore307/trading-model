@@ -1,0 +1,123 @@
+{
+  "artifact_type": "option_abnormality_coverage_probe_v1",
+  "conclusion": "Coverage fields emit correctly, but this live trade_quote-only sample is abnormality_coverage_complete=false for every event because OI/opening-vs-closing, IV change, skew direction, term structure direction, and underlying confirmation/divergence were not supplied by the task input chain.",
+  "coverage_status_counts": {
+    "partial": 10
+  },
+  "created_at": "2026-05-15T06:34:00-04:00",
+  "current_standard": {
+    "opening_activity": {
+      "min_window_volume": 100
+    },
+    "sweep_or_block_activity": {
+      "min_block_notional": 5000,
+      "min_block_trade_size": 75
+    },
+    "trade_at_ask": {
+      "max_price_vs_ask": 0.01,
+      "min_ask_touch_ratio": 0.95
+    },
+    "trade_at_bid": {
+      "max_price_vs_bid": 0.01,
+      "min_bid_touch_ratio": 0.95
+    }
+  },
+  "direction_hypothesis_counts": {
+    "bearish_activity": 3,
+    "bullish_activity": 5,
+    "bullish_activity_or_put_selling": 2
+  },
+  "field_summary": {
+    "aggressor_or_quote_side": {
+      "missing_count": 0,
+      "present_count": 10,
+      "present_rate": 1.0
+    },
+    "ask_bid_touch_context": {
+      "missing_count": 0,
+      "present_count": 10,
+      "present_rate": 1.0
+    },
+    "call_put_side": {
+      "missing_count": 0,
+      "present_count": 10,
+      "present_rate": 1.0
+    },
+    "iv_level_and_change": {
+      "missing_count": 10,
+      "present_count": 0,
+      "present_rate": 0.0
+    },
+    "open_interest_or_oi_change": {
+      "missing_count": 10,
+      "present_count": 0,
+      "present_rate": 0.0
+    },
+    "opening_or_closing_context": {
+      "missing_count": 10,
+      "present_count": 0,
+      "present_rate": 0.0
+    },
+    "skew_direction": {
+      "missing_count": 10,
+      "present_count": 0,
+      "present_rate": 0.0
+    },
+    "sweep_or_block_context": {
+      "missing_count": 0,
+      "present_count": 10,
+      "present_rate": 1.0
+    },
+    "term_structure_direction": {
+      "missing_count": 10,
+      "present_count": 0,
+      "present_rate": 0.0
+    },
+    "underlying_confirmation_or_divergence": {
+      "missing_count": 10,
+      "present_count": 0,
+      "present_rate": 0.0
+    }
+  },
+  "next_gap_to_close": [
+    "wire point-in-time OI snapshots/change into task input",
+    "wire IV level/change from option snapshot or historical IV source",
+    "derive skew direction across strikes/rights",
+    "derive term-structure direction across expirations",
+    "attach underlying confirmation/divergence window",
+    "review sweep condition code semantics instead of block-size-only fallback"
+  ],
+  "sample": {
+    "event_count": 10,
+    "event_date": "2026-04-24",
+    "expiration": "2026-05-15",
+    "max_events_per_right": 5,
+    "provider_trade_quote_rows": {
+      "CALL": 623,
+      "PUT": 520
+    },
+    "rights": [
+      "CALL",
+      "PUT"
+    ],
+    "strike": 270,
+    "timeframe": "5Min",
+    "underlying": "AAPL"
+  },
+  "side_counts": {
+    "CALL:ask_side": 5,
+    "PUT:ask_side": 3,
+    "PUT:bid_side": 2
+  },
+  "source": "trading-data 11_feed_thetadata_option_event_timeline live ThetaData trade_quote bounded sample",
+  "source_artifacts": {
+    "CALL_saved_dir": "/root/projects/trading-data/storage/option_abnormality_coverage_probe_20260515/call/runs/option_abnormality_coverage_probe_aapl_call_20260515/saved",
+    "PUT_saved_dir": "/root/projects/trading-data/storage/option_abnormality_coverage_probe_20260515/put/runs/option_abnormality_coverage_probe_aapl_put_20260515/saved",
+    "trading_data_output_root": "/root/projects/trading-data/storage/option_abnormality_coverage_probe_20260515"
+  },
+  "trigger_counts": {
+    "opening_activity": 2,
+    "trade_at_ask": 8,
+    "trade_at_bid": 2
+  }
+}
