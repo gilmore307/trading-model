@@ -168,6 +168,7 @@ Do not replace this with `event_time <= decision_time`. Scheduled future events 
 Recommended event clocks:
 
 ```text
+event_awareness_time
 event_scheduled_time
 event_effective_time
 event_actual_time
@@ -175,9 +176,35 @@ source_published_time
 source_updated_time
 ingested_time
 available_time
+interpretation_time
+resolution_time
 decision_time
 tradeable_time
 ```
+
+Clock meanings:
+
+- `event_awareness_time` is when the market/system could know that a catalyst or event risk exists.
+- `event_scheduled_time` is the planned report/release/meeting/court/FDA/calendar time or expected window, when known before the outcome.
+- `event_effective_time` is when the event becomes economically or legally effective, if distinct from publication.
+- `event_actual_time` is the fact/result occurrence time reported by the source.
+- `source_published_time` / `source_updated_time` are source clocks; revisions after the decision time are not inference inputs.
+- `ingested_time` / `available_time` are system point-in-time clocks; model visibility uses `available_time`.
+- `interpretation_time` is when `event_interpretation_v1` is produced.
+- `resolution_time` is when a delayed or multi-stage outcome becomes known.
+- `decision_time` / `tradeable_time` are downstream decision and market-action clocks.
+
+Accepted lifecycle types:
+
+```text
+scheduled_known_outcome_later
+unscheduled_surprise
+scheduled_recurring_data_release
+multi_stage_developing_event
+unknown
+```
+
+Lifecycle type is different from lifecycle state. The type says whether the event/catalyst was knowable before its result; the state says where the current row sits in the event arc.
 
 Recommended lifecycle states:
 
@@ -187,11 +214,68 @@ pre_event_window
 live_release_window
 post_event_initial_reaction
 post_event_decay
+developing_update
+resolved
 stale_event
 unknown
 ```
 
 Training/evaluation datasets may include realized future outcomes as labels. Inference rows and `event_risk_intervention / event_context_vector` must not include post-event outcomes, hindsight event interpretations, future source revisions, or future price/option paths.
+
+## Event lifecycle contract
+
+Layer 8 must not treat scheduled catalysts and surprise events as the same training object.
+
+### Scheduled-known / outcome-later events
+
+Examples: earnings dates, macro calendar releases, FOMC meetings, FDA decision dates, court dates, shareholder votes, and known reporting deadlines.
+
+Contract:
+
+- A pre-event row may say the catalyst exists and may affect gap/volatility/risk appetite.
+- Result fields such as actual values, beat/miss, guidance, decision outcome, vote result, or official action are forbidden until an artifact containing the result is visible by `available_time`.
+- Pre-event risk evaluation, release-result interpretation, and post-event reaction labels are separate phases.
+- Pre-event features may include proximity, expected importance, consensus/estimate values when point-in-time valid, option-implied move, and historical event-family risk; they must not include realized result or realized reaction.
+
+### Unscheduled surprise events
+
+Examples: sudden accident, unexpected lawsuit, regulatory raid, sanctions headline, management resignation, banking stress headline, war escalation, surprise offering, or credible investigative report.
+
+Contract:
+
+- The specific event is invisible before the first credible point-in-time source.
+- `event_awareness_time` normally equals the first credible `source_published_time` / `available_time` pair.
+- Pre-event modeling may only use background vulnerability/hazard priors from already-visible context, not the specific future headline.
+- Evaluation should measure detection latency, evidence quality, first-response risk behavior, and decay/resolution behavior after visibility.
+
+### Scheduled recurring data releases
+
+Examples: CPI, payrolls, retail sales, FOMC statement/rate decision, Treasury auctions, inventory reports, and other recurring official calendars.
+
+Contract:
+
+- The shell and scheduled time are known before release.
+- Actual/consensus/previous/revision fields must remain separated.
+- Surprise-vs-consensus and revision effects are only valid after the release artifact is visible.
+- News recaps that merely describe the official release should be canonical-covered by the official release row; independent Fed-path/policy repricing narrative can be a residual if evidence supports it.
+
+### Multi-stage developing events
+
+Examples: investigations, lawsuits, M&A, bankruptcy/restructuring, policy negotiations, geopolitical escalation, and regulatory review.
+
+Contract:
+
+- Preserve each material update as its own point-in-time stage row or detail artifact.
+- Do not collapse the entire arc into the first headline or the final resolution.
+- Stage transitions should keep previous interpretations immutable and add follow-up/resolution refs rather than overwriting history.
+
+### Golden lifecycle examples
+
+| Family | Lifecycle type | Pre-event usable facts | Result/release facts | Forbidden leakage |
+|---|---|---|---|---|
+| Earnings | `scheduled_known_outcome_later` | Earnings date/window, consensus if PIT-valid, option-implied move, prior guidance, historical gap risk. | Reported EPS/revenue, beat/miss, guidance, management commentary once released. | Using actual results, call transcript revisions, or post-release price reaction before `available_time`. |
+| CPI / macro release | `scheduled_recurring_data_release` | Calendar time, importance, consensus/previous when PIT-valid, background inflation/rates context. | Actual CPI values, revision, surprise-vs-consensus, official release text. | Treating recap news as a new independent CPI fact or using release values before publication. |
+| Surprise regulatory raid/news | `unscheduled_surprise` | Only background regulatory vulnerability already visible before the headline. | First credible headline/details and follow-up confirmations after available. | Pretending the specific raid/headline was forecastable; labeling pre-event rows with future facts. |
 
 ## Internal model structure
 

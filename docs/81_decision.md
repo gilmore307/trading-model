@@ -773,3 +773,15 @@ Rationale: the base trading path should remain runnable without mature event int
 Allowed Layer 8 intervention outputs include `block_new_entries`, `max_exposure_factor`, `reduce_exposure_to`, `flatten_position_candidate`, `halt_trading_candidate`, `human_review_required`, event refs, and evidence spans. Layer 8 may modify the decision/risk record consumed by execution risk-control, but it must not directly send broker orders or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence and an accepted execution risk policy or human review path.
 
 Physical implementation surfaces currently retain legacy names (`model_04_event_overlay`, `model_05_alpha_confidence`, `model_06_position_projection`, `model_07_underlying_action`, `model_08_option_expression`) until a dedicated implementation/SQL migration slice renames them. Active docs use the conceptual order above.
+
+## D040 - Event lifecycle clocks separate scheduled catalysts from surprise events
+
+Accepted: 2026-05-15
+
+Layer 8 event intelligence must preserve event lifecycle timing instead of flattening all evidence into one `event_time`.
+
+Accepted lifecycle classes are `scheduled_known_outcome_later`, `unscheduled_surprise`, `scheduled_recurring_data_release`, `multi_stage_developing_event`, and `unknown`. Required clocks, when known, include awareness, scheduled, published, available, interpretation, resolution, decision/tradeable, and reaction/evaluation windows.
+
+Scheduled-known catalysts such as earnings dates or macro releases may affect pre-event risk because the catalyst shell is visible before the result. Their result facts, beat/miss values, guidance, revisions, and realized market reaction are forbidden until visible through point-in-time release artifacts. Unscheduled surprise events have no specific pre-event event row; only already-visible background vulnerability or hazard priors may exist before the first credible source. Multi-stage events must preserve immutable stage/update refs instead of overwriting the original event.
+
+Training and evaluation must not mix scheduled-known and surprise events under the same label construction unless lifecycle type and phase are explicit features.
