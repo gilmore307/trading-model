@@ -383,3 +383,27 @@ Findings:
 - the result-score split is underpowered and not a signed-alpha result.
 
 Interpretation: SEC result artifacts improve canonical coverage and confirm that official result visibility can be joined point-in-time, but the current simple metric-direction split still supports risk/path context more than direction. The next required route is true guidance/result interpretation from official company release/exhibit/transcript artifacts plus verified no-option-abnormality controls.
+
+## Earnings + option-abnormality split scout — existing reviewed option matrix
+
+Artifact: `/root/projects/trading-model/storage/earnings_option_abnormality_split_scout_20260515/`
+
+A bounded no-provider diagnostic joined the canonical 2026 earnings shells to the reviewed complete-evidence option-abnormality matrix. This was the first check toward `earnings/guidance + option abnormality` versus `earnings/guidance without option abnormality`.
+
+Scope:
+
+- canonical earnings shells: 10;
+- option-matrix requested dates: `2026-04-17`, `2026-04-24`, `2026-05-01`;
+- option-covered earnings rows: 2 (`CVX`, `XOM` on `2026-05-01`);
+- earnings rows with verified option abnormality: 2;
+- earnings rows with verified no-option-abnormality controls: 0;
+- not option-covered earnings rows: 8.
+
+Findings for the two covered rows:
+
+- 1d path range about 3.13%;
+- 5d path range about 7.44%;
+- both 5d directional returns were negative;
+- direction-hypothesis rows were mixed, including bullish, bearish, put-selling/call-selling, and mixed/conflicting classes.
+
+Interpretation: the requested amplifier comparison remains blocked because the reviewed local option artifact has no earnings-without-option-abnormality control group. Do not claim an earnings+option amplifier edge until matched earnings dates with verified no-option-abnormality coverage are acquired or verified.

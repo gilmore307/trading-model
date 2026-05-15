@@ -442,3 +442,11 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_result_artifac
 The second itemized earnings/guidance test joined scheduled shells to official SEC submission/companyfacts artifacts. It found official result artifacts for all 12 Q4 2025 events and partial reported-metric interpretation for 11 events.
 
 The split by simple result direction remained too small and not directionally reliable: positive-result-score events had 5d path range about 11.1% and 5d directional hit rate 28.6%; negative-result-score events had 5d path range about 6.3% and 5d directional hit rate 33.3%. This continues to support event-risk/path context, not signed alpha.
+
+## Itemized test 3 — earnings/guidance plus option abnormality split
+
+Artifact: `/root/projects/trading-model/storage/earnings_option_abnormality_split_scout_20260515/`
+
+A no-provider join between canonical 2026 earnings shells and the reviewed option-direction thorough matrix found only two option-covered earnings rows (`CVX`, `XOM` on `2026-05-01`). Both had verified option abnormality; none provided a verified no-option-abnormality earnings control.
+
+The amplifier comparison is therefore blocked rather than negative or positive. Existing evidence cannot distinguish earnings-with-option-abnormality from earnings-without-option-abnormality.

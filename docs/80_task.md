@@ -68,3 +68,5 @@ First itemized follow-up completed: `/root/projects/trading-model/storage/earnin
 Second itemized follow-up completed: `/root/projects/trading-model/storage/earnings_guidance_result_artifact_scout_q4_2025_20260515/` joined those shells to official SEC result artifacts. It found official result artifacts for all 12 events and partial XBRL metric-direction interpretation for 11 events, but no guidance interpretation and no signed-alpha proof.
 
 Remaining future work is evidence expansion only: more earnings seasons, official company release/exhibit/transcript guidance interpretations, verified no-option-abnormality controls, and family-specific promotion gates before any `pilot_training` status.
+
+Third itemized follow-up completed: `/root/projects/trading-model/storage/earnings_option_abnormality_split_scout_20260515/` joined canonical 2026 earnings shells to the reviewed option matrix and found 2 option-covered earnings rows, both abnormal, with 0 verified earnings-without-option-abnormality controls. The earnings+option amplifier comparison remains blocked until matched no-option-abnormality controls are acquired or verified.

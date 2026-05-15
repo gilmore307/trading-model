@@ -125,3 +125,11 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_result_artifac
 The next follow-up joined the Q4 2025 earnings shells to official SEC submission/companyfacts artifacts. All 12 events had an official SEC result artifact in the event window; 11 had partial XBRL metric-direction interpretation, while guidance interpretation remained missing.
 
 Judgment update: official SEC result artifacts strengthen the canonical event-family route, but simple reported-metric YoY direction is not enough for signed alpha. The event layer boundary remains risk/intelligence overlay first. Promotion still requires official guidance/result interpretation, consensus or accepted expectation baselines, verified option-abnormality controls, and family-specific stability evidence.
+
+## Third itemized test — earnings plus option-abnormality split
+
+Artifact: `/root/projects/trading-model/storage/earnings_option_abnormality_split_scout_20260515/`
+
+The first earnings+option split check used only existing reviewed local artifacts. It found two option-covered canonical earnings rows, both with verified option abnormality, and zero verified earnings-without-option-abnormality controls.
+
+Judgment update: the earnings+option amplifier claim is still blocked. The next evidence requirement is not another model-layer expansion; it is acquisition or verification of matched earnings dates with no option abnormality under the same option-event standard.
