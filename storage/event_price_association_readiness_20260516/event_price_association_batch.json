@@ -1,0 +1,361 @@
+{
+  "account_mutation_performed": false,
+  "artifact_deletion_performed": false,
+  "broker_execution_performed": false,
+  "candidate_events": [
+    {
+      "canonical_status": "not_canonicalized_family_candidate_only",
+      "event_key": "legal_regulatory_investigation:alpaca_news:2016-01-28T07:05:40-05:00:Marathon Patent Group Announces Unit Dynamic Advances Has Litigation Update Related to Patent Infringement Case Against Apple",
+      "event_name": "Marathon Patent Group Announces Unit Dynamic Advances Has Litigation Update Related to Patent Infringement Case Against Apple",
+      "event_time": "2016-01-28T07:05:40-05:00",
+      "evidence_text": "Marathon Patent Group Announces Unit Dynamic Advances Has Litigation Update Related to Patent Infringement Case Against Apple",
+      "family_key": "legal_regulatory_investigation",
+      "pit_status": "source_timestamp_present_but_interpretation_not_reviewed",
+      "scope": "symbol_or_macro_news_candidate",
+      "source_ref": "/root/projects/trading-data/storage/monthly_backfill_v1/alpaca_news/2016-01/runs/mgrreq_event_backfill_alpaca_news_aapl_2016_01_event_feed_20260515T052904Z/saved/equity_news.csv",
+      "source_type": "alpaca_news"
+    },
+    {
+      "canonical_status": "not_canonicalized_family_candidate_only",
+      "event_key": "legal_regulatory_investigation:alpaca_news:2016-01-19T08:09:24-05:00:ParkerVision Institues Investigation Of Unfair Trade Practices By Apple, LG, Samsung, And Qualcomm",
+      "event_name": "ParkerVision Institues Investigation Of Unfair Trade Practices By Apple, LG, Samsung, And Qualcomm",
+      "event_time": "2016-01-19T08:09:24-05:00",
+      "evidence_text": "ParkerVision Institues Investigation Of Unfair Trade Practices By Apple, LG, Samsung, And Qualcomm",
+      "family_key": "legal_regulatory_investigation",
+      "pit_status": "source_timestamp_present_but_interpretation_not_reviewed",
+      "scope": "symbol_or_macro_news_candidate",
+      "source_ref": "/root/projects/trading-data/storage/monthly_backfill_v1/alpaca_news/2016-01/runs/mgrreq_event_backfill_alpaca_news_aapl_2016_01_event_feed_20260515T052904Z/saved/equity_news.csv",
+      "source_type": "alpaca_news"
+    },
+    {
+      "canonical_status": "not_canonicalized_family_candidate_only",
+      "event_key": "legal_regulatory_investigation:alpaca_news:2016-01-12T09:40:46-05:00:Court Issues New Order in VirnetX - Apple Lawsuit",
+      "event_name": "Court Issues New Order in VirnetX - Apple Lawsuit",
+      "event_time": "2016-01-12T09:40:46-05:00",
+      "evidence_text": "Court Issues New Order in VirnetX - Apple Lawsuit",
+      "family_key": "legal_regulatory_investigation",
+      "pit_status": "source_timestamp_present_but_interpretation_not_reviewed",
+      "scope": "symbol_or_macro_news_candidate",
+      "source_ref": "/root/projects/trading-data/storage/monthly_backfill_v1/alpaca_news/2016-01/runs/mgrreq_event_backfill_alpaca_news_aapl_2016_01_event_feed_20260515T052904Z/saved/equity_news.csv",
+      "source_type": "alpaca_news"
+    },
+    {
+      "canonical_status": "not_canonicalized_family_candidate_only",
+      "event_key": "legal_regulatory_investigation:alpaca_news:2016-01-04T18:00:40-05:00:Hearing Valencell Has Filed Patent Infringement Suit Against Apple, FitBit",
+      "event_name": "Hearing Valencell Has Filed Patent Infringement Suit Against Apple, FitBit",
+      "event_time": "2016-01-04T18:00:40-05:00",
+      "evidence_text": "Hearing Valencell Has Filed Patent Infringement Suit Against Apple, FitBit",
+      "family_key": "legal_regulatory_investigation",
+      "pit_status": "source_timestamp_present_but_interpretation_not_reviewed",
+      "scope": "symbol_or_macro_news_candidate",
+      "source_ref": "/root/projects/trading-data/storage/monthly_backfill_v1/alpaca_news/2016-01/runs/mgrreq_event_backfill_alpaca_news_aapl_2016_01_event_feed_20260515T052904Z/saved/equity_news.csv",
+      "source_type": "alpaca_news"
+    },
+    {
+      "canonical_status": "not_canonicalized_family_candidate_only",
+      "event_key": "legal_regulatory_investigation:gdelt_news:2016-02-01T18:45:00-05:00:",
+      "event_name": "",
+      "event_time": "2016-02-01T18:45:00-05:00",
+      "evidence_text": "WB_2024_ANTI_CORRUPTION_AUTHORITIES,11414;WB_2024_ANTI_CORRUPTION_AUTHORITIES,11587;WB_840_JUSTICE,11414;WB_840_JUSTICE,11587;WB_2025_INVESTIGATION,11414;WB_2025_INVESTIGATION,1158...[truncated] Google Department,10221;Google Department,10363;Google Department,10421;Google,7;Google,40;Google,172;Google,1827;Google,2203;Google,5042;Google,5274;Google,5417;Google,5970;Google...[truncated]",
+      "family_key": "legal_regulatory_investigation",
+      "pit_status": "source_timestamp_present_but_interpretation_not_reviewed",
+      "scope": "symbol_or_macro_news_candidate",
+      "source_ref": "/root/projects/trading-data/storage/monthly_backfill_v1/gdelt_news/2016-01/runs/mgrreq_event_backfill_gdelt_news_aapl_2016_01_event_feed_20260515T052906Z/saved/gdelt_article.csv",
+      "source_type": "gdelt_news"
+    },
+    {
+      "canonical_status": "not_canonicalized_family_candidate_only",
+      "event_key": "legal_regulatory_investigation:gdelt_news:2016-01-31T18:45:00-05:00:",
+      "event_name": "",
+      "event_time": "2016-01-31T18:45:00-05:00",
+      "evidence_text": "TRIAL,372;WB_845_LEGAL_AND_REGULATORY_FRAMEWORK,245;WB_969_CAPITAL_MARKETS_LAW_AND_REGULATION,245;WB_853_FINANCIAL_LAWS_AND_REGULATIONS,245;WB_1921_PRIVATE_SECTOR_DEVELOPMENT,1637;...[truncated] Wedbush Equity Research,1265;United States,1703",
+      "family_key": "legal_regulatory_investigation",
+      "pit_status": "source_timestamp_present_but_interpretation_not_reviewed",
+      "scope": "symbol_or_macro_news_candidate",
+      "source_ref": "/root/projects/trading-data/storage/monthly_backfill_v1/gdelt_news/2016-01/runs/mgrreq_event_backfill_gdelt_news_aapl_2016_01_event_feed_20260515T061136Z/saved/gdelt_article.csv",
+      "source_type": "gdelt_news"
+    },
+    {
+      "canonical_status": "not_canonicalized_family_candidate_only",
+      "event_key": "legal_regulatory_investigation:gdelt_news:2016-01-31T18:30:00-05:00:",
+      "event_name": "",
+      "event_time": "2016-01-31T18:30:00-05:00",
+      "evidence_text": "TAX_ETHNICITY_AUSTRIAN,502;TAX_FNCACT_ARTIST,135;WB_2024_ANTI_CORRUPTION_AUTHORITIES,537;WB_696_PUBLIC_SECTOR_MANAGEMENT,537;WB_840_JUSTICE,537;WB_2025_INVESTIGATION,537;WB_831_GOV...[truncated] Us Embassy,452",
+      "family_key": "legal_regulatory_investigation",
+      "pit_status": "source_timestamp_present_but_interpretation_not_reviewed",
+      "scope": "symbol_or_macro_news_candidate",
+      "source_ref": "/root/projects/trading-data/storage/monthly_backfill_v1/gdelt_news/2016-01/runs/mgrreq_event_backfill_gdelt_news_aapl_2016_01_event_feed_20260515T061136Z/saved/gdelt_article.csv",
+      "source_type": "gdelt_news"
+    },
+    {
+      "canonical_status": "candidate_macro_release_not_official_source_canonicalized",
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "event_name": "Core Inflation Rate YoY;Inflation Rate YoY",
+      "event_time": "2016-01-20T08:30:00-05:00",
+      "evidence_text": "Core Inflation Rate YoY actual_minus_consensus=0; Inflation Rate YoY actual_minus_consensus=-0.1",
+      "family_key": "cpi_inflation_release",
+      "pit_status": "calendar_timestamp_actual_previous_consensus_present",
+      "scope": "macro",
+      "source_ref": "/root/projects/trading-data/storage/monthly_backfill_v1/trading_economics_calendar_web/2016-01/runs/mgrreq_event_backfill_trading_economics_calendar_web_aapl_2016_01_event_feed_20260515T055520Z/saved/trading_economics_calendar_event.csv",
+      "source_type": "trading_economics_calendar_web"
+    }
+  ],
+  "contract_type": "event_price_association_readiness_batch_v1",
+  "family_keys": [
+    "equity_offering_dilution",
+    "legal_regulatory_investigation",
+    "cpi_inflation_release",
+    "credit_liquidity_stress"
+  ],
+  "family_readiness": [
+    {
+      "association_study_status": "blocked_missing_offering_terms_parser",
+      "blocker_codes": [
+        "missing_family_packet",
+        "needs_offering_terms_parser",
+        "needs_canonical_filing_or_news_events",
+        "needs_matched_controls"
+      ],
+      "candidate_event_count": 0,
+      "control_coverage_status": "no_controls_available",
+      "evidence_refs": [
+        "/root/projects/trading-data/storage/monthly_backfill_v1/sec_company_financials/2016-01/completion_receipt.json"
+      ],
+      "family_key": "equity_offering_dilution",
+      "mechanism_group": "capital_structure",
+      "next_action": "Build the equity-offering packet and parser for offering type, amount, discount, proceeds, filing time, and balance-sheet context.",
+      "pit_status": "local_existing_artifacts_only_no_new_provider_calls",
+      "price_label_count": 0,
+      "priority": "high",
+      "readiness_status": "source_evidence_present_but_event_extraction_missing",
+      "routing_bucket": "sec_filing"
+    },
+    {
+      "association_study_status": "blocked_missing_official_source_and_severity_taxonomy",
+      "blocker_codes": [
+        "missing_family_packet",
+        "needs_official_source_precedence",
+        "needs_severity_taxonomy",
+        "needs_matched_controls"
+      ],
+      "candidate_event_count": 7,
+      "control_coverage_status": "no_controls_available",
+      "evidence_refs": [
+        "/root/projects/trading-data/storage/monthly_backfill_v1/sec_company_financials/2016-01/completion_receipt.json"
+      ],
+      "family_key": "legal_regulatory_investigation",
+      "mechanism_group": "legal_regulatory",
+      "next_action": "Create legal/regulatory packet with official-vs-news source precedence, severity ladder, and review-required rules before study.",
+      "pit_status": "local_existing_artifacts_only_no_new_provider_calls",
+      "price_label_count": 0,
+      "priority": "high",
+      "readiness_status": "candidate_headlines_possible_but_not_canonical",
+      "routing_bucket": "sec_filing"
+    },
+    {
+      "association_study_status": "underpowered_single_month_scouting_only",
+      "blocker_codes": [
+        "single_month_only",
+        "needs_official_source_canonicalization",
+        "needs_matched_controls",
+        "needs_more_macro_cycles"
+      ],
+      "candidate_event_count": 1,
+      "control_coverage_status": "missing_matched_controls_and_multimonth_coverage",
+      "evidence_refs": [
+        "/root/projects/trading-data/storage/monthly_backfill_v1/trading_economics_calendar_web/2016-01/completion_receipt.json"
+      ],
+      "family_key": "cpi_inflation_release",
+      "mechanism_group": "macro_release",
+      "next_action": "Expand CPI family across more months, add official-source precedence, and build matched macro-control windows before any risk/alpha claim.",
+      "pit_status": "local_existing_artifacts_only_no_new_provider_calls",
+      "price_label_count": 10,
+      "priority": "high",
+      "readiness_status": "local_event_and_price_labels_available_underpowered",
+      "routing_bucket": "macro_data"
+    },
+    {
+      "association_study_status": "blocked_missing_stress_event_standard",
+      "blocker_codes": [
+        "missing_family_packet",
+        "needs_stress_severity_ladder",
+        "needs_contagion_scope",
+        "needs_matched_controls"
+      ],
+      "candidate_event_count": 0,
+      "control_coverage_status": "no_controls_available",
+      "evidence_refs": [
+        "/root/projects/trading-data/storage/monthly_backfill_v1/gdelt_news/2016-01/completion_receipt.json",
+        "/root/projects/trading-data/storage/monthly_backfill_v1/alpaca_news/2016-01/completion_receipt.json",
+        "/root/projects/trading-data/storage/monthly_backfill_v1/trading_economics_calendar_web/2016-01/completion_receipt.json"
+      ],
+      "family_key": "credit_liquidity_stress",
+      "mechanism_group": "macro_rates_liquidity",
+      "next_action": "Create credit/liquidity stress packet with severity, scope, official-source precedence, and macro/sector control windows.",
+      "pit_status": "local_existing_artifacts_only_no_new_provider_calls",
+      "price_label_count": 0,
+      "priority": "high",
+      "readiness_status": "candidate_headlines_possible_but_not_stress_standardized",
+      "routing_bucket": "macro_news"
+    }
+  ],
+  "generated_at_utc": "2026-05-16T12:00:07.248851+00:00",
+  "model_activation_performed": false,
+  "month": "2016-01",
+  "price_labels": [
+    {
+      "absolute_return": 0.007428678444347359,
+      "baseline_close": 126.5501,
+      "baseline_date": "2016-01-20",
+      "directional_return": -0.007428678444347359,
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "family_key": "cpi_inflation_release",
+      "forward_close": 125.61,
+      "horizon_days": 1,
+      "path_range": 0.01382851534688645,
+      "symbol": "TLT"
+    },
+    {
+      "absolute_return": 0.0031615937087366985,
+      "baseline_close": 126.5501,
+      "baseline_date": "2016-01-20",
+      "directional_return": -0.0031615937087366985,
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "family_key": "cpi_inflation_release",
+      "forward_close": 126.15,
+      "horizon_days": 5,
+      "path_range": 0.02236268481810766,
+      "symbol": "TLT"
+    },
+    {
+      "absolute_return": 0.004770992366412319,
+      "baseline_close": 20.96,
+      "baseline_date": "2016-01-20",
+      "directional_return": -0.004770992366412319,
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "family_key": "cpi_inflation_release",
+      "forward_close": 20.86,
+      "horizon_days": 1,
+      "path_range": 0.02385496183206104,
+      "symbol": "XLF"
+    },
+    {
+      "absolute_return": 0.008110687022900631,
+      "baseline_close": 20.96,
+      "baseline_date": "2016-01-20",
+      "directional_return": 0.008110687022900631,
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "family_key": "cpi_inflation_release",
+      "forward_close": 21.13,
+      "horizon_days": 5,
+      "path_range": 0.03864503816793896,
+      "symbol": "XLF"
+    },
+    {
+      "absolute_return": 0.017630282603059433,
+      "baseline_close": 38.57,
+      "baseline_date": "2016-01-20",
+      "directional_return": 0.017630282603059433,
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "family_key": "cpi_inflation_release",
+      "forward_close": 39.25,
+      "horizon_days": 1,
+      "path_range": 0.027482499351827894,
+      "symbol": "XLK"
+    },
+    {
+      "absolute_return": 0.03577910292973829,
+      "baseline_close": 38.57,
+      "baseline_date": "2016-01-20",
+      "directional_return": 0.03577910292973829,
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "family_key": "cpi_inflation_release",
+      "forward_close": 39.95,
+      "horizon_days": 5,
+      "path_range": 0.044334975369458185,
+      "symbol": "XLK"
+    },
+    {
+      "absolute_return": 0.008427330481006079,
+      "baseline_close": 77.13,
+      "baseline_date": "2016-01-20",
+      "directional_return": 0.008427330481006079,
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "family_key": "cpi_inflation_release",
+      "forward_close": 77.78,
+      "horizon_days": 1,
+      "path_range": 0.015687799818488224,
+      "symbol": "HYG"
+    },
+    {
+      "absolute_return": 0.01905873201089059,
+      "baseline_close": 77.13,
+      "baseline_date": "2016-01-20",
+      "directional_return": 0.01905873201089059,
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "family_key": "cpi_inflation_release",
+      "forward_close": 78.6,
+      "horizon_days": 5,
+      "path_range": 0.030208738493452514,
+      "symbol": "HYG"
+    },
+    {
+      "absolute_return": 0.030519605949391515,
+      "baseline_close": 51.77,
+      "baseline_date": "2016-01-20",
+      "directional_return": 0.030519605949391515,
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "family_key": "cpi_inflation_release",
+      "forward_close": 53.35,
+      "horizon_days": 1,
+      "path_range": 0.055437512072629036,
+      "symbol": "XLE"
+    },
+    {
+      "absolute_return": 0.06239134633957888,
+      "baseline_close": 51.77,
+      "baseline_date": "2016-01-20",
+      "directional_return": 0.06239134633957888,
+      "event_key": "cpi_inflation_release:2016-01-20T08:30:00-05:00",
+      "family_key": "cpi_inflation_release",
+      "forward_close": 55.0,
+      "horizon_days": 5,
+      "path_range": 0.10160324512265795,
+      "symbol": "XLE"
+    }
+  ],
+  "price_symbols": [
+    "TLT",
+    "XLF",
+    "XLK",
+    "HYG",
+    "XLE"
+  ],
+  "provider_calls": 0,
+  "summary": {
+    "association_study_status_counts": {
+      "blocked_missing_offering_terms_parser": 1,
+      "blocked_missing_official_source_and_severity_taxonomy": 1,
+      "blocked_missing_stress_event_standard": 1,
+      "underpowered_single_month_scouting_only": 1
+    },
+    "blocked_family_keys": [
+      "equity_offering_dilution",
+      "legal_regulatory_investigation",
+      "cpi_inflation_release",
+      "credit_liquidity_stress"
+    ],
+    "candidate_event_count": 8,
+    "families_with_price_labels": [
+      "cpi_inflation_release"
+    ],
+    "family_count": 4,
+    "price_label_count": 10,
+    "readiness_status_counts": {
+      "candidate_headlines_possible_but_not_canonical": 1,
+      "candidate_headlines_possible_but_not_stress_standardized": 1,
+      "local_event_and_price_labels_available_underpowered": 1,
+      "source_evidence_present_but_event_extraction_missing": 1
+    }
+  }
+}

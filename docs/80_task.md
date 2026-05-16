@@ -2,7 +2,7 @@
 
 ## Active Tasks
 
-Fine-grained event-family batch catalog is now available at `storage/event_family_batch_catalog_20260516/` via `scripts/models/model_08_event_risk_governor/build_event_family_batch_catalog.py`. It queues 29 narrow families for independent association analysis and confirms no broad news/filing routing bucket is an accepted modeling family.
+Fine-grained event-family batch catalog is now available at `storage/event_family_batch_catalog_20260516/` via `scripts/models/model_08_event_risk_governor/build_event_family_batch_catalog.py`. It queues 29 narrow families for independent association analysis and confirms no broad news/filing routing bucket is an accepted modeling family. The first local event-price association readiness slice is available at `storage/event_price_association_readiness_20260516/` via `scripts/models/model_08_event_risk_governor/build_event_price_association_readiness.py`; it covers equity offering/dilution, legal/regulatory investigation, CPI inflation release, and credit/liquidity stress without provider calls or model activation.
 
 - Promote-first model phase: concentrate current modeling effort on producing the first usable production-promotable model version. Start with Layer 1 `MarketRegimeModel` promotion-gate repair/evidence production because Layer 2 and Layer 3 depend on a stable approved Layer 1 foundation.
 
