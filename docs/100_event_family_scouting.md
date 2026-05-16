@@ -207,6 +207,16 @@ Result: 131 CPI release dates from 2016-01 through 2026-05, 1,571 strict one-day
 
 Conclusion: CPI release occurrence has weak event-risk/volatility relevance, but realized CPI level/change is not meaningful as standalone directional alpha. If included, CPI should be a macro event-risk/calendar control feature, not a trading signal or promotion-ready event family.
 
+Abnormal CPI follow-up:
+
+Artifact: `storage/cpi_abnormal_release_correlation_study_20260516/`
+
+Definition: expanding historical z-score excluding the current print, `abs(z) >= 1.5`, minimum 24 prior releases, over CPI MoM, Core CPI MoM, CPI YoY, and Core CPI YoY. This identified 44 abnormal CPI release dates out of 131.
+
+Result: abnormal releases show more event-risk/volatility relevance than normal releases, especially one-day path range. For abnormal releases, aggregate one-day path-range delta was about +0.233 percentage points versus controls, compared with about +0.027 percentage points for normal releases. Abnormal YoY/Core YoY prints were stronger on path expansion (roughly +0.405 to +0.489 percentage points one-day path delta). Directional return evidence remained weak/unstable: abnormal one-day return delta was about -0.012 percentage points overall, positive-return-delta share was about 52%, and 5-10 day abnormal return deltas were negative.
+
+Conclusion: abnormal CPI is worth including as an abnormal macro-risk/volatility flag and control feature. It is still not a standalone directional alpha signal.
+
 ## Early-stop criteria
 
 Stop or downgrade a family to `deferred_low_signal` or `retired_no_signal` when any of these hold after a bounded scout:
