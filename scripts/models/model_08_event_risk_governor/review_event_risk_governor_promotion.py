@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Conservative EventOverlayModel local promotion-review wrapper.
+"""Conservative EventRiskGovernor local promotion-review wrapper.
 
 The wrapper reviews a local evaluation summary and always refuses activation.
 Production approval remains gated by the accepted model-governance substrate,
@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 from model_governance.local_layer_scripts import conservative_review, write_payload
-from models.model_04_event_overlay import MODEL_ID, MODEL_SURFACE
+from models.model_08_event_risk_governor import MODEL_ID, MODEL_SURFACE
 
 
 def _load_summary(path: Path) -> dict:

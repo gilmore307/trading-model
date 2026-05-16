@@ -1,6 +1,6 @@
 # Promotion Closeout Evidence
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_04_event_overlay` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_08_event_risk_governor` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -29,7 +29,7 @@ Durable promotion requests, review decisions, activation, rollback, and producti
 | 1 | `model_01_market_regime` | real PostgreSQL evaluation evidence exists | deferred: baseline, label-count, pair-count, and coverage gates still fail | none |
 | 2 | `model_02_sector_context` | real PostgreSQL evaluation evidence exists | deferred: baseline/lift/stability gates still fail | none |
 | 3 | `model_03_target_state_vector` | real PostgreSQL production-eval substrate exists | deferred: upstream Layer 1/2 approvals and Layer 3 calibration evidence missing | none |
-| 4 | `model_04_event_overlay` | missing production event-overlay eval run / calibrated labels | deferred: no production eval substrate | none |
+| 4 | `model_08_event_risk_governor` | missing production event-overlay eval run / calibrated labels | deferred: no production eval substrate | none |
 | 5 | `model_05_alpha_confidence` | missing production adjusted-alpha eval run / calibrated labels | deferred: no production eval substrate | none |
 | 6 | `model_06_position_projection` | missing production position-utility eval run / labels | deferred: no production eval substrate | none |
 | 7 | `model_07_underlying_action` | missing production realized-action outcome eval run | deferred: no production eval substrate | none |

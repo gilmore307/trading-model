@@ -1,6 +1,6 @@
 # Model Decomposition Framework
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_04_event_overlay` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_08_event_risk_governor` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -322,7 +322,7 @@ Layer 2 output feeds downstream target-state work:
 sector_context_state
   -> TargetStateVectorModel
      (Layer 3 preprocessing: anonymous target candidate builder)
-  -> EventOverlayModel
+  -> EventRiskGovernor
   -> AlphaConfidenceModel
   -> PositionProjectionModel
   -> UnderlyingActionModel
@@ -383,7 +383,7 @@ src/models/model_03_target_state_vector/target_state_vector_contract.md
 
 Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence prepared by Layer 3 preprocessing. The primary `target_context_state` output consists of four inspectable blocks: `market_state_features`, `sector_state_features`, `target_state_features`, and `cross_state_features`. Embedding/cluster outputs may be derived representations, but they must not replace the inspectable blocks. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, and row reliability must remain separate. It must not select strategy families, expand parameter variants, output alpha confidence, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
 
-## Layer 4: EventOverlayModel
+## Layer 4: EventRiskGovernor
 
 Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 

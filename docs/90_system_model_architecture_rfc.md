@@ -1,6 +1,6 @@
 # Direction-Neutral Trading Model Architecture
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_04_event_overlay` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_08_event_risk_governor` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -15,7 +15,7 @@ point-in-time data foundation
   -> SectorContextModel
   -> TargetStateVectorModel
      (Layer 3 preprocessing includes anonymous target candidate construction)
-  -> EventOverlayModel
+  -> EventRiskGovernor
   -> AlphaConfidenceModel
   -> PositionProjectionModel
   -> UnderlyingActionModel
@@ -45,7 +45,7 @@ This separation is mandatory:
 | 1 | `MarketRegimeModel` | `market_regime_model` | `market_context_state` | Direction-neutral broad market tradability/regime state keyed by `available_time`. |
 | 2 | `SectorContextModel` | `sector_context_model` | `sector_context_state` | Direction-neutral sector/industry tradability context under market context. |
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
-| 4 | `EventOverlayModel` | `event_overlay_model` | `event_context_vector` | Point-in-time event context, event risk, event direction bias, and event-quality evidence before alpha confidence. |
+| 4 | `EventRiskGovernor` | `event_risk_governor` | `event_context_vector` | Point-in-time event context, event risk, event direction bias, and event-quality evidence before alpha confidence. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Reviewed state stack plus event correction to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
 | 6 | `PositionProjectionModel` | `position_projection_model` | `position_projection_vector` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
 | 7 | `UnderlyingActionModel` | `underlying_action_model` | `underlying_action_plan` / `underlying_action_vector` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and Layer 8 underlying-path handoff. |
@@ -288,9 +288,9 @@ Model-facing vectors must exclude raw ticker/company identity and memorized symb
 
 It outputs `target_context_state`: signed current-state direction evidence, direction-neutral tradability scores, cross-state relationship features, optional derived representation diagnostics, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target context. It does not select downstream action variants, output alpha confidence, size positions, or treat positive direction as inherently better than negative direction.
 
-## Layer 4: EventOverlayModel
+## Layer 4: EventRiskGovernor
 
-`EventOverlayModel` consumes `market_context_state`, `sector_context_state`, `target_context_state`, and point-in-time `source_04_event_overlay` evidence. It outputs `event_context_vector`: event presence, timing/proximity, intensity, direction bias, uncertainty, gap/reversal/liquidity disruption risk, contagion risk, and event-quality context.
+`EventRiskGovernor` consumes `market_context_state`, `sector_context_state`, `target_context_state`, and point-in-time `source_04_event_overlay` evidence. It outputs `event_context_vector`: event presence, timing/proximity, intensity, direction bias, uncertainty, gap/reversal/liquidity disruption risk, contagion risk, and event-quality context.
 
 It is now a peer model layer before alpha confidence, not an after-the-fact overlay. It does not output alpha confidence, trading signals, option contracts, or final actions.
 

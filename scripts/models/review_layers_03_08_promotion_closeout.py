@@ -39,8 +39,8 @@ LAYER_CLOSEOUTS: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 4,
-        "model_id": "model_04_event_overlay",
-        "model_name": "EventOverlayModel",
+        "model_id": "model_08_event_risk_governor",
+        "model_name": "EventRiskGovernor",
         "feature_key": "source_04_event_overlay + event_context_vector",
         "blocker": "no production event-overlay evaluation run or calibrated labels exist",
         "required_next_steps": [

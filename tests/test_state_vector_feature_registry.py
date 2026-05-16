@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from models import state_vector_feature_registry as registry
-from models.model_04_event_overlay import contract as layer4_contract
+from models.model_08_event_risk_governor import contract as layer4_contract
 from models.model_05_alpha_confidence import contract as layer5_contract
 from models.model_06_position_projection import contract as layer6_contract
 from models.model_07_underlying_action import contract as layer7_contract

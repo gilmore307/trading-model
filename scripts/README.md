@@ -25,8 +25,8 @@ Scripts are the runtime boundary. Reusable model logic belongs in `src/`; script
   - `evaluate_model_03_target_state_vector.py` builds baseline-ladder evaluation evidence.
   - `review_target_state_vector_promotion.py` reviews local/fixture evidence conservatively.
   - `review_target_state_vector_production_substrate.py` reviews the real Layer 3 production-evaluation substrate when present.
-- `models/model_04_event_overlay/`
-  - `generate_model_04_event_overlay.py`, `evaluate_model_04_event_overlay.py`, and `review_event_overlay_promotion.py` are local JSON/JSONL-safe EventOverlayModel generation, evaluation-label, and conservative review entrypoints; generation/evaluation also support SQL-backed `--from-database` workflow rows.
+- `models/model_08_event_risk_governor/`
+  - `generate_model_08_event_risk_governor.py`, `evaluate_model_08_event_risk_governor.py`, and `review_event_risk_governor_promotion.py` are local JSON/JSONL-safe EventRiskGovernor generation, evaluation-label, and conservative review entrypoints; generation/evaluation also support SQL-backed `--from-database` workflow rows.
 - `models/model_05_alpha_confidence/`
   - `generate_model_05_alpha_confidence.py`, `evaluate_model_05_alpha_confidence.py`, and `review_alpha_confidence_promotion.py` are local JSON/JSONL-safe AlphaConfidenceModel generation, evaluation-label, and conservative review entrypoints; generation/evaluation also support SQL-backed `--from-database` workflow rows.
 - `models/model_06_position_projection/`

@@ -1,4 +1,4 @@
-"""Offline evaluation helpers for Layer 4 event overlay rows."""
+"""Offline evaluation helpers for Layer 8 event-risk rows."""
 from __future__ import annotations
 
 from typing import Any, Iterable, Mapping

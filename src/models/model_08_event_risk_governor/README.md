@@ -1,6 +1,6 @@
-# model_04_event_overlay
+# model_08_event_risk_governor
 
-Layer 4 deterministic scaffold for `EventOverlayModel`.
+Layer 8 deterministic scaffold for `EventRiskGovernor`.
 
 Owns local, point-in-time conversion from visible event overview/detail rows into `event_context_vector` rows. The scaffold implements:
 

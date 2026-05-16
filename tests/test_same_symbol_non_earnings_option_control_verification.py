@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_04_event_overlay.same_symbol_non_earnings_option_control_verification import (
+from models.model_08_event_risk_governor.same_symbol_non_earnings_option_control_verification import (
     SameSymbolNonEarningsOptionControlInputs,
     summarize_same_symbol_non_earnings_option_controls,
 )

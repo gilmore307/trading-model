@@ -222,7 +222,7 @@ max_daily_loss_state
 underlying_event_policy_block_state
 ```
 
-`underlying_event_policy_block_state` is policy-derived. Layer 4 event context does not directly issue hard trade blocks; event risk may be translated into policy state by Layer 4/6/policy logic before Layer 4 consumes it.
+`underlying_event_policy_block_state` is policy-derived. Layer 8 event-risk context does not directly issue hard trade blocks; event risk may be translated into policy state by event-risk/policy logic before trading guidance consumes it.
 
 ## V1 horizons
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from models.model_04_event_overlay.earnings_guidance_interpretation_review import (
+from models.model_08_event_risk_governor.earnings_guidance_interpretation_review import (
     GuidanceInterpretationReviewInputs,
     run_guidance_interpretation_review,
 )

@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from models.model_04_event_overlay.earnings_option_abnormality_split_scout import EarningsOptionSplitInputs, run_earnings_option_split_scout
+from models.model_08_event_risk_governor.earnings_option_abnormality_split_scout import EarningsOptionSplitInputs, run_earnings_option_split_scout
 
 
 def main() -> int:

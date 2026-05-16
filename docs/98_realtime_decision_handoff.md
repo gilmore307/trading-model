@@ -1,6 +1,6 @@
 # Realtime Decision Handoff
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_04_event_overlay` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_08_event_risk_governor` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -51,7 +51,7 @@ Each layer input must include the expected model id, expected model output, feat
 | 1 | `model_01_market_regime` | `market_context_state` | `scripts/models/model_01_market_regime/generate_model_01_market_regime.py` |
 | 2 | `model_02_sector_context` | `sector_context_state` | `scripts/models/model_02_sector_context/generate_model_02_sector_context.py` |
 | 3 | `model_03_target_state_vector` | `target_context_state` | `scripts/models/model_03_target_state_vector/generate_model_03_target_state_vector.py` |
-| 4 | `model_04_event_overlay` | `event_context_vector` | `scripts/models/model_04_event_overlay/generate_model_04_event_overlay.py` |
+| 4 | `model_08_event_risk_governor` | `event_context_vector` | `scripts/models/model_08_event_risk_governor/generate_model_08_event_risk_governor.py` |
 | 5 | `model_05_alpha_confidence` | `alpha_confidence_vector` | `scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py` |
 | 6 | `model_06_position_projection` | `position_projection_vector` | `scripts/models/model_06_position_projection/generate_model_06_position_projection.py` |
 | 7 | `model_07_underlying_action` | `underlying_action_plan` | `scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py` |

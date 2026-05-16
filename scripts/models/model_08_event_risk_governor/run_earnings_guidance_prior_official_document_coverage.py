@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from models.model_04_event_overlay.earnings_guidance_prior_official_document_coverage import (
+from models.model_08_event_risk_governor.earnings_guidance_prior_official_document_coverage import (
     PriorOfficialDocumentCoverageInputs,
     run_prior_official_document_coverage,
 )

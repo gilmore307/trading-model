@@ -46,7 +46,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
     },
     {
         "layer": 4,
-        "model_id": "event_overlay_model",
+        "model_id": "event_risk_governor",
         "output": "event_context_vector",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",

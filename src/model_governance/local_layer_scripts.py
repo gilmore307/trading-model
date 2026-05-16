@@ -145,7 +145,7 @@ def _reason_codes(*, leakage_errors: list[str], model_rows: list[dict[str, Any]]
 # Fixture rows are intentionally tiny. They exercise each layer's deterministic
 # scaffold without pretending to be production promotion evidence.
 FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
-    "model_04_event_overlay": [
+    "model_08_event_risk_governor": [
         {
             "available_time": "2026-05-07T10:30:00-04:00",
             "tradeable_time": "2026-05-07T10:31:00-04:00",
@@ -271,7 +271,7 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
 }
 
 FIXTURE_OUTCOME_ROWS: dict[str, list[dict[str, Any]]] = {
-    "model_04_event_overlay": [{"event_context_vector_ref": "ecv_3a5b6bb6c3a72d97", "realized_symbol_move_after_event_390min": -0.04}],
+    "model_08_event_risk_governor": [{"event_context_vector_ref": "ecv_3a5b6bb6c3a72d97", "realized_symbol_move_after_event_390min": -0.04}],
     "model_05_alpha_confidence": [{"alpha_confidence_vector_ref": "acv_7d1d9b0867ac4d13", "forward_return_390min": -0.05, "idiosyncratic_residual_return_390min": -0.04, "alpha_tradable_label_390min": True}],
     "model_06_position_projection": [{"position_projection_vector_ref": "ppv_f154b03e7648d661", "realized_position_utility_390min": 0.12, "realized_risk_budget_breach_390min": False}],
     "model_07_underlying_action": [{"underlying_action_plan_ref": "uap_7c6b5381d428ea0a", "entry_price_hit": True, "realized_underlying_return": 0.04, "slippage_pct": 0.001, "spread_cost_pct": 0.001}],
@@ -284,7 +284,7 @@ def fixture_outcome_rows(model_surface: str, model_rows: list[dict[str, Any]]) -
 
     rows: list[dict[str, Any]] = []
     for row in model_rows:
-        if model_surface == "model_04_event_overlay":
+        if model_surface == "model_08_event_risk_governor":
             rows.append({"event_context_vector_ref": row.get("event_context_vector_ref"), "realized_symbol_move_after_event_390min": -0.04})
         elif model_surface == "model_05_alpha_confidence":
             rows.append({"alpha_confidence_vector_ref": row.get("alpha_confidence_vector_ref"), "forward_return_390min": -0.05, "idiosyncratic_residual_return_390min": -0.04, "alpha_tradable_label_390min": True})

@@ -16,7 +16,7 @@ Date: 2026-05-07
 | 5 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; legacy physical surface `model_06_position_projection` until migration |
 | 6 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; legacy physical surface `model_07_underlying_action` until migration |
 | 7 | `TradingGuidanceModel / OptionExpressionModel` | `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted base trading-guidance boundary; V1 option-expression subset uses legacy physical surface `model_08_option_expression` until migration |
-| 8 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary; legacy event-overlay physical surface `model_04_event_overlay` until migration |
+| 8 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary; legacy event-overlay physical surface `model_08_event_risk_governor` until migration |
 
 This closes the model-design phase. It does not approve production promotion.
 

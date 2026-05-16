@@ -1,10 +1,10 @@
 # State Vector Feature Semantics Registry
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_04_event_overlay` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_08_event_risk_governor` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
-Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 4 event-context score families, Layer 5 alpha-confidence score families, Layer 6 position-projection score families, and Layer 7 underlying-action score families.
+Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 8 event-risk score families, Layer 5 alpha-confidence score families, Layer 6 position-projection score families, and Layer 7 underlying-action score families.
 
 This registry prevents the state/context/action-vector system from mixing direction, quality, risk, scope, routing, diagnostics, plan fields, execution fields, and research-only payloads.
 
@@ -45,7 +45,7 @@ src/models/state_vector_feature_registry.py
 
 Stable short states can score highly when direction strength, trend quality, path stability, context support, liquidity, persistence, and quality are strong while noise, transition risk, and exhaustion risk are low.
 
-## Layer 4 event-context score semantics
+## Layer 8 event-risk-context score semantics
 
 Layer 4 `event_context_vector` values must keep these axes separate:
 

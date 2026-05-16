@@ -1,6 +1,6 @@
 """Deterministic AlphaConfidenceModel V1 scaffold.
 
-Layer 5 converts reviewed Layer 1/2/3 state plus Layer 4 event context into the
+Layer 5 converts reviewed Layer 1/2/3 state plus Layer 8 event-risk context into the
 final adjusted ``alpha_confidence_vector``. The scaffold keeps base alpha as a
 diagnostic surface and emits only alpha-confidence fields, not position/action/
 execution fields.

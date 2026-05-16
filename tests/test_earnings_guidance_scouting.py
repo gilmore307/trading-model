@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_04_event_overlay.earnings_guidance_scouting import StudyInputs, load_calendar_events, run_study
+from models.model_08_event_risk_governor.earnings_guidance_scouting import StudyInputs, load_calendar_events, run_study
 
 
 class EarningsGuidanceScoutingTests(unittest.TestCase):

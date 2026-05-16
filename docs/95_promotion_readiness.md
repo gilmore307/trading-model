@@ -1,6 +1,6 @@
 # Promotion Readiness
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_04_event_overlay` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_08_event_risk_governor` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -66,7 +66,7 @@ Realtime evidence becomes stronger as it accumulates untouched future rows, but 
 | 1 | `MarketRegimeModel` | `market_context_state` | deferred after real evaluation | failed baseline, eval-label count, pair-count, and coverage gates; split-stability and leakage currently pass |
 | 2 | `SectorContextModel` | `sector_context_state` | deferred after real evaluation | failed baseline/lift and split-stability gates |
 | 3 | `TargetStateVectorModel` | `target_context_state` | deferred after real production-eval substrate | upstream Layer 1/2 are not production-approved/active and Layer 3 calibration evidence is missing |
-| 4 | `EventOverlayModel` | `event_context_vector` | deferred: no production eval substrate | no production event-overlay evaluation run or calibrated labels exist |
+| 4 | `EventRiskGovernor` | `event_context_vector` | deferred: no production eval substrate | no production event-overlay evaluation run or calibrated labels exist |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | deferred: no production eval substrate | no production adjusted-alpha evaluation run or calibrated labels exist |
 | 6 | `PositionProjectionModel` | `position_projection_vector` | deferred: no production eval substrate | no production position-utility evaluation run or labels exist |
 | 7 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | deferred: no production eval substrate | no production realized-action outcome evaluation run exists |

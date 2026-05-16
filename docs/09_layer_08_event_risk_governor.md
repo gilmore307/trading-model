@@ -1,7 +1,7 @@
 # Layer 08 — EventRiskGovernor / EventIntelligenceOverlay
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 8; legacy event-overlay implementation surface remains `src/models/model_04_event_overlay/` and `source_04_event_overlay` until code/SQL surfaces are renamed.
+Status: active architecture revision. Conceptual Layer 8; implementation package and scripts now use `model_08_event_risk_governor`. The upstream data source still uses `source_04_event_overlay` until a separate data/SQL surface migration is accepted.
 
 Active boundary: Layer 8 is the event-intelligence and event-risk governor after base trading guidance. It consumes standardized point-in-time event interpretations when available (`event_interpretation_v1`) plus event evidence refs, current context states, and the Layer 7 base trading guidance candidate.
 
@@ -11,11 +11,11 @@ Forbidden boundary: Layer 8 must not directly send broker orders, choose routes/
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
-Status: accepted Layer 8 design route; deterministic V1 scaffold implemented in `src/models/model_04_event_overlay/`.
+Status: accepted Layer 8 design route; deterministic V1 scaffold implemented in `src/models/model_08_event_risk_governor/`.
 
 ## Purpose
 
-`EventRiskGovernor / EventOverlayModel` is Layer 8. It converts point-in-time visible event evidence into an `event_risk_intervention / event_context_vector` for the current market, sector, and target context.
+`EventRiskGovernor / EventIntelligenceOverlay` is Layer 8. It converts point-in-time visible event evidence into an `event_risk_intervention / event_context_vector` for the current market, sector, target, and Layer 7 guidance context.
 
 Layer 8 answers:
 
@@ -40,7 +40,7 @@ market_context_state
 + event_detail_artifacts
 + scope_mapping_metadata
 + sensitivity_metadata
-  -> EventRiskGovernor / EventOverlayModel
+  -> EventRiskGovernor / EventRiskGovernor
   -> event_risk_intervention / event_context_vector
 ```
 
@@ -555,7 +555,7 @@ event_risk_intervention / event_context_vector
 Future physical promoted model-output surface:
 
 ```text
-trading_model.model_04_event_overlay
+trading_model.model_08_event_risk_governor
 ```
 
 The V1 output should be a point-in-time row keyed by decision context:
@@ -712,7 +712,7 @@ Layer 8 should prove incremental value over:
 4. residual abnormal-activity-only baseline, excluding bar/liquidity fields already represented in upstream context states;
 5. native-scope-only baseline;
 6. impact-scope-vector baseline;
-7. full EventRiskGovernor / EventOverlayModel.
+7. full EventRiskGovernor / EventRiskGovernor.
 
 Validation should check:
 

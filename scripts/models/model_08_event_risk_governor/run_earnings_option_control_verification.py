@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from models.model_04_event_overlay.earnings_option_control_verification import (
+from models.model_08_event_risk_governor.earnings_option_control_verification import (
     EarningsOptionControlVerificationInputs,
     summarize_earnings_option_control_verification,
 )

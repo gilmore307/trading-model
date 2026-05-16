@@ -17,9 +17,6 @@ anonymous target candidate builder + TargetStateVectorModel
   -> anonymous_target_feature_vector
   -> target_context_state
 
-EventOverlayModel
-  -> event_context_vector
-
 AlphaConfidenceModel
   -> alpha_confidence_vector
 
@@ -29,11 +26,14 @@ PositionProjectionModel
 UnderlyingActionModel
   -> underlying_action_plan / underlying_action_vector
 
-OptionExpressionModel
+TradingGuidanceModel / OptionExpressionModel
   -> option_expression_plan / expression_vector
+
+EventRiskGovernor / EventIntelligenceOverlay
+  -> event_risk_intervention / event-adjusted risk guidance
 ```
 
-Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layers 4-8 convert target state into event context, alpha confidence, projected position state, direct-underlying action thesis, and option-expression choice. Broker orders and account mutation stay outside this repository.
+Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Conceptual Layers 4-7 convert target state into alpha confidence, projected position state, direct-underlying action thesis, and trading/option-expression guidance. Conceptual Layer 8 applies event-risk governance after base guidance. Broker orders and account mutation stay outside this repository.
 
 ## Top-Level Structure
 
@@ -52,11 +52,11 @@ tests/       First-party unit tests and CLI smoke checks using local rows/fake c
 src/models/model_01_market_regime/        MarketRegimeModel.
 src/models/model_02_sector_context/       SectorContextModel.
 src/models/model_03_target_state_vector/  TargetStateVectorModel and anonymous target candidate preprocessing.
-src/models/model_04_event_overlay/        EventOverlayModel.
 src/models/model_05_alpha_confidence/     AlphaConfidenceModel.
 src/models/model_06_position_projection/  PositionProjectionModel.
 src/models/model_07_underlying_action/    UnderlyingActionModel.
-src/models/model_08_option_expression/    OptionExpressionModel.
+src/models/model_08_option_expression/    OptionExpressionModel physical package for conceptual Layer 7 trading guidance.
+src/models/model_08_event_risk_governor/  EventRiskGovernor.
 src/model_governance/                     Shared evaluation, promotion, SQL, and local-layer helpers.
 ```
 
@@ -70,16 +70,16 @@ Important paths:
 scripts/models/model_01_market_regime/
 scripts/models/model_02_sector_context/
 scripts/models/model_03_target_state_vector/
-scripts/models/model_04_event_overlay/
 scripts/models/model_05_alpha_confidence/
 scripts/models/model_06_position_projection/
 scripts/models/model_07_underlying_action/
 scripts/models/model_08_option_expression/
+scripts/models/model_08_event_risk_governor/
 scripts/models/review_layers_03_08_promotion_closeout.py
 scripts/model_governance/
 ```
 
-Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Conceptual Layer 4-8 docs follow the active architecture revision; physical script paths may retain legacy numbering until a dedicated migration renames implementation surfaces. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
+Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Event-risk scripts now use the `model_08_event_risk_governor` surface; option-expression still uses its earlier physical `model_08_option_expression` package until a separate trading-guidance/option-expression migration. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
 
 ## Docs Spine
 

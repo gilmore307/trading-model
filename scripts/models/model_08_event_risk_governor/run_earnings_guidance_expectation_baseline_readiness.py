@@ -1,35 +1,34 @@
 #!/usr/bin/env python3
-"""Audit prior official filings as earnings/guidance baseline source candidates."""
+"""Run point-in-time earnings/guidance expectation baseline readiness scout."""
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
-from models.model_04_event_overlay.earnings_guidance_prior_official_baseline import (
-    PriorOfficialBaselineInputs,
-    run_prior_official_baseline_audit,
+from models.model_08_event_risk_governor.earnings_guidance_expectation_baseline import (
+    ExpectationBaselineInputs,
+    run_expectation_baseline_readiness,
 )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--interpretation-rows", type=Path, required=True)
-    parser.add_argument("--sec-submission-root", type=Path, required=True)
+    parser.add_argument("--baseline-manifest", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--lookback-days", type=int, default=180)
     args = parser.parse_args()
-    report = run_prior_official_baseline_audit(
-        PriorOfficialBaselineInputs(
+    report = run_expectation_baseline_readiness(
+        ExpectationBaselineInputs(
             interpretation_rows_path=args.interpretation_rows,
-            sec_submission_root=args.sec_submission_root,
+            baseline_manifest_path=args.baseline_manifest,
             output_dir=args.output_dir,
-            lookback_days=args.lookback_days,
         )
     )
     print(f"wrote {args.output_dir}")
     print(f"status={report['status']}")
     print(f"event_count={report['event_count']}")
-    print(f"candidate_source_event_count={report['candidate_source_event_count']}")
+    print(f"accepted_baseline_set_event_count={report['accepted_baseline_set_event_count']}")
+    print(f"missing_baseline_event_count={report['missing_baseline_event_count']}")
     print(f"signed_direction_ready_count={report['signed_direction_ready_count']}")
     return 0
 

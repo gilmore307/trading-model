@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from models.model_04_event_overlay.earnings_guidance_event_alone import EventAloneInputs, run_event_alone_study
+from models.model_08_event_risk_governor.earnings_guidance_event_alone import EventAloneInputs, run_event_alone_study
 
 
 def main() -> int:

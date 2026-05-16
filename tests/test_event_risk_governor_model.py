@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from models.model_04_event_overlay import generate_rows
-from models.model_04_event_overlay.evaluation import assert_no_label_leakage, build_event_overlay_labels
+from models.model_08_event_risk_governor import generate_rows
+from models.model_08_event_risk_governor.evaluation import assert_no_label_leakage, build_event_overlay_labels
 
 
 FORBIDDEN_TERMS = {
@@ -27,7 +27,7 @@ FORBIDDEN_TERMS = {
 }
 
 
-class EventOverlayModelTests(unittest.TestCase):
+class EventRiskGovernorTests(unittest.TestCase):
     def test_filters_by_available_time_and_scores_scope_without_actions(self) -> None:
         output = generate_rows([_base_row()])[0]
         vector = output["event_context_vector"]

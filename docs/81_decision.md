@@ -25,7 +25,7 @@ Status: Accepted; revised by V2.2 on 2026-05-05
 | 1 | `MarketRegimeModel` | `market_regime_model` | Broad market tradability/regime context state. |
 | 2 | `SectorContextModel` | `sector_context_model` | Market-context-conditioned sector/industry tradability context. |
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target context for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
-| 4 | `EventOverlayModel` | `event_overlay_model` | Point-in-time `event_context_vector` before alpha confidence. |
+| 4 | `EventRiskGovernor` | `event_risk_governor` | Point-in-time `event_context_vector` before alpha confidence. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack plus event correction to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
 | 6 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
 | 7 | `UnderlyingActionModel` | `underlying_action_model` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and Layer 8 handoff. |
@@ -53,7 +53,7 @@ TargetStateVectorModel
   -> anonymous_target_feature_vector
   -> target_context_state
 
-EventOverlayModel
+EventRiskGovernor
   -> event_context_vector
 
 AlphaConfidenceModel
@@ -414,12 +414,12 @@ State-vector semantics and model-local outputs may continue to mature inside `tr
 
 This keeps Layer 1-8 model design from being constrained by premature manager/storage interface decisions. Registry state-vector values remain reviewed naming/semantic references; they do not by themselves finalize durable manager/storage contracts.
 
-## D020 - EventOverlayModel is Layer 4 before alpha confidence
+## D020 - EventRiskGovernor is Layer 4 before alpha confidence
 
 Date: 2026-05-06
 Status: Accepted
 
-Layer 4 is `EventOverlayModel` with canonical model id `event_overlay_model` and conceptual output `event_context_vector`.
+Layer 4 is `EventRiskGovernor` with canonical model id `event_risk_governor` and conceptual output `event_context_vector`.
 
 This moves event modeling before alpha confidence instead of treating event evidence as an after-the-fact overlay. The reason is structural: scheduled events, breaking news, filings, macro releases, and abnormal activity change the reliability, path risk, reversal risk, gap risk, liquidity disruption, and tradability of any alpha estimate. `AlphaConfidenceModel` must see event context at inference time.
 
@@ -658,7 +658,7 @@ Accepted stack:
 MarketRegimeModel
   -> SectorContextModel
   -> TargetStateVectorModel
-  -> EventOverlayModel
+  -> EventRiskGovernor
   -> AlphaConfidenceModel
   -> PositionProjectionModel
   -> UnderlyingActionModel
@@ -722,12 +722,12 @@ Latest Layer 2 evidence improved coverage; promotion still fails baseline improv
 
 These results are current negative evidence, not a reason to weaken gates. L1/L2 remain deferred, no activation rows are allowed, and downstream L3 promotion remains blocked on upstream approval plus calibration evidence.
 
-## D035 - Price-action false-breakout evidence stays inside EventOverlayModel
+## D035 - Price-action false-breakout evidence stays inside EventRiskGovernor
 
 Date: 2026-05-09
 Status: Accepted
 
-False breakouts, failed breakdowns, liquidity sweeps, bull traps, and bear traps are represented as Layer 4 `price_action` events consumed by `EventOverlayModel`.
+False breakouts, failed breakdowns, liquidity sweeps, bull traps, and bear traps are represented as Layer 4 `price_action` events consumed by `EventRiskGovernor`.
 
 They are not a new Layer 9. At inference time they may affect event intensity, direction bias, reversal risk, liquidity-disruption risk, uncertainty, target relevance, and microstructure/symbol impact inside `event_context_vector`. Realized post-event follow-through/failure remains offline label evidence only and must not leak into inference features.
 
@@ -772,7 +772,7 @@ Rationale: the base trading path should remain runnable without mature event int
 
 Allowed Layer 8 intervention outputs include `block_new_entries`, `max_exposure_factor`, `reduce_exposure_to`, `flatten_position_candidate`, `halt_trading_candidate`, `human_review_required`, event refs, and evidence spans. Layer 8 may modify the decision/risk record consumed by execution risk-control, but it must not directly send broker orders or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence and an accepted execution risk policy or human review path.
 
-Physical implementation surfaces currently retain legacy names (`model_04_event_overlay`, `model_05_alpha_confidence`, `model_06_position_projection`, `model_07_underlying_action`, `model_08_option_expression`) until a dedicated implementation/SQL migration slice renames them. Active docs use the conceptual order above.
+Physical implementation surfaces currently retain legacy names (`model_08_event_risk_governor`, `model_05_alpha_confidence`, `model_06_position_projection`, `model_07_underlying_action`, `model_08_option_expression`) until a dedicated implementation/SQL migration slice renames them. Active docs use the conceptual order above.
 
 ## D040 - Event lifecycle clocks separate scheduled catalysts from surprise events
 

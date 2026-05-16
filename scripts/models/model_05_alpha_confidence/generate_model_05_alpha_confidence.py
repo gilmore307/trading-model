@@ -298,7 +298,7 @@ def generate_from_database(
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
-            model_04_rows = _fetch_rows(cursor, schema="trading_model", table="model_04_event_overlay", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            model_04_rows = _fetch_rows(cursor, schema="trading_model", table="model_08_event_risk_governor", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             model_03_rows = _fetch_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             source_03_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             model_02_rows = _fetch_rows(cursor, schema="trading_model", table="model_02_sector_context", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, sector_or_industry_symbol ASC")

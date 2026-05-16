@@ -2,7 +2,7 @@
 
 Layer 5 deterministic scaffold for `AlphaConfidenceModel`.
 
-Owns local conversion from reviewed Layer 1/2/3 state plus Layer 4 event context into the final adjusted `alpha_confidence_vector`. The scaffold keeps `base_alpha_vector` as diagnostics only and implements:
+Owns local conversion from reviewed Layer 1/2/3 state plus Layer 8 event-risk context into the final adjusted `alpha_confidence_vector`. The scaffold keeps `base_alpha_vector` as diagnostics only and implements:
 
 - base state alpha encoding;
 - baseline-adjusted alpha diagnostics;

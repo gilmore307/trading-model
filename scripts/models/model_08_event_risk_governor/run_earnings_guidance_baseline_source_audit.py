@@ -1,34 +1,35 @@
 #!/usr/bin/env python3
-"""Run point-in-time earnings/guidance expectation baseline readiness scout."""
+"""Audit existing calendar artifacts as earnings/guidance baseline sources."""
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
-from models.model_04_event_overlay.earnings_guidance_expectation_baseline import (
-    ExpectationBaselineInputs,
-    run_expectation_baseline_readiness,
+from models.model_08_event_risk_governor.earnings_guidance_baseline_source_audit import (
+    BaselineSourceAuditInputs,
+    run_baseline_source_audit,
 )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--interpretation-rows", type=Path, required=True)
-    parser.add_argument("--baseline-manifest", type=Path)
+    parser.add_argument("--calendar-artifact-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
-    report = run_expectation_baseline_readiness(
-        ExpectationBaselineInputs(
+    report = run_baseline_source_audit(
+        BaselineSourceAuditInputs(
             interpretation_rows_path=args.interpretation_rows,
-            baseline_manifest_path=args.baseline_manifest,
+            calendar_artifact_root=args.calendar_artifact_root,
             output_dir=args.output_dir,
         )
     )
     print(f"wrote {args.output_dir}")
     print(f"status={report['status']}")
     print(f"event_count={report['event_count']}")
-    print(f"accepted_baseline_set_event_count={report['accepted_baseline_set_event_count']}")
-    print(f"missing_baseline_event_count={report['missing_baseline_event_count']}")
+    print(f"matched_event_count={report['matched_event_count']}")
+    print(f"eps_forecast_present_event_count={report['eps_forecast_present_event_count']}")
+    print(f"accepted_pit_baseline_event_count={report['accepted_pit_baseline_event_count']}")
     print(f"signed_direction_ready_count={report['signed_direction_ready_count']}")
     return 0
 

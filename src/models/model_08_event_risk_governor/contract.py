@@ -1,11 +1,11 @@
-"""Layer 4 EventOverlayModel V1 contract constants."""
+"""Layer 8 EventRiskGovernor V1 contract constants."""
 from __future__ import annotations
 
 from typing import Final
 
-MODEL_ID: Final[str] = "event_overlay_model"
-MODEL_LAYER: Final[str] = "layer_04_event_overlay"
-MODEL_SURFACE: Final[str] = "model_04_event_overlay"
+MODEL_ID: Final[str] = "event_risk_governor"
+MODEL_LAYER: Final[str] = "layer_08_event_risk_governor"
+MODEL_SURFACE: Final[str] = "model_08_event_risk_governor"
 MODEL_VERSION: Final[str] = "event_context_vector_contract"
 VECTOR_OUTPUT: Final[str] = "event_context_vector"
 HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")

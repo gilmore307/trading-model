@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build EventOverlayModel labels and evaluation summary from local or database rows."""
+"""Build EventRiskGovernor labels and evaluation summary from local or database rows."""
 from __future__ import annotations
 
 import argparse
@@ -17,7 +17,7 @@ from model_governance.local_layer_scripts import (
     read_rows,
     write_payload,
 )
-from models.model_04_event_overlay import MODEL_ID, MODEL_SURFACE
+from models.model_08_event_risk_governor import MODEL_ID, MODEL_SURFACE
 
 DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -70,7 +70,7 @@ def _fetch_model_rows(cursor: Any, *, schema: str, table: str, source_start: str
 def _evaluate(model_rows: list[dict[str, Any]], *, evidence_source: str, output_json: Path | None) -> None:
     outcome_rows = fixture_outcome_rows(MODEL_SURFACE, model_rows)
     payload = evaluate_layer(
-        module_name="models.model_04_event_overlay",
+        module_name="models.model_08_event_risk_governor",
         label_builder_name="build_event_overlay_labels",
         model_rows=model_rows,
         outcome_rows=outcome_rows,
@@ -92,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--from-database", action="store_true")
     parser.add_argument("--database-url")
     parser.add_argument("--model-schema", default="trading_model")
-    parser.add_argument("--model-table", default="model_04_event_overlay")
+    parser.add_argument("--model-table", default="model_08_event_risk_governor")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
     args = parser.parse_args(argv)
@@ -107,10 +107,10 @@ def main(argv: list[str] | None = None) -> int:
         model_rows = read_rows(args.model_jsonl)
     else:
         input_rows = read_rows(args.input_jsonl) if args.input_jsonl else FIXTURE_INPUT_ROWS[MODEL_SURFACE]
-        model_rows = generate_layer("models.model_04_event_overlay", input_rows)
+        model_rows = generate_layer("models.model_08_event_risk_governor", input_rows)
     outcome_rows = read_rows(args.outcome_jsonl) if args.outcome_jsonl else fixture_outcome_rows(MODEL_SURFACE, model_rows)
     payload = evaluate_layer(
-        module_name="models.model_04_event_overlay",
+        module_name="models.model_08_event_risk_governor",
         label_builder_name="build_event_overlay_labels",
         model_rows=model_rows,
         outcome_rows=outcome_rows,

@@ -7,7 +7,7 @@ Active boundary: Layer 4 consumes the reviewed Layer 1/2/3 state stack and produ
 
 Allowed outputs: horizon-aware alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Forbidden outputs: target exposure, position size, buy/sell/hold, option contract, order fields, broker/account mutation.
 
-Supersedes older wording in this file that described EventOverlayModel as Layer 4 before alpha. Any remaining legacy implementation references are physical-path notes only, not the conceptual stack order.
+Supersedes older wording in this file that described EventRiskGovernor as Layer 4 before alpha. Any remaining legacy implementation references are physical-path notes only, not the conceptual stack order.
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
@@ -120,7 +120,7 @@ It may also use reviewed cross-state/residual features when available, such as t
 
 Layer 4 may learn that positive or negative target-state evidence has predictive value, but it must not treat Layer 3 direction evidence as a trade instruction or final confidence value.
 
-### Input D - Layer 4 event context
+### Input D - Layer 8 event-risk context
 
 Layer 4 is a correction input, not the primary alpha source. Layer 4 consumes the reviewed `event_context_vector`, including event presence, timing proximity, intensity, direction bias, context alignment, uncertainty, gap/reversal/liquidity/contagion risk, quality, impact-scope strength, scope confidence, escalation risk, and target relevance.
 
@@ -368,7 +368,7 @@ Layer 4 should prove incremental value over:
 2. market/sector context only;
 3. Layer 3 direct target-state score baseline;
 4. Layer 1/2/3 base alpha only;
-5. Layer 4 event only;
+5. Layer 8 event-risk context only;
 6. Layer 1/2/3 plus simple event count;
 7. Layer 1/2/3 plus full EventOverlay adjustment;
 8. full Layer 4 with calibration.

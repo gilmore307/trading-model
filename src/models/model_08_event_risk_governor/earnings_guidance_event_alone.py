@@ -21,7 +21,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-from models.model_04_event_overlay.earnings_guidance_scouting import load_calendar_events
+from models.model_08_event_risk_governor.earnings_guidance_scouting import load_calendar_events
 
 
 HORIZONS = (1, 5, 10, 14)

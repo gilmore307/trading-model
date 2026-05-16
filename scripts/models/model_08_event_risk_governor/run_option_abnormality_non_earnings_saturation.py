@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from models.model_04_event_overlay.option_abnormality_non_earnings_saturation import (
+from models.model_08_event_risk_governor.option_abnormality_non_earnings_saturation import (
     NonEarningsSaturationInputs,
     run_non_earnings_saturation_study,
 )

@@ -1,6 +1,6 @@
 # Vector and State Taxonomy
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_04_event_overlay` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_08_event_risk_governor` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -182,12 +182,12 @@ cross_state_features
 
 Embedding and cluster outputs may exist as derived representation or diagnostics-supporting outputs, but they must not replace the four inspectable blocks as the primary contract.
 
-## Layer 4 event vocabulary
+## Layer 8 event-risk vocabulary
 
 Layer 4 model:
 
 ```text
-EventOverlayModel
+EventRiskGovernor
 ```
 
 Conceptual output:
@@ -199,7 +199,7 @@ event_context_vector
 Future physical promoted artifact:
 
 ```text
-trading_model.model_04_event_overlay
+trading_model.model_08_event_risk_governor
 ```
 
 Primary input source:
@@ -208,7 +208,7 @@ Primary input source:
 trading_data.source_04_event_overlay
 ```
 
-The Layer 4 event vector is a point-in-time overlay on the accepted state stack:
+The Layer 8 event-risk vector is a point-in-time overlay on the accepted state stack:
 
 ```text
 market_context_state
@@ -218,7 +218,7 @@ market_context_state
 + event_detail_artifacts
 + scope_mapping_metadata
 + sensitivity_metadata
-  -> EventOverlayModel
+  -> EventRiskGovernor
   -> event_context_vector
 ```
 
@@ -512,7 +512,7 @@ market_context_state
 
 target_context_state
 + source_04_event_overlay evidence
-  -> EventOverlayModel
+  -> EventRiskGovernor
   -> event_context_vector
 
 target_context_state

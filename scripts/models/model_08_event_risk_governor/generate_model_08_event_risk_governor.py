@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic EventOverlayModel rows from local JSON/JSONL or database rows."""
+"""Generate deterministic EventRiskGovernor rows from local JSON/JSONL or database rows."""
 from __future__ import annotations
 
 import argparse
@@ -12,7 +12,7 @@ from typing import Any, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
-from models.model_04_event_overlay import MODEL_ID, MODEL_SURFACE, MODEL_VERSION, generate_rows
+from models.model_08_event_risk_governor import MODEL_ID, MODEL_SURFACE, MODEL_VERSION, generate_rows
 
 DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -198,14 +198,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
     parser.add_argument("--target-schema", default="trading_model")
-    parser.add_argument("--target-table", default="model_04_event_overlay")
+    parser.add_argument("--target-table", default="model_08_event_risk_governor")
     args = parser.parse_args(argv)
     if args.from_database:
         count = generate_from_database(database_url=_database_url(args.database_url), source_start=args.source_start, source_end=args.source_end, target_schema=args.target_schema, target_table=args.target_table, model_version=args.model_version, output_jsonl=args.output_jsonl)
         print(f"generated {count} rows into {args.target_schema}.{args.target_table}")
         return 0
     input_rows = read_rows(args.input_jsonl) if args.input_jsonl else FIXTURE_INPUT_ROWS[MODEL_SURFACE]
-    rows = generate_layer("models.model_04_event_overlay", input_rows, model_version=args.model_version)
+    rows = generate_layer("models.model_08_event_risk_governor", input_rows, model_version=args.model_version)
     write_rows(rows, args.output_jsonl)
     return 0
 

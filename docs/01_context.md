@@ -7,7 +7,7 @@ The trading platform is split across multiple repositories so each major respons
 1. MarketRegimeModel (`market_regime_model`);
 2. SectorContextModel (`sector_context_model`);
 3. TargetStateVectorModel (`target_state_vector_model`), including anonymous target candidate construction as Layer 3 preprocessing;
-4. EventOverlayModel (`event_overlay_model`);
+4. EventRiskGovernor (`event_risk_governor`);
 5. AlphaConfidenceModel (`alpha_confidence_model`);
 6. PositionProjectionModel (`position_projection_model`);
 7. UnderlyingActionModel (`underlying_action_model`);
@@ -25,7 +25,7 @@ Current structural boundary:
 broad market tradability context -> sector/industry tradability context -> anonymized target context -> event context -> confidence -> position projection -> underlying action plan -> option expression handoff
 ```
 
-`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Layer 4 `EventOverlayModel` adds event context before confidence. Later confidence/projection/action/expression layers may map back to real symbols only for audit, routing, and decision records.
+`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Layer 4 `EventRiskGovernor` adds event context before confidence. Later confidence/projection/action/expression layers may map back to real symbols only for audit, routing, and decision records.
 
 ## Related Systems
 

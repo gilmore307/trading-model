@@ -19,7 +19,7 @@ MODEL_LAYER_ORDER = (
     "layer_01_market_regime",
     "layer_02_sector_context",
     "layer_03_target_state_vector",
-    "layer_04_event_overlay",
+    "layer_08_event_risk_governor",
     "layer_05_alpha_confidence",
     "layer_06_position_projection",
     "layer_07_underlying_action",
@@ -42,10 +42,10 @@ _LAYER_METADATA = {
         "expected_model_output": "target_context_state",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_03_target_state_vector/generate_model_03_target_state_vector.py",
     },
-    "layer_04_event_overlay": {
-        "model_id": "model_04_event_overlay",
+    "layer_08_event_risk_governor": {
+        "model_id": "model_08_event_risk_governor",
         "expected_model_output": "event_context_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_04_event_overlay/generate_model_04_event_overlay.py",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_08_event_risk_governor/generate_model_08_event_risk_governor.py",
     },
     "layer_05_alpha_confidence": {
         "model_id": "model_05_alpha_confidence",
