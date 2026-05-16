@@ -1,10 +1,10 @@
-"""Layer 7 UnderlyingActionModel V1 contract constants."""
+"""Legacy physical constants for conceptual Layer 6 UnderlyingActionModel."""
 from __future__ import annotations
 
 from typing import Final
 
 MODEL_ID: Final[str] = "underlying_action_model"
-MODEL_LAYER: Final[str] = "layer_07_underlying_action"
+MODEL_LAYER: Final[str] = "layer_07_underlying_action"  # legacy physical layer token until a dedicated migration
 MODEL_SURFACE: Final[str] = "model_07_underlying_action"
 MODEL_VERSION: Final[str] = "underlying_action_plan_contract"
 PRIMARY_OUTPUT: Final[str] = "underlying_action_plan"

@@ -42,7 +42,7 @@ The model-side planner consumes an `execution_model_decision_input_snapshot` obj
 - `realtime_feature_snapshot_ref`
 - exactly one layer input for each Layer 1-8
 
-Each layer input must include the expected model id, expected model output, feature ref, frozen model config ref, and historical dataset snapshot ref.
+Each conceptual layer input must include the expected model id, expected model output, feature ref, frozen model config ref, and historical dataset snapshot ref. Some implementation model ids still use legacy physical numbers until a dedicated migration; this table is conceptual-order first.
 
 ## Layer route mapping
 
@@ -51,11 +51,11 @@ Each layer input must include the expected model id, expected model output, feat
 | 1 | `model_01_market_regime` | `market_context_state` | `scripts/models/model_01_market_regime/generate_model_01_market_regime.py` |
 | 2 | `model_02_sector_context` | `sector_context_state` | `scripts/models/model_02_sector_context/generate_model_02_sector_context.py` |
 | 3 | `model_03_target_state_vector` | `target_context_state` | `scripts/models/model_03_target_state_vector/generate_model_03_target_state_vector.py` |
-| 4 | `model_08_event_risk_governor` | `event_context_vector` | `scripts/models/model_08_event_risk_governor/generate_model_08_event_risk_governor.py` |
-| 5 | `model_05_alpha_confidence` | `alpha_confidence_vector` | `scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py` |
-| 6 | `model_06_position_projection` | `position_projection_vector` | `scripts/models/model_06_position_projection/generate_model_06_position_projection.py` |
-| 7 | `model_07_underlying_action` | `underlying_action_plan` | `scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py` |
-| 8 | `model_08_option_expression` | `option_expression_plan` | `scripts/models/model_08_option_expression/generate_model_08_option_expression.py` |
+| 4 | `model_05_alpha_confidence` | `alpha_confidence_vector` | `scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py` |
+| 5 | `model_06_position_projection` | `position_projection_vector` | `scripts/models/model_06_position_projection/generate_model_06_position_projection.py` |
+| 6 | `model_07_underlying_action` | `underlying_action_plan` | `scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py` |
+| 7 | `model_08_option_expression` | `option_expression_plan` | `scripts/models/model_08_option_expression/generate_model_08_option_expression.py` |
+| 8 | `model_08_event_risk_governor` | `event_risk_intervention` / `event_context_vector` | `scripts/models/model_08_event_risk_governor/generate_model_08_event_risk_governor.py` |
 
 ## Non-authorizations
 

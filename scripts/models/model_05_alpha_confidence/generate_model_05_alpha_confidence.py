@@ -200,7 +200,7 @@ def _latest_before(rows: Sequence[Mapping[str, Any]], available_time: datetime) 
 
 def _decision_rows(
     *,
-    model_04_rows: Sequence[Mapping[str, Any]],
+    event_risk_rows: Sequence[Mapping[str, Any]],
     model_03_rows: Sequence[Mapping[str, Any]],
     source_03_rows: Sequence[Mapping[str, Any]],
     model_02_rows: Sequence[Mapping[str, Any]],
@@ -221,7 +221,7 @@ def _decision_rows(
             sector_rows_by_symbol.setdefault(symbol, []).append(row)
 
     rows: list[dict[str, Any]] = []
-    for event_model in model_04_rows:
+    for event_model in event_risk_rows:
         candidate = str(event_model.get("target_candidate_id") or "")
         if not candidate or not event_model.get("available_time"):
             continue
@@ -298,12 +298,12 @@ def generate_from_database(
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
-            model_04_rows = _fetch_rows(cursor, schema="trading_model", table="model_08_event_risk_governor", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            event_risk_rows = _fetch_rows(cursor, schema="trading_model", table="model_08_event_risk_governor", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             model_03_rows = _fetch_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             source_03_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             model_02_rows = _fetch_rows(cursor, schema="trading_model", table="model_02_sector_context", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, sector_or_industry_symbol ASC")
             model_01_rows = _fetch_rows(cursor, schema="trading_model", table="model_01_market_regime", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC")
-            decisions = _decision_rows(model_04_rows=model_04_rows, model_03_rows=model_03_rows, source_03_rows=source_03_rows, model_02_rows=model_02_rows, model_01_rows=model_01_rows)
+            decisions = _decision_rows(event_risk_rows=event_risk_rows, model_03_rows=model_03_rows, source_03_rows=source_03_rows, model_02_rows=model_02_rows, model_01_rows=model_01_rows)
             model_rows = generate_rows(decisions, model_version=model_version)
             _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
     if output_jsonl:

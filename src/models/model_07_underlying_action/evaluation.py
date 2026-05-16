@@ -1,4 +1,4 @@
-"""Local evaluation-label helpers for Layer 7 UnderlyingActionModel.
+"""Local evaluation-label helpers for conceptual Layer 6 UnderlyingActionModel.
 
 These helpers are deliberately offline-only. They join realized outcome rows to
 already-emitted ``underlying_action_plan`` rows and derive plan-quality labels

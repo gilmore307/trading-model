@@ -265,9 +265,9 @@ Accepted V1 score-family horizons are `5min`, `15min`, `60min`, and `390min`. V1
 
 It is event context only. It is not alpha confidence, not a trading signal, not position sizing, not expression selection, and not final action.
 
-## Layer 5 alpha-confidence vocabulary
+## Layer 4 alpha-confidence vocabulary
 
-Layer 5 model:
+Layer 4 model:
 
 ```text
 AlphaConfidenceModel
@@ -295,14 +295,14 @@ event_context_vector
 point-in-time quality/calibration evidence
 ```
 
-The Layer 5 alpha-confidence vector is the calibrated directional opportunity layer after target state and event correction:
+The Layer 4 alpha-confidence vector is the calibrated directional opportunity layer after target state. Event evidence is not a hard upstream input; optional reviewed event-risk diagnostics may be retained for later Layer 8 governance:
 
 ```text
 Layer 1/2/3 state stack
   -> base_alpha_vector                 # diagnostic / unadjusted
 
 base_alpha_vector
-+ event_context_vector
++ optional reviewed event-risk diagnostics
 + quality/calibration/path-risk controls
   -> AlphaConfidenceModel
   -> alpha_confidence_vector           # final adjusted output
@@ -322,12 +322,12 @@ Accepted V1 score-family horizons are `5min`, `15min`, `60min`, and `390min`. V1
 5_alpha_tradability_score_<horizon>
 ```
 
-Base/unadjusted `5_base_*` values are diagnostics for audit/research/event attribution, not the default Layer 6-facing contract. The adjusted vector is alpha confidence only: not target exposure, not position sizing, not option expression, not execution, and not final action.
+Base/unadjusted `5_base_*` values are legacy-prefix diagnostics for audit/research/event attribution, not the default Layer 5-facing contract. The adjusted vector is alpha confidence only: not target exposure, not position sizing, not option expression, not execution, and not final action.
 
 
-## Layer 6 position-projection vocabulary
+## Layer 5 position-projection vocabulary
 
-Layer 6 model:
+Layer 5 model:
 
 ```text
 PositionProjectionModel
@@ -348,7 +348,7 @@ trading_model.model_06_position_projection
 Primary model inputs:
 
 ```text
-alpha_confidence_vector                 # Layer 5 final adjusted output
+alpha_confidence_vector                 # Layer 4 final adjusted output
 current_position_state
 pending_position_state
 position_level_friction_context
@@ -357,7 +357,7 @@ risk_budget_context
 point-in-time policy gates
 ```
 
-The Layer 6 position-projection vector is the account/portfolio-state-aware target holding-state layer:
+The Layer 5 position-projection vector is the account/portfolio-state-aware target holding-state layer:
 
 ```text
 alpha_confidence_vector
@@ -399,9 +399,9 @@ Layer 6 may also expose handoff summary fields for Layer 7:
 
 Layer 6 is position projection only: not buy/sell/hold, not open/close/reverse, not instrument selection, not option-chain reading, not strike/DTE/Greeks, not execution, and not final action.
 
-## Layer 7 underlying-action plan semantics
+## Layer 6 underlying-action plan semantics
 
-Layer 7 `underlying_action_plan` and `underlying_action_vector` values must keep these axes separate:
+Conceptual Layer 6 `underlying_action_plan` and `underlying_action_vector` values must keep these axes separate:
 
 ```text
 alpha confidence != planned underlying action
@@ -417,9 +417,9 @@ underlying action plan != option expression
 underlying action plan != live execution
 ```
 
-Accepted Layer 7 score families use the `7_` prefix and `<horizon>` suffix for horizon-aware families. Planned action types, resolved plan fields, reason codes, entry/target/stop prices, quantities, and Layer 8 handoff fields are plan payload fields, not broker-order fields.
+Accepted underlying-action score families still use the legacy `7_` prefix and `<horizon>` suffix for horizon-aware families until a dedicated physical rename. Planned action types, resolved plan fields, reason codes, entry/target/stop prices, quantities, and conceptual Layer 7 trading-guidance handoff fields are plan payload fields, not broker-order fields.
 
-Core Layer 7 score families:
+Core legacy `7_` underlying-action score families:
 
 - `7_underlying_trade_eligibility_score_<horizon>` — `[0, 1]`, high-is-good direct-underlying trade eligibility.
 - `7_underlying_action_direction_score_<horizon>` — `[-1, 1]`, signed planned direct-underlying side; positive long-side, negative short-side, near zero maintain/no-trade.
@@ -432,11 +432,11 @@ Core Layer 7 score families:
 - `7_underlying_holding_time_fit_score_<horizon>` — `[0, 1]`, high-is-good compatibility between planned holding time and the signal/projection horizon.
 - `7_underlying_action_confidence_score_<horizon>` — `[0, 1]`, calibrated confidence in the offline direct-underlying action thesis.
 
-Resolved Layer 7 fields such as `7_resolved_underlying_action_type`, `7_resolved_action_side`, `7_resolved_dominant_horizon`, and `7_resolved_reason_codes` summarize the chosen plan for Layer 8 and execution-side review. They do not send orders.
+Resolved legacy `7_` fields such as `7_resolved_underlying_action_type`, `7_resolved_action_side`, `7_resolved_dominant_horizon`, and `7_resolved_reason_codes` summarize the conceptual Layer 6 plan for conceptual Layer 7 trading-guidance and execution-side review. They do not send orders.
 
-## Layer 8 option-expression semantics
+## Layer 7 option-expression semantics
 
-Layer 8 `option_expression_plan` and `expression_vector` values must keep these axes separate:
+Conceptual Layer 7 `option_expression_plan` and `expression_vector` values must keep these axes separate:
 
 ```text
 underlying action plan != option expression

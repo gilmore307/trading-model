@@ -120,11 +120,11 @@ It may also use reviewed cross-state/residual features when available, such as t
 
 Layer 4 may learn that positive or negative target-state evidence has predictive value, but it must not treat Layer 3 direction evidence as a trade instruction or final confidence value.
 
-### Input D - Layer 8 event-risk context
+### Non-blocking Layer 8 event-risk context
 
-Layer 4 is a correction input, not the primary alpha source. Layer 4 consumes the reviewed `event_context_vector`, including event presence, timing proximity, intensity, direction bias, context alignment, uncertainty, gap/reversal/liquidity/contagion risk, quality, impact-scope strength, scope confidence, escalation risk, and target relevance.
+Layer 8 event intelligence is not a required input for Layer 4 alpha-confidence generation. Reviewed `event_context_vector` / event-risk evidence may be referenced as diagnostics or later risk-governor context, but it must not be treated as a hard upstream prerequisite for base alpha.
 
-Events may enhance, weaken, contaminate, or in exceptional cases override the base state alpha. Ordinary events should not dominate Layer 1/2/3 state evidence.
+Events may later enhance, weaken, contaminate, block, cap, or require review of the base guidance through the Layer 8 EventRiskGovernor boundary. Ordinary event evidence should not be folded into Layer 4 as duplicate state alpha.
 
 ### Input E - quality, calibration, and research memory
 
@@ -138,7 +138,7 @@ layer_4_quality_score
 feature_coverage_score
 data_quality_score
 state_quality_score
-event_artifact_quality_score
+layer_8_event_artifact_quality_score
 state_neighborhood_sample_count
 state_neighborhood_outcome_stability
 model_ensemble_agreement_score
@@ -181,7 +181,7 @@ Layer 4 V1 uses six auditable submodules before any broad black-box confidence m
 ```text
 5A BaseStateAlphaEncoder
 5B BaselineAdjustedAlphaDecomposer
-5C EventAdjustmentLayer
+5C EventRiskDiagnosticBridge
 5D PathRiskEstimator
 5E ConfidenceCalibrationLayer
 5F AlphaVectorComposer
@@ -217,9 +217,9 @@ Separates target alpha from market/sector beta. Diagnostic fields may include:
 
 If beta dependency is high and target-state lift is low, Layer 4 should avoid claiming target-specific alpha.
 
-### 5C - EventAdjustmentLayer
+### 5C - EventRiskDiagnosticBridge
 
-Uses Layer 4 to adjust base alpha. It may adjust direction, strength, confidence, path risk, horizon quality, and final tradability. Event override mode is allowed only for high-quality, high-intensity, high-relevance, high-confidence events and must carry reason codes.
+Carries optional reviewed Layer 8 event-risk diagnostics for later governance without making event evidence a hard Layer 4 alpha input. Any event-driven block/cap/review/flatten candidate remains a Layer 8 EventRiskGovernor intervention, not a Layer 4 alpha override.
 
 Diagnostic fields may include:
 
@@ -352,7 +352,7 @@ Labels must be materialized only in training/evaluation datasets and must not be
 Layer 4 should be trained in stages:
 
 1. **Base alpha model**: train Layer 1/2/3-only base alpha outputs.
-2. **Event adjustment model**: learn residual corrections from Layer 4 over base-alpha errors, event windows, event-conditioned risk deterioration, and event-supported alpha improvement.
+2. **Event-risk diagnostic bridge**: evaluate whether reviewed Layer 8 event-risk diagnostics explain base-alpha errors, event-window risk deterioration, or event-supported improvement without turning events into a hard upstream alpha input.
 3. **Path/risk heads**: add MFE/MAE, first-touch, reversal, drawdown, liquidity, and event-risk labels.
 4. **Calibration layer**: calibrate confidence, reliability, and tradability using walk-forward and out-of-sample buckets.
 
@@ -416,6 +416,6 @@ Layer 4 must not:
 
 1. **V1.0 base alpha from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics. **Done in deterministic scaffold for fixture rows.**
 2. **V1.1 final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. **Done in deterministic scaffold.**
-3. **V1.2 EventAdjustmentLayer**: connect `event_context_vector` only as a correction layer with diagnostics and constrained override mode. **Done in deterministic scaffold.**
+3. **V1.2 EventRiskDiagnosticBridge**: keep optional `event_context_vector` references diagnostic only for later Layer 8 governance; do not make event evidence a hard Layer 4 alpha input. **Deterministic scaffold uses legacy physical hooks until a dedicated cleanup migration.**
 4. **V1.3 baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence. **Done in deterministic scaffold.**
 5. **V1.4 calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path. **Offline label/leakage helpers exist; calibrated promotion evidence remains later work.**

@@ -1,6 +1,6 @@
 # model_06_position_projection
 
-Layer 6 deterministic scaffold for `PositionProjectionModel`.
+Legacy physical package for conceptual Layer 5 `PositionProjectionModel` deterministic scaffold.
 
 Owns local mapping from final adjusted `alpha_confidence_vector` plus point-in-time current/pending position, friction, portfolio, risk-budget, and policy context into `position_projection_vector`. The scaffold implements:
 

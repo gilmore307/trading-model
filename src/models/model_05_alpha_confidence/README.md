@@ -1,6 +1,6 @@
 # model_05_alpha_confidence
 
-Layer 5 deterministic scaffold for `AlphaConfidenceModel`.
+Legacy physical package for conceptual Layer 4 `AlphaConfidenceModel` deterministic scaffold.
 
 Owns local conversion from reviewed Layer 1/2/3 state plus Layer 8 event-risk context into the final adjusted `alpha_confidence_vector`. The scaffold keeps `base_alpha_vector` as diagnostics only and implements:
 

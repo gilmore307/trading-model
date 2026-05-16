@@ -4,7 +4,7 @@
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
-Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 8 event-risk score families, Layer 5 alpha-confidence score families, Layer 6 position-projection score families, and Layer 7 underlying-action score families.
+Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 8 event-risk score families, Layer 4 alpha-confidence score families, Layer 5 position-projection score families, conceptual Layer 6 underlying-action score families, and conceptual Layer 7 option-expression score families.
 
 This registry prevents the state/context/action-vector system from mixing direction, quality, risk, scope, routing, diagnostics, plan fields, execution fields, and research-only payloads.
 
@@ -47,7 +47,7 @@ Stable short states can score highly when direction strength, trend quality, pat
 
 ## Layer 8 event-risk-context score semantics
 
-Layer 4 `event_context_vector` values must keep these axes separate:
+Layer 8 `event_context_vector` / event-risk intervention values must keep these axes separate:
 
 ```text
 event presence != event intensity
@@ -57,7 +57,7 @@ direction bias != alpha
 event risk != trade action
 ```
 
-Accepted Layer 4 scalar event-context score values use the `4_` prefix and `<horizon>` suffix for horizon-aware families. Enum-like audit fields may share the horizon suffix in model-local contracts, but they are not `state_vector_value` registry rows.
+Accepted event-context scalar score values currently retain the legacy `4_` prefix and `<horizon>` suffix for horizon-aware families until a dedicated score-token migration is accepted. Enum-like audit fields may share the horizon suffix in model-local contracts, but they are not `state_vector_value` registry rows.
 
 Core risk/quality families:
 
@@ -90,13 +90,13 @@ Model-local audit/debug field:
 
 - `4_event_dominant_impact_scope_<horizon>` — enum/routing/audit family; not a scalar score registry value; use carefully as model evidence and prefer numeric scope scores when fitting.
 
-## Layer 5 alpha-confidence score semantics
+## Layer 4 alpha-confidence score semantics
 
-Layer 5 `alpha_confidence_vector` values must keep these axes separate:
+Conceptual Layer 4 `alpha_confidence_vector` values must keep these axes separate:
 
 ```text
 target direction evidence != alpha confidence
-event direction bias != alpha confidence
+event direction bias != base alpha prerequisite
 confidence != expected residual return
 expected residual return != target exposure
 risk != no-trade instruction
@@ -104,7 +104,7 @@ alpha confidence != option expression
 alpha confidence != final action
 ```
 
-Accepted Layer 5 scalar alpha-confidence score values use the `5_` prefix and `<horizon>` suffix for horizon-aware families. Action/routing fields, position sizing, account-risk allocations, option-contract choices, and final verdicts are not `state_vector_value` rows for Layer 5.
+Accepted alpha-confidence score values still use the legacy `5_` prefix and `<horizon>` suffix for horizon-aware families until a dedicated physical rename. Action/routing fields, position sizing, account-risk allocations, option-contract choices, and final verdicts are not `state_vector_value` rows for conceptual Layer 4.
 
 Core final adjusted alpha-confidence families:
 
@@ -118,11 +118,11 @@ Core final adjusted alpha-confidence families:
 - `5_drawdown_risk_score_<horizon>` — `[0, 1]`, high-is-bad adverse excursion / MAE / drawdown risk.
 - `5_alpha_tradability_score_<horizon>` — `[0, 1]`, alpha-level suitability for Layer 6 position projection; not a target exposure, position gap, or operation.
 
-Base/unadjusted `5_base_*` fields are diagnostics for Layer 1/2/3-only attribution and are not registered as core Layer 6-facing `state_vector_value` rows.
+Base/unadjusted `5_base_*` fields are legacy-prefix diagnostics for Layer 1/2/3-only attribution and are not registered as core conceptual Layer 5-facing `state_vector_value` rows.
 
-## Layer 6 position-projection score semantics
+## Layer 5 position-projection score semantics
 
-Layer 6 `position_projection_vector` values must keep these axes separate:
+Conceptual Layer 5 `position_projection_vector` values must keep these axes separate:
 
 ```text
 alpha confidence != target exposure
@@ -136,7 +136,7 @@ projection confidence != alpha confidence
 position projection vector != final action
 ```
 
-Accepted Layer 6 scalar position-projection score values use the `6_` prefix and `<horizon>` suffix for horizon-aware families. Buy/sell/hold/open/close/reverse, instrument selection, option-chain fields, strike/DTE/Greeks, order routing, and execution outputs are not `state_vector_value` rows for Layer 6.
+Accepted position-projection score values still use the legacy `6_` prefix and `<horizon>` suffix for horizon-aware families until a dedicated physical rename. Buy/sell/hold/open/close/reverse, instrument selection, option-chain fields, strike/DTE/Greeks, order routing, and execution outputs are not `state_vector_value` rows for conceptual Layer 5.
 
 Core final position-projection families:
 
@@ -151,9 +151,9 @@ Core final position-projection families:
 - `6_position_state_stability_score_<horizon>` — `[0, 1]`, high-is-good stability of the projected target holding state across alpha, horizon, cost, risk, and pending-order uncertainty.
 - `6_projection_confidence_score_<horizon>` — `[0, 1]`, confidence in the Layer 6 alpha-to-position mapping; separate from Layer 5 alpha confidence.
 
-## Layer 7 underlying-action score semantics
+## Layer 6 underlying-action score semantics
 
-Layer 7 `underlying_action_plan` and `underlying_action_vector` values must keep these axes separate:
+Conceptual Layer 6 `underlying_action_plan` and `underlying_action_vector` values must keep these axes separate:
 
 ```text
 alpha confidence != planned underlying action
@@ -169,9 +169,9 @@ underlying action plan != option expression
 underlying action plan != live execution
 ```
 
-Accepted Layer 7 score families use the `7_` prefix and `<horizon>` suffix for horizon-aware families. Planned action types, resolved handoff fields, reason codes, entry/target/stop prices, quantities, and Layer 8 handoff fields are plan payload fields, not broker-order fields.
+Accepted underlying-action score families still use the legacy `7_` prefix and `<horizon>` suffix for horizon-aware families until a dedicated physical rename. Planned action types, resolved handoff fields, reason codes, entry/target/stop prices, quantities, and conceptual Layer 7 trading-guidance handoff fields are plan payload fields, not broker-order fields.
 
-Core Layer 7 score families:
+Core legacy `7_` underlying-action score families:
 
 - `7_underlying_trade_eligibility_score_<horizon>` — `[0, 1]`, high-is-good direct-underlying trade eligibility after hard/soft gates.
 - `7_underlying_action_direction_score_<horizon>` — `[-1, 1]`, signed direct-underlying planned side; positive long-side, negative short-side, near zero maintain/no-trade.
@@ -186,9 +186,9 @@ Core Layer 7 score families:
 
 Model-local plan/handoff fields include `7_resolved_underlying_action_type`, `7_resolved_action_side`, `7_resolved_dominant_horizon`, `7_resolved_trade_eligibility_score`, `7_resolved_trade_intensity_score`, `7_resolved_entry_quality_score`, `7_resolved_action_confidence_score`, and `7_resolved_reason_codes`. They summarize the plan and do not send orders.
 
-## Layer 8 option-expression score semantics
+## Layer 7 option-expression score semantics
 
-Layer 8 `option_expression_plan` and `expression_vector` values must keep these axes separate:
+Conceptual Layer 7 `option_expression_plan` and `expression_vector` values must keep these axes separate:
 
 ```text
 underlying action plan != option expression

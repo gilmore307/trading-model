@@ -218,7 +218,7 @@ routing_destination
 broker_order_id
 ```
 
-These belong to Layer 6 underlying-action work, Layer 8 option-expression work, or execution-side repositories.
+These belong to conceptual Layer 6 underlying-action work, conceptual Layer 7 option-expression/trading-guidance work, or execution-side repositories.
 
 ## Internal structure
 

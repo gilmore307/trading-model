@@ -1,10 +1,10 @@
-"""Layer 5 AlphaConfidenceModel V1 contract constants."""
+"""Legacy physical constants for conceptual Layer 4 AlphaConfidenceModel."""
 from __future__ import annotations
 
 from typing import Final
 
 MODEL_ID: Final[str] = "alpha_confidence_model"
-MODEL_LAYER: Final[str] = "layer_05_alpha_confidence"
+MODEL_LAYER: Final[str] = "layer_05_alpha_confidence"  # legacy physical layer token until a dedicated migration
 MODEL_SURFACE: Final[str] = "model_05_alpha_confidence"
 MODEL_VERSION: Final[str] = "alpha_confidence_vector_contract"
 VECTOR_OUTPUT: Final[str] = "alpha_confidence_vector"

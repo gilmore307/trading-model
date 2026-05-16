@@ -383,19 +383,7 @@ src/models/model_03_target_state_vector/target_state_vector_contract.md
 
 Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, and target-local tape/liquidity/behavior evidence prepared by Layer 3 preprocessing. The primary `target_context_state` output consists of four inspectable blocks: `market_state_features`, `sector_state_features`, `target_state_features`, and `cross_state_features`. Embedding/cluster outputs may be derived representations, but they must not replace the inspectable blocks. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, and row reliability must remain separate. It must not select strategy families, expand parameter variants, output alpha confidence, output final entry/exit prices, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
 
-## Layer 4: EventRiskGovernor
-
-Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
-
-Contract owner:
-
-```text
-docs/09_layer_08_event_risk_governor.md
-```
-
-Must convert point-in-time event evidence into `event_context_vector` before alpha confidence is estimated. It consumes market, sector, and target context plus visible event rows, then describes event presence, timing, scope, intensity, direction bias, uncertainty, gap/reversal/liquidity disruption risk, contagion risk, and evidence quality. It must preserve event timing and source priority and must not use post-event outcomes as inference inputs.
-
-## Layer 5: AlphaConfidenceModel
+## Layer 4: AlphaConfidenceModel
 
 Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
@@ -405,9 +393,9 @@ Contract owner:
 docs/05_layer_04_alpha_confidence.md
 ```
 
-Must convert reviewed Layer 1/2/3 state evidence plus `event_context_vector` correction into the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/unadjusted alpha from Layer 1/2/3 is retained as diagnostics only; the adjusted vector is the default Layer 6-facing output. Directional alpha belongs here, not in Layer 3 or Layer 4. It must not project target exposure, select option contracts, size positions, emit final actions, or mutate broker/account state.
+Must convert reviewed Layer 1/2/3 state evidence into the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/unadjusted alpha from Layer 1/2/3 is retained as diagnostics only; the adjusted vector is the default Layer 5-facing output. Directional alpha belongs here, not in Layer 3. Event intelligence is no longer a hard upstream prerequisite for base alpha; Layer 8 may later intervene on the base guidance. Layer 4 must not project target exposure, select option contracts, size positions, emit final actions, or mutate broker/account state.
 
-## Layer 6: PositionProjectionModel
+## Layer 5: PositionProjectionModel
 
 Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
@@ -422,7 +410,7 @@ docs/06_layer_05_position_projection.md
 Primary inputs:
 
 ```text
-alpha_confidence_vector                 # Layer 5 final adjusted output
+alpha_confidence_vector                 # Layer 4 final adjusted output
 current_position_state                  # point-in-time current abstract exposure
 pending_position_state                  # point-in-time pending exposure / fill probability
 position_level_friction_context          # spread/slippage/fee/turnover/liquidity capacity
@@ -431,7 +419,7 @@ risk_budget_context                      # limits, drawdown, volatility budget, 
 point-in-time policy gates
 ```
 
-Expression-specific costs such as borrow, financing, and option-expression cost may be diagnostics or soft hints only. Layer 6 must not choose or reject a specific expression/instrument.
+Expression-specific costs such as borrow, financing, and option-expression cost may be diagnostics or soft hints only. Layer 5 must not choose or reject a specific expression/instrument.
 
 ### 2. Features
 
@@ -472,7 +460,7 @@ trading_model.model_06_position_projection_explainability
 trading_model.model_06_position_projection_diagnostics
 ```
 
-The primary output keeps the narrow Layer 7-facing target holding-state projection: target position bias, target exposure, current-position alignment, signed position gap, gap magnitude, expected position utility, cost-to-adjust pressure, risk-budget fit, position-state stability, and projection confidence.
+The primary output keeps the narrow Layer 6-facing target holding-state projection: target position bias, target exposure, current-position alignment, signed position gap, gap magnitude, expected position utility, cost-to-adjust pressure, risk-budget fit, position-state stability, and projection confidence.
 
 Handoff summary fields may expose dominant projection horizon, horizon conflict state, resolved target exposure, resolved position gap, resolution confidence, and reason codes. Diagnostics own raw alpha-to-position priors, effective exposure calculations, and risk/cost reason-code detail.
 
@@ -504,7 +492,7 @@ Evaluate wrongness through cost-aware, risk-adjusted position utility, not raw r
 
 ### 6. Training / parameter update
 
-Layer 6 should prefer a candidate-exposure utility curve rather than directly fitting one hindsight-best target exposure:
+Layer 5 should prefer a candidate-exposure utility curve rather than directly fitting one hindsight-best target exposure:
 
 ```text
 Q(position_context, candidate_exposure) -> net utility
@@ -514,7 +502,7 @@ Candidate exposure grids may start with `-1.00, -0.75, -0.50, -0.25, 0.00, +0.25
 
 ### 7. Validation / usefulness
 
-Layer 6 must prove incremental value over current-position unchanged, flat-position, Layer 5 alpha-only exposure mapping, fixed exposure by confidence, cost-blind projection, risk-budget-blind projection, simple horizon averaging, highest-confidence-horizon, and full PositionProjectionModel baselines.
+Layer 5 must prove incremental value over current-position unchanged, flat-position, Layer 4 alpha-confidence-only exposure mapping, fixed exposure by confidence, cost-blind projection, risk-budget-blind projection, simple horizon averaging, highest-confidence-horizon, and full PositionProjectionModel baselines.
 
 Validation must check utility monotonicity, turnover reduction, cost-pressure usefulness, risk-budget-breach reduction, gap correctness using effective exposure, horizon-resolution value, and no-future-leak evidence.
 
@@ -525,13 +513,13 @@ Controls:
 - separate inference features from future utility labels;
 - avoid learning from strategy-generated historical positions as if they covered all possible exposures;
 - train/evaluate candidate exposure utility curves across chronological splits;
-- keep expression-specific option-chain features out of Layer 6;
+- keep expression-specific option-chain features out of Layer 5;
 - use bounded normalized exposures and reviewed risk-budget gates;
 - require baseline and leakage evidence before promotion.
 
 ### 9. Decision deployment
 
-Layer 6 output feeds Layer 7 direct-underlying action planning:
+Layer 5 output feeds Layer 6 direct-underlying action planning:
 
 ```text
 position_projection_vector
@@ -541,13 +529,13 @@ position_projection_vector
 
 It must not output buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, size orders, route orders, or mutate broker/account state.
 
-## Layer 7: UnderlyingActionModel
+## Layer 6: UnderlyingActionModel
 
 Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
 ### 1. Purpose
 
-Layer 7 maps current state, final adjusted alpha confidence, and Layer 6 target holding-state projection into a direct stock/ETF offline action thesis. It answers whether direct underlying expression is eligible, which planned underlying action type applies, how much exposure the offline plan should adjust, and what entry/target/stop/time thesis defines the trade idea.
+Layer 6 maps current state, final adjusted alpha confidence, and Layer 5 target holding-state projection into a direct stock/ETF offline action thesis. It answers whether direct underlying expression is eligible, which planned underlying action type applies, how much exposure the offline plan should adjust, and what entry/target/stop/time thesis defines the trade idea.
 
 It outputs `underlying_action_plan` and `underlying_action_vector`; it does not output broker orders, order routing, live execution instructions, or option contracts.
 
@@ -567,7 +555,7 @@ risk_budget_state
 policy_gate_state
 ```
 
-Layer 7 must use effective current underlying exposure:
+Layer 6 must use effective current underlying exposure:
 
 ```text
 effective_current_underlying_exposure
@@ -643,9 +631,9 @@ reward_risk_ratio
 
 Stop and take-profit prices are thesis fields, not broker stop/limit orders.
 
-### 7. Layer 8 handoff
+### 7. Layer 7 trading-guidance / option-expression handoff
 
-Layer 7 hands Layer 8 an underlying path thesis: direction, expected entry, target/range, stop, holding time, path quality, reversal risk, drawdown risk, favorable/adverse move, and entry assumption. It must not emit option symbol, right, strike, DTE, expiration, delta, Greeks, or specific contract refs.
+Layer 6 hands Layer 7 an underlying path thesis: direction, expected entry, target/range, stop, holding time, path quality, reversal risk, drawdown risk, favorable/adverse move, and entry assumption. It must not emit option symbol, right, strike, DTE, expiration, delta, Greeks, or specific contract refs.
 
 ### 8. Evaluation
 
@@ -653,21 +641,36 @@ Layer 7 labels evaluate plan quality, not raw direction accuracy: target-before-
 
 ### 9. Decision deployment
 
-Layer 7 feeds Layer 8 and execution-side review:
+Layer 6 feeds Layer 7 trading guidance / option expression and execution-side review:
 
 ```text
 underlying_action_plan
-  -> OptionExpressionModel
-  -> option_expression_plan / expression_vector
+  -> TradingGuidanceModel / OptionExpressionModel
+  -> trading_guidance / option_expression_plan / expression_vector
+  -> EventRiskGovernor / EventIntelligenceOverlay
   -> trading-execution review and broker-order lifecycle
 ```
 
-Layer 7 remains offline: no order type, no route, no time-in-force, no send/cancel/replace flag, no broker order id, no broker/account mutation.
+Layer 6 remains offline: no order type, no route, no time-in-force, no send/cancel/replace flag, no broker order id, no broker/account mutation.
 
-## Layer 8: OptionExpressionModel
+## Layer 7: TradingGuidanceModel / OptionExpressionModel
 
 Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
-Layer 8 uses Layer 7 underlying path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, position-projection context, and market-context constraints. It outputs `option_expression_plan` / `expression_vector` and may choose long-call, long-put, or no-option expression plus a point-in-time selected contract reference and constraints.
+Layer 7 uses Layer 6 underlying path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, position-projection context, and market-context constraints. It outputs base `trading_guidance` and optional `option_expression_plan` / `expression_vector` rows, and may choose long-call, long-put, or no-option expression plus a point-in-time selected contract reference and constraints.
 
-Layer 8 remains offline: no broker order type, no route, no time-in-force, no send/cancel/replace flag, no broker order id, no final order quantity, and no broker/account mutation. V1 does not construct multi-leg spreads.
+Layer 7 remains offline: no broker order type, no route, no time-in-force, no send/cancel/replace flag, no broker order id, no final order quantity, and no broker/account mutation. V1 does not construct multi-leg spreads.
+
+## Layer 8: EventRiskGovernor / EventIntelligenceOverlay
+
+Status: accepted V1 event-risk-governor boundary with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
+
+Contract owner:
+
+```text
+docs/09_layer_08_event_risk_governor.md
+```
+
+Layer 8 consumes point-in-time event evidence, upstream context refs, and Layer 7 base trading guidance. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, or nominate reduction/flattening candidates under reviewed policy.
+
+Layer 8 is not a hard upstream alpha input and not a broker/account mutation surface. It must preserve event timing, lifecycle clocks, source priority, canonical-event identity, deduplication status, scope, references, and point-in-time availability, and it must not use post-event outcomes as inference inputs.

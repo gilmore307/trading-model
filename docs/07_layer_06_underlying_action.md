@@ -73,7 +73,7 @@ Layer 4 owns six responsibilities:
 5. Emit a side-neutral underlying price-path thesis.
 6. Hand that thesis to Layer 7 for option-expression evaluation without choosing strike, DTE, delta, or contract.
 
-Layer 4 is therefore a policy/strategy translation layer:
+Layer 6 is therefore a policy/strategy translation layer:
 
 ```text
 current state + confidence + target exposure
@@ -81,7 +81,7 @@ current state + confidence + target exposure
   -> planned underlying action type
   -> planned exposure change
   -> entry/target/stop/time thesis
-  -> Layer 7 underlying-path handoff
+  -> Layer 7 trading-guidance handoff
 ```
 
 ## Inputs

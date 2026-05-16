@@ -1,7 +1,8 @@
 """Deterministic OptionExpressionModel V1 scaffold.
 
-Layer 8 consumes the Layer 7 underlying thesis plus point-in-time option-chain
-context and emits an offline ``option_expression_plan`` / ``expression_vector``.
+The legacy physical package consumes the conceptual Layer 6 underlying thesis plus
+point-in-time option-chain context and emits an offline ``option_expression_plan`` /
+``expression_vector`` for the conceptual Layer 7 option-expression boundary.
 It can select an expression type, option right, contract reference, and contract
 constraints. It must not place orders, route orders, or mutate broker/account
 state.

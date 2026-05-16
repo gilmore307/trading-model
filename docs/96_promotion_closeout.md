@@ -55,11 +55,11 @@ Layer 3 has a real production-evaluation substrate for `feature_03_target_state_
 
 Layers 4-8 remain explicit blockers, not informal work items:
 
-- Layer 4 requires real event-overlay labels and production evaluation metrics.
-- Layer 5 requires calibrated adjusted-alpha outcomes.
-- Layer 6 requires position-utility/outcome labels.
-- Layer 7 requires realized underlying-action outcome evaluation.
-- Layer 8 requires option-chain replay and option-expression outcome evidence.
+- Layer 4 requires calibrated adjusted-alpha outcomes.
+- Layer 5 requires position-utility/outcome labels.
+- Layer 6 requires realized underlying-action outcome evaluation.
+- Layer 7 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
+- Layer 8 requires real event-risk labels and production evaluation metrics.
 
 `scripts/models/review_layers_03_08_promotion_closeout.py` builds blocked model-side evidence and reviewer artifacts for these gaps. It must not persist manager decisions or activate configs.
 

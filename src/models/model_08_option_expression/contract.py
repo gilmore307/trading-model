@@ -1,10 +1,10 @@
-"""Layer 8 OptionExpressionModel V1 contract constants."""
+"""Legacy physical constants for conceptual Layer 7 OptionExpressionModel."""
 from __future__ import annotations
 
 from typing import Final
 
 MODEL_ID: Final[str] = "option_expression_model"
-MODEL_LAYER: Final[str] = "layer_08_option_expression"
+MODEL_LAYER: Final[str] = "layer_08_option_expression"  # legacy physical layer token until a dedicated migration
 MODEL_SURFACE: Final[str] = "model_08_option_expression"
 MODEL_VERSION: Final[str] = "option_expression_plan_contract"
 PRIMARY_OUTPUT: Final[str] = "option_expression_plan"

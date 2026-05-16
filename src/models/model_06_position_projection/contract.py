@@ -1,10 +1,10 @@
-"""Layer 6 PositionProjectionModel V1 contract constants."""
+"""Legacy physical constants for conceptual Layer 5 PositionProjectionModel."""
 from __future__ import annotations
 
 from typing import Final
 
 MODEL_ID: Final[str] = "position_projection_model"
-MODEL_LAYER: Final[str] = "layer_06_position_projection"
+MODEL_LAYER: Final[str] = "layer_06_position_projection"  # legacy physical layer token until a dedicated migration
 MODEL_SURFACE: Final[str] = "model_06_position_projection"
 MODEL_VERSION: Final[str] = "position_projection_vector_contract"
 VECTOR_OUTPUT: Final[str] = "position_projection_vector"

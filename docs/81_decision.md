@@ -25,11 +25,11 @@ Status: Accepted; revised by V2.2 on 2026-05-05
 | 1 | `MarketRegimeModel` | `market_regime_model` | Broad market tradability/regime context state. |
 | 2 | `SectorContextModel` | `sector_context_model` | Market-context-conditioned sector/industry tradability context. |
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target context for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
-| 4 | `EventRiskGovernor` | `event_risk_governor` | Point-in-time `event_context_vector` before alpha confidence. |
-| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack plus event correction to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
-| 6 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
-| 7 | `UnderlyingActionModel` | `underlying_action_model` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and Layer 8 handoff. |
-| 8 | `OptionExpressionModel` | `option_expression_model` | Option-expression selection from Layer 7 underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
+| 4 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
+| 5 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
+| 6 | `UnderlyingActionModel` | `underlying_action_model` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and trading-guidance handoff. |
+| 7 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | Base trading guidance and optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
+| 8 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | Point-in-time event-risk intervention after base trading guidance; may block/cap/review guidance but must not mutate broker/account state. |
 
 Live/paper order placement remains outside this repository and no layer should be renamed live `ExecutionModel`.
 
@@ -53,9 +53,6 @@ TargetStateVectorModel
   -> anonymous_target_feature_vector
   -> target_context_state
 
-EventRiskGovernor
-  -> event_context_vector
-
 AlphaConfidenceModel
   -> alpha_confidence_vector
 
@@ -65,8 +62,11 @@ PositionProjectionModel
 UnderlyingActionModel
   -> underlying_action_plan / underlying_action_vector
 
-OptionExpressionModel
-  -> option_expression_plan / expression_vector
+TradingGuidanceModel / OptionExpressionModel
+  -> trading_guidance / option_expression_plan / expression_vector
+
+EventRiskGovernor / EventIntelligenceOverlay
+  -> event_risk_intervention / event_context_vector
 ```
 
 Hard separation rules:
@@ -232,7 +232,7 @@ V1 must not choose debit spreads, calendars, diagonals, straddles, strangles, co
 
 The model must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market-context constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade filters.
 
-Layer numbering update: this decision is preserved as future Layer 8 `OptionExpressionModel` context after Layer 7 `UnderlyingActionModel`. It is no longer the current Layer 7 boundary.
+Layer-numbering update: this decision is preserved as conceptual Layer 7 `OptionExpressionModel` / trading-guidance context after Layer 6 `UnderlyingActionModel`. It is no longer the conceptual Layer 8 boundary.
 
 ## D010 - Model governance and promotion evidence stay model-local until manager control-plane acceptance
 
@@ -382,7 +382,7 @@ Layer 3 `TargetStateVectorModel` must make the same separation for anonymous tar
 
 Signed labels may be used for direction-neutral evaluation, but the orientation sign must come from deterministic point-in-time state evidence or from an out-of-sample upstream prediction. It must not be derived from the same fitted target being evaluated.
 
-Layer 4 owns event context; Layer 5+ consumers own direction-confidence calibration, target/stop/action projection, position sizing, expression, and final trading instructions. Layer 3 remains a state/context model.
+Layer 4 owns alpha-confidence calibration; Layers 5-7 own target/stop/action projection, position sizing, expression, and final trading guidance; Layer 8 owns event-risk intervention. Layer 3 remains a state/context model.
 
 ## D018 - Vector taxonomy and Layer 3 preprocessing boundary
 
@@ -414,16 +414,14 @@ State-vector semantics and model-local outputs may continue to mature inside `tr
 
 This keeps Layer 1-8 model design from being constrained by premature manager/storage interface decisions. Registry state-vector values remain reviewed naming/semantic references; they do not by themselves finalize durable manager/storage contracts.
 
-## D020 - EventRiskGovernor is Layer 4 before alpha confidence
+## D020 - Superseded EventRiskGovernor pre-alpha ordering
 
 Date: 2026-05-06
-Status: Accepted
+Status: Superseded by D039 on 2026-05-15
 
-Layer 4 is `EventRiskGovernor` with canonical model id `event_risk_governor` and conceptual output `event_context_vector`.
+This decision preserved the earlier EventRiskGovernor-as-Layer-4 route. D039 is now authoritative: AlphaConfidenceModel is conceptual Layer 4, and EventRiskGovernor / EventIntelligenceOverlay is conceptual Layer 8 after base trading guidance.
 
-This moves event modeling before alpha confidence instead of treating event evidence as an after-the-fact overlay. The reason is structural: scheduled events, breaking news, filings, macro releases, and abnormal activity change the reliability, path risk, reversal risk, gap risk, liquidity disruption, and tradability of any alpha estimate. `AlphaConfidenceModel` must see event context at inference time.
-
-Current layer order:
+Previous layer order:
 
 ```text
 market_context_state
@@ -436,25 +434,25 @@ market_context_state
   -> option_expression_plan / expression_vector
 ```
 
-Layer 4 consumes point-in-time event evidence such as `source_04_event_overlay`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
+Layer 8 consumes point-in-time event evidence such as `source_04_event_overlay`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
 
-Layer 4 must not emit alpha confidence, buy/sell/hold, position size, option contract, strike, DTE, delta, final action, or execution instruction. Those remain downstream responsibilities.
+The former Layer 4 event route must not be used as active conceptual ordering. Event-risk governance is now conceptual Layer 8.
 
-## D021 - AlphaConfidenceModel is Layer 5 adjusted alpha-confidence boundary
+## D021 - AlphaConfidenceModel adjusted alpha-confidence boundary
 
 Date: 2026-05-07
 Status: Accepted
 
-Layer 5 is `AlphaConfidenceModel` with canonical model id `alpha_confidence_model` and conceptual output `alpha_confidence_vector`.
+Layer-numbering update: `AlphaConfidenceModel` is now conceptual Layer 4 with canonical model id `alpha_confidence_model` and conceptual output `alpha_confidence_vector`; the physical implementation and score prefixes may still retain legacy `model_05` / `5_*` names until a dedicated migration.
 
-Layer 5 consumes the reviewed Layer 1/2/3 state stack and uses `event_context_vector` as a correction layer. It is the first layer allowed to convert accepted point-in-time state/context evidence into horizon-aware alpha judgment. It owns alpha direction, alpha strength, expected residual return, alpha confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability.
+AlphaConfidenceModel consumes the reviewed Layer 1/2/3 state stack. It is the first layer allowed to convert accepted point-in-time state/context evidence into horizon-aware alpha judgment. Event intelligence is no longer a hard upstream correction input; conceptual Layer 8 may later intervene on base guidance. AlphaConfidenceModel owns alpha direction, alpha strength, expected residual return, alpha confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability.
 
-Layer 5 keeps two output tiers separate:
+AlphaConfidenceModel keeps two output tiers separate:
 
 - base/unadjusted alpha diagnostics from Layer 1/2/3 only, for research, audit, and event-adjustment attribution;
 - final adjusted `alpha_confidence_vector`, which is the only default Layer 6-facing Layer 5 output.
 
-Layer 5 must keep these boundaries explicit:
+AlphaConfidenceModel must keep these boundaries explicit:
 
 ```text
 target direction evidence != alpha confidence
@@ -468,19 +466,19 @@ alpha confidence != option expression
 alpha confidence != final action
 ```
 
-Layer 5 must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns position projection and target exposure state. Layer 7 owns planned direct-underlying action. Layer 8 owns option expression.
+AlphaConfidenceModel must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Conceptual Layer 5 owns position projection and target exposure state. Conceptual Layer 6 owns planned direct-underlying action. Conceptual Layer 7 owns trading guidance / option expression. Conceptual Layer 8 owns event-risk governance.
 
-Layer 5 V1 uses the synchronized `5min`, `15min`, `60min`, and `390min` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.
+AlphaConfidenceModel V1 uses the synchronized `5min`, `15min`, `60min`, and `390min` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.
 
 
-## D022 - PositionProjectionModel is Layer 6 target holding-state boundary
+## D022 - PositionProjectionModel target holding-state boundary
 
 Date: 2026-05-07
 Status: Accepted
 
-Layer 6 is `PositionProjectionModel` with canonical model id `position_projection_model` and conceptual output `position_projection_vector`.
+Layer-numbering update: `PositionProjectionModel` is now conceptual Layer 5 with canonical model id `position_projection_model` and conceptual output `position_projection_vector`; the physical implementation and score prefixes may still retain legacy `model_06` / `6_*` names until a dedicated migration.
 
-Layer 6 maps final adjusted Layer 5 alpha confidence to projected target holding state under current account/portfolio context. It consumes `alpha_confidence_vector`, current position state, pending position state, point-in-time position-level friction, portfolio exposure context, risk-budget context, and policy gates.
+PositionProjectionModel maps final adjusted alpha confidence to projected target holding state under current account/portfolio context. It consumes `alpha_confidence_vector`, current position state, pending position state, point-in-time position-level friction, portfolio exposure context, risk-budget context, and policy gates.
 
 The accepted V1 core output families are:
 
@@ -497,7 +495,7 @@ The accepted V1 core output families are:
 6_projection_confidence_score_<horizon>
 ```
 
-Layer 6 uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose handoff summary fields such as dominant projection horizon, horizon conflict state, resolved target exposure, resolved position gap, resolution confidence, and reason codes so Layer 7 does not re-solve horizon conflicts.
+PositionProjectionModel uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose handoff summary fields such as dominant projection horizon, horizon conflict state, resolved target exposure, resolved position gap, resolution confidence, and reason codes so the downstream UnderlyingActionModel does not re-solve horizon conflicts.
 
 Accepted invariants:
 
@@ -508,16 +506,16 @@ projection confidence != alpha confidence
 position projection vector != final action
 ```
 
-Layer 6 must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate broker/account state. Layer 7 owns planned direct-underlying action thesis; Layer 8 owns option expression; live/paper broker mutation remains outside `trading-model`.
+PositionProjectionModel must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate broker/account state. Conceptual Layer 6 owns planned direct-underlying action thesis; conceptual Layer 7 owns trading guidance / option expression; live/paper broker mutation remains outside `trading-model`.
 
-## D023 - UnderlyingActionModel is Layer 7 planned direct-underlying action boundary
+## D023 - UnderlyingActionModel planned direct-underlying action boundary
 
 Date: 2026-05-07
 Status: Accepted
 
-Layer 7 is `UnderlyingActionModel` with canonical model id `underlying_action_model` and primary output `underlying_action_plan`. Its score/vector output is `underlying_action_vector`.
+Layer-numbering update: `UnderlyingActionModel` is now conceptual Layer 6 with canonical model id `underlying_action_model` and primary output `underlying_action_plan`; its score/vector output is `underlying_action_vector`. The physical implementation and score prefixes may still retain legacy `model_07` / `7_*` names until a dedicated migration.
 
-Layer 7 converts current state, final adjusted alpha confidence, and Layer 6 target holding-state projection into a direct stock/ETF offline action thesis. It consumes `alpha_confidence_vector`, `position_projection_vector`, current/pending underlying exposure, underlying quote/liquidity/borrow state, risk-budget context, and point-in-time policy gates.
+UnderlyingActionModel converts current state, final adjusted alpha confidence, and target holding-state projection into a direct stock/ETF offline action thesis. It consumes `alpha_confidence_vector`, `position_projection_vector`, current/pending underlying exposure, underlying quote/liquidity/borrow state, risk-budget context, and point-in-time policy gates.
 
 The accepted V1 score families are:
 
@@ -534,7 +532,7 @@ The accepted V1 score families are:
 7_underlying_action_confidence_score_<horizon>
 ```
 
-Layer 7 uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose resolved plan fields such as `7_resolved_underlying_action_type`, action side, dominant horizon, trade eligibility, trade intensity, entry quality, action confidence, and reason codes so Layer 8 does not re-solve the direct-underlying thesis.
+UnderlyingActionModel uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose resolved plan fields such as `7_resolved_underlying_action_type`, action side, dominant horizon, trade eligibility, trade intensity, entry quality, action confidence, and reason codes so downstream trading guidance / option expression does not re-solve the direct-underlying thesis.
 
 Accepted planned action types are:
 
@@ -554,7 +552,7 @@ bearish_underlying_path_but_no_short_allowed
 
 `maintain` and `no_trade` are distinct. `maintain` means an existing state is still aligned or not worth adjusting; `no_trade` means no new direct-underlying operation should be initiated.
 
-Layer 7 must use effective current underlying exposure:
+UnderlyingActionModel must use effective current underlying exposure:
 
 ```text
 effective_current_underlying_exposure
@@ -575,16 +573,16 @@ underlying action plan != option expression
 underlying action plan != live execution
 ```
 
-Layer 7 must not emit broker order fields, order type, route, time-in-force, send/cancel/replace flags, broker order ids, option strike/DTE/delta/Greeks, specific option contract refs, or broker/account mutations. Layer 8 owns option expression. `trading-execution` owns broker-order lifecycle.
+UnderlyingActionModel must not emit broker order fields, order type, route, time-in-force, send/cancel/replace flags, broker order ids, option strike/DTE/delta/Greeks, specific option contract refs, or broker/account mutations. Conceptual Layer 7 owns trading guidance / option expression. `trading-execution` owns broker-order lifecycle.
 
-## D024 - Layer 8 OptionExpressionModel owns offline option expression only
+## D024 - OptionExpressionModel owns offline option expression only
 
 Date: 2026-05-07
 Status: Accepted
 
-Layer 8 is `OptionExpressionModel` (`option_expression_model`) and its implementation surface is `model_08_option_expression`.
+Layer-numbering update: `OptionExpressionModel` remains the accepted option-expression implementation surface (`model_08_option_expression`) under the conceptual Layer 7 trading-guidance boundary until a dedicated physical migration renames it.
 
-It consumes Layer 7 `underlying_action_plan` / `underlying_action_vector` handoff plus point-in-time option-chain context and outputs:
+It consumes conceptual Layer 6 `underlying_action_plan` / `underlying_action_vector` handoff plus point-in-time option-chain context and outputs:
 
 ```text
 option_expression_plan
@@ -620,7 +618,7 @@ Layer 8 must not emit broker order type, route, time-in-force, send/cancel/repla
 Date: 2026-05-10
 Status: Accepted
 
-Layer 8 historical option-expression bucket construction uses near-to-far listed expirations: current listed week first, then next listed week, then the following listed week, continuing outward only when coverage policy requires it.
+Conceptual Layer 7 option-expression bucket construction uses near-to-far listed expirations: current listed week first, then next listed week, then the following listed week, continuing outward only when coverage policy requires it.
 
 For each selected target, the strike bucket is the listed-strike corridor from current underlying reference price to Layer 7 target price plus three actual listed strike levels below the corridor and three actual listed strike levels above it. Example: current `95`, target `100`, one-dollar listed strikes -> scan strikes `92` through `103`.
 
@@ -727,7 +725,7 @@ These results are current negative evidence, not a reason to weaken gates. L1/L2
 Date: 2026-05-09
 Status: Accepted
 
-False breakouts, failed breakdowns, liquidity sweeps, bull traps, and bear traps are represented as Layer 4 `price_action` events consumed by `EventRiskGovernor`.
+False breakouts, failed breakdowns, liquidity sweeps, bull traps, and bear traps are represented as point-in-time `price_action` events consumed by conceptual Layer 8 `EventRiskGovernor`.
 
 They are not a new Layer 9. At inference time they may affect event intensity, direction bias, reversal risk, liquidity-disruption risk, uncertainty, target relevance, and microstructure/symbol impact inside `event_context_vector`. Realized post-event follow-through/failure remains offline label evidence only and must not leak into inference features.
 

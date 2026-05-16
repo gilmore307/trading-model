@@ -1,4 +1,4 @@
-"""Layer 6 PositionProjectionModel deterministic scaffold."""
+"""Legacy physical package for conceptual Layer 5 PositionProjectionModel scaffold."""
 from .contract import MODEL_ID, MODEL_LAYER, MODEL_SURFACE, MODEL_VERSION, VECTOR_OUTPUT
 from .generator import generate_rows
 

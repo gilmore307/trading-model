@@ -45,11 +45,11 @@ This separation is mandatory:
 | 1 | `MarketRegimeModel` | `market_regime_model` | `market_context_state` | Direction-neutral broad market tradability/regime state keyed by `available_time`. |
 | 2 | `SectorContextModel` | `sector_context_model` | `sector_context_state` | Direction-neutral sector/industry tradability context under market context. |
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
-| 4 | `EventRiskGovernor` | `event_risk_governor` | `event_context_vector` | Point-in-time event context, event risk, event direction bias, and event-quality evidence before alpha confidence. |
-| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Reviewed state stack plus event correction to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
-| 6 | `PositionProjectionModel` | `position_projection_model` | `position_projection_vector` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
-| 7 | `UnderlyingActionModel` | `underlying_action_model` | `underlying_action_plan` / `underlying_action_vector` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and Layer 8 underlying-path handoff. |
-| 8 | `OptionExpressionModel` | `option_expression_model` | `option_expression_plan` / `expression_vector` | Option-expression selection from Layer 7 underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
+| 4 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Reviewed state stack to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
+| 5 | `PositionProjectionModel` | `position_projection_model` | `position_projection_vector` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
+| 6 | `UnderlyingActionModel` | `underlying_action_model` | `underlying_action_plan` / `underlying_action_vector` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and trading-guidance handoff. |
+| 7 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | `trading_guidance` / `option_expression_plan` / `expression_vector` | Offline base trading guidance, including optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
+| 8 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | `event_risk_intervention` / `event_context_vector` | Point-in-time event-risk intervention after base trading guidance; may block/cap/review guidance but must not mutate broker/account state. |
 
 Do not treat Layer 7 or Layer 8 as live execution. Broker mutation and live/paper order placement are outside `trading-model`. There is no accepted Layer 9 inside this repository; post-Layer-8 work crosses into downstream review / execution-owned boundaries.
 
@@ -288,21 +288,9 @@ Model-facing vectors must exclude raw ticker/company identity and memorized symb
 
 It outputs `target_context_state`: signed current-state direction evidence, direction-neutral tradability scores, cross-state relationship features, optional derived representation diagnostics, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target context. It does not select downstream action variants, output alpha confidence, size positions, or treat positive direction as inherently better than negative direction.
 
-## Layer 4: EventRiskGovernor
+## Layer 4: AlphaConfidenceModel
 
-`EventRiskGovernor` consumes `market_context_state`, `sector_context_state`, `target_context_state`, and point-in-time `source_04_event_overlay` evidence. It outputs `event_context_vector`: event presence, timing/proximity, intensity, direction bias, uncertainty, gap/reversal/liquidity disruption risk, contagion risk, and event-quality context.
-
-It is now a peer model layer before alpha confidence, not an after-the-fact overlay. It does not output alpha confidence, trading signals, option contracts, or final actions.
-
-Contract owner:
-
-```text
-docs/09_layer_08_event_risk_governor.md
-```
-
-## Layer 5: AlphaConfidenceModel
-
-`AlphaConfidenceModel` consumes the reviewed Layer 1/2/3 state stack and uses `event_context_vector` as a correction layer to estimate the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/unadjusted alpha from Layer 1/2/3 is retained as diagnostics only; the adjusted vector is the default Layer 6-facing output. It does not project target exposure, choose expression/option contracts, size positions, or place orders.
+`AlphaConfidenceModel` consumes the reviewed Layer 1/2/3 state stack to estimate the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/unadjusted alpha from Layer 1/2/3 is retained as diagnostics only; the adjusted vector is the default Layer 5-facing output. It does not project target exposure, choose expression/option contracts, size positions, or place orders. Event intelligence is no longer a hard upstream prerequisite for this base-alpha layer.
 
 Contract owner:
 
@@ -310,7 +298,7 @@ Contract owner:
 docs/05_layer_04_alpha_confidence.md
 ```
 
-## Layer 6: PositionProjectionModel
+## Layer 5: PositionProjectionModel
 
 `PositionProjectionModel` consumes the final adjusted `alpha_confidence_vector`, current/pending position state, position-level friction, portfolio exposure context, risk-budget context, and point-in-time policy gates to project `position_projection_vector`: target position bias, target exposure, current-position alignment, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, position-state stability, and projection confidence.
 
@@ -320,11 +308,11 @@ It owns the mapping from alpha confidence to target holding state. It does not o
 docs/06_layer_05_position_projection.md
 ```
 
-## Layer 7: UnderlyingActionModel
+## Layer 6: UnderlyingActionModel
 
 `UnderlyingActionModel` consumes `position_projection_vector`, alpha-confidence refs, current/pending direct-underlying exposure, quote/liquidity state, risk-budget context, and policy gates to produce `underlying_action_plan` and `underlying_action_vector`.
 
-It owns the direct stock/ETF planned action thesis: planned action type, planned exposure change, entry plan, target price/range, stop, thesis invalidation, time-stop, reward/risk, and side-neutral price-path assumptions for Layer 8. Its planned action types are offline plan values such as `open_long`, `increase_long`, `reduce_long`, `close_long`, `open_short`, `increase_short`, `reduce_short`, `cover_short`, `maintain`, and `no_trade`.
+It owns the direct stock/ETF planned action thesis: planned action type, planned exposure change, entry plan, target price/range, stop, thesis invalidation, time-stop, reward/risk, and side-neutral price-path assumptions for Layer 7 trading guidance / option expression. Its planned action types are offline plan values such as `open_long`, `increase_long`, `reduce_long`, `close_long`, `open_short`, `increase_short`, `reduce_short`, `cover_short`, `maintain`, and `no_trade`.
 
 It does not emit broker order fields, order type, route, time-in-force, send/cancel/replace instructions, broker order ids, option strike/DTE/delta/Greeks, or account mutations. Contract owner:
 
@@ -332,9 +320,9 @@ It does not emit broker order fields, order type, route, time-in-force, send/can
 docs/07_layer_06_underlying_action.md
 ```
 
-## Layer 8: OptionExpressionModel
+## Layer 7: TradingGuidanceModel / OptionExpressionModel
 
-`OptionExpressionModel` consumes Layer 7 underlying price-path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, event context, and market context to produce `option_expression_plan` and `expression_vector`.
+`TradingGuidanceModel` / `OptionExpressionModel` consumes Layer 6 underlying price-path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market/position context to produce base offline trading guidance and optional `option_expression_plan` / `expression_vector` rows.
 
 It owns long-call / long-put / no-option-expression selection, selected point-in-time contract references, contract constraints, premium-risk diagnostics, and expression-confidence scores. V1 is single-leg long calls/puts only. Multi-leg structures remain deferred.
 
@@ -342,6 +330,16 @@ It does not emit broker order type, route, time-in-force, final order quantity, 
 
 ```text
 docs/08_layer_07_trading_guidance.md
+```
+
+## Layer 8: EventRiskGovernor / EventIntelligenceOverlay
+
+`EventRiskGovernor` consumes point-in-time event evidence, upstream context refs, and Layer 7 base trading guidance. It outputs `event_risk_intervention` plus event-context/risk evidence that can block new entries, cap exposure, request human review, or nominate reduction/flattening candidates under reviewed policy.
+
+It is a post-guidance risk-governor boundary, not a hard upstream alpha input and not a broker/account mutation surface. Contract owner:
+
+```text
+docs/09_layer_08_event_risk_governor.md
 ```
 
 ## Unified Decision Record
@@ -355,13 +353,14 @@ market_context_state_ref
 sector_context_state_ref
 target_candidate_id
 target_context_state_ref
-event_context_vector_ref
 alpha_confidence_vector_ref
 position_projection_vector_ref
 underlying_action_plan_ref
 underlying_action_vector_ref
 option_expression_plan_ref
 expression_vector_ref
+event_risk_intervention_ref
+event_context_vector_ref
 audit/routing metadata
 offline execution handoff
 ```
