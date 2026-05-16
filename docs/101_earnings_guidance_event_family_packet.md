@@ -692,3 +692,38 @@ Result:
 - signed-direction-ready rows: 0.
 
 Conclusion: prior guidance baseline extraction is only partially successful on the selected prior official filings. The single accepted event is baseline context only; guidance surprise still requires comparison to current guidance/result evidence. The 11 misses show the source-selection route is still too loose for companies whose selected prior filing is not a guidance-bearing prior earnings/outlook document. Revenue consensus remains a separate gap.
+
+## Prior earnings-exhibit guidance extraction
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_prior_guidance_exhibit_extraction_q4_2025_20260515/`
+
+After the first prior-filing selector produced low coverage, a refined pass targeted official prior-quarter earnings/outlook-bearing SEC exhibits rather than primary 8-K wrapper text. The fetched exhibit set lives under `/root/projects/trading-data/storage/earnings_guidance_prior_earnings_window_exhibit_text_q4_2025_20260515/` and the extraction study itself performs zero provider calls.
+
+Result:
+
+- events: 12;
+- candidate official exhibit documents: 21;
+- accepted prior-company-guidance baseline context events: 7;
+- accepted prior-guidance exhibit documents: 8;
+- accepted prior-guidance spans: 42;
+- reviewed no prior-guidance context events: 5;
+- signed-direction-ready rows: 0.
+
+Conclusion: exhibit-level official filing text materially improves the `prior_company_guidance` baseline route versus arbitrary prior official filings. Accepted spans remain baseline context only. They do not establish guidance surprise, raise/cut, beat/miss, signed alpha, model activation, broker/account mutation, or stronger EventRiskGovernor intervention. Current guidance/result comparison and revenue-consensus or other accepted expectation baselines remain required before signed earnings/guidance claims.
+
+## Revenue-consensus route decision
+
+Revenue consensus remains unresolved for the historical Q4 2025 diagnostic slice. Existing local Nasdaq calendar artifacts are EPS-only and were captured post-event, so they remain rejected for historical PIT baseline use.
+
+A live source reconnaissance found that the Trading Economics earnings page presents columns for `EPS`, `Consensus`, `Previous`, `Revenue`, `Consensus`, and `Previous`, so it is a plausible future revenue-consensus source route. However, this repository does not yet have an accepted persisted `earnings_guidance_expectation_baseline.csv` output for Trading Economics earnings rows with pre-event `captured_at` / `as_of_time` clocks. The route must therefore be treated as `future_revenue_consensus_route_candidate`, not accepted historical evidence.
+
+Acceptance requirements for any future Trading Economics revenue-consensus route:
+
+- capture before the issuer release time with parseable `captured_at` and `as_of_time` clocks;
+- preserve provider/source URL and symbol/date/fiscal period provenance;
+- emit `baseline_type = revenue_consensus` only from pre-event consensus fields;
+- exclude actual/result/surprise fields from baseline use;
+- stop for operator action if cookie, login, captcha, MFA, WAF, or permission prompts block access;
+- remain a baseline artifact only, not a beat/miss or signed-direction interpretation.
+
+Until such artifacts exist, signed revenue beat/miss, guidance raise/cut, signed alpha, model activation, and stronger EventRiskGovernor intervention remain blocked.

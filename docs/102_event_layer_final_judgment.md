@@ -244,3 +244,17 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_prior_guidance
 The extraction pass accepted 1/12 events as having explicit prior-company-guidance baseline context and rejected 11/12 as no prior guidance context found in the selected prior official filing.
 
 Judgment update: prior-company-guidance baseline extraction is partially unblocked but not broad enough for signed earnings/guidance interpretation. The selected prior filing route needs refinement toward previous earnings/outlook-bearing documents or another accepted company-IR/source route. No signed direction, guidance raise/cut, alpha, or stronger EventRiskGovernor intervention is unlocked.
+
+## Seventeenth itemized test — prior earnings-exhibit guidance extraction
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_prior_guidance_exhibit_extraction_q4_2025_20260515/`
+
+The refined prior-guidance route reviewed official prior-quarter earnings/outlook exhibits rather than primary 8-K wrapper filings. It found accepted `prior_company_guidance` baseline context for 7 of 12 diagnostic events, across 8 accepted exhibit documents and 42 accepted spans. Five events still have no accepted prior-guidance context in this route. The study performed zero provider calls.
+
+Judgment update: the prior-company-guidance baseline route is partially unblocked when source selection targets actual earnings/outlook exhibits. This still does not produce signed guidance surprise, raise/cut, beat/miss, alpha, model activation, broker/account mutation, or stronger EventRiskGovernor intervention. Current result/guidance comparison plus remaining point-in-time expectation baselines are still required.
+
+## Revenue-consensus source route judgment
+
+The existing Nasdaq route remains EPS-consensus only. Trading Economics earnings pages expose revenue-consensus-like columns and are a plausible future route, but no accepted persisted pre-event revenue-consensus baseline artifact exists for the historical Q4 2025 diagnostic slice.
+
+Judgment update: revenue consensus is not fabricated from post-event pages or unpersisted reconnaissance. It remains a route candidate for future pre-event capture only. Signed earnings/guidance claims remain blocked until accepted baseline artifacts and reviewed comparisons exist.
