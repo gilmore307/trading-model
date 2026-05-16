@@ -74,7 +74,7 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
         self.assertFalse(plan["broker_order_construction_performed"])
         layer_7 = plan["layer_routes"][6]
         self.assertEqual(layer_7["model_layer"], "layer_07_option_expression")
-        self.assertIn("generate_model_08_option_expression.py", layer_7["generator_entrypoint_ref"])
+        self.assertIn("generate_model_07_option_expression.py", layer_7["generator_entrypoint_ref"])
         self.assertEqual(plan["layer_routes"][-1]["model_layer"], "layer_08_event_risk_governor")
         validation = validate_realtime_decision_route_plan(plan)
         self.assertTrue(validation["valid"])

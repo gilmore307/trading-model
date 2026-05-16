@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from models.model_05_alpha_confidence import generate_rows
-from models.model_05_alpha_confidence.evaluation import assert_no_label_leakage, build_alpha_confidence_labels
+from models.model_04_alpha_confidence import generate_rows
+from models.model_04_alpha_confidence.evaluation import assert_no_label_leakage, build_alpha_confidence_labels
 
 
 FORBIDDEN_TERMS = {
@@ -33,10 +33,10 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         vector = output["alpha_confidence_vector"]
         base = output["base_alpha_vector"]
 
-        self.assertLess(vector["5_alpha_direction_score_390min"], 0.0)
-        self.assertNotEqual(vector["5_alpha_strength_score_390min"], base["5_base_alpha_strength_score_390min"])
-        self.assertGreater(vector["5_alpha_confidence_score_390min"], 0.0)
-        self.assertIn("5_base_alpha_direction_score_390min", base)
+        self.assertLess(vector["4_alpha_direction_score_390min"], 0.0)
+        self.assertNotEqual(vector["4_alpha_strength_score_390min"], base["4_base_alpha_strength_score_390min"])
+        self.assertGreater(vector["4_alpha_confidence_score_390min"], 0.0)
+        self.assertIn("4_base_alpha_direction_score_390min", base)
         self.assertIn("high_quality_event_override", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["390min"])
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
@@ -45,9 +45,9 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         output = generate_rows([_base_row(target_context_state={}, event_context_vector={})])[0]
         vector = output["alpha_confidence_vector"]
 
-        self.assertEqual(vector["5_alpha_direction_score_390min"], 0.0)
-        self.assertEqual(vector["5_alpha_strength_score_390min"], 0.0)
-        self.assertLess(vector["5_alpha_tradability_score_390min"], 0.5)
+        self.assertEqual(vector["4_alpha_direction_score_390min"], 0.0)
+        self.assertEqual(vector["4_alpha_strength_score_390min"], 0.0)
+        self.assertLess(vector["4_alpha_tradability_score_390min"], 0.5)
         self.assertIn("no_material_alpha_edge", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["390min"])
 
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:
@@ -109,16 +109,16 @@ def _base_row(**overrides: object) -> dict[str, object]:
             "3_beta_dependency_score_390min": 0.20,
         },
         "event_context_vector": {
-            "4_event_presence_score_390min": 1.0,
-            "4_event_intensity_score_390min": 0.95,
-            "4_event_target_relevance_score_390min": 0.90,
-            "4_event_context_quality_score_390min": 0.95,
-            "4_event_direction_bias_score_390min": -0.85,
-            "4_event_context_alignment_score_390min": -0.60,
-            "4_event_uncertainty_score_390min": 0.20,
-            "4_event_reversal_risk_score_390min": 0.30,
-            "4_event_gap_risk_score_390min": 0.40,
-            "4_event_liquidity_disruption_score_390min": 0.10,
+            "8_event_presence_score_390min": 1.0,
+            "8_event_intensity_score_390min": 0.95,
+            "8_event_target_relevance_score_390min": 0.90,
+            "8_event_context_quality_score_390min": 0.95,
+            "8_event_direction_bias_score_390min": -0.85,
+            "8_event_context_alignment_score_390min": -0.60,
+            "8_event_uncertainty_score_390min": 0.20,
+            "8_event_reversal_risk_score_390min": 0.30,
+            "8_event_gap_risk_score_390min": 0.40,
+            "8_event_liquidity_disruption_score_390min": 0.10,
         },
         "quality_calibration_state": {
             "sample_support_score": 0.85,

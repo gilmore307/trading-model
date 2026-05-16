@@ -27,7 +27,7 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `97_historical_dataset_scope.md` — accepted distinction between broad historical training sampling universes and narrower live inference routing universes, with per-layer dataset-scope guidance.
 - `98_realtime_decision_handoff.md` — model-side realtime decision input route-plan scaffold for fixture/shadow historical-model decision handoff; no production activation implied.
 
-Layer workflow and acceptance live in the numbered layer files. The active architecture revision moves event intelligence to Layer 8 after base trading guidance. Physical implementation paths may retain legacy layer numbers until dedicated code/SQL migration slices rename them. Do not add a future model layer unless an explicit architecture revision reopens the stack; post-Layer-8 execution belongs outside `trading-model`.
+Layer workflow and acceptance live in the numbered layer files. The active architecture revision moves event intelligence to Layer 8 after base trading guidance. Physical implementation paths are aligned to the active conceptual layer numbering for Layers 4-8. Do not add a future model layer unless an explicit architecture revision reopens the stack; post-Layer-8 execution belongs outside `trading-model`.
 
 Do not place generated data, artifacts, notebooks, logs, credentials, or implementation outputs in this directory.
 

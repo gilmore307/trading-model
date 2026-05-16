@@ -1,7 +1,7 @@
 # Layer 04 — AlphaConfidenceModel
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 4; legacy implementation surface remains `src/models/model_05_alpha_confidence/` until a dedicated implementation migration renames code and SQL surfaces.
+Status: active architecture revision. Conceptual Layer 4; legacy implementation surface remains `src/models/model_04_alpha_confidence/` until a dedicated implementation migration renames code and SQL surfaces.
 
 Active boundary: Layer 4 consumes the reviewed Layer 1/2/3 state stack and produces `alpha_confidence_vector` / base-alpha diagnostics. It does **not** require Layer 8 event evidence to run. Event intelligence is now a later risk-governor overlay, not a hard upstream alpha input.
 
@@ -11,7 +11,7 @@ Supersedes older wording in this file that described EventRiskGovernor as Layer 
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
-Status: accepted Layer 4 design route; deterministic V1 scaffold implemented in `src/models/model_05_alpha_confidence/`.
+Status: accepted Layer 4 design route; deterministic V1 scaffold implemented in `src/models/model_04_alpha_confidence/`.
 
 ## Purpose
 
@@ -192,13 +192,13 @@ Layer 4 V1 uses six auditable submodules before any broad black-box confidence m
 Uses only Layer 1/2/3 state evidence to generate the base alpha judgment. It produces diagnostic `base_alpha_vector` fields such as:
 
 ```text
-5_base_alpha_direction_score_<horizon>
-5_base_alpha_strength_score_<horizon>
+4_base_alpha_direction_score_<horizon>
+4_base_alpha_strength_score_<horizon>
 5_base_expected_return_score_<horizon>
 5_base_path_quality_score_<horizon>
 5_base_reversal_risk_score_<horizon>
 5_base_drawdown_risk_score_<horizon>
-5_base_alpha_tradability_score_<horizon>
+4_base_alpha_tradability_score_<horizon>
 ```
 
 These are not the default downstream contract. They explain what the state stack said before events corrected it.
@@ -241,7 +241,7 @@ Estimates whether the alpha path is tradeable, not merely whether the endpoint i
 
 Calibrates confidence and reliability from point-in-time sample support, ensemble agreement/disagreement, OOD evidence, data quality, event uncertainty, walk-forward reliability, and confidence-bucket realized calibration.
 
-`5_alpha_confidence_score_<horizon>` means current model belief. `5_signal_reliability_score_<horizon>` means similar-signal historical out-of-sample reliability. They are related but not interchangeable.
+`4_alpha_confidence_score_<horizon>` means current model belief. `4_signal_reliability_score_<horizon>` means similar-signal historical out-of-sample reliability. They are related but not interchangeable.
 
 ### 5F - AlphaVectorComposer
 
@@ -265,15 +265,15 @@ Layer 4 V1 uses synchronized alpha-confidence horizons:
 The V1 Layer 5-facing output is exactly 9 core score families per horizon, for 36 final score tokens:
 
 ```text
-5_alpha_direction_score_<horizon>
-5_alpha_strength_score_<horizon>
-5_expected_return_score_<horizon>
-5_alpha_confidence_score_<horizon>
-5_signal_reliability_score_<horizon>
-5_path_quality_score_<horizon>
-5_reversal_risk_score_<horizon>
-5_drawdown_risk_score_<horizon>
-5_alpha_tradability_score_<horizon>
+4_alpha_direction_score_<horizon>
+4_alpha_strength_score_<horizon>
+4_expected_return_score_<horizon>
+4_alpha_confidence_score_<horizon>
+4_signal_reliability_score_<horizon>
+4_path_quality_score_<horizon>
+4_reversal_risk_score_<horizon>
+4_drawdown_risk_score_<horizon>
+4_alpha_tradability_score_<horizon>
 ```
 
 Physical SQL column names must avoid unquoted numeric-leading identifiers unless the storage contract explicitly quotes them. These names are canonical registry/vector payload tokens and may live inside JSONB/vector payloads.
@@ -282,17 +282,17 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 
 | Field family | Range | Directionality | High value means |
 |---|---:|---|---|
-| `5_alpha_direction_score_<horizon>` | `[-1, 1]` | signed | positive = long alpha, negative = short alpha, near zero = mixed/neutral/no edge |
-| `5_alpha_strength_score_<horizon>` | `[0, 1]` | direction-neutral | stronger absolute alpha magnitude, whether long or short |
-| `5_expected_return_score_<horizon>` | `[-1, 1]` | signed | stronger standardized residual alpha expectation after market/sector baseline adjustment |
-| `5_alpha_confidence_score_<horizon>` | `[0, 1]` | direction-neutral | model is more confident in the alpha judgment |
-| `5_signal_reliability_score_<horizon>` | `[0, 1]` | direction-neutral | similar signals have been more stable out-of-sample |
-| `5_path_quality_score_<horizon>` | `[0, 1]` | direction-conditioned | path is smoother, more persistent, and easier to trade |
-| `5_reversal_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | alpha direction is more likely to be interrupted/reversed; high-is-bad |
-| `5_drawdown_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | adverse excursion/MAE risk is higher; high-is-bad |
-| `5_alpha_tradability_score_<horizon>` | `[0, 1]` | alpha-level | alpha is more suitable to hand to Layer 6 for position projection |
+| `4_alpha_direction_score_<horizon>` | `[-1, 1]` | signed | positive = long alpha, negative = short alpha, near zero = mixed/neutral/no edge |
+| `4_alpha_strength_score_<horizon>` | `[0, 1]` | direction-neutral | stronger absolute alpha magnitude, whether long or short |
+| `4_expected_return_score_<horizon>` | `[-1, 1]` | signed | stronger standardized residual alpha expectation after market/sector baseline adjustment |
+| `4_alpha_confidence_score_<horizon>` | `[0, 1]` | direction-neutral | model is more confident in the alpha judgment |
+| `4_signal_reliability_score_<horizon>` | `[0, 1]` | direction-neutral | similar signals have been more stable out-of-sample |
+| `4_path_quality_score_<horizon>` | `[0, 1]` | direction-conditioned | path is smoother, more persistent, and easier to trade |
+| `4_reversal_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | alpha direction is more likely to be interrupted/reversed; high-is-bad |
+| `4_drawdown_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | adverse excursion/MAE risk is higher; high-is-bad |
+| `4_alpha_tradability_score_<horizon>` | `[0, 1]` | alpha-level | alpha is more suitable to hand to Layer 6 for position projection |
 
-`5_alpha_tradability_score_<horizon>` is still not a trade instruction. It is only the Layer 4 judgment that the alpha is worth downstream position-projection mapping.
+`4_alpha_tradability_score_<horizon>` is still not a trade instruction. It is only the Layer 4 judgment that the alpha is worth downstream position-projection mapping.
 
 ## No-edge and null policy
 
@@ -301,15 +301,15 @@ No-edge windows should not create arbitrary nulls in model-facing core fields.
 Default no-edge policy:
 
 ```text
-5_alpha_direction_score_<horizon> = 0
-5_alpha_strength_score_<horizon> = 0
-5_expected_return_score_<horizon> = 0
-5_alpha_confidence_score_<horizon> = low/neutral according to calibration evidence
-5_signal_reliability_score_<horizon> = low when sample support is insufficient
-5_path_quality_score_<horizon> = neutral/baseline
-5_reversal_risk_score_<horizon> = neutral/high when state/event risk is unclear
-5_drawdown_risk_score_<horizon> = neutral/high when state/event risk is unclear
-5_alpha_tradability_score_<horizon> = low
+4_alpha_direction_score_<horizon> = 0
+4_alpha_strength_score_<horizon> = 0
+4_expected_return_score_<horizon> = 0
+4_alpha_confidence_score_<horizon> = low/neutral according to calibration evidence
+4_signal_reliability_score_<horizon> = low when sample support is insufficient
+4_path_quality_score_<horizon> = neutral/baseline
+4_reversal_risk_score_<horizon> = neutral/high when state/event risk is unclear
+4_drawdown_risk_score_<horizon> = neutral/high when state/event risk is unclear
+4_alpha_tradability_score_<horizon> = low
 ```
 
 A zero direction estimate is not a hold instruction. Layer 6 projects target holding state and exposure after costs, risk budget, current/pending position state, and no-trade policy are reviewed.
@@ -416,6 +416,6 @@ Layer 4 must not:
 
 1. **V1.0 base alpha from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics. **Done in deterministic scaffold for fixture rows.**
 2. **V1.1 final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. **Done in deterministic scaffold.**
-3. **V1.2 EventRiskDiagnosticBridge**: keep optional `event_context_vector` references diagnostic only for later Layer 8 governance; do not make event evidence a hard Layer 4 alpha input. **Deterministic scaffold uses legacy physical hooks until a dedicated cleanup migration.**
+3. **V1.2 EventRiskDiagnosticBridge**: keep optional `event_context_vector` references diagnostic only for later Layer 8 governance; do not make event evidence a hard Layer 4 alpha input. **Deterministic scaffold uses current Layer 4 package and score-prefix hooks.**
 4. **V1.3 baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence. **Done in deterministic scaffold.**
 5. **V1.4 calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path. **Offline label/leakage helpers exist; calibrated promotion evidence remains later work.**

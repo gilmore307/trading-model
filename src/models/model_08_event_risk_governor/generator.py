@@ -39,18 +39,18 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     for horizon in HORIZONS:
         scores = _horizon_scores(events, horizon)
         suffix = _suffix(horizon)
-        payload.update({f"4_event_{key}_score_{suffix}": scores[key] for key in (
+        payload.update({f"8_event_{key}_score_{suffix}": scores[key] for key in (
             "presence", "timing_proximity", "intensity", "uncertainty", "gap_risk",
             "reversal_risk", "liquidity_disruption", "contagion_risk", "context_quality",
         )})
-        payload[f"4_event_direction_bias_score_{suffix}"] = scores["direction_bias"]
-        payload[f"4_event_context_alignment_score_{suffix}"] = scores["context_alignment"]
+        payload[f"8_event_direction_bias_score_{suffix}"] = scores["direction_bias"]
+        payload[f"8_event_context_alignment_score_{suffix}"] = scores["context_alignment"]
         for scope in SCOPE_KEYS:
-            payload[f"4_event_{scope}_impact_score_{suffix}"] = scores[f"{scope}_impact"]
-        payload[f"4_event_scope_confidence_score_{suffix}"] = scores["scope_confidence"]
-        payload[f"4_event_scope_escalation_risk_score_{suffix}"] = scores["scope_escalation_risk"]
-        payload[f"4_event_target_relevance_score_{suffix}"] = scores["target_relevance"]
-        audit[f"4_event_dominant_impact_scope_{suffix}"] = scores["dominant_impact_scope"]
+            payload[f"8_event_{scope}_impact_score_{suffix}"] = scores[f"{scope}_impact"]
+        payload[f"8_event_scope_confidence_score_{suffix}"] = scores["scope_confidence"]
+        payload[f"8_event_scope_escalation_risk_score_{suffix}"] = scores["scope_escalation_risk"]
+        payload[f"8_event_target_relevance_score_{suffix}"] = scores["target_relevance"]
+        audit[f"8_event_dominant_impact_scope_{suffix}"] = scores["dominant_impact_scope"]
 
     ref = _stable_id("ecv", target_candidate_id, available_time, model_version)
     output = {
@@ -79,7 +79,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
 
 
 def _visible_events(row: Mapping[str, Any], decision_available_time: datetime) -> list[Mapping[str, Any]]:
-    event_rows = row.get("source_04_event_overlay") or row.get("event_rows") or row.get("events") or []
+    event_rows = row.get("source_08_event_risk_governor") or row.get("event_rows") or row.get("events") or []
     if isinstance(event_rows, Mapping):
         event_rows = [event_rows]
     visible: list[Mapping[str, Any]] = []
@@ -300,7 +300,7 @@ def _normalize_row(row: Mapping[str, Any]) -> dict[str, Any]:
     output = dict(row)
     for key in ("market_context_state", "sector_context_state", "target_context_state"):
         output[key] = _coerce_payload(output.get(key))
-    events = output.get("source_04_event_overlay") or output.get("event_rows") or output.get("events") or []
+    events = output.get("source_08_event_risk_governor") or output.get("event_rows") or output.get("events") or []
     if isinstance(events, str):
         events = _coerce_payload(events)
     output["event_rows"] = events if isinstance(events, list) else [events] if isinstance(events, Mapping) else []

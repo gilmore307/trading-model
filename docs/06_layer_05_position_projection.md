@@ -1,7 +1,7 @@
 # Layer 05 — PositionProjectionModel
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 5; legacy implementation surface remains `src/models/model_06_position_projection/` until code/SQL surfaces are renamed.
+Status: active architecture revision. Conceptual Layer 5; legacy implementation surface remains `src/models/model_05_position_projection/` until code/SQL surfaces are renamed.
 
 Active boundary: Layer 5 consumes `alpha_confidence_vector` plus point-in-time current/pending position, cost, exposure, and risk-budget context. It outputs `position_projection_vector`: target holding-state projection and abstract exposure gap, not execution instructions.
 
@@ -9,7 +9,7 @@ Forbidden outputs: buy/sell/hold, option/instrument selection, route, time-in-fo
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
-Status: accepted Layer 5 design route; deterministic V1 scaffold implemented in `src/models/model_06_position_projection/`.
+Status: accepted Layer 5 design route; deterministic V1 scaffold implemented in `src/models/model_05_position_projection/`.
 
 ## Purpose
 
@@ -57,7 +57,7 @@ Accepted names:
 ```text
 Model class: PositionProjectionModel
 Stable id: position_projection_model
-Layer id: model_06_position_projection
+Layer id: model_05_position_projection
 Conceptual output: position_projection_vector
 ```
 
@@ -91,15 +91,15 @@ Training/evaluation inputs may include future outcomes as labels, but those labe
 Layer 4 consumes the final adjusted `alpha_confidence_vector` by default:
 
 ```text
-5_alpha_direction_score_<horizon>
-5_alpha_strength_score_<horizon>
-5_expected_return_score_<horizon>
-5_alpha_confidence_score_<horizon>
-5_signal_reliability_score_<horizon>
-5_path_quality_score_<horizon>
-5_reversal_risk_score_<horizon>
-5_drawdown_risk_score_<horizon>
-5_alpha_tradability_score_<horizon>
+4_alpha_direction_score_<horizon>
+4_alpha_strength_score_<horizon>
+4_expected_return_score_<horizon>
+4_alpha_confidence_score_<horizon>
+4_signal_reliability_score_<horizon>
+4_path_quality_score_<horizon>
+4_reversal_risk_score_<horizon>
+4_drawdown_risk_score_<horizon>
+4_alpha_tradability_score_<horizon>
 ```
 
 Base/unadjusted Layer 4 `5_base_*` diagnostics may be retained as explainability refs, but they must not be treated as competing default trading inputs.
@@ -155,7 +155,7 @@ turnover_cost_estimate
 liquidity_capacity_score
 ```
 
-`6_cost_to_adjust_position_score_<horizon>` should represent cost pressure for changing the current position gap, not raw market cost alone. A high spread should not heavily penalize a row when `position_gap` is near zero.
+`5_cost_to_adjust_position_score_<horizon>` should represent cost pressure for changing the current position gap, not raw market cost alone. A high spread should not heavily penalize a row when `position_gap` is near zero.
 
 ### Input E - expression-specific friction hints
 
@@ -267,14 +267,14 @@ Encodes current and pending exposure state so Layer 4 can decide whether the acc
 Computes the signed target-current gap using effective exposure:
 
 ```text
-6_position_gap_score_<horizon>
-= 6_target_exposure_score_<horizon>
+5_position_gap_score_<horizon>
+= 5_target_exposure_score_<horizon>
 - effective_current_exposure
 ```
 
 The gap may be clipped to `[-1, 1]` for model-facing score output while diagnostics preserve the unclipped calculation if needed.
 
-`6_position_gap_magnitude_score_<horizon>` is the normalized absolute gap. It describes distance from target state, not urgency or final action.
+`5_position_gap_magnitude_score_<horizon>` is the normalized absolute gap. It describes distance from target state, not urgency or final action.
 
 ### 6D - CostToAdjustEstimator
 
@@ -299,12 +299,12 @@ Resolves conflicting per-horizon position projections. It should not simply aver
 Model-local or handoff summary fields may include:
 
 ```text
-6_dominant_projection_horizon
-6_horizon_conflict_state
-6_resolved_target_exposure_score
-6_resolved_position_gap_score
-6_projection_resolution_confidence_score
-6_horizon_resolution_reason_codes
+5_dominant_projection_horizon
+5_horizon_conflict_state
+5_resolved_target_exposure_score
+5_resolved_position_gap_score
+5_projection_resolution_confidence_score
+5_horizon_resolution_reason_codes
 ```
 
 These are Layer 4 handoff summary fields, not final actions.
@@ -331,16 +331,16 @@ Layer 4 V1 uses the same synchronized horizons as Layers 4 and 5:
 The V1 primary `position_projection_vector` exposes 10 core score families per horizon:
 
 ```text
-6_target_position_bias_score_<horizon>
-6_target_exposure_score_<horizon>
-6_current_position_alignment_score_<horizon>
-6_position_gap_score_<horizon>
-6_position_gap_magnitude_score_<horizon>
-6_expected_position_utility_score_<horizon>
-6_cost_to_adjust_position_score_<horizon>
-6_risk_budget_fit_score_<horizon>
-6_position_state_stability_score_<horizon>
-6_projection_confidence_score_<horizon>
+5_target_position_bias_score_<horizon>
+5_target_exposure_score_<horizon>
+5_current_position_alignment_score_<horizon>
+5_position_gap_score_<horizon>
+5_position_gap_magnitude_score_<horizon>
+5_expected_position_utility_score_<horizon>
+5_cost_to_adjust_position_score_<horizon>
+5_risk_budget_fit_score_<horizon>
+5_position_state_stability_score_<horizon>
+5_projection_confidence_score_<horizon>
 ```
 
 Physical SQL column names must avoid unquoted numeric-leading identifiers unless the storage contract explicitly quotes them. These names are canonical registry/vector payload tokens and may live inside JSONB/vector payloads.
@@ -349,24 +349,24 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 
 | Field family | Range | Directionality | High value means |
 |---|---:|---|---|
-| `6_target_position_bias_score_<horizon>` | `[-1, 1]` | signed | preferred target holding direction; positive = long exposure bias, negative = short exposure bias |
-| `6_target_exposure_score_<horizon>` | `[-1, 1]` | signed exposure | normalized abstract target risk exposure, not shares/contracts/orders |
-| `6_current_position_alignment_score_<horizon>` | `[0, 1]` | direction-neutral | current plus pending position is already close to the target state |
-| `6_position_gap_score_<horizon>` | `[-1, 1]` | signed gap | target exposure minus effective current exposure |
-| `6_position_gap_magnitude_score_<horizon>` | `[0, 1]` | direction-neutral | absolute normalized distance between target and effective current exposure |
-| `6_expected_position_utility_score_<horizon>` | `[-1, 1]` | signed utility | expected risk-adjusted net utility of the projected target state after position-level friction/risk penalties |
-| `6_cost_to_adjust_position_score_<horizon>` | `[0, 1]` | high-is-bad | relative cost pressure for closing the position gap |
-| `6_risk_budget_fit_score_<horizon>` | `[0, 1]` | high-is-good | target exposure fits current risk budget and portfolio constraints |
-| `6_position_state_stability_score_<horizon>` | `[0, 1]` | high-is-good | target holding state is stable across alpha, horizon, cost, risk, and pending-order uncertainty |
-| `6_projection_confidence_score_<horizon>` | `[0, 1]` | high-is-good | Layer 4 confidence in the alpha-to-position mapping |
+| `5_target_position_bias_score_<horizon>` | `[-1, 1]` | signed | preferred target holding direction; positive = long exposure bias, negative = short exposure bias |
+| `5_target_exposure_score_<horizon>` | `[-1, 1]` | signed exposure | normalized abstract target risk exposure, not shares/contracts/orders |
+| `5_current_position_alignment_score_<horizon>` | `[0, 1]` | direction-neutral | current plus pending position is already close to the target state |
+| `5_position_gap_score_<horizon>` | `[-1, 1]` | signed gap | target exposure minus effective current exposure |
+| `5_position_gap_magnitude_score_<horizon>` | `[0, 1]` | direction-neutral | absolute normalized distance between target and effective current exposure |
+| `5_expected_position_utility_score_<horizon>` | `[-1, 1]` | signed utility | expected risk-adjusted net utility of the projected target state after position-level friction/risk penalties |
+| `5_cost_to_adjust_position_score_<horizon>` | `[0, 1]` | high-is-bad | relative cost pressure for closing the position gap |
+| `5_risk_budget_fit_score_<horizon>` | `[0, 1]` | high-is-good | target exposure fits current risk budget and portfolio constraints |
+| `5_position_state_stability_score_<horizon>` | `[0, 1]` | high-is-good | target holding state is stable across alpha, horizon, cost, risk, and pending-order uncertainty |
+| `5_projection_confidence_score_<horizon>` | `[0, 1]` | high-is-good | Layer 4 confidence in the alpha-to-position mapping |
 
-`6_target_position_bias_score_<horizon>` and `6_target_exposure_score_<horizon>` are deliberately separate. Bias says which way the position wants to lean; exposure says how large the normalized target holding state should be after risk/cost constraints.
+`5_target_position_bias_score_<horizon>` and `5_target_exposure_score_<horizon>` are deliberately separate. Bias says which way the position wants to lean; exposure says how large the normalized target holding state should be after risk/cost constraints.
 
 Example:
 
 ```text
-6_target_position_bias_score_60min = +0.85
-6_target_exposure_score_60min = +0.25
+5_target_position_bias_score_60min = +0.85
+5_target_exposure_score_60min = +0.25
 ```
 
 This means the projection is clearly long-biased but only supports a small long exposure after constraints. It is not a buy instruction.
@@ -376,12 +376,12 @@ This means the projection is clearly long-biased but only supports a small long 
 Layer 4 may expose a resolved summary for Layer 6 so underlying-action planning does not re-solve horizon conflicts:
 
 ```text
-6_dominant_projection_horizon
-6_horizon_conflict_state
-6_resolved_target_exposure_score
-6_resolved_position_gap_score
-6_projection_resolution_confidence_score
-6_horizon_resolution_reason_codes
+5_dominant_projection_horizon
+5_horizon_conflict_state
+5_resolved_target_exposure_score
+5_resolved_position_gap_score
+5_projection_resolution_confidence_score
+5_horizon_resolution_reason_codes
 ```
 
 These fields summarize the projected target holding state. They do not choose instrument, contract, order type, underlying action, or final execution.
@@ -396,9 +396,9 @@ Diagnostic fields may include:
 6_alpha_position_conversion_score_<horizon>
 6_effective_current_exposure_score
 6_pending_adjusted_exposure_score
-6_cost_adjustment_reason_codes
-6_risk_budget_reason_codes
-6_projection_reason_codes
+5_cost_adjustment_reason_codes
+5_risk_budget_reason_codes
+5_projection_reason_codes
 ```
 
 Diagnostics explain why Layer 4 compressed or changed the raw alpha-to-position prior. Downstream production logic should not hard-depend on diagnostics without reviewed promotion.
@@ -410,9 +410,9 @@ No-position or aligned-position cases must not create arbitrary nulls in model-f
 If alpha exists but current plus pending exposure already matches the target exposure:
 
 ```text
-6_current_position_alignment_score_<horizon> = high
-6_position_gap_score_<horizon> = near 0
-6_position_gap_magnitude_score_<horizon> = near 0
+5_current_position_alignment_score_<horizon> = high
+5_position_gap_score_<horizon> = near 0
+5_position_gap_magnitude_score_<horizon> = near 0
 ```
 
 This does not mean hold as a final action; it means the current projected holding state is already aligned.
@@ -420,8 +420,8 @@ This does not mean hold as a final action; it means the current projected holdin
 If risk budget is unavailable or kill-switch policy forces exposure compression:
 
 ```text
-6_risk_budget_fit_score_<horizon> = low / 0
-6_target_exposure_score_<horizon> compressed to the allowed range
+5_risk_budget_fit_score_<horizon> = low / 0
+5_target_exposure_score_<horizon> compressed to the allowed range
 reason codes include the policy gate
 ```
 
@@ -493,12 +493,12 @@ Layer 4 should prove incremental value over:
 
 Validation must separately check:
 
-- utility: high `6_expected_position_utility_score_<horizon>` buckets realize better risk-adjusted net utility;
-- alignment: high `6_current_position_alignment_score_<horizon>` reduces unnecessary turnover;
-- cost: high `6_cost_to_adjust_position_score_<horizon>` identifies cases where changing exposure was not worthwhile;
-- risk: high `6_risk_budget_fit_score_<horizon>` reduces risk-budget breaches and concentration blow-ups;
-- gap: `6_position_gap_score_<horizon>` correctly represents target-current mismatch using effective exposure;
-- stability: `6_position_state_stability_score_<horizon>` distinguishes durable target states from horizon/cost/risk-conflicted states;
+- utility: high `5_expected_position_utility_score_<horizon>` buckets realize better risk-adjusted net utility;
+- alignment: high `5_current_position_alignment_score_<horizon>` reduces unnecessary turnover;
+- cost: high `5_cost_to_adjust_position_score_<horizon>` identifies cases where changing exposure was not worthwhile;
+- risk: high `5_risk_budget_fit_score_<horizon>` reduces risk-budget breaches and concentration blow-ups;
+- gap: `5_position_gap_score_<horizon>` correctly represents target-current mismatch using effective exposure;
+- stability: `5_position_state_stability_score_<horizon>` distinguishes durable target states from horizon/cost/risk-conflicted states;
 - horizon resolution: resolved summaries improve over simple averaging or fixed-horizon baselines;
 - leakage: all position, pending, cost, and risk inputs are point-in-time.
 
@@ -520,8 +520,8 @@ position projection vector != final action
 
 Layer 4 invariants:
 
-1. `6_target_exposure_score_<horizon>` is abstract target risk exposure, not shares, contracts, or order quantity.
-2. `6_position_gap_score_<horizon>` is the difference between target state and current/pending state, not an execution instruction.
+1. `5_target_exposure_score_<horizon>` is abstract target risk exposure, not shares, contracts, or order quantity.
+2. `5_position_gap_score_<horizon>` is the difference between target state and current/pending state, not an execution instruction.
 3. Layer 4 does not output buy/sell/hold/open/close/reverse.
 4. Layer 4 does not choose instrument, read option chains, or choose strike/DTE/Greeks.
 5. Layer 4 uses only point-in-time current/pending/cost/risk state.

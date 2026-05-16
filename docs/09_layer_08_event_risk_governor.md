@@ -1,7 +1,7 @@
 # Layer 08 — EventRiskGovernor / EventIntelligenceOverlay
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 8; implementation package and scripts now use `model_08_event_risk_governor`. The upstream data source still uses `source_04_event_overlay` until a separate data/SQL surface migration is accepted.
+Status: active architecture revision. Conceptual Layer 8; implementation package and scripts now use `model_08_event_risk_governor`. The upstream data source still uses `source_08_event_risk_governor` until a separate data/SQL surface migration is accepted.
 
 Active boundary: Layer 8 is the event-intelligence and event-risk governor after base trading guidance. It consumes standardized point-in-time event interpretations when available (`event_interpretation_v1`) plus event evidence refs, current context states, and the Layer 7 base trading guidance candidate.
 
@@ -36,7 +36,7 @@ Layer 8 is an event-context overlay on top of the accepted state stack:
 market_context_state
 + sector_context_state
 + target_context_state
-+ source_04_event_overlay
++ source_08_event_risk_governor
 + event_detail_artifacts
 + scope_mapping_metadata
 + sensitivity_metadata
@@ -56,19 +56,19 @@ tradeable_time
 market_context_state_ref
 sector_context_state_ref
 target_context_state_ref
-source_04_event_overlay rows visible by available_time
+source_08_event_risk_governor rows visible by available_time
 canonical-event and dedup metadata visible by available_time
 event_detail_artifact references visible by available_time
 scope_mapping_metadata visible by available_time
 sensitivity_metadata visible by available_time
 ```
 
-### Input A - `source_04_event_overlay`
+### Input A - `source_08_event_risk_governor`
 
 `trading-data` owns the current one-row-per-event overview table:
 
 ```text
-source_04_event_overlay
+source_08_event_risk_governor
 ```
 
 Current SQL overview fields:
@@ -533,16 +533,16 @@ Native scope is not enough. An NVDA earnings event is native-symbol but may affe
 Layer 8 should express impact by score family rather than one enum:
 
 ```text
-4_event_market_impact_score_<horizon>
-4_event_sector_impact_score_<horizon>
-4_event_industry_impact_score_<horizon>
-4_event_theme_factor_impact_score_<horizon>
-4_event_peer_group_impact_score_<horizon>
-4_event_symbol_impact_score_<horizon>
-4_event_microstructure_impact_score_<horizon>
+8_event_market_impact_score_<horizon>
+8_event_sector_impact_score_<horizon>
+8_event_industry_impact_score_<horizon>
+8_event_theme_factor_impact_score_<horizon>
+8_event_peer_group_impact_score_<horizon>
+8_event_symbol_impact_score_<horizon>
+8_event_microstructure_impact_score_<horizon>
 ```
 
-`4_event_dominant_impact_scope_<horizon>` remains useful for audit/debug/routing, but model behavior should primarily depend on the impact score vector.
+`8_event_dominant_impact_scope_<horizon>` remains useful for audit/debug/routing, but model behavior should primarily depend on the impact score vector.
 
 ## Output surface
 
@@ -593,38 +593,38 @@ V1 uses two score groups: core event risk/quality and impact scope.
 ### A. Core event risk/quality score families
 
 ```text
-4_event_presence_score_<horizon>
-4_event_timing_proximity_score_<horizon>
-4_event_intensity_score_<horizon>
-4_event_direction_bias_score_<horizon>
-4_event_context_alignment_score_<horizon>
-4_event_uncertainty_score_<horizon>
-4_event_gap_risk_score_<horizon>
-4_event_reversal_risk_score_<horizon>
-4_event_liquidity_disruption_score_<horizon>
-4_event_contagion_risk_score_<horizon>
-4_event_context_quality_score_<horizon>
+8_event_presence_score_<horizon>
+8_event_timing_proximity_score_<horizon>
+8_event_intensity_score_<horizon>
+8_event_direction_bias_score_<horizon>
+8_event_context_alignment_score_<horizon>
+8_event_uncertainty_score_<horizon>
+8_event_gap_risk_score_<horizon>
+8_event_reversal_risk_score_<horizon>
+8_event_liquidity_disruption_score_<horizon>
+8_event_contagion_risk_score_<horizon>
+8_event_context_quality_score_<horizon>
 ```
 
 ### B. Event impact-scope score families
 
 ```text
-4_event_market_impact_score_<horizon>
-4_event_sector_impact_score_<horizon>
-4_event_industry_impact_score_<horizon>
-4_event_theme_factor_impact_score_<horizon>
-4_event_peer_group_impact_score_<horizon>
-4_event_symbol_impact_score_<horizon>
-4_event_microstructure_impact_score_<horizon>
-4_event_scope_confidence_score_<horizon>
-4_event_scope_escalation_risk_score_<horizon>
-4_event_target_relevance_score_<horizon>
+8_event_market_impact_score_<horizon>
+8_event_sector_impact_score_<horizon>
+8_event_industry_impact_score_<horizon>
+8_event_theme_factor_impact_score_<horizon>
+8_event_peer_group_impact_score_<horizon>
+8_event_symbol_impact_score_<horizon>
+8_event_microstructure_impact_score_<horizon>
+8_event_scope_confidence_score_<horizon>
+8_event_scope_escalation_risk_score_<horizon>
+8_event_target_relevance_score_<horizon>
 ```
 
 Optional audit/debug field, not a scalar `state_vector_value`:
 
 ```text
-4_event_dominant_impact_scope_<horizon>
+8_event_dominant_impact_scope_<horizon>
 ```
 
 V1-full therefore has 21 horizon-aware scalar score families plus one horizon-aware dominant-scope audit field across 4 horizons. V1-minimal may start with the core group only, but impact scope should remain part of the accepted contract because event intensity, event scope, and target relevance are separate semantics.
@@ -657,17 +657,17 @@ No-event windows should not create arbitrary nulls in model-facing core fields.
 Default no-event policy:
 
 ```text
-4_event_presence_score_<horizon> = 0
-4_event_timing_proximity_score_<horizon> = 0
-4_event_intensity_score_<horizon> = 0
-4_event_direction_bias_score_<horizon> = 0
-4_event_context_alignment_score_<horizon> = 0
-4_event_uncertainty_score_<horizon> = event-driven neutral/baseline
-4_event_gap_risk_score_<horizon> = event-driven neutral/baseline
-4_event_reversal_risk_score_<horizon> = event-driven neutral/baseline
-4_event_liquidity_disruption_score_<horizon> = event-driven neutral/baseline
-4_event_contagion_risk_score_<horizon> = event-driven neutral/baseline
-4_event_context_quality_score_<horizon> = neutral/high if event coverage is known complete, lower if event coverage is weak
+8_event_presence_score_<horizon> = 0
+8_event_timing_proximity_score_<horizon> = 0
+8_event_intensity_score_<horizon> = 0
+8_event_direction_bias_score_<horizon> = 0
+8_event_context_alignment_score_<horizon> = 0
+8_event_uncertainty_score_<horizon> = event-driven neutral/baseline
+8_event_gap_risk_score_<horizon> = event-driven neutral/baseline
+8_event_reversal_risk_score_<horizon> = event-driven neutral/baseline
+8_event_liquidity_disruption_score_<horizon> = event-driven neutral/baseline
+8_event_contagion_risk_score_<horizon> = event-driven neutral/baseline
+8_event_context_quality_score_<horizon> = neutral/high if event coverage is known complete, lower if event coverage is weak
 ```
 
 Background risk from Layer 1/2/3 must stay distinguishable from event-driven overlay risk. Layer 8 may condition event sensitivity on background state, but should not silently relabel broad market stress as event presence.

@@ -1,6 +1,6 @@
 # State Vector Feature Semantics Registry
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_08_event_risk_governor` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths are aligned to the current conceptual numbering, including `model_08_event_risk_governor` and `model_07_option_expression`.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -61,34 +61,34 @@ Accepted event-context scalar score values currently retain the legacy `4_` pref
 
 Core risk/quality families:
 
-- `4_event_presence_score_<horizon>` — `[0, 1]`, event presence, not good/bad by itself.
-- `4_event_timing_proximity_score_<horizon>` — `[0, 1]`, closer to a sensitive event window.
-- `4_event_intensity_score_<horizon>` — `[0, 1]`, stronger information shock/attention.
-- `4_event_direction_bias_score_<horizon>` — `[-1, 1]`, target-conditioned positive/negative event bias; not alpha confidence.
-- `4_event_context_alignment_score_<horizon>` — `[-1, 1]`, event supports/conflicts with current `target_context_state`.
-- `4_event_uncertainty_score_<horizon>` — `[0, 1]`, high-is-bad information uncertainty.
-- `4_event_gap_risk_score_<horizon>` — `[0, 1]`, high-is-bad jump/gap risk.
-- `4_event_reversal_risk_score_<horizon>` — `[0, 1]`, high-is-bad current-path reversal risk.
-- `4_event_liquidity_disruption_score_<horizon>` — `[0, 1]`, high-is-bad spread/depth/slippage disruption risk.
-- `4_event_contagion_risk_score_<horizon>` — `[0, 1]`, high-is-bad cross-scope transmission risk.
-- `4_event_context_quality_score_<horizon>` — `[0, 1]`, high-is-good evidence quality.
+- `8_event_presence_score_<horizon>` — `[0, 1]`, event presence, not good/bad by itself.
+- `8_event_timing_proximity_score_<horizon>` — `[0, 1]`, closer to a sensitive event window.
+- `8_event_intensity_score_<horizon>` — `[0, 1]`, stronger information shock/attention.
+- `8_event_direction_bias_score_<horizon>` — `[-1, 1]`, target-conditioned positive/negative event bias; not alpha confidence.
+- `8_event_context_alignment_score_<horizon>` — `[-1, 1]`, event supports/conflicts with current `target_context_state`.
+- `8_event_uncertainty_score_<horizon>` — `[0, 1]`, high-is-bad information uncertainty.
+- `8_event_gap_risk_score_<horizon>` — `[0, 1]`, high-is-bad jump/gap risk.
+- `8_event_reversal_risk_score_<horizon>` — `[0, 1]`, high-is-bad current-path reversal risk.
+- `8_event_liquidity_disruption_score_<horizon>` — `[0, 1]`, high-is-bad spread/depth/slippage disruption risk.
+- `8_event_contagion_risk_score_<horizon>` — `[0, 1]`, high-is-bad cross-scope transmission risk.
+- `8_event_context_quality_score_<horizon>` — `[0, 1]`, high-is-good evidence quality.
 
 Impact-scope families:
 
-- `4_event_market_impact_score_<horizon>`
-- `4_event_sector_impact_score_<horizon>`
-- `4_event_industry_impact_score_<horizon>`
-- `4_event_theme_factor_impact_score_<horizon>`
-- `4_event_peer_group_impact_score_<horizon>`
-- `4_event_symbol_impact_score_<horizon>`
-- `4_event_microstructure_impact_score_<horizon>`
-- `4_event_scope_confidence_score_<horizon>`
-- `4_event_scope_escalation_risk_score_<horizon>`
-- `4_event_target_relevance_score_<horizon>`
+- `8_event_market_impact_score_<horizon>`
+- `8_event_sector_impact_score_<horizon>`
+- `8_event_industry_impact_score_<horizon>`
+- `8_event_theme_factor_impact_score_<horizon>`
+- `8_event_peer_group_impact_score_<horizon>`
+- `8_event_symbol_impact_score_<horizon>`
+- `8_event_microstructure_impact_score_<horizon>`
+- `8_event_scope_confidence_score_<horizon>`
+- `8_event_scope_escalation_risk_score_<horizon>`
+- `8_event_target_relevance_score_<horizon>`
 
 Model-local audit/debug field:
 
-- `4_event_dominant_impact_scope_<horizon>` — enum/routing/audit family; not a scalar score registry value; use carefully as model evidence and prefer numeric scope scores when fitting.
+- `8_event_dominant_impact_scope_<horizon>` — enum/routing/audit family; not a scalar score registry value; use carefully as model evidence and prefer numeric scope scores when fitting.
 
 ## Layer 4 alpha-confidence score semantics
 
@@ -108,15 +108,15 @@ Accepted alpha-confidence score values still use the legacy `5_` prefix and `<ho
 
 Core final adjusted alpha-confidence families:
 
-- `5_alpha_direction_score_<horizon>` — `[-1, 1]`, signed long/short alpha direction; not a buy/sell/hold action.
-- `5_alpha_strength_score_<horizon>` — `[0, 1]`, absolute alpha strength regardless of direction sign.
-- `5_expected_return_score_<horizon>` — `[-1, 1]`, standardized residual expected return after market/sector baseline adjustment.
-- `5_alpha_confidence_score_<horizon>` — `[0, 1]`, model confidence in the alpha judgment.
-- `5_signal_reliability_score_<horizon>` — `[0, 1]`, historical out-of-sample reliability for similar signals.
-- `5_path_quality_score_<horizon>` — `[0, 1]`, high-is-good expected path smoothness/tradability.
-- `5_reversal_risk_score_<horizon>` — `[0, 1]`, high-is-bad risk that the alpha direction is interrupted or reversed.
-- `5_drawdown_risk_score_<horizon>` — `[0, 1]`, high-is-bad adverse excursion / MAE / drawdown risk.
-- `5_alpha_tradability_score_<horizon>` — `[0, 1]`, alpha-level suitability for Layer 6 position projection; not a target exposure, position gap, or operation.
+- `4_alpha_direction_score_<horizon>` — `[-1, 1]`, signed long/short alpha direction; not a buy/sell/hold action.
+- `4_alpha_strength_score_<horizon>` — `[0, 1]`, absolute alpha strength regardless of direction sign.
+- `4_expected_return_score_<horizon>` — `[-1, 1]`, standardized residual expected return after market/sector baseline adjustment.
+- `4_alpha_confidence_score_<horizon>` — `[0, 1]`, model confidence in the alpha judgment.
+- `4_signal_reliability_score_<horizon>` — `[0, 1]`, historical out-of-sample reliability for similar signals.
+- `4_path_quality_score_<horizon>` — `[0, 1]`, high-is-good expected path smoothness/tradability.
+- `4_reversal_risk_score_<horizon>` — `[0, 1]`, high-is-bad risk that the alpha direction is interrupted or reversed.
+- `4_drawdown_risk_score_<horizon>` — `[0, 1]`, high-is-bad adverse excursion / MAE / drawdown risk.
+- `4_alpha_tradability_score_<horizon>` — `[0, 1]`, alpha-level suitability for Layer 6 position projection; not a target exposure, position gap, or operation.
 
 Base/unadjusted `5_base_*` fields are legacy-prefix diagnostics for Layer 1/2/3-only attribution and are not registered as core conceptual Layer 5-facing `state_vector_value` rows.
 
@@ -140,16 +140,16 @@ Accepted position-projection score values still use the legacy `6_` prefix and `
 
 Core final position-projection families:
 
-- `6_target_position_bias_score_<horizon>` — `[-1, 1]`, signed target holding-direction bias; not a buy/sell/hold operation.
-- `6_target_exposure_score_<horizon>` — `[-1, 1]`, normalized abstract target risk exposure; not shares, contracts, or order quantity.
-- `6_current_position_alignment_score_<horizon>` — `[0, 1]`, high-is-good alignment between current plus pending exposure and projected target state.
-- `6_position_gap_score_<horizon>` — `[-1, 1]`, target exposure minus effective current exposure; not an execution instruction.
-- `6_position_gap_magnitude_score_<horizon>` — `[0, 1]`, absolute normalized target-current exposure gap; not urgency by itself.
-- `6_expected_position_utility_score_<horizon>` — `[-1, 1]`, expected risk-adjusted net utility of the projected target holding state.
-- `6_cost_to_adjust_position_score_<horizon>` — `[0, 1]`, high-is-bad relative cost pressure to close the position gap.
-- `6_risk_budget_fit_score_<horizon>` — `[0, 1]`, high-is-good compatibility with current risk budget and portfolio constraints.
-- `6_position_state_stability_score_<horizon>` — `[0, 1]`, high-is-good stability of the projected target holding state across alpha, horizon, cost, risk, and pending-order uncertainty.
-- `6_projection_confidence_score_<horizon>` — `[0, 1]`, confidence in the Layer 6 alpha-to-position mapping; separate from Layer 5 alpha confidence.
+- `5_target_position_bias_score_<horizon>` — `[-1, 1]`, signed target holding-direction bias; not a buy/sell/hold operation.
+- `5_target_exposure_score_<horizon>` — `[-1, 1]`, normalized abstract target risk exposure; not shares, contracts, or order quantity.
+- `5_current_position_alignment_score_<horizon>` — `[0, 1]`, high-is-good alignment between current plus pending exposure and projected target state.
+- `5_position_gap_score_<horizon>` — `[-1, 1]`, target exposure minus effective current exposure; not an execution instruction.
+- `5_position_gap_magnitude_score_<horizon>` — `[0, 1]`, absolute normalized target-current exposure gap; not urgency by itself.
+- `5_expected_position_utility_score_<horizon>` — `[-1, 1]`, expected risk-adjusted net utility of the projected target holding state.
+- `5_cost_to_adjust_position_score_<horizon>` — `[0, 1]`, high-is-bad relative cost pressure to close the position gap.
+- `5_risk_budget_fit_score_<horizon>` — `[0, 1]`, high-is-good compatibility with current risk budget and portfolio constraints.
+- `5_position_state_stability_score_<horizon>` — `[0, 1]`, high-is-good stability of the projected target holding state across alpha, horizon, cost, risk, and pending-order uncertainty.
+- `5_projection_confidence_score_<horizon>` — `[0, 1]`, confidence in the Layer 6 alpha-to-position mapping; separate from Layer 5 alpha confidence.
 
 ## Layer 6 underlying-action score semantics
 
@@ -173,18 +173,18 @@ Accepted underlying-action score families still use the legacy `7_` prefix and `
 
 Core legacy `7_` underlying-action score families:
 
-- `7_underlying_trade_eligibility_score_<horizon>` — `[0, 1]`, high-is-good direct-underlying trade eligibility after hard/soft gates.
-- `7_underlying_action_direction_score_<horizon>` — `[-1, 1]`, signed direct-underlying planned side; positive long-side, negative short-side, near zero maintain/no-trade.
-- `7_underlying_trade_intensity_score_<horizon>` — `[0, 1]`, high-is-more planned adjustment intensity after confidence, risk, cost, stability, and liquidity compression.
-- `7_underlying_entry_quality_score_<horizon>` — `[0, 1]`, high-is-good planned entry quality.
-- `7_underlying_expected_return_score_<horizon>` — `[-1, 1]`, signed favorable direct-underlying return quality.
-- `7_underlying_adverse_risk_score_<horizon>` — `[0, 1]`, high-is-bad adverse move / stop-risk pressure.
-- `7_underlying_reward_risk_score_<horizon>` — `[0, 1]`, high-is-good reward/risk quality.
-- `7_underlying_liquidity_fit_score_<horizon>` — `[0, 1]`, high-is-good direct-underlying liquidity/spread fit.
-- `7_underlying_holding_time_fit_score_<horizon>` — `[0, 1]`, high-is-good compatibility between planned holding time and horizon/path evidence.
-- `7_underlying_action_confidence_score_<horizon>` — `[0, 1]`, calibrated confidence in the offline direct-underlying action thesis.
+- `6_underlying_trade_eligibility_score_<horizon>` — `[0, 1]`, high-is-good direct-underlying trade eligibility after hard/soft gates.
+- `6_underlying_action_direction_score_<horizon>` — `[-1, 1]`, signed direct-underlying planned side; positive long-side, negative short-side, near zero maintain/no-trade.
+- `6_underlying_trade_intensity_score_<horizon>` — `[0, 1]`, high-is-more planned adjustment intensity after confidence, risk, cost, stability, and liquidity compression.
+- `6_underlying_entry_quality_score_<horizon>` — `[0, 1]`, high-is-good planned entry quality.
+- `6_underlying_expected_return_score_<horizon>` — `[-1, 1]`, signed favorable direct-underlying return quality.
+- `6_underlying_adverse_risk_score_<horizon>` — `[0, 1]`, high-is-bad adverse move / stop-risk pressure.
+- `6_underlying_reward_risk_score_<horizon>` — `[0, 1]`, high-is-good reward/risk quality.
+- `6_underlying_liquidity_fit_score_<horizon>` — `[0, 1]`, high-is-good direct-underlying liquidity/spread fit.
+- `6_underlying_holding_time_fit_score_<horizon>` — `[0, 1]`, high-is-good compatibility between planned holding time and horizon/path evidence.
+- `6_underlying_action_confidence_score_<horizon>` — `[0, 1]`, calibrated confidence in the offline direct-underlying action thesis.
 
-Model-local plan/handoff fields include `7_resolved_underlying_action_type`, `7_resolved_action_side`, `7_resolved_dominant_horizon`, `7_resolved_trade_eligibility_score`, `7_resolved_trade_intensity_score`, `7_resolved_entry_quality_score`, `7_resolved_action_confidence_score`, and `7_resolved_reason_codes`. They summarize the plan and do not send orders.
+Model-local plan/handoff fields include `6_resolved_underlying_action_type`, `6_resolved_action_side`, `6_resolved_dominant_horizon`, `6_resolved_trade_eligibility_score`, `6_resolved_trade_intensity_score`, `6_resolved_entry_quality_score`, `6_resolved_action_confidence_score`, and `6_resolved_reason_codes`. They summarize the plan and do not send orders.
 
 ## Layer 7 option-expression score semantics
 
@@ -205,15 +205,15 @@ Accepted Layer 8 score families use the `8_` prefix and `<horizon>` suffix for h
 
 Core Layer 8 score families:
 
-- `8_option_expression_eligibility_score_<horizon>` — `[0, 1]`, high-is-good option-expression admissibility.
-- `8_option_expression_direction_score_<horizon>` — `[-1, 1]`, signed expression direction; positive call-side/bullish, negative put-side/bearish, near zero no-option expression.
-- `8_option_contract_fit_score_<horizon>` — `[0, 1]`, high-is-good selected contract fit.
-- `8_option_liquidity_fit_score_<horizon>` — `[0, 1]`, high-is-good option spread/volume/open-interest fit.
-- `8_option_iv_fit_score_<horizon>` — `[0, 1]`, high-is-good IV/IV-rank fit.
-- `8_option_greek_fit_score_<horizon>` — `[0, 1]`, high-is-good delta/Greek fit.
-- `8_option_reward_risk_score_<horizon>` — `[0, 1]`, high-is-good premium reward/risk quality.
-- `8_option_theta_risk_score_<horizon>` — `[0, 1]`, high-is-bad theta-decay pressure.
-- `8_option_fill_quality_score_<horizon>` — `[0, 1]`, high-is-good conservative fill-quality estimate.
-- `8_option_expression_confidence_score_<horizon>` — `[0, 1]`, calibrated confidence in the offline option-expression plan.
+- `7_option_expression_eligibility_score_<horizon>` — `[0, 1]`, high-is-good option-expression admissibility.
+- `7_option_expression_direction_score_<horizon>` — `[-1, 1]`, signed expression direction; positive call-side/bullish, negative put-side/bearish, near zero no-option expression.
+- `7_option_contract_fit_score_<horizon>` — `[0, 1]`, high-is-good selected contract fit.
+- `7_option_liquidity_fit_score_<horizon>` — `[0, 1]`, high-is-good option spread/volume/open-interest fit.
+- `7_option_iv_fit_score_<horizon>` — `[0, 1]`, high-is-good IV/IV-rank fit.
+- `7_option_greek_fit_score_<horizon>` — `[0, 1]`, high-is-good delta/Greek fit.
+- `7_option_reward_risk_score_<horizon>` — `[0, 1]`, high-is-good premium reward/risk quality.
+- `7_option_theta_risk_score_<horizon>` — `[0, 1]`, high-is-bad theta-decay pressure.
+- `7_option_fill_quality_score_<horizon>` — `[0, 1]`, high-is-good conservative fill-quality estimate.
+- `7_option_expression_confidence_score_<horizon>` — `[0, 1]`, calibrated confidence in the offline option-expression plan.
 
-Model-local resolved fields include `8_resolved_expression_type`, `8_resolved_option_right`, `8_resolved_dominant_horizon`, `8_resolved_selected_contract_ref`, `8_resolved_contract_fit_score`, `8_resolved_expression_confidence_score`, `8_resolved_no_option_reason_codes`, and `8_resolved_reason_codes`. They summarize the selected expression and do not send orders.
+Model-local resolved fields include `7_resolved_expression_type`, `7_resolved_option_right`, `7_resolved_dominant_horizon`, `7_resolved_selected_contract_ref`, `7_resolved_contract_fit_score`, `7_resolved_expression_confidence_score`, `7_resolved_no_option_reason_codes`, and `7_resolved_reason_codes`. They summarize the selected expression and do not send orders.

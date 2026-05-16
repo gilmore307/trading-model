@@ -12,10 +12,10 @@ Date: 2026-05-07
 | 1 | `MarketRegimeModel` | `market_context_state` | accepted V2.2 contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
 | 2 | `SectorContextModel` | `sector_context_state` | accepted direction-neutral contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
 | 3 | `TargetStateVectorModel` | `target_context_state` | accepted direction-neutral target-state contract, anonymous candidate preprocessing, deterministic implementation/evaluation scaffold |
-| 4 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted base-alpha V1 scaffold; legacy physical surface `model_05_alpha_confidence` until migration |
-| 5 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; legacy physical surface `model_06_position_projection` until migration |
-| 6 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; legacy physical surface `model_07_underlying_action` until migration |
-| 7 | `TradingGuidanceModel / OptionExpressionModel` | `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted base trading-guidance boundary; V1 option-expression subset uses legacy physical surface `model_08_option_expression` until migration |
+| 4 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted base-alpha V1 scaffold; current surface `model_04_alpha_confidence` |
+| 5 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; current surface `model_05_position_projection` |
+| 6 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; current surface `model_06_underlying_action` |
+| 7 | `TradingGuidanceModel / OptionExpressionModel` | `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted base trading-guidance boundary; V1 option-expression subset uses current surface `model_07_option_expression` |
 | 8 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary; legacy event-overlay physical surface `model_08_event_risk_governor` until migration |
 
 This closes the model-design phase. It does not approve production promotion.

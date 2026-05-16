@@ -1,7 +1,7 @@
 # Layer 07 — TradingGuidanceModel / OptionExpressionModel
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 7; V1 legacy implementation surface remains `src/models/model_08_option_expression/` as the option-expression subset until a dedicated TradingGuidanceModel migration is implemented.
+Status: active architecture revision. Conceptual Layer 7; V1 legacy implementation surface remains `src/models/model_07_option_expression/` as the option-expression subset until a dedicated TradingGuidanceModel migration is implemented.
 
 Active boundary: Layer 7 outputs the final **base trading guidance candidate** before event-risk intervention. It consumes Layer 6 underlying-action thesis, position/risk context, and optional point-in-time option-chain evidence. It may choose direct-underlying, option-expression, or no-trade/maintain guidance as an offline decision record.
 
@@ -138,14 +138,14 @@ trading_guidance_vector / expression_vector
 Resolved fields:
 
 ```text
-8_resolved_expression_type
-8_resolved_option_right
-8_resolved_dominant_horizon
-8_resolved_selected_contract_ref
-8_resolved_contract_fit_score
-8_resolved_expression_confidence_score
-8_resolved_no_option_reason_codes
-8_resolved_reason_codes
+7_resolved_expression_type
+7_resolved_option_right
+7_resolved_dominant_horizon
+7_resolved_selected_contract_ref
+7_resolved_contract_fit_score
+7_resolved_expression_confidence_score
+7_resolved_no_option_reason_codes
+7_resolved_reason_codes
 ```
 
 V1 expression types:
@@ -169,16 +169,16 @@ none
 Layer 6 score families use the `8_` prefix and `<horizon>` suffix for horizon-aware scalar scores.
 
 ```text
-8_option_expression_eligibility_score_<horizon>
-8_option_expression_direction_score_<horizon>
-8_option_contract_fit_score_<horizon>
-8_option_liquidity_fit_score_<horizon>
-8_option_iv_fit_score_<horizon>
-8_option_greek_fit_score_<horizon>
-8_option_reward_risk_score_<horizon>
-8_option_theta_risk_score_<horizon>
-8_option_fill_quality_score_<horizon>
-8_option_expression_confidence_score_<horizon>
+7_option_expression_eligibility_score_<horizon>
+7_option_expression_direction_score_<horizon>
+7_option_contract_fit_score_<horizon>
+7_option_liquidity_fit_score_<horizon>
+7_option_iv_fit_score_<horizon>
+7_option_greek_fit_score_<horizon>
+7_option_reward_risk_score_<horizon>
+7_option_theta_risk_score_<horizon>
+7_option_fill_quality_score_<horizon>
+7_option_expression_confidence_score_<horizon>
 ```
 
 Semantics:
@@ -218,7 +218,7 @@ diagnostics
 The local deterministic scaffold lives in:
 
 ```text
-src/models/model_08_option_expression/
+src/models/model_07_option_expression/
 ```
 
 It implements:

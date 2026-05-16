@@ -41,7 +41,7 @@ LAYER_CLOSEOUTS: tuple[dict[str, Any], ...] = (
         "layer": 4,
         "model_id": "model_08_event_risk_governor",
         "model_name": "EventRiskGovernor",
-        "feature_key": "source_04_event_overlay + event_context_vector",
+        "feature_key": "source_08_event_risk_governor + event_context_vector",
         "blocker": "no production event-overlay evaluation run or calibrated labels exist",
         "required_next_steps": [
             "Create point-in-time event overlay evaluation rows with canonical event refs and dedup status.",
@@ -51,7 +51,7 @@ LAYER_CLOSEOUTS: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 5,
-        "model_id": "model_05_alpha_confidence",
+        "model_id": "model_04_alpha_confidence",
         "model_name": "AlphaConfidenceModel",
         "feature_key": "alpha_confidence_vector",
         "blocker": "no production adjusted-alpha evaluation run or calibrated labels exist",
@@ -63,7 +63,7 @@ LAYER_CLOSEOUTS: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 6,
-        "model_id": "model_06_position_projection",
+        "model_id": "model_05_position_projection",
         "model_name": "PositionProjectionModel",
         "feature_key": "position_projection_vector",
         "blocker": "no production position-utility evaluation run or labels exist",
@@ -75,7 +75,7 @@ LAYER_CLOSEOUTS: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 7,
-        "model_id": "model_07_underlying_action",
+        "model_id": "model_06_underlying_action",
         "model_name": "UnderlyingActionModel",
         "feature_key": "underlying_action_plan",
         "blocker": "no production realized-action outcome evaluation run exists",
@@ -87,7 +87,7 @@ LAYER_CLOSEOUTS: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 8,
-        "model_id": "model_08_option_expression",
+        "model_id": "model_07_option_expression",
         "model_name": "OptionExpressionModel",
         "feature_key": "option_expression_plan",
         "blocker": "no production option-chain replay evaluation run exists",

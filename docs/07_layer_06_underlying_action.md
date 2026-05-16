@@ -1,7 +1,7 @@
 # Layer 06 — UnderlyingActionModel
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 6; legacy implementation surface remains `src/models/model_07_underlying_action/` until code/SQL surfaces are renamed.
+Status: active architecture revision. Conceptual Layer 6; legacy implementation surface remains `src/models/model_06_underlying_action/` until code/SQL surfaces are renamed.
 
 Active boundary: Layer 6 converts Layer 5 target holding-state projection into an offline direct-underlying action thesis: eligibility, planned action type, exposure-adjustment thesis, entry/target/stop/time assumptions, and handoff to Layer 7 trading guidance.
 
@@ -9,7 +9,7 @@ It may describe a direct stock/ETF plan, but it is not broker execution and does
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
-Status: accepted Layer 6 design route; deterministic scaffold implemented in `src/models/model_07_underlying_action/`; production validation pending.
+Status: accepted Layer 6 design route; deterministic scaffold implemented in `src/models/model_06_underlying_action/`; production validation pending.
 
 ## Purpose
 
@@ -55,7 +55,7 @@ Accepted names:
 ```text
 Model class: UnderlyingActionModel
 Stable id: underlying_action_model
-Layer id: model_07_underlying_action
+Layer id: model_06_underlying_action
 Primary output: underlying_action_plan
 Score/vector output: underlying_action_vector
 ```
@@ -114,15 +114,15 @@ Training/evaluation inputs may include future outcomes as labels, but labels mus
 Layer 4 may consume Layer 4 score families directly or through Layer 4 refs when it needs the alpha/path/risk terms behind an action plan:
 
 ```text
-5_alpha_direction_score_<horizon>
-5_alpha_strength_score_<horizon>
-5_expected_return_score_<horizon>
-5_alpha_confidence_score_<horizon>
-5_signal_reliability_score_<horizon>
-5_path_quality_score_<horizon>
-5_reversal_risk_score_<horizon>
-5_drawdown_risk_score_<horizon>
-5_alpha_tradability_score_<horizon>
+4_alpha_direction_score_<horizon>
+4_alpha_strength_score_<horizon>
+4_expected_return_score_<horizon>
+4_alpha_confidence_score_<horizon>
+4_signal_reliability_score_<horizon>
+4_path_quality_score_<horizon>
+4_reversal_risk_score_<horizon>
+4_drawdown_risk_score_<horizon>
+4_alpha_tradability_score_<horizon>
 ```
 
 Layer 4 remains alpha confidence only. A high alpha score is not itself a trade.
@@ -132,27 +132,27 @@ Layer 4 remains alpha confidence only. A high alpha score is not itself a trade.
 Layer 4 consumes Layer 4 target holding-state projection:
 
 ```text
-6_target_position_bias_score_<horizon>
-6_target_exposure_score_<horizon>
-6_current_position_alignment_score_<horizon>
-6_position_gap_score_<horizon>
-6_position_gap_magnitude_score_<horizon>
-6_expected_position_utility_score_<horizon>
-6_cost_to_adjust_position_score_<horizon>
-6_risk_budget_fit_score_<horizon>
-6_position_state_stability_score_<horizon>
-6_projection_confidence_score_<horizon>
+5_target_position_bias_score_<horizon>
+5_target_exposure_score_<horizon>
+5_current_position_alignment_score_<horizon>
+5_position_gap_score_<horizon>
+5_position_gap_magnitude_score_<horizon>
+5_expected_position_utility_score_<horizon>
+5_cost_to_adjust_position_score_<horizon>
+5_risk_budget_fit_score_<horizon>
+5_position_state_stability_score_<horizon>
+5_projection_confidence_score_<horizon>
 ```
 
 Layer 4 should prefer Layer 4 resolved handoff fields when available:
 
 ```text
-6_dominant_projection_horizon
-6_horizon_conflict_state
-6_resolved_target_exposure_score
-6_resolved_position_gap_score
-6_projection_resolution_confidence_score
-6_horizon_resolution_reason_codes
+5_dominant_projection_horizon
+5_horizon_conflict_state
+5_resolved_target_exposure_score
+5_resolved_position_gap_score
+5_projection_resolution_confidence_score
+5_horizon_resolution_reason_codes
 ```
 
 Layer 4 projection does not choose instrument, quantity, order type, or final action. Layer 4 translates it into an offline direct-underlying plan.
@@ -489,16 +489,16 @@ Those belong to Layer 7 and execution-side systems.
 The primary output is `underlying_action_plan`. The V1 score/vector output `underlying_action_vector` exposes 10 per-horizon score families:
 
 ```text
-7_underlying_trade_eligibility_score_<horizon>
-7_underlying_action_direction_score_<horizon>
-7_underlying_trade_intensity_score_<horizon>
-7_underlying_entry_quality_score_<horizon>
-7_underlying_expected_return_score_<horizon>
-7_underlying_adverse_risk_score_<horizon>
-7_underlying_reward_risk_score_<horizon>
-7_underlying_liquidity_fit_score_<horizon>
-7_underlying_holding_time_fit_score_<horizon>
-7_underlying_action_confidence_score_<horizon>
+6_underlying_trade_eligibility_score_<horizon>
+6_underlying_action_direction_score_<horizon>
+6_underlying_trade_intensity_score_<horizon>
+6_underlying_entry_quality_score_<horizon>
+6_underlying_expected_return_score_<horizon>
+6_underlying_adverse_risk_score_<horizon>
+6_underlying_reward_risk_score_<horizon>
+6_underlying_liquidity_fit_score_<horizon>
+6_underlying_holding_time_fit_score_<horizon>
+6_underlying_action_confidence_score_<horizon>
 ```
 
 Physical SQL column names must avoid unquoted numeric-leading identifiers unless the storage contract explicitly quotes them. These names are canonical vector payload tokens and may live inside JSONB/vector payloads.
@@ -507,30 +507,30 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 
 | Field family | Range | Directionality | High value means |
 |---|---:|---|---|
-| `7_underlying_trade_eligibility_score_<horizon>` | `[0, 1]` | high-is-good | Direct underlying expression passes point-in-time gate quality for this horizon. |
-| `7_underlying_action_direction_score_<horizon>` | `[-1, 1]` | signed | Planned direct-underlying side; positive = long-side plan, negative = short-side plan, near zero = maintain/no-trade. |
-| `7_underlying_trade_intensity_score_<horizon>` | `[0, 1]` | high-is-more | Planned adjustment intensity after confidence, risk, cost, stability, and liquidity compression. |
-| `7_underlying_entry_quality_score_<horizon>` | `[0, 1]` | high-is-good | Current or planned entry quality supports the action. |
-| `7_underlying_expected_return_score_<horizon>` | `[-1, 1]` | signed utility | Expected direct-underlying favorable move / return quality after context adjustment. |
-| `7_underlying_adverse_risk_score_<horizon>` | `[0, 1]` | high-is-bad | Expected adverse move / stop-risk pressure for the planned underlying action. |
-| `7_underlying_reward_risk_score_<horizon>` | `[0, 1]` | high-is-good | Planned reward/risk quality of the direct-underlying thesis. |
-| `7_underlying_liquidity_fit_score_<horizon>` | `[0, 1]` | high-is-good | Direct underlying liquidity/spread supports the planned adjustment. |
-| `7_underlying_holding_time_fit_score_<horizon>` | `[0, 1]` | high-is-good | Planned holding time is compatible with alpha, projection, liquidity, and event context. |
-| `7_underlying_action_confidence_score_<horizon>` | `[0, 1]` | high-is-good | Confidence in the complete direct-underlying action plan. |
+| `6_underlying_trade_eligibility_score_<horizon>` | `[0, 1]` | high-is-good | Direct underlying expression passes point-in-time gate quality for this horizon. |
+| `6_underlying_action_direction_score_<horizon>` | `[-1, 1]` | signed | Planned direct-underlying side; positive = long-side plan, negative = short-side plan, near zero = maintain/no-trade. |
+| `6_underlying_trade_intensity_score_<horizon>` | `[0, 1]` | high-is-more | Planned adjustment intensity after confidence, risk, cost, stability, and liquidity compression. |
+| `6_underlying_entry_quality_score_<horizon>` | `[0, 1]` | high-is-good | Current or planned entry quality supports the action. |
+| `6_underlying_expected_return_score_<horizon>` | `[-1, 1]` | signed utility | Expected direct-underlying favorable move / return quality after context adjustment. |
+| `6_underlying_adverse_risk_score_<horizon>` | `[0, 1]` | high-is-bad | Expected adverse move / stop-risk pressure for the planned underlying action. |
+| `6_underlying_reward_risk_score_<horizon>` | `[0, 1]` | high-is-good | Planned reward/risk quality of the direct-underlying thesis. |
+| `6_underlying_liquidity_fit_score_<horizon>` | `[0, 1]` | high-is-good | Direct underlying liquidity/spread supports the planned adjustment. |
+| `6_underlying_holding_time_fit_score_<horizon>` | `[0, 1]` | high-is-good | Planned holding time is compatible with alpha, projection, liquidity, and event context. |
+| `6_underlying_action_confidence_score_<horizon>` | `[0, 1]` | high-is-good | Confidence in the complete direct-underlying action plan. |
 
 ## Resolved plan fields
 
 Layer 4 also needs resolved plan fields so downstream consumers do not re-solve per-horizon action conflicts:
 
 ```text
-7_resolved_underlying_action_type
-7_resolved_action_side
-7_resolved_dominant_horizon
-7_resolved_trade_eligibility_score
-7_resolved_trade_intensity_score
-7_resolved_entry_quality_score
-7_resolved_action_confidence_score
-7_resolved_reason_codes
+6_resolved_underlying_action_type
+6_resolved_action_side
+6_resolved_dominant_horizon
+6_resolved_trade_eligibility_score
+6_resolved_trade_intensity_score
+6_resolved_entry_quality_score
+6_resolved_action_confidence_score
+6_resolved_reason_codes
 ```
 
 Resolved fields are handoff/plan fields, not core scalar score-family rows. They summarize the chosen underlying thesis and remain offline.
@@ -690,7 +690,7 @@ Layer 4 should be trained or calibrated in stages:
 1. **Deterministic policy scaffold**: map Layer 4/6 scores plus quote/risk gates to planned action, intensity, entry, target, stop, and time-stop.
 2. **Candidate action utility evaluation**: evaluate `no_trade`, `maintain`, open/increase/reduce/close candidates, and direct short candidates where allowed.
 3. **Entry and risk-plan calibration**: learn fill probability, target-before-stop, stop-before-target, MFE/MAE, and reward/risk quality.
-4. **Plan confidence calibration**: calibrate `7_underlying_action_confidence_score_<horizon>` by out-of-sample plan utility buckets.
+4. **Plan confidence calibration**: calibrate `6_underlying_action_confidence_score_<horizon>` by out-of-sample plan utility buckets.
 5. **Layer 7 handoff validation**: prove that Layer 4 price-path assumptions improve option-expression selection versus raw alpha/projection-only baselines.
 
 Do not train Layer 4 from in-sample upstream model outputs. Upstream vectors consumed by Layer 4 training must be generated with rolling/cross-fitted point-in-time discipline.
@@ -753,7 +753,7 @@ Layer 4 must not:
 
 Current local scaffold status:
 
-1. Deterministic `model_07_underlying_action` scaffold exists using Layer 4/6 fixture vectors, quote/liquidity fixtures, and risk/policy fixtures.
+1. Deterministic `model_06_underlying_action` scaffold exists using Layer 4/6 fixture vectors, quote/liquidity fixtures, and risk/policy fixtures.
 2. Effective-current-underlying-exposure calculation with pending fill probability is implemented.
 3. Hard-gate/soft-gate decision trace and planned action resolver are implemented.
 4. Entry, price-path, risk-plan, and Layer 7 handoff builders are implemented.

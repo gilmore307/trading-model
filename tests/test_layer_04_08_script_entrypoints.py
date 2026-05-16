@@ -11,10 +11,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LAYERS = {
     "model_08_event_risk_governor": "event_risk_governor",
-    "model_05_alpha_confidence": "alpha_confidence",
-    "model_06_position_projection": "position_projection",
-    "model_07_underlying_action": "underlying_action",
-    "model_08_option_expression": "option_expression",
+    "model_04_alpha_confidence": "alpha_confidence",
+    "model_05_position_projection": "position_projection",
+    "model_06_underlying_action": "underlying_action",
+    "model_07_option_expression": "option_expression",
 }
 
 

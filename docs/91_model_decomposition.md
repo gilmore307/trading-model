@@ -1,6 +1,6 @@
 # Model Decomposition Framework
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Legacy physical paths such as `model_08_event_risk_governor` and `model_08_option_expression` may remain in implementation notes until a dedicated migration renames them.
+> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths are aligned to the current conceptual numbering, including `model_08_event_risk_governor` and `model_07_option_expression`.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -455,9 +455,9 @@ position_projection_vector
 Planned physical artifacts:
 
 ```text
-trading_model.model_06_position_projection
-trading_model.model_06_position_projection_explainability
-trading_model.model_06_position_projection_diagnostics
+trading_model.model_05_position_projection
+trading_model.model_05_position_projection_explainability
+trading_model.model_05_position_projection_diagnostics
 ```
 
 The primary output keeps the narrow Layer 6-facing target holding-state projection: target position bias, target exposure, current-position alignment, signed position gap, gap magnitude, expected position utility, cost-to-adjust pressure, risk-budget fit, position-state stability, and projection confidence.
@@ -568,16 +568,16 @@ effective_current_underlying_exposure
 The V1 score/vector output exposes these per-horizon score families:
 
 ```text
-7_underlying_trade_eligibility_score_<horizon>
-7_underlying_action_direction_score_<horizon>
-7_underlying_trade_intensity_score_<horizon>
-7_underlying_entry_quality_score_<horizon>
-7_underlying_expected_return_score_<horizon>
-7_underlying_adverse_risk_score_<horizon>
-7_underlying_reward_risk_score_<horizon>
-7_underlying_liquidity_fit_score_<horizon>
-7_underlying_holding_time_fit_score_<horizon>
-7_underlying_action_confidence_score_<horizon>
+6_underlying_trade_eligibility_score_<horizon>
+6_underlying_action_direction_score_<horizon>
+6_underlying_trade_intensity_score_<horizon>
+6_underlying_entry_quality_score_<horizon>
+6_underlying_expected_return_score_<horizon>
+6_underlying_adverse_risk_score_<horizon>
+6_underlying_reward_risk_score_<horizon>
+6_underlying_liquidity_fit_score_<horizon>
+6_underlying_holding_time_fit_score_<horizon>
+6_underlying_action_confidence_score_<horizon>
 ```
 
 Resolved plan fields include planned action type, action side, dominant horizon, trade eligibility, trade intensity, entry quality, action confidence, and reason codes.
