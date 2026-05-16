@@ -199,6 +199,14 @@ Output artifacts live under `storage/cpi_inflation_association_readiness_2026051
 
 The CPI slice scans available local Trading Economics calendar artifacts and Alpaca ETF bars. Current local result: 1 CPI event month (`2016-01`), 1 CPI event clock, 10 event labels, 120 same-month control labels, and 10 event/control comparisons. Status remains `underpowered_cpi_scouting_only`: the matched-control machinery exists, but the local event sample is far too small and still lacks official-source canonicalization, market/sector/target-state controls, and a preaccepted surprise definition. No association, risk-promotion, or alpha claim is made.
 
+A follow-up diagnostic used FRED read-only CPI release dates and CPI/Core CPI observations against already-local Alpaca ETF bars:
+
+Artifact: `storage/cpi_release_correlation_study_20260516/`
+
+Result: 131 CPI release dates from 2016-01 through 2026-05, 1,571 strict one-day ETF/event rows across liquid ETF/sector proxies, and nearby non-event controls. Aggregate one-day event return delta versus controls was effectively zero (-0.004 percentage points), aggregate one-day absolute-return delta was effectively zero (+0.001 percentage points), and one-day path-range delta was small (+0.097 percentage points). Realized CPI/Core CPI level/change correlations with forward returns were weak and unstable: aggregate one-day correlations were about +0.05 to +0.09, while 5-10 day correlations drifted mildly negative (roughly -0.04 to -0.09 for month-over-month CPI/core and -0.08 to -0.09 for year-over-year CPI/core).
+
+Conclusion: CPI release occurrence has weak event-risk/volatility relevance, but realized CPI level/change is not meaningful as standalone directional alpha. If included, CPI should be a macro event-risk/calendar control feature, not a trading signal or promotion-ready event family.
+
 ## Early-stop criteria
 
 Stop or downgrade a family to `deferred_low_signal` or `retired_no_signal` when any of these hold after a bounded scout:
