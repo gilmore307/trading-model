@@ -635,3 +635,14 @@ Boundary:
 - accepted baseline use is `epsForecast` only when captured pre-event;
 - post-event `eps` actual and `surprise` fields are forbidden as baseline inputs;
 - revenue consensus and prior-guidance/guidance-consensus remain separate source-route gaps.
+
+## Execution-side Nasdaq EPS baseline output
+
+`trading-execution` `calendar_discovery` now emits `saved/earnings_guidance_expectation_baseline.csv` when a manager-prepared task uses `baseline_capture_mode = future_pre_event_eps_consensus_snapshot`.
+
+Acceptance behavior:
+
+- emits only rows with Nasdaq `epsForecast` present;
+- requires capture clock before `release_time`;
+- skips and warns rows with actual EPS (`eps`) or `surprise` fields;
+- output remains EPS-consensus evidence only and does not establish beat/miss or signed direction.
