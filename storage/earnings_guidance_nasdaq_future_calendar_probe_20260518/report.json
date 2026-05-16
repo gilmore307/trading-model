@@ -1,0 +1,21 @@
+{
+  "actual_eps_present_event_count": 0,
+  "broker_or_account_mutation_performed": false,
+  "date": "2026-05-18",
+  "eps_forecast_present_event_count": 19,
+  "event_count": 43,
+  "future_eps_baseline_candidate_event_count": 19,
+  "guidance_expectation_present_event_count": 0,
+  "interpretation": [
+    "Nasdaq earnings calendar can query future earnings shells and provide clean EPS forecast-like fields before actual/surprise fields appear for some rows.",
+    "This supports a future EPS-consensus snapshot route, not historical PIT reconstruction for past events.",
+    "Revenue consensus and prior-guidance/guidance-consensus routes remain separate gaps.",
+    "Future production use must persist captured_at/as_of_time and exclude post-event actual/surprise fields from baseline artifacts."
+  ],
+  "model_activation_performed": false,
+  "provider_calls_performed_by_probe": 1,
+  "revenue_consensus_present_event_count": 0,
+  "schema": "earnings_guidance_nasdaq_future_calendar_probe_v1",
+  "status": "future_eps_consensus_route_candidate_confirmed",
+  "surprise_present_event_count": 0
+}

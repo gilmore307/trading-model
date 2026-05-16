@@ -598,3 +598,22 @@ Result:
 - signed-direction-ready rows: 0.
 
 Conclusion: existing Nasdaq rows prove that an EPS-consensus candidate route exists, but the historical snapshots were captured after the events and include actual EPS / surprise fields. They are therefore rejected as point-in-time historical baselines. Nasdaq can only be used for future EPS-consensus monitoring if snapshots are captured before the event and stored with clean PIT clocks; revenue consensus and prior-guidance/guidance-consensus routes remain separate gaps.
+
+## Nasdaq future earnings-calendar EPS baseline route probe
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_nasdaq_future_calendar_probe_20260518/`
+
+A bounded live probe queried the Nasdaq earnings calendar for future date `2026-05-18`.
+
+Result:
+
+- provider calls: 1;
+- events returned: 43;
+- EPS forecast-like rows: 19;
+- actual EPS rows: 0;
+- surprise rows: 0;
+- clean future EPS baseline candidates: 19;
+- revenue consensus rows: 0;
+- guidance expectation rows: 0.
+
+Conclusion: Nasdaq can support a future EPS-consensus snapshot route when captured before events and stored with point-in-time clocks. It does not solve historical PIT reconstruction for already-past events, and it does not provide revenue consensus or prior-guidance/guidance-consensus coverage in the probed route.

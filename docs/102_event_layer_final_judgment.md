@@ -217,3 +217,11 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_baseline_sourc
 The audit found matching Nasdaq earnings-calendar rows for all 12 reviewed events, and all 12 contained EPS forecast-like fields. However, all audited snapshots were captured after the historical event dates and include actual/surprise fields. The existing artifacts are not acceptable point-in-time baselines.
 
 Judgment update: the current system has a plausible future EPS-consensus route, but it does not yet have accepted historical PIT expectation baselines. Revenue consensus and guidance expectation baselines remain unavailable in the audited artifacts. Signed claims remain blocked.
+
+## Fourteenth itemized test — Nasdaq future earnings-calendar route probe
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_nasdaq_future_calendar_probe_20260518/`
+
+A bounded future-date Nasdaq probe returned 43 future earnings rows for `2026-05-18`; 19 rows contained EPS forecast-like fields while actual EPS and surprise fields were absent. This confirms Nasdaq can be used as a future EPS-consensus snapshot candidate route.
+
+Judgment update: this route is useful for future monitoring and PIT baseline capture, not historical reconstruction. Revenue consensus and guidance expectation baseline routes remain separate open gaps. Signed claims remain blocked until clean pre-event baseline artifacts and reviewed result/guidance comparisons exist.
