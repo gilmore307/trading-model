@@ -193,3 +193,11 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_text_candidate
 The scout scanned the 12 acquired official SEC documents for guidance/outlook-like candidate spans. It found 11 events with candidate non-boilerplate spans and one event with boilerplate/safe-harbor-only matches. It performed zero provider calls.
 
 Judgment update: this narrows the human/reviewed interpretation queue, but it is not accepted guidance interpretation. SEC filings contain generic expectation/accounting/safe-harbor language, so candidate text remains review-required. Signed-direction and stronger EventRiskGovernor claims remain blocked by missing reviewed guidance/result interpretation and missing point-in-time expectation baselines.
+
+## Eleventh itemized test — official guidance interpretation review
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_interpretation_review_q4_2025_20260515/`
+
+The review classified official-document candidate spans into partial future operating/financial context versus rejected boilerplate/accounting/risk language. It found 9 partial guidance-context events and 3 reviewed no accepted guidance-context events.
+
+Judgment update: this is useful event context, but not signed alpha. Accepted guidance raise/cut remains zero, expectation baselines remain zero, and signed-direction-ready rows remain zero. Earnings/guidance can support direction-neutral EventRiskGovernor context only.

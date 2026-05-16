@@ -540,3 +540,20 @@ Scope:
 - signed-direction-ready rows: 0.
 
 Conclusion: official filing text contains guidance/outlook-like candidate spans, but the extraction is intentionally conservative and review-required because SEC filings include safe-harbor, accounting, and generic expectation language. These candidates narrow the review queue only. They do not establish guidance raise/cut, beat/miss, signed alpha, or EventRiskGovernor escalation without reviewed interpretation and point-in-time expectation baselines.
+
+## Official guidance interpretation review
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_interpretation_review_q4_2025_20260515/`
+
+A conservative no-provider review consumed candidate spans from official SEC documents and separated partial future operating/financial context from rejected boilerplate/accounting/risk language.
+
+Scope:
+
+- events: 12;
+- partial official guidance-context events: 9;
+- reviewed no accepted guidance-context events: 3;
+- accepted guidance raise/cut rows: 0;
+- consensus or accepted expectation baselines: 0;
+- signed-direction-ready rows: 0.
+
+Conclusion: the review creates partial official guidance context only. It does not establish beat/miss, guidance raise/cut, or signed direction because expectation baselines are still absent. EventRiskGovernor consumption remains direction-neutral context only unless a later reviewed policy accepts stronger intervention evidence.

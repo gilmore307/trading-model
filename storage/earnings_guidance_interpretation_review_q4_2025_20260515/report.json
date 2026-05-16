@@ -1,0 +1,21 @@
+{
+  "accepted_guidance_raise_cut_count": 0,
+  "event_count": 12,
+  "expectation_baseline_count": 0,
+  "interpretation": [
+    "Partial official guidance context means a reviewed future operating/financial context span exists, not that guidance was raised/cut or beat/miss was established.",
+    "Generic safe-harbor, accounting guidance, pension/lease/accounting estimates, and risk language are rejected for guidance interpretation.",
+    "No signed earnings/guidance claim is allowed because point-in-time expectation baselines remain missing.",
+    "EventRiskGovernor consumption remains direction-neutral context only unless a later reviewed policy explicitly accepts stronger intervention evidence."
+  ],
+  "partial_guidance_context_event_count": 9,
+  "provider_calls_performed_by_study": 0,
+  "reviewed_guidance_interpretation_status_counts": {
+    "partial_official_guidance_context_reviewed": 9,
+    "reviewed_no_accepted_guidance_context": 3
+  },
+  "reviewed_no_accepted_guidance_context_event_count": 3,
+  "schema": "earnings_guidance_interpretation_review_v1",
+  "signed_direction_ready_count": 0,
+  "status": "blocked_missing_expectation_baselines_for_signed_claims"
+}
