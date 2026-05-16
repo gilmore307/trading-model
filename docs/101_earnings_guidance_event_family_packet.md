@@ -522,3 +522,21 @@ Scope:
 - signed-direction-ready rows: 0.
 
 Conclusion: the family has now cleared the local official-document-text coverage prerequisite for this 12-event diagnostic slice, but it has not cleared interpretation or expectation gates. The official documents are `official_document_text_present_uninterpreted`; they must not be treated as guidance raise/cut, beat/miss, signed alpha, or EventRiskGovernor escalation until a reviewed guidance/result interpretation and point-in-time expectation baseline are added.
+
+## Official guidance-text candidate scout
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_text_candidate_scout_q4_2025_20260515/`
+
+A no-provider scout scanned the 12 acquired official SEC filing documents for guidance/outlook-like evidence spans. This is an extraction/review-queue artifact only; it does not produce accepted guidance interpretation.
+
+Scope:
+
+- events: 12;
+- official document text events: 12;
+- candidate guidance-text events requiring review: 11;
+- boilerplate/safe-harbor-only events: 1;
+- accepted guidance interpretations: 0;
+- consensus or accepted expectation baselines: 0;
+- signed-direction-ready rows: 0.
+
+Conclusion: official filing text contains guidance/outlook-like candidate spans, but the extraction is intentionally conservative and review-required because SEC filings include safe-harbor, accounting, and generic expectation language. These candidates narrow the review queue only. They do not establish guidance raise/cut, beat/miss, signed alpha, or EventRiskGovernor escalation without reviewed interpretation and point-in-time expectation baselines.

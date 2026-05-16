@@ -185,3 +185,11 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_artifact_cover
 A bounded SEC acquisition fetched the selected official result filing document text for all 12 Q4 2025 earnings events. The follow-up coverage gate found 12/12 local official document text artifacts and zero acquisition failures.
 
 Judgment update: this resolves the previous local-document blocker, but not the signed-claim blocker. All 12 documents remain uninterpreted for guidance/outlook, and there are still zero expectation baselines and zero signed-direction-ready rows. Earnings/guidance remains direction-neutral EventRiskGovernor context only.
+
+## Tenth itemized test — official guidance-text candidate scout
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_text_candidate_scout_q4_2025_20260515/`
+
+The scout scanned the 12 acquired official SEC documents for guidance/outlook-like candidate spans. It found 11 events with candidate non-boilerplate spans and one event with boilerplate/safe-harbor-only matches. It performed zero provider calls.
+
+Judgment update: this narrows the human/reviewed interpretation queue, but it is not accepted guidance interpretation. SEC filings contain generic expectation/accounting/safe-harbor language, so candidate text remains review-required. Signed-direction and stronger EventRiskGovernor claims remain blocked by missing reviewed guidance/result interpretation and missing point-in-time expectation baselines.

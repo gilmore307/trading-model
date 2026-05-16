@@ -1,0 +1,23 @@
+{
+  "accepted_guidance_interpretation_count": 0,
+  "boilerplate_only_event_count": 1,
+  "candidate_guidance_text_event_count": 11,
+  "event_count": 12,
+  "expectation_baseline_count": 0,
+  "guidance_candidate_status_counts": {
+    "boilerplate_or_safe_harbor_only_review_required": 1,
+    "candidate_guidance_text_present_review_required": 11
+  },
+  "interpretation": [
+    "Candidate guidance/outlook spans are extraction evidence only and remain review-required.",
+    "Safe-harbor and forward-looking boilerplate is explicitly separated from candidate guidance text.",
+    "No accepted guidance raise/cut, beat/miss, or signed-direction claim is produced by this scout.",
+    "Point-in-time expectation baselines remain required before signed earnings/guidance claims."
+  ],
+  "no_candidate_guidance_text_event_count": 0,
+  "official_document_text_event_count": 12,
+  "provider_calls_performed_by_study": 0,
+  "schema": "earnings_guidance_text_candidate_scout_v1",
+  "signed_direction_ready_count": 0,
+  "status": "blocked_missing_reviewed_guidance_interpretation_and_expectation_baseline"
+}
