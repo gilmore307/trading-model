@@ -266,3 +266,9 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_current_prior_
 The no-provider readiness pass joined prior-company-guidance baseline context, current official guidance-context review rows, and official result artifacts. It found 7 accepted prior-guidance baseline events and 9 current partial guidance-context events, but 0 current comparable company-guidance events, 0 accepted raise/cut rows, and 0 signed-direction-ready rows.
 
 Judgment update: current primary-document future-operating context is useful direction-neutral event context, but it is not accepted comparable company guidance. Earnings/guidance signed direction, alpha, model activation, broker/account mutation, and stronger EventRiskGovernor intervention remain blocked until reviewed current guidance comparison and point-in-time expectation baselines exist.
+
+## Closeout artifact and regeneration policy
+
+The event-model redo is now closed as an actionable architecture decision, not as a promotion approval. `scripts/models/model_08_event_risk_governor/build_event_model_closeout_report.py` emits `event_model_closeout_report_v1`, which records the accepted EventRiskGovernor boundary, rejected alpha routes, current event-family statuses, required next gates, and the storage/deletion hold.
+
+Downstream regeneration should rebuild only event-risk-governor-dependent outputs after reviewed `source_08_event_risk_governor` / `feature_08_event_risk_governor` coverage. Base Layers 1-7 are not blocked by event feeds and should be preserved when they are otherwise valid under the rolling-fold policy. Old event-overlay, abnormal-activity-only, or pre-coverage Layer 8 outputs are superseded for review/regeneration, but diagnostic artifacts are preserved for audit and comparison. Dashboard snapshot and model-run metadata deletion remains dry-run only until regenerated event-risk-governor evidence has been reviewed.
