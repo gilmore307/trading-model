@@ -711,6 +711,23 @@ Result:
 
 Conclusion: exhibit-level official filing text materially improves the `prior_company_guidance` baseline route versus arbitrary prior official filings. Accepted spans remain baseline context only. They do not establish guidance surprise, raise/cut, beat/miss, signed alpha, model activation, broker/account mutation, or stronger EventRiskGovernor intervention. Current guidance/result comparison and revenue-consensus or other accepted expectation baselines remain required before signed earnings/guidance claims.
 
+## Current-vs-prior guidance comparison readiness
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_current_prior_comparison_readiness_q4_2025_20260516/`
+
+A no-provider readiness pass joined accepted prior-company-guidance context, current official guidance-context review rows, and official result artifacts. The pass is deliberately conservative: partial current future-operating context from primary 10-Q/8-K text is not treated as comparable current company guidance and cannot establish raise/cut, guidance surprise, or signed direction.
+
+Result:
+
+- events: 12;
+- accepted prior-guidance baseline events: 7;
+- current partial guidance-context events: 9;
+- current comparable guidance events: 0;
+- accepted guidance raise/cut rows: 0;
+- signed-direction-ready rows: 0.
+
+Conclusion: the prior-guidance route is partially available, but current comparable guidance context is still missing. The next acceptable evidence route is current earnings-release/exhibit/transcript guidance text plus PIT expectation baselines, not comparison against post-event pages or market reaction. EventRiskGovernor use remains direction-neutral context only.
+
 ## Revenue-consensus route decision
 
 Revenue consensus remains unresolved for the historical Q4 2025 diagnostic slice. Existing local Nasdaq calendar artifacts are EPS-only and were captured post-event, so they remain rejected for historical PIT baseline use.
