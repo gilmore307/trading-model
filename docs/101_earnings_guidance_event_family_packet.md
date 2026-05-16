@@ -581,3 +581,20 @@ Acceptance requirements:
 - signed beat/miss or guidance surprise still requires reviewed actual/result or guidance comparison after baselines are accepted.
 
 Current diagnostic slice result: 12 events, 0 baseline artifacts supplied, 12 missing point-in-time expectation baselines, 0 signed-direction-ready rows. This is an explicit blocker, not a text-interpretation gap.
+
+## Existing calendar baseline source audit
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_baseline_source_audit_q4_2025_20260515/`
+
+A no-provider audit checked whether already captured Nasdaq earnings-calendar artifacts can satisfy the point-in-time expectation baseline gate for the 12-event diagnostic slice.
+
+Result:
+
+- events: 12;
+- matched Nasdaq calendar rows: 12;
+- EPS forecast-like fields present: 12;
+- revenue forecast-like fields present: 0;
+- accepted PIT baseline rows: 0;
+- signed-direction-ready rows: 0.
+
+Conclusion: existing Nasdaq rows prove that an EPS-consensus candidate route exists, but the historical snapshots were captured after the events and include actual EPS / surprise fields. They are therefore rejected as point-in-time historical baselines. Nasdaq can only be used for future EPS-consensus monitoring if snapshots are captured before the event and stored with clean PIT clocks; revenue consensus and prior-guidance/guidance-consensus routes remain separate gaps.

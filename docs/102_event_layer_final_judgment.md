@@ -209,3 +209,11 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_expectation_ba
 The readiness gate formalized point-in-time baseline acceptance before signed earnings/guidance interpretation. It accepts EPS consensus, revenue consensus, prior company guidance, or guidance consensus/analyst range artifacts only when provenance and point-in-time clocks are present and predate the event under current date-only clocks.
 
 Judgment update: the diagnostic slice has 0 supplied baseline artifacts and 12 missing baseline events. Signed beat/miss, guidance raise/cut, alpha, model activation, and stronger EventRiskGovernor intervention remain blocked. The next work is acquisition/curation of point-in-time baselines, not additional SEC text mining.
+
+## Thirteenth itemized test — existing calendar baseline source audit
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_baseline_source_audit_q4_2025_20260515/`
+
+The audit found matching Nasdaq earnings-calendar rows for all 12 reviewed events, and all 12 contained EPS forecast-like fields. However, all audited snapshots were captured after the historical event dates and include actual/surprise fields. The existing artifacts are not acceptable point-in-time baselines.
+
+Judgment update: the current system has a plausible future EPS-consensus route, but it does not yet have accepted historical PIT expectation baselines. Revenue consensus and guidance expectation baselines remain unavailable in the audited artifacts. Signed claims remain blocked.
