@@ -1,0 +1,17 @@
+{
+  "candidate_source_event_count": 12,
+  "event_count": 12,
+  "interpretation": [
+    "Selected prior official filings are source candidates for prior-company-guidance baselines only.",
+    "Document fetch, reviewed guidance extraction, and point-in-time comparison are still required before any guidance surprise or signed claim.",
+    "Provider calls reported here are zero because this audit consumes already acquired SEC submission rows."
+  ],
+  "prior_official_guidance_source_status_counts": {
+    "candidate_prior_official_guidance_source_selected": 12
+  },
+  "provider_calls_performed_by_study": 0,
+  "schema": "earnings_guidance_prior_official_baseline_source_audit_v1",
+  "sec_submission_row_count": 35010,
+  "signed_direction_ready_count": 0,
+  "status": "candidate_prior_official_guidance_sources_identified"
+}

@@ -646,3 +646,33 @@ Acceptance behavior:
 - requires capture clock before `release_time`;
 - skips and warns rows with actual EPS (`eps`) or `surprise` fields;
 - output remains EPS-consensus evidence only and does not establish beat/miss or signed direction.
+
+## Prior official guidance baseline source audit
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_prior_official_baseline_source_audit_q4_2025_20260515/`
+
+A bounded SEC submission acquisition and no-provider source audit identified prior official filings that can seed a `prior_company_guidance` baseline route.
+
+Result:
+
+- events: 12;
+- SEC submission rows consumed: 35,010;
+- candidate prior official source events: 12;
+- signed-direction-ready rows: 0.
+
+The selected prior filings are source candidates only. They require official document text fetch and reviewed prior-guidance extraction before any guidance surprise comparison.
+
+## Prior official guidance document coverage
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_prior_official_document_coverage_q4_2025_20260515/`
+
+The selected prior official filings were fetched through `trading-data` SEC document support and checked for local text coverage.
+
+Result:
+
+- events: 12;
+- prior official document text present: 12;
+- accepted prior guidance baselines: 0;
+- signed-direction-ready rows: 0.
+
+Conclusion: prior official documents are now present for review, but remain uninterpreted. The next gate is prior-guidance baseline extraction/review. Revenue consensus remains a separate baseline gap.

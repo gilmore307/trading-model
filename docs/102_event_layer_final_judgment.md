@@ -225,3 +225,14 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_nasdaq_future_
 A bounded future-date Nasdaq probe returned 43 future earnings rows for `2026-05-18`; 19 rows contained EPS forecast-like fields while actual EPS and surprise fields were absent. This confirms Nasdaq can be used as a future EPS-consensus snapshot candidate route.
 
 Judgment update: this route is useful for future monitoring and PIT baseline capture, not historical reconstruction. Revenue consensus and guidance expectation baseline routes remain separate open gaps. Signed claims remain blocked until clean pre-event baseline artifacts and reviewed result/guidance comparisons exist.
+
+## Fifteenth itemized test — prior official guidance source and document coverage
+
+Artifacts:
+
+- `/root/projects/trading-model/storage/earnings_guidance_prior_official_baseline_source_audit_q4_2025_20260515/`
+- `/root/projects/trading-model/storage/earnings_guidance_prior_official_document_coverage_q4_2025_20260515/`
+
+The source audit selected prior official SEC filings for all 12 diagnostic events after consuming SEC submission rows. The document coverage pass then confirmed 12/12 prior official document texts are locally present.
+
+Judgment update: the prior-company-guidance source route is now materially unblocked at the document-text level. It still does not establish guidance surprise because the documents remain uninterpreted and no accepted prior-guidance baseline rows exist. Revenue consensus remains unsolved.
