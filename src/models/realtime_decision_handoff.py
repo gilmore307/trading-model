@@ -19,11 +19,11 @@ MODEL_LAYER_ORDER = (
     "layer_01_market_regime",
     "layer_02_sector_context",
     "layer_03_target_state_vector",
+    "layer_04_alpha_confidence",
+    "layer_05_position_projection",
+    "layer_06_underlying_action",
+    "layer_07_option_expression",
     "layer_08_event_risk_governor",
-    "layer_05_alpha_confidence",
-    "layer_06_position_projection",
-    "layer_07_underlying_action",
-    "layer_08_option_expression",
 )
 
 _LAYER_METADATA = {
@@ -47,23 +47,23 @@ _LAYER_METADATA = {
         "expected_model_output": "event_context_vector",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_08_event_risk_governor/generate_model_08_event_risk_governor.py",
     },
-    "layer_05_alpha_confidence": {
-        "model_id": "model_05_alpha_confidence",
+    "layer_04_alpha_confidence": {
+        "model_id": "model_04_alpha_confidence",
         "expected_model_output": "alpha_confidence_vector",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py",
     },
-    "layer_06_position_projection": {
-        "model_id": "model_06_position_projection",
+    "layer_05_position_projection": {
+        "model_id": "model_05_position_projection",
         "expected_model_output": "position_projection_vector",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_06_position_projection/generate_model_06_position_projection.py",
     },
-    "layer_07_underlying_action": {
-        "model_id": "model_07_underlying_action",
+    "layer_06_underlying_action": {
+        "model_id": "model_06_underlying_action",
         "expected_model_output": "underlying_action_plan",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py",
     },
-    "layer_08_option_expression": {
-        "model_id": "model_08_option_expression",
+    "layer_07_option_expression": {
+        "model_id": "model_07_option_expression",
         "expected_model_output": "option_expression_plan",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_08_option_expression/generate_model_08_option_expression.py",
     },
