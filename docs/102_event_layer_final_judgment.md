@@ -177,3 +177,11 @@ The coverage scout consumed the Q4 2025 interpreted earnings/result rows and sel
 Result: 12/12 events have SEC result filing references, but 0/12 have local official filing/release/transcript text artifacts, 0 accepted guidance interpretations, 0 expectation baselines, and 0 signed-direction-ready rows.
 
 Judgment update: SEC metadata and normalized facts are not enough. Earnings/guidance remains direction-neutral EventRiskGovernor context only until official company document text is acquired, interpreted under a reviewed guidance standard, and joined to point-in-time expectation baselines.
+
+## Ninth itemized test — official document text acquisition
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_artifact_coverage_with_documents_q4_2025_20260515/`
+
+A bounded SEC acquisition fetched the selected official result filing document text for all 12 Q4 2025 earnings events. The follow-up coverage gate found 12/12 local official document text artifacts and zero acquisition failures.
+
+Judgment update: this resolves the previous local-document blocker, but not the signed-claim blocker. All 12 documents remain uninterpreted for guidance/outlook, and there are still zero expectation baselines and zero signed-direction-ready rows. Earnings/guidance remains direction-neutral EventRiskGovernor context only.

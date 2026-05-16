@@ -504,3 +504,21 @@ Scope:
 - signed-direction-ready rows: 0.
 
 Conclusion: filing references and normalized SEC facts establish official result visibility, but not guidance interpretation. The next acceptable route is bounded acquisition of official company document text (`sec_filing_document` or accepted IR/transcript route), deterministic/ reviewed guidance interpretation, and point-in-time expectation baselines. Missing artifacts remain `missing`; do not infer guidance surprise from price reaction, result metadata, or XBRL facts alone.
+
+## Official SEC document-text coverage rerun
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_artifact_coverage_with_documents_q4_2025_20260515/`
+
+After the initial coverage gate showed missing local official-document text, bounded SEC document acquisition fetched the selected official result filing document for each Q4 2025 event through `08_feed_sec_company_financials` / `sec_filing_document`.
+
+Scope:
+
+- requested official documents: 12;
+- successful SEC filing document artifacts: 12;
+- failed document artifacts: 0;
+- local official document text artifacts available to the coverage gate: 12;
+- accepted guidance interpretations: 0;
+- consensus or accepted expectation baselines: 0;
+- signed-direction-ready rows: 0.
+
+Conclusion: the family has now cleared the local official-document-text coverage prerequisite for this 12-event diagnostic slice, but it has not cleared interpretation or expectation gates. The official documents are `official_document_text_present_uninterpreted`; they must not be treated as guidance raise/cut, beat/miss, signed alpha, or EventRiskGovernor escalation until a reviewed guidance/result interpretation and point-in-time expectation baseline are added.

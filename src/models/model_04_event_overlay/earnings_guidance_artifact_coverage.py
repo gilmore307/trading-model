@@ -44,13 +44,28 @@ def _key(accession_number: Any, document_name: Any) -> tuple[str, str]:
     return (str(accession_number or "").strip(), str(document_name or "").strip())
 
 
+def _resolve_text_path(metadata_path: Path, value: str) -> str:
+    if not value:
+        return ""
+    raw_path = Path(value)
+    if raw_path.is_absolute():
+        return str(raw_path)
+    for parent in (metadata_path.parent, *metadata_path.parents):
+        candidate = parent / raw_path
+        if candidate.exists():
+            return str(candidate)
+    return value
+
+
 def _load_document_metadata(paths: Sequence[Path]) -> dict[tuple[str, str], dict[str, str]]:
     out: dict[tuple[str, str], dict[str, str]] = {}
     for path in paths:
         for row in _read_csv(path):
             key = _key(row.get("accession_number"), row.get("document_name"))
             if all(key):
-                out[key] = row
+                item = dict(row)
+                item["document_text_path"] = _resolve_text_path(path, str(row.get("document_text_path") or ""))
+                out[key] = item
     return out
 
 
