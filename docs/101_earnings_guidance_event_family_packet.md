@@ -617,3 +617,21 @@ Result:
 - guidance expectation rows: 0.
 
 Conclusion: Nasdaq can support a future EPS-consensus snapshot route when captured before events and stored with point-in-time clocks. It does not solve historical PIT reconstruction for already-past events, and it does not provide revenue consensus or prior-guidance/guidance-consensus coverage in the probed route.
+
+## Future Nasdaq EPS baseline snapshot task route
+
+`trading-manager` now prepares future Nasdaq earnings EPS-consensus baseline snapshot task keys for `trading-execution` `calendar_discovery`.
+
+Prepared task-key convention:
+
+```text
+trading-manager/storage/earnings_guidance_baseline/nasdaq_earnings_calendar/YYYY-MM-DD/task_key.json
+```
+
+Boundary:
+
+- preparation performs zero provider calls;
+- dispatch must occur before the event date;
+- accepted baseline use is `epsForecast` only when captured pre-event;
+- post-event `eps` actual and `surprise` fields are forbidden as baseline inputs;
+- revenue consensus and prior-guidance/guidance-consensus remain separate source-route gaps.
