@@ -14,6 +14,27 @@ Future event-risk work must therefore scout coherent event families before train
 
 Each event family must have a packet before model training or risk-intervention promotion work begins.
 
+## Event-family granularity rule
+
+Event-family scouting must be deliberately fine-grained. The overview categories produced by event ingestion, such as `macro_news`, `symbol_news`, `sec_filing`, or `earnings_guidance`, are routing buckets, not modeling families. They are too broad for price/path association proof and must not be trained as one mixed event model.
+
+News must be decomposed into concrete reusable event families before association analysis. A `symbol_news` row is only a source container until interpretation assigns a narrower family such as management change, product launch, customer loss, legal action, regulatory approval/rejection, analyst-rating change, capital allocation, supply-chain disruption, or earnings/guidance narrative residual. Likewise, `macro_news` and `sector_news` must be split by policy, rates, inflation, commodity, credit/liquidity, geopolitical, regulation, demand, supply, or other reviewed mechanism.
+
+Each narrow family must run its own `event_family_scouting_packet_v1` and price/path association study. Do not pool unrelated mechanisms merely to increase row count. Cross-family composition is allowed only after family-specific evidence, clocks, controls, and failure modes are understood.
+
+Initial fine-grained family candidates include, but are not limited to:
+
+| Routing bucket | Candidate event families |
+|---|---|
+| `earnings_guidance` | scheduled earnings shell, earnings result, guidance raise/cut, guidance withdrawal, margin/mix commentary, earnings-call narrative residual |
+| `sec_filing` | equity offering/dilution, buyback/repurchase, M&A filing, insider/ownership change, legal/regulatory investigation, accounting restatement, bankruptcy/restructuring, routine filing with no material event |
+| `symbol_news` | product launch/failure, management change, customer/contract win or loss, analyst rating/price-target change, lawsuit, regulatory approval/rejection, supply-chain disruption, capital allocation, strategic investment reframing |
+| `sector_news` | sector regulation, commodity/input-cost shock, demand shock, technology transition, industry read-through, sector ETF/flow stress |
+| `macro_data` / `macro_news` | CPI/inflation, FOMC/rates, NFP/employment, GDP/growth, retail sales/consumption, Treasury/yield-curve shock, credit/liquidity stress, fiscal/geopolitical shock |
+| abnormal activity buckets | price-action pattern, residual market-structure disturbance, microstructure liquidity disruption, option derivatives abnormality |
+
+If a candidate family is still too broad to state a plausible mechanism and matched-control design, split it again before training.
+
 Required fields:
 
 ```text

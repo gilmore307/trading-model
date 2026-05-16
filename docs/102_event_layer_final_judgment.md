@@ -77,6 +77,8 @@ Do **not** build these as active model routes now:
 
 The event layer may exist structurally as risk governance before alpha proof, but each event family must remain gated.
 
+Event-family gates must be fine-grained. Ingestion categories such as `symbol_news`, `sector_news`, `macro_news`, `sec_filing`, and `earnings_guidance` are routing buckets only; they are not accepted modeling families. News and filings must be decomposed into narrower mechanism-level families before price/path association analysis. Examples include equity offering/dilution, buyback, M&A, legal/regulatory investigation, product/customer news, management change, analyst-rating change, CPI/inflation, FOMC/rates, NFP/employment, credit/liquidity stress, and earnings/guidance result or narrative-residual families. Broad mixed-news pooling is rejected even when it increases sample count.
+
 An event family may move from `scouting` to `pilot_training` only after it has:
 
 - canonical source precedence and lifecycle clocks;
