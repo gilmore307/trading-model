@@ -1,0 +1,55 @@
+{
+  "account_mutation_performed": false,
+  "artifact_deletion_performed": false,
+  "association_status_counts": {
+    "blocked_missing_current_comparable_guidance_context": 1,
+    "blocked_missing_family_packet": 20,
+    "blocked_missing_liquidity_evidence": 1,
+    "blocked_missing_residual_definition": 2,
+    "direction_neutral_path_signal_observed_underpowered": 1,
+    "matched_controls_failed_current_definition": 1,
+    "packet_needed_source_evidence_available": 2,
+    "partial_result_context_only": 1
+  },
+  "broker_execution_performed": false,
+  "candidate_count": 29,
+  "contract_type": "event_family_batch_summary_v1",
+  "family_status_counts": {
+    "deferred_low_signal": 1,
+    "proposed": 26,
+    "scouting": 2
+  },
+  "generated_at_utc": "2026-05-16T11:46:41.860439+00:00",
+  "high_priority_family_keys": [
+    "earnings_guidance_scheduled_shell",
+    "earnings_guidance_result_metrics",
+    "earnings_guidance_raise_cut_or_withdrawal",
+    "equity_offering_dilution",
+    "mna_transaction",
+    "legal_regulatory_investigation",
+    "accounting_restatement_or_fraud",
+    "bankruptcy_or_restructuring",
+    "sector_regulation_policy",
+    "cpi_inflation_release",
+    "fomc_rates_policy",
+    "credit_liquidity_stress",
+    "option_derivatives_abnormality"
+  ],
+  "model_activation_performed": false,
+  "priority_counts": {
+    "high": 13,
+    "normal": 16
+  },
+  "provider_calls": 0,
+  "routing_bucket_counts": {
+    "earnings_guidance": 3,
+    "equity_abnormal_activity": 2,
+    "macro_data": 2,
+    "macro_news": 4,
+    "option_abnormal_activity": 1,
+    "price_action": 1,
+    "sec_filing": 7,
+    "sector_news": 3,
+    "symbol_news": 6
+  }
+}

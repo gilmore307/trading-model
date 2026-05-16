@@ -2,6 +2,8 @@
 
 ## Active Tasks
 
+Fine-grained event-family batch catalog is now available at `storage/event_family_batch_catalog_20260516/` via `scripts/models/model_08_event_risk_governor/build_event_family_batch_catalog.py`. It queues 29 narrow families for independent association analysis and confirms no broad news/filing routing bucket is an accepted modeling family.
+
 - Promote-first model phase: concentrate current modeling effort on producing the first usable production-promotable model version. Start with Layer 1 `MarketRegimeModel` promotion-gate repair/evidence production because Layer 2 and Layer 3 depend on a stable approved Layer 1 foundation.
 
 Layers 1-8 are structurally closed for the accepted local deterministic scaffold phase; see `docs/94_model_stack_closeout.md`. Realtime decision handoff scaffolds remain accepted but are parked until at least one model has an approved/promotable version. The next work is historical evidence production, gate repair, calibration/baseline/stability/leakage evidence, and manager-side promotion review preparation — not realtime integration expansion or additional ad hoc repository cleanup.
