@@ -487,3 +487,20 @@ Scope:
 - signed-direction-ready rows: 0.
 
 Conclusion: the event family still has partial point-in-time result context only. Official SEC result artifacts are useful for event-risk context, but guidance surprise, beat/miss, and signed-direction claims remain blocked until official company release/transcript guidance interpretation and expectation baselines are added.
+
+## Official artifact coverage gate
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_artifact_coverage_scout_q4_2025_20260515/`
+
+A no-provider coverage gate checked whether the current Q4 2025 official-result scout has local official document text that could support guidance/outlook interpretation.
+
+Scope:
+
+- events: 12;
+- SEC result filing references: 12;
+- local official filing/release/transcript text artifacts: 0;
+- accepted guidance interpretations: 0;
+- consensus or accepted expectation baselines: 0;
+- signed-direction-ready rows: 0.
+
+Conclusion: filing references and normalized SEC facts establish official result visibility, but not guidance interpretation. The next acceptable route is bounded acquisition of official company document text (`sec_filing_document` or accepted IR/transcript route), deterministic/ reviewed guidance interpretation, and point-in-time expectation baselines. Missing artifacts remain `missing`; do not infer guidance surprise from price reaction, result metadata, or XBRL facts alone.

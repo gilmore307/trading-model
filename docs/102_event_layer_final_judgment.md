@@ -167,3 +167,13 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_readiness_scou
 The readiness scout found official SEC result artifacts for all 12 Q4 2025 earnings events and partial result context for 11, but found zero official guidance interpretations, zero expectation baselines, and zero signed-direction-ready rows.
 
 Judgment update: earnings/guidance remains useful as direction-neutral event-risk context only. The next acceptable evidence route is official company release/exhibit/transcript guidance interpretation plus consensus or accepted expectation baselines. Do not infer signed alpha from SEC result artifacts alone.
+
+## Eighth itemized test — official artifact coverage gate
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_artifact_coverage_scout_q4_2025_20260515/`
+
+The coverage scout consumed the Q4 2025 interpreted earnings/result rows and selected SEC result filing references. It performed zero provider calls and checked whether local official company document text artifacts exist for guidance/outlook interpretation.
+
+Result: 12/12 events have SEC result filing references, but 0/12 have local official filing/release/transcript text artifacts, 0 accepted guidance interpretations, 0 expectation baselines, and 0 signed-direction-ready rows.
+
+Judgment update: SEC metadata and normalized facts are not enough. Earnings/guidance remains direction-neutral EventRiskGovernor context only until official company document text is acquired, interpreted under a reviewed guidance standard, and joined to point-in-time expectation baselines.
