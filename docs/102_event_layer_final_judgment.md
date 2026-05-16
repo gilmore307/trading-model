@@ -201,3 +201,11 @@ Artifact: `/root/projects/trading-model/storage/earnings_guidance_interpretation
 The review classified official-document candidate spans into partial future operating/financial context versus rejected boilerplate/accounting/risk language. It found 9 partial guidance-context events and 3 reviewed no accepted guidance-context events.
 
 Judgment update: this is useful event context, but not signed alpha. Accepted guidance raise/cut remains zero, expectation baselines remain zero, and signed-direction-ready rows remain zero. Earnings/guidance can support direction-neutral EventRiskGovernor context only.
+
+## Twelfth itemized test — expectation baseline readiness gate
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_expectation_baseline_readiness_q4_2025_20260515/`
+
+The readiness gate formalized point-in-time baseline acceptance before signed earnings/guidance interpretation. It accepts EPS consensus, revenue consensus, prior company guidance, or guidance consensus/analyst range artifacts only when provenance and point-in-time clocks are present and predate the event under current date-only clocks.
+
+Judgment update: the diagnostic slice has 0 supplied baseline artifacts and 12 missing baseline events. Signed beat/miss, guidance raise/cut, alpha, model activation, and stronger EventRiskGovernor intervention remain blocked. The next work is acquisition/curation of point-in-time baselines, not additional SEC text mining.

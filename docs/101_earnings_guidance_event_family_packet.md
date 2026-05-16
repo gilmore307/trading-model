@@ -557,3 +557,27 @@ Scope:
 - signed-direction-ready rows: 0.
 
 Conclusion: the review creates partial official guidance context only. It does not establish beat/miss, guidance raise/cut, or signed direction because expectation baselines are still absent. EventRiskGovernor consumption remains direction-neutral context only unless a later reviewed policy accepts stronger intervention evidence.
+
+## Point-in-time expectation baseline readiness gate
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_expectation_baseline_readiness_q4_2025_20260515/`
+
+A no-provider readiness gate now defines the accepted baseline artifact requirements before any beat/miss, guidance surprise, or signed-direction claim can be reviewed.
+
+Accepted baseline artifact types:
+
+- `eps_consensus`;
+- `revenue_consensus`;
+- `prior_company_guidance`;
+- `guidance_consensus_or_analyst_range`.
+
+Acceptance requirements:
+
+- baseline artifact identifies `event_id` and `symbol`;
+- baseline type is accepted;
+- `source_name` and `source_ref` preserve provenance;
+- `captured_at` and `as_of_time` are parseable point-in-time clocks;
+- with current date-only event clocks, baseline clocks must predate `event_date`; same-day evidence requires timestamped release clocks before acceptance;
+- signed beat/miss or guidance surprise still requires reviewed actual/result or guidance comparison after baselines are accepted.
+
+Current diagnostic slice result: 12 events, 0 baseline artifacts supplied, 12 missing point-in-time expectation baselines, 0 signed-direction-ready rows. This is an explicit blocker, not a text-interpretation gap.
