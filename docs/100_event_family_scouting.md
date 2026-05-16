@@ -227,6 +227,14 @@ Result: the meaningful abnormal definition is the larger actual-vs-forecast miss
 
 Conclusion: actual-vs-forecast CPI surprise is the right CPI abnormality definition. It is meaningful enough to include as an abnormal macro-risk/surprise feature, especially for event-day volatility/path risk and conditional risk-off pressure after hot surprises. It is still not robust enough to be a standalone buy/sell alpha signal.
 
+TE canonical route check:
+
+Artifact: `storage/te_cpi_surprise_correlation_study_20260516/`
+
+Trading Economics visible calendar rows expose `actual`, `consensus`, and `te_forecast` fields through the existing `trading-data` feed. A TE-only probe over monthly visible-calendar windows found expectation-populated historical CPI rows for 18 release dates / 36 CPI metric rows, mostly 2016-2017 YoY rows; later visible historical rows often retain `actual`/`previous` but blank `consensus`/`te_forecast`. TE therefore remains the preferred canonical route when expectation fields are populated, but the current visible-calendar scrape is not enough by itself for the broad 2017-2026 surprise study. The larger Investing.com surprise diagnostic remains a temporary evidence source until a fuller TE expectation-history route is accepted.
+
+The TE-only sample is too small for a final claim, but it is directionally consistent with the surprise framing: use `actual - consensus` when present, otherwise `actual - te_forecast`, and treat large CPI surprise as macro event-risk/control input rather than standalone alpha.
+
 ## Early-stop criteria
 
 Stop or downgrade a family to `deferred_low_signal` or `retired_no_signal` when any of these hold after a bounded scout:
