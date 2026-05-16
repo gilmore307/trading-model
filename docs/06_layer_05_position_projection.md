@@ -234,7 +234,7 @@ Layer 4 V1 uses auditable submodules before any broad learned utility model:
 6G PositionProjectionComposer
 ```
 
-### 6A - AlphaToPositionPrior
+### 5A - AlphaToPositionPrior
 
 Converts final adjusted Layer 4 alpha into a raw target-position prior:
 
@@ -258,11 +258,11 @@ Diagnostic fields may include:
 6_alpha_position_conversion_score_<horizon>
 ```
 
-### 6B - CurrentPositionStateEncoder
+### 5B - CurrentPositionStateEncoder
 
-Encodes current and pending exposure state so Layer 4 can decide whether the account is already close to the target state, overexposed, underexposed, or directionally conflicted.
+Encodes current and pending exposure state so Layer 5 can decide whether the account is already close to the target state, overexposed, underexposed, or directionally conflicted.
 
-### 6C - PositionGapProjector
+### 5C - PositionGapProjector
 
 Computes the signed target-current gap using effective exposure:
 
@@ -276,7 +276,7 @@ The gap may be clipped to `[-1, 1]` for model-facing score output while diagnost
 
 `5_position_gap_magnitude_score_<horizon>` is the normalized absolute gap. It describes distance from target state, not urgency or final action.
 
-### 6D - CostToAdjustEstimator
+### 5D - CostToAdjustEstimator
 
 Estimates the cost pressure of changing the current effective exposure toward the target exposure. The cost should be gap-aware:
 
@@ -288,11 +288,11 @@ cost_to_adjust_position
 
 The output is compressed to `[0, 1]`, where high is bad.
 
-### 6E - RiskBudgetFitEvaluator
+### 5E - RiskBudgetFitEvaluator
 
 Evaluates whether the target exposure fits current portfolio/risk state. Kill-switch and drawdown gates may compress target exposure or force risk-budget fit to zero, but final action remains downstream.
 
-### 6F - HorizonPositionResolver
+### 5F - HorizonPositionResolver
 
 Resolves conflicting per-horizon position projections. It should not simply average horizons when short and long horizon projections conflict.
 
@@ -307,9 +307,9 @@ Model-local or handoff summary fields may include:
 5_horizon_resolution_reason_codes
 ```
 
-These are Layer 4 handoff summary fields, not final actions.
+These are Layer 5 handoff summary fields, not final actions.
 
-### 6G - PositionProjectionComposer
+### 5G - PositionProjectionComposer
 
 Composes the final `position_projection_vector`: core per-horizon scores, handoff summary, diagnostics refs, range clipping, effective-exposure adjustment, cost/risk downgrades, horizon consistency checks, and reason-code attribution.
 

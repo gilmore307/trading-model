@@ -18,7 +18,7 @@ DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 ET = ZoneInfo("America/New_York")
-JSON_COLUMNS = {"event_context_vector", "event_overlay_diagnostics"}
+JSON_COLUMNS = {"event_context_vector", "event_risk_governor_diagnostics"}
 PRIMARY_KEY = ("event_context_vector_ref",)
 
 
@@ -61,7 +61,7 @@ def _qualified(schema: str, table: str) -> str:
 def _column_type(column: str) -> str:
     if column in JSON_COLUMNS:
         return "JSONB"
-    if column.startswith("4_"):
+    if column.startswith("8_"):
         return "DOUBLE PRECISION"
     return "TEXT"
 

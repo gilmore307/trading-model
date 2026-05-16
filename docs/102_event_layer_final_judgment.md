@@ -258,3 +258,11 @@ Judgment update: the prior-company-guidance baseline route is partially unblocke
 The existing Nasdaq route remains EPS-consensus only. Trading Economics earnings pages expose revenue-consensus-like columns and are a plausible future route, but no accepted persisted pre-event revenue-consensus baseline artifact exists for the historical Q4 2025 diagnostic slice.
 
 Judgment update: revenue consensus is not fabricated from post-event pages or unpersisted reconnaissance. It remains a route candidate for future pre-event capture only. Signed earnings/guidance claims remain blocked until accepted baseline artifacts and reviewed comparisons exist.
+
+## Eighteenth itemized test — current-vs-prior guidance comparison readiness
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_current_prior_comparison_readiness_q4_2025_20260516/`
+
+The no-provider readiness pass joined prior-company-guidance baseline context, current official guidance-context review rows, and official result artifacts. It found 7 accepted prior-guidance baseline events and 9 current partial guidance-context events, but 0 current comparable company-guidance events, 0 accepted raise/cut rows, and 0 signed-direction-ready rows.
+
+Judgment update: current primary-document future-operating context is useful direction-neutral event context, but it is not accepted comparable company guidance. Earnings/guidance signed direction, alpha, model activation, broker/account mutation, and stronger EventRiskGovernor intervention remain blocked until reviewed current guidance comparison and point-in-time expectation baselines exist.

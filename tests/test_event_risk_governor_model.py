@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from models.model_08_event_risk_governor import generate_rows
-from models.model_08_event_risk_governor.evaluation import assert_no_label_leakage, build_event_overlay_labels
+from models.model_08_event_risk_governor.evaluation import assert_no_label_leakage, build_event_risk_governor_labels
 
 
 FORBIDDEN_TERMS = {
@@ -31,7 +31,7 @@ class EventRiskGovernorTests(unittest.TestCase):
     def test_filters_by_available_time_and_scores_scope_without_actions(self) -> None:
         output = generate_rows([_base_row()])[0]
         vector = output["event_context_vector"]
-        diagnostics = output["event_overlay_diagnostics"]
+        diagnostics = output["event_risk_governor_diagnostics"]
 
         self.assertEqual(diagnostics["visible_event_count"], 2)
         self.assertEqual(diagnostics["canonical_event_count"], 1)
@@ -74,7 +74,7 @@ class EventRiskGovernorTests(unittest.TestCase):
 
         output = generate_rows([row])[0]
         vector = output["event_context_vector"]
-        encoded = output["event_overlay_diagnostics"]["encoded_events"][0]
+        encoded = output["event_risk_governor_diagnostics"]["encoded_events"][0]
 
         self.assertEqual(encoded["event_native_scope_type"], "price_action")
         self.assertGreater(vector["8_event_microstructure_impact_score_15min"], 0.0)
@@ -84,7 +84,7 @@ class EventRiskGovernorTests(unittest.TestCase):
 
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:
         output = generate_rows([_base_row()])[0]
-        labels = build_event_overlay_labels(
+        labels = build_event_risk_governor_labels(
             [output],
             [
                 {

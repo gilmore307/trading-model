@@ -14,7 +14,7 @@ LABEL_FIELDS = {
 }
 
 
-def build_event_overlay_labels(model_rows: Iterable[Mapping[str, Any]], outcome_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+def build_event_risk_governor_labels(model_rows: Iterable[Mapping[str, Any]], outcome_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
     """Join future outcomes to event-context rows for offline evaluation only.
 
     The join key is ``event_context_vector_ref``. Returned labels are deliberately
@@ -42,7 +42,7 @@ def assert_no_label_leakage(model_row: Mapping[str, Any]) -> None:
 
     leaked = sorted(field for field in LABEL_FIELDS if _contains_key(model_row, field))
     if leaked:
-        raise ValueError(f"Layer 4 label fields leaked into inference row: {', '.join(leaked)}")
+        raise ValueError(f"Layer 8 label fields leaked into inference row: {', '.join(leaked)}")
 
 
 def _contains_key(value: Any, key: str) -> bool:

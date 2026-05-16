@@ -23,7 +23,7 @@ SCOPE_KEYS = ("market", "sector", "industry", "theme_factor", "peer_group", "sym
 def generate_rows(input_rows: Iterable[Mapping[str, Any]], *, model_version: str = MODEL_VERSION) -> list[dict[str, Any]]:
     rows = [_normalize_row(row) for row in input_rows]
     if not rows:
-        raise ValueError("at least one Layer 4 decision row is required")
+        raise ValueError("at least one Layer 8 decision row is required")
     rows.sort(key=lambda row: (_row_time(row), str(row.get("target_candidate_id") or row.get("scope_key") or "")))
     return [_model_row(row, model_version=model_version) for row in rows]
 
@@ -66,7 +66,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "event_context_vector_ref": ref,
         **payload,
         "event_context_vector": payload,
-        "event_overlay_diagnostics": {
+        "event_risk_governor_diagnostics": {
             "visible_event_count": len(events),
             "canonical_event_count": sum(1 for event in events if event.get("dedup_status") not in {"covered_by_canonical_event", "duplicate", "covered"}),
             "visible_event_ids": [event.get("event_id") for event in events],

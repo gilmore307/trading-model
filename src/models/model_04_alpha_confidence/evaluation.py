@@ -1,4 +1,4 @@
-"""Offline evaluation helpers for Layer 5 alpha confidence rows."""
+"""Offline evaluation helpers for Layer 4 alpha confidence rows."""
 from __future__ import annotations
 
 from typing import Any, Iterable, Mapping
