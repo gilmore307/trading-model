@@ -217,6 +217,16 @@ Result: abnormal releases show more event-risk/volatility relevance than normal 
 
 Conclusion: abnormal CPI is worth including as an abnormal macro-risk/volatility flag and control feature. It is still not a standalone directional alpha signal.
 
+CPI surprise follow-up:
+
+Artifact: `storage/cpi_surprise_correlation_study_20260516/`
+
+Definition: actual-minus-forecast surprise from public Investing.com CPI event pages for CPI MoM, Core CPI MoM, CPI YoY, and Core CPI YoY, joined to local ETF bars and nearby non-event controls. Large surprise thresholds tested at 0.1 and 0.2 percentage points.
+
+Result: the meaningful abnormal definition is the larger actual-vs-forecast miss, `abs(actual - forecast) >= 0.2pp`, which produced 33 release dates. Large CPI surprises have clearer event-risk relevance than raw CPI levels: aggregate one-day path-range delta was about +0.465 percentage points and absolute-return delta about +0.149 percentage points. Directional return remains conditional and not standalone: aggregate one-day return delta was about -0.389 percentage points, hotter surprises were more negative (about -0.534 percentage points one-day return delta, positive-delta share about 34%), and cooler surprises were less negative (about -0.216 percentage points, positive-delta share about 48%).
+
+Conclusion: actual-vs-forecast CPI surprise is the right CPI abnormality definition. It is meaningful enough to include as an abnormal macro-risk/surprise feature, especially for event-day volatility/path risk and conditional risk-off pressure after hot surprises. It is still not robust enough to be a standalone buy/sell alpha signal.
+
 ## Early-stop criteria
 
 Stop or downgrade a family to `deferred_low_signal` or `retired_no_signal` when any of these hold after a bounded scout:
