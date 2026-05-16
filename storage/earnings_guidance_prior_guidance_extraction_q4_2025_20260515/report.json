@@ -1,0 +1,18 @@
+{
+  "accepted_prior_guidance_baseline_event_count": 1,
+  "accepted_prior_guidance_span_count": 3,
+  "event_count": 12,
+  "interpretation": [
+    "Accepted prior-company-guidance context is baseline evidence only, not a guidance surprise label.",
+    "Current guidance/result comparison is still required before raise/cut or signed direction can be reviewed.",
+    "Revenue consensus remains a separate baseline gap."
+  ],
+  "prior_guidance_baseline_status_counts": {
+    "accepted_prior_company_guidance_context_baseline": 1,
+    "reviewed_no_prior_guidance_context_found": 11
+  },
+  "provider_calls_performed_by_study": 0,
+  "schema": "earnings_guidance_prior_guidance_extraction_v1",
+  "signed_direction_ready_count": 0,
+  "status": "partial_prior_guidance_baseline_context_extracted"
+}

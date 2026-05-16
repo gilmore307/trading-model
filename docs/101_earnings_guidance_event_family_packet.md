@@ -676,3 +676,19 @@ Result:
 - signed-direction-ready rows: 0.
 
 Conclusion: prior official documents are now present for review, but remain uninterpreted. The next gate is prior-guidance baseline extraction/review. Revenue consensus remains a separate baseline gap.
+
+## Prior official guidance baseline extraction
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_prior_guidance_extraction_q4_2025_20260515/`
+
+A no-provider reviewed extraction pass consumed the prior official document text coverage and accepted only explicit guidance/outlook sections as prior-company-guidance baseline context. Generic forward-looking, safe-harbor, accounting, and risk language remained rejected.
+
+Result:
+
+- events: 12;
+- accepted prior-company-guidance baseline context events: 1;
+- accepted prior guidance spans: 3;
+- reviewed no prior guidance context found: 11;
+- signed-direction-ready rows: 0.
+
+Conclusion: prior guidance baseline extraction is only partially successful on the selected prior official filings. The single accepted event is baseline context only; guidance surprise still requires comparison to current guidance/result evidence. The 11 misses show the source-selection route is still too loose for companies whose selected prior filing is not a guidance-bearing prior earnings/outlook document. Revenue consensus remains a separate gap.

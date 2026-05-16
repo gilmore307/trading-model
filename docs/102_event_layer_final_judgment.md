@@ -236,3 +236,11 @@ Artifacts:
 The source audit selected prior official SEC filings for all 12 diagnostic events after consuming SEC submission rows. The document coverage pass then confirmed 12/12 prior official document texts are locally present.
 
 Judgment update: the prior-company-guidance source route is now materially unblocked at the document-text level. It still does not establish guidance surprise because the documents remain uninterpreted and no accepted prior-guidance baseline rows exist. Revenue consensus remains unsolved.
+
+## Sixteenth itemized test — prior official guidance baseline extraction
+
+Artifact: `/root/projects/trading-model/storage/earnings_guidance_prior_guidance_extraction_q4_2025_20260515/`
+
+The extraction pass accepted 1/12 events as having explicit prior-company-guidance baseline context and rejected 11/12 as no prior guidance context found in the selected prior official filing.
+
+Judgment update: prior-company-guidance baseline extraction is partially unblocked but not broad enough for signed earnings/guidance interpretation. The selected prior filing route needs refinement toward previous earnings/outlook-bearing documents or another accepted company-IR/source route. No signed direction, guidance raise/cut, alpha, or stronger EventRiskGovernor intervention is unlocked.
