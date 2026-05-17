@@ -1,0 +1,59 @@
+{
+  "account_mutation_performed": false,
+  "artifact_deletion_performed": false,
+  "association_class_counts": {
+    "current_definition_no_accepted_association": 1,
+    "local_directional_candidate_unaccepted": 2,
+    "local_screening_risk_association_unaccepted": 11,
+    "no_clear_local_association": 2,
+    "not_measured_data_gap": 4,
+    "not_measured_required_precondition_missing": 7,
+    "risk_volatility_association_not_directional_alpha": 1,
+    "scheduled_path_risk_association_not_directional_alpha": 1
+  },
+  "broker_execution_performed": false,
+  "contract_type": "event_family_all_association_summary_v1",
+  "directional_alpha_supported_families": [],
+  "families_with_measured_event_labels": [
+    "earnings_guidance_scheduled_shell",
+    "earnings_call_narrative_residual",
+    "equity_offering_dilution",
+    "buyback_or_capital_return",
+    "mna_transaction",
+    "insider_or_ownership_change",
+    "legal_regulatory_investigation",
+    "bankruptcy_or_restructuring",
+    "product_launch_or_failure",
+    "customer_contract_win_loss",
+    "management_change",
+    "analyst_rating_or_price_target_change",
+    "supply_chain_disruption",
+    "sector_regulation_policy",
+    "commodity_or_input_cost_shock",
+    "sector_demand_shock",
+    "cpi_inflation_release",
+    "nfp_employment_release",
+    "price_action_pattern",
+    "option_derivatives_abnormality"
+  ],
+  "family_count": 29,
+  "final_measurement_note": "All 29 families emitted. Measured association is separated from no-local-event/data-gap statuses.",
+  "generated_at_utc": "2026-05-17T02:09:18.922891+00:00",
+  "measurement_status_counts": {
+    "measured_local_directional_candidate_unreviewed": 2,
+    "measured_local_no_clear_association": 2,
+    "measured_local_screening_risk_association": 11,
+    "measured_prior_study_low_signal": 1,
+    "measured_prior_study_positive_path_risk_association": 1,
+    "measured_prior_study_positive_risk_association": 1,
+    "not_measurable_blocked_precondition": 7,
+    "not_measurable_no_local_event_labels": 4
+  },
+  "model_activation_performed": false,
+  "model_training_performed": false,
+  "provider_calls": 0,
+  "risk_control_supported_families": [
+    "earnings_guidance_scheduled_shell",
+    "cpi_inflation_release"
+  ]
+}
