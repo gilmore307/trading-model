@@ -171,6 +171,17 @@ microstructure_liquidity_disruption
 option_derivatives_abnormality
 ```
 
+Startup included scope is intentionally narrow:
+
+| Category | Included at startup | Required admission condition |
+| --- | --- | --- |
+| `price_action_pattern` | false breakout, false breakdown, liquidity sweep high/low, bull trap, bear trap | compact token plus refs; not raw return/volume/trend reuse |
+| `residual_market_structure_disturbance` | target-specific board/tape disturbance after market, sector, peer, and target-state conditioning | residual proof required for scoring; `review_required_overlap_unknown` is provenance/review only |
+| `microstructure_liquidity_disruption` | spread widening, depth disappearance, one-sided prints, halt/pause, anomalous quote environment | outside broad-market liquidity/context state already consumed upstream |
+| `option_derivatives_abnormality` | IV/skew/term-structure shock, unusual option volume, call/put imbalance, sweep/block evidence, OI change, option-liquidity disruption | not already consumed by Layer 8 option-expression inputs, or explicitly residual after that path |
+
+Excluded from startup scope: raw return/volume/spread/liquidity z-scores alone; ordinary `equity_bar`, `equity_liquidity_bar`, target-state, option-expression, or Layer 8 guidance fields; post-event realized returns or labels; strategy/base-stack failure labels; and detector thresholds without reviewed calibration.
+
 Accepted uses:
 
 - `price_action_pattern`: false breakout, failed breakdown, liquidity sweep high/low, bull trap, bear trap, or similar event-shaped behavior represented as a compact token with refs rather than duplicated raw feature columns;
