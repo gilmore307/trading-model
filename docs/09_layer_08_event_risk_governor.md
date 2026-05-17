@@ -40,6 +40,25 @@ The accepted event-model workflow is two-sided:
 
 This workflow prevents event evidence from becoming a broad news-alpha model. Events are used to explain and correct residual anomalies, and to warn when a known event family is visible before the base stack fully reprices it.
 
+## Event observation pool and strategy-promotion route
+
+Historical research and realtime operation have different event scopes:
+
+- **Historical/model research:** may scan all point-in-time events, news, filings, macro releases, and other visible evidence to explain residual anomalies. This is how new event families enter consideration.
+- **Realtime operation:** must not continuously read/classify every possible news item. It should observe only reviewed event families in the `event_observation_pool`, plus probationary families explicitly accepted for monitoring.
+
+A family enters the realtime observation pool only after residual-anomaly research shows that it repeatedly explains abnormal behavior or carries accepted risk/control value. For example, if residual anomaly analysis repeatedly finds that war/geopolitical outbreak news explains market dislocations, a war/geopolitical family may enter the observation pool so realtime trading watches that family continuously.
+
+A family may be proposed for promotion above the correction layer only when evidence shows stable, predictive, repeatable market reaction across splits, controls, base-stack residuals, and regimes. In that case the event family may become a strategy-decision candidate rather than a correction-only overlay. This promotion is not automatic: the script must emit an evidence packet and call an agent review for final accept/defer/reject before manager records any production scope change.
+
+Current policy artifact:
+
+```bash
+PYTHONPATH=src python3 scripts/models/model_08_event_risk_governor/build_event_observation_pool_policy.py
+```
+
+Output: `storage/event_observation_pool_policy_20260516/`.
+
 ## Position and input chain
 
 Layer 8 is an event-context overlay on top of the accepted state stack:

@@ -1,0 +1,100 @@
+{
+  "account_mutation_performed": false,
+  "artifact_deletion_performed": false,
+  "broker_execution_performed": false,
+  "contract_type": "event_observation_pool_policy_v1",
+  "generated_at_utc": "2026-05-17T03:25:06.623078+00:00",
+  "model_activation_performed": false,
+  "model_training_performed": false,
+  "observation_pool_rows": [
+    {
+      "agent_review_required": true,
+      "evidence_basis": "accepted_actual_vs_expectation_surprise_risk_volatility_association",
+      "family_key": "cpi_inflation_release",
+      "layer_role": "risk_correction_layer",
+      "note": "Accepted for event-risk/control observation, not standalone alpha.",
+      "promotion_status": "not_strategy_promotion_currently",
+      "realtime_action": "monitor_calendar_and_surprise_fields_for_warning_path_risk_and_risk_off_correction",
+      "realtime_pool_status": "active_observation_pool"
+    },
+    {
+      "agent_review_required": true,
+      "evidence_basis": "accepted_scheduled_path_risk_association",
+      "family_key": "earnings_guidance_scheduled_shell",
+      "layer_role": "risk_correction_layer",
+      "note": "Accepted as scheduled path-risk context only; signed result/guidance alpha remains blocked.",
+      "promotion_status": "not_strategy_promotion_currently",
+      "realtime_action": "monitor_scheduled_earnings_or_guidance_windows_for_gap_path_risk_and_review_hints",
+      "realtime_pool_status": "active_observation_pool"
+    },
+    {
+      "agent_review_required": true,
+      "evidence_basis": "reverse_price_anomaly_discovery_enrichment_candidate",
+      "family_key": "legal_regulatory_investigation",
+      "layer_role": "event_explanation_candidate",
+      "note": "Reverse-discovery candidate; not accepted for intervention until canonical event interpretation and matched controls pass.",
+      "promotion_status": "not_strategy_promotion_currently",
+      "realtime_action": "monitor as candidate explanation source while canonical parser, dedup, and relevance controls are built",
+      "realtime_pool_status": "probationary_observation_pool"
+    }
+  ],
+  "promotion_rule_rows": [
+    {
+      "agent_review_required": false,
+      "allowed_result": "new family may be proposed for observation pool",
+      "applies_to": "training_and_research",
+      "minimum_requirement": "all point-in-time event/news/filing/macro candidates may be searched to explain residual anomalies",
+      "rule_key": "historical_discovery_uses_all_events"
+    },
+    {
+      "agent_review_required": true,
+      "allowed_result": "event may be monitored for warnings/explanations/corrections",
+      "applies_to": "production_realtime_monitoring",
+      "minimum_requirement": "family is active or probationary observation-pool member with reviewed evidence basis",
+      "rule_key": "realtime_observes_pool_only"
+    },
+    {
+      "agent_review_required": true,
+      "allowed_result": "warning, uncertainty, path-risk, entry-block, cap, reduce/flatten-review, or human-review hint",
+      "applies_to": "event_risk_governor",
+      "minimum_requirement": "residual anomaly explanation, canonical event clocks, relevance, matched controls, and stability support risk/path correction",
+      "rule_key": "correction_layer_acceptance"
+    },
+    {
+      "agent_review_required": true,
+      "allowed_result": "event family may become strategy-decision input rather than correction-only overlay",
+      "applies_to": "strategy_decision_layer",
+      "minimum_requirement": "stable predictive reaction across splits, controls, base-stack residuals, regimes, and no leakage; improvement over base strategy is material",
+      "rule_key": "strategy_layer_promotion"
+    },
+    {
+      "agent_review_required": true,
+      "allowed_result": "manager records reviewed decision before production scope changes",
+      "applies_to": "script_requested_promotion_or_demotion",
+      "minimum_requirement": "script emits evidence packet and calls agent review for final accept/defer/reject decision",
+      "rule_key": "agent_final_decision"
+    }
+  ],
+  "provider_calls": 0,
+  "summary": {
+    "account_mutation_performed": false,
+    "active_realtime_observation_pool": [
+      "cpi_inflation_release",
+      "earnings_guidance_scheduled_shell"
+    ],
+    "agent_review_required_for_strategy_promotion": true,
+    "artifact_deletion_performed": false,
+    "broker_execution_performed": false,
+    "contract_type": "event_observation_pool_policy_summary_v1",
+    "generated_at_utc": "2026-05-17T03:25:06.623078+00:00",
+    "historical_research_scope": "scan_all_point_in_time_events_to_explain_residual_anomalies",
+    "model_activation_performed": false,
+    "model_training_performed": false,
+    "probationary_realtime_observation_pool": [
+      "legal_regulatory_investigation"
+    ],
+    "provider_calls": 0,
+    "realtime_operation_scope": "observe_reviewed_event_observation_pool_only",
+    "strategy_promotion_candidates": []
+  }
+}

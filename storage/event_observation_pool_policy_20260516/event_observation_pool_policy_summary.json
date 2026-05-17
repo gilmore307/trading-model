@@ -1,0 +1,21 @@
+{
+  "account_mutation_performed": false,
+  "active_realtime_observation_pool": [
+    "cpi_inflation_release",
+    "earnings_guidance_scheduled_shell"
+  ],
+  "agent_review_required_for_strategy_promotion": true,
+  "artifact_deletion_performed": false,
+  "broker_execution_performed": false,
+  "contract_type": "event_observation_pool_policy_summary_v1",
+  "generated_at_utc": "2026-05-17T03:25:06.623078+00:00",
+  "historical_research_scope": "scan_all_point_in_time_events_to_explain_residual_anomalies",
+  "model_activation_performed": false,
+  "model_training_performed": false,
+  "probationary_realtime_observation_pool": [
+    "legal_regulatory_investigation"
+  ],
+  "provider_calls": 0,
+  "realtime_operation_scope": "observe_reviewed_event_observation_pool_only",
+  "strategy_promotion_candidates": []
+}
