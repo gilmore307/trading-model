@@ -1,0 +1,21 @@
+{
+  "account_mutation_performed": false,
+  "anomaly_count": 104,
+  "anomaly_z_threshold": 1.25,
+  "artifact_deletion_performed": false,
+  "broker_execution_performed": false,
+  "candidate_common_event_families": [
+    "legal_regulatory_investigation"
+  ],
+  "contract_type": "price_anomaly_event_discovery_summary_v1",
+  "discovery_note": "Reverse discovery starts from local price anomalies, then checks nearby local event-family mentions. It is not causal proof or model approval.",
+  "enriched_family_count": 23,
+  "event_window_days": 1,
+  "generated_at_utc": "2026-05-17T02:59:17.007971+00:00",
+  "high_lift_thin_families": [],
+  "model_activation_performed": false,
+  "model_training_performed": false,
+  "price_month": "2016-01",
+  "provider_calls": 0,
+  "symbol_count": 27
+}

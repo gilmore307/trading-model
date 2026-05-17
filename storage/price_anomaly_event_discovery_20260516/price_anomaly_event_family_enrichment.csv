@@ -1,0 +1,24 @@
+family_key,anomaly_hit_count,anomaly_observation_count,anomaly_hit_rate,control_hit_count,control_observation_count,control_hit_rate,hit_rate_delta,lift,threshold_discovery_status,evidence_note
+legal_regulatory_investigation,50,104,0.4807692307692308,81,365,0.2219178082191781,0.25885142255005267,2.166429249762583,reverse_discovery_candidate,Event family is materially enriched around price anomalies versus non-anomaly observations; requires canonical family review before causal use.
+sector_regulation_policy,78,104,0.75,209,365,0.5726027397260274,0.17739726027397262,1.3098086124401915,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+cpi_inflation_release,24,104,0.23076923076923078,54,365,0.14794520547945206,0.08282402528977872,1.5598290598290598,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+mna_transaction,62,104,0.5961538461538461,199,365,0.5452054794520548,0.05094836670179137,1.093448009277155,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+geopolitical_or_fiscal_shock,94,104,0.9038461538461539,322,365,0.8821917808219178,0.021654373024236007,1.0245461060678451,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+buyback_or_capital_return,59,104,0.5673076923076923,200,365,0.547945205479452,0.019362486828240266,1.0353365384615385,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+analyst_rating_or_price_target_change,104,104,1.0,365,365,1.0,0.0,1.0,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+customer_contract_win_loss,104,104,1.0,365,365,1.0,0.0,1.0,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+sector_demand_shock,97,104,0.9326923076923077,345,365,0.9452054794520548,-0.012513171759747088,0.9867614269788183,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+option_derivatives_abnormality,97,104,0.9326923076923077,346,365,0.947945205479452,-0.015252897787144337,0.9839095153401513,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+nfp_employment_release,9,104,0.08653846153846154,45,365,0.1232876712328767,-0.03674920969441517,0.701923076923077,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+treasury_yield_curve_shock,42,104,0.40384615384615385,165,365,0.4520547945205479,-0.048208640674394065,0.8933566433566434,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+management_change,46,104,0.4423076923076923,188,365,0.5150684931506849,-0.07276080084299263,0.8587356792144026,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+credit_liquidity_stress,75,104,0.7211538461538461,292,365,0.8,-0.0788461538461539,0.9014423076923076,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+bankruptcy_or_restructuring,5,104,0.04807692307692308,47,365,0.12876712328767123,-0.08069020021074816,0.37336333878887074,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+earnings_call_narrative_residual,90,104,0.8653846153846154,354,365,0.9698630136986301,-0.10447839831401473,0.8922750977835724,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+product_launch_or_failure,71,104,0.6826923076923077,293,365,0.8027397260273973,-0.12004741833508958,0.8504528747702809,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+supply_chain_disruption,82,104,0.7884615384615384,335,365,0.9178082191780822,-0.12934668071654376,0.8590700344431688,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+equity_offering_dilution,29,104,0.27884615384615385,153,365,0.4191780821917808,-0.14033192834562697,0.6652212166918049,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+insider_or_ownership_change,9,104,0.08653846153846154,94,365,0.25753424657534246,-0.17099578503688093,0.3360270049099836,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+fomc_rates_policy,14,104,0.1346153846153846,117,365,0.32054794520547947,-0.18593256059009486,0.4199539776462853,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+price_action_pattern,31,104,0.2980769230769231,178,365,0.4876712328767123,-0.18959430979978925,0.6112251512532412,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
+commodity_or_input_cost_shock,18,104,0.17307692307692307,164,365,0.44931506849315067,-0.2762381454162276,0.3852016885553471,not_enriched_or_too_thin,No robust reverse-discovery enrichment under this local screen.
