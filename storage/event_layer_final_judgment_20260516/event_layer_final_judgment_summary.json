@@ -1,0 +1,36 @@
+{
+  "account_mutation_performed": false,
+  "artifact_deletion_performed": false,
+  "broker_execution_performed": false,
+  "contract_type": "event_layer_final_judgment_summary_v1",
+  "family_count": 29,
+  "family_disposition_counts": {
+    "blocked_missing_liquidity_depth_evidence": 1,
+    "blocked_missing_pit_baseline": 3,
+    "blocked_missing_residual_detector": 3,
+    "candidate_events_found_needs_family_study": 12,
+    "deferred_low_signal_revise_definition": 1,
+    "direction_neutral_event_risk_context_only": 1,
+    "risk_control_feature_accepted_not_alpha": 1,
+    "source_or_parser_gap": 7
+  },
+  "final_alpha_decision": "reject_standalone_directional_event_alpha_for_current_evidence",
+  "final_model_posture": "build_event_risk_governor_not_standalone_event_alpha",
+  "final_risk_decision": "accept_bounded_event_risk_intelligence_overlay",
+  "final_short_answer": "Build the event layer now only as EventRiskGovernor/EventIntelligenceOverlay. Do not build or train a standalone event alpha model under current evidence.",
+  "final_training_decision": "do_not_train_or_activate_event_alpha_model",
+  "generated_at_utc": "2026-05-17T01:49:41.631927+00:00",
+  "model_activation_performed": false,
+  "model_training_performed": false,
+  "promotion_status_counts": {
+    "accepted_for_risk_or_control_only": 2,
+    "blocked_no_promotion": 26,
+    "rejected_for_current_alpha_or_risk_promotion": 1
+  },
+  "provider_calls": 0,
+  "risk_or_control_families_now": [
+    "earnings_guidance_scheduled_shell",
+    "cpi_inflation_release"
+  ],
+  "standalone_alpha_families_now": []
+}
