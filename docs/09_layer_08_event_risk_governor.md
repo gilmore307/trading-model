@@ -28,6 +28,18 @@ Layer 8 answers:
 
 Layer 8 does **not** answer alpha, trade, expression, sizing, or execution questions. It must not emit buy/sell/hold, final action, position size, option contract, strike, DTE, delta, order instruction, or account-specific decision fields.
 
+## Residual-anomaly discovery and correction workflow
+
+The accepted event-model workflow is two-sided:
+
+1. **Base-stack first:** Layers 1-7 analyze the market, sector, target, alpha confidence, position projection, underlying action, and option/trading guidance context. Their job is to explain the normal trading state without event shortcuts.
+2. **Residual anomaly detection:** price/path/volume/liquidity/option behavior that remains abnormal after conditioning on Layers 1-7 becomes a `residual_anomaly_context`, not an event conclusion.
+3. **Event explanation:** Layer 8 inspects point-in-time event evidence around the residual anomaly and asks whether a canonical event family plausibly explains, amplifies, or contradicts the anomaly.
+4. **Overlay output:** if evidence is strong enough, Layer 8 emits warning, explanation, uncertainty, path-risk, block/cap/reduce/flatten-review, or human-review hints. It keeps base Layer 7 guidance and event-adjusted guidance side by side.
+5. **Correction boundary:** corrections are risk/explanation overlays only. They may modify confidence, risk caps, entry permission, or review requirements, but they must not replace Layers 1-7 with standalone event alpha or direct execution decisions.
+
+This workflow prevents event evidence from becoming a broad news-alpha model. Events are used to explain and correct residual anomalies, and to warn when a known event family is visible before the base stack fully reprices it.
+
 ## Position and input chain
 
 Layer 8 is an event-context overlay on top of the accepted state stack:

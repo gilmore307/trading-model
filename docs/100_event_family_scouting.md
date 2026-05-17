@@ -373,6 +373,21 @@ This scan starts from local price anomalies first, then checks nearby event-fami
 
 Reverse discovery is a hypothesis generator, not causal proof. Candidate families still require canonical event interpretation, deduplication, symbol/sector relevance, matched controls, and point-in-time clocks before threshold or model use.
 
+## Base-stack residual anomaly route
+
+The preferred production shape is not raw price anomaly -> event claim. The preferred route is:
+
+```text
+Layers 1-7 base stack
+  -> expected market/sector/target/action/option context
+  -> residual_anomaly_context when observed price/path/volume/liquidity/option behavior is not explained
+  -> Layer 8 event-family explanation / warning / correction overlay
+```
+
+This makes reverse discovery stricter. A price move should only become an event-model candidate when it is abnormal after the base stack explains broad market regime, sector context, target state, alpha confidence, position projection, underlying action, and option/trading guidance. The event layer then answers whether nearby events share a common family, whether the event plausibly explains the residual, and whether the right output is warning, block/cap, reduce/flatten review, uncertainty increase, or no event adjustment.
+
+This route supports the final target: EventRiskGovernor remains a coverage, correction, explanation, and warning layer. It is not a replacement for the base trading model and does not become a standalone event-alpha model.
+
 ## Early-stop criteria
 
 Stop or downgrade a family to `deferred_low_signal` or `retired_no_signal` when any of these hold after a bounded scout:
