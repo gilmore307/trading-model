@@ -1,6 +1,6 @@
 # Vector and State Taxonomy
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-17): conceptual Layers 4-9 are now Layer 4 EventFailureRiskModel, Layer 5 AlphaConfidenceModel, Layer 6 PositionProjectionModel, Layer 7 UnderlyingActionModel, Layer 8 TradingGuidanceModel / OptionExpressionModel, and Layer 9 EventRiskGovernor / EventIntelligenceOverlay. Physical implementation paths for Layers 4-9 remain on prior numbering until a dedicated code/SQL renumbering migration.
+> Active architecture revision (2026-05-17): Layers 1-9 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 4-9 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -270,7 +270,7 @@ base_alpha_vector
   -> alpha_confidence_vector           # final adjusted output
 ```
 
-Conceptual Layer 5 score families should use `5_*` after a dedicated field-renumbering migration. Current physical code/SQL may still expose legacy `4_*` alpha fields until that migration. The adjusted vector is alpha confidence only: not target exposure, not position sizing, not option expression, not execution, and not final action.
+Layer 5 score families use `5_*` alpha fields in current physical code/SQL. The adjusted vector is alpha confidence only: not target exposure, not position sizing, not option expression, not execution, and not final action.
 
 ## Layer 6 position-projection vocabulary
 
@@ -304,7 +304,7 @@ risk_budget_context
 point-in-time policy gates
 ```
 
-Layer 6 maps alpha into target holding state and abstract exposure only. Current physical score families may retain legacy `5_*` prefixes until renumbering. It is not buy/sell/hold, open/close/reverse, instrument selection, option-chain reading, strike/DTE/Greeks, execution, or final action.
+Layer 6 maps alpha into target holding state and abstract exposure only. Current physical score families use `6_*` prefixes. It is not buy/sell/hold, open/close/reverse, instrument selection, option-chain reading, strike/DTE/Greeks, execution, or final action.
 
 ## Layer 7 underlying-action plan semantics
 
@@ -324,7 +324,7 @@ underlying action plan != option expression
 underlying action plan != live execution
 ```
 
-Current physical underlying-action score families may retain legacy `6_*` prefixes until renumbering. Planned action types, resolved plan fields, reason codes, entry/target/stop prices, quantities, and Layer 8 handoff fields are plan payload fields, not broker-order fields.
+Current physical underlying-action score families use `7_*` prefixes. Planned action types, resolved plan fields, reason codes, entry/target/stop prices, quantities, and Layer 8 handoff fields are plan payload fields, not broker-order fields.
 
 ## Layer 8 trading-guidance / option-expression semantics
 
@@ -341,7 +341,7 @@ expression confidence != final approval
 Layer 8 offline plan != live execution
 ```
 
-Current physical option-expression score families may retain legacy `7_*` prefixes until renumbering. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
+Current physical option-expression score families use `8_*` prefixes. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
 
 ## Layer 9 event-risk vocabulary
 
@@ -389,7 +389,7 @@ market_context_state
   -> event_risk_intervention / event_context_vector
 ```
 
-Current physical event-risk score families may retain legacy `8_*` prefixes until renumbering. Layer 9 may warn, explain, block/cap/reduce/flatten-review, maintain the observation pool, and propose Layer 4 promotion packets. It is not alpha confidence, not a trading signal, not position sizing, not expression selection, and not final action.
+Current physical event-risk score families use `9_event_*` prefixes. Layer 9 may warn, explain, block/cap/reduce/flatten-review, maintain the observation pool, and propose Layer 4 promotion packets. It is not alpha confidence, not a trading signal, not position sizing, not expression selection, and not final action.
 
 ## Label boundary
 

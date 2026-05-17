@@ -1,7 +1,7 @@
 # Layer 05 — AlphaConfidenceModel
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 5; current physical implementation surface remains `src/models/model_05_alpha_confidence/` until a dedicated implementation/renumbering migration renames code and SQL surfaces.
+Status: active architecture revision. Layer 5; current physical implementation surface is `src/models/model_05_alpha_confidence/`.
 
 Active boundary: Layer 5 consumes the reviewed Layer 1/2/3 state stack plus Layer 4 `event_failure_risk_vector` when available and produces `alpha_confidence_vector` / base-alpha diagnostics. It does not consume arbitrary raw event evidence; only reviewed Layer 4 event-failure-risk conditioning is allowed upstream, while Layer 9 remains the residual event-risk governor.
 
@@ -11,7 +11,7 @@ Supersedes older wording in this file that described EventRiskGovernor as Layer 
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
-Status: accepted Layer 5 design route; deterministic V1 scaffold currently implemented in physical `src/models/model_05_alpha_confidence/` until a dedicated code/SQL renumbering migration.
+Status: accepted Layer 5 design route; deterministic V1 scaffold currently implemented in physical `src/models/model_05_alpha_confidence/`.
 
 ## Purpose
 
@@ -243,7 +243,7 @@ Estimates whether the alpha path is tradeable, not merely whether the endpoint i
 
 Calibrates confidence and reliability from point-in-time sample support, ensemble agreement/disagreement, OOD evidence, data quality, event uncertainty, walk-forward reliability, and confidence-bucket realized calibration.
 
-Conceptual Layer 5 alpha confidence fields should use the Layer 5 semantic family after a dedicated field-renumbering migration. Current physical examples may still show legacy `4_*` prefixes until code/SQL paths are migrated. `alpha_confidence_score_<horizon>` means current model belief. `signal_reliability_score_<horizon>` means similar-signal historical out-of-sample reliability. They are related but not interchangeable.
+Layer 5 alpha confidence fields use the Layer 5 semantic family in current physical code/SQL. `alpha_confidence_score_<horizon>` means current model belief. `signal_reliability_score_<horizon>` means similar-signal historical out-of-sample reliability. They are related but not interchangeable.
 
 ### 5F - AlphaVectorComposer
 
@@ -418,6 +418,6 @@ Layer 5 must not:
 
 1. **V1.0 base alpha from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics. **Done in deterministic scaffold for fixture rows.**
 2. **V1.1 final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. **Done in deterministic scaffold.**
-3. **V1.2 EventRiskDiagnosticBridge**: keep optional `event_context_vector` references diagnostic only for later Layer 9 governance; do not make event evidence a hard Layer 5 alpha input. **Deterministic scaffold uses the current physical alpha package and legacy score-prefix hooks until a dedicated renumbering migration.**
+3. **V1.2 EventRiskDiagnosticBridge**: keep optional `event_context_vector` references diagnostic only for later Layer 9 governance; do not make event evidence a hard Layer 5 alpha input. **Deterministic scaffold uses the current physical `model_05_alpha_confidence` package and `5_*` score-prefix hooks.**
 4. **V1.3 baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence. **Done in deterministic scaffold.**
 5. **V1.4 calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path. **Offline label/leakage helpers exist; calibrated promotion evidence remains later work.**

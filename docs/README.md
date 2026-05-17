@@ -28,7 +28,7 @@ This directory is the authoritative documentation spine for `trading-model`.
 - `97_historical_dataset_scope.md` — accepted distinction between broad historical training sampling universes and narrower live inference routing universes, with per-layer dataset-scope guidance.
 - `98_realtime_decision_handoff.md` — model-side realtime decision input route-plan scaffold for fixture/shadow historical-model decision handoff; no production activation implied.
 
-Layer workflow and acceptance live in the numbered layer files. The active architecture revision inserts Layer 4 EventFailureRiskModel before alpha confidence and shifts AlphaConfidence/PositionProjection/UnderlyingAction/TradingGuidance/EventRiskGovernor to Layers 5-9. Physical implementation paths remain on their prior numbering until a dedicated implementation/renumbering migration. Do not add another future model layer unless an explicit architecture revision reopens the stack; post-Layer-9 execution belongs outside `trading-model`.
+Layer workflow and acceptance live in the numbered layer files. The active architecture revision has nine model layers: Layer 4 EventFailureRiskModel, Layers 5-8 for alpha/position/action/trading guidance, and Layer 9 EventRiskGovernor. Active implementation paths use the current numbering; historical/applied migration records may retain prior numbering. Do not add another future model layer unless an explicit architecture revision reopens the stack; post-Layer-9 execution belongs outside `trading-model`.
 
 Do not place generated data, artifacts, notebooks, logs, credentials, or implementation outputs in this directory.
 

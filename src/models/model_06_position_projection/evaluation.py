@@ -1,4 +1,4 @@
-"""Offline evaluation helpers for Layer 5 position projection rows."""
+"""Offline evaluation helpers for Layer 6 position projection rows."""
 from __future__ import annotations
 
 from typing import Any, Iterable, Mapping

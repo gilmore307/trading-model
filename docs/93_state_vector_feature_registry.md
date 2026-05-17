@@ -1,6 +1,6 @@
 # State Vector Feature Semantics Registry
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-17): conceptual Layers 4-9 are now Layer 4 EventFailureRiskModel, Layer 5 AlphaConfidenceModel, Layer 6 PositionProjectionModel, Layer 7 UnderlyingActionModel, Layer 8 TradingGuidanceModel / OptionExpressionModel, and Layer 9 EventRiskGovernor / EventIntelligenceOverlay. Physical implementation paths for Layers 4-9 remain on prior numbering until a dedicated code/SQL renumbering migration.
+> Active architecture revision (2026-05-17): Layers 1-9 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 4-9 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -59,7 +59,7 @@ evidence quality != event presence
 applicability confidence != causal proof
 ```
 
-Core conceptual Layer 4 score families use `4_event_*` names and require a reviewed evidence packet plus explicit agent/manager acceptance before production use. No local screen may auto-promote a family into Layer 4.
+Core Layer 4 score families use `4_event_*` names and require a reviewed evidence packet plus explicit agent/manager acceptance before production use. No local screen may auto-promote a family into Layer 4.
 
 ## Layer 5 alpha-confidence score semantics
 
@@ -75,7 +75,7 @@ alpha confidence != option expression
 alpha confidence != final action
 ```
 
-Current physical alpha-confidence score values may still use legacy `4_*` prefixes until a dedicated physical rename. Action/routing fields, position sizing, account-risk allocations, option-contract choices, and final verdicts are not `state_vector_value` rows for conceptual Layer 5.
+Current physical alpha-confidence score values use `5_*` prefixes. Action/routing fields, position sizing, account-risk allocations, option-contract choices, and final verdicts are not `state_vector_value` rows for Layer 5.
 
 ## Layer 6 position-projection score semantics
 
@@ -93,7 +93,7 @@ projection confidence != alpha confidence
 position projection vector != final action
 ```
 
-Current physical position-projection score values may still use legacy `5_*` prefixes until a dedicated physical rename. Buy/sell/hold/open/close/reverse, instrument selection, option-chain fields, strike/DTE/Greeks, order routing, and execution outputs are not `state_vector_value` rows for conceptual Layer 6.
+Current physical position-projection score values use `6_*` prefixes. Buy/sell/hold/open/close/reverse, instrument selection, option-chain fields, strike/DTE/Greeks, order routing, and execution outputs are not `state_vector_value` rows for Layer 6.
 
 ## Layer 7 underlying-action score semantics
 
@@ -113,7 +113,7 @@ underlying action plan != option expression
 underlying action plan != live execution
 ```
 
-Current physical underlying-action score families may still use legacy `6_*` prefixes until a dedicated physical rename. Planned action types, resolved handoff fields, reason codes, entry/target/stop prices, quantities, and conceptual Layer 8 trading-guidance handoff fields are plan payload fields, not broker-order fields.
+Current physical underlying-action score families use `7_*` prefixes. Planned action types, resolved handoff fields, reason codes, entry/target/stop prices, quantities, and Layer 8 trading-guidance handoff fields are plan payload fields, not broker-order fields.
 
 ## Layer 8 trading-guidance / option-expression score semantics
 
@@ -130,7 +130,7 @@ expression confidence != final approval
 Layer 8 offline plan != live execution
 ```
 
-Current physical option-expression score families may still use legacy `7_*` prefixes until a dedicated physical rename. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
+Current physical option-expression score families use `8_*` prefixes. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
 
 ## Layer 9 event-risk-context score semantics
 
@@ -146,4 +146,4 @@ residual explanation != causal proof
 observation-pool addition != Layer 4 promotion
 ```
 
-Current physical event-context scalar score values may still use legacy `8_*` prefixes until a dedicated score-token migration is accepted. Enum-like audit fields may share the horizon suffix in model-local contracts, but they are not `state_vector_value` registry rows. Layer 9 may emit warning/cap/block/review/flatten-candidate overlays and Layer 4 promotion packets, but it must not send orders or mutate accounts.
+Current physical event-risk scalar score values use `9_event_*` prefixes. Enum-like audit fields may share the horizon suffix in model-local contracts, but they are not `state_vector_value` registry rows. Layer 9 may emit warning/cap/block/review/flatten-candidate overlays and Layer 4 promotion packets, but it must not send orders or mutate accounts.

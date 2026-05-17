@@ -1,6 +1,6 @@
 """Residual-anomaly to event-family discovery for EventRiskGovernor.
 
-This module starts from Layers 1-7 evaluation labels instead of raw price moves.
+This module starts from Layers 1-8 base-stack evaluation labels instead of raw price moves.
 It identifies base-stack residual anomalies, then scans nearby point-in-time event
 families to propose observation-pool candidates or strategy-promotion review
 packets. It is safe/local by default: no provider calls, training, activation,
@@ -174,7 +174,7 @@ class ResidualAnomalyEventDiscovery:
             "account_mutation_performed": self.account_mutation_performed,
             "service_daemon_started": self.service_daemon_started,
             "artifact_deletion_performed": self.artifact_deletion_performed,
-            "discovery_note": "Starts from Layers 1-7 evaluation residuals, then searches nearby PIT event families. Promotion requires an evidence packet plus agent review.",
+            "discovery_note": "Starts from Layers 1-8 base-stack evaluation residuals, then searches nearby PIT event families. Promotion requires an evidence packet plus agent review.",
         }
 
     def to_dict(self) -> dict[str, Any]:
@@ -473,7 +473,7 @@ def write_residual_anomaly_event_discovery_artifacts(discovery: ResidualAnomalyE
 
 Contract: `{discovery.contract_type}`
 
-This artifact starts from Layers 1-7 evaluation residuals, not raw price anomalies. It then searches nearby point-in-time event families for explanations, observation-pool candidates, and strategy-promotion review packets. Strategy promotion remains blocked until an emitted packet receives agent review.
+This artifact starts from Layers 1-8 base-stack evaluation residuals, not raw price anomalies. It then searches nearby point-in-time event families for explanations, observation-pool candidates, and strategy-promotion review packets. Strategy promotion remains blocked until an emitted packet receives agent review.
 
 Safety: no provider calls, model training, model activation, broker/account mutation, service daemon start, destructive SQL, or artifact deletion.
 """,

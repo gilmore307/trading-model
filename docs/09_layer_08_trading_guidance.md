@@ -1,7 +1,7 @@
 # Layer 08 — TradingGuidanceModel / OptionExpressionModel
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 8; current V1 physical implementation surface remains `src/models/model_08_option_expression/` as the option-expression subset until a dedicated TradingGuidanceModel migration is implemented.
+Status: active architecture revision. Layer 8; current V1 physical implementation surface is `src/models/model_08_option_expression/` as the option-expression subset until a dedicated broader TradingGuidanceModel implementation is accepted.
 
 Active boundary: Layer 8 outputs the final **base trading guidance candidate** before event-risk intervention. It consumes Layer 7 underlying-action thesis, position/risk context, and optional point-in-time option-chain evidence. It may choose direct-underlying, option-expression, or no-trade/maintain guidance as an offline decision record.
 

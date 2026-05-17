@@ -1,4 +1,4 @@
-"""Offline evaluation helpers for conceptual Layer 7 option-expression rows."""
+"""Offline evaluation helpers for Layer 8 option-expression rows."""
 from __future__ import annotations
 
 from typing import Any, Iterable, Mapping

@@ -153,7 +153,7 @@ def build_event_model_closeout_report(*, generated_at_utc: str | None = None) ->
         ),
         downstream_regeneration_policy=(
             "Invalidate/rebuild only event-risk-governor-dependent outputs after reviewed source_08/feature_08 coverage; "
-            "do not make base Layers 1-7 wait on event feeds, and do not delete legacy evidence artifacts."
+            "do not make base Layers 1-8 wait on event feeds, and do not delete historical evidence artifacts."
         ),
         storage_lifecycle_hold=(
             "Keep dashboard snapshot/model-run metadata deletion on hold until event-risk-governor regeneration and downstream review are complete."

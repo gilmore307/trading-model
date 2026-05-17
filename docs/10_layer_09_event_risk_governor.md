@@ -69,7 +69,7 @@ PYTHONPATH=src python3 scripts/models/model_09_event_risk_governor/build_residua
 
 Output: `storage/residual_anomaly_event_discovery_20260516/`.
 
-This builder starts from current physical Layer 8/governor evaluation labels over the Layers 1-8 base-stack decision path, identifies residual anomalies such as missed no-trade moves or negative-utility actions, then searches nearby PIT event families for explanations. It emits event-family enrichment rows and, when evidence is strong enough, `event_family_strategy_promotion_review_packet_v1` rows for agent review.
+This builder starts from current physical Layer 9/governor evaluation labels over the Layers 1-8 base-stack decision path, identifies residual anomalies such as missed no-trade moves or negative-utility actions, then searches nearby PIT event families for explanations. It emits event-family enrichment rows and, when evidence is strong enough, `event_family_strategy_promotion_review_packet_v1` rows for agent review.
 
 The current local Layer 7 label substrate is saturated: all available `2016-01` underlying-action labels are `no_trade` with missed positive utility, so non-residual controls are unavailable in this slice. The artifact therefore connects the code/service surface but deliberately emits no observation-pool addition and no strategy-promotion packet until non-residual controls exist.
 

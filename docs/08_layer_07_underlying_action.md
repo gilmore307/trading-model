@@ -1,7 +1,7 @@
 # Layer 07 — UnderlyingActionModel
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 7; current physical implementation surface remains `src/models/model_07_underlying_action/` until code/SQL surfaces are renamed.
+Status: active architecture revision. Layer 7; current physical implementation surface is `src/models/model_07_underlying_action/`.
 
 Active boundary: Layer 7 converts Layer 6 target holding-state projection into an offline direct-underlying action thesis: eligibility, planned action type, exposure-adjustment thesis, entry/target/stop/time assumptions, and handoff to Layer 8 trading guidance.
 

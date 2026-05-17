@@ -1,6 +1,6 @@
 # trading-model
 
-`trading-model` is the offline modeling repository for the current eight-layer trading decision stack.
+`trading-model` is the offline modeling repository for the current nine-layer trading decision stack.
 
 It owns point-in-time model research, model-local generators/evaluators, promotion evidence, and model outputs. It does **not** own raw source acquisition, global registry authority, durable storage policy, dashboards, live/paper order placement, broker/account mutation, generated runtime artifacts committed to Git, or secrets.
 
@@ -16,6 +16,9 @@ SectorContextModel
 anonymous target candidate builder + TargetStateVectorModel
   -> anonymous_target_feature_vector
   -> target_context_state
+
+EventFailureRiskModel
+  -> event_failure_risk_vector
 
 AlphaConfidenceModel
   -> alpha_confidence_vector
@@ -33,7 +36,7 @@ EventRiskGovernor / EventIntelligenceOverlay
   -> event_risk_intervention / event-adjusted risk guidance
 ```
 
-Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Conceptual Layers 4-7 convert target state into alpha confidence, projected position state, direct-underlying action thesis, and trading/option-expression guidance. Conceptual Layer 8 applies event-risk governance after base guidance. Broker orders and account mutation stay outside this repository.
+Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning. Layers 5-8 convert target state and reviewed failure-risk conditioning into alpha confidence, projected position state, direct-underlying action thesis, and trading/option-expression guidance. Layer 9 applies event-risk governance after base guidance. Broker orders and account mutation stay outside this repository.
 
 ## Top-Level Structure
 
@@ -52,10 +55,11 @@ tests/       First-party unit tests and CLI smoke checks using local rows/fake c
 src/models/model_01_market_regime/        MarketRegimeModel.
 src/models/model_02_sector_context/       SectorContextModel.
 src/models/model_03_target_state_vector/  TargetStateVectorModel and anonymous target candidate preprocessing.
+src/models/model_04_event_failure_risk/   EventFailureRiskModel.
 src/models/model_05_alpha_confidence/     AlphaConfidenceModel.
 src/models/model_06_position_projection/  PositionProjectionModel.
 src/models/model_07_underlying_action/    UnderlyingActionModel.
-src/models/model_08_option_expression/    OptionExpressionModel physical package for conceptual Layer 7 trading guidance.
+src/models/model_08_option_expression/    OptionExpressionModel package for Layer 8 trading guidance.
 src/models/model_09_event_risk_governor/  EventRiskGovernor.
 src/model_governance/                     Shared evaluation, promotion, SQL, and local-layer helpers.
 ```
@@ -70,6 +74,7 @@ Important paths:
 scripts/models/model_01_market_regime/
 scripts/models/model_02_sector_context/
 scripts/models/model_03_target_state_vector/
+scripts/models/model_04_event_failure_risk/
 scripts/models/model_05_alpha_confidence/
 scripts/models/model_06_position_projection/
 scripts/models/model_07_underlying_action/
@@ -79,7 +84,7 @@ scripts/models/review_layers_03_08_promotion_closeout.py
 scripts/model_governance/
 ```
 
-Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Event-risk scripts now use the `model_09_event_risk_governor` surface; option-expression still uses its earlier physical `model_08_option_expression` package until a separate trading-guidance/option-expression migration. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
+Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Layer 4 event-failure-risk scripts and Layer 9 event-risk scripts use the current physical `model_04_event_failure_risk` and `model_09_event_risk_governor` surfaces. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
 
 ## Docs Spine
 

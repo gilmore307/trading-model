@@ -1,6 +1,6 @@
 # Promotion Closeout Evidence
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-17): conceptual Layers 4-9 are now Layer 4 EventFailureRiskModel, Layer 5 AlphaConfidenceModel, Layer 6 PositionProjectionModel, Layer 7 UnderlyingActionModel, Layer 8 TradingGuidanceModel / OptionExpressionModel, and Layer 9 EventRiskGovernor / EventIntelligenceOverlay. Physical implementation paths for Layers 4-9 remain on prior numbering until a dedicated code/SQL renumbering migration.
+> Active architecture revision (2026-05-17): Layers 1-9 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 4-9 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -62,7 +62,7 @@ Layers 4-9 remain explicit blockers, not informal work items:
 - Layer 8 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
 - Layer 9 requires real residual-event-risk labels and production evaluation metrics.
 
-The legacy closeout helper `scripts/models/review_layers_03_08_promotion_closeout.py` builds blocked model-side evidence and reviewer artifacts for the physical Layers 3-8 surfaces. Until a dedicated renumbering migration exists, its name is a physical-path note, not the conceptual layer order. It must not persist manager decisions or activate configs.
+The closeout helper `scripts/models/review_layers_03_08_promotion_closeout.py` builds blocked model-side evidence and reviewer artifacts for the base Layers 3-8 surfaces. Its name is a bounded base-stack review scope, not a Layer 9 event-risk-governor activation path. It must not persist manager decisions or activate configs.
 
 ## Activation invariant
 

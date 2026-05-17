@@ -1,7 +1,7 @@
 # Layer 06 — PositionProjectionModel
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 6; current physical implementation surface remains `src/models/model_06_position_projection/` until code/SQL surfaces are renamed.
+Status: active architecture revision. Layer 6; current physical implementation surface is `src/models/model_06_position_projection/`.
 
 Active boundary: Layer 6 consumes `alpha_confidence_vector` plus point-in-time current/pending position, cost, exposure, and risk-budget context. It outputs `position_projection_vector`: target holding-state projection and abstract exposure gap, not execution instructions.
 
@@ -219,7 +219,7 @@ routing_destination
 broker_order_id
 ```
 
-These belong to conceptual Layer 7 underlying-action work, conceptual Layer 8 option-expression/trading-guidance work, or execution-side repositories.
+These belong to Layer 7 underlying-action work, Layer 8 option-expression/trading-guidance work, or execution-side repositories.
 
 ## Internal structure
 
@@ -235,7 +235,7 @@ Layer 6 V1 uses auditable submodules before any broad learned utility model:
 6G PositionProjectionComposer
 ```
 
-Current physical code/tests may retain `5*` prefixes until the dedicated code/SQL renumbering migration.
+Current physical code/tests use `6*` prefixes after the nine-layer renumbering migration.
 
 ### 6A - AlphaToPositionPrior
 
