@@ -40,6 +40,8 @@ The accepted event-model workflow is two-sided:
 
 This workflow prevents event evidence from becoming a broad news-alpha model. Events are used to explain and correct residual anomalies, and to warn when a known event family is visible before the base stack fully reprices it.
 
+For the complete Layer 8 base-guidance -> Layer 9 event-governor -> Layer 4 promotion mechanism, including abnormality categories, lifecycle types, lifecycle states, required clocks, and activity-bridge relation timing, see `docs/103_event_governor_layer_04_mechanism.md`.
+
 ## Event observation pool and strategy-promotion route
 
 Historical research and realtime operation have different event scopes:

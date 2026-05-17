@@ -85,6 +85,8 @@ An event family can enter Layer 4 only after all of the following are true:
 
 Absent this reviewed promotion, the family remains in Layer 9 research/observation/governance only.
 
+For the detailed Layer 8 base-guidance -> Layer 9 event-governor -> Layer 4 promotion mechanism, including accepted abnormality and time/lifecycle values, see `docs/103_event_governor_layer_04_mechanism.md`.
+
 ## Hard boundaries
 
 `EventFailureRiskModel` must not:
