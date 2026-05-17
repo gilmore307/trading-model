@@ -402,7 +402,7 @@ def _validate_no_forbidden_output(value: Any, path: str = "output") -> None:
         for key, nested in value.items():
             key_l = str(key).lower()
             if key_l in FORBIDDEN_OUTPUT_FIELDS:
-                raise ValueError(f"forbidden Layer 4 output field at {path}.{key}: {key}")
+                raise ValueError(f"forbidden Layer 9 output field at {path}.{key}: {key}")
             _validate_no_forbidden_output(nested, f"{path}.{key}")
     elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         for index, nested in enumerate(value):

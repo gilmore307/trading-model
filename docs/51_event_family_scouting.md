@@ -1,6 +1,6 @@
 # Event Family Scouting
 
-Status: active Layer 8 research/governance contract.
+Status: active Layer 9 EventRiskGovernor research/governance contract.
 
 This document turns the option-abnormality proof work into a stricter route for event-risk modeling. It does **not** promote `event_activity_bridge` or raw option abnormality into a model layer.
 

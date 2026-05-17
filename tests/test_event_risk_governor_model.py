@@ -4,6 +4,7 @@ import unittest
 
 from models.model_09_event_risk_governor import generate_rows
 from models.model_09_event_risk_governor.evaluation import assert_no_label_leakage, build_event_risk_governor_labels
+from models.model_09_event_risk_governor.generator import _validate_no_forbidden_output
 
 
 FORBIDDEN_TERMS = {
@@ -81,6 +82,10 @@ class EventRiskGovernorTests(unittest.TestCase):
         self.assertGreater(vector["9_event_reversal_risk_score_15min"], 0.0)
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
+
+    def test_forbidden_output_diagnostic_names_layer_nine(self) -> None:
+        with self.assertRaisesRegex(ValueError, "forbidden Layer 9 output field"):
+            _validate_no_forbidden_output({"buy": True})
 
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:
         output = generate_rows([_base_row()])[0]

@@ -2,13 +2,16 @@
 """Run a development DB smoke test for the MarketRegimeModel chain.
 
 The smoke path uses deterministic fixture market bars, writes temporary
-component-owned tables to the configured development database, writes the Layer 1
+component-owned tables to an explicitly supplied development database URL under
+the isolated ``trading_model_development_smoke`` schema, writes the Layer 1
 primary model and support-artifact tables, reads the feature and model rows back
 from SQL, runs the dry-run evaluation artifact builder, and cleans the
 development tables by default.
 
 It does not call market-data providers, read provider secrets, or promote a
-model. Use ``--keep-db`` only when inspecting the temporary development tables.
+model. It refuses to run unless the caller supplies both ``--database-url`` and
+the explicit database-mutation confirmation token. Use ``--keep-db`` only when
+inspecting the temporary development tables.
 """
 from __future__ import annotations
 
@@ -34,14 +37,27 @@ DEFAULT_UNIVERSE_CSV = trading_storage_root() / "main/shared/layer_01_02_market_
 DEFAULT_COMBINATIONS_CSV = trading_storage_root() / "main/shared/layer_01_02_market_context_relative_strength_combinations.csv"
 ET = ZoneInfo("America/New_York")
 
-SOURCE_SCHEMA = "trading_data"
+DEVELOPMENT_SCHEMA = "trading_model_development_smoke"
+CONFIRM_DATABASE_MUTATION_TOKEN = "I_UNDERSTAND_THIS_MUTATES_DEVELOPMENT_DB"
+
+SOURCE_SCHEMA = DEVELOPMENT_SCHEMA
 SOURCE_TABLE = "source_01_market_regime"
-FEATURE_SCHEMA = "trading_data"
+FEATURE_SCHEMA = DEVELOPMENT_SCHEMA
 FEATURE_TABLE = "feature_01_market_regime"
-MODEL_SCHEMA = "trading_model"
+MODEL_SCHEMA = DEVELOPMENT_SCHEMA
 MODEL_TABLE = "model_01_market_regime"
 EXPLAINABILITY_TABLE = "model_01_market_regime_explainability"
 DIAGNOSTICS_TABLE = "model_01_market_regime_diagnostics"
+
+
+def _require_database_mutation_confirmation(args: argparse.Namespace) -> None:
+    if args.confirm_development_db_mutation != CONFIRM_DATABASE_MUTATION_TOKEN:
+        raise SystemExit(
+            "refusing development DB smoke without --confirm-development-db-mutation "
+            f"{CONFIRM_DATABASE_MUTATION_TOKEN!r}"
+        )
+    if not args.database_url:
+        raise SystemExit("refusing development DB smoke without explicit --database-url")
 
 
 def _database_url(explicit: str | None) -> str:
@@ -334,6 +350,7 @@ def _cleanup(database_url: str) -> None:
 
 
 def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
+    _require_database_mutation_confirmation(args)
     feature_generator, model_generator, build_evaluation_artifacts, summarize_artifacts = _load_modules(args.trading_data_src)
     database_url = _database_url(args.database_url)
     universe_rows = _read_csv_rows(args.universe_csv)
@@ -400,7 +417,11 @@ def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--database-url", help="PostgreSQL URL. Defaults to OPENCLAW_DATABASE_URL or the local OpenClaw DB secret file.")
+    parser.add_argument("--database-url", help="Explicit PostgreSQL development-smoke URL. Required; defaults are refused for mutating smoke runs.")
+    parser.add_argument(
+        "--confirm-development-db-mutation",
+        help=f"Required exact token to allow temporary table writes/drops: {CONFIRM_DATABASE_MUTATION_TOKEN}",
+    )
     parser.add_argument("--trading-data-src", type=Path, default=DEFAULT_TRADING_DATA_SRC)
     parser.add_argument("--universe-csv", type=Path, default=DEFAULT_UNIVERSE_CSV)
     parser.add_argument("--combinations-csv", type=Path, default=DEFAULT_COMBINATIONS_CSV)

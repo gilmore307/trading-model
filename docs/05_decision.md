@@ -25,11 +25,12 @@ Status: Accepted; revised by V2.2 on 2026-05-05
 | 1 | `MarketRegimeModel` | `market_regime_model` | Broad market tradability/regime context state. |
 | 2 | `SectorContextModel` | `sector_context_model` | Market-context-conditioned sector/industry tradability context. |
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target context for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
-| 4 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
-| 5 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
-| 6 | `UnderlyingActionModel` | `underlying_action_model` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and trading-guidance handoff. |
-| 7 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | Base trading guidance and optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
-| 8 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | Point-in-time event-risk intervention after base trading guidance; may block/cap/review guidance but must not mutate broker/account state. |
+| 4 | `EventFailureRiskModel` | `event_failure_risk_model` | Reviewed event/strategy-failure risk conditioning before alpha confidence; not a raw-news alpha layer. |
+| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
+| 6 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
+| 7 | `UnderlyingActionModel` | `underlying_action_model` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and trading-guidance handoff. |
+| 8 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | Base trading guidance and optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
+| 9 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | Point-in-time event-risk intervention after base trading guidance; may block/cap/review guidance but must not mutate broker/account state. |
 
 Live/paper order placement remains outside this repository and no layer should be renamed live `ExecutionModel`.
 

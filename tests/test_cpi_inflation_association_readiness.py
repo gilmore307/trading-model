@@ -22,7 +22,11 @@ class CpiInflationAssociationReadinessTests(unittest.TestCase):
         )
 
     def test_cpi_readiness_preserves_non_mutating_boundary(self) -> None:
-        readiness = build_cpi_inflation_association_readiness(generated_at_utc="2026-05-16T12:10:00+00:00")
+        with tempfile.TemporaryDirectory() as raw_tmp:
+            readiness = build_cpi_inflation_association_readiness(
+                data_root=Path(raw_tmp) / "empty-trading-data",
+                generated_at_utc="2026-05-16T12:10:00+00:00",
+            )
         payload = readiness.to_dict()
 
         self.assertEqual(payload["contract_type"], "cpi_inflation_association_readiness_v1")
