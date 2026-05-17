@@ -1,6 +1,0 @@
-rule_key,applies_to,minimum_requirement,allowed_result,agent_review_required
-historical_discovery_uses_all_events,training_and_research,all point-in-time event/news/filing/macro candidates may be searched to explain residual anomalies,new family may be proposed for observation pool,false
-realtime_observes_pool_only,production_realtime_monitoring,family is active or probationary observation-pool member with reviewed evidence basis,event may be monitored for warnings/explanations/corrections,true
-correction_layer_acceptance,event_risk_governor,"residual anomaly explanation, canonical event clocks, relevance, matched controls, and stability support risk/path correction","warning, uncertainty, path-risk, entry-block, cap, reduce/flatten-review, or human-review hint",true
-strategy_layer_promotion,strategy_decision_layer,"stable predictive reaction across splits, controls, base-stack residuals, regimes, and no leakage; improvement over base strategy is material",event family may become strategy-decision input rather than correction-only overlay,true
-agent_final_decision,script_requested_promotion_or_demotion,script emits evidence packet and calls agent review for final accept/defer/reject decision,manager records reviewed decision before production scope changes,true
