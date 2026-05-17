@@ -1,0 +1,39 @@
+{
+  "account_mutation_performed": false,
+  "active_threshold_universe": [
+    "earnings_guidance_scheduled_shell",
+    "earnings_call_narrative_residual",
+    "equity_offering_dilution",
+    "buyback_or_capital_return",
+    "customer_contract_win_loss",
+    "management_change",
+    "analyst_rating_or_price_target_change",
+    "supply_chain_disruption",
+    "sector_regulation_policy",
+    "commodity_or_input_cost_shock",
+    "cpi_inflation_release"
+  ],
+  "artifact_deletion_performed": false,
+  "broker_execution_performed": false,
+  "contract_type": "event_family_threshold_grading_summary_v1",
+  "deleted_from_threshold_queue": [
+    "mna_transaction",
+    "product_launch_or_failure",
+    "sector_demand_shock",
+    "option_derivatives_abnormality"
+  ],
+  "family_count": 29,
+  "generated_at_utc": "2026-05-17T02:53:47.779784+00:00",
+  "model_activation_performed": false,
+  "model_training_performed": false,
+  "provider_calls": 0,
+  "queue_status_counts": {
+    "accepted_risk_control": 2,
+    "blocked_required_data_or_precondition": 11,
+    "hold_thin_unstable_screening": 3,
+    "retired_current_definition_no_accepted_association": 1,
+    "retired_no_clear_local_association": 3,
+    "threshold_review_candidate": 9
+  },
+  "retirement_note": "Delete means remove from the next active threshold/grading queue while preserving audit artifacts and evidence rows."
+}
