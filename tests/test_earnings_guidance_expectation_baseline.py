@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_08_event_risk_governor.earnings_guidance_expectation_baseline import (
+from models.model_09_event_risk_governor.earnings_guidance_expectation_baseline import (
     ExpectationBaselineInputs,
     run_expectation_baseline_readiness,
 )

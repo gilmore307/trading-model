@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 import json
 
-from models.model_08_event_risk_governor.event_model_closeout import build_event_model_closeout_report, write_report_file
+from models.model_09_event_risk_governor.event_model_closeout import build_event_model_closeout_report, write_report_file
 
 
 class EventModelCloseoutTests(unittest.TestCase):

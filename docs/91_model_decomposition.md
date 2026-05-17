@@ -398,7 +398,7 @@ Layer 4 consumes reviewed Layer 1/2/3 context plus only agent-accepted event/str
 
 ## Layer 5: AlphaConfidenceModel
 
-Status: accepted V1 contract with deterministic scaffold complete under the current physical `model_04_alpha_confidence` surface; production promotion remains evidence-gated.
+Status: accepted V1 contract with deterministic scaffold complete under the current physical `model_05_alpha_confidence` surface; production promotion remains evidence-gated.
 
 Contract owner:
 
@@ -410,7 +410,7 @@ Layer 5 converts reviewed Layer 1/2/3 state evidence plus Layer 4 `event_failure
 
 ## Layer 6: PositionProjectionModel
 
-Status: accepted V1 contract with deterministic scaffold complete under the current physical `model_05_position_projection` surface; production promotion remains evidence-gated.
+Status: accepted V1 contract with deterministic scaffold complete under the current physical `model_06_position_projection` surface; production promotion remains evidence-gated.
 
 Contract owner:
 
@@ -422,7 +422,7 @@ Layer 6 maps final adjusted alpha plus point-in-time current/pending position, c
 
 ## Layer 7: UnderlyingActionModel
 
-Status: accepted V1 contract with deterministic scaffold complete under the current physical `model_06_underlying_action` surface; production promotion remains evidence-gated.
+Status: accepted V1 contract with deterministic scaffold complete under the current physical `model_07_underlying_action` surface; production promotion remains evidence-gated.
 
 Contract owner:
 
@@ -434,7 +434,7 @@ Layer 7 maps Layer 6 target holding-state projection into a direct stock/ETF off
 
 ## Layer 8: TradingGuidanceModel / OptionExpressionModel
 
-Status: accepted V1 contract with deterministic option-expression scaffold complete under the current physical `model_07_option_expression` subset; production promotion remains evidence-gated.
+Status: accepted V1 contract with deterministic option-expression scaffold complete under the current physical `model_08_option_expression` subset; production promotion remains evidence-gated.
 
 Contract owner:
 
@@ -446,7 +446,7 @@ Layer 8 consumes Layer 7 underlying path assumptions plus timestamped option-cha
 
 ## Layer 9: EventRiskGovernor / EventIntelligenceOverlay
 
-Status: accepted V1 event-risk-governor boundary with deterministic scaffold complete under the current physical `model_08_event_risk_governor` surface; production promotion remains evidence-gated.
+Status: accepted V1 event-risk-governor boundary with deterministic scaffold complete under the current physical `model_09_event_risk_governor` surface; production promotion remains evidence-gated.
 
 Contract owner:
 

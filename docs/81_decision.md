@@ -232,7 +232,7 @@ V1 must not choose debit spreads, calendars, diagonals, straddles, strangles, co
 
 The model must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market-context constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade filters.
 
-Layer-numbering update: after D047, this decision is preserved as conceptual Layer 8 `OptionExpressionModel` / trading-guidance context after Layer 7 `UnderlyingActionModel`. Current physical implementation names may still use legacy `model_07_option_expression` until a dedicated renumbering migration.
+Layer-numbering update: after D047, this decision is preserved as conceptual Layer 8 `OptionExpressionModel` / trading-guidance context after Layer 7 `UnderlyingActionModel`. Current physical implementation names may still use legacy `model_08_option_expression` until a dedicated renumbering migration.
 
 ## D010 - Model governance and promotion evidence stay model-local until manager control-plane acceptance
 
@@ -434,7 +434,7 @@ market_context_state
   -> option_expression_plan / expression_vector
 ```
 
-Conceptual Layer 9 consumes point-in-time event evidence such as legacy `source_08_event_risk_governor`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
+Conceptual Layer 9 consumes point-in-time event evidence such as legacy `source_09_event_risk_governor`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
 
 The former hard-upstream event route must not be used as active conceptual ordering. Event-risk governance is now conceptual Layer 9, except for reviewed event-failure factors promoted into conceptual Layer 4.
 
@@ -483,16 +483,16 @@ PositionProjectionModel maps final adjusted alpha confidence to projected target
 The accepted V1 core output families are:
 
 ```text
-5_target_position_bias_score_<horizon>
-5_target_exposure_score_<horizon>
-5_current_position_alignment_score_<horizon>
-5_position_gap_score_<horizon>
-5_position_gap_magnitude_score_<horizon>
-5_expected_position_utility_score_<horizon>
-5_cost_to_adjust_position_score_<horizon>
-5_risk_budget_fit_score_<horizon>
-5_position_state_stability_score_<horizon>
-5_projection_confidence_score_<horizon>
+6_target_position_bias_score_<horizon>
+6_target_exposure_score_<horizon>
+6_current_position_alignment_score_<horizon>
+6_position_gap_score_<horizon>
+6_position_gap_magnitude_score_<horizon>
+6_expected_position_utility_score_<horizon>
+6_cost_to_adjust_position_score_<horizon>
+6_risk_budget_fit_score_<horizon>
+6_position_state_stability_score_<horizon>
+6_projection_confidence_score_<horizon>
 ```
 
 PositionProjectionModel uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose handoff summary fields such as dominant projection horizon, horizon conflict state, resolved target exposure, resolved position gap, resolution confidence, and reason codes so the downstream UnderlyingActionModel does not re-solve horizon conflicts.
@@ -520,19 +520,19 @@ UnderlyingActionModel converts current state, final adjusted alpha confidence, a
 The accepted V1 score families are:
 
 ```text
-6_underlying_trade_eligibility_score_<horizon>
-6_underlying_action_direction_score_<horizon>
-6_underlying_trade_intensity_score_<horizon>
-6_underlying_entry_quality_score_<horizon>
-6_underlying_expected_return_score_<horizon>
-6_underlying_adverse_risk_score_<horizon>
-6_underlying_reward_risk_score_<horizon>
-6_underlying_liquidity_fit_score_<horizon>
-6_underlying_holding_time_fit_score_<horizon>
-6_underlying_action_confidence_score_<horizon>
+7_underlying_trade_eligibility_score_<horizon>
+7_underlying_action_direction_score_<horizon>
+7_underlying_trade_intensity_score_<horizon>
+7_underlying_entry_quality_score_<horizon>
+7_underlying_expected_return_score_<horizon>
+7_underlying_adverse_risk_score_<horizon>
+7_underlying_reward_risk_score_<horizon>
+7_underlying_liquidity_fit_score_<horizon>
+7_underlying_holding_time_fit_score_<horizon>
+7_underlying_action_confidence_score_<horizon>
 ```
 
-UnderlyingActionModel uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose resolved plan fields such as `6_resolved_underlying_action_type`, action side, dominant horizon, trade eligibility, trade intensity, entry quality, action confidence, and reason codes so downstream trading guidance / option expression does not re-solve the direct-underlying thesis.
+UnderlyingActionModel uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose resolved plan fields such as `7_resolved_underlying_action_type`, action side, dominant horizon, trade eligibility, trade intensity, entry quality, action confidence, and reason codes so downstream trading guidance / option expression does not re-solve the direct-underlying thesis.
 
 Accepted planned action types are:
 
@@ -580,7 +580,7 @@ UnderlyingActionModel must not emit broker order fields, order type, route, time
 Date: 2026-05-07
 Status: Accepted
 
-Layer-numbering update after D047: `OptionExpressionModel` remains the accepted option-expression implementation surface (`model_07_option_expression`) under the conceptual Layer 8 trading-guidance boundary until a dedicated physical migration renames it.
+Layer-numbering update after D047: `OptionExpressionModel` remains the accepted option-expression implementation surface (`model_08_option_expression`) under the conceptual Layer 8 trading-guidance boundary until a dedicated physical migration renames it.
 
 It consumes conceptual Layer 6 `underlying_action_plan` / `underlying_action_vector` handoff plus point-in-time option-chain context and outputs:
 
@@ -771,7 +771,7 @@ Rationale: the base trading path should remain runnable without mature event int
 
 Allowed event-risk-governor intervention outputs include `block_new_entries`, `max_exposure_factor`, `reduce_exposure_to`, `flatten_position_candidate`, `halt_trading_candidate`, `human_review_required`, event refs, and evidence spans. Under D047 this is conceptual Layer 9. It may modify the decision/risk record consumed by execution risk-control, but it must not directly send broker orders or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence and an accepted execution risk policy or human review path.
 
-Physical implementation surfaces currently retain legacy names (`model_08_event_risk_governor`, `model_04_alpha_confidence`, `model_05_position_projection`, `model_06_underlying_action`, `model_07_option_expression`) until a dedicated implementation/SQL migration slice renames them. Active docs use the conceptual order above.
+Physical implementation surfaces currently retain legacy names (`model_09_event_risk_governor`, `model_05_alpha_confidence`, `model_06_position_projection`, `model_07_underlying_action`, `model_08_option_expression`) until a dedicated implementation/SQL migration slice renames them. Active docs use the conceptual order above.
 
 ## D040 - Event lifecycle clocks separate scheduled catalysts from surprise events
 
@@ -871,4 +871,4 @@ Layer 4 contains only agent-accepted, empirically reviewed event/strategy-failur
 
 Layer 9 remains the residual event-risk governor and research surface. It may explain residual anomalies, maintain the observation pool, warn/cap/block/review base guidance, and generate event-family promotion packets. A family can move from Layer 9 discovery/observation into Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, incremental value review, and explicit agent/manager acceptance.
 
-This decision is architecture/governance only. Current physical script/package/table names such as `model_04_alpha_confidence`, `model_05_position_projection`, `model_06_underlying_action`, `model_07_option_expression`, `model_08_event_risk_governor`, `MODEL_08_*`, and `source_08_event_risk_governor` remain legacy implementation surfaces until a dedicated code/SQL renumbering migration is reviewed.
+This decision is architecture/governance only. Current physical script/package/table names such as `model_05_alpha_confidence`, `model_06_position_projection`, `model_07_underlying_action`, `model_08_option_expression`, `model_09_event_risk_governor`, `MODEL_09_*`, and `source_09_event_risk_governor` remain legacy implementation surfaces until a dedicated code/SQL renumbering migration is reviewed.

@@ -1,7 +1,7 @@
 # Layer 05 — AlphaConfidenceModel
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 5; current physical implementation surface remains `src/models/model_04_alpha_confidence/` until a dedicated implementation/renumbering migration renames code and SQL surfaces.
+Status: active architecture revision. Conceptual Layer 5; current physical implementation surface remains `src/models/model_05_alpha_confidence/` until a dedicated implementation/renumbering migration renames code and SQL surfaces.
 
 Active boundary: Layer 5 consumes the reviewed Layer 1/2/3 state stack plus Layer 4 `event_failure_risk_vector` when available and produces `alpha_confidence_vector` / base-alpha diagnostics. It does not consume arbitrary raw event evidence; only reviewed Layer 4 event-failure-risk conditioning is allowed upstream, while Layer 9 remains the residual event-risk governor.
 
@@ -11,7 +11,7 @@ Supersedes older wording in this file that described EventRiskGovernor as Layer 
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
-Status: accepted Layer 5 design route; deterministic V1 scaffold currently implemented in physical `src/models/model_04_alpha_confidence/` until a dedicated code/SQL renumbering migration.
+Status: accepted Layer 5 design route; deterministic V1 scaffold currently implemented in physical `src/models/model_05_alpha_confidence/` until a dedicated code/SQL renumbering migration.
 
 ## Purpose
 
@@ -194,13 +194,13 @@ Layer 5 V1 uses six auditable submodules before any broad black-box confidence m
 Uses only Layer 1/2/3 state evidence to generate the base alpha judgment. It produces diagnostic `base_alpha_vector` fields such as:
 
 ```text
-4_base_alpha_direction_score_<horizon>
-4_base_alpha_strength_score_<horizon>
+5_base_alpha_direction_score_<horizon>
+5_base_alpha_strength_score_<horizon>
 5_base_expected_return_score_<horizon>
 5_base_path_quality_score_<horizon>
 5_base_reversal_risk_score_<horizon>
 5_base_drawdown_risk_score_<horizon>
-4_base_alpha_tradability_score_<horizon>
+5_base_alpha_tradability_score_<horizon>
 ```
 
 These are not the default downstream contract. They explain what the state stack said before Layer 4 event-failure conditioning and later Layer 9 event-risk review are attributed.
@@ -267,15 +267,15 @@ Layer 5 V1 uses synchronized alpha-confidence horizons:
 The V1 Layer 5-facing output is exactly 9 core score families per horizon, for 36 final score tokens:
 
 ```text
-4_alpha_direction_score_<horizon>
-4_alpha_strength_score_<horizon>
-4_expected_return_score_<horizon>
-4_alpha_confidence_score_<horizon>
-4_signal_reliability_score_<horizon>
-4_path_quality_score_<horizon>
-4_reversal_risk_score_<horizon>
-4_drawdown_risk_score_<horizon>
-4_alpha_tradability_score_<horizon>
+5_alpha_direction_score_<horizon>
+5_alpha_strength_score_<horizon>
+5_expected_return_score_<horizon>
+5_alpha_confidence_score_<horizon>
+5_signal_reliability_score_<horizon>
+5_path_quality_score_<horizon>
+5_reversal_risk_score_<horizon>
+5_drawdown_risk_score_<horizon>
+5_alpha_tradability_score_<horizon>
 ```
 
 Physical SQL column names must avoid unquoted numeric-leading identifiers unless the storage contract explicitly quotes them. These names are canonical registry/vector payload tokens and may live inside JSONB/vector payloads.
@@ -284,17 +284,17 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 
 | Field family | Range | Directionality | High value means |
 |---|---:|---|---|
-| `4_alpha_direction_score_<horizon>` | `[-1, 1]` | signed | positive = long alpha, negative = short alpha, near zero = mixed/neutral/no edge |
-| `4_alpha_strength_score_<horizon>` | `[0, 1]` | direction-neutral | stronger absolute alpha magnitude, whether long or short |
-| `4_expected_return_score_<horizon>` | `[-1, 1]` | signed | stronger standardized residual alpha expectation after market/sector baseline adjustment |
-| `4_alpha_confidence_score_<horizon>` | `[0, 1]` | direction-neutral | model is more confident in the alpha judgment |
-| `4_signal_reliability_score_<horizon>` | `[0, 1]` | direction-neutral | similar signals have been more stable out-of-sample |
-| `4_path_quality_score_<horizon>` | `[0, 1]` | direction-conditioned | path is smoother, more persistent, and easier to trade |
-| `4_reversal_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | alpha direction is more likely to be interrupted/reversed; high-is-bad |
-| `4_drawdown_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | adverse excursion/MAE risk is higher; high-is-bad |
-| `4_alpha_tradability_score_<horizon>` | `[0, 1]` | alpha-level | alpha is more suitable to hand to Layer 6 for position projection |
+| `5_alpha_direction_score_<horizon>` | `[-1, 1]` | signed | positive = long alpha, negative = short alpha, near zero = mixed/neutral/no edge |
+| `5_alpha_strength_score_<horizon>` | `[0, 1]` | direction-neutral | stronger absolute alpha magnitude, whether long or short |
+| `5_expected_return_score_<horizon>` | `[-1, 1]` | signed | stronger standardized residual alpha expectation after market/sector baseline adjustment |
+| `5_alpha_confidence_score_<horizon>` | `[0, 1]` | direction-neutral | model is more confident in the alpha judgment |
+| `5_signal_reliability_score_<horizon>` | `[0, 1]` | direction-neutral | similar signals have been more stable out-of-sample |
+| `5_path_quality_score_<horizon>` | `[0, 1]` | direction-conditioned | path is smoother, more persistent, and easier to trade |
+| `5_reversal_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | alpha direction is more likely to be interrupted/reversed; high-is-bad |
+| `5_drawdown_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | adverse excursion/MAE risk is higher; high-is-bad |
+| `5_alpha_tradability_score_<horizon>` | `[0, 1]` | alpha-level | alpha is more suitable to hand to Layer 6 for position projection |
 
-`4_alpha_tradability_score_<horizon>` is still not a trade instruction. It is only the Layer 5 judgment that the alpha is worth downstream position-projection mapping.
+`5_alpha_tradability_score_<horizon>` is still not a trade instruction. It is only the Layer 5 judgment that the alpha is worth downstream position-projection mapping.
 
 ## No-edge and null policy
 
@@ -303,15 +303,15 @@ No-edge windows should not create arbitrary nulls in model-facing core fields.
 Default no-edge policy:
 
 ```text
-4_alpha_direction_score_<horizon> = 0
-4_alpha_strength_score_<horizon> = 0
-4_expected_return_score_<horizon> = 0
-4_alpha_confidence_score_<horizon> = low/neutral according to calibration evidence
-4_signal_reliability_score_<horizon> = low when sample support is insufficient
-4_path_quality_score_<horizon> = neutral/baseline
-4_reversal_risk_score_<horizon> = neutral/high when state/event risk is unclear
-4_drawdown_risk_score_<horizon> = neutral/high when state/event risk is unclear
-4_alpha_tradability_score_<horizon> = low
+5_alpha_direction_score_<horizon> = 0
+5_alpha_strength_score_<horizon> = 0
+5_expected_return_score_<horizon> = 0
+5_alpha_confidence_score_<horizon> = low/neutral according to calibration evidence
+5_signal_reliability_score_<horizon> = low when sample support is insufficient
+5_path_quality_score_<horizon> = neutral/baseline
+5_reversal_risk_score_<horizon> = neutral/high when state/event risk is unclear
+5_drawdown_risk_score_<horizon> = neutral/high when state/event risk is unclear
+5_alpha_tradability_score_<horizon> = low
 ```
 
 A zero direction estimate is not a hold instruction. Layer 6 projects target holding state and exposure after costs, risk budget, current/pending position state, and no-trade policy are reviewed.

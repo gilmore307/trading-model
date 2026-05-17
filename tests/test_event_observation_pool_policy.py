@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_08_event_risk_governor.event_observation_pool_policy import (
+from models.model_09_event_risk_governor.event_observation_pool_policy import (
     build_event_observation_pool_policy,
     write_event_observation_pool_policy_artifacts,
 )

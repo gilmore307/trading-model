@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_08_event_risk_governor.earnings_guidance_readiness_scout import (
+from models.model_09_event_risk_governor.earnings_guidance_readiness_scout import (
     GuidanceReadinessInputs,
     run_guidance_readiness_scout,
 )

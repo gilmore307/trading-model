@@ -244,7 +244,7 @@ alpha_confidence_vector
 Current physical promoted artifact remains until renumbering:
 
 ```text
-trading_model.model_04_alpha_confidence
+trading_model.model_05_alpha_confidence
 ```
 
 Primary model inputs:
@@ -289,7 +289,7 @@ position_projection_vector
 Current physical promoted artifact remains until renumbering:
 
 ```text
-trading_model.model_05_position_projection
+trading_model.model_06_position_projection
 ```
 
 Primary model inputs:
@@ -361,13 +361,13 @@ event_risk_intervention
 Current physical promoted artifact remains until renumbering:
 
 ```text
-trading_model.model_08_event_risk_governor
+trading_model.model_09_event_risk_governor
 ```
 
 Primary input source remains until a separate data/SQL migration:
 
 ```text
-trading_data.source_08_event_risk_governor
+trading_data.source_09_event_risk_governor
 ```
 
 Layer 9 is a point-in-time residual event-risk overlay after Layer 8 base trading guidance:
@@ -381,7 +381,7 @@ market_context_state
 + position_projection_vector
 + underlying_action_plan / vector
 + trading_guidance_record / option_expression_plan / expression_vector
-+ source_08_event_risk_governor
++ source_09_event_risk_governor
 + event_detail_artifacts
 + scope_mapping_metadata
 + sensitivity_metadata

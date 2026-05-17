@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_08_event_risk_governor.earnings_guidance_text_candidate_scout import (
+from models.model_09_event_risk_governor.earnings_guidance_text_candidate_scout import (
     GuidanceTextCandidateInputs,
     run_guidance_text_candidate_scout,
 )

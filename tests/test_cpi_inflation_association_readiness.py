@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_08_event_risk_governor.cpi_inflation_association_readiness import (
+from models.model_09_event_risk_governor.cpi_inflation_association_readiness import (
     build_cpi_inflation_association_readiness,
     write_readiness_artifacts,
 )

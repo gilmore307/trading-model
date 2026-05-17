@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_08_event_risk_governor.event_family_empirical_coverage import (
+from models.model_09_event_risk_governor.event_family_empirical_coverage import (
     build_event_family_empirical_coverage,
     write_empirical_coverage_artifacts,
 )

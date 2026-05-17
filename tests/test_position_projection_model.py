@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from models.model_05_position_projection import generate_rows
-from models.model_05_position_projection.evaluation import assert_no_label_leakage, build_position_projection_labels
+from models.model_06_position_projection import generate_rows
+from models.model_06_position_projection.evaluation import assert_no_label_leakage, build_position_projection_labels
 
 
 FORBIDDEN_TERMS = {
@@ -38,20 +38,20 @@ class PositionProjectionModelTests(unittest.TestCase):
         vector = output["position_projection_vector"]
         diagnostics = output["position_projection_diagnostics"]
 
-        self.assertGreater(vector["5_target_exposure_score_390min"], 0.0)
+        self.assertGreater(vector["6_target_exposure_score_390min"], 0.0)
         self.assertAlmostEqual(diagnostics["effective_current_exposure_score"], 0.15)
         self.assertAlmostEqual(
-            vector["5_position_gap_score_390min"],
-            round(vector["5_target_exposure_score_390min"] - 0.15, 6),
+            vector["6_position_gap_score_390min"],
+            round(vector["6_target_exposure_score_390min"] - 0.15, 6),
         )
-        self.assertEqual(vector["5_dominant_projection_horizon"], "390min")
-        self.assertNotIn("buy", vector["5_horizon_resolution_reason_codes"][0])
+        self.assertEqual(vector["6_dominant_projection_horizon"], "390min")
+        self.assertNotIn("buy", vector["6_horizon_resolution_reason_codes"][0])
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
     def test_gap_aware_cost_does_not_penalize_aligned_position_heavily(self) -> None:
         first = generate_rows([_base_row(current_position_state={"current_position_exposure_score": 0.0})])[0]
-        target = first["5_target_exposure_score_390min"]
+        target = first["6_target_exposure_score_390min"]
         aligned = generate_rows(
             [
                 _base_row(
@@ -62,9 +62,9 @@ class PositionProjectionModelTests(unittest.TestCase):
             ]
         )[0]
 
-        self.assertAlmostEqual(aligned["5_position_gap_magnitude_score_390min"], 0.0, places=5)
-        self.assertAlmostEqual(aligned["5_cost_to_adjust_position_score_390min"], 0.0, places=5)
-        self.assertGreater(aligned["5_current_position_alignment_score_390min"], 0.99)
+        self.assertAlmostEqual(aligned["6_position_gap_magnitude_score_390min"], 0.0, places=5)
+        self.assertAlmostEqual(aligned["6_cost_to_adjust_position_score_390min"], 0.0, places=5)
+        self.assertGreater(aligned["6_current_position_alignment_score_390min"], 0.99)
 
     def test_policy_and_risk_can_compress_projection_without_action_language(self) -> None:
         output = generate_rows(
@@ -76,8 +76,8 @@ class PositionProjectionModelTests(unittest.TestCase):
             ]
         )[0]
 
-        self.assertEqual(output["5_target_exposure_score_390min"], 0.0)
-        self.assertEqual(output["5_risk_budget_fit_score_390min"], 0.0)
+        self.assertEqual(output["6_target_exposure_score_390min"], 0.0)
+        self.assertEqual(output["6_risk_budget_fit_score_390min"], 0.0)
         self.assertIn(
             "risk_budget_compression",
             output["position_projection_diagnostics"]["horizon_projections"]["390min"]["reason_codes"],
@@ -121,15 +121,15 @@ def _base_row(**overrides: object) -> dict[str, object]:
         "current_position_state_ref": "current_fixture",
         "pending_position_state_ref": "pending_fixture",
         "alpha_confidence_vector": {
-            "4_alpha_direction_score_390min": 0.80,
-            "4_alpha_strength_score_390min": 0.70,
-            "4_expected_return_score_390min": 0.06,
-            "4_alpha_confidence_score_390min": 0.90,
-            "4_signal_reliability_score_390min": 0.85,
-            "4_path_quality_score_390min": 0.80,
-            "4_reversal_risk_score_390min": 0.15,
-            "4_drawdown_risk_score_390min": 0.20,
-            "4_alpha_tradability_score_390min": 0.90,
+            "5_alpha_direction_score_390min": 0.80,
+            "5_alpha_strength_score_390min": 0.70,
+            "5_expected_return_score_390min": 0.06,
+            "5_alpha_confidence_score_390min": 0.90,
+            "5_signal_reliability_score_390min": 0.85,
+            "5_path_quality_score_390min": 0.80,
+            "5_reversal_risk_score_390min": 0.15,
+            "5_drawdown_risk_score_390min": 0.20,
+            "5_alpha_tradability_score_390min": 0.90,
         },
         "current_position_state": {"current_position_exposure_score": 0.10},
         "pending_position_state": {"pending_exposure_size": 0.10, "pending_order_fill_probability_estimate": 0.50},

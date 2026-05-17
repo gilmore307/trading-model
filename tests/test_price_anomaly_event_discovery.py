@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_08_event_risk_governor.price_anomaly_event_discovery import (
+from models.model_09_event_risk_governor.price_anomaly_event_discovery import (
     build_price_anomaly_event_discovery,
     write_price_anomaly_event_discovery_artifacts,
 )
