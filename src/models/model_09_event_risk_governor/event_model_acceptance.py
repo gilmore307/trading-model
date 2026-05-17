@@ -148,12 +148,14 @@ def build_event_model_acceptance_report(*, generated_at_utc: str | None = None) 
                 accepted_use="bounded_risk_intelligence_overlay_after_base_layer_1_7_guidance",
                 blocked_use="entry_selection_position_sizing_contract_selection_order_routing_or_account_mutation",
                 blocker_codes=("activation_requires_manager_promotion_review", "execution_mutation_out_of_scope"),
-                next_evidence_gate="rebuild_source_08_feature_08_model_08_over_reviewed_event_feeds_then_evaluate_without_activation",
+                next_evidence_gate="rebuild_source_09_event_risk_governor_feature_09_event_risk_governor_model_09_event_risk_governor_over_reviewed_event_feeds_then_evaluate_without_activation",
             ),
         ),
         downstream_regeneration_policy=(
-            "Invalidate/rebuild only event-risk-governor-dependent outputs after reviewed source_08/feature_08 coverage; "
-            "do not make base_stack_layers_01_08 wait on event feeds, and do not delete historical evidence artifacts."
+            "Invalidate/rebuild only event-risk-governor-dependent outputs after reviewed "
+            "source_09_event_risk_governor/feature_09_event_risk_governor coverage and "
+            "model_09_event_risk_governor regeneration; do not make base_stack_layers_01_08 "
+            "wait on event feeds, and do not delete historical evidence artifacts."
         ),
         storage_lifecycle_hold=(
             "Keep dashboard snapshot/model-run metadata deletion on hold until event-risk-governor regeneration and downstream review are complete."

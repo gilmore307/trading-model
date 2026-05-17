@@ -24,7 +24,21 @@ class EventModelAcceptanceTests(unittest.TestCase):
         families = {item["family_key"]: item for item in row["family_statuses"]}
         self.assertEqual(families["earnings_guidance_event_family"]["status"], "scouting_direction_neutral_context_only")
         self.assertIn("missing_pit_revenue_consensus_baseline", families["earnings_guidance_event_family"]["blocker_codes"])
-        self.assertEqual(families["event_risk_governor_structure"]["status"], "accepted_architecture")
+        governor = families["event_risk_governor_structure"]
+        self.assertEqual(governor["status"], "accepted_architecture")
+        self.assertIn("source_09_event_risk_governor", governor["next_evidence_gate"])
+        self.assertIn("feature_09_event_risk_governor", governor["next_evidence_gate"])
+        self.assertIn("model_09_event_risk_governor", governor["next_evidence_gate"])
+        self.assertNotIn("source_08", governor["next_evidence_gate"])
+        self.assertNotIn("feature_08", governor["next_evidence_gate"])
+        self.assertNotIn("model_08", governor["next_evidence_gate"])
+
+        self.assertIn("source_09_event_risk_governor", row["downstream_regeneration_policy"])
+        self.assertIn("feature_09_event_risk_governor", row["downstream_regeneration_policy"])
+        self.assertIn("model_09_event_risk_governor", row["downstream_regeneration_policy"])
+        self.assertNotIn("source_08", row["downstream_regeneration_policy"])
+        self.assertNotIn("feature_08", row["downstream_regeneration_policy"])
+        self.assertNotIn("model_08", row["downstream_regeneration_policy"])
 
     def test_writes_report_file(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:
