@@ -330,8 +330,9 @@ Output artifacts live under `storage/event_family_all_association_20260516/`:
 - `event_family_all_association.json`
 - `event_family_all_association_summary.json`
 - `event_family_all_association.csv`
+- `event_family_expanded_stability.csv`
 
-It emits a row for every one of the 29 families. Measured positive accepted associations remain limited to risk/control: CPI surprise shows risk/volatility association, and earnings/guidance scheduled shells show direction-neutral path-risk association. Eleven additional families show only local keyword/proxy screening risk associations and two show unreviewed directional candidates; these are explicitly not accepted because source/parser, canonical interpretation, matched-control, PIT baseline, residual-detector, or liquidity-depth gates are missing. Four families have no local measurable labels; seven remain blocked by required preconditions. No family supports accepted standalone directional alpha.
+It emits a row for every one of the 29 families. The expanded local screening pass uses every available local Alpaca bar symbol for the screening month, currently 47 ETF/proxy symbols, rather than the initial 12-symbol proxy subset. Measured positive accepted associations remain limited to risk/control: CPI surprise shows risk/volatility association, and earnings/guidance scheduled shells show direction-neutral path-risk association. The expanded stability screen identifies nine additional families as threshold-review candidates only; these are not accepted because source/parser, canonical interpretation, matched-control, PIT baseline, residual-detector, or liquidity-depth gates are still missing. Three measured families remain no-clear-local-association, four have no local measurable labels, seven remain blocked by required preconditions, three thin local candidates are unstable, and option derivatives abnormality still requires definition revision. No family supports accepted standalone directional alpha.
 
 ## Early-stop criteria
 

@@ -61,9 +61,13 @@ class EventFamilyAllAssociationTests(unittest.TestCase):
             self.assertTrue(payload_path.exists())
             self.assertTrue(summary_path.exists())
             self.assertTrue(csv_path.exists())
+            stability_path = output_dir / "event_family_expanded_stability.csv"
+            self.assertTrue(stability_path.exists())
             payload = json.loads(payload_path.read_text(encoding="utf-8"))
             self.assertEqual(payload["summary"]["family_count"], 29)
+            self.assertIn("screening_stability_counts", payload["summary"])
             self.assertIn("earnings_guidance_scheduled_shell", csv_path.read_text(encoding="utf-8"))
+            self.assertIn("threshold_grading_ready", stability_path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

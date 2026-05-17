@@ -28,7 +28,7 @@ DEFAULT_OUTPUT_DIR = Path("storage/event_family_all_association_20260516")
 DEFAULT_TRADING_DATA_ROOT = Path("/root/projects/trading-data")
 DEFAULT_BAR_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill_v1/alpaca_bars"
 DEFAULT_SOURCE_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill_v1"
-PROXY_SYMBOLS = ("SPY", "QQQ", "IWM", "XLF", "XLK", "XLE", "XLY", "XLP", "XLI", "XLB", "HYG", "LQD")
+DEFAULT_PROXY_SYMBOLS = ("SPY", "QQQ", "IWM", "XLF", "XLK", "XLE", "XLY", "XLP", "XLI", "XLB", "HYG", "LQD")
 EVENT_MONTH = "2016-01"
 
 SPECIAL_PREVIOUS_STUDIES: dict[str, dict[str, Any]] = {
@@ -138,8 +138,17 @@ class EventFamilyAllAssociation:
             "contract_type": SUMMARY_CONTRACT_TYPE,
             "generated_at_utc": self.generated_at_utc,
             "family_count": len(self.family_rows),
+            "local_screening_universe": {
+                "bar_root": str(DEFAULT_BAR_ROOT),
+                "event_source_root": str(DEFAULT_SOURCE_ROOT),
+                "screening_month": EVENT_MONTH,
+                "available_bar_symbol_count": len(_discover_symbols(DEFAULT_BAR_ROOT)),
+                "available_bar_symbols": list(_discover_symbols(DEFAULT_BAR_ROOT)),
+                "note": "Local keyword/proxy screening uses every available symbol under the local bar root for the screening month; accepted prior CPI/earnings/option studies retain their reviewed source universes.",
+            },
             "measurement_status_counts": _counts(row.measurement_status for row in self.family_rows),
             "association_class_counts": _counts(row.association_class for row in self.family_rows),
+            "screening_stability_counts": _counts(row["screening_stability_status"] for row in _stability_rows(self.family_rows)),
             "risk_control_supported_families": [row.family_key for row in self.family_rows if row.risk_control_supported],
             "directional_alpha_supported_families": [row.family_key for row in self.family_rows if row.directional_alpha_supported],
             "families_with_measured_event_labels": [row.family_key for row in self.family_rows if row.label_count_1d or row.label_count_5d or row.label_count_10d],
@@ -251,7 +260,13 @@ def _candidate_dates_for_family(family: str, sources: Mapping[str, list[dict[str
     return tuple(sorted(set(out), key=lambda item: (item[0], item[1])))
 
 
-def _load_daily_bars(bar_root: Path, symbols: Sequence[str] = PROXY_SYMBOLS, month: str = EVENT_MONTH) -> dict[str, list[DailyBar]]:
+def _discover_symbols(bar_root: Path) -> tuple[str, ...]:
+    symbols = tuple(sorted(path.name for path in bar_root.iterdir() if path.is_dir())) if bar_root.exists() else ()
+    return symbols or DEFAULT_PROXY_SYMBOLS
+
+
+def _load_daily_bars(bar_root: Path, symbols: Sequence[str] | None = None, month: str = EVENT_MONTH) -> dict[str, list[DailyBar]]:
+    symbols = tuple(symbols or _discover_symbols(bar_root))
     by_symbol: dict[str, dict[date, list[tuple[datetime, float, float, float, float]]]] = {symbol: defaultdict(list) for symbol in symbols}
     for symbol in symbols:
         for path in glob.glob(str(bar_root / symbol / month / "runs/*/saved/equity_bar.csv")):
@@ -378,6 +393,62 @@ def _local_association_row(family: str, coverage_row: Mapping[str, Any], sources
     )
 
 
+def _numeric(value: float | None) -> float | None:
+    return value if value is not None and math.isfinite(value) else None
+
+
+def _stability_rows(rows: Sequence[FamilyAssociationRow]) -> list[dict[str, Any]]:
+    stability_rows: list[dict[str, Any]] = []
+    available_symbol_count = len(_discover_symbols(DEFAULT_BAR_ROOT))
+    for row in rows:
+        risk_values = [
+            _numeric(row.abs_return_delta_1d),
+            _numeric(row.path_range_delta_1d),
+            _numeric(row.abs_return_delta_5d),
+            _numeric(row.path_range_delta_5d),
+            _numeric(row.abs_return_delta_10d),
+            _numeric(row.path_range_delta_10d),
+        ]
+        risk_positive_count = sum(1 for value in risk_values if value is not None and value > 0)
+        risk_material_count = sum(1 for value in risk_values if value is not None and value > 0.0025)
+        return_values = [_numeric(row.return_delta_1d), _numeric(row.return_delta_5d), _numeric(row.return_delta_10d)]
+        positive_direction_count = sum(1 for value in return_values if value is not None and value > 0)
+        negative_direction_count = sum(1 for value in return_values if value is not None and value < 0)
+        label_counts = [row.label_count_1d, row.label_count_5d, row.label_count_10d]
+        measured_horizon_count = sum(1 for value in label_counts if value > 0)
+        max_label_count = max(label_counts) if label_counts else 0
+        if row.risk_control_supported:
+            stability_status = "accepted_risk_control_prior_study"
+        elif row.association_class == "current_definition_no_accepted_association":
+            stability_status = "definition_revision_required"
+        elif row.association_class.startswith("not_measured"):
+            stability_status = "not_threshold_ready_precondition_or_data_gap"
+        elif row.association_class == "no_clear_local_association":
+            stability_status = "measured_no_clear_local_stability"
+        elif row.event_count >= 5 and max_label_count >= 50 and measured_horizon_count >= 2:
+            stability_status = "expanded_screening_threshold_review_candidate"
+        else:
+            stability_status = "thin_unstable_screening"
+        stability_rows.append(
+            {
+                "family_key": row.family_key,
+                "association_class": row.association_class,
+                "screening_stability_status": stability_status,
+                "available_symbol_count": available_symbol_count,
+                "event_count": row.event_count,
+                "measured_horizon_count": measured_horizon_count,
+                "max_label_count": max_label_count,
+                "risk_positive_metric_count": risk_positive_count,
+                "risk_material_metric_count": risk_material_count,
+                "positive_direction_horizon_count": positive_direction_count,
+                "negative_direction_horizon_count": negative_direction_count,
+                "threshold_grading_ready": str(stability_status in {"accepted_risk_control_prior_study", "expanded_screening_threshold_review_candidate"}).lower(),
+                "note": "Preparation-only stability screen; thresholds and grades are not assigned in this artifact.",
+            }
+        )
+    return stability_rows
+
+
 def _special_row(family: str, data: Mapping[str, Any]) -> FamilyAssociationRow:
     return FamilyAssociationRow(
         family_key=family,
@@ -434,7 +505,7 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]], *, fieldnames: Seq
     path.parent.mkdir(parents=True, exist_ok=True)
     fields = list(fieldnames or sorted({key for row in rows for key in row.keys()}))
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -449,12 +520,15 @@ def write_event_family_all_association_artifacts(association: EventFamilyAllAsso
     )
     fields = list(FamilyAssociationRow("", "", "", 0, 0, 0, 0, (), (), None, None, None, None, None, None, None, None, None, False, False, "").csv_row().keys())
     _write_csv(output_dir / "event_family_all_association.csv", [row.csv_row() for row in association.family_rows], fieldnames=fields)
+    _write_csv(output_dir / "event_family_expanded_stability.csv", _stability_rows(association.family_rows))
     (output_dir / "README.md").write_text(
         f"""# Event-family all-association measurement
 
 Contract: `{association.contract_type}`
 
 This artifact emits an association row for every EventRiskGovernor family. It separates measured association from no-local-event and blocked-precondition statuses. It uses local source/study artifacts only and performs no provider calls, training, activation, broker/account mutation, destructive SQL, or artifact deletion.
+
+`event_family_expanded_stability.csv` is a preparation-only stability screen for the next threshold/grading step. It does not assign final thresholds or grades.
 """,
         encoding="utf-8",
     )
