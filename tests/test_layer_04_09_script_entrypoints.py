@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import subprocess
 import sys
@@ -28,6 +29,14 @@ LAYER_NUMBERS = {
 
 
 class LayerFourNineScriptEntrypointTests(unittest.TestCase):
+    def _load_script_module(self, script: Path):
+        spec = importlib.util.spec_from_file_location(script.stem, script)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
     def _run(self, args: list[str]) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, *args],
@@ -50,6 +59,20 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
                     result = self._run([script, "--help"])
                     self.assertEqual(result.returncode, 0, result.stderr)
                     self.assertIn("usage:", result.stdout)
+
+    def test_model_09_sql_column_typing_uses_layer_09_prefix(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py")
+
+        self.assertEqual(generator._column_type("9_event_gap_risk_score_390min"), "DOUBLE PRECISION")
+        self.assertEqual(generator._column_type("8_legacy_event_score"), "TEXT")
+
+    def test_active_generator_column_type_prefixes_match_layer_numbers(self) -> None:
+        for surface, layer_number in LAYER_NUMBERS.items():
+            with self.subTest(surface=surface):
+                generator = self._load_script_module(REPO_ROOT / f"scripts/models/{surface}/generate_{surface}.py")
+                self.assertEqual(generator._column_type(f"{layer_number}_fixture_score"), "DOUBLE PRECISION")
+                previous_layer = layer_number - 1
+                self.assertEqual(generator._column_type(f"{previous_layer}_legacy_score"), "TEXT")
 
     def test_fixture_generate_evaluate_review_defers_activation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

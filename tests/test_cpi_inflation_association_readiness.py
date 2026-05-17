@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.event_family_fixtures import build_event_family_fixture
+
 from models.model_09_event_risk_governor.cpi_inflation_association_readiness import (
     build_cpi_inflation_association_readiness,
     write_readiness_artifacts,
@@ -12,6 +14,13 @@ from models.model_09_event_risk_governor.cpi_inflation_association_readiness imp
 
 
 class CpiInflationAssociationReadinessTests(unittest.TestCase):
+    def _build_fixture_readiness(self, root: Path):
+        fixture = build_event_family_fixture(root)
+        return build_cpi_inflation_association_readiness(
+            data_root=fixture.trading_data_root,
+            generated_at_utc="2026-05-16T12:10:00+00:00",
+        )
+
     def test_cpi_readiness_preserves_non_mutating_boundary(self) -> None:
         readiness = build_cpi_inflation_association_readiness(generated_at_utc="2026-05-16T12:10:00+00:00")
         payload = readiness.to_dict()
@@ -24,29 +33,31 @@ class CpiInflationAssociationReadinessTests(unittest.TestCase):
         self.assertFalse(payload["artifact_deletion_performed"])
 
     def test_cpi_has_event_and_control_diagnostics_but_remains_underpowered(self) -> None:
-        readiness = build_cpi_inflation_association_readiness(generated_at_utc="2026-05-16T12:10:00+00:00")
+        with tempfile.TemporaryDirectory() as raw_tmp:
+            readiness = self._build_fixture_readiness(Path(raw_tmp))
 
-        self.assertIn("2016-01", readiness.calendar_months_available)
-        self.assertGreater(readiness.event_count, 0)
-        self.assertGreater(readiness.event_label_count, 0)
-        self.assertGreater(readiness.control_label_count, 0)
-        self.assertGreater(readiness.comparison_count, 0)
-        self.assertEqual(readiness.association_study_status, "underpowered_cpi_scouting_only")
-        self.assertIn("insufficient_local_cpi_calendar_months", readiness.blocker_codes)
-        self.assertIn("needs_market_sector_target_state_controls", readiness.blocker_codes)
+            self.assertIn("2016-01", readiness.calendar_months_available)
+            self.assertGreater(readiness.event_count, 0)
+            self.assertGreater(readiness.event_label_count, 0)
+            self.assertGreater(readiness.control_label_count, 0)
+            self.assertGreater(readiness.comparison_count, 0)
+            self.assertEqual(readiness.association_study_status, "underpowered_cpi_scouting_only")
+            self.assertIn("insufficient_local_cpi_calendar_months", readiness.blocker_codes)
+            self.assertIn("needs_market_sector_target_state_controls", readiness.blocker_codes)
 
     def test_comparisons_include_available_event_control_rows(self) -> None:
-        readiness = build_cpi_inflation_association_readiness(generated_at_utc="2026-05-16T12:10:00+00:00")
-        available = [item for item in readiness.comparisons if item.comparison_status == "comparison_available"]
+        with tempfile.TemporaryDirectory() as raw_tmp:
+            readiness = self._build_fixture_readiness(Path(raw_tmp))
+            available = [item for item in readiness.comparisons if item.comparison_status == "comparison_available"]
 
-        self.assertTrue(available)
-        self.assertTrue(all(item.control_count > 0 for item in available))
-        self.assertTrue(any(item.event_minus_control_mean is not None for item in available))
+            self.assertTrue(available)
+            self.assertTrue(all(item.control_count > 0 for item in available))
+            self.assertTrue(any(item.event_minus_control_mean is not None for item in available))
 
     def test_writes_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:
             output_dir = Path(raw_tmp) / "cpi"
-            readiness = build_cpi_inflation_association_readiness(generated_at_utc="2026-05-16T12:10:00+00:00")
+            readiness = self._build_fixture_readiness(Path(raw_tmp) / "fixture")
             write_readiness_artifacts(readiness, output_dir)
 
             summary_path = output_dir / "cpi_inflation_association_summary.json"

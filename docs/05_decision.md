@@ -412,7 +412,7 @@ Status: Accepted
 
 State-vector semantics and model-local outputs may continue to mature inside `trading-model`, but final artifact, manifest, ready-signal, request, durable receipt, shared storage root, and SQL/storage destination contracts wait until all model layers are designed and `trading-manager` development begins.
 
-This keeps Layer 1-8 model design from being constrained by premature manager/storage interface decisions. Registry state-vector values remain reviewed naming/semantic references; they do not by themselves finalize durable manager/storage contracts.
+This keeps `base_stack_layers_01_08` model design from being constrained by premature manager/storage interface decisions. Registry state-vector values remain reviewed naming/semantic references; they do not by themselves finalize durable manager/storage contracts.
 
 ## D020 - Superseded EventRiskGovernor pre-alpha ordering
 
@@ -643,7 +643,7 @@ storage executes lifecycle
 
 Lifecycle work caused by promotion must route through manager `storage_lifecycle_request`; `trading-storage` owns protected-set checks, physical lifecycle execution, receipts, and tombstones.
 
-## D025 - Layers 1-8 model-design acceptance
+## D025 - `base_stack_layers_01_08` model-design acceptance
 
 Date: 2026-05-07
 Status: Superseded by D047
@@ -663,7 +663,7 @@ MarketRegimeModel
   -> OptionExpressionModel
 ```
 
-Layers 1-8 have accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture-level verification for the current design phase.
+`base_stack_layers_01_08` has accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture-level verification for the current design phase.
 
 This acceptance is superseded by the 2026-05-17 architecture revision that inserts Layer 4 EventFailureRiskModel and makes EventRiskGovernor Layer 9. After Layer 9, downstream work belongs to review / execution-owned boundaries: broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 

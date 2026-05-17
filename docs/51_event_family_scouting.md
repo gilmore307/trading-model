@@ -378,7 +378,7 @@ Reverse discovery is a hypothesis generator, not causal proof. Candidate familie
 The preferred production shape is not raw price anomaly -> event claim. The preferred route is:
 
 ```text
-Layers 1-8 base stack
+`base_stack_layers_01_08`
   -> expected market/sector/target/event-failure/alpha/position/action/option context
   -> residual_anomaly_context when observed price/path/volume/liquidity/option behavior is not explained
   -> Layer 9 event-family explanation / warning / correction overlay

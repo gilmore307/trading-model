@@ -32,11 +32,11 @@ Layer 9 does **not** answer alpha, trade, expression, sizing, or execution quest
 
 The accepted event-model workflow is two-sided:
 
-1. **Base-stack first:** Layers 1-8 analyze the market, sector, target, accepted event-failure risk, alpha confidence, position projection, underlying action, and option/trading guidance context. Their job is to explain the normal trading state without event shortcuts.
-2. **Residual anomaly detection:** price/path/volume/liquidity/option behavior that remains abnormal after conditioning on Layers 1-8 becomes a `residual_anomaly_context`, not an event conclusion.
+1. **Base-stack first:** `base_stack_layers_01_08` analyze the market, sector, target, accepted event-failure risk, alpha confidence, position projection, underlying action, and option/trading guidance context. Their job is to explain the normal trading state without event shortcuts.
+2. **Residual anomaly detection:** price/path/volume/liquidity/option behavior that remains abnormal after conditioning on `base_stack_layers_01_08` becomes a `residual_anomaly_context`, not an event conclusion.
 3. **Event explanation:** Layer 9 inspects point-in-time event evidence around the residual anomaly and asks whether a canonical event family plausibly explains, amplifies, or contradicts the anomaly.
 4. **Overlay output:** if evidence is strong enough, Layer 9 emits warning, explanation, uncertainty, path-risk, block/cap/reduce/flatten-review, or human-review hints. It keeps base Layer 8 guidance and event-adjusted guidance side by side.
-5. **Correction boundary:** corrections are risk/explanation overlays only. They may modify confidence, risk caps, entry permission, or review requirements, but they must not replace Layers 1-8 with standalone event alpha or direct execution decisions.
+5. **Correction boundary:** corrections are risk/explanation overlays only. They may modify confidence, risk caps, entry permission, or review requirements, but they must not replace `base_stack_layers_01_08` with standalone event alpha or direct execution decisions.
 
 This workflow prevents event evidence from becoming a broad news-alpha model. Events are used to explain and correct residual anomalies, and to warn when a known event family is visible before the base stack fully reprices it.
 
@@ -69,7 +69,7 @@ PYTHONPATH=src python3 scripts/models/model_09_event_risk_governor/build_residua
 
 Output: `storage/residual_anomaly_event_discovery_20260516/`.
 
-This builder starts from current physical Layer 9/governor evaluation labels over the Layers 1-8 base-stack decision path, identifies residual anomalies such as missed no-trade moves or negative-utility actions, then searches nearby PIT event families for explanations. It emits event-family enrichment rows and, when evidence is strong enough, `event_family_strategy_promotion_review_packet_v1` rows for agent review.
+This builder starts from current physical Layer 9/governor evaluation labels over the `base_stack_layers_01_08` decision path, identifies residual anomalies such as missed no-trade moves or negative-utility actions, then searches nearby PIT event families for explanations. It emits event-family enrichment rows and, when evidence is strong enough, `event_family_strategy_promotion_review_packet_v1` rows for agent review.
 
 The current local Layer 7 label substrate is saturated: all available `2016-01` underlying-action labels are `no_trade` with missed positive utility, so non-residual controls are unavailable in this slice. The artifact therefore connects the code/service surface but deliberately emits no observation-pool addition and no strategy-promotion packet until non-residual controls exist.
 
@@ -160,7 +160,7 @@ Artifacts must remain point-in-time versioned. A later article revision, later S
 
 ### Abnormal-activity residual boundary
 
-Layer 9 abnormal-activity evidence must not double-count model-owned bars, volume, spread, liquidity, volatility, gap, VWAP, trend, or target-state features that already enter Layer 1-8 inputs.
+Layer 9 abnormal-activity evidence must not double-count model-owned bars, volume, spread, liquidity, volatility, gap, VWAP, trend, or target-state features that already enter `base_stack_layers_01_08` inputs.
 
 Accepted abnormal-activity evidence categories:
 
@@ -205,7 +205,7 @@ Some raw news and narratives are difficult to standardize immediately. Layer 9 m
 
 The bridge connects event evidence to price, flow, liquidity, option, and prediction-market behavior. It does not claim hidden knowledge; it records lead/lag, residual activity, and cross-market confirmation or divergence.
 
-Activity bridge evidence is allowed only after a non-overlap gate. The bridge must prove that each activity leg is not already consumed by the upstream Layers 1-8 feature/model path for the same decision context. If the evidence is already represented by market/sector/target state, liquidity features, option-expression inputs, or Layer 8 trading-guidance payloads, Layer 9 may reference the upstream state for audit but must not re-score the same information as new event evidence. Missing non-overlap evidence downgrades the bridge row to provenance/review context only.
+Activity bridge evidence is allowed only after a non-overlap gate. The bridge must prove that each activity leg is not already consumed by the upstream `base_stack_layers_01_08` feature/model path for the same decision context. If the evidence is already represented by market/sector/target state, liquidity features, option-expression inputs, or Layer 8 trading-guidance payloads, Layer 9 may reference the upstream state for audit but must not re-score the same information as new event evidence. Missing non-overlap evidence downgrades the bridge row to provenance/review context only.
 
 Accepted relation types:
 

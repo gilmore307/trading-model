@@ -15,4 +15,4 @@ Acceptance and discovery helpers:
 
 - `event_model_acceptance.py` emits `event_model_acceptance_report_v1`, the accepted acceptance artifact for the 2026-05 event-layer redo. It records that Layer 9 closes as a bounded EventRiskGovernor / EventIntelligenceOverlay, keeps earnings/guidance in scouting, rejects broad event/option-flow/signed-guidance alpha, and preserves the downstream regeneration/deletion hold rules without mutating artifacts.
 - `event_observation_pool_policy.py` emits `event_observation_pool_policy_v1`, separating all-event historical research from reviewed realtime observation-pool monitoring.
-- `residual_anomaly_event_discovery.py` emits `residual_anomaly_event_discovery_v1`, starting from Layers 1-8 base-stack evaluation residuals and searching PIT event families for explanations, observation-pool candidates, and strategy-promotion review packets.
+- `residual_anomaly_event_discovery.py` emits `residual_anomaly_event_discovery_v1`, starting from `base_stack_layers_01_08` evaluation residuals and searching PIT event families for explanations, observation-pool candidates, and strategy-promotion review packets.

@@ -65,7 +65,7 @@ def _qualified(schema: str, table: str) -> str:
 def _column_type(column: str) -> str:
     if column in JSON_COLUMNS:
         return "JSONB"
-    if column.startswith("8_"):
+    if column.startswith("9_"):
         return "DOUBLE PRECISION"
     return "TEXT"
 
