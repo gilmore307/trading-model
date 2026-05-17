@@ -20,7 +20,7 @@ The correct route is:
 base model stack guidance
 + point-in-time canonical event evidence
 + interpreted event-family packets when accepted
-+ abnormal-activity bridge evidence as provenance/risk context
++ abnormal-activity bridge evidence as provenance/risk context only after a non-overlap check against upstream model inputs
   -> EventRiskGovernor / EventIntelligenceOverlay
   -> event risk intervention, uncertainty, review/block/cap/flatten hints
 ```
@@ -65,7 +65,7 @@ Build the event layer around four responsibilities:
 
 1. **Canonical event timeline** — lifecycle class, clocks, shell/result split, point-in-time availability, dedup/canonical refs.
 2. **Event interpretation** — reviewed `event_interpretation_v1` or deterministic family-equivalent rows for accepted event families.
-3. **Event/activity bridge** — typed relationships such as pre-event precursor, co-event reaction, post-event absorption, divergence, and unresolved latent hazard.
+3. **Event/activity bridge** — typed relationships such as pre-event precursor, co-event reaction, post-event absorption, divergence, and unresolved latent hazard, admitted for scoring only when the activity leg is not already counted by Layers 1-8 or remains residual after upstream conditioning.
 4. **Risk-governor output** — uncertainty, gap/reversal/liquidity/contagion risk, human-review requirements, entry blocks, exposure caps, reduce/flatten candidates, and audit explanations.
 
 ## Rejected architecture

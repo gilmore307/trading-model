@@ -194,6 +194,8 @@ Some raw news and narratives are difficult to standardize immediately. Layer 9 m
 
 The bridge connects event evidence to price, flow, liquidity, option, and prediction-market behavior. It does not claim hidden knowledge; it records lead/lag, residual activity, and cross-market confirmation or divergence.
 
+Activity bridge evidence is allowed only after a non-overlap gate. The bridge must prove that each activity leg is not already consumed by the upstream Layers 1-8 feature/model path for the same decision context. If the evidence is already represented by market/sector/target state, liquidity features, option-expression inputs, or Layer 8 trading-guidance payloads, Layer 9 may reference the upstream state for audit but must not re-score the same information as new event evidence. Missing non-overlap evidence downgrades the bridge row to provenance/review context only.
+
 Accepted relation types:
 
 ```text
@@ -231,6 +233,7 @@ review_required
 
 Rules:
 
+- Every bridge row must carry or reference an upstream-feature coverage check: `not_in_upstream_features`, `residual_after_upstream_conditioning`, or `review_required_overlap_unknown`. Only the first two may be used for model/risk intervention scoring.
 - `pre_event_precursor`: abnormal activity appears before the linked event is publicly visible. This is latent-event hazard evidence, not proof that the future event was known.
 - `co_event_reaction`: abnormal activity appears at or near event visibility and measures immediate interpretation/attention.
 - `post_event_absorption`: abnormal activity after visibility reflects absorption, disagreement, delayed repricing, liquidity stress, or second-order interpretation.
