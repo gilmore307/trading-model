@@ -19,6 +19,7 @@ MODEL_LAYER_ORDER = (
     "layer_01_market_regime",
     "layer_02_sector_context",
     "layer_03_target_state_vector",
+    "layer_04_event_failure_risk",
     "layer_05_alpha_confidence",
     "layer_06_position_projection",
     "layer_07_underlying_action",
@@ -42,10 +43,10 @@ _LAYER_METADATA = {
         "expected_model_output": "target_context_state",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_03_target_state_vector/generate_model_03_target_state_vector.py",
     },
-    "layer_09_event_risk_governor": {
-        "model_id": "model_09_event_risk_governor",
-        "expected_model_output": "event_context_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py",
+    "layer_04_event_failure_risk": {
+        "model_id": "model_04_event_failure_risk",
+        "expected_model_output": "event_failure_risk_vector",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py",
     },
     "layer_05_alpha_confidence": {
         "model_id": "model_05_alpha_confidence",
@@ -66,6 +67,11 @@ _LAYER_METADATA = {
         "model_id": "model_08_option_expression",
         "expected_model_output": "option_expression_plan",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_08_option_expression/generate_model_08_option_expression.py",
+    },
+    "layer_09_event_risk_governor": {
+        "model_id": "model_09_event_risk_governor",
+        "expected_model_output": "event_context_vector",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py",
     },
 }
 

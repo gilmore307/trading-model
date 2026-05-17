@@ -19,6 +19,7 @@ from pathlib import Path
 from statistics import mean, pstdev
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
+from model_runtime.config import trading_data_root
 from models.model_09_event_risk_governor.event_price_association_readiness import (
     CPI_KEYWORDS,
     CandidateEvent,
@@ -34,7 +35,7 @@ from models.model_09_event_risk_governor.event_price_association_readiness impor
 )
 
 CONTRACT_TYPE = "cpi_inflation_association_readiness_v1"
-DEFAULT_DATA_ROOT = Path("/root/projects/trading-data")
+DEFAULT_DATA_ROOT = trading_data_root()
 DEFAULT_OUTPUT_DIR = Path("storage/cpi_inflation_association_readiness_20260516")
 DEFAULT_PRICE_SYMBOLS = ("TLT", "XLF", "XLK", "HYG", "XLE")
 DEFAULT_HORIZONS = (1, 5)

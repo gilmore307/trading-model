@@ -19,13 +19,14 @@ from statistics import mean
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 import glob
 
+from model_runtime.config import trading_data_root
 from models.model_09_event_risk_governor.event_family_empirical_coverage import FAMILY_KEYWORDS
 
 CONTRACT_TYPE = "event_family_all_association_v1"
 SUMMARY_CONTRACT_TYPE = "event_family_all_association_summary_v1"
 DEFAULT_COVERAGE_PATH = Path("storage/event_family_empirical_coverage_20260516/event_family_empirical_coverage.json")
 DEFAULT_OUTPUT_DIR = Path("storage/event_family_all_association_20260516")
-DEFAULT_TRADING_DATA_ROOT = Path("/root/projects/trading-data")
+DEFAULT_TRADING_DATA_ROOT = trading_data_root()
 DEFAULT_BAR_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill_v1/alpaca_bars"
 DEFAULT_SOURCE_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill_v1"
 DEFAULT_PROXY_SYMBOLS = ("SPY", "QQQ", "IWM", "XLF", "XLK", "XLE", "XLY", "XLP", "XLI", "XLB", "HYG", "LQD")

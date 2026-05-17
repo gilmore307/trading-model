@@ -11,7 +11,9 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
+from model_runtime.config import database_url_file
+
+DEFAULT_DB_URL_FILE = database_url_file()
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
@@ -45,9 +47,10 @@ def _load_psycopg():
 def _database_url(explicit: str | None) -> str:
     if explicit:
         return explicit
-    value = os.environ.get("OPENCLAW_DATABASE_URL", "").strip()
-    if value:
-        return value
+    for env_name in ("TRADING_MODEL_DATABASE_URL", "OPENCLAW_DATABASE_URL"):
+        value = os.environ.get(env_name, "").strip()
+        if value:
+            return value
     if DEFAULT_DB_URL_FILE.exists():
         return DEFAULT_DB_URL_FILE.read_text(encoding="utf-8").strip()
     raise SystemExit(f"database URL not supplied and {DEFAULT_DB_URL_FILE} does not exist")
@@ -93,7 +96,7 @@ def fetch_feature_rows(
         where.append("snapshot_time >= %s")
         params.append(source_start)
     if source_end:
-        where.append("snapshot_time <= %s")
+        where.append("snapshot_time < %s")
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
     cursor.execute(
@@ -126,7 +129,7 @@ def fetch_market_context_rows(
         where.append("available_time >= %s")
         params.append(source_start)
     if source_end:
-        where.append("available_time <= %s")
+        where.append("available_time < %s")
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
     cursor.execute(f"SELECT * FROM {_qualified(source_schema, source_table)}{where_sql} ORDER BY available_time ASC", params)

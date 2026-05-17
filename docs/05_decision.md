@@ -747,7 +747,7 @@ Status: Accepted
 
 Realtime execution inputs may enter `trading-model` through `execution_model_decision_input_snapshot` only after `trading-execution` has packaged capture refs into realtime feature/model-input envelopes with historical dataset snapshot refs and frozen model config refs.
 
-`trading-model` accepts `model_realtime_decision_route_plan` as the model-side route plan for fixture/shadow historical-model decision routing. The plan validates Layer 1-8 input coverage and maps each layer to its reviewed generator entrypoint, but it does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
+`trading-model` accepts `model_realtime_decision_route_plan` as the model-side route plan for fixture/shadow historical-model decision routing. The plan validates Layer 1-9 input coverage and maps each layer to its reviewed generator entrypoint, but it does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
 
 Production model activation, durable decision records, promotion approval, and execution authority remain manager/execution-owned gates, not implied by this handoff scaffold.
 

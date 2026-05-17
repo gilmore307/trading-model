@@ -21,9 +21,6 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-import psycopg
-from psycopg.rows import dict_row
-
 from model_governance.common.sql import database_url, quote_identifier
 from model_governance.promotion import build_model_config_ref, build_promotion_candidate_evidence
 from model_governance.promotion.agent_review import extract_json_object, validate_promotion_review, build_review_artifact_from_review
@@ -50,6 +47,15 @@ TEXT_MODEL_COLUMNS = {
 }
 
 
+def _load_psycopg():
+    try:
+        import psycopg  # type: ignore
+        from psycopg.rows import dict_row  # type: ignore
+    except ModuleNotFoundError as error:
+        raise SystemExit("psycopg is required for SQL production-substrate review; install psycopg[binary].") from error
+    return psycopg, dict_row
+
+
 def read_feature_rows(*, db_url: str, schema: str, table: str, start: str | None, end: str | None) -> list[dict[str, Any]]:
     clauses: list[str] = []
     params: list[str] = []
@@ -57,13 +63,14 @@ def read_feature_rows(*, db_url: str, schema: str, table: str, start: str | None
         clauses.append("available_time >= %s")
         params.append(start)
     if end:
-        clauses.append("available_time <= %s")
+        clauses.append("available_time < %s")
         params.append(end)
     where = " WHERE " + " AND ".join(clauses) if clauses else ""
     sql = (
         f"SELECT * FROM {quote_identifier(schema)}.{quote_identifier(table)}"
         f"{where} ORDER BY target_candidate_id, available_time"
     )
+    psycopg, dict_row = _load_psycopg()
     with psycopg.connect(db_url, row_factory=dict_row) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
@@ -116,6 +123,7 @@ def persist_model_rows(*, db_url: str, schema: str, table: str, rows: Sequence[M
         tuple(json.dumps(row.get(column), sort_keys=True, default=str) if column in JSON_MODEL_COLUMNS else row.get(column) for column in columns)
         for row in rows
     ]
+    psycopg, _dict_row = _load_psycopg()
     with psycopg.connect(db_url) as conn:
         with conn.cursor() as cur:
             cur.execute(f"CREATE SCHEMA IF NOT EXISTS {quote_identifier(schema)}")

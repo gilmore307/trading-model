@@ -11,11 +11,19 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LAYERS = {
     "model_04_event_failure_risk": "event_failure_risk",
-    "model_09_event_risk_governor": "event_risk_governor",
     "model_05_alpha_confidence": "alpha_confidence",
     "model_06_position_projection": "position_projection",
     "model_07_underlying_action": "underlying_action",
     "model_08_option_expression": "option_expression",
+    "model_09_event_risk_governor": "event_risk_governor",
+}
+LAYER_NUMBERS = {
+    "model_04_event_failure_risk": 4,
+    "model_05_alpha_confidence": 5,
+    "model_06_position_projection": 6,
+    "model_07_underlying_action": 7,
+    "model_08_option_expression": 8,
+    "model_09_event_risk_governor": 9,
 }
 
 
@@ -70,6 +78,7 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
                     self.assertEqual(evaluate.returncode, 0, evaluate.stderr)
                     evaluation = json.loads(eval_path.read_text(encoding="utf-8"))
                     self.assertEqual(evaluation["summary"]["model_surface"], surface)
+                    self.assertEqual(evaluation["summary"]["layer_number"], LAYER_NUMBERS[surface])
                     self.assertEqual(evaluation["summary"]["label_row_count"], 1)
                     self.assertTrue(evaluation["summary"]["leakage_check_passed"])
                     self.assertIn("fixture_or_local_evidence_must_defer", evaluation["summary"]["reason_codes"])

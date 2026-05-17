@@ -49,6 +49,12 @@ tests/       First-party unit tests and CLI smoke checks using local rows/fake c
 
 `src/` owns reusable model logic. `scripts/` may import `src/`; `src/` must not import `scripts/`.
 
+## Runtime Configuration
+
+Install Python dependencies from `requirements.txt`. SQL-backed governance/generation paths require `psycopg[binary]`; pure fixture/local tests do not import it eagerly.
+
+Runtime path defaults preserve the OpenClaw `/root/projects` layout but can be overridden for downloaded copies or CI with `TRADING_MODEL_ROOT`, `TRADING_DATA_ROOT`, `TRADING_MANAGER_ROOT`, `TRADING_STORAGE_ROOT`, `TRADING_PROJECTS_ROOT`, `TRADING_SECRET_ROOT`, `TRADING_MODEL_DATABASE_URL`, and `TRADING_MODEL_DATABASE_URL_FILE`.
+
 ## Implementation Packages
 
 ```text

@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from model_runtime.config import trading_data_root
+
 
 @dataclass(frozen=True)
 class PriorOfficialDocumentCoverageInputs:
@@ -45,7 +47,7 @@ def _resolve_text_path(metadata_path: Path, document_text_path: str) -> Path:
     if candidate.is_absolute() and candidate.exists():
         return candidate
     # First resolve relative to trading-data repo root when paths begin with storage/.
-    repo_root = Path("/root/projects/trading-data")
+    repo_root = trading_data_root()
     repo_candidate = repo_root / candidate
     if "[truncated]" not in document_text_path and repo_candidate.exists():
         return repo_candidate

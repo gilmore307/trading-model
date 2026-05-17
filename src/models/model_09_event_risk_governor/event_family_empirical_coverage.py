@@ -17,11 +17,13 @@ from typing import Any, Iterable, Mapping, Sequence, TextIO
 import glob
 import re
 
+from model_runtime.config import trading_data_root
+
 CONTRACT_TYPE = "event_family_empirical_coverage_v1"
 SUMMARY_CONTRACT_TYPE = "event_family_empirical_coverage_summary_v1"
 DEFAULT_PRECONDITION_PATH = Path("storage/event_family_precondition_completion_20260516/event_family_precondition_completion.json")
 DEFAULT_OUTPUT_DIR = Path("storage/event_family_empirical_coverage_20260516")
-DEFAULT_TRADING_DATA_ROOT = Path("/root/projects/trading-data")
+DEFAULT_TRADING_DATA_ROOT = trading_data_root()
 
 EXISTING_EMPIRICAL_ARTIFACTS: dict[str, tuple[str, ...]] = {
     "earnings_guidance_scheduled_shell": ("storage/earnings_guidance_event_alone_q4_2025_20260515/report.json",),

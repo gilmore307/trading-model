@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from event_family_fixtures import build_event_family_fixture
+
 from models.model_09_event_risk_governor.event_family_empirical_coverage import (
     build_event_family_empirical_coverage,
     write_empirical_coverage_artifacts,
@@ -12,8 +14,15 @@ from models.model_09_event_risk_governor.event_family_empirical_coverage import 
 
 
 class EventFamilyEmpiricalCoverageTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.fixture = build_event_family_fixture(Path(self._tmp.name))
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
     def test_builds_coverage_for_every_family_and_preserves_safety(self) -> None:
-        coverage = build_event_family_empirical_coverage(generated_at_utc="2026-05-17T02:00:00+00:00")
+        coverage = build_event_family_empirical_coverage(precondition_path=self.fixture.precondition_path, trading_data_root=self.fixture.trading_data_root, model_root=self.fixture.model_root, generated_at_utc="2026-05-17T02:00:00+00:00")
         payload = coverage.to_dict()
 
         self.assertEqual(payload["contract_type"], "event_family_empirical_coverage_v1")
@@ -30,7 +39,7 @@ class EventFamilyEmpiricalCoverageTests(unittest.TestCase):
         )
 
     def test_expected_family_statuses_are_conservative(self) -> None:
-        coverage = build_event_family_empirical_coverage(generated_at_utc="2026-05-17T02:00:00+00:00")
+        coverage = build_event_family_empirical_coverage(precondition_path=self.fixture.precondition_path, trading_data_root=self.fixture.trading_data_root, model_root=self.fixture.model_root, generated_at_utc="2026-05-17T02:00:00+00:00")
         by_family = {row.family_key: row for row in coverage.family_rows}
 
         self.assertEqual(
@@ -48,7 +57,7 @@ class EventFamilyEmpiricalCoverageTests(unittest.TestCase):
         )
 
     def test_local_macro_candidate_detection_finds_nfp_or_cpi_rows(self) -> None:
-        coverage = build_event_family_empirical_coverage(generated_at_utc="2026-05-17T02:00:00+00:00")
+        coverage = build_event_family_empirical_coverage(precondition_path=self.fixture.precondition_path, trading_data_root=self.fixture.trading_data_root, model_root=self.fixture.model_root, generated_at_utc="2026-05-17T02:00:00+00:00")
         by_family = {row.family_key: row for row in coverage.family_rows}
 
         self.assertGreater(by_family["nfp_employment_release"].local_candidate_count, 0)
@@ -57,7 +66,7 @@ class EventFamilyEmpiricalCoverageTests(unittest.TestCase):
     def test_writes_expected_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:
             output_dir = Path(raw_tmp) / "coverage"
-            coverage = build_event_family_empirical_coverage(generated_at_utc="2026-05-17T02:00:00+00:00")
+            coverage = build_event_family_empirical_coverage(precondition_path=self.fixture.precondition_path, trading_data_root=self.fixture.trading_data_root, model_root=self.fixture.model_root, generated_at_utc="2026-05-17T02:00:00+00:00")
             write_empirical_coverage_artifacts(coverage, output_dir)
 
             payload_path = output_dir / "event_family_empirical_coverage.json"

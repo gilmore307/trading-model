@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,7 @@ def _decision_input_snapshot() -> dict[str, object]:
         ("layer_01_market_regime", "model_01_market_regime", "market_context_state"),
         ("layer_02_sector_context", "model_02_sector_context", "sector_context_state"),
         ("layer_03_target_state_vector", "model_03_target_state_vector", "target_context_state"),
+        ("layer_04_event_failure_risk", "model_04_event_failure_risk", "event_failure_risk_vector"),
         ("layer_05_alpha_confidence", "model_05_alpha_confidence", "alpha_confidence_vector"),
         ("layer_06_position_projection", "model_06_position_projection", "position_projection_vector"),
         ("layer_07_underlying_action", "model_07_underlying_action", "underlying_action_plan"),
@@ -68,13 +70,16 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
 
         self.assertEqual(plan["contract_type"], "model_realtime_decision_route_plan")
         self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_historical_model_decision_route")
-        self.assertEqual(len(plan["layer_routes"]), 8)
+        self.assertEqual(len(plan["layer_routes"]), 9)
         self.assertEqual(plan["provider_calls_performed"], 0)
         self.assertFalse(plan["model_activation_performed"])
         self.assertFalse(plan["broker_order_construction_performed"])
-        layer_7 = plan["layer_routes"][6]
-        self.assertEqual(layer_7["model_layer"], "layer_08_option_expression")
-        self.assertIn("generate_model_08_option_expression.py", layer_7["generator_entrypoint_ref"])
+        layer_4 = plan["layer_routes"][3]
+        self.assertEqual(layer_4["model_layer"], "layer_04_event_failure_risk")
+        self.assertIn("generate_model_04_event_failure_risk.py", layer_4["generator_entrypoint_ref"])
+        layer_8 = plan["layer_routes"][7]
+        self.assertEqual(layer_8["model_layer"], "layer_08_option_expression")
+        self.assertIn("generate_model_08_option_expression.py", layer_8["generator_entrypoint_ref"])
         self.assertEqual(plan["layer_routes"][-1]["model_layer"], "layer_09_event_risk_governor")
         validation = validate_realtime_decision_route_plan(plan)
         self.assertTrue(validation["valid"])
@@ -97,8 +102,8 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
             plan_result = subprocess.run(
                 [sys.executable, "scripts/models/plan_realtime_decision_handoff.py", str(input_path)],
                 check=True,
-                cwd="/root/projects/trading-model",
-                env={"PYTHONPATH": "src"},
+                cwd=Path(__file__).resolve().parents[1],
+                env={**os.environ, "PYTHONPATH": "src"},
                 text=True,
                 capture_output=True,
             )
@@ -109,8 +114,8 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
             validate_result = subprocess.run(
                 [sys.executable, "scripts/models/validate_realtime_decision_handoff.py", str(plan_path)],
                 check=True,
-                cwd="/root/projects/trading-model",
-                env={"PYTHONPATH": "src"},
+                cwd=Path(__file__).resolve().parents[1],
+                env={**os.environ, "PYTHONPATH": "src"},
                 text=True,
                 capture_output=True,
             )

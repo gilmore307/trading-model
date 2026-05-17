@@ -12,8 +12,6 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from psycopg.types.json import Jsonb
-
 from model_governance.common.sql import DEFAULT_SCHEMA, database_url, qualified, quote_identifier
 from model_governance.schema import ensure_model_governance_schema
 
@@ -254,6 +252,10 @@ def _json_payload(value: Any) -> dict[str, Any]:
 
 def _sql_value(column: str, value: Any) -> Any:
     if column in JSON_COLUMNS:
+        try:
+            from psycopg.types.json import Jsonb  # type: ignore
+        except ModuleNotFoundError as error:  # pragma: no cover - exercised only without DB dependency installed
+            raise SystemExit("psycopg is required for SQL persistence; install psycopg[binary].") from error
         return Jsonb(_json_payload(value))
     return value
 

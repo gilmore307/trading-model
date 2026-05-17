@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from event_family_fixtures import build_event_family_fixture
+
 from models.model_09_event_risk_governor.event_layer_final_judgment import (
     build_event_layer_final_judgment,
     write_event_layer_final_judgment_artifacts,
@@ -12,8 +14,15 @@ from models.model_09_event_risk_governor.event_layer_final_judgment import (
 
 
 class EventLayerFinalJudgmentTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.fixture = build_event_family_fixture(Path(self._tmp.name))
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
     def test_final_posture_rejects_standalone_event_alpha(self) -> None:
-        judgment = build_event_layer_final_judgment(generated_at_utc="2026-05-17T02:00:00+00:00")
+        judgment = build_event_layer_final_judgment(coverage_path=self.fixture.coverage_path, model_root=self.fixture.model_root, generated_at_utc="2026-05-17T02:00:00+00:00")
         payload = judgment.to_dict()
 
         self.assertEqual(payload["contract_type"], "event_layer_final_judgment_v1")
@@ -28,7 +37,7 @@ class EventLayerFinalJudgmentTests(unittest.TestCase):
         self.assertFalse(payload["artifact_deletion_performed"])
 
     def test_family_dispositions_cover_all_families(self) -> None:
-        judgment = build_event_layer_final_judgment(generated_at_utc="2026-05-17T02:00:00+00:00")
+        judgment = build_event_layer_final_judgment(coverage_path=self.fixture.coverage_path, model_root=self.fixture.model_root, generated_at_utc="2026-05-17T02:00:00+00:00")
         by_family = {row.family_key: row for row in judgment.family_dispositions}
 
         self.assertEqual(len(by_family), 29)
@@ -50,7 +59,7 @@ class EventLayerFinalJudgmentTests(unittest.TestCase):
         )
 
     def test_allowed_and_prohibited_outputs_are_explicit(self) -> None:
-        judgment = build_event_layer_final_judgment(generated_at_utc="2026-05-17T02:00:00+00:00")
+        judgment = build_event_layer_final_judgment(coverage_path=self.fixture.coverage_path, model_root=self.fixture.model_root, generated_at_utc="2026-05-17T02:00:00+00:00")
 
         self.assertIn("event_risk_score_or_bucket", judgment.allowed_outputs)
         self.assertIn("human_review_required_flag", judgment.allowed_outputs)
@@ -61,7 +70,7 @@ class EventLayerFinalJudgmentTests(unittest.TestCase):
     def test_writes_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:
             output_dir = Path(raw_tmp) / "judgment"
-            judgment = build_event_layer_final_judgment(generated_at_utc="2026-05-17T02:00:00+00:00")
+            judgment = build_event_layer_final_judgment(coverage_path=self.fixture.coverage_path, model_root=self.fixture.model_root, generated_at_utc="2026-05-17T02:00:00+00:00")
             write_event_layer_final_judgment_artifacts(judgment, output_dir)
 
             payload_path = output_dir / "event_layer_final_judgment.json"

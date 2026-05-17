@@ -22,7 +22,7 @@ REQUIRED_PROMOTION_EVIDENCE_FIELDS = (
 LAYER_PROMOTION_READINESS_MATRIX = (
     {
         "layer": 1,
-        "model_id": "market_regime_model",
+        "model_id": "model_01_market_regime",
         "output": "market_context_state",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_after_real_evaluation",
@@ -30,7 +30,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
     },
     {
         "layer": 2,
-        "model_id": "sector_context_model",
+        "model_id": "model_02_sector_context",
         "output": "sector_context_state",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_after_real_evaluation",
@@ -38,7 +38,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
     },
     {
         "layer": 3,
-        "model_id": "target_state_vector_model",
+        "model_id": "model_03_target_state_vector",
         "output": "target_context_state",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_after_real_evaluation",
@@ -46,15 +46,15 @@ LAYER_PROMOTION_READINESS_MATRIX = (
     },
     {
         "layer": 4,
-        "model_id": "event_risk_governor",
-        "output": "event_context_vector",
+        "model_id": "model_04_event_failure_risk",
+        "output": "event_failure_risk_vector",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
-        "blocking_gap": "no production event-overlay evaluation run or calibrated labels exist",
+        "blocking_gap": "no production EventFailureRiskModel evaluation substrate or reviewed strategy-failure conditioning labels exist",
     },
     {
         "layer": 5,
-        "model_id": "alpha_confidence_model",
+        "model_id": "model_05_alpha_confidence",
         "output": "alpha_confidence_vector",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
@@ -62,7 +62,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
     },
     {
         "layer": 6,
-        "model_id": "position_projection_model",
+        "model_id": "model_06_position_projection",
         "output": "position_projection_vector",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
@@ -70,7 +70,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
     },
     {
         "layer": 7,
-        "model_id": "underlying_action_model",
+        "model_id": "model_07_underlying_action",
         "output": "underlying_action_plan",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
@@ -78,11 +78,19 @@ LAYER_PROMOTION_READINESS_MATRIX = (
     },
     {
         "layer": 8,
-        "model_id": "option_expression_model",
+        "model_id": "model_08_option_expression",
         "output": "option_expression_plan",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_no_production_eval_substrate",
         "blocking_gap": "no production option-chain replay evaluation run exists",
+    },
+    {
+        "layer": 9,
+        "model_id": "model_09_event_risk_governor",
+        "output": "event_context_vector",
+        "design_status": "design_closed",
+        "production_promotion_status": "deferred_no_production_eval_substrate",
+        "blocking_gap": "no production residual-event-governor evaluation run or calibrated labels exist",
     },
 )
 

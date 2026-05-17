@@ -25,11 +25,13 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
+from model_runtime.config import database_url_file, trading_data_root, trading_storage_root
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
-DEFAULT_TRADING_DATA_SRC = Path("/root/projects/trading-data/src")
-DEFAULT_UNIVERSE_CSV = Path("/root/projects/trading-storage/main/shared/layer_01_02_market_context_etf_universe.csv")
-DEFAULT_COMBINATIONS_CSV = Path("/root/projects/trading-storage/main/shared/layer_01_02_market_context_relative_strength_combinations.csv")
+DEFAULT_DB_URL_FILE = database_url_file()
+DEFAULT_TRADING_DATA_SRC = trading_data_root() / "src"
+DEFAULT_UNIVERSE_CSV = trading_storage_root() / "main/shared/layer_01_02_market_context_etf_universe.csv"
+DEFAULT_COMBINATIONS_CSV = trading_storage_root() / "main/shared/layer_01_02_market_context_relative_strength_combinations.csv"
 ET = ZoneInfo("America/New_York")
 
 SOURCE_SCHEMA = "trading_data"
@@ -45,9 +47,10 @@ DIAGNOSTICS_TABLE = "model_01_market_regime_diagnostics"
 def _database_url(explicit: str | None) -> str:
     if explicit:
         return explicit
-    value = os.environ.get("OPENCLAW_DATABASE_URL", "").strip()
-    if value:
-        return value
+    for env_name in ("TRADING_MODEL_DATABASE_URL", "OPENCLAW_DATABASE_URL"):
+        value = os.environ.get(env_name, "").strip()
+        if value:
+            return value
     if DEFAULT_DB_URL_FILE.exists():
         return DEFAULT_DB_URL_FILE.read_text(encoding="utf-8").strip()
     raise SystemExit(f"database URL not supplied and {DEFAULT_DB_URL_FILE} does not exist")

@@ -8,17 +8,20 @@ import subprocess
 import sys
 from pathlib import Path
 
+from model_runtime.config import database_url_file
+
 from model_governance.schema import DEFAULT_SCHEMA, TABLE_NAMES, create_governance_schema_sql
 
-DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
+DEFAULT_DB_URL_FILE = database_url_file()
 
 
 def _database_url(explicit: str | None) -> str:
     if explicit:
         return explicit
-    value = os.environ.get("OPENCLAW_DATABASE_URL", "").strip()
-    if value:
-        return value
+    for env_name in ("TRADING_MODEL_DATABASE_URL", "OPENCLAW_DATABASE_URL"):
+        value = os.environ.get(env_name, "").strip()
+        if value:
+            return value
     if DEFAULT_DB_URL_FILE.exists():
         return DEFAULT_DB_URL_FILE.read_text(encoding="utf-8").strip()
     raise SystemExit(f"database URL not supplied and {DEFAULT_DB_URL_FILE} does not exist")

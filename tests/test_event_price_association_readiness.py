@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from event_family_fixtures import build_event_family_fixture
+
 from models.model_09_event_risk_governor.event_price_association_readiness import (
     build_event_price_association_readiness_batch,
     write_batch_artifacts,
@@ -12,8 +14,15 @@ from models.model_09_event_risk_governor.event_price_association_readiness impor
 
 
 class EventPriceAssociationReadinessTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.fixture = build_event_family_fixture(Path(self._tmp.name))
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
     def test_default_batch_preserves_non_mutating_boundary(self) -> None:
-        batch = build_event_price_association_readiness_batch(generated_at_utc="2026-05-16T12:00:00+00:00")
+        batch = build_event_price_association_readiness_batch(catalog_path=self.fixture.catalog_path, data_root=self.fixture.trading_data_root, generated_at_utc="2026-05-16T12:00:00+00:00")
         payload = batch.to_dict()
 
         self.assertEqual(payload["contract_type"], "event_price_association_readiness_batch_v1")
@@ -30,7 +39,7 @@ class EventPriceAssociationReadinessTests(unittest.TestCase):
         ])
 
     def test_cpi_family_has_local_candidates_and_price_labels_but_stays_underpowered(self) -> None:
-        batch = build_event_price_association_readiness_batch(generated_at_utc="2026-05-16T12:00:00+00:00")
+        batch = build_event_price_association_readiness_batch(catalog_path=self.fixture.catalog_path, data_root=self.fixture.trading_data_root, generated_at_utc="2026-05-16T12:00:00+00:00")
         by_family = {row.family_key: row for row in batch.family_readiness}
 
         self.assertGreater(by_family["cpi_inflation_release"].candidate_event_count, 0)
@@ -42,7 +51,7 @@ class EventPriceAssociationReadinessTests(unittest.TestCase):
         self.assertIn("single_month_only", by_family["cpi_inflation_release"].blocker_codes)
 
     def test_blocked_families_do_not_claim_association(self) -> None:
-        batch = build_event_price_association_readiness_batch(generated_at_utc="2026-05-16T12:00:00+00:00")
+        batch = build_event_price_association_readiness_batch(catalog_path=self.fixture.catalog_path, data_root=self.fixture.trading_data_root, generated_at_utc="2026-05-16T12:00:00+00:00")
         by_family = {row.family_key: row for row in batch.family_readiness}
 
         self.assertEqual(by_family["equity_offering_dilution"].association_study_status, "blocked_missing_offering_terms_parser")
@@ -58,7 +67,7 @@ class EventPriceAssociationReadinessTests(unittest.TestCase):
     def test_writes_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:
             output_dir = Path(raw_tmp) / "association"
-            batch = build_event_price_association_readiness_batch(generated_at_utc="2026-05-16T12:00:00+00:00")
+            batch = build_event_price_association_readiness_batch(catalog_path=self.fixture.catalog_path, data_root=self.fixture.trading_data_root, generated_at_utc="2026-05-16T12:00:00+00:00")
             write_batch_artifacts(batch, output_dir)
 
             batch_path = output_dir / "event_price_association_batch.json"

@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from event_family_fixtures import build_event_family_fixture
+
 from models.model_09_event_risk_governor.event_family_precondition_completion import (
     build_event_family_precondition_completion,
     write_precondition_artifacts,
@@ -12,8 +14,15 @@ from models.model_09_event_risk_governor.event_family_precondition_completion im
 
 
 class EventFamilyPreconditionCompletionTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.fixture = build_event_family_fixture(Path(self._tmp.name))
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
     def test_builds_packet_for_every_family_and_preserves_safety(self) -> None:
-        completion = build_event_family_precondition_completion(generated_at_utc="2026-05-16T22:00:00+00:00")
+        completion = build_event_family_precondition_completion(catalog_path=self.fixture.catalog_path, acceptance_path=self.fixture.remaining_acceptance_path, generated_at_utc="2026-05-16T22:00:00+00:00")
         payload = completion.to_dict()
 
         self.assertEqual(payload["contract_type"], "event_family_precondition_completion_v1")
@@ -28,7 +37,7 @@ class EventFamilyPreconditionCompletionTests(unittest.TestCase):
         self.assertFalse(payload["artifact_deletion_performed"])
 
     def test_packets_fill_missing_packet_blocker_but_keep_empirical_gates(self) -> None:
-        completion = build_event_family_precondition_completion(generated_at_utc="2026-05-16T22:00:00+00:00")
+        completion = build_event_family_precondition_completion(catalog_path=self.fixture.catalog_path, acceptance_path=self.fixture.remaining_acceptance_path, generated_at_utc="2026-05-16T22:00:00+00:00")
         for packet in completion.packets:
             self.assertNotIn("missing_family_packet", packet.remaining_blocker_codes)
             self.assertIn("empirical_association_study_required", packet.remaining_blocker_codes)
@@ -38,7 +47,7 @@ class EventFamilyPreconditionCompletionTests(unittest.TestCase):
             self.assertTrue(packet.matched_control_design)
 
     def test_special_evidence_gates_are_explicit(self) -> None:
-        completion = build_event_family_precondition_completion(generated_at_utc="2026-05-16T22:00:00+00:00")
+        completion = build_event_family_precondition_completion(catalog_path=self.fixture.catalog_path, acceptance_path=self.fixture.remaining_acceptance_path, generated_at_utc="2026-05-16T22:00:00+00:00")
         by_family = {packet.family_key: packet for packet in completion.packets}
 
         self.assertIn("fuller_te_expectation_history_required", by_family["cpi_inflation_release"].remaining_blocker_codes)
@@ -50,7 +59,7 @@ class EventFamilyPreconditionCompletionTests(unittest.TestCase):
     def test_writes_expected_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:
             output_dir = Path(raw_tmp) / "preconditions"
-            completion = build_event_family_precondition_completion(generated_at_utc="2026-05-16T22:00:00+00:00")
+            completion = build_event_family_precondition_completion(catalog_path=self.fixture.catalog_path, acceptance_path=self.fixture.remaining_acceptance_path, generated_at_utc="2026-05-16T22:00:00+00:00")
             write_precondition_artifacts(completion, output_dir)
 
             payload_path = output_dir / "event_family_precondition_completion.json"

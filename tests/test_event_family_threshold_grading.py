@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from event_family_fixtures import build_event_family_fixture
+
 from models.model_09_event_risk_governor.event_family_threshold_grading import (
     build_event_family_threshold_grading,
     write_event_family_threshold_grading_artifacts,
@@ -12,8 +14,15 @@ from models.model_09_event_risk_governor.event_family_threshold_grading import (
 
 
 class EventFamilyThresholdGradingTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.fixture = build_event_family_fixture(Path(self._tmp.name))
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
     def test_deletes_no_clear_families_from_threshold_queue_only(self) -> None:
-        grading = build_event_family_threshold_grading(generated_at_utc="2026-05-17T03:00:00+00:00")
+        grading = build_event_family_threshold_grading(association_dir=self.fixture.association_dir, generated_at_utc="2026-05-17T03:00:00+00:00")
         by_family = {row.family_key: row for row in grading.family_rows}
 
         self.assertTrue(by_family["mna_transaction"].delete_from_threshold_queue)
@@ -23,7 +32,7 @@ class EventFamilyThresholdGradingTests(unittest.TestCase):
         self.assertFalse(by_family["earnings_call_narrative_residual"].delete_from_threshold_queue)
 
     def test_summary_active_and_deleted_sets(self) -> None:
-        grading = build_event_family_threshold_grading(generated_at_utc="2026-05-17T03:00:00+00:00")
+        grading = build_event_family_threshold_grading(association_dir=self.fixture.association_dir, generated_at_utc="2026-05-17T03:00:00+00:00")
         summary = grading.summary
 
         self.assertIn("cpi_inflation_release", summary["active_threshold_universe"])
@@ -37,7 +46,7 @@ class EventFamilyThresholdGradingTests(unittest.TestCase):
     def test_writes_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:
             output_dir = Path(raw_tmp) / "grading"
-            grading = build_event_family_threshold_grading(generated_at_utc="2026-05-17T03:00:00+00:00")
+            grading = build_event_family_threshold_grading(association_dir=self.fixture.association_dir, generated_at_utc="2026-05-17T03:00:00+00:00")
             write_event_family_threshold_grading_artifacts(grading, output_dir)
 
             payload_path = output_dir / "event_family_threshold_grading.json"

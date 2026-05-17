@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from event_family_fixtures import build_event_family_fixture
+
 from models.model_09_event_risk_governor.residual_anomaly_event_discovery import (
     build_residual_anomaly_event_discovery,
     write_residual_anomaly_event_discovery_artifacts,
@@ -12,8 +14,15 @@ from models.model_09_event_risk_governor.residual_anomaly_event_discovery import
 
 
 class ResidualAnomalyEventDiscoveryTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.fixture = build_event_family_fixture(Path(self._tmp.name))
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
     def test_builds_from_layer_seven_evaluation_labels_with_safety_flags(self) -> None:
-        discovery = build_residual_anomaly_event_discovery(generated_at_utc="2026-05-17T03:30:00+00:00")
+        discovery = build_residual_anomaly_event_discovery(runtime_root=self.fixture.runtime_root, source_root=self.fixture.source_root, generated_at_utc="2026-05-17T03:30:00+00:00")
         payload = discovery.to_dict()
 
         self.assertEqual(payload["contract_type"], "residual_anomaly_event_discovery_v1")
@@ -29,7 +38,7 @@ class ResidualAnomalyEventDiscoveryTests(unittest.TestCase):
         self.assertFalse(payload["artifact_deletion_performed"])
 
     def test_current_fixture_does_not_auto_promote_without_controls(self) -> None:
-        discovery = build_residual_anomaly_event_discovery(generated_at_utc="2026-05-17T03:30:00+00:00")
+        discovery = build_residual_anomaly_event_discovery(runtime_root=self.fixture.runtime_root, source_root=self.fixture.source_root, generated_at_utc="2026-05-17T03:30:00+00:00")
 
         self.assertEqual(discovery.summary["control_label_status"], "missing_non_residual_control_labels")
         self.assertEqual(discovery.summary["strategy_promotion_review_candidates"], [])
@@ -41,7 +50,7 @@ class ResidualAnomalyEventDiscoveryTests(unittest.TestCase):
     def test_writes_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:
             output_dir = Path(raw_tmp) / "residual"
-            discovery = build_residual_anomaly_event_discovery(generated_at_utc="2026-05-17T03:30:00+00:00")
+            discovery = build_residual_anomaly_event_discovery(runtime_root=self.fixture.runtime_root, source_root=self.fixture.source_root, generated_at_utc="2026-05-17T03:30:00+00:00")
             write_residual_anomaly_event_discovery_artifacts(discovery, output_dir)
 
             payload_path = output_dir / "residual_anomaly_event_discovery.json"

@@ -9,12 +9,15 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+
 from zoneinfo import ZoneInfo
+
+from model_runtime.config import database_url_file
 
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
 from models.model_04_event_failure_risk import MODEL_ID, MODEL_SURFACE, MODEL_VERSION, generate_rows
 
-DEFAULT_DB_URL_FILE = Path("/root/secrets/openclaw/database-url")
+DEFAULT_DB_URL_FILE = database_url_file()
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 ET = ZoneInfo("America/New_York")
@@ -25,9 +28,10 @@ PRIMARY_KEY = ("event_failure_risk_vector_ref",)
 def _database_url(explicit: str | None) -> str:
     if explicit:
         return explicit
-    value = os.environ.get("OPENCLAW_DATABASE_URL", "").strip()
-    if value:
-        return value
+    for env_name in ("TRADING_MODEL_DATABASE_URL", "OPENCLAW_DATABASE_URL"):
+        value = os.environ.get(env_name, "").strip()
+        if value:
+            return value
     if DEFAULT_DB_URL_FILE.exists():
         return DEFAULT_DB_URL_FILE.read_text(encoding="utf-8").strip()
     raise SystemExit(f"database URL not supplied and {DEFAULT_DB_URL_FILE} does not exist")

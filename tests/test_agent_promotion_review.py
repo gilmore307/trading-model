@@ -141,6 +141,14 @@ class AgentPromotionReviewTests(unittest.TestCase):
         self.assertEqual(review["decision_status"], "deferred")
         self.assertFalse(review["evidence_checks"]["production_evaluation_substrate_present"])
 
+    def test_layers_03_08_acceptance_uses_current_base_layer_map(self) -> None:
+        by_layer = {item["layer"]: item for item in layers_03_08_review_script.LAYER_ACCEPTANCES}
+
+        self.assertEqual(sorted(by_layer), list(range(3, 9)))
+        self.assertEqual(by_layer[4]["model_id"], "model_04_event_failure_risk")
+        self.assertEqual(by_layer[4]["model_name"], "EventFailureRiskModel")
+        self.assertNotIn("model_09_event_risk_governor", {item["model_id"] for item in by_layer.values()})
+
     def test_layers_03_08_dry_run_builds_blocked_artifacts_without_agent(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         result = subprocess.run(

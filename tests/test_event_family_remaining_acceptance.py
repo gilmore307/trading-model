@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from event_family_fixtures import build_event_family_fixture
+
 from models.model_09_event_risk_governor.event_family_remaining_acceptance import (
     build_event_family_remaining_acceptance,
     write_acceptance_artifacts,
@@ -12,8 +14,15 @@ from models.model_09_event_risk_governor.event_family_remaining_acceptance impor
 
 
 class EventFamilyRemainingAcceptanceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.fixture = build_event_family_fixture(Path(self._tmp.name))
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
     def test_acceptance_accounts_for_all_catalog_families_and_preserves_safety(self) -> None:
-        batch = build_event_family_remaining_acceptance(generated_at_utc="2026-05-16T16:00:00+00:00")
+        batch = build_event_family_remaining_acceptance(catalog_path=self.fixture.catalog_path, generated_at_utc="2026-05-16T16:00:00+00:00")
         payload = batch.to_dict()
 
         self.assertEqual(payload["contract_type"], "event_family_remaining_acceptance_v1")
@@ -25,12 +34,12 @@ class EventFamilyRemainingAcceptanceTests(unittest.TestCase):
         self.assertFalse(payload["artifact_deletion_performed"])
 
     def test_no_family_is_promoted_to_directional_alpha(self) -> None:
-        batch = build_event_family_remaining_acceptance(generated_at_utc="2026-05-16T16:00:00+00:00")
+        batch = build_event_family_remaining_acceptance(catalog_path=self.fixture.catalog_path, generated_at_utc="2026-05-16T16:00:00+00:00")
         for row in batch.family_rows:
             self.assertTrue(row.alpha_promotion_status.startswith("alpha_blocked") or row.alpha_promotion_status == "alpha_not_applicable_execution_risk_family")
 
     def test_cpi_and_option_dispositions_are_conservative(self) -> None:
-        batch = build_event_family_remaining_acceptance(generated_at_utc="2026-05-16T16:00:00+00:00")
+        batch = build_event_family_remaining_acceptance(catalog_path=self.fixture.catalog_path, generated_at_utc="2026-05-16T16:00:00+00:00")
         by_family = {row.family_key: row for row in batch.family_rows}
 
         cpi = by_family["cpi_inflation_release"]
@@ -45,7 +54,7 @@ class EventFamilyRemainingAcceptanceTests(unittest.TestCase):
     def test_writes_expected_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:
             output_dir = Path(raw_tmp) / "acceptance"
-            batch = build_event_family_remaining_acceptance(generated_at_utc="2026-05-16T16:00:00+00:00")
+            batch = build_event_family_remaining_acceptance(catalog_path=self.fixture.catalog_path, generated_at_utc="2026-05-16T16:00:00+00:00")
             write_acceptance_artifacts(batch, output_dir)
 
             payload_path = output_dir / "event_family_remaining_acceptance.json"

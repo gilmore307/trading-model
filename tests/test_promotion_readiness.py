@@ -10,10 +10,15 @@ from model_governance.promotion import (
 
 
 class PromotionReadinessTests(unittest.TestCase):
-    def test_readiness_matrix_covers_layers_one_through_eight(self) -> None:
+    def test_readiness_matrix_covers_current_layers_one_through_nine(self) -> None:
         layers = [row["layer"] for row in LAYER_PROMOTION_READINESS_MATRIX]
+        by_layer = {row["layer"]: row for row in LAYER_PROMOTION_READINESS_MATRIX}
 
-        self.assertEqual(layers, list(range(1, 9)))
+        self.assertEqual(layers, list(range(1, 10)))
+        self.assertEqual(by_layer[4]["model_id"], "model_04_event_failure_risk")
+        self.assertEqual(by_layer[4]["output"], "event_failure_risk_vector")
+        self.assertEqual(by_layer[9]["model_id"], "model_09_event_risk_governor")
+        self.assertEqual(by_layer[9]["output"], "event_context_vector")
         self.assertTrue(all(row["design_status"] == "design_closed" for row in LAYER_PROMOTION_READINESS_MATRIX))
         statuses = {row["production_promotion_status"] for row in LAYER_PROMOTION_READINESS_MATRIX}
         self.assertNotIn("production_approved", statuses)

@@ -19,11 +19,12 @@ from pathlib import Path
 from statistics import mean, pstdev
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
+from model_runtime.config import trading_data_root
 from models.model_09_event_risk_governor.event_family_empirical_coverage import FAMILY_KEYWORDS
 
 CONTRACT_TYPE = "price_anomaly_event_discovery_v1"
 SUMMARY_CONTRACT_TYPE = "price_anomaly_event_discovery_summary_v1"
-DEFAULT_TRADING_DATA_ROOT = Path("/root/projects/trading-data")
+DEFAULT_TRADING_DATA_ROOT = trading_data_root()
 DEFAULT_BAR_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill_v1/alpaca_bars"
 DEFAULT_SOURCE_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill_v1"
 DEFAULT_OUTPUT_DIR = Path("storage/price_anomaly_event_discovery_20260516")
