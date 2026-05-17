@@ -1,0 +1,23 @@
+{
+  "account_mutation_performed": false,
+  "artifact_deletion_performed": false,
+  "broker_execution_performed": false,
+  "contract_type": "residual_anomaly_event_discovery_summary_v1",
+  "control_label_status": "missing_non_residual_control_labels",
+  "discovery_note": "Starts from Layers 1-7 evaluation residuals, then searches nearby PIT event families. Promotion requires an evidence packet plus agent review.",
+  "enriched_family_count": 23,
+  "evaluation_month": "2016-01",
+  "event_window_days": 1,
+  "generated_at_utc": "2026-05-17T03:41:45.074282+00:00",
+  "min_residual_severity": 0.01,
+  "model_activation_performed": false,
+  "model_training_performed": false,
+  "observation_pool_candidates": [],
+  "promotion_review_packet_count": 0,
+  "provider_calls": 0,
+  "residual_anomaly_count": 3555,
+  "residual_target_candidate_count": 79,
+  "service_daemon_started": false,
+  "service_integration_status": "registered_callable_artifact_builder_only_no_daemon_start",
+  "strategy_promotion_review_candidates": []
+}
