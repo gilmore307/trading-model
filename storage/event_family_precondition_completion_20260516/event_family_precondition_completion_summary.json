@@ -1,0 +1,88 @@
+{
+  "account_mutation_performed": false,
+  "artifact_deletion_performed": false,
+  "broker_execution_performed": false,
+  "contract_type": "event_family_precondition_completion_summary_v1",
+  "deferred_low_signal_family_keys": [
+    "option_derivatives_abnormality"
+  ],
+  "expectation_baseline_family_keys": [
+    "earnings_guidance_result_metrics",
+    "earnings_guidance_raise_cut_or_withdrawal",
+    "nfp_employment_release"
+  ],
+  "family_count": 29,
+  "final_conclusion": "withheld_until_all_required_empirical_association_studies_exist",
+  "final_judgment_status_counts": {
+    "final_alpha_judgment_withheld_current_definition_low_signal": 1,
+    "final_judgment_withheld_until_empirical_association_complete": 28
+  },
+  "generated_at_utc": "2026-05-17T01:20:50.373800+00:00",
+  "liquidity_evidence_family_keys": [
+    "microstructure_liquidity_disruption"
+  ],
+  "model_activation_performed": false,
+  "model_training_performed": false,
+  "packet_status_counts": {
+    "packet_spec_completed_current_risk_only_evidence": 2,
+    "packet_spec_completed_deferred_low_signal_current_definition": 1,
+    "packet_spec_completed_pending_empirical_evidence": 26
+  },
+  "provider_calls": 0,
+  "remaining_blocker_counts": {
+    "canonical_te_expectation_history_needed": 1,
+    "coverage_underpowered": 1,
+    "directional_alpha_not_proven": 1,
+    "empirical_association_study_required": 29,
+    "fuller_te_expectation_history_required": 1,
+    "liquidity_depth_evidence_required": 1,
+    "matched_controls_failed": 1,
+    "matched_controls_required": 1,
+    "missing_current_comparable_guidance_context": 1,
+    "missing_pit_expectation_baseline": 1,
+    "missing_pit_revenue_consensus_baseline": 1,
+    "missing_transcript_or_company_ir_route": 1,
+    "needs_canonical_source_rules": 1,
+    "needs_deal_terms_and_resolution_clocks": 1,
+    "needs_departure_reason_taxonomy": 1,
+    "needs_distress_stage_lifecycle": 1,
+    "needs_execution_risk_labels": 1,
+    "needs_exposure_mapping": 1,
+    "needs_form_specific_parser": 1,
+    "needs_liquidity_depth_evidence": 1,
+    "needs_matched_controls": 1,
+    "needs_materiality_rules": 1,
+    "needs_more_seasons_symbols": 1,
+    "needs_news_interpretation_standard": 1,
+    "needs_offering_terms_parser": 1,
+    "needs_official_calendar_and_statement_route": 1,
+    "needs_official_vs_allegation_split": 1,
+    "needs_pit_consensus_surprise": 2,
+    "needs_rates_state_residual_definition": 1,
+    "needs_readthrough_rules": 1,
+    "needs_residual_over_base_state": 2,
+    "needs_review_required_rules": 1,
+    "needs_revised_abnormality_definition": 1,
+    "needs_scope_routing_rules": 1,
+    "needs_sector_scope_mapping": 1,
+    "needs_severity_taxonomy": 1,
+    "needs_source_identity_and_reiteration_rules": 1,
+    "needs_stress_severity_ladder": 1,
+    "needs_unknown_event_standard_review": 1,
+    "non_earnings_option_standard_saturated": 1,
+    "partial_metric_interpretation_only": 1,
+    "pit_expectation_or_comparable_baseline_required": 3,
+    "residual_over_base_state_required": 3,
+    "revised_abnormality_definition_required": 1
+  },
+  "residual_definition_family_keys": [
+    "treasury_yield_curve_shock",
+    "price_action_pattern",
+    "residual_market_structure_disturbance"
+  ],
+  "risk_only_current_evidence_family_keys": [
+    "earnings_guidance_scheduled_shell",
+    "cpi_inflation_release"
+  ],
+  "sql_destructive_mutation_performed": false
+}
