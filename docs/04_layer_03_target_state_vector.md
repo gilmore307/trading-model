@@ -200,4 +200,4 @@ A Layer 3 implementation is not accepted unless it proves:
 - liquidity/cost diagnostics identify states that are theoretically predictive but practically untradeable;
 - audit/routing metadata can map decisions back to real symbols without leaking identity into fitting vectors;
 - generated outputs, large artifacts, and credentials stay out of Git;
-- Layer 4 AlphaConfidenceModel and later consumers, not Layer 3, own direction-confidence calibration, target/stop/action projection, position sizing, expression, and final trading guidance. Layer 8 EventRiskGovernor owns post-guidance event-risk intervention.
+- Layer 5 AlphaConfidenceModel and later consumers, not Layer 3, own direction-confidence calibration, target/stop/action projection, position sizing, expression, and final trading guidance. Layer 9 EventRiskGovernor owns post-guidance event-risk intervention.

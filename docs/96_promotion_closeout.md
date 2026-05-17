@@ -1,6 +1,6 @@
 # Promotion Closeout Evidence
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths are aligned to the current conceptual numbering, including `model_08_event_risk_governor` and `model_07_option_expression`.
+> Active architecture revision (2026-05-17): conceptual Layers 4-9 are now Layer 4 EventFailureRiskModel, Layer 5 AlphaConfidenceModel, Layer 6 PositionProjectionModel, Layer 7 UnderlyingActionModel, Layer 8 TradingGuidanceModel / OptionExpressionModel, and Layer 9 EventRiskGovernor / EventIntelligenceOverlay. Physical implementation paths for Layers 4-9 remain on prior numbering until a dedicated code/SQL renumbering migration.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -51,17 +51,18 @@ Layer 3 has a real production-evaluation substrate for `feature_03_target_state_
 - Layer 1 and Layer 2 are not production-approved active upstream dependencies;
 - Layer 3 calibration evidence is missing.
 
-## Layers 4-8 blockers
+## Layers 4-9 blockers
 
-Layers 4-8 remain explicit blockers, not informal work items:
+Layers 4-9 remain explicit blockers, not informal work items:
 
-- Layer 4 requires calibrated adjusted-alpha outcomes.
-- Layer 5 requires position-utility/outcome labels.
-- Layer 6 requires realized underlying-action outcome evaluation.
-- Layer 7 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
-- Layer 8 requires real event-risk labels and production evaluation metrics.
+- Layer 4 requires a reviewed EventFailureRiskModel implementation/evaluation substrate for accepted event/strategy-failure conditioning.
+- Layer 5 requires calibrated adjusted-alpha outcomes.
+- Layer 6 requires position-utility/outcome labels.
+- Layer 7 requires realized underlying-action outcome evaluation.
+- Layer 8 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
+- Layer 9 requires real residual-event-risk labels and production evaluation metrics.
 
-`scripts/models/review_layers_03_08_promotion_closeout.py` builds blocked model-side evidence and reviewer artifacts for these gaps. It must not persist manager decisions or activate configs.
+The legacy closeout helper `scripts/models/review_layers_03_08_promotion_closeout.py` builds blocked model-side evidence and reviewer artifacts for the physical Layers 3-8 surfaces. Until a dedicated renumbering migration exists, its name is a physical-path note, not the conceptual layer order. It must not persist manager decisions or activate configs.
 
 ## Activation invariant
 

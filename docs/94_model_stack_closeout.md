@@ -1,6 +1,6 @@
 # Model Stack Closeout
 
-Status: accepted model-design closeout for Layers 1-8
+Status: accepted model-design closeout for Layers 1-9
 Date: 2026-05-07
 
 ## Closeout scope
@@ -12,21 +12,22 @@ Date: 2026-05-07
 | 1 | `MarketRegimeModel` | `market_context_state` | accepted V2.2 contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
 | 2 | `SectorContextModel` | `sector_context_state` | accepted direction-neutral contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
 | 3 | `TargetStateVectorModel` | `target_context_state` | accepted direction-neutral target-state contract, anonymous candidate preprocessing, deterministic implementation/evaluation scaffold |
-| 4 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted base-alpha V1 scaffold; current surface `model_04_alpha_confidence` |
-| 5 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; current surface `model_05_position_projection` |
-| 6 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; current surface `model_06_underlying_action` |
-| 7 | `TradingGuidanceModel / OptionExpressionModel` | `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted base trading-guidance boundary; V1 option-expression subset uses current surface `model_07_option_expression` |
-| 8 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary; current physical surface `model_08_event_risk_governor` |
+| 4 | `EventFailureRiskModel` | `event_failure_risk_vector` | accepted pre-implementation contract; physical implementation pending dedicated slice |
+| 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted base-alpha V1 scaffold; current physical surface still `model_04_alpha_confidence` until renumbering |
+| 6 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; current physical surface still `model_05_position_projection` until renumbering |
+| 7 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; current physical surface still `model_06_underlying_action` until renumbering |
+| 8 | `TradingGuidanceModel / OptionExpressionModel` | `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted base trading-guidance boundary; V1 option-expression subset currently uses physical surface `model_07_option_expression` |
+| 9 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary; current physical surface still `model_08_event_risk_governor` until renumbering |
 
 This closes the model-design phase. It does not approve production promotion.
 
 ## Boundary closeout
 
-There is no accepted Layer 9 inside `trading-model`.
+Layer 9 is now EventRiskGovernor / EventIntelligenceOverlay. There is no accepted Layer 10 inside `trading-model`.
 
-After Layer 8, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
+After Layer 9, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
-Layer 7 produces the base offline trading-guidance candidate. Layer 8 may intervene on that candidate for high-severity event risk by blocking new entries, capping exposure, reducing exposure, or nominating flatten/halt/human-review actions. Layer 8 still must not directly send broker orders or mutate accounts; execution risk-control owns any resulting broker action.
+Layer 8 produces the base offline trading-guidance candidate. Layer 9 may intervene on that candidate for high-severity residual event risk by blocking new entries, capping exposure, reducing exposure, or nominating flatten/halt/human-review actions. Layer 9 still must not directly send broker orders or mutate accounts; execution risk-control owns any resulting broker action.
 
 ## Historical-training readiness classification
 
@@ -59,4 +60,4 @@ trading-model  34f8cd0 Tighten layer eight candidate filters
 trading-manager 633c2cb Register layer eight candidate filter policy
 ```
 
-After this closeout document lands, `trading-model` should be treated as structurally closed for the accepted Layers 1-8 model-design phase. Future changes should be scoped as production hardening, evidence/promotion work, bug fixes, or explicitly accepted architecture revisions.
+After this closeout document lands, `trading-model` should be treated as structurally closed for the accepted Layers 1-9 architecture phase. Future changes should be scoped as production hardening, evidence/promotion work, bug fixes, or explicitly accepted architecture revisions.

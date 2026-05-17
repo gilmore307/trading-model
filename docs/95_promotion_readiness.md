@@ -1,6 +1,6 @@
 # Promotion Readiness
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-15): conceptual Layers 4-8 are now Layer 4 AlphaConfidenceModel, Layer 5 PositionProjectionModel, Layer 6 UnderlyingActionModel, Layer 7 TradingGuidanceModel / OptionExpressionModel, and Layer 8 EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths are aligned to the current conceptual numbering, including `model_08_event_risk_governor` and `model_07_option_expression`.
+> Active architecture revision (2026-05-17): conceptual Layers 4-9 are now Layer 4 EventFailureRiskModel, Layer 5 AlphaConfidenceModel, Layer 6 PositionProjectionModel, Layer 7 UnderlyingActionModel, Layer 8 TradingGuidanceModel / OptionExpressionModel, and Layer 9 EventRiskGovernor / EventIntelligenceOverlay. Physical implementation paths for Layers 4-9 remain on prior numbering until a dedicated code/SQL renumbering migration.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -9,7 +9,7 @@ Date: 2026-05-07
 
 ## Purpose
 
-Layers 1-8 are structurally closed for model design, but production promotion is a separate evidence gate. This document turns the accepted promotion/calibration rules into a single per-layer readiness matrix and checklist.
+Layers 1-9 are structurally revised for model design, but production promotion is a separate evidence gate. This document turns the accepted promotion/calibration rules into a single per-layer readiness matrix and checklist.
 
 A layer may not be treated as production-promoted merely because its contract, deterministic scaffold, fixture tests, registry score names, or local evaluation helpers exist.
 
@@ -66,11 +66,12 @@ Realtime evidence becomes stronger as it accumulates untouched future rows, but 
 | 1 | `MarketRegimeModel` | `market_context_state` | deferred after real evaluation | failed baseline, eval-label count, pair-count, and coverage gates; split-stability and leakage currently pass |
 | 2 | `SectorContextModel` | `sector_context_state` | deferred after real evaluation | failed baseline/lift and split-stability gates |
 | 3 | `TargetStateVectorModel` | `target_context_state` | deferred after real production-eval substrate | upstream Layer 1/2 are not production-approved/active and Layer 3 calibration evidence is missing |
-| 4 | `EventRiskGovernor` | `event_context_vector` | deferred: no production eval substrate | no production event-overlay evaluation run or calibrated labels exist |
+| 4 | `EventFailureRiskModel` | `event_failure_risk_vector` | deferred: no production eval substrate | no accepted production implementation/evaluation run for reviewed event/strategy-failure conditioning exists |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | deferred: no production eval substrate | no production adjusted-alpha evaluation run or calibrated labels exist |
 | 6 | `PositionProjectionModel` | `position_projection_vector` | deferred: no production eval substrate | no production position-utility evaluation run or labels exist |
 | 7 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | deferred: no production eval substrate | no production realized-action outcome evaluation run exists |
 | 8 | `OptionExpressionModel` | `option_expression_plan` / `expression_vector` | deferred: no production eval substrate | no production option-chain replay evaluation run exists |
+| 9 | `EventRiskGovernor` | `event_context_vector` / `event_risk_intervention` | deferred: no production eval substrate | no production residual-event-governor evaluation run or calibrated labels exist |
 
 No layer in this matrix is currently production-approved by this document.
 
@@ -108,7 +109,7 @@ storage executes lifecycle
 
 Approved/promoted model bodies and required lineage must be marked for permanent retention. Regenerable intermediates may receive retention hints, but lifecycle action must route through manager `storage_lifecycle_request` and storage protected-set execution.
 
-The current closeout evidence creates no activation rows. Layers 3-8 route through `scripts/models/review_layers_03_08_promotion_closeout.py`, which builds blocked evidence and reviewer artifacts without persisting manager decisions. A follow-up Layer 3 substrate run can rebuild real Layer 3 evaluation evidence, but Layers 4-8 remain blocked for missing production eval substrate. See `96_promotion_closeout.md` for the current evidence receipt.
+The current closeout evidence creates no activation rows. Layers 3-8 route through `scripts/models/review_layers_03_08_promotion_closeout.py`, which builds blocked evidence and reviewer artifacts without persisting manager decisions. A follow-up Layer 3 substrate run can rebuild real Layer 3 evaluation evidence, but Layers 4-9 remain blocked for missing production eval substrate. See `96_promotion_closeout.md` for the current evidence receipt.
 
 ## Implementation hook
 

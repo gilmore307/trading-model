@@ -1,23 +1,23 @@
-# Layer 08 — EventRiskGovernor / EventIntelligenceOverlay
+# Layer 09 — EventRiskGovernor / EventIntelligenceOverlay
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 8; implementation package and scripts now use `model_08_event_risk_governor`. The upstream data source still uses `source_08_event_risk_governor` until a separate data/SQL surface migration is accepted.
+Status: active architecture revision. Conceptual Layer 9; implementation package and scripts now use `model_08_event_risk_governor`. The upstream data source still uses `source_08_event_risk_governor` until a separate data/SQL surface migration is accepted.
 
-Active boundary: Layer 8 is the event-intelligence and event-risk governor after base trading guidance. It consumes standardized point-in-time event interpretations when available (`event_interpretation_v1`) plus event evidence refs, current context states, and the Layer 7 base trading guidance candidate.
+Active boundary: Layer 9 is the event-intelligence and event-risk governor after base trading guidance. It consumes standardized point-in-time event interpretations when available (`event_interpretation_v1`) plus event evidence refs, current context states, and the Layer 8 base trading guidance candidate.
 
-It may directly modify the decision/risk record consumed by execution risk-control: block new entries, cap exposure, reduce exposure, nominate flatten/clear candidates, halt trading candidates, or require human review. It must keep the base Layer 7 guidance and event-adjusted guidance side by side for audit.
+It may directly modify the decision/risk record consumed by execution risk-control: block new entries, cap exposure, reduce exposure, nominate flatten/clear candidates, halt trading candidates, or require human review. It must keep the base Layer 8 guidance and event-adjusted guidance side by side for audit.
 
-Forbidden boundary: Layer 8 must not directly send broker orders, choose routes/time-in-force, or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence plus accepted execution risk policy or human review path.
+Forbidden boundary: Layer 9 must not directly send broker orders, choose routes/time-in-force, or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence plus accepted execution risk policy or human review path.
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
-Status: accepted Layer 8 design route; deterministic V1 scaffold implemented in `src/models/model_08_event_risk_governor/`.
+Status: accepted Layer 9 design route; deterministic V1 scaffold implemented in `src/models/model_08_event_risk_governor/`.
 
 ## Purpose
 
-`EventRiskGovernor / EventIntelligenceOverlay` is Layer 8. It converts point-in-time visible event evidence into an `event_risk_intervention / event_context_vector` for the current market, sector, target, and Layer 7 guidance context.
+`EventRiskGovernor / EventIntelligenceOverlay` is Layer 9. It converts point-in-time visible event evidence into an `event_risk_intervention / event_context_vector` for the current market, sector, target, and Layer 8 guidance context.
 
-Layer 8 answers:
+Layer 9 answers:
 
 - Which events are visible at this decision time?
 - Are those events macro, sector, industry, theme, peer-group, symbol, or microstructure scoped?
@@ -26,17 +26,17 @@ Layer 8 answers:
 - Does the event raise uncertainty, gap risk, reversal risk, liquidity-disruption risk, or contagion risk?
 - How reliable, fresh, complete, and conflict-free is the event evidence?
 
-Layer 8 does **not** answer alpha, trade, expression, sizing, or execution questions. It must not emit buy/sell/hold, final action, position size, option contract, strike, DTE, delta, order instruction, or account-specific decision fields.
+Layer 9 does **not** answer alpha, trade, expression, sizing, or execution questions. It must not emit buy/sell/hold, final action, position size, option contract, strike, DTE, delta, order instruction, or account-specific decision fields.
 
 ## Residual-anomaly discovery and correction workflow
 
 The accepted event-model workflow is two-sided:
 
-1. **Base-stack first:** Layers 1-7 analyze the market, sector, target, alpha confidence, position projection, underlying action, and option/trading guidance context. Their job is to explain the normal trading state without event shortcuts.
-2. **Residual anomaly detection:** price/path/volume/liquidity/option behavior that remains abnormal after conditioning on Layers 1-7 becomes a `residual_anomaly_context`, not an event conclusion.
-3. **Event explanation:** Layer 8 inspects point-in-time event evidence around the residual anomaly and asks whether a canonical event family plausibly explains, amplifies, or contradicts the anomaly.
-4. **Overlay output:** if evidence is strong enough, Layer 8 emits warning, explanation, uncertainty, path-risk, block/cap/reduce/flatten-review, or human-review hints. It keeps base Layer 7 guidance and event-adjusted guidance side by side.
-5. **Correction boundary:** corrections are risk/explanation overlays only. They may modify confidence, risk caps, entry permission, or review requirements, but they must not replace Layers 1-7 with standalone event alpha or direct execution decisions.
+1. **Base-stack first:** Layers 1-8 analyze the market, sector, target, accepted event-failure risk, alpha confidence, position projection, underlying action, and option/trading guidance context. Their job is to explain the normal trading state without event shortcuts.
+2. **Residual anomaly detection:** price/path/volume/liquidity/option behavior that remains abnormal after conditioning on Layers 1-8 becomes a `residual_anomaly_context`, not an event conclusion.
+3. **Event explanation:** Layer 9 inspects point-in-time event evidence around the residual anomaly and asks whether a canonical event family plausibly explains, amplifies, or contradicts the anomaly.
+4. **Overlay output:** if evidence is strong enough, Layer 9 emits warning, explanation, uncertainty, path-risk, block/cap/reduce/flatten-review, or human-review hints. It keeps base Layer 8 guidance and event-adjusted guidance side by side.
+5. **Correction boundary:** corrections are risk/explanation overlays only. They may modify confidence, risk caps, entry permission, or review requirements, but they must not replace Layers 1-8 with standalone event alpha or direct execution decisions.
 
 This workflow prevents event evidence from becoming a broad news-alpha model. Events are used to explain and correct residual anomalies, and to warn when a known event family is visible before the base stack fully reprices it.
 
@@ -69,13 +69,13 @@ PYTHONPATH=src python3 scripts/models/model_08_event_risk_governor/build_residua
 
 Output: `storage/residual_anomaly_event_discovery_20260516/`.
 
-This builder starts from Layer 7 evaluation labels over the Layers 1-7 base-stack decision path, identifies residual anomalies such as missed no-trade moves or negative-utility actions, then searches nearby PIT event families for explanations. It emits event-family enrichment rows and, when evidence is strong enough, `event_family_strategy_promotion_review_packet_v1` rows for agent review.
+This builder starts from current physical Layer 8/governor evaluation labels over the Layers 1-8 base-stack decision path, identifies residual anomalies such as missed no-trade moves or negative-utility actions, then searches nearby PIT event families for explanations. It emits event-family enrichment rows and, when evidence is strong enough, `event_family_strategy_promotion_review_packet_v1` rows for agent review.
 
 The current local Layer 7 label substrate is saturated: all available `2016-01` underlying-action labels are `no_trade` with missed positive utility, so non-residual controls are unavailable in this slice. The artifact therefore connects the code/service surface but deliberately emits no observation-pool addition and no strategy-promotion packet until non-residual controls exist.
 
 ## Position and input chain
 
-Layer 8 is an event-context overlay on top of the accepted state stack:
+Layer 9 is an event-context overlay on top of the accepted state stack:
 
 ```text
 market_context_state
@@ -89,7 +89,7 @@ market_context_state
   -> event_risk_intervention / event_context_vector
 ```
 
-The upstream states are reviewed context inputs, not raw feature shortcuts. Layer 8 may use ticker/symbol identity for event matching, routing, and audit, but model-facing fitting vectors must keep raw ticker/company identity outside the payload.
+The upstream states are reviewed context inputs, not raw feature shortcuts. Layer 9 may use ticker/symbol identity for event matching, routing, and audit, but model-facing fitting vectors must keep raw ticker/company identity outside the payload.
 
 ## Inputs
 
@@ -160,7 +160,7 @@ Artifacts must remain point-in-time versioned. A later article revision, later S
 
 ### Abnormal-activity residual boundary
 
-Layer 8 abnormal-activity evidence must not double-count model-owned bars, volume, spread, liquidity, volatility, gap, VWAP, trend, or target-state features that already enter Layer 1-3/Layer 7 inputs.
+Layer 9 abnormal-activity evidence must not double-count model-owned bars, volume, spread, liquidity, volatility, gap, VWAP, trend, or target-state features that already enter Layer 1-8 inputs.
 
 Accepted abnormal-activity evidence categories:
 
@@ -190,7 +190,7 @@ Training implication: EventRiskGovernor must prove incremental value over upstre
 
 ### Event-activity bridge contract
 
-Some raw news and narratives are difficult to standardize immediately. Layer 8 may convert them into an auditable `event_activity_bridge` when observable activity gives a cleaner point-in-time structure than semantic news classification alone.
+Some raw news and narratives are difficult to standardize immediately. Layer 9 may convert them into an auditable `event_activity_bridge` when observable activity gives a cleaner point-in-time structure than semantic news classification alone.
 
 The bridge connects event evidence to price, flow, liquidity, option, and prediction-market behavior. It does not claim hidden knowledge; it records lead/lag, residual activity, and cross-market confirmation or divergence.
 
@@ -307,7 +307,7 @@ Promotion rule: if abnormal activity only explains the current move but does not
 
 ### Input C - upstream context states
 
-Layer 8 consumes slim, reviewed state/context outputs:
+Layer 9 consumes slim, reviewed state/context outputs:
 
 ```text
 market_context_state_ref
@@ -315,11 +315,11 @@ sector_context_state_ref
 target_context_state_ref
 ```
 
-The relevant state information includes broad market risk/stability/liquidity context, sector trend/stability/liquidity/handoff context, and target direction/trend/path/noise/transition/liquidity/tradability context. Layer 8 uses these to decide whether an event is amplified, dampened, aligned, conflicting, or irrelevant for the current target.
+The relevant state information includes broad market risk/stability/liquidity context, sector trend/stability/liquidity/handoff context, and target direction/trend/path/noise/transition/liquidity/tradability context. Layer 9 uses these to decide whether an event is amplified, dampened, aligned, conflicting, or irrelevant for the current target.
 
 ### Input D - scope mapping and sensitivity metadata
 
-Layer 8 needs mapping metadata for event-to-target relevance:
+Layer 9 needs mapping metadata for event-to-target relevance:
 
 ```text
 target_internal_id_for_join
@@ -349,7 +349,7 @@ These fields are for join, routing, sensitivity, and audit. The model-facing vec
 
 ## Point-in-time rules
 
-Layer 8 is a high-leakage-risk layer. The primary visibility rule is:
+Layer 9 is a high-leakage-risk layer. The primary visibility rule is:
 
 ```text
 event_visible := event.available_time <= decision_available_time
@@ -416,7 +416,7 @@ Training/evaluation datasets may include realized future outcomes as labels. Inf
 
 ## Event-family scouting gate
 
-Raw news proximity and raw abnormal option flow are not enough to promote an event-risk input. Before Layer 8 uses an event family for model training or risk-intervention evidence, the family needs an `event_family_scouting_packet_v1` as defined in `docs/100_event_family_scouting.md`.
+Raw news proximity and raw abnormal option flow are not enough to promote an event-risk input. Before Layer 9 uses an event family for model training or risk-intervention evidence, the family needs an `event_family_scouting_packet_v1` as defined in `docs/100_event_family_scouting.md`.
 
 The scouting packet must define the family, inclusion/exclusion rules, source precedence, lifecycle clocks, materiality/surprise rules, scope routing, abnormal-activity bridge rules, control design, forward labels, coverage gates, and early-stop criteria.
 
@@ -429,7 +429,7 @@ Current accepted status from the option/news diagnostics:
 
 ## Event lifecycle contract
 
-Layer 8 must not treat scheduled catalysts and surprise events as the same training object.
+Layer 9 must not treat scheduled catalysts and surprise events as the same training object.
 
 ### Scheduled-known / outcome-later events
 
@@ -484,7 +484,7 @@ Contract:
 
 ## Internal model structure
 
-Layer 8 V1 should be auditable and structured before any broad black-box event model. The internal route is:
+Layer 9 V1 should be auditable and structured before any broad black-box event model. The internal route is:
 
 ```text
 4A EventEncoder
@@ -550,7 +550,7 @@ impact_scope_heads
 
 ## Event scope model
 
-Layer 8 must separate where an event originates from where it may have impact.
+Layer 9 must separate where an event originates from where it may have impact.
 
 ### Native scope
 
@@ -575,7 +575,7 @@ Native scope is not enough. An NVDA earnings event is native-symbol but may affe
 
 ### Impact scope vector
 
-Layer 8 should express impact by score family rather than one enum:
+Layer 9 should express impact by score family rather than one enum:
 
 ```text
 8_event_market_impact_score_<horizon>
@@ -622,7 +622,7 @@ diagnostics_ref
 
 ## V1 horizons
 
-Layer 8 V1 uses the same synchronized context horizons unless later evaluation proves a different event-specific grid is needed:
+Layer 9 V1 uses the same synchronized context horizons unless later evaluation proves a different event-specific grid is needed:
 
 ```text
 5min
@@ -715,7 +715,7 @@ Default no-event policy:
 8_event_context_quality_score_<horizon> = neutral/high if event coverage is known complete, lower if event coverage is weak
 ```
 
-Background risk from Layer 1/2/3 must stay distinguishable from event-driven overlay risk. Layer 8 may condition event sensitivity on background state, but should not silently relabel broad market stress as event presence.
+Background risk from Layer 1/2/3 must stay distinguishable from event-driven overlay risk. Layer 9 may condition event sensitivity on background state, but should not silently relabel broad market stress as event presence.
 
 ## Labels and outcomes
 
@@ -749,7 +749,7 @@ Labels must be materialized only in training/evaluation datasets and must not be
 
 ## Baselines and validation
 
-Layer 8 should prove incremental value over:
+Layer 9 should prove incremental value over:
 
 1. no-event baseline: upstream context states only;
 2. simple event-count baseline;
@@ -779,7 +779,7 @@ direction bias != alpha
 event risk != trade action
 ```
 
-Layer 8 must not:
+Layer 9 must not:
 
 - emit `buy`, `sell`, or `hold`;
 - emit alpha confidence, expected residual return, or Layer 5 final adjusted alpha values;
@@ -800,7 +800,7 @@ Layer 8 must not:
 
 The accepted judgment is recorded in `docs/102_event_layer_final_judgment.md`.
 
-Layer 8 is worth building as a bounded EventRiskGovernor / EventIntelligenceOverlay. It is not currently worth promoting as broad event alpha, standalone option abnormality alpha, or a separate `EventActivityBridgeModel`.
+Layer 9 is worth building as a bounded EventRiskGovernor / EventIntelligenceOverlay. It is not currently worth promoting as broad event alpha, standalone option abnormality alpha, or a separate `EventActivityBridgeModel`.
 
 Accepted active boundary:
 

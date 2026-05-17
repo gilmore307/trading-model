@@ -1,23 +1,23 @@
-# Layer 04 — AlphaConfidenceModel
+# Layer 05 — AlphaConfidenceModel
 
 <!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 4; legacy implementation surface remains `src/models/model_04_alpha_confidence/` until a dedicated implementation migration renames code and SQL surfaces.
+Status: active architecture revision. Conceptual Layer 5; current physical implementation surface remains `src/models/model_04_alpha_confidence/` until a dedicated implementation/renumbering migration renames code and SQL surfaces.
 
-Active boundary: Layer 4 consumes the reviewed Layer 1/2/3 state stack and produces `alpha_confidence_vector` / base-alpha diagnostics. It does **not** require Layer 8 event evidence to run. Event intelligence is now a later risk-governor overlay, not a hard upstream alpha input.
+Active boundary: Layer 5 consumes the reviewed Layer 1/2/3 state stack plus Layer 4 `event_failure_risk_vector` when available and produces `alpha_confidence_vector` / base-alpha diagnostics. It does not consume arbitrary raw event evidence; only reviewed Layer 4 event-failure-risk conditioning is allowed upstream, while Layer 9 remains the residual event-risk governor.
 
 Allowed outputs: horizon-aware alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Forbidden outputs: target exposure, position size, buy/sell/hold, option contract, order fields, broker/account mutation.
 
-Supersedes older wording in this file that described EventRiskGovernor as Layer 4 before alpha. Any remaining legacy implementation references are physical-path notes only, not the conceptual stack order.
+Supersedes older wording in this file that described EventRiskGovernor as Layer 5 before alpha. Any remaining legacy implementation references are physical-path notes only, not the conceptual stack order.
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
-Status: accepted Layer 4 design route; deterministic V1 scaffold implemented in `src/models/model_04_alpha_confidence/`.
+Status: accepted Layer 5 design route; deterministic V1 scaffold currently implemented in physical `src/models/model_04_alpha_confidence/` until a dedicated code/SQL renumbering migration.
 
 ## Purpose
 
-`AlphaConfidenceModel` is Layer 4. It consumes the reviewed Layer 1/2/3 state stack and calibration evidence to produce the base `alpha_confidence_vector`.
+`AlphaConfidenceModel` is Layer 5. It consumes the reviewed Layer 1/2/3 state stack and calibration evidence to produce the base `alpha_confidence_vector`.
 
-Layer 4 answers:
+Layer 5 answers:
 
 - Is there tradable alpha over `5min`, `15min`, `60min`, or `390min`?
 - Is the alpha direction biased long, biased short, mixed, or neutral?
@@ -25,45 +25,47 @@ Layer 4 answers:
 - How reliable and calibrated is this judgment?
 - Is the expected residual return actually target-specific, or mostly market/sector beta?
 - Is the forward path likely to be tradeable, or likely to reverse/draw down first?
-- Is the alpha good enough to hand to Layer 5 for position-projection work?
+- Is the alpha good enough to hand to Layer 6 for position-projection work?
 
-Layer 4 does **not** answer trading-intent, exposure, position-size, option-contract, order-routing, or execution questions. It must not emit buy/sell/hold, final action, target exposure, account-risk allocation, option symbol, strike, DTE, delta, order type, or broker mutation fields.
+Layer 5 does **not** answer trading-intent, exposure, position-size, option-contract, order-routing, or execution questions. It must not emit buy/sell/hold, final action, target exposure, account-risk allocation, option symbol, strike, DTE, delta, order type, or broker mutation fields.
 
 ## Position and input chain
 
-Layer 4 is the first model layer allowed to convert reviewed state/context into horizon-aware alpha judgment. The accepted chain is:
+Layer 5 is the first model layer allowed to convert reviewed state/context plus reviewed event-failure-risk conditioning into horizon-aware alpha judgment. The accepted chain is:
 
 ```text
 market_context_state
 + sector_context_state
 + target_context_state / target_state_vector
++ event_failure_risk_vector / reviewed event-failure conditioning
 + point-in-time quality and calibration evidence
   -> AlphaConfidenceModel
   -> alpha_confidence_vector
 ```
 
-Layer 3 `3_target_direction_score_<window>` is signed current-state direction evidence, not alpha confidence. Layer 4 owns the calibrated alpha-confidence step. Event-direction/risk evidence now belongs to the later Layer 8 event-risk governor boundary.
+Layer 3 `3_target_direction_score_<window>` is signed current-state direction evidence, not alpha confidence. Layer 5 owns the calibrated alpha-confidence step. Reviewed strategy-failure event evidence belongs to Layer 4; residual/unreviewed event governance belongs to Layer 9.
 
 ## Two-tier output policy
 
-Layer 4 deliberately keeps two surfaces separate:
+Layer 5 deliberately keeps two surfaces separate:
 
 1. **Base-alpha diagnostics**
-   - built from Layer 1/2/3 state only;
+   - built from Layer 1/2/3 state plus separately auditable Layer 4 event-failure conditioning when applicable;
    - used for research, debugging, audit, and calibration attribution;
    - not a trading action or exposure target.
 
 2. **Default `alpha_confidence_vector`**
    - built from base alpha plus quality, calibration, path-risk, and point-in-time controls;
-   - the only default Layer 5-facing Layer 4 output.
+   - the only default Layer 6-facing Layer 5 output.
 
 ```text
 Layer 1/2/3
++ reviewed Layer 4 event-failure conditioning when applicable
 + quality/calibration/path-risk controls
   -> alpha_confidence_vector
 ```
 
-Layer 5 should consume the `alpha_confidence_vector` by default. Event-adjusted risk guidance, if available, is applied later by Layer 8 against the base trading guidance record rather than being a hard prerequisite here.
+Layer 6 should consume the `alpha_confidence_vector` by default. Layer 9 event-adjusted risk guidance, if available, is applied later against the base trading guidance record rather than being a hard prerequisite here.
 
 ## Inputs
 
@@ -88,19 +90,19 @@ Training/evaluation inputs may include future outcomes as labels, but those labe
 
 ### Input A - Layer 1 market context
 
-Layer 4 may consume the reviewed `market_context_state`, including market direction, direction strength, trend quality, stability, risk stress, transition risk, breadth participation, correlation crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality.
+Layer 5 may consume the reviewed `market_context_state`, including market direction, direction strength, trend quality, stability, risk stress, transition risk, breadth participation, correlation crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality.
 
-Layer 4 uses these fields to decide whether the market background supports or overwhelms target-specific alpha.
+Layer 5 uses these fields to decide whether the market background supports or overwhelms target-specific alpha.
 
 ### Input B - Layer 2 sector context
 
-Layer 4 may consume the reviewed `sector_context_state`, including relative direction, trend quality/stability, transition risk, market-context support, breadth confirmation, dispersion/crowding, liquidity/tradability, state quality, coverage, data quality, and handoff state/bias/rank.
+Layer 5 may consume the reviewed `sector_context_state`, including relative direction, trend quality/stability, transition risk, market-context support, breadth confirmation, dispersion/crowding, liquidity/tradability, state quality, coverage, data quality, and handoff state/bias/rank.
 
-Layer 4 uses these fields to decide whether target alpha is sector-supported, sector-conflicted, or mostly sector beta.
+Layer 5 uses these fields to decide whether target alpha is sector-supported, sector-conflicted, or mostly sector beta.
 
 ### Input C - Layer 3 target state vector
 
-Layer 3 is the primary state input. Layer 4 consumes reviewed target-state fields such as:
+Layer 3 is the primary state input. Layer 5 consumes reviewed target-state fields such as:
 
 ```text
 3_target_direction_score_<window>
@@ -118,17 +120,17 @@ Layer 3 is the primary state input. Layer 4 consumes reviewed target-state field
 
 It may also use reviewed cross-state/residual features when available, such as target-vs-market residual direction, target-vs-sector residual direction, beta/correlation dependency, idiosyncratic residual state, and relative liquidity/tradability state.
 
-Layer 4 may learn that positive or negative target-state evidence has predictive value, but it must not treat Layer 3 direction evidence as a trade instruction or final confidence value.
+Layer 5 may learn that positive or negative target-state evidence has predictive value, but it must not treat Layer 3 direction evidence as a trade instruction or final confidence value.
 
-### Non-blocking Layer 8 event-risk context
+### Non-blocking Layer 9 event-risk context
 
-Layer 8 event intelligence is not a required input for Layer 4 alpha-confidence generation. Reviewed `event_context_vector` / event-risk evidence may be referenced as diagnostics or later risk-governor context, but it must not be treated as a hard upstream prerequisite for base alpha.
+Layer 9 event intelligence is not a required input for Layer 5 alpha-confidence generation. Reviewed `event_context_vector` / event-risk evidence may be referenced as diagnostics or later risk-governor context, but it must not be treated as a hard upstream prerequisite for base alpha.
 
-Events may later enhance, weaken, contaminate, block, cap, or require review of the base guidance through the Layer 8 EventRiskGovernor boundary. Ordinary event evidence should not be folded into Layer 4 as duplicate state alpha.
+Events may later enhance, weaken, contaminate, block, cap, or require review of the base guidance through the Layer 9 EventRiskGovernor boundary. Ordinary event evidence should not be folded into Layer 5 as duplicate state alpha.
 
 ### Input E - quality, calibration, and research memory
 
-Layer 4 needs point-in-time reliability inputs such as:
+Layer 5 needs point-in-time reliability inputs such as:
 
 ```text
 layer_1_quality_score
@@ -138,7 +140,7 @@ layer_4_quality_score
 feature_coverage_score
 data_quality_score
 state_quality_score
-layer_8_event_artifact_quality_score
+layer_9_event_artifact_quality_score
 state_neighborhood_sample_count
 state_neighborhood_outcome_stability
 model_ensemble_agreement_score
@@ -152,7 +154,7 @@ These fields do not create alpha by themselves. They influence confidence, relia
 
 ## Inputs explicitly excluded
 
-Layer 4 must not use account, position, expression, or execution state:
+Layer 5 must not use account, position, expression, or execution state:
 
 ```text
 current_position_size
@@ -172,11 +174,11 @@ final_action
 execution_result
 ```
 
-These belong to Layer 6/7/8 or training-label/evaluation surfaces, not Layer 4 inference.
+These belong to Layer 6/7/8/9 or training-label/evaluation surfaces, not Layer 5 inference.
 
 ## Internal structure
 
-Layer 4 V1 uses six auditable submodules before any broad black-box confidence modeling:
+Layer 5 V1 uses six auditable submodules before any broad black-box confidence modeling:
 
 ```text
 5A BaseStateAlphaEncoder
@@ -201,7 +203,7 @@ Uses only Layer 1/2/3 state evidence to generate the base alpha judgment. It pro
 4_base_alpha_tradability_score_<horizon>
 ```
 
-These are not the default downstream contract. They explain what the state stack said before events corrected it.
+These are not the default downstream contract. They explain what the state stack said before Layer 4 event-failure conditioning and later Layer 9 event-risk review are attributed.
 
 ### 5B - BaselineAdjustedAlphaDecomposer
 
@@ -215,11 +217,11 @@ Separates target alpha from market/sector beta. Diagnostic fields may include:
 5_beta_dependency_score_<horizon>
 ```
 
-If beta dependency is high and target-state lift is low, Layer 4 should avoid claiming target-specific alpha.
+If beta dependency is high and target-state lift is low, Layer 5 should avoid claiming target-specific alpha.
 
 ### 5C - EventRiskDiagnosticBridge
 
-Carries optional reviewed Layer 8 event-risk diagnostics for later governance without making event evidence a hard Layer 4 alpha input. Any event-driven block/cap/review/flatten candidate remains a Layer 8 EventRiskGovernor intervention, not a Layer 4 alpha override.
+Carries optional reviewed Layer 9 event-risk diagnostics for later governance without making event evidence a hard Layer 5 alpha input. Any event-driven block/cap/review/flatten candidate remains a Layer 9 EventRiskGovernor intervention, not a Layer 5 alpha override.
 
 Diagnostic fields may include:
 
@@ -241,7 +243,7 @@ Estimates whether the alpha path is tradeable, not merely whether the endpoint i
 
 Calibrates confidence and reliability from point-in-time sample support, ensemble agreement/disagreement, OOD evidence, data quality, event uncertainty, walk-forward reliability, and confidence-bucket realized calibration.
 
-`4_alpha_confidence_score_<horizon>` means current model belief. `4_signal_reliability_score_<horizon>` means similar-signal historical out-of-sample reliability. They are related but not interchangeable.
+Conceptual Layer 5 alpha confidence fields should use the Layer 5 semantic family after a dedicated field-renumbering migration. Current physical examples may still show legacy `4_*` prefixes until code/SQL paths are migrated. `alpha_confidence_score_<horizon>` means current model belief. `signal_reliability_score_<horizon>` means similar-signal historical out-of-sample reliability. They are related but not interchangeable.
 
 ### 5F - AlphaVectorComposer
 
@@ -249,7 +251,7 @@ Composes base alpha, event adjustment, baseline adjustment, path risk, quality g
 
 ## V1 horizons
 
-Layer 4 V1 uses synchronized alpha-confidence horizons:
+Layer 5 V1 uses synchronized alpha-confidence horizons:
 
 ```text
 5min
@@ -292,7 +294,7 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 | `4_drawdown_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | adverse excursion/MAE risk is higher; high-is-bad |
 | `4_alpha_tradability_score_<horizon>` | `[0, 1]` | alpha-level | alpha is more suitable to hand to Layer 6 for position projection |
 
-`4_alpha_tradability_score_<horizon>` is still not a trade instruction. It is only the Layer 4 judgment that the alpha is worth downstream position-projection mapping.
+`4_alpha_tradability_score_<horizon>` is still not a trade instruction. It is only the Layer 5 judgment that the alpha is worth downstream position-projection mapping.
 
 ## No-edge and null policy
 
@@ -349,29 +351,29 @@ Labels must be materialized only in training/evaluation datasets and must not be
 
 ## Training route
 
-Layer 4 should be trained in stages:
+Layer 5 should be trained in stages:
 
 1. **Base alpha model**: train Layer 1/2/3-only base alpha outputs.
-2. **Event-risk diagnostic bridge**: evaluate whether reviewed Layer 8 event-risk diagnostics explain base-alpha errors, event-window risk deterioration, or event-supported improvement without turning events into a hard upstream alpha input.
+2. **Event-risk diagnostic bridge**: evaluate whether reviewed Layer 9 event-risk diagnostics explain base-alpha errors, event-window risk deterioration, or event-supported improvement without turning events into a hard upstream alpha input.
 3. **Path/risk heads**: add MFE/MAE, first-touch, reversal, drawdown, liquidity, and event-risk labels.
 4. **Calibration layer**: calibrate confidence, reliability, and tradability using walk-forward and out-of-sample buckets.
 
-Do not train Layer 4 from in-sample Layer 1/2/3/4 model outputs. Upstream state vectors consumed by Layer 4 training must be generated with rolling/cross-fitted point-in-time discipline.
+Do not train Layer 5 from in-sample Layer 1/2/3/4 model outputs. Upstream state vectors consumed by Layer 5 training must be generated with rolling/cross-fitted point-in-time discipline.
 
 Overlapping horizons, especially `60min` and `390min`, require purge and embargo.
 
 ## Baselines and validation
 
-Layer 4 should prove incremental value over:
+Layer 5 should prove incremental value over:
 
 1. no-alpha baseline;
 2. market/sector context only;
 3. Layer 3 direct target-state score baseline;
 4. Layer 1/2/3 base alpha only;
-5. Layer 8 event-risk context only;
+5. Layer 9 event-risk context only;
 6. Layer 1/2/3 plus simple event count;
 7. Layer 1/2/3 plus full EventOverlay adjustment;
-8. full Layer 4 with calibration.
+8. full Layer 5 with calibration.
 
 Validation must separately check:
 
@@ -403,7 +405,7 @@ alpha confidence != option expression
 alpha confidence != final action
 ```
 
-Layer 4 must not:
+Layer 5 must not:
 
 - emit `buy`, `sell`, or `hold`;
 - emit position size, target exposure, or account-risk allocation;
@@ -416,6 +418,6 @@ Layer 4 must not:
 
 1. **V1.0 base alpha from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics. **Done in deterministic scaffold for fixture rows.**
 2. **V1.1 final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. **Done in deterministic scaffold.**
-3. **V1.2 EventRiskDiagnosticBridge**: keep optional `event_context_vector` references diagnostic only for later Layer 8 governance; do not make event evidence a hard Layer 4 alpha input. **Deterministic scaffold uses current Layer 4 package and score-prefix hooks.**
+3. **V1.2 EventRiskDiagnosticBridge**: keep optional `event_context_vector` references diagnostic only for later Layer 9 governance; do not make event evidence a hard Layer 5 alpha input. **Deterministic scaffold uses the current physical alpha package and legacy score-prefix hooks until a dedicated renumbering migration.**
 4. **V1.3 baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence. **Done in deterministic scaffold.**
 5. **V1.4 calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path. **Offline label/leakage helpers exist; calibrated promotion evidence remains later work.**

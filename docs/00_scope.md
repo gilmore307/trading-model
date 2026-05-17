@@ -2,18 +2,19 @@
 
 ## Purpose
 
-`trading-model` is the offline modeling home for the current eight-layer trading decision stack.
+`trading-model` is the offline modeling home for the current nine-layer trading decision stack.
 
 It owns point-in-time model research, model-local generators/evaluators, validation workflows, promotion evidence, model outputs, and decision-record prototypes for:
 
 1. `MarketRegimeModel` -> `market_context_state`;
 2. `SectorContextModel` -> `sector_context_state`;
 3. `TargetStateVectorModel` -> `target_context_state`, with anonymous target candidate construction as Layer 3 preprocessing;
-4. `AlphaConfidenceModel` -> `alpha_confidence_vector`;
-5. `PositionProjectionModel` -> `position_projection_vector`;
-6. `UnderlyingActionModel` -> `underlying_action_plan` / `underlying_action_vector`;
-7. `TradingGuidanceModel / OptionExpressionModel` -> `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`;
-8. `EventRiskGovernor / EventIntelligenceOverlay` -> `event_risk_intervention` / event-adjusted risk guidance.
+4. `EventFailureRiskModel` -> `event_failure_risk_vector`;
+5. `AlphaConfidenceModel` -> `alpha_confidence_vector`;
+6. `PositionProjectionModel` -> `position_projection_vector`;
+7. `UnderlyingActionModel` -> `underlying_action_plan` / `underlying_action_vector`;
+8. `TradingGuidanceModel / OptionExpressionModel` -> `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`;
+9. `EventRiskGovernor / EventIntelligenceOverlay` -> `event_risk_intervention` / event-adjusted risk guidance.
 
 The repository does **not** place orders, mutate accounts, own provider acquisition, or become the global registry. It produces offline model artifacts and review evidence for downstream systems.
 
@@ -23,11 +24,12 @@ The repository does **not** place orders, mutate accounts, own provider acquisit
 - Broad market tradability/regime state from market-only inputs.
 - Market-context-conditioned sector/industry tradability state.
 - Anonymous target candidate construction and target state-vector modeling without ticker/company identity in fitting vectors.
-- Alpha-confidence modeling from the reviewed Layer 1/2/3 state stack without requiring event evidence.
+- Event-failure-risk modeling from agent-reviewed, empirically accepted event/strategy-failure relationships before alpha confidence.
+- Alpha-confidence modeling from the reviewed Layer 1/2/3 state stack plus reviewed Layer 4 failure-risk conditioning when available.
 - Position-projection modeling from alpha plus current/pending position, cost, exposure, and risk-budget context; this projects target position state, not orders.
-- Underlying-action modeling for offline direct stock/ETF action thesis, planned exposure change, price-path assumptions, and Layer 7 handoff; this is not broker execution.
-- Trading-guidance / option-expression modeling from the Layer 6 thesis plus optional option-chain context; this may choose offline expression/contract constraints, not routes or orders.
-- Event-intelligence / event-risk-governor modeling after base trading guidance, including high-severity risk interventions such as blocking new entries, capping exposure, or nominating flatten/halt candidates without directly mutating broker/account state.
+- Underlying-action modeling for offline direct stock/ETF action thesis, planned exposure change, price-path assumptions, and Layer 8 handoff; this is not broker execution.
+- Trading-guidance / option-expression modeling from the Layer 7 thesis plus optional option-chain context; this may choose offline expression/contract constraints, not routes or orders.
+- Event-intelligence / event-risk-governor modeling after base trading guidance, including residual discovery and high-severity risk interventions such as blocking new entries, capping exposure, or nominating flatten/halt candidates without directly mutating broker/account state.
 - Model-local labels, diagnostics, explainability, fixtures, and acceptance gates.
 - Proposing shared names/contracts to `trading-manager` when model outputs need cross-repository consumption.
 
