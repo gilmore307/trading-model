@@ -1,4 +1,4 @@
-# Task
+# Tasks
 
 ## Active Tasks
 
@@ -6,7 +6,7 @@ Fine-grained event-family batch catalog is now available at `storage/event_famil
 
 - Promote-first model phase: concentrate current modeling effort on producing the first usable production-promotable model version. Start with Layer 1 `MarketRegimeModel` promotion-gate repair/evidence production because Layer 2 and Layer 3 depend on a stable approved Layer 1 foundation.
 
-Layers 1-9 are structurally revised for the accepted local deterministic scaffold phase; see `docs/15_model_stack_acceptance.md`. Realtime decision handoff scaffolds remain accepted but are parked until at least one model has an approved/promotable version. The next work is historical evidence production, gate repair, calibration/baseline/stability/leakage evidence, and manager-side promotion review preparation — not realtime integration expansion or additional ad hoc repository cleanup.
+Layers 1-9 are structurally revised for the accepted local deterministic scaffold phase; see `docs/03_contracts.md`. Realtime decision handoff scaffolds remain accepted but are parked until at least one model has an approved/promotable version. The next work is historical evidence production, gate repair, calibration/baseline/stability/leakage evidence, and manager-side promotion review preparation — not realtime integration expansion or additional ad hoc repository cleanup.
 
 ## Historical-Training Evidence Requirements
 
@@ -30,14 +30,14 @@ These items are intentionally outside the current promote-first historical-train
 ## Recently Accepted
 
 - Added `model_realtime_decision_route_plan` and validation scaffold for `execution_model_decision_input_snapshot` handoff from `trading-execution`. It maps Layer 1-8 input refs to reviewed generator entrypoints for fixture/shadow historical-model decision routing without running models, activating configs, constructing orders, or persisting manager decisions.
-- Promotion closeout evidence is recorded in `docs/17_promotion_acceptance.md`: Layers 1-2 have real database evidence; Layers 3-8 have blocked/deferred eval evidence proving no production eval substrate exists yet. No production activation occurred, and durable decision/activation ownership is now in `trading-manager`.
-- Production-promotion readiness rules are accepted for Layers 1-9 in `docs/16_promotion_readiness.md`: every production approval requires dataset snapshot/split/labels/eval run/metrics/candidate/thresholds/baselines/stability/leakage/calibration/decision evidence. Current status remains deferred, not production-approved.
+- Promotion closeout evidence is recorded in `docs/31_promotion_acceptance.md`: Layers 1-2 have real database evidence; Layers 3-8 have blocked/deferred eval evidence proving no production eval substrate exists yet. No production activation occurred, and durable decision/activation ownership is now in `trading-manager`.
+- Production-promotion readiness rules are accepted for Layers 1-9 in `docs/30_promotion_readiness.md`: every production approval requires dataset snapshot/split/labels/eval run/metrics/candidate/thresholds/baselines/stability/leakage/calibration/decision evidence. Current status remains deferred, not production-approved.
 - Repository model-stack closeout is accepted for the current design phase: Layers 1-9 now have accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture evidence. Layer 9 is now EventRiskGovernor / EventIntelligenceOverlay; there is no accepted Layer 10 inside `trading-model`; post-Layer-9 execution remains outside this repository.
 - Layer 1-3 model-design closeout is accepted for the current phase: MarketRegimeModel, SectorContextModel, and TargetStateVectorModel have reviewed contracts, deterministic local implementations/evaluation scaffolds, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.
 - Layer 3 is `TargetStateVectorModel`; the active purpose is market + sector + target state-vector construction before trade/action decisions.
 - Current V2.2 architecture is `MarketRegimeModel -> SectorContextModel -> TargetStateVectorModel -> EventFailureRiskModel -> AlphaConfidenceModel -> PositionProjectionModel -> UnderlyingActionModel -> TradingGuidanceModel / OptionExpressionModel -> EventRiskGovernor / EventIntelligenceOverlay`, with anonymous target candidate construction inside Layer 3 preprocessing.
 - Layer 8 trading guidance includes the accepted `OptionExpressionModel` implementation surface for offline `option_expression_plan` / `expression_vector` rows. Its current physical package remains `src/models/model_08_option_expression/` until a dedicated renumbering migration.
-- `docs/13_vector_taxonomy.md` owns the accepted distinction between feature surfaces, feature vectors, states, state vectors, scalar scores, diagnostics, explainability, and labels/outcomes.
+- `docs/21_vector_taxonomy.md` owns the accepted distinction between feature surfaces, feature vectors, states, state vectors, scalar scores, diagnostics, explainability, and labels/outcomes.
 - Layer 1 outputs only broad `market_context_state`; old market-property factor names are model-local signal groups and evidence sources, not active downstream output fields.
 - Layer 1 must not pre-label ETF/sector behavior or rank sectors/ETFs/stocks.
 - Layer 2 contract and deterministic implementation semantics are direction-neutral: signed sector direction is separate from trend quality, tradability, transition risk, state quality, and handoff bias.
@@ -64,7 +64,7 @@ These items are intentionally outside the current promote-first historical-train
 
 The abnormal-activity, option-direction, matched-control, raw-news, and canonical earnings/guidance scouting slice is closed for the current judgment pass.
 
-Accepted judgment: build/keep Layer 9 as a bounded EventRiskGovernor / EventIntelligenceOverlay, not as broad event alpha or standalone option abnormality. See `docs/23_event_layer_final_judgment.md`.
+Accepted judgment: build/keep Layer 9 as a bounded EventRiskGovernor / EventIntelligenceOverlay, not as broad event alpha or standalone option abnormality. See `docs/53_event_layer_final_judgment.md`.
 
 First itemized follow-up completed: `/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/` tested 12 Q4 2025 canonical Nasdaq earnings shells against 36 same-symbol non-earnings controls. It showed direction-neutral path expansion, not directional alpha; earnings/guidance remains `scouting`.
 

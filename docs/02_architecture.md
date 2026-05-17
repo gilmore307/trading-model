@@ -1,4 +1,4 @@
-# Direction-Neutral Trading Model Architecture
+# Architecture
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
 > Active architecture revision (2026-05-17): Layers 1-9 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 4-9 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
@@ -6,6 +6,16 @@
 
 Status: accepted current route; Layers 1-9 architecture revised, Layer 4 pre-implementation contract accepted
 Owner intent: keep the model stack direct, point-in-time, and current-route authoritative.
+
+## Module Map
+
+| Docs band | Implementation surface | Purpose |
+|---|---|---|
+| `10_*` | `src/models/model_01_*` through `src/models/model_09_*`; matching `scripts/models/model_*/` | Layer-specific model contracts and local builders. |
+| `20_*` | shared model-contract/taxonomy helpers | Model decomposition, vector taxonomy, and state-vector feature registry. |
+| `30_*` | `src/model_governance/promotion/`, `scripts/model_governance/` | Promotion readiness and acceptance evidence. |
+| `40_*` | historical/realtime handoff docs and governance code | Dataset scope and realtime decision handoff boundaries. |
+| `50_*` | `src/models/model_09_event_risk_governor/` event-family research helpers | Event-family scouting, packets, and final event-layer judgment. |
 
 ## Architecture Summary
 
@@ -66,13 +76,13 @@ model_NN_<layer_slug>_diagnostics
 
 The primary output is the narrow downstream dependency contract. Explainability owns human-review internals. Diagnostics owns acceptance, monitoring, and gating evidence. Layer-owned fields use compact `1_*`, `2_*`, ... names in docs, model-facing payloads, and SQL physical columns; SQL writers quote numeric-leading names when needed rather than storing `layer01_*` / `layer02_*` aliases.
 
-`docs/13_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual model output.
+`docs/21_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual model output.
 
 ## Historical Sampling vs Live Routing
 
 Historical training may use a broader point-in-time sampling universe than live inference routing. Live routing can be narrow because upstream layers gate or prioritize candidates; historical training should not copy those gates when doing so would remove useful contrast.
 
-The canonical policy lives in `docs/18_historical_dataset_scope.md`.
+The canonical policy lives in `docs/40_historical_dataset_scope.md`.
 
 Especially for Layer 3, live routing may send targets from Layer 2 selected/prioritized sector baskets, but historical training may sample targets across other sectors, industries, styles, market caps, and liquidity tiers. Layer 2 context must remain attached to each row as point-in-time context, but it does not have to be a hard historical-training filter.
 
@@ -296,7 +306,7 @@ It outputs `target_context_state`: signed current-state direction evidence, dire
 Contract owner:
 
 ```text
-docs/05_layer_04_event_failure_risk.md
+docs/13_layer_04_event_failure_risk.md
 ```
 
 ## Layer 5: AlphaConfidenceModel
@@ -306,7 +316,7 @@ docs/05_layer_04_event_failure_risk.md
 Contract owner:
 
 ```text
-docs/06_layer_05_alpha_confidence.md
+docs/14_layer_05_alpha_confidence.md
 ```
 
 ## Layer 6: PositionProjectionModel
@@ -316,7 +326,7 @@ docs/06_layer_05_alpha_confidence.md
 It owns the mapping from alpha confidence to target holding state. It does not output buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, or mutate broker/account state. Contract owner:
 
 ```text
-docs/07_layer_06_position_projection.md
+docs/15_layer_06_position_projection.md
 ```
 
 ## Layer 7: UnderlyingActionModel
@@ -328,7 +338,7 @@ It owns the direct stock/ETF planned action thesis: planned action type, planned
 It does not emit broker order fields, order type, route, time-in-force, send/cancel/replace instructions, broker order ids, option strike/DTE/delta/Greeks, or account mutations. Contract owner:
 
 ```text
-docs/08_layer_07_underlying_action.md
+docs/16_layer_07_underlying_action.md
 ```
 
 ## Layer 8: TradingGuidanceModel / OptionExpressionModel
@@ -340,7 +350,7 @@ It owns long-call / long-put / no-option-expression selection, selected point-in
 It does not emit broker order type, route, time-in-force, final order quantity, send/cancel/replace flags, broker order ids, or account mutation. Contract owner:
 
 ```text
-docs/09_layer_08_trading_guidance.md
+docs/17_layer_08_trading_guidance.md
 ```
 
 ## Layer 9: EventRiskGovernor / EventIntelligenceOverlay
@@ -350,7 +360,7 @@ docs/09_layer_08_trading_guidance.md
 It is a post-guidance risk-governor boundary, not a hard upstream alpha input and not a broker/account mutation surface. Contract owner:
 
 ```text
-docs/10_layer_09_event_risk_governor.md
+docs/18_layer_09_event_risk_governor.md
 ```
 
 ## Unified Decision Record

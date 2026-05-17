@@ -1,4 +1,4 @@
-# Model Stack Closeout
+# Contracts
 
 Status: accepted model-design closeout for Layers 1-9
 Date: 2026-05-07
@@ -34,7 +34,7 @@ Layer 8 produces the base offline trading-guidance candidate. Layer 9 may interv
 There are no active model-stack design work items for the current no-broker historical-training preparation boundary. The next work is run/evidence production during formal historical-training passes:
 
 - build point-in-time inference/evaluation datasets from accepted historical source routes;
-- use `docs/16_promotion_readiness.md` as the required evidence checklist and status matrix;
+- use `docs/30_promotion_readiness.md` as the required evidence checklist and status matrix;
 - calibrate labels and thresholds on chronological splits;
 - prove baseline improvement, stability, leakage safety, and calibration quality;
 - persist promotion evidence and accepted review decisions through the manager/storage paths;

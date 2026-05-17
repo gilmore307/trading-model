@@ -146,7 +146,7 @@ FAMILY_SPECS: tuple[_FamilySpec, ...] = (
         "signed_alpha_or_stronger_intervention",
         ("coverage_underpowered", "needs_more_seasons_symbols"),
         (
-            "docs/22_earnings_guidance_event_family_packet.md",
+            "docs/52_earnings_guidance_event_family_packet.md",
             "storage/earnings_guidance_event_alone_q4_2025_20260515/report.json",
         ),
         "Expand shell study across more seasons/symbols and rerun matched controls with market/sector/target-state adjustments.",
@@ -631,9 +631,9 @@ def build_event_family_batch_catalog(*, root: Path = Path("."), generated_at_utc
         ),
         candidates=tuple(candidates),
         source_documents=(
-            "trading-model/docs/21_event_family_scouting.md",
-            "trading-model/docs/23_event_layer_final_judgment.md",
-            "trading-manager/docs/81_decision.md#D197",
+            "trading-model/docs/51_event_family_scouting.md",
+            "trading-model/docs/53_event_layer_final_judgment.md",
+            "trading-manager/docs/05_decision.md#D197",
         ),
     )
 

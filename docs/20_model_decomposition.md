@@ -41,7 +41,7 @@ Layer-owned fields use compact `1_*`, `2_*`, ... prefixes consistently across do
 - Data acquisition/source evidence stays in `trading-data`.
 - Global terms, fields, artifacts, statuses, templates, and contracts route through `trading-manager`.
 - Do not collapse rich context into a scalar unless supporting fields remain available for audit and downstream interpretation.
-- Use `docs/13_vector_taxonomy.md` as the vocabulary authority: feature surfaces feed models, feature vectors are model-facing inputs, states/state vectors are model outputs, scores are scalar dimensions, labels/outcomes are training/evaluation-only.
+- Use `docs/21_vector_taxonomy.md` as the vocabulary authority: feature surfaces feed models, feature vectors are model-facing inputs, states/state vectors are model outputs, scores are scalar dimensions, labels/outcomes are training/evaluation-only.
 - Live/paper order mutation remains outside `trading-model`.
 
 ## Layer 1: MarketRegimeModel
@@ -378,7 +378,7 @@ Status: accepted target state-vector contract with deterministic implementation/
 Contract owners:
 
 ```text
-docs/04_layer_03_target_state_vector.md
+docs/12_layer_03_target_state_vector.md
 src/models/model_03_target_state_vector/target_state_vector_contract.md
 ```
 
@@ -391,7 +391,7 @@ Status: accepted architecture revision and pre-implementation contract; producti
 Contract owner:
 
 ```text
-docs/05_layer_04_event_failure_risk.md
+docs/13_layer_04_event_failure_risk.md
 ```
 
 Layer 4 consumes reviewed Layer 1/2/3 context plus only agent-accepted event/strategy-failure evidence. It outputs `event_failure_risk_vector`: strategy-failure risk, entry-block pressure, exposure-cap pressure, strategy-disable pressure, path-risk amplification, evidence quality, and applicability confidence. It is a pre-alpha conditioning gate, not raw event alpha and not a discovery layer. New event families can enter Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, and explicit agent/manager acceptance.
@@ -403,7 +403,7 @@ Status: accepted V1 contract with deterministic scaffold complete under the curr
 Contract owner:
 
 ```text
-docs/06_layer_05_alpha_confidence.md
+docs/14_layer_05_alpha_confidence.md
 ```
 
 Layer 5 converts reviewed Layer 1/2/3 state evidence plus Layer 4 `event_failure_risk_vector` when applicable into the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/no-event alpha remains auditable diagnostics. Layer 5 must not project target exposure, select option contracts, size positions, emit final actions, or mutate broker/account state.
@@ -415,7 +415,7 @@ Status: accepted V1 contract with deterministic scaffold complete under the curr
 Contract owner:
 
 ```text
-docs/07_layer_06_position_projection.md
+docs/15_layer_06_position_projection.md
 ```
 
 Layer 6 maps final adjusted alpha plus point-in-time current/pending position, cost, exposure, risk-budget, and policy context into `position_projection_vector`: target holding state, abstract target exposure, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, stability, and projection confidence. It must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate accounts.
@@ -427,7 +427,7 @@ Status: accepted V1 contract with deterministic scaffold complete under the curr
 Contract owner:
 
 ```text
-docs/08_layer_07_underlying_action.md
+docs/16_layer_07_underlying_action.md
 ```
 
 Layer 7 maps Layer 6 target holding-state projection into a direct stock/ETF offline action thesis. It outputs `underlying_action_plan` and `underlying_action_vector`: eligibility, planned action type, planned exposure change, entry/target/stop/time assumptions, and Layer 8 handoff fields. It does not output broker orders, order routing, live execution instructions, or option contracts.
@@ -439,7 +439,7 @@ Status: accepted V1 contract with deterministic option-expression scaffold compl
 Contract owner:
 
 ```text
-docs/09_layer_08_trading_guidance.md
+docs/17_layer_08_trading_guidance.md
 ```
 
 Layer 8 consumes Layer 7 underlying path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, position/risk context, and policy constraints. It outputs base `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`. It remains offline: no broker order type, route, time-in-force, send/cancel/replace flag, broker order id, final order quantity, or broker/account mutation.
@@ -451,7 +451,7 @@ Status: accepted V1 event-risk-governor boundary with deterministic scaffold com
 Contract owner:
 
 ```text
-docs/10_layer_09_event_risk_governor.md
+docs/18_layer_09_event_risk_governor.md
 ```
 
 Layer 9 consumes point-in-time residual event evidence, upstream context refs, and Layer 8 base trading guidance. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, nominate reduction/flattening candidates, maintain an observation pool, and propose future Layer 4 promotions through evidence packets and agent review. It is not a hard upstream alpha input and not a broker/account mutation surface.

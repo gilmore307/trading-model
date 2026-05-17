@@ -127,7 +127,7 @@ than one opaque scalar. This is the Layer 3 model-facing input vector, not a mod
 | `candidate_quality_vector` | Coverage, freshness, evidence count, duplicate-collapse confidence, and anonymity-check results. |
 
 These block names are model-local until implementation/evaluation proves which
-fields should be promoted through `trading-manager`. Cross-layer vocabulary is governed by `docs/13_vector_taxonomy.md`.
+fields should be promoted through `trading-manager`. Cross-layer vocabulary is governed by `docs/21_vector_taxonomy.md`.
 
 
 Bucket fields must be timestamp-local or reviewed-window-local where possible. They may describe trade structure, liquidity, cost, volatility, and exposure shape, but they must not become long-lived symbol identity surrogates. `target_candidate_id` and bucket combinations must be covered by anonymity/leakage checks before promotion.

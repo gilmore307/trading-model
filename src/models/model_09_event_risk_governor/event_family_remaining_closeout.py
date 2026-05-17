@@ -44,7 +44,7 @@ EXPECTATION_BASELINE_FAMILIES = {
 EVIDENCE_BY_FAMILY: dict[str, tuple[str, ...]] = {
     "earnings_guidance_scheduled_shell": (
         "storage/earnings_guidance_event_alone_q4_2025_20260515/report.json",
-        "docs/22_earnings_guidance_event_family_packet.md",
+        "docs/52_earnings_guidance_event_family_packet.md",
     ),
     "earnings_guidance_result_metrics": (
         "storage/earnings_guidance_readiness_scout_q4_2025_20260515/report.json",

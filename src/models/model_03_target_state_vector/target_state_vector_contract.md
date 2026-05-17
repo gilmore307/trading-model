@@ -4,7 +4,7 @@ Status: Accepted V1 contract; deterministic implementation/evaluation scaffold c
 
 This file owns the model-local Layer 3 target context/state-vector output contract. Layer 3 is not a strategy-variant selector. It constructs anonymous, point-in-time, direction-neutral `target_context_state` that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context.
 
-`docs/13_vector_taxonomy.md` owns the vocabulary distinction: `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector, while `target_context_state` is the Layer 3 conceptual model output.
+`docs/21_vector_taxonomy.md` owns the vocabulary distinction: `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector, while `target_context_state` is the Layer 3 conceptual model output.
 
 ## Row identity
 
