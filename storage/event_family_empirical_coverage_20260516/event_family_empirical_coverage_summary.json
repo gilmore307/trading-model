@@ -1,0 +1,69 @@
+{
+  "account_mutation_performed": false,
+  "artifact_deletion_performed": false,
+  "association_readiness_status_counts": {
+    "candidate_ready_for_interpretation_then_association": 12,
+    "not_ready_build_liquidity_depth_route_first": 1,
+    "not_ready_build_pit_baseline_first": 3,
+    "not_ready_build_residual_detector_first": 3,
+    "not_ready_expand_source_or_parser_first": 7,
+    "not_ready_revise_abnormality_definition_before_retest": 1,
+    "partial_ready_expand_shell_sample_controls": 1,
+    "partial_ready_risk_only_after_fuller_te_history": 1
+  },
+  "broker_execution_performed": false,
+  "contract_type": "event_family_empirical_coverage_summary_v1",
+  "coverage_status_counts": {
+    "blocked_missing_liquidity_depth_evidence": 1,
+    "blocked_missing_pit_expectation_or_comparable_baseline": 3,
+    "blocked_missing_residual_detector": 3,
+    "existing_empirical_studies_deferred_low_signal": 1,
+    "existing_empirical_studies_risk_only_needs_canonical_history": 1,
+    "existing_empirical_study_underpowered_risk_shell": 1,
+    "local_candidates_found_interpretation_required": 12,
+    "no_local_candidate_events_found_under_current_sources": 7
+  },
+  "families_with_existing_empirical_artifacts": [
+    "earnings_guidance_scheduled_shell",
+    "earnings_guidance_result_metrics",
+    "earnings_guidance_raise_cut_or_withdrawal",
+    "cpi_inflation_release",
+    "option_derivatives_abnormality"
+  ],
+  "families_with_local_candidates": [
+    "earnings_guidance_scheduled_shell",
+    "earnings_guidance_result_metrics",
+    "earnings_guidance_raise_cut_or_withdrawal",
+    "earnings_call_narrative_residual",
+    "product_launch_or_failure",
+    "customer_contract_win_loss",
+    "management_change",
+    "analyst_rating_or_price_target_change",
+    "supply_chain_disruption",
+    "sector_regulation_policy",
+    "commodity_or_input_cost_shock",
+    "sector_demand_shock",
+    "cpi_inflation_release",
+    "fomc_rates_policy",
+    "nfp_employment_release",
+    "treasury_yield_curve_shock",
+    "credit_liquidity_stress",
+    "geopolitical_or_fiscal_shock",
+    "option_derivatives_abnormality"
+  ],
+  "family_count": 29,
+  "final_conclusion": "withheld_until_family_specific_empirical_association_studies_complete",
+  "generated_at_utc": "2026-05-17T01:39:20.226552+00:00",
+  "local_source_profile": {
+    "alpaca_news_rows": 405,
+    "bar_receipt_count": 6045,
+    "gdelt_news_rows": 750,
+    "sec_company_fact_rows": 24764,
+    "trading_economics_expectation_rows": 12,
+    "trading_economics_rows": 12
+  },
+  "model_activation_performed": false,
+  "model_training_performed": false,
+  "provider_calls": 0,
+  "total_local_candidate_count": 842
+}

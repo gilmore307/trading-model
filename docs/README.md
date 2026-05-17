@@ -32,6 +32,6 @@ Layer workflow and acceptance live in the numbered layer files. The active archi
 Do not place generated data, artifacts, notebooks, logs, credentials, or implementation outputs in this directory.
 
 - [99_activity_price_relationship_study.md](99_activity_price_relationship_study.md) — Cross-sectional proof study for abnormal activity versus future price/path outcomes before any EventActivityBridgeModel promotion.
-- [100_event_family_scouting.md](100_event_family_scouting.md) — Layer 8 event-family scouting contract, fine-grained family batch catalog/closeout, all-family precondition packets, status values, early-stop rules, and current option/news/CPI findings.
+- [100_event_family_scouting.md](100_event_family_scouting.md) — Layer 8 event-family scouting contract, fine-grained family batch catalog/closeout, all-family precondition packets, local empirical coverage scan, status values, early-stop rules, and current option/news/CPI findings.
 - [101_earnings_guidance_event_family_packet.md](101_earnings_guidance_event_family_packet.md) — `earnings_guidance_event_family` scouting packet, canonical source precedence, lifecycle rules, controls, labels, and early-stop gates.
 - [102_event_layer_final_judgment.md](102_event_layer_final_judgment.md) — accepted event-layer go/no-go judgment: build EventRiskGovernor as bounded risk/intelligence overlay, do not promote broad event alpha or standalone option abnormality.
