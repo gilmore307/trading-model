@@ -1,4 +1,4 @@
-"""Close out the current fine-grained event-family scouting queue.
+"""Summarize acceptance status for the current fine-grained event-family scouting queue.
 
 This module does not promote, train, activate, or mutate anything. It consumes the
 existing local event-family catalog and available scouting artifacts, then assigns
@@ -15,10 +15,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
-CONTRACT_TYPE = "event_family_remaining_closeout_v1"
-SUMMARY_CONTRACT_TYPE = "event_family_remaining_closeout_summary_v1"
+CONTRACT_TYPE = "event_family_remaining_acceptance_v1"
+SUMMARY_CONTRACT_TYPE = "event_family_remaining_acceptance_summary_v1"
 DEFAULT_CATALOG_PATH = Path("storage/event_family_batch_catalog_20260516/event_family_batch_catalog.json")
-DEFAULT_OUTPUT_DIR = Path("storage/event_family_remaining_closeout_20260516")
+DEFAULT_OUTPUT_DIR = Path("storage/event_family_remaining_acceptance_20260516")
 
 RISK_ONLY_FAMILIES = {"earnings_guidance_scheduled_shell", "cpi_inflation_release"}
 TEMPORARY_EVIDENCE_FAMILIES = {"cpi_inflation_release"}
@@ -69,14 +69,14 @@ EVIDENCE_BY_FAMILY: dict[str, tuple[str, ...]] = {
 
 
 @dataclass(frozen=True)
-class FamilyCloseoutRow:
+class FamilyAcceptanceRow:
     family_key: str
     routing_bucket: str
     mechanism_group: str
     priority: str
     prior_family_status: str
     prior_association_status: str
-    closeout_status: str
+    acceptance_status: str
     accepted_current_use: str
     blocked_use: str
     alpha_promotion_status: str
@@ -95,10 +95,10 @@ class FamilyCloseoutRow:
 
 
 @dataclass(frozen=True)
-class RemainingCloseoutBatch:
+class RemainingAcceptanceBatch:
     contract_type: str
     generated_at_utc: str
-    family_rows: tuple[FamilyCloseoutRow, ...]
+    family_rows: tuple[FamilyAcceptanceRow, ...]
     provider_calls: int = 0
     model_activation_performed: bool = False
     broker_execution_performed: bool = False
@@ -111,14 +111,14 @@ class RemainingCloseoutBatch:
             "contract_type": SUMMARY_CONTRACT_TYPE,
             "generated_at_utc": self.generated_at_utc,
             "family_count": len(self.family_rows),
-            "closeout_status_counts": _counts(row.closeout_status for row in self.family_rows),
+            "acceptance_status_counts": _counts(row.acceptance_status for row in self.family_rows),
             "alpha_promotion_status_counts": _counts(row.alpha_promotion_status for row in self.family_rows),
             "risk_feature_status_counts": _counts(row.risk_feature_status for row in self.family_rows),
             "next_action_class_counts": _counts(row.next_action_class for row in self.family_rows),
             "risk_candidate_family_keys": [
                 row.family_key for row in self.family_rows if row.risk_feature_status.startswith("risk_candidate")
             ],
-            "deferred_low_signal_family_keys": [row.family_key for row in self.family_rows if row.closeout_status == "deferred_low_signal"],
+            "deferred_low_signal_family_keys": [row.family_key for row in self.family_rows if row.acceptance_status == "deferred_low_signal"],
             "next_packet_queue": [row.family_key for row in self.family_rows if row.next_action_class == "build_family_packet"],
             "provider_calls": self.provider_calls,
             "model_activation_performed": self.model_activation_performed,
@@ -263,33 +263,33 @@ def _disposition(spec: Mapping[str, Any]) -> tuple[str, str, str, str, tuple[str
         "manual_review",
         blockers,
         str(spec.get("next_action") or "Manual review required before continuing."),
-        "No automatic closeout rule matched this family.",
+        "No automatic acceptance rule matched this family.",
     )
 
 
-def build_event_family_remaining_closeout(
+def build_event_family_remaining_acceptance(
     *,
     catalog_path: Path = DEFAULT_CATALOG_PATH,
     generated_at_utc: str | None = None,
-) -> RemainingCloseoutBatch:
+) -> RemainingAcceptanceBatch:
     generated = generated_at_utc or datetime.now(UTC).isoformat()
-    rows: list[FamilyCloseoutRow] = []
+    rows: list[FamilyAcceptanceRow] = []
     for spec in _read_catalog(catalog_path):
         family = str(spec.get("family_key") or "")
-        closeout, alpha_status, risk_status, next_class, blockers, next_action, disposition_note = _disposition(spec)
+        acceptance, alpha_status, risk_status, next_class, blockers, next_action, disposition_note = _disposition(spec)
         evidence_refs = _dedupe((*_as_tuple(spec.get("evidence_refs")), *EVIDENCE_BY_FAMILY.get(family, ())))
         accepted_current_use = str(spec.get("accepted_current_use") or "")
         if family in TEMPORARY_EVIDENCE_FAMILIES:
             accepted_current_use = "temporary_macro_risk_surprise_evidence_pending_canonical_te_history"
         rows.append(
-            FamilyCloseoutRow(
+            FamilyAcceptanceRow(
                 family_key=family,
                 routing_bucket=str(spec.get("routing_bucket") or ""),
                 mechanism_group=str(spec.get("mechanism_group") or ""),
                 priority=str(spec.get("priority") or ""),
                 prior_family_status=str(spec.get("family_status") or ""),
                 prior_association_status=str(spec.get("association_status") or ""),
-                closeout_status=closeout,
+                acceptance_status=acceptance,
                 accepted_current_use=accepted_current_use,
                 blocked_use=str(spec.get("blocked_use") or ""),
                 alpha_promotion_status=alpha_status,
@@ -300,7 +300,7 @@ def build_event_family_remaining_closeout(
                 next_action=f"{disposition_note} Next: {next_action}",
             )
         )
-    return RemainingCloseoutBatch(contract_type=CONTRACT_TYPE, generated_at_utc=generated, family_rows=tuple(rows))
+    return RemainingAcceptanceBatch(contract_type=CONTRACT_TYPE, generated_at_utc=generated, family_rows=tuple(rows))
 
 
 def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]], *, fieldnames: Sequence[str] | None = None) -> None:
@@ -312,20 +312,20 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]], *, fieldnames: Seq
         writer.writerows(rows)
 
 
-def write_closeout_artifacts(batch: RemainingCloseoutBatch, output_dir: Path) -> None:
+def write_acceptance_artifacts(batch: RemainingAcceptanceBatch, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "event_family_remaining_closeout.json").write_text(
+    (output_dir / "event_family_remaining_acceptance.json").write_text(
         json.dumps(batch.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    (output_dir / "event_family_remaining_closeout_summary.json").write_text(
+    (output_dir / "event_family_remaining_acceptance_summary.json").write_text(
         json.dumps(batch.summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    row_fields = list(FamilyCloseoutRow("", "", "", "", "", "", "", "", "", "", "", "", (), (), "").csv_row().keys())
-    _write_csv(output_dir / "event_family_remaining_closeout.csv", [row.csv_row() for row in batch.family_rows], fieldnames=row_fields)
+    row_fields = list(FamilyAcceptanceRow("", "", "", "", "", "", "", "", "", "", "", "", (), (), "").csv_row().keys())
+    _write_csv(output_dir / "event_family_remaining_acceptance.csv", [row.csv_row() for row in batch.family_rows], fieldnames=row_fields)
     packet_rows = [row.csv_row() for row in batch.family_rows if row.next_action_class == "build_family_packet"]
     _write_csv(output_dir / "event_family_next_packet_queue.csv", packet_rows, fieldnames=row_fields)
     (output_dir / "README.md").write_text(
-        f"""# Event-family remaining closeout
+        f"""# Event-family remaining acceptance
 
 Contract: `{batch.contract_type}`
 
@@ -337,21 +337,21 @@ This artifact closes the current fine-grained event-family batch by assigning al
 - Account mutation performed: {batch.account_mutation_performed}
 - Artifact deletion performed: {batch.artifact_deletion_performed}
 
-The closeout separates risk/control candidates from blocked packet work and deferred low-signal families. No family is promoted to standalone directional alpha.
+The acceptance summary separates risk/control candidates from blocked packet work and deferred low-signal families. No family is promoted to standalone directional alpha.
 """,
         encoding="utf-8",
     )
 
 
-def write_batch(batch: RemainingCloseoutBatch, *, output: TextIO) -> None:
+def write_batch(batch: RemainingAcceptanceBatch, *, output: TextIO) -> None:
     json.dump(batch.to_dict(), output, indent=2, sort_keys=True)
     output.write("\n")
 
 
 __all__ = [
-    "FamilyCloseoutRow",
-    "RemainingCloseoutBatch",
-    "build_event_family_remaining_closeout",
+    "FamilyAcceptanceRow",
+    "RemainingAcceptanceBatch",
+    "build_event_family_remaining_acceptance",
     "write_batch",
-    "write_closeout_artifacts",
+    "write_acceptance_artifacts",
 ]

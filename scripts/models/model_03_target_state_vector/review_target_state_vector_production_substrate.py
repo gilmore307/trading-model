@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build and review the real Layer 3 production-evaluation substrate.
 
-This script is the reproducible form of the Layer 3 closeout follow-up: read
+This script is the reproducible form of the Layer 3 acceptance follow-up: read
 point-in-time ``feature_03_target_state_vector`` rows from PostgreSQL, generate
 compact ``model_03_target_state_vector`` rows, persist the model table, build
 promotion-evaluation artifacts, and ask the reviewer agent for a strict review

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from models.model_09_event_risk_governor.event_family_precondition_completion import (
     DEFAULT_CATALOG_PATH,
-    DEFAULT_CLOSEOUT_PATH,
+    DEFAULT_ACCEPTANCE_PATH,
     DEFAULT_OUTPUT_DIR,
     build_event_family_precondition_completion,
     write_completion,
@@ -19,11 +19,11 @@ from models.model_09_event_risk_governor.event_family_precondition_completion im
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG_PATH, help="Event-family batch catalog JSON.")
-    parser.add_argument("--closeout", type=Path, default=DEFAULT_CLOSEOUT_PATH, help="Remaining closeout JSON.")
+    parser.add_argument("--acceptance", type=Path, default=DEFAULT_ACCEPTANCE_PATH, help="Remaining acceptance JSON.")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR, help="Output artifact directory.")
     args = parser.parse_args(argv)
 
-    completion = build_event_family_precondition_completion(catalog_path=args.catalog, closeout_path=args.closeout)
+    completion = build_event_family_precondition_completion(catalog_path=args.catalog, acceptance_path=args.acceptance)
     write_precondition_artifacts(completion, args.output_dir)
     write_completion(completion, output=sys.stdout)
     return 0

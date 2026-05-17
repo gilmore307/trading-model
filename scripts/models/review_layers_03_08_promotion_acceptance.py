@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent-reviewed production-promotion closeout for Layers 3-8.
+"""Agent-reviewed production-promotion acceptance for Layers 3-8.
 
 Layers 1-2 have real database evaluation paths. Layers 3-8 do not yet have
 production evaluation substrate for their accepted contracts. This script builds
@@ -20,11 +20,11 @@ from typing import Any
 from model_governance.promotion import build_model_config_ref, build_promotion_candidate_evidence
 from model_governance.promotion.agent_review import build_review_artifact_from_review, extract_json_object, validate_promotion_review
 
-CLOSEOUT_DATE = "2026-05-08"
-CLOSEOUT_TS = "2026-05-08T00:00:00-04:00"
-CONFIG_HASH = "production_closeout_no_eval_substrate_2026_05_08"
+ACCEPTANCE_DATE = "2026-05-08"
+ACCEPTANCE_TS = "2026-05-08T00:00:00-04:00"
+CONFIG_HASH = "production_acceptance_no_eval_substrate_2026_05_08"
 
-LAYER_CLOSEOUTS: tuple[dict[str, Any], ...] = (
+LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
     {
         "layer": 3,
         "model_id": "model_03_target_state_vector",
@@ -100,36 +100,36 @@ LAYER_CLOSEOUTS: tuple[dict[str, Any], ...] = (
 )
 
 
-def closeout_for_layer(layer: int) -> dict[str, Any]:
-    for item in LAYER_CLOSEOUTS:
+def acceptance_for_layer(layer: int) -> dict[str, Any]:
+    for item in LAYER_ACCEPTANCES:
         if int(item["layer"]) == layer:
             return dict(item)
     raise ValueError(f"unsupported layer: {layer}")
 
 
-def build_blocked_evaluation_artifacts(closeout: Mapping[str, Any]) -> dict[str, list[dict[str, Any]]]:
-    layer = int(closeout["layer"])
+def build_blocked_evaluation_artifacts(acceptance: Mapping[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    layer = int(acceptance["layer"])
     prefix = f"l{layer:02d}"
-    model_id = str(closeout["model_id"])
-    feature_key = str(closeout["feature_key"])
-    blocker = str(closeout["blocker"])
-    request_id = f"mdreq_closeout_{prefix}_no_eval_substrate_20260508"
-    snapshot_id = f"mdsnap_closeout_{prefix}_no_eval_substrate_20260508"
-    eval_run_id = f"mdevrun_closeout_{prefix}_no_eval_substrate_20260508"
-    metric_id = f"mpmet_closeout_{prefix}_production_eval_run_missing"
+    model_id = str(acceptance["model_id"])
+    feature_key = str(acceptance["feature_key"])
+    blocker = str(acceptance["blocker"])
+    request_id = f"mdreq_acceptance_{prefix}_no_eval_substrate_20260508"
+    snapshot_id = f"mdsnap_acceptance_{prefix}_no_eval_substrate_20260508"
+    eval_run_id = f"mdevrun_acceptance_{prefix}_no_eval_substrate_20260508"
+    metric_id = f"mpmet_acceptance_{prefix}_production_eval_run_missing"
     return {
         "model_dataset_request": [
             {
                 "request_id": request_id,
                 "model_id": model_id,
-                "purpose": "production_promotion_closeout",
-                "required_data_start_time": CLOSEOUT_TS,
-                "required_data_end_time": CLOSEOUT_TS,
+                "purpose": "production_promotion_acceptance",
+                "required_data_start_time": ACCEPTANCE_TS,
+                "required_data_end_time": ACCEPTANCE_TS,
                 "required_source_key": feature_key,
                 "required_feature_key": feature_key,
                 "request_status": "blocked",
-                "request_payload_json": {"closeout_date": CLOSEOUT_DATE, "blocker": blocker, "no_activation": True},
-                "completed_at": CLOSEOUT_TS,
+                "request_payload_json": {"acceptance_date": ACCEPTANCE_DATE, "blocker": blocker, "no_activation": True},
+                "completed_at": ACCEPTANCE_TS,
                 "status_detail": blocker,
             }
         ],
@@ -140,12 +140,12 @@ def build_blocked_evaluation_artifacts(closeout: Mapping[str, Any]) -> dict[str,
                 "request_id": request_id,
                 "feature_schema": "missing_production_eval_substrate",
                 "feature_table": feature_key,
-                "data_start_time": CLOSEOUT_TS,
-                "data_end_time": CLOSEOUT_TS,
+                "data_start_time": ACCEPTANCE_TS,
+                "data_end_time": ACCEPTANCE_TS,
                 "feature_row_count": 0,
                 "feature_data_hash": f"no_rows_{prefix}_20260508",
                 "model_config_hash": CONFIG_HASH,
-                "snapshot_payload_json": {"closeout_status": "blocked_no_production_eval_substrate", "blocker": blocker},
+                "snapshot_payload_json": {"acceptance_status": "blocked_no_production_eval_substrate", "blocker": blocker},
             }
         ],
         "model_eval_run": [
@@ -153,16 +153,16 @@ def build_blocked_evaluation_artifacts(closeout: Mapping[str, Any]) -> dict[str,
                 "eval_run_id": eval_run_id,
                 "model_id": model_id,
                 "snapshot_id": snapshot_id,
-                "run_name": "production_promotion_closeout_no_eval_substrate",
+                "run_name": "production_promotion_acceptance_no_eval_substrate",
                 "model_version": model_id,
                 "config_hash": CONFIG_HASH,
                 "run_status": "blocked",
                 "run_payload_json": {
-                    "closeout_status": "blocked_no_production_eval_substrate",
+                    "acceptance_status": "blocked_no_production_eval_substrate",
                     "blocker": blocker,
                     "no_metrics_or_labels_available": True,
                 },
-                "completed_at": CLOSEOUT_TS,
+                "completed_at": ACCEPTANCE_TS,
                 "status_detail": blocker,
             }
         ],
@@ -174,7 +174,7 @@ def build_blocked_evaluation_artifacts(closeout: Mapping[str, Any]) -> dict[str,
                 "label_name": "production_eval_run_available",
                 "target_symbol": "",
                 "horizon": "all",
-                "factor_name": "promotion_closeout",
+                "factor_name": "promotion_acceptance",
                 "metric_name": "production_eval_run_available",
                 "metric_value": 0.0,
                 "metric_payload_json": {"passed": False, "blocker": blocker},
@@ -183,17 +183,17 @@ def build_blocked_evaluation_artifacts(closeout: Mapping[str, Any]) -> dict[str,
     }
 
 
-def build_summary(closeout: Mapping[str, Any], artifacts: Mapping[str, list[Mapping[str, Any]]]) -> dict[str, Any]:
+def build_summary(acceptance: Mapping[str, Any], artifacts: Mapping[str, list[Mapping[str, Any]]]) -> dict[str, Any]:
     eval_run = artifacts["model_eval_run"][0]
     snapshot = artifacts["model_dataset_snapshot"][0]
     metric = artifacts["model_promotion_metric"][0]
     return {
-        "layer": closeout["layer"],
-        "model_id": closeout["model_id"],
-        "model_name": closeout["model_name"],
+        "layer": acceptance["layer"],
+        "model_id": acceptance["model_id"],
+        "model_name": acceptance["model_name"],
         "eval_run_id": eval_run["eval_run_id"],
         "snapshot_id": snapshot["snapshot_id"],
-        "evidence_source": "blocked_closeout_missing_production_eval_substrate",
+        "evidence_source": "blocked_acceptance_missing_production_eval_substrate",
         "run_status": "blocked",
         "promotion_evidence_ready": False,
         "metric_value_summary": {"production_eval_run_available": {"count": 1.0, "min": 0.0, "max": 0.0, "mean": 0.0}},
@@ -203,22 +203,22 @@ def build_summary(closeout: Mapping[str, Any], artifacts: Mapping[str, list[Mapp
         "leakage_summary": {},
         "calibration_summary": {},
         "tables": {table: len(rows) for table, rows in artifacts.items()},
-        "blocking_gap": closeout["blocker"],
-        "required_next_steps": list(closeout["required_next_steps"]),
+        "blocking_gap": acceptance["blocker"],
+        "required_next_steps": list(acceptance["required_next_steps"]),
         "metric_refs": [metric["metric_id"]],
         "write_policy": "model_side_review_artifact_only_manager_control_plane_required",
     }
 
 
-def build_generic_promotion_prompt(*, closeout: Mapping[str, Any], evaluation_summary: Mapping[str, Any], config_version_row: Mapping[str, Any], promotion_candidate_row: Mapping[str, Any]) -> str:
+def build_generic_promotion_prompt(*, acceptance: Mapping[str, Any], evaluation_summary: Mapping[str, Any], config_version_row: Mapping[str, Any], promotion_candidate_row: Mapping[str, Any]) -> str:
     evidence = {
-        "closeout": dict(closeout),
+        "acceptance": dict(acceptance),
         "evaluation_summary": dict(evaluation_summary),
         "model_config_ref": dict(config_version_row),
         "promotion_candidate": dict(promotion_candidate_row),
     }
     return (
-        f"You are the independent promotion reviewer for trading-model Layer {closeout['layer']} {closeout['model_name']}.\n"
+        f"You are the independent promotion reviewer for trading-model Layer {acceptance['layer']} {acceptance['model_name']}.\n"
         "Evaluate whether this candidate can be promoted. Be strict.\n\n"
         "Hard rules:\n"
         "- Return ONLY one JSON object. No markdown, no prose outside JSON.\n"
@@ -287,27 +287,27 @@ def invoke_agent(*, prompt: str, openclaw_bin: str, agent: str | None, model: st
     return validate_promotion_review(extract_json_object(_extract_agent_text(result.stdout)))
 
 
-def build_rows(closeout: Mapping[str, Any]) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any], dict[str, Any], dict[str, Any], str]:
-    artifacts = build_blocked_evaluation_artifacts(closeout)
-    summary = build_summary(closeout, artifacts)
+def build_rows(acceptance: Mapping[str, Any]) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any], dict[str, Any], dict[str, Any], str]:
+    artifacts = build_blocked_evaluation_artifacts(acceptance)
+    summary = build_summary(acceptance, artifacts)
     config_row = build_model_config_ref(
-        model_id=str(closeout["model_id"]),
-        model_version=str(closeout["model_id"]),
+        model_id=str(acceptance["model_id"]),
+        model_version=str(acceptance["model_id"]),
         config_hash=CONFIG_HASH,
-        config_payload={"promotion_closeout": "blocked_no_production_eval_substrate", "blocker": closeout["blocker"]},
+        config_payload={"promotion_acceptance": "blocked_no_production_eval_substrate", "blocker": acceptance["blocker"]},
         status_detail="not eligible for production activation",
     )
     eval_run_id = artifacts["model_eval_run"][0]["eval_run_id"]
     candidate_row = build_promotion_candidate_evidence(
-        model_id=str(closeout["model_id"]),
+        model_id=str(acceptance["model_id"]),
         config_ref_id=config_row["config_ref_id"],
         eval_run_id=str(eval_run_id),
-        proposed_by="agent_promotion_closeout_script",
+        proposed_by="agent_promotion_acceptance_script",
         candidate_payload={"evaluation_summary": summary},
-        status_detail="agent-reviewed deferred closeout candidate; missing production evaluation substrate",
+        status_detail="agent-reviewed deferred acceptance candidate; missing production evaluation substrate",
     )
     prompt = build_generic_promotion_prompt(
-        closeout=closeout,
+        acceptance=acceptance,
         evaluation_summary=summary,
         config_version_row=config_row,
         promotion_candidate_row=candidate_row,
@@ -330,12 +330,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.all and args.layer is None:
         raise SystemExit("provide --layer or --all")
-    closeouts = [closeout_for_layer(layer) for layer in range(3, 9)] if args.all else [closeout_for_layer(int(args.layer))]
+    acceptances = [acceptance_for_layer(layer) for layer in range(3, 9)] if args.all else [acceptance_for_layer(int(args.layer))]
     receipts: list[dict[str, Any]] = []
-    for closeout in closeouts:
-        artifacts, summary, config_row, candidate_row, prompt = build_rows(closeout)
+    for acceptance in acceptances:
+        artifacts, summary, config_row, candidate_row, prompt = build_rows(acceptance)
         if args.dry_run:
-            receipts.append({"closeout": closeout, "summary": summary, "model_config_ref": config_row, "promotion_candidate": candidate_row, "agent_prompt": prompt})
+            receipts.append({"acceptance": acceptance, "summary": summary, "model_config_ref": config_row, "promotion_candidate": candidate_row, "agent_prompt": prompt})
             continue
         review = invoke_agent(
             prompt=prompt,
@@ -350,7 +350,7 @@ def main(argv: list[str] | None = None) -> int:
             review=review,
             reviewed_by="agent_promotion_reviewer",
         )
-        receipts.append({"closeout": closeout, "summary": summary, "model_config_ref": config_row, "promotion_candidate": candidate_row, "agent_review": review, "promotion_review_artifact": review_artifact})
+        receipts.append({"acceptance": acceptance, "summary": summary, "model_config_ref": config_row, "promotion_candidate": candidate_row, "agent_review": review, "promotion_review_artifact": review_artifact})
 
     output = {"receipts": receipts, "manager_control_plane_required": True, "activation_attempted": False}
     rendered = json.dumps(output, indent=2, sort_keys=True, default=str)

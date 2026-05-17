@@ -1,4 +1,4 @@
-# Promotion Closeout Evidence
+# Promotion Acceptance
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
 > Active architecture revision (2026-05-17): Layers 1-9 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 4-9 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
@@ -9,7 +9,7 @@ Date: 2026-05-09
 
 ## Summary
 
-No model layer is production-promoted by this closeout evidence.
+No model layer is production-promoted by this acceptance evidence.
 
 `trading-model` owns evidence generation and reviewer artifacts only:
 
@@ -62,8 +62,8 @@ Layers 4-9 remain explicit blockers, not informal work items:
 - Layer 8 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
 - Layer 9 requires real residual-event-risk labels and production evaluation metrics.
 
-The closeout helper `scripts/models/review_layers_03_08_promotion_closeout.py` builds blocked model-side evidence and reviewer artifacts for the base Layers 3-8 surfaces. Its name is a bounded base-stack review scope, not a Layer 9 event-risk-governor activation path. It must not persist manager decisions or activate configs.
+The acceptance helper `scripts/models/review_layers_03_08_promotion_acceptance.py` builds blocked model-side evidence and reviewer artifacts for the base Layers 3-8 surfaces. Its name is a bounded base-stack review scope, not a Layer 9 event-risk-governor activation path. It must not persist manager decisions or activate configs.
 
 ## Activation invariant
 
-No production config is active from this closeout pass. Deferred reviews must not create activation records or move active config pointers. Any durable activation record is manager-control-plane work in `trading-manager`.
+No production config is active from this acceptance pass. Deferred reviews must not create activation records or move active config pointers. Any durable activation record is manager-control-plane work in `trading-manager`.

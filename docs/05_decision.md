@@ -643,7 +643,7 @@ storage executes lifecycle
 
 Lifecycle work caused by promotion must route through manager `storage_lifecycle_request`; `trading-storage` owns protected-set checks, physical lifecycle execution, receipts, and tombstones.
 
-## D025 - Layers 1-8 model-design closeout
+## D025 - Layers 1-8 model-design acceptance
 
 Date: 2026-05-07
 Status: Superseded by D047
@@ -665,7 +665,7 @@ MarketRegimeModel
 
 Layers 1-8 have accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture-level verification for the current design phase.
 
-This closeout is superseded by the 2026-05-17 architecture revision that inserts Layer 4 EventFailureRiskModel and makes EventRiskGovernor Layer 9. After Layer 9, downstream work belongs to review / execution-owned boundaries: broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
+This acceptance is superseded by the 2026-05-17 architecture revision that inserts Layer 4 EventFailureRiskModel and makes EventRiskGovernor Layer 9. After Layer 9, downstream work belongs to review / execution-owned boundaries: broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
 Remaining work is production hardening and control-plane integration, not new model-layer design: real point-in-time feeds, label calibration, baseline/stability proof, accepted promotion decisions, and exact unified decision-record / artifact contracts through `trading-manager`.
 
@@ -680,32 +680,32 @@ Every production promotion review for active conceptual Layers 1-9 must use the 
 
 Missing evidence or failed gates require a deferred promotion review. Deferred or rejected reviews must not activate configs or move production pointers. Approval can only be considered after the evidence package is complete and gates pass; durable decision and activation belong in `trading-manager`.
 
-## D031 - Promotion closeout records real deferrals before activation
+## D031 - Promotion acceptance records real deferrals before activation
 
 Date: 2026-05-08
 Status: Superseded by D036
 
-The useful part of this decision remains: production-promotion closeout must evaluate real evidence and must not activate on missing or failed gates. The implementation detail that `trading-model` persists durable promotion decisions is superseded. `trading-model` now emits model-side evidence/review artifacts; `trading-manager` owns durable review decisions and activation.
+The useful part of this decision remains: production-promotion acceptance must evaluate real evidence and must not activate on missing or failed gates. The implementation detail that `trading-model` persists durable promotion decisions is superseded. `trading-model` now emits model-side evidence/review artifacts; `trading-manager` owns durable review decisions and activation.
 
-## D032 - Layers 3-8 blocked closeout must be agent-reviewed
+## D032 - Layers 3-8 blocked acceptance must be agent-reviewed
 
 Date: 2026-05-08
 Status: Superseded by D036
 
-Chentong clarified that Layers 3-8 should follow the same promotion principle as Layers 1-2: even when production evaluation substrate is missing, the closeout script must call the reviewer agent. The model-side closeout entrypoint now builds blocked evaluation artifacts and review artifacts only; durable deferred decisions belong in `trading-manager`.
+Chentong clarified that Layers 3-8 should follow the same promotion principle as Layers 1-2: even when production evaluation substrate is missing, the acceptance script must call the reviewer agent. The model-side acceptance entrypoint now builds blocked evaluation artifacts and review artifacts only; durable deferred decisions belong in `trading-manager`.
 
 ## D033 - Layer 3 production-evaluation substrate is present but not promotable
 
 Date: 2026-05-08
 Status: Accepted
 
-A follow-up closeout run created a real Layer 3 production-evaluation substrate instead of leaving Layer 3 only in the generic missing-substrate bucket.
+A follow-up acceptance run created a real Layer 3 production-evaluation substrate instead of leaving Layer 3 only in the generic missing-substrate bucket.
 
 Layer 3 now has PostgreSQL feature rows in `trading_data.feature_03_target_state_vector`, generated model rows in `trading_model.model_03_target_state_vector`, future-target-tradeable-path labels, and reproducible evaluation evidence.
 
 The measured Layer 3 thresholds passed, but promotion remains deferred because Layer 1 and Layer 2 are not production-approved/active upstream dependencies and Layer 3 calibration evidence is still missing. No model-side review artifact may activate a config; activation belongs in `trading-manager`.
 
-`review_target_state_vector_production_substrate.py` is the accepted reproducible entrypoint for rebuilding the Layer 3 substrate and review package. Layers 4-8 remain blocked on missing real production evaluation surfaces and labels; they must not be promoted from the blocked closeout receipts.
+`review_target_state_vector_production_substrate.py` is the accepted reproducible entrypoint for rebuilding the Layer 3 substrate and review package. Layers 4-8 remain blocked on missing real production evaluation surfaces and labels; they must not be promoted from the blocked acceptance receipts.
 
 ## D034 - Layer 1/2 repair fixed stale data completeness but did not justify promotion
 

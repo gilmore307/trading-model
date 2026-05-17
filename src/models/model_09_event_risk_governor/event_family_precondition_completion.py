@@ -23,7 +23,7 @@ CONTRACT_TYPE = "event_family_precondition_completion_v1"
 PACKET_CONTRACT_TYPE = "event_family_scouting_packet_v1"
 SUMMARY_CONTRACT_TYPE = "event_family_precondition_completion_summary_v1"
 DEFAULT_CATALOG_PATH = Path("storage/event_family_batch_catalog_20260516/event_family_batch_catalog.json")
-DEFAULT_CLOSEOUT_PATH = Path("storage/event_family_remaining_closeout_20260516/event_family_remaining_closeout.json")
+DEFAULT_ACCEPTANCE_PATH = Path("storage/event_family_remaining_acceptance_20260516/event_family_remaining_acceptance.json")
 DEFAULT_OUTPUT_DIR = Path("storage/event_family_precondition_completion_20260516")
 
 EXPECTATION_BASELINE_FAMILIES = {
@@ -98,7 +98,7 @@ class EventFamilyPreconditionCompletion:
     contract_type: str
     generated_at_utc: str
     source_catalog_path: str
-    source_closeout_path: str
+    source_acceptance_path: str
     packets: tuple[EventFamilyPreconditionPacket, ...]
     provider_calls: int = 0
     model_training_performed: bool = False
@@ -147,7 +147,7 @@ class EventFamilyPreconditionCompletion:
             "contract_type": self.contract_type,
             "generated_at_utc": self.generated_at_utc,
             "source_catalog_path": self.source_catalog_path,
-            "source_closeout_path": self.source_closeout_path,
+            "source_acceptance_path": self.source_acceptance_path,
             "packets": [packet.to_row() for packet in self.packets],
             "summary": self.summary,
             "provider_calls": self.provider_calls,
@@ -190,7 +190,7 @@ def _read_catalog(path: Path) -> list[dict[str, Any]]:
     return [dict(item) for item in _read_json(path).get("candidates", [])]
 
 
-def _read_closeout(path: Path) -> dict[str, dict[str, Any]]:
+def _read_acceptance(path: Path) -> dict[str, dict[str, Any]]:
     if not path.exists():
         return {}
     return {str(row.get("family_key") or ""): dict(row) for row in _read_json(path).get("family_rows", [])}
@@ -501,27 +501,27 @@ def _packet_from_spec(spec: Mapping[str, Any]) -> EventFamilyPreconditionPacket:
 def build_event_family_precondition_completion(
     *,
     catalog_path: Path = DEFAULT_CATALOG_PATH,
-    closeout_path: Path = DEFAULT_CLOSEOUT_PATH,
+    acceptance_path: Path = DEFAULT_ACCEPTANCE_PATH,
     generated_at_utc: str | None = None,
 ) -> EventFamilyPreconditionCompletion:
     generated = generated_at_utc or datetime.now(UTC).isoformat()
-    closeout = _read_closeout(closeout_path)
+    acceptance = _read_acceptance(acceptance_path)
     packets: list[EventFamilyPreconditionPacket] = []
     for spec in _read_catalog(catalog_path):
         family = str(spec.get("family_key") or "")
         merged = dict(spec)
-        if family in closeout:
-            # Closeout supplies the latest accepted use/blocker framing, while the catalog
+        if family in acceptance:
+            # Acceptance summary supplies the latest accepted use/blocker framing, while the catalog
             # supplies the association question and original mechanism metadata.
-            merged["accepted_current_use"] = closeout[family].get("accepted_current_use", merged.get("accepted_current_use"))
-            merged["blocked_use"] = closeout[family].get("blocked_use", merged.get("blocked_use"))
-            merged["blocker_codes"] = _dedupe((*_as_tuple(merged.get("blocker_codes")), *_as_tuple(closeout[family].get("blocker_codes"))))
+            merged["accepted_current_use"] = acceptance[family].get("accepted_current_use", merged.get("accepted_current_use"))
+            merged["blocked_use"] = acceptance[family].get("blocked_use", merged.get("blocked_use"))
+            merged["blocker_codes"] = _dedupe((*_as_tuple(merged.get("blocker_codes")), *_as_tuple(acceptance[family].get("blocker_codes"))))
         packets.append(_packet_from_spec(merged))
     return EventFamilyPreconditionCompletion(
         contract_type=CONTRACT_TYPE,
         generated_at_utc=generated,
         source_catalog_path=str(catalog_path),
-        source_closeout_path=str(closeout_path),
+        source_acceptance_path=str(acceptance_path),
         packets=tuple(packets),
     )
 

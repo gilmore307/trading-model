@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 import scripts.models.model_01_market_regime.review_market_regime_promotion as review_script
-import scripts.models.review_layers_03_08_promotion_closeout as layers_03_08_review_script
+import scripts.models.review_layers_03_08_promotion_acceptance as layers_03_08_review_script
 from model_governance.agent_review import (
     build_review_artifact_from_review,
     build_market_regime_promotion_prompt,
@@ -146,7 +146,7 @@ class AgentPromotionReviewTests(unittest.TestCase):
         result = subprocess.run(
             [
                 sys.executable,
-                "scripts/models/review_layers_03_08_promotion_closeout.py",
+                "scripts/models/review_layers_03_08_promotion_acceptance.py",
                 "--layer",
                 "3",
                 "--dry-run",

@@ -1,13 +1,13 @@
 # Contracts
 
-Status: accepted model-design closeout for Layers 1-9
+Status: accepted model-design acceptance for Layers 1-9
 Date: 2026-05-07
 
-## Closeout scope
+## Acceptance scope
 
 `trading-model` has a complete accepted local deterministic scaffold for the current offline model stack:
 
-| Layer | Model | Output | Closeout state |
+| Layer | Model | Output | Acceptance state |
 |---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_context_state` | accepted V2.2 contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
 | 2 | `SectorContextModel` | `sector_context_state` | accepted direction-neutral contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
@@ -21,7 +21,7 @@ Date: 2026-05-07
 
 This closes the model-design phase. It does not approve production promotion.
 
-## Boundary closeout
+## Boundary acceptance
 
 Layer 9 is now EventRiskGovernor / EventIntelligenceOverlay. There is no accepted Layer 10 inside `trading-model`.
 
@@ -44,7 +44,7 @@ Execution-facing unified decision-record artifacts remain outside the current no
 
 ## Verification receipt
 
-Latest closeout verification for this closeout:
+Latest acceptance verification for this acceptance:
 
 ```text
 trading-model: PYTHONPATH=src python3 -m unittest discover tests -> 94 tests OK
@@ -53,11 +53,11 @@ trading-manager: python3 scripts/registry/apply_registry_migrations.py --dry-run
 git diff --check clean in both repositories
 ```
 
-Latest relevant pushed commits before the final closeout-doc commit:
+Latest relevant pushed commits before the final acceptance-doc commit:
 
 ```text
 trading-model  34f8cd0 Tighten layer eight candidate filters
 trading-manager 633c2cb Register layer eight candidate filter policy
 ```
 
-After this closeout document lands, `trading-model` should be treated as structurally closed for the accepted Layers 1-9 architecture phase. Future changes should be scoped as production hardening, evidence/promotion work, bug fixes, or explicitly accepted architecture revisions.
+After this acceptance document lands, `trading-model` should be treated as structurally closed for the accepted Layers 1-9 architecture phase. Future changes should be scoped as production hardening, evidence/promotion work, bug fixes, or explicitly accepted architecture revisions.

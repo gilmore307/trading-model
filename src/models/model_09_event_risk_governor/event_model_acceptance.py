@@ -1,7 +1,7 @@
-"""EventRiskGovernor closeout report helpers.
+"""EventRiskGovernor acceptance report helpers.
 
 This module turns the 2026-05 event-layer redo judgment into a compact,
-machine-readable closeout artifact. It performs no training, provider calls,
+machine-readable acceptance artifact. It performs no training, provider calls,
 activation, broker/account mutation, or artifact deletion.
 """
 from __future__ import annotations
@@ -20,7 +20,7 @@ LAYER_CONTRACT_DOC = "trading-model/docs/18_layer_09_event_risk_governor.md"
 
 
 @dataclass(frozen=True)
-class EventFamilyCloseoutStatus:
+class EventFamilyAcceptanceStatus:
     family_key: str
     status: str
     accepted_use: str
@@ -35,7 +35,7 @@ class EventFamilyCloseoutStatus:
 
 
 @dataclass(frozen=True)
-class EventModelCloseoutReport:
+class EventModelAcceptanceReport:
     contract_type: str
     generated_at_utc: str
     model_id: str
@@ -46,7 +46,7 @@ class EventModelCloseoutReport:
     actionable_judgment: str
     accepted_build_boundary: tuple[str, ...]
     rejected_routes: tuple[str, ...]
-    family_statuses: tuple[EventFamilyCloseoutStatus, ...]
+    family_statuses: tuple[EventFamilyAcceptanceStatus, ...]
     downstream_regeneration_policy: str
     storage_lifecycle_hold: str
     required_next_actions: tuple[str, ...]
@@ -80,12 +80,12 @@ class EventModelCloseoutReport:
         }
 
 
-def build_event_model_closeout_report(*, generated_at_utc: str | None = None) -> EventModelCloseoutReport:
-    """Build the accepted closeout report for the event-layer redo loop."""
+def build_event_model_acceptance_report(*, generated_at_utc: str | None = None) -> EventModelAcceptanceReport:
+    """Build the accepted acceptance report for the event-layer redo loop."""
 
     generated = generated_at_utc or datetime.now(UTC).isoformat()
-    return EventModelCloseoutReport(
-        contract_type="event_model_closeout_report_v1",
+    return EventModelAcceptanceReport(
+        contract_type="event_model_acceptance_report_v1",
         generated_at_utc=generated,
         model_id=MODEL_ID,
         model_layer=MODEL_LAYER,
@@ -114,7 +114,7 @@ def build_event_model_closeout_report(*, generated_at_utc: str | None = None) ->
             "broker_order_or_account_mutation_from_event_layer",
         ),
         family_statuses=(
-            EventFamilyCloseoutStatus(
+            EventFamilyAcceptanceStatus(
                 family_key="standalone_option_abnormality",
                 status="deferred_low_signal",
                 accepted_use="diagnostic_provenance_and_event_activity_bridge_context_only",
@@ -122,7 +122,7 @@ def build_event_model_closeout_report(*, generated_at_utc: str | None = None) ->
                 blocker_codes=("matched_controls_failed", "non_earnings_option_standard_saturated"),
                 next_evidence_gate="revise_abnormality_standard_then_revalidate_forward_controls_before_any_alpha_claim",
             ),
-            EventFamilyCloseoutStatus(
+            EventFamilyAcceptanceStatus(
                 family_key="raw_news_proximity",
                 status="deferred_low_signal",
                 accepted_use="discovery_or_secondary_narrative_residual_when_tied_to_canonical_event",
@@ -130,7 +130,7 @@ def build_event_model_closeout_report(*, generated_at_utc: str | None = None) ->
                 blocker_codes=("news_proximity_saturated", "canonical_source_required"),
                 next_evidence_gate="family_specific_canonical_source_led_packet_with_event_interpretation_v1",
             ),
-            EventFamilyCloseoutStatus(
+            EventFamilyAcceptanceStatus(
                 family_key="earnings_guidance_event_family",
                 status="scouting_direction_neutral_context_only",
                 accepted_use="scheduled_shells_official_results_and_reviewed_guidance_context_as_event_risk_context",
@@ -142,7 +142,7 @@ def build_event_model_closeout_report(*, generated_at_utc: str | None = None) ->
                 ),
                 next_evidence_gate="reviewed_current_prior_guidance_comparison_plus_pit_expectation_baselines_before_signed_claims",
             ),
-            EventFamilyCloseoutStatus(
+            EventFamilyAcceptanceStatus(
                 family_key="event_risk_governor_structure",
                 status="accepted_architecture",
                 accepted_use="bounded_risk_intelligence_overlay_after_base_layer_1_7_guidance",
@@ -164,26 +164,26 @@ def build_event_model_closeout_report(*, generated_at_utc: str | None = None) ->
             "generate_feature_09_event_risk_governor_and_model_09_event_risk_governor_outputs",
             "evaluate_event_risk_governor_with_direction_neutral_risk_labels_before_directional_claims",
             "record_manager_promotion_review_as_deferred_unless_real_gates_pass",
-            "revisit_storage_lifecycle_deletion_holds_only_after_reviewed_regeneration_closeout",
+            "revisit_storage_lifecycle_deletion_holds_only_after_reviewed_regeneration_acceptance",
         ),
         source_documents=(FINAL_JUDGMENT_DOC, EVENT_FAMILY_PACKET_DOC, LAYER_CONTRACT_DOC),
     )
 
 
-def write_report(report: EventModelCloseoutReport, *, output: TextIO) -> None:
+def write_report(report: EventModelAcceptanceReport, *, output: TextIO) -> None:
     json.dump(report.summary_row(), output, indent=2, sort_keys=True)
     output.write("\n")
 
 
-def write_report_file(report: EventModelCloseoutReport, path: Path) -> None:
+def write_report_file(report: EventModelAcceptanceReport, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report.summary_row(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 __all__ = [
-    "EventFamilyCloseoutStatus",
-    "EventModelCloseoutReport",
-    "build_event_model_closeout_report",
+    "EventFamilyAcceptanceStatus",
+    "EventModelAcceptanceReport",
+    "build_event_model_acceptance_report",
     "write_report",
     "write_report_file",
 ]

@@ -80,7 +80,7 @@ scripts/models/model_06_position_projection/
 scripts/models/model_07_underlying_action/
 scripts/models/model_08_option_expression/
 scripts/models/model_09_event_risk_governor/
-scripts/models/review_layers_03_08_promotion_closeout.py
+scripts/models/review_layers_03_08_promotion_acceptance.py
 scripts/model_governance/
 ```
 
