@@ -23,7 +23,7 @@ trading-execution realtime capture
   -> fixture/shadow historical-model generation route
 ```
 
-`model_realtime_decision_route_plan` is a route plan, not a model output. It validates that all Layer 1-9 input refs are present, maps each layer to its reviewed model generator entrypoint, and records the handoff mode.
+`model_realtime_decision_route_plan` is a route plan, not a model output. It validates that all Layer 1-8 input refs are present, maps each layer to its reviewed model generator entrypoint, and records the handoff mode.
 
 Accepted handoff modes:
 
@@ -40,7 +40,7 @@ The model-side planner consumes an `execution_model_decision_input_snapshot` obj
 - `historical_dataset_snapshot_ref`
 - `frozen_model_config_ref`
 - `realtime_feature_snapshot_ref`
-- exactly one layer input for each Layer 1-9
+- exactly one layer input for each Layer 1-8
 
 Each conceptual layer input must include the expected model id, expected model output, feature ref, frozen model config ref, and historical dataset snapshot ref. Implementation model ids now follow the current conceptual layer numbering; this table is conceptual-order first.
 
@@ -51,12 +51,11 @@ Each conceptual layer input must include the expected model id, expected model o
 | 1 | `model_01_market_regime` | `market_context_state` | `scripts/models/model_01_market_regime/generate_model_01_market_regime.py` |
 | 2 | `model_02_sector_context` | `sector_context_state` | `scripts/models/model_02_sector_context/generate_model_02_sector_context.py` |
 | 3 | `model_03_target_state_vector` | `target_context_state` | `scripts/models/model_03_target_state_vector/generate_model_03_target_state_vector.py` |
-| 4 | `model_04_event_failure_risk` | `event_failure_risk_vector` | `scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py` |
-| 5 | `model_05_alpha_confidence` | `alpha_confidence_vector` | `scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py` |
-| 6 | `model_06_position_projection` | `position_projection_vector` | `scripts/models/model_06_position_projection/generate_model_06_position_projection.py` |
-| 7 | `model_07_underlying_action` | `underlying_action_plan` | `scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py` |
-| 8 | `model_08_option_expression` | `option_expression_plan` | `scripts/models/model_08_option_expression/generate_model_08_option_expression.py` |
-| 9 | `model_09_event_risk_governor` | `event_risk_intervention` / `event_context_vector` | `scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py` |
+| 4 | `model_05_alpha_confidence` | `alpha_confidence_vector` | `scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py` |
+| 5 | `model_06_position_projection` | `position_projection_vector` | `scripts/models/model_06_position_projection/generate_model_06_position_projection.py` |
+| 6 | `model_07_underlying_action` | `underlying_action_plan` | `scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py` |
+| 7 | `model_08_option_expression` | `option_expression_plan` | `scripts/models/model_08_option_expression/generate_model_08_option_expression.py` |
+| 8 | `model_09_event_risk_governor` | `event_risk_intervention` / `event_context_vector` | `scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py` |
 
 ## Non-authorizations
 
