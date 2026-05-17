@@ -102,14 +102,14 @@ docs/09_layer_09_event_risk_governor.md
 docs/80_task.md
 docs/81_decision.md
 docs/82_memory.md
-docs/90_system_model_architecture_rfc.md
-docs/91_model_decomposition.md
-docs/92_vector_taxonomy.md
-docs/93_state_vector_feature_registry.md
-docs/94_model_stack_closeout.md
-docs/95_promotion_readiness.md
-docs/96_promotion_closeout.md
-docs/97_historical_dataset_scope.md
+docs/11_system_model_architecture.md
+docs/12_model_decomposition.md
+docs/13_vector_taxonomy.md
+docs/14_state_vector_feature_registry.md
+docs/15_model_stack_acceptance.md
+docs/16_promotion_readiness.md
+docs/17_promotion_acceptance.md
+docs/18_historical_dataset_scope.md
 ```
 
 Layer workflow and acceptance live in the numbered layer files. Architecture and decomposition docs describe the current route, not historical detours.

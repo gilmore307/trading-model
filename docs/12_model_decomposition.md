@@ -41,7 +41,7 @@ Layer-owned fields use compact `1_*`, `2_*`, ... prefixes consistently across do
 - Data acquisition/source evidence stays in `trading-data`.
 - Global terms, fields, artifacts, statuses, templates, and contracts route through `trading-manager`.
 - Do not collapse rich context into a scalar unless supporting fields remain available for audit and downstream interpretation.
-- Use `docs/92_vector_taxonomy.md` as the vocabulary authority: feature surfaces feed models, feature vectors are model-facing inputs, states/state vectors are model outputs, scores are scalar dimensions, labels/outcomes are training/evaluation-only.
+- Use `docs/13_vector_taxonomy.md` as the vocabulary authority: feature surfaces feed models, feature vectors are model-facing inputs, states/state vectors are model outputs, scores are scalar dimensions, labels/outcomes are training/evaluation-only.
 - Live/paper order mutation remains outside `trading-model`.
 
 ## Layer 1: MarketRegimeModel

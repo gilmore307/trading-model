@@ -14,9 +14,9 @@ import json
 
 from .contract import MODEL_ID, MODEL_LAYER, MODEL_SURFACE, VECTOR_OUTPUT
 
-FINAL_JUDGMENT_DOC = "trading-model/docs/102_event_layer_final_judgment.md"
-EVENT_FAMILY_PACKET_DOC = "trading-model/docs/101_earnings_guidance_event_family_packet.md"
-LAYER_CONTRACT_DOC = "trading-model/docs/09_layer_09_event_risk_governor.md"
+FINAL_JUDGMENT_DOC = "trading-model/docs/23_event_layer_final_judgment.md"
+EVENT_FAMILY_PACKET_DOC = "trading-model/docs/22_earnings_guidance_event_family_packet.md"
+LAYER_CONTRACT_DOC = "trading-model/docs/10_layer_09_event_risk_governor.md"
 
 
 @dataclass(frozen=True)

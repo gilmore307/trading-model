@@ -430,7 +430,7 @@ Training/evaluation datasets may include realized future outcomes as labels. Inf
 
 ## Event-family scouting gate
 
-Raw news proximity and raw abnormal option flow are not enough to promote an event-risk input. Before Layer 9 uses an event family for model training or risk-intervention evidence, the family needs an `event_family_scouting_packet_v1` as defined in `docs/100_event_family_scouting.md`.
+Raw news proximity and raw abnormal option flow are not enough to promote an event-risk input. Before Layer 9 uses an event family for model training or risk-intervention evidence, the family needs an `event_family_scouting_packet_v1` as defined in `docs/21_event_family_scouting.md`.
 
 The scouting packet must define the family, inclusion/exclusion rules, source precedence, lifecycle clocks, materiality/surprise rules, scope routing, abnormal-activity bridge rules, control design, forward labels, coverage gates, and early-stop criteria.
 
@@ -439,7 +439,7 @@ Current accepted status from the option/news diagnostics:
 - standalone option abnormality: `deferred_low_signal`;
 - threshold-only strict option abnormality refinement: `deferred_low_signal`;
 - raw option abnormality + raw news proximity: `deferred_low_signal`;
-- earnings/guidance event family: `scouting` only, not promotion evidence; packet details live in `docs/101_earnings_guidance_event_family_packet.md`.
+- earnings/guidance event family: `scouting` only, not promotion evidence; packet details live in `docs/22_earnings_guidance_event_family_packet.md`.
 
 ## Event lifecycle contract
 
@@ -812,7 +812,7 @@ Layer 9 must not:
 5. **V1.4 evaluation**: compare against no-event, count, proximity, abnormal-activity, native-scope, and impact-scope baselines with walk-forward leakage checks. **Offline label/leakage helpers exist; baseline proof remains promotion work.**
 ## Final go/no-go judgment — 2026-05-15
 
-The accepted judgment is recorded in `docs/102_event_layer_final_judgment.md`.
+The accepted judgment is recorded in `docs/23_event_layer_final_judgment.md`.
 
 Layer 9 is worth building as a bounded EventRiskGovernor / EventIntelligenceOverlay. It is not currently worth promoting as broad event alpha, standalone option abnormality alpha, or a separate `EventActivityBridgeModel`.
 

@@ -58,7 +58,7 @@ Detailed V1 contract:
 src/models/model_03_target_state_vector/target_state_vector_contract.md
 ```
 
-Use `docs/92_vector_taxonomy.md` for vocabulary. `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual output. Historical implementation paths still use `model_03_target_state_vector`.
+Use `docs/13_vector_taxonomy.md` for vocabulary. `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual output. Historical implementation paths still use `model_03_target_state_vector`.
 
 Layer 3 output context/state vectors must be explicitly decomposable into four model-facing blocks.
 

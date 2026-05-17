@@ -676,7 +676,7 @@ Status: Accepted; expanded by D047
 
 Closing the model-design phase does not approve production promotion for any layer.
 
-Every production promotion review for active conceptual Layers 1-9 must use the complete evidence package defined in `docs/95_promotion_readiness.md`: dataset snapshot, chronological split, label refs, eval run, promotion metrics, promotion candidate, thresholds, baseline comparison, split stability, leakage/no-future checks, calibration report, and decision receipt.
+Every production promotion review for active conceptual Layers 1-9 must use the complete evidence package defined in `docs/16_promotion_readiness.md`: dataset snapshot, chronological split, label refs, eval run, promotion metrics, promotion candidate, thresholds, baseline comparison, split stability, leakage/no-future checks, calibration report, and decision receipt.
 
 Missing evidence or failed gates require a deferred promotion review. Deferred or rejected reviews must not activate configs or move production pointers. Approval can only be considered after the evidence package is complete and gates pass; durable decision and activation belong in `trading-manager`.
 

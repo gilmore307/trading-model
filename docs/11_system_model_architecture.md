@@ -66,13 +66,13 @@ model_NN_<layer_slug>_diagnostics
 
 The primary output is the narrow downstream dependency contract. Explainability owns human-review internals. Diagnostics owns acceptance, monitoring, and gating evidence. Layer-owned fields use compact `1_*`, `2_*`, ... names in docs, model-facing payloads, and SQL physical columns; SQL writers quote numeric-leading names when needed rather than storing `layer01_*` / `layer02_*` aliases.
 
-`docs/92_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual model output.
+`docs/13_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual model output.
 
 ## Historical Sampling vs Live Routing
 
 Historical training may use a broader point-in-time sampling universe than live inference routing. Live routing can be narrow because upstream layers gate or prioritize candidates; historical training should not copy those gates when doing so would remove useful contrast.
 
-The canonical policy lives in `docs/97_historical_dataset_scope.md`.
+The canonical policy lives in `docs/18_historical_dataset_scope.md`.
 
 Especially for Layer 3, live routing may send targets from Layer 2 selected/prioritized sector baskets, but historical training may sample targets across other sectors, industries, styles, market caps, and liquidity tiers. Layer 2 context must remain attached to each row as point-in-time context, but it does not have to be a hard historical-training filter.
 
