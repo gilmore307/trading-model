@@ -5,7 +5,7 @@ Status: active architecture revision. Layer 7; current physical implementation s
 
 Active boundary: Layer 7 converts Layer 6 target holding-state projection into an offline direct-underlying action thesis: eligibility, planned action type, exposure-adjustment thesis, entry/target/stop/time assumptions, and handoff to Layer 8 trading guidance.
 
-It may describe a direct stock/ETF plan, but it is not broker execution and does not select option contracts. Layer 8 composes the final offline trading guidance candidate; Layer 9 may later cap/block/reduce/flatten that candidate for event risk.
+It may describe a direct underlying plan for stock, ETF, or crypto spot-style candidates, but it is not broker/exchange execution and does not select option contracts. Layer 8 composes the final offline trading guidance candidate when needed; Layer 9 may later cap/block/reduce/flatten the underlying thesis for event risk, with option-expression context only when available.
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
@@ -17,7 +17,7 @@ Status: accepted Layer 7 design route; deterministic scaffold implemented in `sr
 
 Layer 7 answers:
 
-- Is the current opportunity eligible for direct stock/ETF expression?
+- Is the current opportunity eligible for direct underlying/spot expression?
 - If using the underlying, should the offline plan open, increase, reduce, close, cover, maintain, or avoid a position?
 - How much exposure should this planned adjustment express before execution-side review?
 - What entry, target, stop, thesis-invalidation, and time-stop assumptions define the underlying thesis?
@@ -40,13 +40,13 @@ Layer 7: UnderlyingActionModel
   -> underlying_action_plan / underlying_action_vector
 
 Layer 8: TradingGuidanceModel / OptionExpressionModel
-  -> option_expression_plan / expression_vector
+  -> trading_guidance_record plus optional option_expression_plan / expression_vector
 
 trading-execution
   -> broker/account execution, orders, fills, reconciliation, safety controls
 ```
 
-Layer 5 asks whether event-conditioned alpha exists. Layer 6 maps adjusted alpha to target holding state. Layer 7 maps target holding state to a direct underlying action thesis. Layer 8 may use that thesis to choose an option expression. `trading-execution` is the only owner of real order placement.
+Layer 5 asks whether event-conditioned alpha exists. Layer 6 maps adjusted alpha to target holding state. Layer 7 maps target holding state to a direct underlying/spot action thesis. Layer 8 may use that thesis to compose broader trading guidance or choose an option expression when options are available and allowed. `trading-execution` is the only owner of real order placement.
 
 ## Names
 
@@ -67,12 +67,12 @@ Avoid `ExecutionModel`, `final_action`, `order_instruction`, and `execution_inst
 
 Layer 7 owns six responsibilities:
 
-1. Decide whether direct stock/ETF expression is currently allowed.
+1. Decide whether direct underlying/spot expression is currently allowed.
 2. Resolve Layer 6 position gap into a planned underlying action type.
 3. Convert alpha, projection confidence, costs, risk budget, stability, and liquidity into planned action intensity.
 4. Build the direct-underlying entry, target, stop, thesis-invalidation, and time-stop plan.
 5. Emit a side-neutral underlying price-path thesis.
-6. Hand that thesis to Layer 8 for option-expression evaluation without choosing strike, DTE, delta, or contract.
+6. Hand that thesis to Layer 8 when broader trading guidance or option-expression evaluation is needed, without choosing strike, DTE, delta, or contract.
 
 Layer 7 is therefore a policy/strategy translation layer:
 

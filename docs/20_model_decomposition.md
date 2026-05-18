@@ -430,7 +430,7 @@ Contract owner:
 docs/16_layer_07_underlying_action.md
 ```
 
-Layer 7 maps Layer 6 target holding-state projection into a direct stock/ETF offline action thesis. It outputs `underlying_action_plan` and `underlying_action_vector`: eligibility, planned action type, planned exposure change, entry/target/stop/time assumptions, and Layer 8 handoff fields. It does not output broker orders, order routing, live execution instructions, or option contracts.
+Layer 7 maps Layer 6 target holding-state projection into a direct underlying/spot offline action thesis for stock, ETF, or crypto-style candidates. It outputs `underlying_action_plan` and `underlying_action_vector`: eligibility, planned action type, planned exposure change, entry/target/stop/time assumptions, and optional Layer 8 handoff fields. It does not output broker/exchange orders, order routing, live execution instructions, or option contracts.
 
 ## Layer 8: TradingGuidanceModel / OptionExpressionModel
 
@@ -454,4 +454,4 @@ Contract owner:
 docs/18_layer_09_event_risk_governor.md
 ```
 
-Layer 9 consumes point-in-time residual event evidence, upstream context refs, and Layer 8 base trading guidance. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, nominate reduction/flattening candidates, maintain an observation pool, and propose future Layer 4 promotions through evidence packets and agent review. It is not a hard upstream alpha input and not a broker/account mutation surface.
+Layer 9 consumes point-in-time residual event evidence, upstream context refs, and the Layer 7 direct-underlying action thesis as its canonical risk target. Layer 8 base trading guidance / option-expression context is optional expression context when available, not a prerequisite. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, nominate reduction/flattening candidates, maintain an observation pool, and propose future Layer 4 promotions through evidence packets and agent review. It is not a hard upstream alpha input and not a broker/account mutation surface.

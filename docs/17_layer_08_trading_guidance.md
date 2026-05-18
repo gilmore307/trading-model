@@ -3,17 +3,17 @@
 <!-- ACTIVE_LAYER_REVISION -->
 Status: active architecture revision. Layer 8; current V1 physical implementation surface is `src/models/model_08_option_expression/` as the option-expression subset until a dedicated broader TradingGuidanceModel implementation is accepted.
 
-Active boundary: Layer 8 outputs the final **base trading guidance candidate** before event-risk intervention. It consumes Layer 7 underlying-action thesis, position/risk context, and optional point-in-time option-chain evidence. It may choose direct-underlying, option-expression, or no-trade/maintain guidance as an offline decision record.
+Active boundary: Layer 8 outputs an optional offline `trading_guidance_record` and optional option-expression context. It consumes Layer 7 underlying-action thesis, position/risk context, and optional point-in-time option-chain evidence. It may choose direct-underlying, option-expression, or no-trade/maintain guidance as an offline decision record, but Layer 9 does not require this layer for direct-underlying-only routes.
 
 Allowed outputs: `trading_guidance_record`, `trading_guidance_vector`, optional `option_expression_plan` / `expression_vector`, selected contract references and constraints when option expression is used, reason codes, and replay refs. Forbidden outputs: broker order id, route, time-in-force, send/cancel/replace, final order quantity, or broker/account mutation.
 
-Layer 9 is allowed to intervene after this layer for high-severity event risk.
+Layer 9's canonical risk target is the Layer 7 underlying/spot thesis. Layer 8 expression context is optional for the governor; crypto/direct-underlying-only routes may bypass Layer 8 option expression entirely.
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
 Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
-`TradingGuidanceModel / OptionExpressionModel` consumes the Layer 7 `underlying_action_plan` / `underlying_action_vector` handoff plus point-in-time option-chain context to produce an offline `trading_guidance_record / option_expression_plan` and `trading_guidance_vector / expression_vector`.
+`TradingGuidanceModel / OptionExpressionModel` consumes the Layer 7 `underlying_action_plan` / `underlying_action_vector` handoff plus optional point-in-time option-chain context to produce an offline `trading_guidance_record` and, when options are available and allowed, `option_expression_plan` / `expression_vector`.
 
 It is the first layer that may select option expression and contract constraints. It is still not live execution.
 

@@ -56,6 +56,22 @@ class EventRiskGovernorTests(unittest.TestCase):
         self.assertEqual(vector["9_event_market_impact_score_390min"], 0.0)
         self.assertGreater(vector["9_event_context_quality_score_390min"], 0.0)
 
+    def test_crypto_context_uses_direct_underlying_without_option_requirement(self) -> None:
+        output = generate_rows([
+            _base_row(
+                asset_class="crypto",
+                underlying_action_plan_ref="uap_btc_fixture",
+                underlying_action_vector_ref="uav_btc_fixture",
+            )
+        ])[0]
+
+        self.assertEqual(output["asset_expression_route"], "direct_underlying_only")
+        self.assertEqual(output["base_underlying_action_plan_ref"], "uap_btc_fixture")
+        self.assertIsNone(output["base_trading_guidance_record_ref"])
+        self.assertIsNone(output["option_expression_plan_ref"])
+        self.assertFalse(output["event_risk_governor_diagnostics"]["base_guidance_context"]["option_expression_required_for_governor"])
+        self.assert_no_forbidden_terms(output)
+
     def test_price_action_event_maps_to_microstructure_reversal_risk(self) -> None:
         row = _base_row(source_09_event_risk_governor=[
             {

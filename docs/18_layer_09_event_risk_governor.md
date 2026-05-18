@@ -3,9 +3,9 @@
 <!-- ACTIVE_LAYER_REVISION -->
 Status: active architecture revision. Conceptual Layer 9; implementation package and scripts now use `model_09_event_risk_governor`. The upstream data source still uses `source_09_event_risk_governor` until a separate data/SQL surface migration is accepted.
 
-Active boundary: Layer 9 is the event-intelligence and event-risk governor after base trading guidance. It consumes standardized point-in-time event interpretations when available (`event_interpretation_v1`) plus event evidence refs, current context states, and the Layer 8 base trading guidance candidate.
+Active boundary: Layer 9 is the event-intelligence and event-risk governor after the base direct-underlying thesis is known. It consumes standardized point-in-time event interpretations when available (`event_interpretation_v1`) plus event evidence refs, current context states, and the Layer 7 `underlying_action_plan` as the canonical risk target. Layer 8 `trading_guidance_record` / `option_expression_plan` is optional expression context, not a prerequisite.
 
-It may directly modify the decision/risk record consumed by execution risk-control: block new entries, cap exposure, reduce exposure, nominate flatten/clear candidates, halt trading candidates, or require human review. It must keep the base Layer 8 guidance and event-adjusted guidance side by side for audit.
+It may directly modify the decision/risk record consumed by execution risk-control: block new entries, cap exposure, reduce exposure, nominate flatten/clear candidates, halt trading candidates, or require human review. It must keep the base Layer 7 underlying-action thesis, optional Layer 8 expression context, and event-adjusted guidance side by side for audit. For crypto or other direct-underlying-only assets, Layer 9 operates on the underlying/spot action thesis and must not require option-expression evidence.
 
 Forbidden boundary: Layer 9 must not directly send broker orders, choose routes/time-in-force, or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence plus accepted execution risk policy or human review path.
 <!-- /ACTIVE_LAYER_REVISION -->
@@ -15,7 +15,7 @@ Status: accepted Layer 9 design route; deterministic V1 scaffold implemented in 
 
 ## Purpose
 
-`EventRiskGovernor / EventIntelligenceOverlay` is Layer 9. It converts point-in-time visible event evidence into an `event_risk_intervention / event_context_vector` for the current market, sector, target, and Layer 8 guidance context.
+`EventRiskGovernor / EventIntelligenceOverlay` is Layer 9. It converts point-in-time visible event evidence into an `event_risk_intervention / event_context_vector` for the current market, sector, target, and base direct-underlying action context. Option-expression context may be attached when available, but the governor's primary risk question is whether the event changes the safety of the underlying/spot thesis.
 
 Layer 9 answers:
 
@@ -35,7 +35,7 @@ The accepted event-model workflow is two-sided:
 1. **Base-stack first:** `base_stack_layers_01_08` analyze the market, sector, target, accepted event-failure risk, alpha confidence, position projection, underlying action, and option/trading guidance context. Their job is to explain the normal trading state without event shortcuts.
 2. **Residual anomaly detection:** price/path/volume/liquidity/option behavior that remains abnormal after conditioning on `base_stack_layers_01_08` becomes a `residual_anomaly_context`, not an event conclusion.
 3. **Event explanation:** Layer 9 inspects point-in-time event evidence around the residual anomaly and asks whether a canonical event family plausibly explains, amplifies, or contradicts the anomaly.
-4. **Overlay output:** if evidence is strong enough, Layer 9 emits warning, explanation, uncertainty, path-risk, block/cap/reduce/flatten-review, or human-review hints. It keeps base Layer 8 guidance and event-adjusted guidance side by side.
+4. **Overlay output:** if evidence is strong enough, Layer 9 emits warning, explanation, uncertainty, path-risk, block/cap/reduce/flatten-review, or human-review hints. It keeps the base Layer 7 underlying-action thesis, optional Layer 8 expression context, and event-adjusted guidance side by side.
 5. **Correction boundary:** corrections are risk/explanation overlays only. They may modify confidence, risk caps, entry permission, or review requirements, but they must not replace `base_stack_layers_01_08` with standalone event alpha or direct execution decisions.
 
 This workflow prevents event evidence from becoming a broad news-alpha model. Events are used to explain and correct residual anomalies, and to warn when a known event family is visible before the base stack fully reprices it.
@@ -81,6 +81,9 @@ Layer 9 is an event-context overlay on top of the accepted state stack:
 market_context_state
 + sector_context_state
 + target_context_state
++ underlying_action_plan / underlying_action_vector
++ optional trading_guidance_record
++ optional option_expression_plan / expression_vector
 + source_09_event_risk_governor
 + event_detail_artifacts
 + scope_mapping_metadata
@@ -101,6 +104,11 @@ tradeable_time
 market_context_state_ref
 sector_context_state_ref
 target_context_state_ref
+underlying_action_plan_ref
+underlying_action_vector_ref
+optional trading_guidance_record_ref
+optional option_expression_plan_ref
+asset_expression_route (`direct_underlying_primary`, `direct_underlying_only`, or `option_expression_context_available`)
 source_09_event_risk_governor rows visible by available_time
 canonical-event and dedup metadata visible by available_time
 event_detail_artifact references visible by available_time
@@ -158,6 +166,18 @@ The overview row can reference type-specific artifacts. These artifacts may incl
 
 Artifacts must remain point-in-time versioned. A later article revision, later SEC interpretation, or post-event price reaction can be a training/evaluation label only; it cannot be an inference feature.
 
+### Direct-underlying basis and crypto/no-option route
+
+Layer 9's intervention target is the direct-underlying thesis from Layer 7. The governor asks whether visible event evidence should block, cap, reduce, flatten-review, halt-review, explain, or require human review for that underlying/spot thesis.
+
+Layer 8 context is optional:
+
+- for stock/ETF candidates with an accepted option-expression plan, Layer 9 may also inspect `trading_guidance_record` and `option_expression_plan` to avoid double-counting option-chain evidence and to cap/block the chosen expression;
+- for direct stock/ETF guidance with no option expression, Layer 9 still operates normally on `underlying_action_plan`;
+- for crypto candidates, `asset_expression_route=direct_underlying_only`; there is no required option chain, option-expression plan, strike, DTE, delta, or contract evidence.
+
+This keeps event-risk governance instrument-aware without making options the default or mandatory path.
+
 ### Abnormal-activity residual boundary
 
 Layer 9 abnormal-activity evidence must not double-count model-owned bars, volume, spread, liquidity, volatility, gap, VWAP, trend, or target-state features that already enter `base_stack_layers_01_08` inputs.
@@ -180,7 +200,7 @@ Startup included scope is intentionally narrow:
 | `microstructure_liquidity_disruption` | spread widening, depth disappearance, one-sided prints, halt/pause, anomalous quote environment | outside broad-market liquidity/context state already consumed upstream |
 | `option_derivatives_abnormality` | IV/skew/term-structure shock, unusual option volume, call/put imbalance, sweep/block evidence, OI change, option-liquidity disruption | not already consumed by Layer 8 option-expression inputs, or explicitly residual after that path |
 
-Excluded from startup scope: raw return/volume/spread/liquidity z-scores alone; ordinary `equity_bar`, `equity_liquidity_bar`, target-state, option-expression, or Layer 8 guidance fields; post-event realized returns or labels; strategy/base-stack failure labels; and detector thresholds without reviewed calibration.
+Excluded from startup scope: raw return/volume/spread/liquidity z-scores alone; ordinary `equity_bar`, `equity_liquidity_bar`, target-state, option-expression, or optional Layer 8 expression-context fields; post-event realized returns or labels; strategy/base-stack failure labels; and detector thresholds without reviewed calibration.
 
 Accepted uses:
 

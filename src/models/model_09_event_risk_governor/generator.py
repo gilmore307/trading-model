@@ -23,7 +23,7 @@ SCOPE_KEYS = ("market", "sector", "industry", "theme_factor", "peer_group", "sym
 def generate_rows(input_rows: Iterable[Mapping[str, Any]], *, model_version: str = MODEL_VERSION) -> list[dict[str, Any]]:
     rows = [_normalize_row(row) for row in input_rows]
     if not rows:
-        raise ValueError("at least one Layer 8 decision row is required")
+        raise ValueError("at least one Layer 9 decision/context row is required")
     rows.sort(key=lambda row: (_row_time(row), str(row.get("target_candidate_id") or row.get("scope_key") or "")))
     return [_model_row(row, model_version=model_version) for row in rows]
 
@@ -63,6 +63,11 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "market_context_state_ref": row.get("market_context_state_ref"),
         "sector_context_state_ref": row.get("sector_context_state_ref"),
         "target_context_state_ref": row.get("target_context_state_ref"),
+        "base_underlying_action_plan_ref": row.get("underlying_action_plan_ref") or row.get("base_underlying_action_plan_ref"),
+        "base_underlying_action_vector_ref": row.get("underlying_action_vector_ref") or row.get("base_underlying_action_vector_ref"),
+        "base_trading_guidance_record_ref": row.get("trading_guidance_record_ref") or row.get("base_trading_guidance_record_ref"),
+        "option_expression_plan_ref": row.get("option_expression_plan_ref"),
+        "asset_expression_route": row.get("asset_expression_route") or _asset_expression_route(row),
         "event_context_vector_ref": ref,
         **payload,
         "event_context_vector": payload,
@@ -72,6 +77,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "visible_event_ids": [event.get("event_id") for event in events],
             "dominant_impact_scope_by_horizon": audit,
             "encoded_events": events,
+            "base_guidance_context": _base_guidance_context(row),
         },
     }
     _validate_no_forbidden_output(output)
@@ -395,6 +401,32 @@ def _suffix(horizon: str) -> str:
 def _stable_id(prefix: str, *parts: object) -> str:
     digest = hashlib.sha256("|".join(str(part) for part in parts).encode("utf-8")).hexdigest()[:16]
     return f"{prefix}_{digest}"
+
+
+def _asset_expression_route(row: Mapping[str, Any]) -> str:
+    asset_class = str(row.get("asset_class") or row.get("instrument_family") or "").lower()
+    option_ref = row.get("option_expression_plan_ref")
+    option_plan = _coerce_payload(row.get("option_expression_plan"))
+    option_payload = option_plan if isinstance(option_plan, Mapping) else {}
+    expression_type = str(option_payload.get("selected_expression_type") or row.get("selected_expression_type") or "").lower()
+    if asset_class in {"crypto", "crypto_spot", "digital_asset"}:
+        return "direct_underlying_only"
+    if option_ref or expression_type in {"long_call", "long_put"}:
+        return "option_expression_context_available"
+    return "direct_underlying_primary"
+
+
+def _base_guidance_context(row: Mapping[str, Any]) -> dict[str, Any]:
+    route = row.get("asset_expression_route") or _asset_expression_route(row)
+    return {
+        "risk_target_basis": "underlying_action_plan",
+        "asset_expression_route": route,
+        "underlying_action_plan_ref": row.get("underlying_action_plan_ref") or row.get("base_underlying_action_plan_ref"),
+        "underlying_action_vector_ref": row.get("underlying_action_vector_ref") or row.get("base_underlying_action_vector_ref"),
+        "trading_guidance_record_ref": row.get("trading_guidance_record_ref") or row.get("base_trading_guidance_record_ref"),
+        "option_expression_plan_ref": row.get("option_expression_plan_ref"),
+        "option_expression_required_for_governor": False,
+    }
 
 
 def _validate_no_forbidden_output(value: Any, path: str = "output") -> None:

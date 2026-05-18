@@ -26,6 +26,8 @@ MODEL_LAYER_ORDER = (
     "layer_08_option_expression",
     "layer_09_event_risk_governor",
 )
+REQUIRED_MODEL_LAYER_ORDER = tuple(layer for layer in MODEL_LAYER_ORDER if layer != "layer_08_option_expression")
+OPTIONAL_MODEL_LAYER_ORDER = ("layer_08_option_expression",)
 
 _LAYER_METADATA = {
     "layer_01_market_regime": {
@@ -65,7 +67,8 @@ _LAYER_METADATA = {
     },
     "layer_08_option_expression": {
         "model_id": "option_expression_model",
-        "expected_model_output": "option_expression_plan",
+        "expected_model_output": "trading_guidance_record",
+        "accepted_model_outputs": ("trading_guidance_record", "option_expression_plan"),
         "generator_entrypoint_ref": "trading-model/scripts/models/model_08_option_expression/generate_model_08_option_expression.py",
     },
     "layer_09_event_risk_governor": {
@@ -176,10 +179,12 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
                     row_errors.append(f"layer_input_refs[{index}].{field} missing")
             if row.get("model_id") and row.get("model_id") != metadata["model_id"]:
                 row_errors.append(f"layer_input_refs[{index}].model_id mismatch for {layer}")
-            if row.get("expected_model_output") and row.get("expected_model_output") != metadata["expected_model_output"]:
+            accepted_outputs = metadata.get("accepted_model_outputs") or (metadata["expected_model_output"],)
+            if row.get("expected_model_output") and row.get("expected_model_output") not in accepted_outputs:
                 row_errors.append(f"layer_input_refs[{index}].expected_model_output mismatch for {layer}")
 
-    missing_layers = sorted(set(MODEL_LAYER_ORDER) - set(rows_by_layer))
+    missing_layers = sorted(set(REQUIRED_MODEL_LAYER_ORDER) - set(rows_by_layer))
+    missing_optional_layers = sorted(set(OPTIONAL_MODEL_LAYER_ORDER) - set(rows_by_layer))
     valid = (
         not missing_fields
         and contract_type_valid
@@ -197,6 +202,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
         "decision_time_valid": decision_time_valid,
         "forbidden_actions_present": forbidden_actions_present,
         "missing_layers": missing_layers,
+        "missing_optional_layers": missing_optional_layers,
         "row_errors": row_errors,
         "provider_calls_performed": 0,
         "model_activation_performed": False,
@@ -258,7 +264,8 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
             )
         )
 
-    ready = validation["valid"] and len(routes) == len(MODEL_LAYER_ORDER)
+    routed_layers = {route.model_layer for route in routes}
+    ready = validation["valid"] and set(REQUIRED_MODEL_LAYER_ORDER).issubset(routed_layers)
     return {
         "contract_type": "model_realtime_decision_route_plan",
         "route_plan_id": route_plan_id,
@@ -322,7 +329,8 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
                     row_errors.append(f"layer_routes[{index}].{field} missing")
             if row.get("generator_entrypoint_ref") != metadata["generator_entrypoint_ref"]:
                 row_errors.append(f"layer_routes[{index}].generator_entrypoint_ref mismatch for {layer}")
-    missing_layers = sorted(set(MODEL_LAYER_ORDER) - layer_set)
+    missing_layers = sorted(set(REQUIRED_MODEL_LAYER_ORDER) - layer_set)
+    missing_optional_layers = sorted(set(OPTIONAL_MODEL_LAYER_ORDER) - layer_set)
     valid = (
         not missing_fields
         and contract_type_valid
@@ -340,6 +348,7 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
         "handoff_mode_valid": handoff_mode_valid,
         "input_valid": input_valid,
         "missing_layers": missing_layers,
+        "missing_optional_layers": missing_optional_layers,
         "row_errors": row_errors,
         "provider_calls_performed": 0,
         "model_activation_performed": False,
@@ -352,6 +361,8 @@ __all__ = [
     "ACCEPTED_HANDOFF_MODES",
     "FORBIDDEN_HANDOFF_ACTIONS",
     "MODEL_LAYER_ORDER",
+    "OPTIONAL_MODEL_LAYER_ORDER",
+    "REQUIRED_MODEL_LAYER_ORDER",
     "RealtimeDecisionLayerRoute",
     "build_realtime_decision_route_plan",
     "validate_execution_model_decision_input_snapshot",

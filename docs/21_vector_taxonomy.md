@@ -370,7 +370,7 @@ Primary input source remains until a separate data/SQL migration:
 trading_data.source_09_event_risk_governor
 ```
 
-Layer 9 is a point-in-time residual event-risk overlay after Layer 8 base trading guidance:
+Layer 9 is a point-in-time residual event-risk overlay whose canonical risk target is the Layer 7 direct-underlying thesis. Layer 8 trading-guidance / option-expression context is optional and absent for direct-underlying-only crypto routes:
 
 ```text
 market_context_state
@@ -380,7 +380,7 @@ market_context_state
 + alpha_confidence_vector
 + position_projection_vector
 + underlying_action_plan / vector
-+ trading_guidance_record / option_expression_plan / expression_vector
++ optional trading_guidance_record / option_expression_plan / expression_vector
 + source_09_event_risk_governor
 + event_detail_artifacts
 + scope_mapping_metadata

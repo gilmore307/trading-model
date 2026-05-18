@@ -58,9 +58,9 @@ This separation is mandatory:
 | 4 | `EventFailureRiskModel` | `event_failure_risk_model` | `event_failure_risk_vector` | Agent-reviewed event/strategy-failure relationships converted into pre-alpha failure-risk conditioning. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Reviewed state stack plus Layer 4 failure-risk conditioning to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
 | 6 | `PositionProjectionModel` | `position_projection_model` | `position_projection_vector` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
-| 7 | `UnderlyingActionModel` | `underlying_action_model` | `underlying_action_plan` / `underlying_action_vector` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and trading-guidance handoff. |
+| 7 | `UnderlyingActionModel` | `underlying_action_model` | `underlying_action_plan` / `underlying_action_vector` | Direct underlying/spot planned action thesis for stock, ETF, or crypto-style candidates: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and optional trading-guidance handoff. |
 | 8 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | `trading_guidance` / `option_expression_plan` / `expression_vector` | Offline base trading guidance, including optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
-| 9 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | `event_risk_intervention` / `event_context_vector` | Point-in-time residual event-risk intervention after base trading guidance; may discover, block/cap/review guidance, or propose Layer 4 promotions but must not mutate broker/account state. |
+| 9 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | `event_risk_intervention` / `event_context_vector` | Point-in-time residual event-risk intervention on the direct-underlying/spot thesis; may use optional Layer 8 expression context, discover, block/cap/review guidance, or propose Layer 4 promotions but must not mutate broker/account state. |
 
 Do not treat Layer 8 or Layer 9 as live execution. Broker mutation and live/paper order placement are outside `trading-model`. There is no accepted Layer 10 inside this repository; post-Layer-9 work crosses into downstream review / execution-owned boundaries.
 
@@ -333,7 +333,7 @@ docs/15_layer_06_position_projection.md
 
 `UnderlyingActionModel` consumes `position_projection_vector`, alpha-confidence refs, current/pending direct-underlying exposure, quote/liquidity state, risk-budget context, and policy gates to produce `underlying_action_plan` and `underlying_action_vector`.
 
-It owns the direct stock/ETF planned action thesis: planned action type, planned exposure change, entry plan, target price/range, stop, thesis invalidation, time-stop, reward/risk, and side-neutral price-path assumptions for Layer 8 trading guidance / option expression. Its planned action types are offline plan values such as `open_long`, `increase_long`, `reduce_long`, `close_long`, `open_short`, `increase_short`, `reduce_short`, `cover_short`, `maintain`, and `no_trade`.
+It owns the direct underlying/spot planned action thesis for stock, ETF, or crypto-style candidates: planned action type, planned exposure change, entry plan, target price/range, stop, thesis invalidation, time-stop, reward/risk, and side-neutral price-path assumptions for optional Layer 8 trading guidance / option expression. Its planned action types are offline plan values such as `open_long`, `increase_long`, `reduce_long`, `close_long`, `open_short`, `increase_short`, `reduce_short`, `cover_short`, `maintain`, and `no_trade`.
 
 It does not emit broker order fields, order type, route, time-in-force, send/cancel/replace instructions, broker order ids, option strike/DTE/delta/Greeks, or account mutations. Contract owner:
 
@@ -355,7 +355,7 @@ docs/17_layer_08_trading_guidance.md
 
 ## Layer 9: EventRiskGovernor / EventIntelligenceOverlay
 
-`EventRiskGovernor` consumes point-in-time residual event evidence, upstream context refs, and Layer 8 base trading guidance. It outputs `event_risk_intervention` plus event-context/risk evidence that can block new entries, cap exposure, request human review, or nominate reduction/flattening candidates under reviewed policy.
+`EventRiskGovernor` consumes point-in-time residual event evidence, upstream context refs, and the Layer 7 direct-underlying action thesis as its canonical risk target. Layer 8 base trading guidance / option-expression context is optional expression context when available. It outputs `event_risk_intervention` plus event-context/risk evidence that can block new entries, cap exposure, request human review, or nominate reduction/flattening candidates under reviewed policy.
 
 It is a post-guidance risk-governor boundary, not a hard upstream alpha input and not a broker/account mutation surface. Contract owner:
 
@@ -379,7 +379,9 @@ alpha_confidence_vector_ref
 position_projection_vector_ref
 underlying_action_plan_ref
 underlying_action_vector_ref
-option_expression_plan_ref
+trading_guidance_record_ref (optional)
+option_expression_plan_ref (optional; absent for direct-underlying-only/crypto routes)
+asset_expression_route
 expression_vector_ref
 event_risk_intervention_ref
 event_context_vector_ref

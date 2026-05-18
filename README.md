@@ -30,13 +30,13 @@ UnderlyingActionModel
   -> underlying_action_plan / underlying_action_vector
 
 TradingGuidanceModel / OptionExpressionModel
-  -> option_expression_plan / expression_vector
+  -> trading_guidance_record plus optional option_expression_plan / expression_vector
 
 EventRiskGovernor / EventIntelligenceOverlay
   -> event_risk_intervention / event-adjusted risk guidance
 ```
 
-Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning. Layers 5-8 convert target state and reviewed failure-risk conditioning into alpha confidence, projected position state, direct-underlying action thesis, and trading/option-expression guidance. Layer 9 applies event-risk governance after base guidance. Broker orders and account mutation stay outside this repository.
+Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning. Layers 5-8 convert target state and reviewed failure-risk conditioning into alpha confidence, projected position state, direct-underlying action thesis, and trading/option-expression guidance. Layer 9 applies event-risk governance to the direct-underlying/spot thesis, using Layer 8 expression context only when present. Broker orders and account mutation stay outside this repository.
 
 ## Top-Level Structure
 

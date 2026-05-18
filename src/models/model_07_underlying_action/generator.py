@@ -3,9 +3,9 @@
 Consumes point-in-time Layer 5/6 vectors plus current/pending direct-underlying
 state, quote/liquidity/borrow state, and risk/policy gates. Emits an offline
 ``underlying_action_plan`` and ``underlying_action_vector``. The scaffold is
-intentionally conservative: it plans direct stock/ETF action only, uses pending
-exposure when calculating effective exposure, blocks broker/order fields, and
-never selects option contracts.
+intentionally conservative: it plans direct underlying/spot actions for stock,
+ETF, or crypto-style candidates, uses pending exposure when calculating effective
+exposure, blocks broker/exchange order fields, and never selects option contracts.
 """
 from __future__ import annotations
 

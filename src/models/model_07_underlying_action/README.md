@@ -2,7 +2,7 @@
 
 Current physical package for Layer 7 `UnderlyingActionModel` deterministic scaffold.
 
-This package owns local/offline implementation for the accepted Layer 7 direct stock/ETF planned-action boundary:
+This package owns local/offline implementation for the accepted Layer 7 direct underlying/spot planned-action boundary across stock, ETF, or crypto-style candidates:
 
 - consumes Layer 5 `alpha_confidence_vector` refs/payloads;
 - consumes Layer 6 `position_projection_vector` refs/payloads;

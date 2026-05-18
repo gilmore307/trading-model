@@ -65,7 +65,7 @@ Layer 1/2/3
   -> alpha_confidence_vector
 ```
 
-Layer 6 should consume the `alpha_confidence_vector` by default. Layer 9 event-adjusted risk guidance, if available, is applied later against the base trading guidance record rather than being a hard prerequisite here.
+Layer 6 should consume the `alpha_confidence_vector` by default. Layer 9 event-adjusted risk guidance, if available, is applied later against the Layer 7 direct-underlying/spot thesis and optional Layer 8 expression context rather than being a hard prerequisite here.
 
 ## Inputs
 
@@ -126,7 +126,7 @@ Layer 5 may learn that positive or negative target-state evidence has predictive
 
 Layer 9 event intelligence is not a required input for Layer 5 alpha-confidence generation. Reviewed `event_context_vector` / event-risk evidence may be referenced as diagnostics or later risk-governor context, but it must not be treated as a hard upstream prerequisite for base alpha.
 
-Events may later enhance, weaken, contaminate, block, cap, or require review of the base guidance through the Layer 9 EventRiskGovernor boundary. Ordinary event evidence should not be folded into Layer 5 as duplicate state alpha.
+Events may later enhance, weaken, contaminate, block, cap, or require review of the direct-underlying/spot thesis through the Layer 9 EventRiskGovernor boundary. Ordinary event evidence should not be folded into Layer 5 as duplicate state alpha.
 
 ### Input E - quality, calibration, and research memory
 

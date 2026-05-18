@@ -16,7 +16,7 @@ The trading platform is split across multiple repositories so each major respons
 
 Layer 8 and Layer 9 plans remain offline and broker mutation stays outside this repository.
 
-Reviewed event/strategy-failure evidence is now a Layer 4 conditioning boundary before alpha confidence. Unreviewed, residual, or discovery-stage event evidence remains a Layer 9 risk-governor/intervention boundary after base trading guidance.
+Reviewed event/strategy-failure evidence is now a Layer 4 conditioning boundary before alpha confidence. Unreviewed, residual, or discovery-stage event evidence remains a Layer 9 risk-governor/intervention boundary on the direct-underlying/spot thesis, with Layer 8 expression context only when available.
 
 The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
 
@@ -26,7 +26,7 @@ Current structural boundary:
 broad market tradability context -> sector/industry tradability context -> anonymized target context -> reviewed event-failure risk -> confidence -> position projection -> underlying action plan -> trading guidance / option expression -> event-risk intervention
 ```
 
-`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Layer 4 `EventFailureRiskModel` applies agent-reviewed event/strategy-failure conditioning, Layer 5 `AlphaConfidenceModel` estimates event-conditioned adjusted alpha, Layers 6-8 project position/action/guidance, and Layer 9 `EventRiskGovernor` may intervene on the base guidance with point-in-time residual event risk. Later confidence/projection/action/expression/event-risk layers may map back to real symbols only for audit, routing, and decision records.
+`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Layer 4 `EventFailureRiskModel` applies agent-reviewed event/strategy-failure conditioning, Layer 5 `AlphaConfidenceModel` estimates event-conditioned adjusted alpha, Layers 6-8 project position/action/guidance, and Layer 9 `EventRiskGovernor` may intervene on the Layer 7 direct-underlying/spot thesis with point-in-time residual event risk while treating Layer 8 expression context as optional. Later confidence/projection/action/expression/event-risk layers may map back to real symbols only for audit, routing, and decision records.
 
 ## Related Systems
 

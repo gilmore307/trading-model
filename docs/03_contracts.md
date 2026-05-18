@@ -27,7 +27,7 @@ Layer 9 is now EventRiskGovernor / EventIntelligenceOverlay. There is no accepte
 
 After Layer 9, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
-Layer 8 produces the base offline trading-guidance candidate. Layer 9 may intervene on that candidate for high-severity residual event risk by blocking new entries, capping exposure, reducing exposure, or nominating flatten/halt/human-review actions. Layer 9 still must not directly send broker orders or mutate accounts; execution risk-control owns any resulting broker action.
+Layer 7 produces the base direct-underlying action thesis. Layer 8 may compose a broader offline trading-guidance candidate and optional option-expression plan, but Layer 9's canonical intervention target remains the Layer 7 underlying/spot thesis. Layer 9 may use optional Layer 8 expression context when present, and may intervene for high-severity residual event risk by blocking new entries, capping exposure, reducing exposure, or nominating flatten/halt/human-review actions. For crypto/direct-underlying-only routes, option-expression evidence is not required. Layer 9 still must not directly send broker orders or mutate accounts; execution risk-control owns any resulting broker action.
 
 ## Historical-training readiness classification
 

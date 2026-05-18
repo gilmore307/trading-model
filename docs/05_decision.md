@@ -28,9 +28,9 @@ Status: Accepted; revised by V2.2 on 2026-05-05
 | 4 | `EventFailureRiskModel` | `event_failure_risk_model` | Reviewed event/strategy-failure risk conditioning before alpha confidence; not a raw-news alpha layer. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
 | 6 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
-| 7 | `UnderlyingActionModel` | `underlying_action_model` | Direct stock/ETF planned action thesis: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and trading-guidance handoff. |
+| 7 | `UnderlyingActionModel` | `underlying_action_model` | Direct underlying/spot planned action thesis across stock, ETF, or crypto-style candidates: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and optional trading-guidance handoff. |
 | 8 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | Base trading guidance and optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
-| 9 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | Point-in-time event-risk intervention after base trading guidance; may block/cap/review guidance but must not mutate broker/account state. |
+| 9 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | Point-in-time event-risk intervention on the direct-underlying/spot thesis, with optional Layer 8 expression context; may block/cap/review guidance but must not mutate broker/account state. |
 
 Live/paper order placement remains outside this repository and no layer should be renamed live `ExecutionModel`.
 
@@ -420,7 +420,7 @@ This keeps `base_stack_layers_01_08` model design from being constrained by prem
 Date: 2026-05-06
 Status: Superseded by D039 on 2026-05-15
 
-This decision preserved the earlier EventRiskGovernor-as-Layer-4 route. D039 later moved event governance after the base trading stack, and D047 is now authoritative for exact numbering: EventFailureRiskModel is Layer 4, AlphaConfidenceModel is Layer 5, and EventRiskGovernor / EventIntelligenceOverlay is Layer 9 after base trading guidance.
+This decision preserved the earlier EventRiskGovernor-as-Layer-4 route. D039 later moved event governance after the base trading stack, and D047 is now authoritative for exact numbering: EventFailureRiskModel is Layer 4, AlphaConfidenceModel is Layer 5, and EventRiskGovernor / EventIntelligenceOverlay is Layer 9, intervening on the Layer 7 direct-underlying/spot thesis with optional Layer 8 expression context.
 
 Previous layer order:
 
@@ -446,7 +446,7 @@ Status: Accepted
 
 Layer-numbering update after D047: `AlphaConfidenceModel` is Layer 5 with canonical model id `alpha_confidence_model`, output `alpha_confidence_vector`, current physical surface `model_05_alpha_confidence`, and `5_*` score prefixes.
 
-AlphaConfidenceModel consumes the reviewed Layer 1/2/3 state stack plus Layer 4 event-failure-risk conditioning when applicable. It is the first layer allowed to convert accepted point-in-time state/context evidence into horizon-aware alpha judgment. Raw event intelligence is not a hard upstream correction input; Layer 9 may later intervene on base guidance. AlphaConfidenceModel owns alpha direction, alpha strength, expected residual return, alpha confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability.
+AlphaConfidenceModel consumes the reviewed Layer 1/2/3 state stack plus Layer 4 event-failure-risk conditioning when applicable. It is the first layer allowed to convert accepted point-in-time state/context evidence into horizon-aware alpha judgment. Raw event intelligence is not a hard upstream correction input; Layer 9 may later intervene on the Layer 7 direct-underlying/spot thesis, with optional Layer 8 expression context when present. AlphaConfidenceModel owns alpha direction, alpha strength, expected residual return, alpha confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability.
 
 AlphaConfidenceModel keeps two output tiers separate:
 
@@ -516,7 +516,7 @@ Status: Accepted
 
 Layer-numbering update: `UnderlyingActionModel` is Layer 7 with canonical model id `underlying_action_model` and primary output `underlying_action_plan`; its score/vector output is `underlying_action_vector`. The physical implementation and score prefixes now use current `model_07` / `7_*` names.
 
-UnderlyingActionModel converts current state, final adjusted alpha confidence, and target holding-state projection into a direct stock/ETF offline action thesis. It consumes `alpha_confidence_vector`, `position_projection_vector`, current/pending underlying exposure, underlying quote/liquidity/borrow state, risk-budget context, and point-in-time policy gates.
+UnderlyingActionModel converts current state, final adjusted alpha confidence, and target holding-state projection into a direct underlying/spot offline action thesis for stock, ETF, or crypto-style candidates. It consumes `alpha_confidence_vector`, `position_projection_vector`, current/pending underlying exposure, underlying quote/liquidity/borrow state, risk-budget context, and point-in-time policy gates.
 
 The accepted V1 score families are:
 
@@ -769,7 +769,7 @@ This historical decision moved event intelligence out of the hard upstream alpha
 8. TradingGuidanceModel / OptionExpressionModel;
 9. EventRiskGovernor / EventIntelligenceOverlay.
 
-Rationale: the base trading path should remain runnable without mature event interpretation, while event intelligence can continue expanding as a high-value side branch. Layer 8 produces the base offline trading-guidance candidate. Layer 9 may intervene after Layer 8 when high-risk point-in-time events are detected.
+Rationale: the base trading path should remain runnable without mature event interpretation, while event intelligence can continue expanding as a high-value side branch. Layer 7 produces the direct-underlying/spot thesis that Layer 9 governs. Layer 8 may produce a broader offline trading-guidance candidate and option-expression context when available, but Layer 9 does not require Layer 8 for direct-underlying-only routes.
 
 Allowed event-risk-governor intervention outputs include `block_new_entries`, `max_exposure_factor`, `reduce_exposure_to`, `flatten_position_candidate`, `halt_trading_candidate`, `human_review_required`, event refs, and evidence spans. Under D047 this is Layer 9. It may modify the decision/risk record consumed by execution risk-control, but it must not directly send broker orders or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence and an accepted execution risk policy or human review path.
 
@@ -791,7 +791,7 @@ Training and evaluation must not mix scheduled-known and surprise events under t
 
 Accepted: 2026-05-15
 
-Layer 9 abnormal-activity evidence is not a second copy of bar-derived state. Bars, volume, spread, liquidity, volatility, gap, trend, VWAP distance, and target-state behavior already belong to Layer 1-3 / base guidance inputs when those fields are part of the accepted model stack.
+Layer 9 abnormal-activity evidence is not a second copy of bar-derived state. Bars, volume, spread, liquidity, volatility, gap, trend, VWAP distance, and target-state behavior already belong to Layer 1-3 and direct-underlying/action inputs when those fields are part of the accepted model stack.
 
 EventRiskGovernor may consume abnormal activity only as trigger/provenance evidence, residual unexplained board/tape disturbance after upstream context conditioning, discrete price-action pattern evidence, or cross-source abnormal evidence not otherwise consumed by the base path. It must not treat every high return/volume/spread z-score as an independent event factor when the same information is already available in upstream context states.
 
@@ -871,6 +871,6 @@ Layer 9: EventRiskGovernor / EventIntelligenceOverlay
 
 Layer 4 contains only agent-accepted, empirically reviewed event/strategy-failure factors. Its output is `event_failure_risk_vector`; it may condition alpha confidence, entry permission, exposure caps, strategy disable pressure, and path-risk amplification, but it must not emit buy/sell/hold, choose expression/contract, size positions, route orders, mutate accounts, or perform destructive SQL/storage actions.
 
-Layer 9 remains the residual event-risk governor and research surface. It may explain residual anomalies, maintain the observation pool, warn/cap/block/review base guidance, and generate event-family promotion packets. A family can move from Layer 9 discovery/observation into Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, incremental value review, and explicit agent/manager acceptance.
+Layer 9 remains the residual event-risk governor and research surface. It may explain residual anomalies, maintain the observation pool, warn/cap/block/review the direct-underlying/spot thesis, and generate event-family promotion packets. A family can move from Layer 9 discovery/observation into Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, incremental value review, and explicit agent/manager acceptance.
 
 This decision is architecture/governance only. Current physical script/package/table names now include `model_04_event_failure_risk`, `model_05_alpha_confidence`, `model_06_position_projection`, `model_07_underlying_action`, `model_08_option_expression`, `model_09_event_risk_governor`, `MODEL_09_*`, and `source_09_event_risk_governor`; historical/applied migrations may retain earlier names.
