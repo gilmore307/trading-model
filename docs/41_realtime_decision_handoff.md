@@ -23,7 +23,7 @@ trading-execution realtime capture
   -> fixture/shadow historical-model generation route
 ```
 
-`model_realtime_decision_route_plan` is a route plan, not a model output. It validates that required Layer 1-7 and Layer 9 input refs are present, accepts Layer 9 trading-guidance / option-expression refs when available, maps each present layer to its reviewed model generator entrypoint, and records the handoff mode.
+`model_realtime_decision_route_plan` is a route plan, not a model output. It validates required Layer 1-7 input refs, accepts Layer 8 trading-guidance / option-expression refs and Layer 9 event-risk refs when available, maps each present layer to its reviewed model generator entrypoint, and records the handoff mode. Direct-underlying routes must not require Layer 8 option refs.
 
 Accepted handoff modes:
 
@@ -41,7 +41,7 @@ The model-side planner consumes an `execution_model_decision_input_snapshot` obj
 - `frozen_model_config_ref`
 - `realtime_feature_snapshot_ref`
 - exactly one required layer input for Layers 1-7 and Layer 9
-- zero or one optional Layer 9 trading-guidance / option-expression input
+- zero or one optional Layer 8 trading-guidance / option-expression input
 
 Each conceptual layer input must include the expected model id, expected model output, feature ref, frozen model config ref, and historical dataset snapshot ref. Implementation model ids now follow the current conceptual layer numbering; this table is conceptual-order first.
 
@@ -56,8 +56,8 @@ Each conceptual layer input must include the expected model id, expected model o
 | 5 | `model_05_alpha_confidence` | `alpha_confidence_vector` | `scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py` |
 | 6 | `model_06_position_projection` | `position_projection_vector` | `scripts/models/model_06_position_projection/generate_model_06_position_projection.py` |
 | 7 | `model_07_underlying_action` | `underlying_action_plan` | `scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py` |
-| 8 | `model_09_option_expression` | optional `trading_guidance_record` with optional `option_expression_plan` | `scripts/models/model_09_option_expression/generate_model_09_option_expression.py` |
-| 9 | `model_08_event_risk_governor` | `event_risk_intervention` / `event_context_vector` | `scripts/models/model_08_event_risk_governor/generate_model_08_event_risk_governor.py` |
+| 8 | `model_08_option_expression` | optional `trading_guidance_record` with optional `option_expression_plan` | `scripts/models/model_08_option_expression/generate_model_08_option_expression.py` |
+| 9 | `model_09_event_risk_governor` | `event_risk_intervention` / `event_context_vector` | `scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py` |
 
 ## Non-authorizations
 

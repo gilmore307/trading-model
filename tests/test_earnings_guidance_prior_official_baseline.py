@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_08_event_risk_governor.earnings_guidance_prior_official_baseline import (
+from models.model_09_event_risk_governor.earnings_guidance_prior_official_baseline import (
     PriorOfficialBaselineInputs,
     run_prior_official_baseline_audit,
 )

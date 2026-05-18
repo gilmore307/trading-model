@@ -33,8 +33,8 @@ Durable promotion requests, review decisions, activation, rollback, and producti
 | 5 | `model_05_alpha_confidence` | missing production adjusted-alpha eval run / calibrated labels | deferred: no production eval substrate | none |
 | 6 | `model_06_position_projection` | missing production position-utility eval run / labels | deferred: no production eval substrate | none |
 | 7 | `model_07_underlying_action` | missing production realized-action outcome eval run | deferred: no production eval substrate | none |
-| 8 | `model_09_option_expression` | missing production option-chain replay eval run | deferred: no production eval substrate | none |
-| 9 | `model_08_event_risk_governor` | missing residual-event-governor eval run / calibrated residual-risk labels | deferred: no production eval substrate | none |
+| 8 | `model_08_option_expression` | missing production option-chain replay eval run | deferred: no production eval substrate | none |
+| 9 | `model_09_event_risk_governor` | missing residual-event-governor eval run / calibrated residual-risk labels | deferred: no production eval substrate | none |
 
 ## Layer 1 and 2 evidence
 
@@ -60,10 +60,10 @@ Layers 4-9 remain explicit blockers, not informal work items:
 - Layer 5 requires calibrated adjusted-alpha outcomes.
 - Layer 6 requires position-utility/outcome labels.
 - Layer 7 requires realized underlying-action outcome evaluation.
-- Layer 9 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
-- Layer 8 requires real residual-event-risk labels and production evaluation metrics.
+- Layer 8 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
+- Layer 9 requires real residual-event-risk labels and production evaluation metrics.
 
-The acceptance helper `scripts/models/review_layers_03_08_promotion_acceptance.py` builds blocked model-side evidence and reviewer artifacts for the base Layers 3-8 surfaces. Its name is a bounded base-stack review scope, not a Layer 8 event-risk-governor activation path. It must not persist manager decisions or activate configs.
+The acceptance helper `scripts/models/review_layers_03_08_promotion_acceptance.py` builds blocked model-side evidence and reviewer artifacts for the base Layers 3-8 surfaces. Its name is a bounded base-stack review scope, not a Layer 9 event-risk-governor activation path. It must not persist manager decisions or activate configs.
 
 ## Activation invariant
 

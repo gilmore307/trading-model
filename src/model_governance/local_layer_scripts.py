@@ -171,7 +171,7 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
             "event_failure_evidence_packet": {"evidence_quality_score": 0.86, "applicability_confidence_score": 0.80},
         }
     ],
-    "model_08_event_risk_governor": [
+    "model_09_event_risk_governor": [
         {
             "available_time": "2026-05-07T10:30:00-04:00",
             "tradeable_time": "2026-05-07T10:31:00-04:00",
@@ -272,7 +272,7 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
             "policy_gate_state": {},
         }
     ],
-    "model_09_option_expression": [
+    "model_08_option_expression": [
         {
             "available_time": "2026-05-07T10:30:00-04:00",
             "tradeable_time": "2026-05-07T10:31:00-04:00",
@@ -284,7 +284,7 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
             "underlying_reference_price": 100.25,
             "underlying_action_plan": {"planned_underlying_action_type": "increase_long", "action_side": "long", "dominant_horizon": "390min", "handoff_to_layer_8": {"underlying_path_direction": "bullish", "expected_entry_price": 100.0, "expected_target_price": 105.0, "target_price_low": 103.0, "target_price_high": 106.0, "stop_loss_price": 98.0, "thesis_invalidation_price": 97.5, "expected_holding_time_minutes": 390, "path_quality_score": 0.82, "reversal_risk_score": 0.18, "drawdown_risk_score": 0.22, "expected_favorable_move_pct": 0.05, "expected_adverse_move_pct": -0.02, "entry_price_assumption": "limit_or_pullback", "underlying_action_confidence_score": 0.78}},
             "market_context_state": {"1_market_risk_stress_score": 0.20, "1_market_liquidity_support_score": 0.85},
-            "event_context_vector": {"8_event_gap_risk_score_390min": 0.20, "8_event_uncertainty_score_390min": 0.15},
+            "event_context_vector": {"9_event_gap_risk_score_390min": 0.20, "9_event_uncertainty_score_390min": 0.15},
             "option_expression_policy": {"max_option_spread_pct": 0.18, "iv_rank_ceiling": 0.75},
             "option_contract_candidates": [
                 {"contract_ref": "AAPL_CALL_GOOD", "quote_snapshot_ref": "qs_call_good", "quote_available_time": "2026-05-07T10:30:05-04:00", "quote_age_seconds": 12, "strike": 102, "moneyness": 1.02, "contract_multiplier": 100, "exercise_style": "american", "settlement_type": "physical", "is_weekly": True, "is_monthly": False, "is_adjusted_contract": False, "last_trade_time": "2026-05-07T10:29:58-04:00", "right": "call", "expiration": "2026-05-15", "dte": 8, "delta": 0.52, "gamma": 0.04, "theta": -0.08, "vega": 0.12, "iv": 0.32, "iv_rank": 0.45, "bid": 2.40, "ask": 2.55, "bid_size": 30, "ask_size": 25, "volume": 1200, "open_interest": 6500, "intrinsic_value": 2.0, "extrinsic_value": 0.475, "breakeven_price": 104.475, "theoretical_value": 2.49}
@@ -295,11 +295,11 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
 
 FIXTURE_OUTCOME_ROWS: dict[str, list[dict[str, Any]]] = {
     "model_04_event_failure_risk": [{"event_failure_risk_vector_ref": "efrv_fixture", "realized_strategy_failure_390min": True, "realized_path_risk_amplification_390min": 0.25}],
-    "model_08_event_risk_governor": [{"event_context_vector_ref": "ecv_3a5b6bb6c3a72d97", "realized_symbol_move_after_event_390min": -0.04}],
+    "model_09_event_risk_governor": [{"event_context_vector_ref": "ecv_3a5b6bb6c3a72d97", "realized_symbol_move_after_event_390min": -0.04}],
     "model_05_alpha_confidence": [{"alpha_confidence_vector_ref": "acv_7d1d9b0867ac4d13", "forward_return_390min": -0.05, "idiosyncratic_residual_return_390min": -0.04, "alpha_tradable_label_390min": True}],
     "model_06_position_projection": [{"position_projection_vector_ref": "ppv_f154b03e7648d661", "realized_position_utility_390min": 0.12, "realized_risk_budget_breach_390min": False}],
     "model_07_underlying_action": [{"underlying_action_plan_ref": "uap_7c6b5381d428ea0a", "entry_price_hit": True, "realized_underlying_return": 0.04, "slippage_pct": 0.001, "spread_cost_pct": 0.001}],
-    "model_09_option_expression": [{"option_expression_plan_ref": "oep_8b65e90b82a73385", "realized_option_return_390min": 0.42, "target_premium_hit_before_stop_label_390min": True}],
+    "model_08_option_expression": [{"option_expression_plan_ref": "oep_8b65e90b82a73385", "realized_option_return_390min": 0.42, "target_premium_hit_before_stop_label_390min": True}],
 }
 
 
@@ -310,7 +310,7 @@ def fixture_outcome_rows(model_surface: str, model_rows: list[dict[str, Any]]) -
     for row in model_rows:
         if model_surface == "model_04_event_failure_risk":
             rows.append({"event_failure_risk_vector_ref": row.get("event_failure_risk_vector_ref"), "realized_strategy_failure_390min": True, "realized_path_risk_amplification_390min": 0.25})
-        elif model_surface == "model_08_event_risk_governor":
+        elif model_surface == "model_09_event_risk_governor":
             rows.append({"event_context_vector_ref": row.get("event_context_vector_ref"), "realized_symbol_move_after_event_390min": -0.04})
         elif model_surface == "model_05_alpha_confidence":
             rows.append({"alpha_confidence_vector_ref": row.get("alpha_confidence_vector_ref"), "forward_return_390min": -0.05, "idiosyncratic_residual_return_390min": -0.04, "alpha_tradable_label_390min": True})
@@ -318,6 +318,6 @@ def fixture_outcome_rows(model_surface: str, model_rows: list[dict[str, Any]]) -
             rows.append({"position_projection_vector_ref": row.get("position_projection_vector_ref"), "realized_position_utility_390min": 0.12, "realized_risk_budget_breach_390min": False})
         elif model_surface == "model_07_underlying_action":
             rows.append({"underlying_action_plan_ref": row.get("underlying_action_plan_ref"), "entry_price_hit": True, "realized_underlying_return": 0.04, "slippage_pct": 0.001, "spread_cost_pct": 0.001})
-        elif model_surface == "model_09_option_expression":
+        elif model_surface == "model_08_option_expression":
             rows.append({"option_expression_plan_ref": row.get("option_expression_plan_ref"), "realized_option_return_390min": 0.42, "target_premium_hit_before_stop_label_390min": True})
     return rows

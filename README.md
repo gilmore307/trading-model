@@ -36,7 +36,7 @@ TradingGuidanceModel / OptionExpressionModel
   -> trading_guidance_record plus optional option_expression_plan / expression_vector
 ```
 
-Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning. Layers 5-7 convert target state and reviewed failure-risk conditioning into alpha confidence, projected position state, and a direct-underlying action thesis. Layer 8 applies event-risk governance to that direct-underlying/spot thesis. Layer 9 composes final offline trading guidance and optional option-expression context. Broker orders and account mutation stay outside this repository.
+Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning. Layers 5-7 convert target state and reviewed failure-risk conditioning into alpha confidence, projected position state, and a direct-underlying action thesis. Layer 8 composes optional offline trading guidance and option-expression context from that thesis. Layer 9 applies event-risk governance to the direct-underlying/spot thesis, with Layer 8 context attached only when available. Broker orders and account mutation stay outside this repository.
 
 ## Top-Level Structure
 
@@ -65,8 +65,8 @@ src/models/model_04_event_failure_risk/   EventFailureRiskModel.
 src/models/model_05_alpha_confidence/     AlphaConfidenceModel.
 src/models/model_06_position_projection/  PositionProjectionModel.
 src/models/model_07_underlying_action/    UnderlyingActionModel.
-src/models/model_08_event_risk_governor/  EventRiskGovernor.
-src/models/model_09_option_expression/    OptionExpressionModel package for Layer 9 trading guidance.
+src/models/model_09_event_risk_governor/  EventRiskGovernor.
+src/models/model_08_option_expression/    OptionExpressionModel package for Layer 8 trading guidance.
 src/model_governance/                     Shared evaluation, promotion, SQL, and local-layer helpers.
 ```
 
@@ -84,13 +84,13 @@ scripts/models/model_04_event_failure_risk/
 scripts/models/model_05_alpha_confidence/
 scripts/models/model_06_position_projection/
 scripts/models/model_07_underlying_action/
-scripts/models/model_08_event_risk_governor/
-scripts/models/model_09_option_expression/
+scripts/models/model_09_event_risk_governor/
+scripts/models/model_08_option_expression/
 scripts/models/review_layers_03_08_promotion_acceptance.py
 scripts/model_governance/
 ```
 
-Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Layer 1 also exposes `diagnose_model_01_market_regime_substrate.py`, a read-only source/feature/model substrate diagnostic for promotion-readiness triage before regeneration planning. Layer 4 event-failure-risk scripts and Layer 8 event-risk scripts use the current physical `model_04_event_failure_risk` and `model_08_event_risk_governor` surfaces. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
+Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Layer 1 also exposes `diagnose_model_01_market_regime_substrate.py`, a read-only source/feature/model substrate diagnostic for promotion-readiness triage before regeneration planning. Layer 4 event-failure-risk scripts and Layer 9 event-risk scripts use the current physical `model_04_event_failure_risk` and `model_09_event_risk_governor` surfaces. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
 
 ## Docs Spine
 
@@ -109,8 +109,8 @@ docs/13_layer_04_event_failure_risk.md
 docs/14_layer_05_alpha_confidence.md
 docs/15_layer_06_position_projection.md
 docs/16_layer_07_underlying_action.md
-docs/17_layer_08_event_risk_governor.md
-docs/18_layer_09_trading_guidance.md
+docs/18_layer_09_event_risk_governor.md
+docs/17_layer_08_trading_guidance.md
 docs/20_model_decomposition.md
 docs/21_vector_taxonomy.md
 docs/22_state_vector_feature_registry.md

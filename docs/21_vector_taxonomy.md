@@ -326,9 +326,9 @@ underlying action plan != live execution
 
 Current physical underlying-action score families use `7_*` prefixes. Planned action types, resolved plan fields, reason codes, entry/target/stop prices, quantities, and Layer 9 handoff fields are plan payload fields, not broker-order fields.
 
-## Layer 9 trading-guidance / option-expression semantics
+## Layer 8 trading-guidance / option-expression semantics
 
-Conceptual Layer 9 `trading_guidance_record`, `option_expression_plan`, and `expression_vector` values must keep these axes separate:
+Conceptual Layer 8 `trading_guidance_record`, `option_expression_plan`, and `expression_vector` values must keep these axes separate:
 
 ```text
 underlying action plan != trading guidance approval
@@ -338,12 +338,12 @@ selected_contract != send order
 contract constraints != route / time-in-force
 premium risk plan != account mutation
 expression confidence != final approval
-Layer 9 offline plan != live execution
+Layer 8 offline plan != live execution
 ```
 
 Current physical option-expression score families use `8_*` prefixes. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
 
-## Layer 8 event-risk vocabulary
+## Layer 9 event-risk vocabulary
 
 Layer 9 model:
 
@@ -361,7 +361,7 @@ event_risk_intervention
 Current physical promoted artifact remains until renumbering:
 
 ```text
-trading_model.model_08_event_risk_governor
+trading_model.model_09_event_risk_governor
 ```
 
 Primary input source remains until a separate data/SQL migration:
@@ -370,7 +370,7 @@ Primary input source remains until a separate data/SQL migration:
 trading_data.source_09_event_risk_governor
 ```
 
-Layer 9 is a point-in-time residual event-risk overlay whose canonical risk target is the Layer 7 direct-underlying thesis. Layer 9 trading-guidance / option-expression context is optional and absent for direct-underlying-only crypto routes:
+Layer 9 is a point-in-time residual event-risk overlay whose canonical risk target is the Layer 7 direct-underlying thesis. Layer 8 trading-guidance / option-expression context is optional and absent for direct-underlying-only crypto routes:
 
 ```text
 market_context_state
@@ -389,7 +389,7 @@ market_context_state
   -> event_risk_intervention / event_context_vector
 ```
 
-Current physical event-risk score families use `8_event_*` prefixes. Layer 8 may warn, explain, block/cap/reduce/flatten-review, maintain the observation pool, and propose Layer 4 promotion packets. It is not alpha confidence, not a trading signal, not position sizing, not expression selection, and not final action.
+Current physical event-risk score families use `9_event_*` prefixes. Layer 9 may warn, explain, block/cap/reduce/flatten-review, maintain the observation pool, and propose Layer 4 promotion packets. It is not alpha confidence, not a trading signal, not position sizing, not expression selection, and not final action.
 
 ## Label boundary
 

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from event_family_fixtures import build_event_family_fixture
 
-from models.model_08_event_risk_governor.event_family_remaining_acceptance import (
+from models.model_09_event_risk_governor.event_family_remaining_acceptance import (
     build_event_family_remaining_acceptance,
     write_acceptance_artifacts,
 )
