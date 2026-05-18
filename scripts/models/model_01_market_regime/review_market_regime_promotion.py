@@ -23,7 +23,7 @@ from model_governance.promotion.agent_review import (
     validate_promotion_review,
 )
 
-DEFAULT_MODEL_ID = "model_01_market_regime"
+DEFAULT_MODEL_ID = "market_regime_model"
 DEFAULT_MODEL_VERSION = "model_01_market_regime"
 DEFAULT_CONFIG_HASH = "development_smoke"
 

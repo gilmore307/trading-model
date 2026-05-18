@@ -17,15 +17,15 @@ from models.realtime_decision_handoff import (
 
 def _decision_input_snapshot() -> dict[str, object]:
     layers = [
-        ("layer_01_market_regime", "model_01_market_regime", "market_context_state"),
-        ("layer_02_sector_context", "model_02_sector_context", "sector_context_state"),
-        ("layer_03_target_state_vector", "model_03_target_state_vector", "target_context_state"),
-        ("layer_04_event_failure_risk", "model_04_event_failure_risk", "event_failure_risk_vector"),
-        ("layer_05_alpha_confidence", "model_05_alpha_confidence", "alpha_confidence_vector"),
-        ("layer_06_position_projection", "model_06_position_projection", "position_projection_vector"),
-        ("layer_07_underlying_action", "model_07_underlying_action", "underlying_action_plan"),
-        ("layer_08_option_expression", "model_08_option_expression", "option_expression_plan"),
-        ("layer_09_event_risk_governor", "model_09_event_risk_governor", "event_context_vector"),
+        ("layer_01_market_regime", "market_regime_model", "market_context_state"),
+        ("layer_02_sector_context", "sector_context_model", "sector_context_state"),
+        ("layer_03_target_state_vector", "target_state_vector_model", "target_context_state"),
+        ("layer_04_event_failure_risk", "event_failure_risk_model", "event_failure_risk_vector"),
+        ("layer_05_alpha_confidence", "alpha_confidence_model", "alpha_confidence_vector"),
+        ("layer_06_position_projection", "position_projection_model", "position_projection_vector"),
+        ("layer_07_underlying_action", "underlying_action_model", "underlying_action_plan"),
+        ("layer_08_option_expression", "option_expression_model", "option_expression_plan"),
+        ("layer_09_event_risk_governor", "event_risk_governor", "event_context_vector"),
     ]
     return {
         "contract_type": "execution_model_decision_input_snapshot",

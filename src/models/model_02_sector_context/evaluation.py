@@ -17,7 +17,7 @@ from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 ET = ZoneInfo("America/New_York")
-DEFAULT_MODEL_ID = "model_02_sector_context"
+DEFAULT_MODEL_ID = "sector_context_model"
 DEFAULT_FEATURE_SCHEMA = "trading_data"
 DEFAULT_FEATURE_TABLE = "feature_02_sector_context"
 DEFAULT_MODEL_SCHEMA = "trading_model"

@@ -71,7 +71,7 @@ class SectorContextEvaluationTests(unittest.TestCase):
         self.assertGreater(len(table_rows["model_eval_label"]), 0)
         self.assertGreater(len(table_rows["model_promotion_metric"]), 0)
         self.assertEqual(artifacts.dataset_request["required_feature_key"], "FEATURE_02_SECTOR_CONTEXT")
-        self.assertEqual(artifacts.eval_run["model_id"], "model_02_sector_context")
+        self.assertEqual(artifacts.eval_run["model_id"], "sector_context_model")
 
     def test_future_labels_are_symbol_specific(self) -> None:
         features, models = _rows()
@@ -156,7 +156,7 @@ class SectorContextEvaluationTests(unittest.TestCase):
         summary = summarize_artifacts(build_evaluation_artifacts(feature_rows=features, model_rows=models))
         prompt = build_sector_context_promotion_prompt(
             evaluation_summary=summary,
-            config_version_row={"model_id": "model_02_sector_context"},
+            config_version_row={"model_id": "sector_context_model"},
             promotion_candidate_row={"candidate_ref": "candidate"},
         )
 

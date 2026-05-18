@@ -22,7 +22,7 @@ from model_governance.promotion.agent_review import (
     validate_promotion_review,
 )
 
-DEFAULT_MODEL_ID = "model_02_sector_context"
+DEFAULT_MODEL_ID = "sector_context_model"
 DEFAULT_MODEL_VERSION = "model_02_sector_context"
 DEFAULT_CONFIG_HASH = "sector_context_contract"
 

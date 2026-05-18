@@ -29,7 +29,7 @@ class EvaluationPersistenceTests(unittest.TestCase):
             "model_eval_run",
             {
                 "eval_run_id": "run1",
-                "model_id": "model_03_target_state_vector",
+                "model_id": "target_state_vector_model",
                 "snapshot_id": "snap1",
                 "eval_status": "completed",
                 "eval_payload_json": {"evidence_source": "real_database_evaluation"},

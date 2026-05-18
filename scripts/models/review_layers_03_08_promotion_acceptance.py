@@ -27,7 +27,7 @@ CONFIG_HASH = "production_acceptance_no_eval_substrate_2026_05_08"
 LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
     {
         "layer": 3,
-        "model_id": "model_03_target_state_vector",
+        "model_id": "target_state_vector_model",
         "model_name": "TargetStateVectorModel",
         "feature_key": "feature_03_target_state_vector",
         "blocker": "no production SQL evidence table / eval run exists for current contract",
@@ -39,7 +39,7 @@ LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 4,
-        "model_id": "model_04_event_failure_risk",
+        "model_id": "event_failure_risk_model",
         "model_name": "EventFailureRiskModel",
         "feature_key": "event_failure_risk_vector",
         "blocker": "no production EventFailureRiskModel evaluation substrate or reviewed strategy-failure conditioning labels exist",
@@ -51,7 +51,7 @@ LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 5,
-        "model_id": "model_05_alpha_confidence",
+        "model_id": "alpha_confidence_model",
         "model_name": "AlphaConfidenceModel",
         "feature_key": "alpha_confidence_vector",
         "blocker": "no production adjusted-alpha evaluation run or calibrated labels exist",
@@ -63,7 +63,7 @@ LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 6,
-        "model_id": "model_06_position_projection",
+        "model_id": "position_projection_model",
         "model_name": "PositionProjectionModel",
         "feature_key": "position_projection_vector",
         "blocker": "no production position-utility evaluation run or labels exist",
@@ -75,7 +75,7 @@ LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 7,
-        "model_id": "model_07_underlying_action",
+        "model_id": "underlying_action_model",
         "model_name": "UnderlyingActionModel",
         "feature_key": "underlying_action_plan",
         "blocker": "no production realized-action outcome evaluation run exists",
@@ -87,7 +87,7 @@ LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 8,
-        "model_id": "model_08_option_expression",
+        "model_id": "option_expression_model",
         "model_name": "OptionExpressionModel",
         "feature_key": "option_expression_plan",
         "blocker": "no production option-chain replay evaluation run exists",

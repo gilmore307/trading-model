@@ -29,47 +29,47 @@ MODEL_LAYER_ORDER = (
 
 _LAYER_METADATA = {
     "layer_01_market_regime": {
-        "model_id": "model_01_market_regime",
+        "model_id": "market_regime_model",
         "expected_model_output": "market_context_state",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_01_market_regime/generate_model_01_market_regime.py",
     },
     "layer_02_sector_context": {
-        "model_id": "model_02_sector_context",
+        "model_id": "sector_context_model",
         "expected_model_output": "sector_context_state",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_02_sector_context/generate_model_02_sector_context.py",
     },
     "layer_03_target_state_vector": {
-        "model_id": "model_03_target_state_vector",
+        "model_id": "target_state_vector_model",
         "expected_model_output": "target_context_state",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_03_target_state_vector/generate_model_03_target_state_vector.py",
     },
     "layer_04_event_failure_risk": {
-        "model_id": "model_04_event_failure_risk",
+        "model_id": "event_failure_risk_model",
         "expected_model_output": "event_failure_risk_vector",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py",
     },
     "layer_05_alpha_confidence": {
-        "model_id": "model_05_alpha_confidence",
+        "model_id": "alpha_confidence_model",
         "expected_model_output": "alpha_confidence_vector",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py",
     },
     "layer_06_position_projection": {
-        "model_id": "model_06_position_projection",
+        "model_id": "position_projection_model",
         "expected_model_output": "position_projection_vector",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_06_position_projection/generate_model_06_position_projection.py",
     },
     "layer_07_underlying_action": {
-        "model_id": "model_07_underlying_action",
+        "model_id": "underlying_action_model",
         "expected_model_output": "underlying_action_plan",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py",
     },
     "layer_08_option_expression": {
-        "model_id": "model_08_option_expression",
+        "model_id": "option_expression_model",
         "expected_model_output": "option_expression_plan",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_08_option_expression/generate_model_08_option_expression.py",
     },
     "layer_09_event_risk_governor": {
-        "model_id": "model_09_event_risk_governor",
+        "model_id": "event_risk_governor",
         "expected_model_output": "event_context_vector",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py",
     },

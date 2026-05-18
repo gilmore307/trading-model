@@ -28,9 +28,9 @@ class AgentPromotionReviewTests(unittest.TestCase):
         }
 
     def test_prompt_requires_strict_json_and_blocks_fixture_only_approval(self) -> None:
-        config = build_model_config_ref(model_id="model_01_market_regime", config_hash="abc")
+        config = build_model_config_ref(model_id="market_regime_model", config_hash="abc")
         candidate = build_promotion_candidate_evidence(
-            model_id="model_01_market_regime",
+            model_id="market_regime_model",
             config_ref_id=config["config_ref_id"],
             eval_run_id="mdevrun_001",
         )
@@ -145,9 +145,9 @@ class AgentPromotionReviewTests(unittest.TestCase):
         by_layer = {item["layer"]: item for item in layers_03_08_review_script.LAYER_ACCEPTANCES}
 
         self.assertEqual(sorted(by_layer), list(range(3, 9)))
-        self.assertEqual(by_layer[4]["model_id"], "model_04_event_failure_risk")
+        self.assertEqual(by_layer[4]["model_id"], "event_failure_risk_model")
         self.assertEqual(by_layer[4]["model_name"], "EventFailureRiskModel")
-        self.assertNotIn("model_09_event_risk_governor", {item["model_id"] for item in by_layer.values()})
+        self.assertNotIn("event_risk_governor", {item["model_id"] for item in by_layer.values()})
 
     def test_layers_03_08_dry_run_builds_blocked_artifacts_without_agent(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
