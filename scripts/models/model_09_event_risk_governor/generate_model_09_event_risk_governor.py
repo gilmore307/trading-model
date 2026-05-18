@@ -101,6 +101,58 @@ def _fetch_rows(cursor: Any, *, schema: str, table: str, source_start: str | Non
     return [dict(row) for row in cursor.fetchall()]
 
 
+def _table_exists(cursor: Any, *, schema: str, table: str) -> bool:
+    _quote_identifier(schema)
+    _quote_identifier(table)
+    cursor.execute("SELECT to_regclass(%s) AS table_ref", (f"{schema}.{table}",))
+    row = cursor.fetchone()
+    if isinstance(row, Mapping):
+        return row.get("table_ref") is not None
+    if isinstance(row, Sequence):
+        return bool(row and row[0] is not None)
+    return False
+
+
+def _fetch_target_context_rows(cursor: Any, *, schema: str, table: str, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+    explainability_table = f"{table}_explainability"
+    if not _table_exists(cursor, schema=schema, table=explainability_table):
+        return _fetch_rows(
+            cursor,
+            schema=schema,
+            table=table,
+            source_start=source_start,
+            source_end=source_end,
+            order_by="available_time ASC, target_candidate_id ASC",
+        )
+    where: list[str] = []
+    params: list[Any] = []
+    if source_start:
+        where.append('t."available_time" >= %s')
+        params.append(source_start)
+    if source_end:
+        where.append('t."available_time" < %s')
+        params.append(source_end)
+    where_sql = " WHERE " + " AND ".join(where) if where else ""
+    cursor.execute(
+        f"""
+        SELECT
+          t.*,
+          e."target_context_state",
+          e."target_state_embedding",
+          e."state_cluster_id"
+        FROM {_qualified(schema, table)} AS t
+        LEFT JOIN {_qualified(schema, explainability_table)} AS e
+          ON e."target_candidate_id" = t."target_candidate_id"
+         AND e."available_time"::timestamptz = t."available_time"::timestamptz
+         AND e."model_version" = t."model_version"
+        {where_sql}
+        ORDER BY t."available_time" ASC, t."target_candidate_id" ASC
+        """,
+        params,
+    )
+    return [dict(row) for row in cursor.fetchall()]
+
+
 def _decision_rows(*, source_rows: Sequence[Mapping[str, Any]], source_03_rows: Sequence[Mapping[str, Any]], model_03_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     target_by_symbol_time: dict[tuple[str, str], Mapping[str, Any]] = {}
     for row in source_03_rows:
@@ -183,7 +235,7 @@ def generate_from_database(
         with conn.cursor() as cursor:
             source_rows = _fetch_rows(cursor, schema="trading_data", table="source_09_event_risk_governor", source_start=source_start, source_end=source_end, order_by="available_time ASC, event_id ASC")
             source_03_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, order_by="available_time ASC, target_candidate_id ASC")
-            model_03_rows = _fetch_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end, order_by="available_time ASC, target_candidate_id ASC")
+            model_03_rows = _fetch_target_context_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end)
             decisions = _decision_rows(source_rows=source_rows, source_03_rows=source_03_rows, model_03_rows=model_03_rows)
             model_rows = generate_rows(decisions, model_version=model_version)
             _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)

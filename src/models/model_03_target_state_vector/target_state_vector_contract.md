@@ -14,6 +14,15 @@ Canonical model output when promoted:
 trading_model.model_03_target_state_vector
 ```
 
+The primary SQL table owns row identity, upstream refs, `target_context_state_ref`, and scalar `3_*` score-family outputs. Full inspectable payload blocks, embeddings, clusters, and row-quality diagnostics live in support artifacts:
+
+```text
+trading_model.model_03_target_state_vector_explainability
+trading_model.model_03_target_state_vector_diagnostics
+```
+
+`state_quality_diagnostics` is promotion-review evidence, not a promotion decision field. Durable promotion state belongs to evaluation and promotion artifacts.
+
 Required identity fields:
 
 | Field | Role |

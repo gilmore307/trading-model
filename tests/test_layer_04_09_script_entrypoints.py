@@ -120,6 +120,49 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
         model_rows = generator.generate_rows(rows)
         self.assertEqual(model_rows[0]["4_resolved_event_failure_risk_status"], "no_reviewed_event_failure_risk")
 
+    def test_layer_04_target_context_explainability_join_casts_available_time(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py")
+
+        class FakeCursor:
+            def __init__(self) -> None:
+                self._one = None
+                self._many = []
+                self.statements: list[str] = []
+
+            def execute(self, sql: str, params: tuple[object, ...] | list[object] | None = None) -> None:
+                self.statements.append(sql)
+                if "to_regclass" in sql:
+                    self._one = {"table_ref": "trading_model.model_03_target_state_vector_explainability"}
+                    return
+                self._many = [
+                    {
+                        "available_time": "2016-01-04T09:35:00-05:00",
+                        "target_candidate_id": "anon_aapl",
+                        "target_context_state": {"3_state_quality_score": 0.8},
+                        "target_state_embedding": {"embedding": [0.1]},
+                        "state_cluster_id": "cluster_1",
+                    }
+                ]
+
+            def fetchone(self):
+                return self._one
+
+            def fetchall(self):
+                return self._many
+
+        cursor = FakeCursor()
+        rows = generator._fetch_target_context_rows(
+            cursor,
+            schema="trading_model",
+            table="model_03_target_state_vector",
+            source_start="2016-01-01T00:00:00-05:00",
+            source_end="2016-07-01T00:00:00-04:00",
+        )
+
+        join_sql = "\n".join(cursor.statements)
+        self.assertIn('e."available_time"::timestamptz = t."available_time"::timestamptz', join_sql)
+        self.assertEqual(rows[0]["state_cluster_id"], "cluster_1")
+
     def test_layer_04_from_database_writes_target_table_by_default(self) -> None:
         script = (REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py").read_text(encoding="utf-8")
 

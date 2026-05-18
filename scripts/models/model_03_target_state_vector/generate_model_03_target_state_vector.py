@@ -16,8 +16,12 @@ from models.model_03_target_state_vector import generator
 DEFAULT_DB_URL_FILE = database_url_file()
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
-JSON_COLUMNS = {"target_context_state", "target_state_embedding", "state_quality_diagnostics"}
+PRIMARY_JSON_COLUMNS: set[str] = set()
+EXPLAINABILITY_JSON_COLUMNS = {"target_context_state", "target_state_embedding", "explanation_payload_json"}
+DIAGNOSTICS_JSON_COLUMNS = {"diagnostic_payload_json"}
+RETIRED_PRIMARY_COLUMNS = ("target_context_state", "target_state_embedding", "state_cluster_id", "state_quality_diagnostics")
 PRIMARY_KEY = ("target_candidate_id", "available_time", "model_version")
+SUPPORT_PRIMARY_KEY = ("target_candidate_id", "available_time", "model_version")
 
 
 def _read_rows(path: Path) -> list[dict[str, Any]]:
@@ -73,10 +77,12 @@ def _qualified(schema: str, table: str) -> str:
 
 
 def _column_type(column: str) -> str:
-    if column in JSON_COLUMNS:
+    if column in PRIMARY_JSON_COLUMNS or column in EXPLAINABILITY_JSON_COLUMNS or column in DIAGNOSTICS_JSON_COLUMNS:
         return "JSONB"
     if column in {"available_time", "tradeable_time"}:
-        return "TEXT"
+        return "TIMESTAMPTZ"
+    if column in {"3_evidence_count", "present_score_output_count", "missing_score_output_count"}:
+        return "INTEGER"
     if column.startswith("3_"):
         return "DOUBLE PRECISION"
     return "TEXT"
@@ -125,10 +131,13 @@ def _ensure_table(cursor: Any, *, target_schema: str, target_table: str, columns
 def write_model_rows_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema: str, target_table: str) -> None:
     if not rows:
         return
-    columns = list(rows[0].keys())
+    columns = list(generator.OUTPUT_COLUMNS)
     _ensure_table(cursor, target_schema=target_schema, target_table=target_table, columns=columns)
+    qualified_table = _qualified(target_schema, target_table)
+    for column in RETIRED_PRIMARY_COLUMNS:
+        cursor.execute(f"ALTER TABLE {qualified_table} DROP COLUMN IF EXISTS {_quote_column_identifier(column)}")
     quoted_columns = [_quote_column_identifier(column) for column in columns]
-    placeholders = ["%s::jsonb" if column in JSON_COLUMNS else "%s" for column in columns]
+    placeholders = ["%s::jsonb" if column in PRIMARY_JSON_COLUMNS else "%s" for column in columns]
     update_sql = ", ".join(
         f"{_quote_column_identifier(column)} = EXCLUDED.{_quote_column_identifier(column)}"
         for column in columns
@@ -141,8 +150,58 @@ def write_model_rows_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, targ
         ON CONFLICT ({conflict_sql}) DO UPDATE SET {update_sql}
     """
     for row in rows:
-        values = [json.dumps(row.get(column), sort_keys=True, default=str) if column in JSON_COLUMNS else row.get(column) for column in columns]
+        values = [json.dumps(row.get(column), sort_keys=True, default=str) if column in PRIMARY_JSON_COLUMNS else row.get(column) for column in columns]
         cursor.execute(insert_sql, values)
+
+
+def _write_support_rows_sql(
+    cursor: Any,
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    target_schema: str,
+    target_table: str,
+    json_columns: set[str],
+) -> None:
+    if not rows:
+        return
+    columns = list(rows[0].keys())
+    _ensure_table(cursor, target_schema=target_schema, target_table=target_table, columns=columns)
+    quoted_columns = [_quote_column_identifier(column) for column in columns]
+    placeholders = ["%s::jsonb" if column in json_columns else "%s" for column in columns]
+    update_sql = ", ".join(
+        f"{_quote_column_identifier(column)} = EXCLUDED.{_quote_column_identifier(column)}"
+        for column in columns
+        if column not in SUPPORT_PRIMARY_KEY
+    )
+    conflict_sql = ", ".join(_quote_column_identifier(column) for column in SUPPORT_PRIMARY_KEY)
+    insert_sql = f"""
+        INSERT INTO {_qualified(target_schema, target_table)} ({", ".join(quoted_columns)})
+        VALUES ({", ".join(placeholders)})
+        ON CONFLICT ({conflict_sql}) DO UPDATE SET {update_sql}
+    """
+    for row in rows:
+        values = [json.dumps(row.get(column), sort_keys=True, default=str) if column in json_columns else row.get(column) for column in columns]
+        cursor.execute(insert_sql, values)
+
+
+def write_explainability_rows_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema: str, target_table: str) -> None:
+    _write_support_rows_sql(
+        cursor,
+        rows,
+        target_schema=target_schema,
+        target_table=target_table,
+        json_columns=EXPLAINABILITY_JSON_COLUMNS,
+    )
+
+
+def write_diagnostics_rows_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema: str, target_table: str) -> None:
+    _write_support_rows_sql(
+        cursor,
+        rows,
+        target_schema=target_schema,
+        target_table=target_table,
+        json_columns=DIAGNOSTICS_JSON_COLUMNS,
+    )
 
 
 def generate_from_database(
@@ -152,6 +211,8 @@ def generate_from_database(
     feature_table: str,
     target_schema: str,
     target_table: str,
+    explainability_table: str,
+    diagnostics_table: str,
     source_start: str | None,
     source_end: str | None,
     model_version: str,
@@ -162,7 +223,19 @@ def generate_from_database(
         with conn.cursor() as cursor:
             feature_rows = fetch_feature_rows(cursor, source_schema=feature_schema, source_table=feature_table, source_start=source_start, source_end=source_end)
             model_rows = generator.generate_rows(feature_rows, model_version=model_version)
-            write_model_rows_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
+            write_model_rows_sql(cursor, generator.build_primary_rows(model_rows), target_schema=target_schema, target_table=target_table)
+            write_explainability_rows_sql(
+                cursor,
+                generator.build_explainability_rows(model_rows),
+                target_schema=target_schema,
+                target_table=explainability_table,
+            )
+            write_diagnostics_rows_sql(
+                cursor,
+                generator.build_diagnostics_rows(model_rows),
+                target_schema=target_schema,
+                target_table=diagnostics_table,
+            )
     if output:
         _write_jsonl(output, model_rows)
     return len(model_rows)
@@ -179,6 +252,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--feature-table", default="feature_03_target_state_vector")
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_03_target_state_vector")
+    parser.add_argument("--explainability-table", help="Optional explainability artifact table. Defaults to <target-table>_explainability.")
+    parser.add_argument("--diagnostics-table", help="Optional diagnostics artifact table. Defaults to <target-table>_diagnostics.")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
     args = parser.parse_args(argv)
@@ -189,12 +264,18 @@ def main(argv: list[str] | None = None) -> int:
             feature_table=args.feature_table,
             target_schema=args.target_schema,
             target_table=args.target_table,
+            explainability_table=args.explainability_table or f"{args.target_table}_explainability",
+            diagnostics_table=args.diagnostics_table or f"{args.target_table}_diagnostics",
             source_start=args.source_start,
             source_end=args.source_end,
             model_version=args.model_version,
             output=args.output,
         )
-        print(f"generated {row_count} rows into {args.target_schema}.{args.target_table}")
+        print(
+            f"generated {row_count} rows into {args.target_schema}.{args.target_table} "
+            f"with support artifacts {args.target_schema}.{args.explainability_table or args.target_table + '_explainability'} "
+            f"and {args.target_schema}.{args.diagnostics_table or args.target_table + '_diagnostics'}"
+        )
         return 0
     if not args.feature_rows:
         parser.error("--feature-rows is required unless --from-database is supplied")

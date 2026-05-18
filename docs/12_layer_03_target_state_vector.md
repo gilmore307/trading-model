@@ -100,17 +100,14 @@ sector_context_state_ref
 3_target_context_state_ref
 ```
 
-Model-facing payload groups:
+Primary model-output columns stay focused on row identity, upstream refs, `target_context_state_ref`, and scalar `3_*` score families. Full state payloads and diagnostics are support artifacts, matching the Layer 1/2 output-table pattern:
 
 ```text
-market_state_features
-sector_state_features
-target_state_features
-cross_state_features
-target_state_embedding
-state_cluster_id
-state_quality_diagnostics
+trading_model.model_03_target_state_vector_explainability
+trading_model.model_03_target_state_vector_diagnostics
 ```
+
+The explainability table owns the inspectable `target_context_state` blocks, `target_state_embedding`, and `state_cluster_id`. The diagnostics table owns `state_quality_diagnostics` and row-quality evidence used by evaluation and promotion review. Promotion decisions themselves remain evaluation/promotion artifacts, not fields in the primary model output table.
 
 Audit/routing metadata must remain outside model-facing fitting vectors:
 

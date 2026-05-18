@@ -33,7 +33,9 @@ DEFAULT_MODEL_TABLE = "model_03_target_state_vector"
 DEFAULT_MODEL_ID = evaluation.DEFAULT_MODEL_ID
 DEFAULT_MODEL_VERSION = "model_03_target_state_vector"
 DEFAULT_CONFIG_HASH = "target_context_state_contract_production_eval_20260508"
-JSON_MODEL_COLUMNS = {"target_context_state", "target_state_embedding", "state_quality_diagnostics"}
+PRIMARY_JSON_MODEL_COLUMNS: set[str] = set()
+EXPLAINABILITY_JSON_MODEL_COLUMNS = {"target_context_state", "target_state_embedding", "explanation_payload_json"}
+DIAGNOSTICS_JSON_MODEL_COLUMNS = {"diagnostic_payload_json"}
 TEXT_MODEL_COLUMNS = {
     "available_time",
     "tradeable_time",
@@ -45,6 +47,19 @@ TEXT_MODEL_COLUMNS = {
     "target_context_state_ref",
     "state_cluster_id",
 }
+RETIRED_PRIMARY_COLUMNS = ("target_context_state", "target_state_embedding", "state_cluster_id", "state_quality_diagnostics")
+
+
+def _primary_column_type(column: str) -> str:
+    if column in PRIMARY_JSON_MODEL_COLUMNS:
+        return "JSONB"
+    if column == "available_time" or column == "tradeable_time":
+        return "TIMESTAMPTZ"
+    if column in TEXT_MODEL_COLUMNS:
+        return "TEXT"
+    if column == "3_evidence_count":
+        return "INTEGER"
+    return "DOUBLE PRECISION"
 
 
 def _load_psycopg():
@@ -81,34 +96,13 @@ def read_feature_rows(*, db_url: str, schema: str, table: str, start: str | None
 
 
 def persist_model_rows(*, db_url: str, schema: str, table: str, rows: Sequence[Mapping[str, Any]]) -> None:
-    score_columns = sorted({key for row in rows for key in row if key.startswith("3_")})
-    columns = [
-        "available_time",
-        "tradeable_time",
-        "target_candidate_id",
-        "model_id",
-        "model_version",
-        "market_context_state_ref",
-        "sector_context_state_ref",
-        "target_context_state_ref",
-        *score_columns,
-        "target_context_state",
-        "target_state_embedding",
-        "state_cluster_id",
-        "state_quality_diagnostics",
-    ]
+    columns = list(generator.OUTPUT_COLUMNS)
     ddl_columns = []
     for column in columns:
-        if column in JSON_MODEL_COLUMNS:
-            kind = "JSONB"
-        elif column in TEXT_MODEL_COLUMNS:
-            kind = "TEXT"
-        else:
-            kind = "DOUBLE PRECISION"
-        ddl_columns.append(f"{quote_identifier(column)} {kind}")
+        ddl_columns.append(f"{quote_identifier(column)} {_primary_column_type(column)}")
     q_table = f"{quote_identifier(schema)}.{quote_identifier(table)}"
     primary_key = ", ".join(quote_identifier(column) for column in ("target_candidate_id", "available_time", "model_version"))
-    placeholders = ["%s::jsonb" if column in JSON_MODEL_COLUMNS else "%s" for column in columns]
+    placeholders = ["%s::jsonb" if column in PRIMARY_JSON_MODEL_COLUMNS else "%s" for column in columns]
     updates = ", ".join(
         f"{quote_identifier(column)} = EXCLUDED.{quote_identifier(column)}"
         for column in columns
@@ -120,7 +114,7 @@ def persist_model_rows(*, db_url: str, schema: str, table: str, rows: Sequence[M
         f"ON CONFLICT ({primary_key}) DO UPDATE SET {updates}"
     )
     values = [
-        tuple(json.dumps(row.get(column), sort_keys=True, default=str) if column in JSON_MODEL_COLUMNS else row.get(column) for column in columns)
+        tuple(json.dumps(row.get(column), sort_keys=True, default=str) if column in PRIMARY_JSON_MODEL_COLUMNS else row.get(column) for column in columns)
         for row in rows
     ]
     psycopg, _dict_row = _load_psycopg()
@@ -131,6 +125,63 @@ def persist_model_rows(*, db_url: str, schema: str, table: str, rows: Sequence[M
                 f"CREATE TABLE IF NOT EXISTS {q_table} "
                 f"({', '.join(ddl_columns)}, PRIMARY KEY ({primary_key}))"
             )
+            for column in columns:
+                cur.execute(f"ALTER TABLE {q_table} ADD COLUMN IF NOT EXISTS {quote_identifier(column)} {_primary_column_type(column)}")
+            for column in RETIRED_PRIMARY_COLUMNS:
+                cur.execute(f"ALTER TABLE {q_table} DROP COLUMN IF EXISTS {quote_identifier(column)}")
+            cur.executemany(insert_sql, values)
+        conn.commit()
+
+
+def _support_column_type(column: str, json_columns: set[str]) -> str:
+    if column in json_columns:
+        return "JSONB"
+    if column in {"available_time"}:
+        return "TIMESTAMPTZ"
+    if column in {"3_evidence_count", "present_score_output_count", "missing_score_output_count"}:
+        return "INTEGER"
+    if column.startswith("3_"):
+        return "DOUBLE PRECISION"
+    return "TEXT"
+
+
+def persist_support_rows(
+    *,
+    db_url: str,
+    schema: str,
+    table: str,
+    rows: Sequence[Mapping[str, Any]],
+    json_columns: set[str],
+) -> None:
+    if not rows:
+        return
+    columns = list(rows[0].keys())
+    q_table = f"{quote_identifier(schema)}.{quote_identifier(table)}"
+    primary_key_columns = ("target_candidate_id", "available_time", "model_version")
+    primary_key = ", ".join(quote_identifier(column) for column in primary_key_columns)
+    ddl_columns = [f"{quote_identifier(column)} {_support_column_type(column, json_columns)}" for column in columns]
+    placeholders = ["%s::jsonb" if column in json_columns else "%s" for column in columns]
+    updates = ", ".join(
+        f"{quote_identifier(column)} = EXCLUDED.{quote_identifier(column)}"
+        for column in columns
+        if column not in primary_key_columns
+    )
+    insert_sql = (
+        f"INSERT INTO {q_table} ({', '.join(quote_identifier(column) for column in columns)}) "
+        f"VALUES ({', '.join(placeholders)}) "
+        f"ON CONFLICT ({primary_key}) DO UPDATE SET {updates}"
+    )
+    values = [
+        tuple(json.dumps(row.get(column), sort_keys=True, default=str) if column in json_columns else row.get(column) for column in columns)
+        for row in rows
+    ]
+    psycopg, _dict_row = _load_psycopg()
+    with psycopg.connect(db_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"CREATE SCHEMA IF NOT EXISTS {quote_identifier(schema)}")
+            cur.execute(f"CREATE TABLE IF NOT EXISTS {q_table} ({', '.join(ddl_columns)}, PRIMARY KEY ({primary_key}))")
+            for column in columns:
+                cur.execute(f"ALTER TABLE {q_table} ADD COLUMN IF NOT EXISTS {quote_identifier(column)} {_support_column_type(column, json_columns)}")
             cur.executemany(insert_sql, values)
         conn.commit()
 
@@ -299,6 +350,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--feature-table", default=DEFAULT_FEATURE_TABLE)
     parser.add_argument("--model-schema", default=DEFAULT_MODEL_SCHEMA)
     parser.add_argument("--model-table", default=DEFAULT_MODEL_TABLE)
+    parser.add_argument("--explainability-table", help="Optional explainability artifact table. Defaults to <model-table>_explainability.")
+    parser.add_argument("--diagnostics-table", help="Optional diagnostics artifact table. Defaults to <model-table>_diagnostics.")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
     parser.add_argument("--config-hash", default=DEFAULT_CONFIG_HASH)
@@ -318,6 +371,20 @@ def main(argv: list[str] | None = None) -> int:
     feature_rows = read_feature_rows(db_url=db_url, schema=args.feature_schema, table=args.feature_table, start=args.source_start, end=args.source_end)
     model_rows = generator.generate_rows(feature_rows)
     persist_model_rows(db_url=db_url, schema=args.model_schema, table=args.model_table, rows=model_rows)
+    persist_support_rows(
+        db_url=db_url,
+        schema=args.model_schema,
+        table=args.explainability_table or f"{args.model_table}_explainability",
+        rows=generator.build_explainability_rows(model_rows),
+        json_columns=EXPLAINABILITY_JSON_MODEL_COLUMNS,
+    )
+    persist_support_rows(
+        db_url=db_url,
+        schema=args.model_schema,
+        table=args.diagnostics_table or f"{args.model_table}_diagnostics",
+        rows=generator.build_diagnostics_rows(model_rows),
+        json_columns=DIAGNOSTICS_JSON_MODEL_COLUMNS,
+    )
     artifacts = evaluation.build_evaluation_artifacts(
         feature_rows=feature_rows,
         model_rows=model_rows,

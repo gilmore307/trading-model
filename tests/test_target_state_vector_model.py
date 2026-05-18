@@ -55,6 +55,16 @@ class TargetStateVectorModelTests(unittest.TestCase):
         self.assertEqual(row["state_quality_diagnostics"]["identity_leakage_check"], "passed")
         self.assertEqual(row["state_quality_diagnostics"]["field_semantics_policy"]["target_state_embedding"], "research_only_not_primary_model_feature")
 
+        primary_rows = generator.build_primary_rows(rows)
+        explainability_rows = generator.build_explainability_rows(rows)
+        diagnostics_rows = generator.build_diagnostics_rows(rows)
+        self.assertNotIn("target_context_state", primary_rows[0])
+        self.assertNotIn("state_quality_diagnostics", primary_rows[0])
+        self.assertEqual(explainability_rows[0]["target_context_state_ref"], row["target_context_state_ref"])
+        self.assertIn("target_context_state", explainability_rows[0])
+        self.assertEqual(diagnostics_rows[0]["diagnostic_payload_json"]["identity_leakage_check"], "passed")
+        self.assertIn("3_state_quality_score", diagnostics_rows[0])
+
     def test_evaluation_builds_baseline_ladder_and_defers_small_fixture_thresholds(self) -> None:
         feature_rows = [_feature_row(index) for index in range(8)]
         model_rows = generator.generate_rows(feature_rows)

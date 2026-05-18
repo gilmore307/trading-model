@@ -20,9 +20,44 @@ ET = ZoneInfo("America/New_York")
 MODEL_ID = "target_state_vector_model"
 MODEL_VERSION = "target_context_state_contract"
 PRIMARY_TABLE = "model_03_target_state_vector"
+EXPLAINABILITY_TABLE = "model_03_target_state_vector_explainability"
+DIAGNOSTICS_TABLE = "model_03_target_state_vector_diagnostics"
 STATE_WINDOWS = ("5min", "15min", "60min", "390min")
 JSON_BLOCKS = ("market_state_features", "sector_state_features", "target_state_features", "cross_state_features")
 FORBIDDEN_OUTPUT_FIELDS = {"ticker", "symbol", "company", "strategy_variant", "alpha_confidence", "position_size", "option_contract_id", "final_action"}
+IDENTITY_COLUMNS = [
+    "available_time",
+    "tradeable_time",
+    "target_candidate_id",
+    "model_id",
+    "model_version",
+    "market_context_state_ref",
+    "sector_context_state_ref",
+    "target_context_state_ref",
+]
+PRIMARY_SCORE_COLUMNS = [
+    "3_target_liquidity_tradability_score",
+    "3_state_quality_score",
+    "3_evidence_count",
+    *[
+        f"3_{name}_{window.replace('min', 'min')}"
+        for window in STATE_WINDOWS
+        for name in (
+            "target_direction_score",
+            "target_direction_strength_score",
+            "target_trend_quality_score",
+            "target_path_stability_score",
+            "target_noise_score",
+            "target_transition_risk_score",
+            "target_state_persistence_score",
+            "target_exhaustion_risk_score",
+            "context_direction_alignment_score",
+            "context_support_quality_score",
+            "tradability_score",
+        )
+    ],
+]
+OUTPUT_COLUMNS = [*IDENTITY_COLUMNS, *PRIMARY_SCORE_COLUMNS]
 
 
 def generate_rows(feature_rows: Iterable[Mapping[str, Any]], *, model_version: str = MODEL_VERSION) -> list[dict[str, Any]]:
@@ -32,6 +67,61 @@ def generate_rows(feature_rows: Iterable[Mapping[str, Any]], *, model_version: s
     rows.sort(key=lambda row: (_row_time(row), str(row.get("target_candidate_id") or "")))
     output = [_model_row(row, model_version=model_version) for row in rows]
     return output
+
+
+def build_primary_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    return [{column: row.get(column) for column in OUTPUT_COLUMNS} for row in model_rows]
+
+
+def build_explainability_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in model_rows:
+        rows.append(
+            {
+                "available_time": row.get("available_time"),
+                "target_candidate_id": row.get("target_candidate_id"),
+                "model_version": row.get("model_version"),
+                "target_context_state_ref": row.get("target_context_state_ref"),
+                "target_context_state": row.get("target_context_state") or {},
+                "target_state_embedding": row.get("target_state_embedding") or [],
+                "state_cluster_id": row.get("state_cluster_id"),
+                "explanation_payload_json": {
+                    "artifact": EXPLAINABILITY_TABLE,
+                    "contract": "target_context_state_payload_support",
+                    "primary_table": PRIMARY_TABLE,
+                    "primary_ref": row.get("target_context_state_ref"),
+                    "primary_score_columns": [column for column in PRIMARY_SCORE_COLUMNS if row.get(column) is not None],
+                    "research_only_fields": ["target_state_embedding", "state_cluster_id"],
+                },
+            }
+        )
+    return rows
+
+
+def build_diagnostics_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in model_rows:
+        diagnostics = dict(_coerce_payload(row.get("state_quality_diagnostics")))
+        present_scores = [column for column in PRIMARY_SCORE_COLUMNS if row.get(column) is not None]
+        missing_scores = [column for column in PRIMARY_SCORE_COLUMNS if row.get(column) is None]
+        diagnostics.setdefault("artifact", DIAGNOSTICS_TABLE)
+        diagnostics.setdefault("primary_table", PRIMARY_TABLE)
+        diagnostics.setdefault("present_primary_score_columns", present_scores)
+        diagnostics.setdefault("missing_primary_score_columns", missing_scores)
+        rows.append(
+            {
+                "available_time": row.get("available_time"),
+                "target_candidate_id": row.get("target_candidate_id"),
+                "model_version": row.get("model_version"),
+                "target_context_state_ref": row.get("target_context_state_ref"),
+                "3_state_quality_score": row.get("3_state_quality_score"),
+                "3_evidence_count": row.get("3_evidence_count"),
+                "present_score_output_count": len(present_scores),
+                "missing_score_output_count": len(missing_scores),
+                "diagnostic_payload_json": diagnostics,
+            }
+        )
+    return rows
 
 
 def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
