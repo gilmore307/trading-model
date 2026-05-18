@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 
 from model_runtime.config import database_url_file
 
+from model_governance.model_output_support import write_model_output_with_support
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
 from models.model_04_event_failure_risk import MODEL_ID, MODEL_SURFACE, MODEL_VERSION, generate_rows
 
@@ -23,6 +24,8 @@ COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 ET = ZoneInfo("America/New_York")
 JSON_COLUMNS = {"event_failure_risk_vector", "event_failure_risk_diagnostics"}
 PRIMARY_KEY = ("event_failure_risk_vector_ref",)
+EXPLAINABILITY_COLUMNS = {"event_failure_risk_vector"}
+DIAGNOSTICS_COLUMNS = {"event_failure_risk_diagnostics"}
 
 
 def _database_url(explicit: str | None) -> str:
@@ -318,8 +321,15 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 rows = generate_rows(input_rows, model_version=args.model_version)
                 if args.from_database or args.write_database:
-                    _ensure_table(cursor, schema=args.target_schema, table=args.target_table, rows=rows)
-                    _insert_rows(cursor, schema=args.target_schema, table=args.target_table, rows=rows)
+                    write_model_output_with_support(
+                        cursor,
+                        rows,
+                        target_schema=args.target_schema,
+                        target_table=args.target_table,
+                        primary_key=PRIMARY_KEY,
+                        explainability_columns=EXPLAINABILITY_COLUMNS,
+                        diagnostics_columns=DIAGNOSTICS_COLUMNS,
+                    )
                 conn.commit()
         if args.output_jsonl or not args.from_database:
             write_rows(rows, args.output_jsonl)

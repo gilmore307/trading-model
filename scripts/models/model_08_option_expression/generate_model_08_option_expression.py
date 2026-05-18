@@ -17,6 +17,7 @@ from typing import Any, Mapping, Sequence
 
 from model_runtime.config import database_url_file
 
+from model_governance.model_output_support import write_model_output_with_support
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
 from models.model_08_option_expression import MODEL_SURFACE, MODEL_VERSION, generate_rows
 
@@ -31,6 +32,8 @@ JSON_COLUMNS = {
     "expression_vector",
     "option_expression_plan",
 }
+EXPLAINABILITY_COLUMNS = {"pending_option_exposure_context", "expression_vector", "option_expression_plan"}
+DIAGNOSTICS_COLUMNS = {"8_resolved_no_option_reason_codes", "8_resolved_reason_codes"}
 TEXT_8_COLUMNS = {
     "8_resolved_expression_type",
     "8_resolved_option_right",
@@ -100,21 +103,44 @@ def _fetch_layer_7_rows(cursor: Any, *, source_start: str | None, source_end: st
     where: list[str] = []
     params: list[Any] = []
     if source_start:
-        where.append("available_time::timestamptz >= %s::timestamptz")
+        where.append('u."available_time"::timestamptz >= %s::timestamptz')
         params.append(source_start)
     if source_end:
-        where.append("available_time::timestamptz < %s::timestamptz")
+        where.append('u."available_time"::timestamptz < %s::timestamptz')
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
-    cursor.execute(
-        f"""
-        SELECT *
-        FROM {_qualified('trading_model', 'model_07_underlying_action')}
-        {where_sql}
-        ORDER BY available_time::timestamptz ASC, target_candidate_id ASC
-        """,
-        params,
-    )
+    explainability_table = "model_07_underlying_action_explainability"
+    cursor.execute("SELECT to_regclass(%s) AS table_ref", (f"trading_model.{explainability_table}",))
+    exists = cursor.fetchone()
+    if isinstance(exists, Mapping):
+        support_exists = exists.get("table_ref") is not None
+    else:
+        support_exists = bool(exists and exists[0] is not None)
+    if support_exists:
+        cursor.execute(
+            f"""
+            SELECT
+              u.*,
+              e."underlying_action_vector",
+              e."underlying_action_plan"
+            FROM {_qualified('trading_model', 'model_07_underlying_action')} AS u
+            LEFT JOIN {_qualified('trading_model', explainability_table)} AS e
+              ON e."underlying_action_plan_ref" = u."underlying_action_plan_ref"
+            {where_sql}
+            ORDER BY u."available_time"::timestamptz ASC, u."target_candidate_id" ASC
+            """,
+            params,
+        )
+    else:
+        cursor.execute(
+            f"""
+            SELECT u.*
+            FROM {_qualified('trading_model', 'model_07_underlying_action')} AS u
+            {where_sql}
+            ORDER BY u."available_time"::timestamptz ASC, u."target_candidate_id" ASC
+            """,
+            params,
+        )
     return [dict(row) for row in cursor.fetchall()]
 
 
@@ -153,26 +179,15 @@ def _ensure_table(cursor: Any, *, target_schema: str, target_table: str, columns
 
 
 def _write_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema: str, target_table: str) -> None:
-    if not rows:
-        return
-    columns = list(rows[0].keys())
-    _ensure_table(cursor, target_schema=target_schema, target_table=target_table, columns=columns)
-    placeholders = ["%s::jsonb" if column in JSON_COLUMNS else "%s" for column in columns]
-    update_sql = ", ".join(
-        f"{_quote_column_identifier(column)} = EXCLUDED.{_quote_column_identifier(column)}"
-        for column in columns
-        if column not in PRIMARY_KEY
+    write_model_output_with_support(
+        cursor,
+        rows,
+        target_schema=target_schema,
+        target_table=target_table,
+        primary_key=PRIMARY_KEY,
+        explainability_columns=EXPLAINABILITY_COLUMNS,
+        diagnostics_columns=DIAGNOSTICS_COLUMNS,
     )
-    insert_sql = f"""
-        INSERT INTO {_qualified(target_schema, target_table)} ({", ".join(_quote_column_identifier(column) for column in columns)})
-        VALUES ({", ".join(placeholders)})
-        ON CONFLICT ({", ".join(_quote_column_identifier(column) for column in PRIMARY_KEY)}) DO UPDATE SET {update_sql}
-    """
-    for row in rows:
-        cursor.execute(
-            insert_sql,
-            [json.dumps(row.get(column), sort_keys=True, default=str) if column in JSON_COLUMNS else row.get(column) for column in columns],
-        )
 
 
 def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:

@@ -163,6 +163,48 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
         self.assertIn('e."available_time"::timestamptz = t."available_time"::timestamptz', join_sql)
         self.assertEqual(rows[0]["state_cluster_id"], "cluster_1")
 
+    def test_layer_08_reads_underlying_action_explainability_with_qualified_time_filters(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_08_option_expression/generate_model_08_option_expression.py")
+
+        class FakeCursor:
+            def __init__(self) -> None:
+                self._one = None
+                self._many = []
+                self.statements: list[str] = []
+
+            def execute(self, sql: str, params: tuple[object, ...] | list[object] | None = None) -> None:
+                self.statements.append(sql)
+                if "to_regclass" in sql:
+                    self._one = {"table_ref": "trading_model.model_07_underlying_action_explainability"}
+                    return
+                self._many = [
+                    {
+                        "available_time": "2016-01-04T09:35:00-05:00",
+                        "target_candidate_id": "anon_aapl",
+                        "underlying_action_plan_ref": "uap_1",
+                        "underlying_action_plan": {"handoff_to_layer_8": {"direction": "neutral"}},
+                    }
+                ]
+
+            def fetchone(self):
+                return self._one
+
+            def fetchall(self):
+                return self._many
+
+        cursor = FakeCursor()
+        rows = generator._fetch_layer_7_rows(
+            cursor,
+            source_start="2016-01-01T00:00:00-05:00",
+            source_end="2016-07-01T00:00:00-04:00",
+        )
+
+        sql = "\n".join(cursor.statements)
+        self.assertIn('u."available_time"::timestamptz >= %s::timestamptz', sql)
+        self.assertIn('u."available_time"::timestamptz < %s::timestamptz', sql)
+        self.assertIn('e."underlying_action_plan_ref" = u."underlying_action_plan_ref"', sql)
+        self.assertEqual(rows[0]["underlying_action_plan_ref"], "uap_1")
+
     def test_layer_04_from_database_writes_target_table_by_default(self) -> None:
         script = (REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py").read_text(encoding="utf-8")
 

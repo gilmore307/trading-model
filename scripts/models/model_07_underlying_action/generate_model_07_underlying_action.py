@@ -11,6 +11,7 @@ from typing import Any, Mapping, Sequence
 
 from model_runtime.config import database_url_file
 
+from model_governance.model_output_support import write_model_output_with_support
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
 from models.model_07_underlying_action import MODEL_ID, MODEL_SURFACE, MODEL_VERSION, generate_rows
 
@@ -19,6 +20,8 @@ IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 JSON_COLUMNS = {"7_resolved_reason_codes", "underlying_action_vector", "underlying_action_plan"}
 PRIMARY_KEY = ("underlying_action_plan_ref",)
+EXPLAINABILITY_COLUMNS = {"underlying_action_vector", "underlying_action_plan"}
+DIAGNOSTICS_COLUMNS = {"7_resolved_reason_codes"}
 TEXT_7_COLUMNS = {"7_resolved_underlying_action_type", "7_resolved_action_side", "7_resolved_dominant_horizon"}
 
 
@@ -138,19 +141,15 @@ def _ensure_table(cursor: Any, *, target_schema: str, target_table: str, columns
 
 
 def _write_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema: str, target_table: str) -> None:
-    if not rows:
-        return
-    columns = list(rows[0].keys())
-    _ensure_table(cursor, target_schema=target_schema, target_table=target_table, columns=columns)
-    placeholders = ["%s::jsonb" if column in JSON_COLUMNS else "%s" for column in columns]
-    update_sql = ", ".join(f"{_quote_column_identifier(column)} = EXCLUDED.{_quote_column_identifier(column)}" for column in columns if column not in PRIMARY_KEY)
-    insert_sql = f"""
-        INSERT INTO {_qualified(target_schema, target_table)} ({", ".join(_quote_column_identifier(column) for column in columns)})
-        VALUES ({", ".join(placeholders)})
-        ON CONFLICT ({", ".join(_quote_column_identifier(column) for column in PRIMARY_KEY)}) DO UPDATE SET {update_sql}
-    """
-    for row in rows:
-        cursor.execute(insert_sql, [json.dumps(row.get(column), sort_keys=True, default=str) if column in JSON_COLUMNS else row.get(column) for column in columns])
+    write_model_output_with_support(
+        cursor,
+        rows,
+        target_schema=target_schema,
+        target_table=target_table,
+        primary_key=PRIMARY_KEY,
+        explainability_columns=EXPLAINABILITY_COLUMNS,
+        diagnostics_columns=DIAGNOSTICS_COLUMNS,
+    )
 
 
 def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
