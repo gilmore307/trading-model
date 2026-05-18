@@ -275,7 +275,8 @@ def main(argv: list[str] | None = None) -> int:
                     _ensure_table(cursor, schema=args.target_schema, table=args.target_table, rows=rows)
                     _insert_rows(cursor, schema=args.target_schema, table=args.target_table, rows=rows)
                 conn.commit()
-        write_rows(rows, args.output_jsonl)
+        if args.output_jsonl or not args.from_database:
+            write_rows(rows, args.output_jsonl)
         if args.from_database:
             print(f"generated {len(rows)} rows into {args.target_schema}.{args.target_table}")
         return 0

@@ -124,6 +124,7 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
         script = (REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py").read_text(encoding="utf-8")
 
         self.assertIn("if args.from_database or args.write_database:", script)
+        self.assertIn("if args.output_jsonl or not args.from_database:", script)
         self.assertIn('print(f"generated {len(rows)} rows into {args.target_schema}.{args.target_table}")', script)
 
     def test_fixture_generate_evaluate_review_defers_activation(self) -> None:
