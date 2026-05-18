@@ -98,6 +98,23 @@ diagnostic_payload_json
 
 `diagnostic_payload_json` owns missingness/freshness, minimum-history, standardization and z-score clipping checks, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness versus baselines, and no-future-leak checks.
 
+## Substrate promotion diagnostic
+
+`src/models/model_01_market_regime/substrate_diagnostics.py` owns the reusable read-only substrate diagnostic for promotion-readiness triage. The stable script entrypoint is:
+
+```bash
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/diagnose_model_01_market_regime_substrate.py
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/diagnose_model_01_market_regime_substrate.py --from-database --output-json /tmp/l1_substrate_diagnostic.json
+```
+
+The diagnostic emits `model_01_market_regime_substrate_diagnostic_v1` and separates:
+
+- source-bar sparsity by source symbol/timeframe decision-day coverage;
+- feature lookback / non-null signal coverage gaps;
+- model-output coverage and feature-to-model timestamp alignment gaps.
+
+`--from-database` performs read-only SQL selects over source, feature, and model tables. It does not write source rows, feature rows, model rows, evaluation rows, promotion evidence, activation records, broker/account state, or storage lifecycle state. `1_coverage_score` and `1_data_quality_score` stay quality evidence and are excluded from predictive-output coverage counts.
+
 ## Naming rule
 
 Layer 1 model fields use compact `1_*` names in docs, model-facing payloads, and SQL physical columns. SQL writers should quote numeric-leading column names when needed rather than storing semantic aliases such as `layer01_*`.
@@ -121,6 +138,8 @@ Current Layer 1 verification gates include:
 python3 -m compileall -q src scripts tests
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/generate_model_01_market_regime.py --help
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/diagnose_model_01_market_regime_substrate.py --help
+PYTHONPATH=src python3 scripts/models/model_01_market_regime/diagnose_model_01_market_regime_substrate.py --from-database --output-json /tmp/l1_substrate_diagnostic.json
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --help
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --print-artifacts --output-json /tmp/l1_promotion_artifacts.json
