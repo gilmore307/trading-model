@@ -74,6 +74,52 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
                 previous_layer = layer_number - 1
                 self.assertEqual(generator._column_type(f"{previous_layer}_legacy_score"), "TEXT")
 
+    def test_layer_04_database_input_falls_back_to_neutral_target_context_without_gate_table(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py")
+
+        class FakeCursor:
+            def __init__(self) -> None:
+                self._one = None
+                self._many = []
+
+            def execute(self, sql: str, params: tuple[object, ...] | list[object] | None = None) -> None:
+                if "to_regclass" in sql:
+                    self._one = {"table_ref": None}
+                    return
+                self._many = [
+                    {
+                        "available_time": "2016-01-04T09:35:00-05:00",
+                        "tradeable_time": "2016-01-04T09:35:00-05:00",
+                        "target_candidate_id": "anon_aapl",
+                        "market_context_state_ref": "mcs_1",
+                        "sector_context_state_ref": "scs_1",
+                        "target_context_state_ref": "tcs_1",
+                        "target_context_state": {"3_state_quality_score": 0.8},
+                    }
+                ]
+
+            def fetchone(self):
+                return self._one
+
+            def fetchall(self):
+                return self._many
+
+        rows = generator._fetch_input_rows(
+            FakeCursor(),
+            source_schema="trading_model",
+            source_table="event_strategy_failure_gate",
+            target_context_schema="trading_model",
+            target_context_table="model_03_target_state_vector",
+            source_start="2016-01-01T00:00:00-05:00",
+            source_end="2016-07-01T00:00:00-04:00",
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["target_candidate_id"], "anon_aapl")
+        self.assertEqual(rows[0]["event_strategy_failure_gate"]["gate_status"], "not_present")
+        model_rows = generator.generate_rows(rows)
+        self.assertEqual(model_rows[0]["4_resolved_event_failure_risk_status"], "no_reviewed_event_failure_risk")
+
     def test_fixture_generate_evaluate_review_defers_activation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)

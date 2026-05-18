@@ -113,7 +113,27 @@ def _insert_rows(cursor: Any, *, schema: str, table: str, rows: Sequence[Mapping
         cursor.execute(f"INSERT INTO {_qualified(schema, table)} ({column_sql}) VALUES ({placeholders}){conflict_sql}", values)
 
 
-def _fetch_source_rows(cursor: Any, *, schema: str, table: str, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+def _table_exists(cursor: Any, *, schema: str, table: str) -> bool:
+    _quote_identifier(schema)
+    _quote_identifier(table)
+    cursor.execute("SELECT to_regclass(%s) AS table_ref", (f"{schema}.{table}",))
+    row = cursor.fetchone()
+    if isinstance(row, Mapping):
+        return row.get("table_ref") is not None
+    if isinstance(row, Sequence):
+        return bool(row and row[0] is not None)
+    return False
+
+
+def _fetch_table_rows(
+    cursor: Any,
+    *,
+    schema: str,
+    table: str,
+    source_start: str | None,
+    source_end: str | None,
+    order_by: str,
+) -> list[dict[str, Any]]:
     where: list[str] = []
     params: list[Any] = []
     if source_start:
@@ -123,8 +143,97 @@ def _fetch_source_rows(cursor: Any, *, schema: str, table: str, source_start: st
         where.append("available_time::timestamptz < %s::timestamptz")
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
-    cursor.execute(f"SELECT * FROM {_qualified(schema, table)}{where_sql} ORDER BY available_time::timestamptz ASC", params)
+    cursor.execute(f"SELECT * FROM {_qualified(schema, table)}{where_sql} ORDER BY {order_by}", params)
     return [dict(row) for row in cursor.fetchall()]
+
+
+def _payload_value(row: Mapping[str, Any], *keys: str) -> Any:
+    for key in keys:
+        value = row.get(key)
+        if value is not None:
+            return value
+    return None
+
+
+def _neutral_input_rows_from_target_context(target_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    neutral_rows: list[dict[str, Any]] = []
+    for row in target_rows:
+        neutral_rows.append(
+            {
+                "available_time": row.get("available_time"),
+                "tradeable_time": row.get("tradeable_time") or row.get("available_time"),
+                "target_candidate_id": row.get("target_candidate_id"),
+                "market_context_state_ref": row.get("market_context_state_ref"),
+                "sector_context_state_ref": row.get("sector_context_state_ref"),
+                "target_context_state_ref": row.get("target_context_state_ref") or row.get("target_state_vector_ref"),
+                "target_context_state": _payload_value(row, "target_context_state", "target_state_vector"),
+                "target_state_vector": _payload_value(row, "target_context_state", "target_state_vector"),
+                "event_strategy_failure_gate_ref": None,
+                "event_strategy_failure_gate": {
+                    "gate_status": "not_present",
+                    "review_decision": "no_reviewed_event_failure_risk",
+                    "reason_codes": ["no_reviewed_event_strategy_failure_gate"],
+                },
+            }
+        )
+    return neutral_rows
+
+
+def _merge_gate_rows_with_target_context(
+    *,
+    gate_rows: Sequence[Mapping[str, Any]],
+    target_rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    targets_by_key = {
+        (str(row.get("target_candidate_id") or ""), str(row.get("available_time") or "")): row
+        for row in target_rows
+    }
+    merged: list[dict[str, Any]] = []
+    for gate in gate_rows:
+        row = dict(gate)
+        target = targets_by_key.get((str(row.get("target_candidate_id") or ""), str(row.get("available_time") or "")))
+        if target is not None:
+            row.setdefault("tradeable_time", target.get("tradeable_time") or target.get("available_time"))
+            row.setdefault("market_context_state_ref", target.get("market_context_state_ref"))
+            row.setdefault("sector_context_state_ref", target.get("sector_context_state_ref"))
+            row.setdefault("target_context_state_ref", target.get("target_context_state_ref") or target.get("target_state_vector_ref"))
+            row.setdefault("target_context_state", _payload_value(target, "target_context_state", "target_state_vector"))
+            row.setdefault("target_state_vector", _payload_value(target, "target_context_state", "target_state_vector"))
+        merged.append(row)
+    return merged
+
+
+def _fetch_input_rows(
+    cursor: Any,
+    *,
+    source_schema: str,
+    source_table: str,
+    target_context_schema: str,
+    target_context_table: str,
+    source_start: str | None,
+    source_end: str | None,
+) -> list[dict[str, Any]]:
+    target_rows = _fetch_table_rows(
+        cursor,
+        schema=target_context_schema,
+        table=target_context_table,
+        source_start=source_start,
+        source_end=source_end,
+        order_by="available_time::timestamptz ASC, target_candidate_id ASC",
+    )
+    if not _table_exists(cursor, schema=source_schema, table=source_table):
+        return _neutral_input_rows_from_target_context(target_rows)
+    gate_rows = _fetch_table_rows(
+        cursor,
+        schema=source_schema,
+        table=source_table,
+        source_start=source_start,
+        source_end=source_end,
+        order_by="available_time::timestamptz ASC, target_candidate_id ASC",
+    )
+    if not gate_rows:
+        return _neutral_input_rows_from_target_context(target_rows)
+    return _merge_gate_rows_with_target_context(gate_rows=gate_rows, target_rows=target_rows)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -137,6 +246,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--database-url")
     parser.add_argument("--source-schema", default="trading_model")
     parser.add_argument("--source-table", default="event_strategy_failure_gate")
+    parser.add_argument("--target-context-schema", default="trading_model")
+    parser.add_argument("--target-context-table", default="model_03_target_state_vector")
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_04_event_failure_risk")
     parser.add_argument("--source-start")
@@ -146,7 +257,19 @@ def main(argv: list[str] | None = None) -> int:
         psycopg, dict_row = _load_psycopg()
         with psycopg.connect(_database_url(args.database_url), row_factory=dict_row) as conn:
             with conn.cursor() as cursor:
-                input_rows = _fetch_source_rows(cursor, schema=args.source_schema, table=args.source_table, source_start=args.source_start, source_end=args.source_end) if args.from_database else (read_rows(args.input_jsonl) if args.input_jsonl else FIXTURE_INPUT_ROWS[MODEL_SURFACE])
+                input_rows = (
+                    _fetch_input_rows(
+                        cursor,
+                        source_schema=args.source_schema,
+                        source_table=args.source_table,
+                        target_context_schema=args.target_context_schema,
+                        target_context_table=args.target_context_table,
+                        source_start=args.source_start,
+                        source_end=args.source_end,
+                    )
+                    if args.from_database
+                    else (read_rows(args.input_jsonl) if args.input_jsonl else FIXTURE_INPUT_ROWS[MODEL_SURFACE])
+                )
                 rows = generate_rows(input_rows, model_version=args.model_version)
                 if args.write_database:
                     _ensure_table(cursor, schema=args.target_schema, table=args.target_table, rows=rows)
