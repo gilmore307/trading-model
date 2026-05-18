@@ -40,8 +40,8 @@ Durable promotion requests, review decisions, activation, rollback, and producti
 
 Layer 1 and Layer 2 have real database evidence paths. The current evidence is useful negative evidence, not promotion approval:
 
-- Layer 1 data completeness/leakage repair succeeded, and the current split-stability checks pass after excluding quality outputs from predictive-return factor scoring. Promotion is still blocked by baseline improvement (`-0.4488 < 0.0`), eval-label count (`72 < 200`), minimum pair count (`4 < 30`), and coverage (`0.20 < 0.80`).
-- Layer 2 coverage improved, but baseline improvement, selected-vs-blocked lift, and split sign-stability gates still block promotion.
+- Layer 1 data completeness/leakage classification is now explicit: missing model rows at label decision times are alignment/completeness evidence, not future leakage. No-future-leak and chronological split-overlap checks pass, but promotion is still blocked by model-row count, eval-label count, model/label alignment, pair-count, coverage, correlation, baseline-improvement, and split-stability gates.
+- Layer 2 uses the same leakage/alignment separation. No-future-leak and chronological split-overlap checks pass, but promotion is still blocked by model/label alignment, coverage/pair-count, baseline, stability, and sector handoff gates.
 
 The model repo may regenerate these evidence packages, but durable review requests and decisions must be submitted through `trading-manager`.
 

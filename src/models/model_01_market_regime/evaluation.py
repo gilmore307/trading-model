@@ -618,7 +618,7 @@ def build_leakage_metrics(
     for left, right in zip(ordered_splits, ordered_splits[1:], strict=False):
         if _parse_time(left["split_end_time"]) >= _parse_time(right["split_start_time"]):
             split_overlap_violations += 1
-    total = float(label_direction_violations + missing_model_alignment + split_overlap_violations)
+    total = float(label_direction_violations + split_overlap_violations)
     return [
         _metric_row(
             eval_run_id,
@@ -633,7 +633,7 @@ def build_leakage_metrics(
             None,
             metric_name="model_label_alignment_missing_count",
             metric_value=float(missing_model_alignment),
-            payload={"metric_family": "leakage", "check": "model_row_exists_at_label_available_time"},
+            payload={"metric_family": "alignment", "check": "model_row_exists_at_label_available_time"},
             write_policy=write_policy,
         ),
         _metric_row(
@@ -790,7 +790,8 @@ def summarize_artifacts(artifacts: EvaluationArtifacts, *, thresholds: Mapping[s
         "failed_thresholds": failed_thresholds,
         "baseline_summary": _metric_family_summary(artifacts.eval_metrics, ("baseline_pearson_correlation", "baseline_improvement_abs")),
         "stability_summary": _metric_family_summary(artifacts.eval_metrics, ("split_stability_sign_consistency", "split_stability_correlation_range")),
-        "leakage_summary": _metric_family_summary(artifacts.eval_metrics, ("no_future_leak_violation_count", "model_label_alignment_missing_count", "chronological_split_overlap_violation_count", "total_leakage_violation_count")),
+        "alignment_summary": _metric_family_summary(artifacts.eval_metrics, ("model_label_alignment_missing_count",)),
+        "leakage_summary": _metric_family_summary(artifacts.eval_metrics, ("no_future_leak_violation_count", "chronological_split_overlap_violation_count", "total_leakage_violation_count")),
         "promotion_evidence_ready": not failed_thresholds,
         "snapshot_id": artifacts.dataset_snapshot["snapshot_id"],
         "eval_run_id": artifacts.eval_run["eval_run_id"],

@@ -146,9 +146,33 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
         self.assertIn("metric_value_summary", summary)
         self.assertIn("baseline_summary", summary)
         self.assertIn("stability_summary", summary)
+        self.assertIn("alignment_summary", summary)
         self.assertIn("leakage_summary", summary)
         self.assertIn("threshold_results", summary)
         self.assertTrue(summary["promotion_evidence_ready"])
+
+    def test_missing_model_alignment_is_not_counted_as_future_leakage(self) -> None:
+        features, models = _rows()
+        summary = summarize_artifacts(
+            build_evaluation_artifacts(feature_rows=features, model_rows=models[:3]),
+            thresholds={
+                "minimum_feature_rows": 1,
+                "minimum_model_rows": 1,
+                "minimum_eval_labels": 1,
+                "minimum_split_count": 1,
+                "minimum_pair_count": 0,
+                "minimum_coverage": 0,
+                "minimum_state_output_abs_pearson": 0,
+                "minimum_baseline_improvement_abs": -2,
+                "minimum_stability_sign_consistency": 0,
+                "maximum_stability_correlation_range": 2,
+                "maximum_leakage_violation_count": 0,
+            },
+        )
+
+        self.assertGreater(summary["alignment_summary"]["model_label_alignment_missing_count"]["max"], 0)
+        self.assertEqual(summary["leakage_summary"]["total_leakage_violation_count"]["max"], 0.0)
+        self.assertTrue(summary["threshold_results"]["maximum_leakage_violation_count"]["passed"])
 
     def test_core_evaluator_has_no_database_connection_surface(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]

@@ -552,10 +552,10 @@ def build_leakage_metrics(model_rows: Sequence[Mapping[str, Any]], labels: Seque
     for left, right in zip(ordered_splits, ordered_splits[1:], strict=False):
         if _parse_time(left["split_end_time"]) >= _parse_time(right["split_start_time"]):
             split_overlap_violations += 1
-    total = float(label_direction_violations + missing_model_alignment + split_overlap_violations)
+    total = float(label_direction_violations + split_overlap_violations)
     return [
         _metric_row(eval_run_id, None, metric_name="no_future_leak_violation_count", metric_value=float(label_direction_violations), payload={"metric_family": "leakage", "check": "label_time_strictly_after_available_time"}, write_policy=write_policy),
-        _metric_row(eval_run_id, None, metric_name="model_label_alignment_missing_count", metric_value=float(missing_model_alignment), payload={"metric_family": "leakage", "check": "model_row_exists_at_label_available_time_and_symbol"}, write_policy=write_policy),
+        _metric_row(eval_run_id, None, metric_name="model_label_alignment_missing_count", metric_value=float(missing_model_alignment), payload={"metric_family": "alignment", "check": "model_row_exists_at_label_available_time_and_symbol"}, write_policy=write_policy),
         _metric_row(eval_run_id, None, metric_name="chronological_split_overlap_violation_count", metric_value=float(split_overlap_violations), payload={"metric_family": "leakage", "check": "splits_are_strictly_ordered"}, write_policy=write_policy),
         _metric_row(eval_run_id, None, metric_name="total_leakage_violation_count", metric_value=total, payload={"metric_family": "leakage"}, write_policy=write_policy),
     ]
@@ -638,7 +638,8 @@ def summarize_artifacts(artifacts: EvaluationArtifacts, *, thresholds: Mapping[s
         "baseline_summary": _metric_family_summary(artifacts.eval_metrics, ("baseline_pearson_correlation", "baseline_improvement_abs")),
         "stability_summary": _metric_family_summary(artifacts.eval_metrics, ("split_stability_sign_consistency", "split_stability_correlation_range")),
         "handoff_summary": _metric_family_summary(artifacts.eval_metrics, ("selected_count", "selected_long_bias_count", "selected_short_bias_count", "selected_bias_alignment_rate", "selected_average_abs_label", "watch_average_abs_label", "blocked_average_abs_label", "selected_abs_label_lift_vs_blocked")),
-        "leakage_summary": _metric_family_summary(artifacts.eval_metrics, ("no_future_leak_violation_count", "model_label_alignment_missing_count", "chronological_split_overlap_violation_count", "total_leakage_violation_count")),
+        "alignment_summary": _metric_family_summary(artifacts.eval_metrics, ("model_label_alignment_missing_count",)),
+        "leakage_summary": _metric_family_summary(artifacts.eval_metrics, ("no_future_leak_violation_count", "chronological_split_overlap_violation_count", "total_leakage_violation_count")),
         "promotion_evidence_ready": all(result["passed"] for result in threshold_results.values()),
         "snapshot_id": artifacts.dataset_snapshot["snapshot_id"],
         "eval_run_id": artifacts.eval_run["eval_run_id"],

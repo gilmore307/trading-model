@@ -127,8 +127,36 @@ class SectorContextEvaluationTests(unittest.TestCase):
         self.assertIn("selected_count", summary["handoff_summary"])
         self.assertIn("selected_bias_alignment_rate", summary["handoff_summary"])
         self.assertIn("selected_average_abs_label", summary["handoff_summary"])
+        self.assertIn("alignment_summary", summary)
         self.assertIn("threshold_results", summary)
         self.assertTrue(summary["promotion_evidence_ready"])
+
+    def test_missing_model_alignment_is_not_counted_as_future_leakage(self) -> None:
+        features, models = _rows()
+        summary = summarize_artifacts(
+            build_evaluation_artifacts(feature_rows=features, model_rows=models[:3]),
+            thresholds={
+                "minimum_feature_rows": 1,
+                "minimum_model_rows": 1,
+                "minimum_eval_labels": 1,
+                "minimum_split_count": 1,
+                "minimum_pair_count": 0,
+                "minimum_coverage": 0,
+                "minimum_factor_abs_pearson": 0,
+                "minimum_baseline_improvement_abs": -1_000_000_000,
+                "minimum_stability_sign_consistency": 0,
+                "maximum_stability_correlation_range": 1_000_000_000,
+                "maximum_leakage_violation_count": 0,
+                "minimum_selected_count": 0,
+                "minimum_selected_bias_alignment_rate": 0,
+                "minimum_selected_average_abs_label": 0,
+                "minimum_selected_abs_label_lift_vs_blocked": -1,
+            },
+        )
+
+        self.assertGreater(summary["alignment_summary"]["model_label_alignment_missing_count"]["max"], 0)
+        self.assertEqual(summary["leakage_summary"]["total_leakage_violation_count"]["max"], 0.0)
+        self.assertTrue(summary["threshold_results"]["maximum_leakage_violation_count"]["passed"])
 
     def test_core_evaluator_has_no_database_connection_surface(self) -> None:
         text = (REPO_ROOT / "src" / "models" / "model_02_sector_context" / "evaluation.py").read_text(encoding="utf-8")
