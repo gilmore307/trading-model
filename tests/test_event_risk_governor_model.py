@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import unittest
 
-from models.model_09_event_risk_governor import generate_rows
-from models.model_09_event_risk_governor.evaluation import assert_no_label_leakage, build_event_risk_governor_labels
-from models.model_09_event_risk_governor.generator import _validate_no_forbidden_output
+from models.model_08_event_risk_governor import generate_rows
+from models.model_08_event_risk_governor.evaluation import assert_no_label_leakage, build_event_risk_governor_labels
+from models.model_08_event_risk_governor.generator import _validate_no_forbidden_output
 
 
 FORBIDDEN_TERMS = {
@@ -36,11 +36,11 @@ class EventRiskGovernorTests(unittest.TestCase):
 
         self.assertEqual(diagnostics["visible_event_count"], 2)
         self.assertEqual(diagnostics["canonical_event_count"], 1)
-        self.assertGreater(vector["9_event_presence_score_60min"], 0.0)
-        self.assertLess(vector["9_event_direction_bias_score_60min"], 0.0)
-        self.assertGreater(vector["9_event_symbol_impact_score_60min"], vector["9_event_market_impact_score_60min"])
+        self.assertGreater(vector["8_event_presence_score_60min"], 0.0)
+        self.assertLess(vector["8_event_direction_bias_score_60min"], 0.0)
+        self.assertGreater(vector["8_event_symbol_impact_score_60min"], vector["8_event_market_impact_score_60min"])
         self.assertEqual(
-            diagnostics["dominant_impact_scope_by_horizon"]["9_event_dominant_impact_scope_60min"],
+            diagnostics["dominant_impact_scope_by_horizon"]["8_event_dominant_impact_scope_60min"],
             "symbol",
         )
         assert_no_label_leakage(output)
@@ -51,10 +51,10 @@ class EventRiskGovernorTests(unittest.TestCase):
         output = generate_rows([row])[0]
         vector = output["event_context_vector"]
 
-        self.assertEqual(vector["9_event_presence_score_390min"], 0.0)
-        self.assertEqual(vector["9_event_direction_bias_score_390min"], 0.0)
-        self.assertEqual(vector["9_event_market_impact_score_390min"], 0.0)
-        self.assertGreater(vector["9_event_context_quality_score_390min"], 0.0)
+        self.assertEqual(vector["8_event_presence_score_390min"], 0.0)
+        self.assertEqual(vector["8_event_direction_bias_score_390min"], 0.0)
+        self.assertEqual(vector["8_event_market_impact_score_390min"], 0.0)
+        self.assertGreater(vector["8_event_context_quality_score_390min"], 0.0)
 
     def test_crypto_context_uses_direct_underlying_without_option_requirement(self) -> None:
         output = generate_rows([
@@ -67,9 +67,10 @@ class EventRiskGovernorTests(unittest.TestCase):
 
         self.assertEqual(output["asset_expression_route"], "direct_underlying_only")
         self.assertEqual(output["base_underlying_action_plan_ref"], "uap_btc_fixture")
-        self.assertIsNone(output["base_trading_guidance_record_ref"])
-        self.assertIsNone(output["option_expression_plan_ref"])
-        self.assertFalse(output["event_risk_governor_diagnostics"]["base_guidance_context"]["option_expression_required_for_governor"])
+        self.assertNotIn("base_trading_guidance_record_ref", output)
+        self.assertNotIn("option_expression_plan_ref", output)
+        self.assertFalse(output["event_risk_governor_diagnostics"]["underlying_thesis_context"]["option_expression_required_for_governor"])
+        self.assertFalse(output["event_risk_governor_diagnostics"]["underlying_thesis_context"]["layer_9_trading_guidance_required_for_governor"])
         self.assert_no_forbidden_terms(output)
 
     def test_price_action_event_maps_to_microstructure_reversal_risk(self) -> None:
@@ -94,13 +95,13 @@ class EventRiskGovernorTests(unittest.TestCase):
         encoded = output["event_risk_governor_diagnostics"]["encoded_events"][0]
 
         self.assertEqual(encoded["event_native_scope_type"], "price_action")
-        self.assertGreater(vector["9_event_microstructure_impact_score_15min"], 0.0)
-        self.assertGreater(vector["9_event_reversal_risk_score_15min"], 0.0)
+        self.assertGreater(vector["8_event_microstructure_impact_score_15min"], 0.0)
+        self.assertGreater(vector["8_event_reversal_risk_score_15min"], 0.0)
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
     def test_forbidden_output_diagnostic_names_layer_nine(self) -> None:
-        with self.assertRaisesRegex(ValueError, "forbidden Layer 9 output field"):
+        with self.assertRaisesRegex(ValueError, "forbidden Layer 8 output field"):
             _validate_no_forbidden_output({"buy": True})
 
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:

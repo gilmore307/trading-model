@@ -15,16 +15,16 @@ LAYERS = {
     "model_05_alpha_confidence": "alpha_confidence",
     "model_06_position_projection": "position_projection",
     "model_07_underlying_action": "underlying_action",
-    "model_08_option_expression": "option_expression",
-    "model_09_event_risk_governor": "event_risk_governor",
+    "model_09_option_expression": "option_expression",
+    "model_08_event_risk_governor": "event_risk_governor",
 }
 LAYER_NUMBERS = {
     "model_04_event_failure_risk": 4,
     "model_05_alpha_confidence": 5,
     "model_06_position_projection": 6,
     "model_07_underlying_action": 7,
-    "model_08_option_expression": 8,
-    "model_09_event_risk_governor": 9,
+    "model_08_event_risk_governor": 8,
+    "model_09_option_expression": 9,
 }
 
 
@@ -60,10 +60,10 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stderr)
                     self.assertIn("usage:", result.stdout)
 
-    def test_model_09_sql_column_typing_uses_layer_09_prefix(self) -> None:
-        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py")
+    def test_model_08_event_sql_column_typing_uses_layer_08_prefix(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_08_event_risk_governor/generate_model_08_event_risk_governor.py")
 
-        self.assertEqual(generator._column_type("9_event_gap_risk_score_390min"), "DOUBLE PRECISION")
+        self.assertEqual(generator._column_type("8_event_gap_risk_score_390min"), "DOUBLE PRECISION")
         self.assertEqual(generator._column_type("8_legacy_event_score"), "TEXT")
 
     def test_active_generator_column_type_prefixes_match_layer_numbers(self) -> None:

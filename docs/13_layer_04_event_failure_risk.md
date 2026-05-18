@@ -18,8 +18,8 @@ Layer 1: MarketRegimeModel
   -> Layer 5: AlphaConfidenceModel
   -> Layer 6: PositionProjectionModel
   -> Layer 7: UnderlyingActionModel
-  -> Layer 8: TradingGuidanceModel / OptionExpressionModel
-  -> Layer 9: EventRiskGovernor / EventIntelligenceOverlay
+  -> Layer 8: EventRiskGovernor / EventIntelligenceOverlay
+  -> Layer 9: TradingGuidanceModel / OptionExpressionModel
 ```
 
 Layer 4 is not broad event alpha and not raw-news ingestion. It is a narrow pre-alpha failure-risk gate for event families that have already passed agent review.
@@ -70,7 +70,7 @@ Layer 5 `AlphaConfidenceModel` consumes `event_failure_risk_vector` as a **condi
 
 Layer 6-8 may consume the resolved Layer 4 conditioning indirectly through Layer 5/6 handoffs. They must not independently re-promote raw event evidence.
 
-Layer 9 remains responsible for residual discovery, unexplained anomaly review, observation-pool maintenance, and proposing future event-family promotions into Layer 4.
+Layer 8 remains responsible for residual discovery, unexplained anomaly review, observation-pool maintenance, and proposing future event-family promotions into Layer 4.
 
 ## Promotion gate into Layer 4
 
@@ -83,7 +83,7 @@ An event family can enter Layer 4 only after all of the following are true:
 5. agent review explicitly accepts `accept_layer_04_event_failure_risk_scope` or equivalent;
 6. manager registry records the accepted scope and allowed decision effects.
 
-Absent this reviewed promotion, the family remains in Layer 9 research/observation/governance only.
+Absent this reviewed promotion, the family remains in Layer 8 research/observation/governance only.
 
 ## Hard boundaries
 

@@ -23,11 +23,14 @@ MODEL_LAYER_ORDER = (
     "layer_05_alpha_confidence",
     "layer_06_position_projection",
     "layer_07_underlying_action",
-    "layer_08_option_expression",
-    "layer_09_event_risk_governor",
+    "layer_08_event_risk_governor",
+    "layer_09_option_expression",
 )
-REQUIRED_MODEL_LAYER_ORDER = tuple(layer for layer in MODEL_LAYER_ORDER if layer != "layer_08_option_expression")
-OPTIONAL_MODEL_LAYER_ORDER = ("layer_08_option_expression",)
+# Current Layer 9 implementation is the option-expression subset of the broader
+# TradingGuidance/realtime-handoff boundary, so direct-underlying-only routes may
+# omit it until a full non-option TradingGuidanceModel surface is accepted.
+REQUIRED_MODEL_LAYER_ORDER = tuple(layer for layer in MODEL_LAYER_ORDER if layer != "layer_09_option_expression")
+OPTIONAL_MODEL_LAYER_ORDER = ("layer_09_option_expression",)
 
 _LAYER_METADATA = {
     "layer_01_market_regime": {
@@ -65,16 +68,16 @@ _LAYER_METADATA = {
         "expected_model_output": "underlying_action_plan",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py",
     },
-    "layer_08_option_expression": {
+    "layer_09_option_expression": {
         "model_id": "option_expression_model",
         "expected_model_output": "trading_guidance_record",
         "accepted_model_outputs": ("trading_guidance_record", "option_expression_plan"),
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_08_option_expression/generate_model_08_option_expression.py",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_09_option_expression/generate_model_09_option_expression.py",
     },
-    "layer_09_event_risk_governor": {
+    "layer_08_event_risk_governor": {
         "model_id": "event_risk_governor",
         "expected_model_output": "event_context_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_08_event_risk_governor/generate_model_08_event_risk_governor.py",
     },
 }
 

@@ -5,7 +5,7 @@ Status: active architecture revision. Layer 6; current physical implementation s
 
 Active boundary: Layer 6 consumes `alpha_confidence_vector` plus point-in-time current/pending position, cost, exposure, and risk-budget context. It outputs `position_projection_vector`: target holding-state projection and abstract exposure gap, not execution instructions.
 
-Forbidden outputs: buy/sell/hold, option/instrument selection, route, time-in-force, final quantity, broker/account mutation. Layer 7 owns direct-underlying action thesis; Layer 8 owns trading-guidance/expression; Layer 9 owns event-risk intervention.
+Forbidden outputs: buy/sell/hold, option/instrument selection, route, time-in-force, final quantity, broker/account mutation. Layer 7 owns direct-underlying action thesis; Layer 9 owns trading-guidance/expression; Layer 9 owns event-risk intervention.
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
@@ -24,7 +24,7 @@ Layer 6 answers:
 - Are costs, liquidity, concentration, drawdown state, and risk budget compatible with the target exposure?
 - Which horizon should dominate the handoff when per-horizon projections conflict?
 
-Layer 6 does **not** answer buy/sell/hold, open/close/reverse, instrument choice, option-contract choice, order type, routing, or live/paper execution questions. It projects target position state only. Layer 7 owns the direct-underlying planned action thesis; Layer 8 owns trading guidance / option expression. Broker mutation remains outside `trading-model`.
+Layer 6 does **not** answer buy/sell/hold, open/close/reverse, instrument choice, option-contract choice, order type, routing, or live/paper execution questions. It projects target position state only. Layer 7 owns the direct-underlying planned action thesis; Layer 9 owns trading guidance / option expression. Broker mutation remains outside `trading-model`.
 
 ## Position and input chain
 
@@ -219,7 +219,7 @@ routing_destination
 broker_order_id
 ```
 
-These belong to Layer 7 underlying-action work, Layer 8 option-expression/trading-guidance work, or execution-side repositories.
+These belong to Layer 7 underlying-action work, Layer 9 option-expression/trading-guidance work, or execution-side repositories.
 
 ## Internal structure
 

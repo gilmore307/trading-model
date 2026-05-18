@@ -3,7 +3,7 @@
 <!-- ACTIVE_LAYER_REVISION -->
 Status: active architecture revision. Layer 5; current physical implementation surface is `src/models/model_05_alpha_confidence/`.
 
-Active boundary: Layer 5 consumes the reviewed Layer 1/2/3 state stack plus Layer 4 `event_failure_risk_vector` when available and produces `alpha_confidence_vector` / base-alpha diagnostics. It does not consume arbitrary raw event evidence; only reviewed Layer 4 event-failure-risk conditioning is allowed upstream, while Layer 9 remains the residual event-risk governor.
+Active boundary: Layer 5 consumes the reviewed Layer 1/2/3 state stack plus Layer 4 `event_failure_risk_vector` when available and produces `alpha_confidence_vector` / base-alpha diagnostics. It does not consume arbitrary raw event evidence; only reviewed Layer 4 event-failure-risk conditioning is allowed upstream, while Layer 8 remains the residual event-risk governor.
 
 Allowed outputs: horizon-aware alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Forbidden outputs: target exposure, position size, buy/sell/hold, option contract, order fields, broker/account mutation.
 
@@ -65,7 +65,7 @@ Layer 1/2/3
   -> alpha_confidence_vector
 ```
 
-Layer 6 should consume the `alpha_confidence_vector` by default. Layer 9 event-adjusted risk guidance, if available, is applied later against the Layer 7 direct-underlying/spot thesis and optional Layer 8 expression context rather than being a hard prerequisite here.
+Layer 6 should consume the `alpha_confidence_vector` by default. Layer 9 event-adjusted risk guidance, if available, is applied later against the Layer 7 direct-underlying/spot thesis and optional Layer 9 expression context rather than being a hard prerequisite here.
 
 ## Inputs
 
@@ -122,11 +122,11 @@ It may also use reviewed cross-state/residual features when available, such as t
 
 Layer 5 may learn that positive or negative target-state evidence has predictive value, but it must not treat Layer 3 direction evidence as a trade instruction or final confidence value.
 
-### Non-blocking Layer 9 event-risk context
+### Non-blocking Layer 8 event-risk context
 
-Layer 9 event intelligence is not a required input for Layer 5 alpha-confidence generation. Reviewed `event_context_vector` / event-risk evidence may be referenced as diagnostics or later risk-governor context, but it must not be treated as a hard upstream prerequisite for base alpha.
+Layer 8 event intelligence is not a required input for Layer 5 alpha-confidence generation. Reviewed `event_context_vector` / event-risk evidence may be referenced as diagnostics or later risk-governor context, but it must not be treated as a hard upstream prerequisite for base alpha.
 
-Events may later enhance, weaken, contaminate, block, cap, or require review of the direct-underlying/spot thesis through the Layer 9 EventRiskGovernor boundary. Ordinary event evidence should not be folded into Layer 5 as duplicate state alpha.
+Events may later enhance, weaken, contaminate, block, cap, or require review of the direct-underlying/spot thesis through the Layer 8 EventRiskGovernor boundary. Ordinary event evidence should not be folded into Layer 5 as duplicate state alpha.
 
 ### Input E - quality, calibration, and research memory
 
@@ -140,7 +140,7 @@ layer_4_quality_score
 feature_coverage_score
 data_quality_score
 state_quality_score
-layer_9_event_artifact_quality_score
+layer_8_event_artifact_quality_score
 state_neighborhood_sample_count
 state_neighborhood_outcome_stability
 model_ensemble_agreement_score
@@ -203,7 +203,7 @@ Uses only Layer 1/2/3 state evidence to generate the base alpha judgment. It pro
 5_base_alpha_tradability_score_<horizon>
 ```
 
-These are not the default downstream contract. They explain what the state stack said before Layer 4 event-failure conditioning and later Layer 9 event-risk review are attributed.
+These are not the default downstream contract. They explain what the state stack said before Layer 4 event-failure conditioning and later Layer 8 event-risk review are attributed.
 
 ### 5B - BaselineAdjustedAlphaDecomposer
 
@@ -221,7 +221,7 @@ If beta dependency is high and target-state lift is low, Layer 5 should avoid cl
 
 ### 5C - EventRiskDiagnosticBridge
 
-Carries optional reviewed Layer 9 event-risk diagnostics for later governance without making event evidence a hard Layer 5 alpha input. Any event-driven block/cap/review/flatten candidate remains a Layer 9 EventRiskGovernor intervention, not a Layer 5 alpha override.
+Carries optional reviewed Layer 8 event-risk diagnostics for later governance without making event evidence a hard Layer 5 alpha input. Any event-driven block/cap/review/flatten candidate remains a Layer 8 EventRiskGovernor intervention, not a Layer 5 alpha override.
 
 Diagnostic fields may include:
 
@@ -354,7 +354,7 @@ Labels must be materialized only in training/evaluation datasets and must not be
 Layer 5 should be trained in stages:
 
 1. **Base alpha model**: train Layer 1/2/3-only base alpha outputs.
-2. **Event-risk diagnostic bridge**: evaluate whether reviewed Layer 9 event-risk diagnostics explain base-alpha errors, event-window risk deterioration, or event-supported improvement without turning events into a hard upstream alpha input.
+2. **Event-risk diagnostic bridge**: evaluate whether reviewed Layer 8 event-risk diagnostics explain base-alpha errors, event-window risk deterioration, or event-supported improvement without turning events into a hard upstream alpha input.
 3. **Path/risk heads**: add MFE/MAE, first-touch, reversal, drawdown, liquidity, and event-risk labels.
 4. **Calibration layer**: calibrate confidence, reliability, and tradability using walk-forward and out-of-sample buckets.
 
@@ -370,7 +370,7 @@ Layer 5 should prove incremental value over:
 2. market/sector context only;
 3. Layer 3 direct target-state score baseline;
 4. Layer 1/2/3 base alpha only;
-5. Layer 9 event-risk context only;
+5. Layer 8 event-risk context only;
 6. Layer 1/2/3 plus simple event count;
 7. Layer 1/2/3 plus full EventOverlay adjustment;
 8. full Layer 5 with calibration.

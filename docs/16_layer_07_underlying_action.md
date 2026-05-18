@@ -3,9 +3,9 @@
 <!-- ACTIVE_LAYER_REVISION -->
 Status: active architecture revision. Layer 7; current physical implementation surface is `src/models/model_07_underlying_action/`.
 
-Active boundary: Layer 7 converts Layer 6 target holding-state projection into an offline direct-underlying action thesis: eligibility, planned action type, exposure-adjustment thesis, entry/target/stop/time assumptions, and handoff to Layer 8 trading guidance.
+Active boundary: Layer 7 converts Layer 6 target holding-state projection into an offline direct-underlying action thesis: eligibility, planned action type, exposure-adjustment thesis, entry/target/stop/time assumptions, and handoff to Layer 9 trading guidance.
 
-It may describe a direct underlying plan for stock, ETF, or crypto spot-style candidates, but it is not broker/exchange execution and does not select option contracts. Layer 8 composes the final offline trading guidance candidate when needed; Layer 9 may later cap/block/reduce/flatten the underlying thesis for event risk, with option-expression context only when available.
+It may describe a direct underlying plan for stock, ETF, or crypto spot-style candidates, but it is not broker/exchange execution and does not select option contracts. Layer 8 may cap/block/reduce/flatten the underlying thesis for event risk. Layer 9 composes the final offline trading guidance candidate and optional option-expression context when needed.
 <!-- /ACTIVE_LAYER_REVISION -->
 
 
@@ -21,7 +21,7 @@ Layer 7 answers:
 - If using the underlying, should the offline plan open, increase, reduce, close, cover, maintain, or avoid a position?
 - How much exposure should this planned adjustment express before execution-side review?
 - What entry, target, stop, thesis-invalidation, and time-stop assumptions define the underlying thesis?
-- What side-neutral price-path assumptions should Layer 8 use when evaluating option expression?
+- What side-neutral price-path assumptions should Layer 9 use when evaluating option expression?
 
 Layer 7 does **not** place orders, route orders, choose order type, mutate broker/account state, or select option contracts. Its action type is a planned/offline action type, not an execution instruction. Live/paper execution remains in `trading-execution`.
 
@@ -39,14 +39,16 @@ Layer 6: PositionProjectionModel
 Layer 7: UnderlyingActionModel
   -> underlying_action_plan / underlying_action_vector
 
-Layer 8: TradingGuidanceModel / OptionExpressionModel
+Layer 8: EventRiskGovernor / EventIntelligenceOverlay
+  -> event_risk_intervention / event-adjusted risk guidance
+Layer 9: TradingGuidanceModel / OptionExpressionModel
   -> trading_guidance_record plus optional option_expression_plan / expression_vector
 
 trading-execution
   -> broker/account execution, orders, fills, reconciliation, safety controls
 ```
 
-Layer 5 asks whether event-conditioned alpha exists. Layer 6 maps adjusted alpha to target holding state. Layer 7 maps target holding state to a direct underlying/spot action thesis. Layer 8 may use that thesis to compose broader trading guidance or choose an option expression when options are available and allowed. `trading-execution` is the only owner of real order placement.
+Layer 5 asks whether event-conditioned alpha exists. Layer 6 maps adjusted alpha to target holding state. Layer 7 maps target holding state to a direct underlying/spot action thesis. Layer 9 may use that thesis plus Layer 8 event-risk context to compose broader trading guidance or choose an option expression when options are available and allowed. `trading-execution` is the only owner of real order placement.
 
 ## Names
 
@@ -72,7 +74,7 @@ Layer 7 owns six responsibilities:
 3. Convert alpha, projection confidence, costs, risk budget, stability, and liquidity into planned action intensity.
 4. Build the direct-underlying entry, target, stop, thesis-invalidation, and time-stop plan.
 5. Emit a side-neutral underlying price-path thesis.
-6. Hand that thesis to Layer 8 when broader trading guidance or option-expression evaluation is needed, without choosing strike, DTE, delta, or contract.
+6. Hand that thesis to Layer 9 when broader trading guidance or option-expression evaluation is needed, without choosing strike, DTE, delta, or contract.
 
 Layer 7 is therefore a policy/strategy translation layer:
 
@@ -82,7 +84,7 @@ current state + confidence + target exposure
   -> planned underlying action type
   -> planned exposure change
   -> entry/target/stop/time thesis
-  -> Layer 8 trading-guidance handoff
+  -> Layer 9 trading-guidance handoff
 ```
 
 ## Inputs
@@ -223,7 +225,7 @@ max_daily_loss_state
 underlying_event_policy_block_state
 ```
 
-`underlying_event_policy_block_state` is policy-derived. Layer 9 event-risk context does not directly issue hard trade blocks; event risk may be translated into policy state by event-risk/policy logic before trading guidance consumes it.
+`underlying_event_policy_block_state` is policy-derived. Layer 8 event-risk context does not directly issue hard trade blocks; event risk may be translated into policy state by event-risk/policy logic before trading guidance consumes it.
 
 ## V1 horizons
 
@@ -447,9 +449,9 @@ risk_plan_reason_codes
 
 `stop_loss_price` and `take_profit_price` describe the offline plan. They are not broker stop orders or limit orders. Execution-side systems decide whether and how any stop/limit order is staged.
 
-## Handoff to Layer 8
+## Handoff to Layer 9
 
-Layer 7 is the underlying-thesis provider for option expression. Handoff fields should be enough for Layer 8 to evaluate option contracts without Layer 7 crossing the contract-selection boundary:
+Layer 7 is the underlying-thesis provider for option expression. Handoff fields should be enough for Layer 9 to evaluate option contracts without Layer 7 crossing the contract-selection boundary:
 
 ```text
 underlying_path_direction
@@ -483,7 +485,7 @@ specific_contract_ref
 option_order_type
 ```
 
-Those belong to Layer 8 and execution-side systems.
+Those belong to Layer 9 and execution-side systems.
 
 ## Core output contract
 
@@ -692,7 +694,7 @@ Layer 7 should be trained or calibrated in stages:
 2. **Candidate action utility evaluation**: evaluate `no_trade`, `maintain`, open/increase/reduce/close candidates, and direct short candidates where allowed.
 3. **Entry and risk-plan calibration**: learn fill probability, target-before-stop, stop-before-target, MFE/MAE, and reward/risk quality.
 4. **Plan confidence calibration**: calibrate `7_underlying_action_confidence_score_<horizon>` by out-of-sample plan utility buckets.
-5. **Layer 8 handoff validation**: prove that Layer 7 price-path assumptions improve option-expression selection versus raw alpha/projection-only baselines.
+5. **Layer 9 handoff validation**: prove that Layer 7 price-path assumptions improve option-expression selection versus raw alpha/projection-only baselines.
 
 Do not train Layer 7 from in-sample upstream model outputs. Upstream vectors consumed by Layer 7 training must be generated with rolling/cross-fitted point-in-time discipline.
 
@@ -719,7 +721,7 @@ Validation must separately check:
 - risk: stops and thesis invalidation limit realized MAE without excessive good-trade truncation;
 - confidence: action-confidence buckets are calibrated out-of-sample;
 - no-trade: no-trade avoids bad trades without unacceptable missed-positive-utility cost;
-- handoff: Layer 8 option expression improves when it uses Layer 7 price-path assumptions;
+- handoff: Layer 9 option expression improves when it uses Layer 7 price-path assumptions;
 - leakage: all feature rows obey `available_time <= decision_time`, and labels are isolated from inference features.
 
 ## Boundary rules
@@ -757,7 +759,7 @@ Current local scaffold status:
 1. Deterministic `model_07_underlying_action` scaffold exists using Layer 5/6 fixture vectors, quote/liquidity fixtures, and risk/policy fixtures.
 2. Effective-current-underlying-exposure calculation with pending fill probability is implemented.
 3. Hard-gate/soft-gate decision trace and planned action resolver are implemented.
-4. Entry, price-path, risk-plan, and Layer 8 handoff builders are implemented.
+4. Entry, price-path, risk-plan, and Layer 9 handoff builders are implemented.
 5. Fixture tests cover maintain vs no_trade, pending-exposure avoidance, side-neutral price fields, conservative opposite-exposure handling, and no order/option-field leakage.
 6. Local evaluation-label helper covers target-before-stop, entry fill probability, no-trade opportunity/avoidance, slippage/spread-adjusted return, and realized reward/risk.
 7. Shared names were promoted through `trading-manager` before cross-repository dependence.
@@ -777,4 +779,4 @@ Layer 7 design/implementation is not accepted for production until:
 - no broker order fields or option-contract fields leak into Layer 7 outputs;
 - plan-quality labels are point-in-time and separated from inference features;
 - walk-forward validation beats the accepted baselines;
-- Layer 8 handoff fields improve option-expression evaluation or are explicitly deferred.
+- Layer 9 handoff fields improve option-expression evaluation or are explicitly deferred.

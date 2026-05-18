@@ -7,7 +7,7 @@ from pathlib import Path
 
 from event_family_fixtures import build_event_family_fixture
 
-from models.model_09_event_risk_governor.event_family_all_association import (
+from models.model_08_event_risk_governor.event_family_all_association import (
     build_event_family_all_association,
     write_event_family_all_association_artifacts,
 )

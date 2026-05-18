@@ -430,28 +430,28 @@ Contract owner:
 docs/16_layer_07_underlying_action.md
 ```
 
-Layer 7 maps Layer 6 target holding-state projection into a direct underlying/spot offline action thesis for stock, ETF, or crypto-style candidates. It outputs `underlying_action_plan` and `underlying_action_vector`: eligibility, planned action type, planned exposure change, entry/target/stop/time assumptions, and optional Layer 8 handoff fields. It does not output broker/exchange orders, order routing, live execution instructions, or option contracts.
+Layer 7 maps Layer 6 target holding-state projection into a direct underlying/spot offline action thesis for stock, ETF, or crypto-style candidates. It outputs `underlying_action_plan` and `underlying_action_vector`: eligibility, planned action type, planned exposure change, entry/target/stop/time assumptions, and optional Layer 9 handoff fields. It does not output broker/exchange orders, order routing, live execution instructions, or option contracts.
 
-## Layer 8: TradingGuidanceModel / OptionExpressionModel
+## Layer 8: EventRiskGovernor / EventIntelligenceOverlay
 
-Status: accepted V1 contract with deterministic option-expression scaffold complete under the current physical `model_08_option_expression` subset; production promotion remains evidence-gated.
-
-Contract owner:
-
-```text
-docs/17_layer_08_trading_guidance.md
-```
-
-Layer 8 consumes Layer 7 underlying path assumptions plus timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, position/risk context, and policy constraints. It outputs base `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`. It remains offline: no broker order type, route, time-in-force, send/cancel/replace flag, broker order id, final order quantity, or broker/account mutation.
-
-## Layer 9: EventRiskGovernor / EventIntelligenceOverlay
-
-Status: accepted V1 event-risk-governor boundary with deterministic scaffold complete under the current physical `model_09_event_risk_governor` surface; production promotion remains evidence-gated.
+Status: accepted V1 event-risk-governor boundary with deterministic scaffold complete under the current physical `model_08_event_risk_governor` surface; production promotion remains evidence-gated.
 
 Contract owner:
 
 ```text
-docs/18_layer_09_event_risk_governor.md
+docs/17_layer_08_event_risk_governor.md
 ```
 
-Layer 9 consumes point-in-time residual event evidence, upstream context refs, and the Layer 7 direct-underlying action thesis as its canonical risk target. Layer 8 base trading guidance / option-expression context is optional expression context when available, not a prerequisite. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, nominate reduction/flattening candidates, maintain an observation pool, and propose future Layer 4 promotions through evidence packets and agent review. It is not a hard upstream alpha input and not a broker/account mutation surface.
+Layer 8 consumes point-in-time residual event evidence, upstream context refs, and the Layer 7 direct-underlying action thesis as its canonical risk target. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, nominate reduction/flattening candidates, maintain an observation pool, and propose future Layer 4 promotions through evidence packets and agent review. It is not a hard upstream alpha input, not trading guidance, and not a broker/account mutation surface.
+
+## Layer 9: TradingGuidanceModel / OptionExpressionModel
+
+Status: accepted V1 contract with deterministic option-expression scaffold complete under the current physical `model_09_option_expression` subset; production promotion remains evidence-gated.
+
+Contract owner:
+
+```text
+docs/18_layer_09_trading_guidance.md
+```
+
+Layer 9 consumes Layer 7 underlying path assumptions, Layer 8 event-risk context, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, position/risk context, and policy constraints. It outputs base `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`. It remains offline: no broker order type, route, time-in-force, send/cancel/replace flag, broker order id, final order quantity, or broker/account mutation.
