@@ -35,6 +35,18 @@ RETIRED_PRIMARY_COLUMNS = (
     "2_context_conditioned_stability_score",
     "2_selection_readiness_score",
     "2_sector_dispersion_crowding_score",
+    "2_sector_liquidity_tradability_score",
+)
+RETIRED_DIAGNOSTIC_COLUMNS = (
+    "2_liquidity_score",
+    "2_spread_cost_score",
+    "2_optionability_score",
+    "2_capacity_score",
+    "2_tradability_score",
+    "2_gap_risk_score",
+    "2_event_density_score",
+    "2_abnormal_activity_score",
+    "2_downside_tail_risk_score",
 )
 
 
@@ -255,6 +267,8 @@ def write_diagnostics_rows_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *
     )
     for column in generator.DIAGNOSTIC_SCORE_COLUMNS:
         cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS {_quote_column_identifier(column)} DOUBLE PRECISION")
+    for column in RETIRED_DIAGNOSTIC_COLUMNS:
+        cursor.execute(f"ALTER TABLE {qualified_table} DROP COLUMN IF EXISTS {_quote_column_identifier(column)}")
     cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS \"diagnostic_payload_json\" JSONB NOT NULL DEFAULT '{{}}'::jsonb")
     quoted_columns = [_quote_column_identifier(column) for column in columns]
     update_sql = ", ".join(

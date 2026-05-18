@@ -64,7 +64,6 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "sector_context_state_ref": row.get("sector_context_state_ref"),
         "target_context_state_ref": row.get("target_context_state_ref"),
         "base_underlying_action_plan_ref": row.get("underlying_action_plan_ref") or row.get("base_underlying_action_plan_ref"),
-        "base_underlying_action_vector_ref": row.get("underlying_action_vector_ref") or row.get("base_underlying_action_vector_ref"),
         "asset_expression_route": row.get("asset_expression_route") or _asset_expression_route(row),
         "event_context_vector_ref": ref,
         **payload,
@@ -414,7 +413,6 @@ def _underlying_thesis_context(row: Mapping[str, Any]) -> dict[str, Any]:
         "risk_target_basis": "underlying_action_plan",
         "asset_expression_route": route,
         "underlying_action_plan_ref": row.get("underlying_action_plan_ref") or row.get("base_underlying_action_plan_ref"),
-        "underlying_action_vector_ref": row.get("underlying_action_vector_ref") or row.get("base_underlying_action_vector_ref"),
         "layer_8_trading_guidance_required_for_governor": False,
         "option_expression_required_for_governor": False,
     }

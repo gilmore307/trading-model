@@ -26,6 +26,7 @@ JSON_COLUMNS = {"alpha_confidence_vector", "base_alpha_vector", "alpha_confidenc
 PRIMARY_KEY = ("alpha_confidence_vector_ref",)
 EXPLAINABILITY_COLUMNS = {"alpha_confidence_vector", "base_alpha_vector"}
 DIAGNOSTICS_COLUMNS = {"alpha_confidence_diagnostics"}
+RETIRED_COLUMNS = ("event_context_vector_ref",)
 
 
 def _database_url(explicit: str | None) -> str:
@@ -281,6 +282,9 @@ def _write_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema:
         explainability_columns=EXPLAINABILITY_COLUMNS,
         diagnostics_columns=DIAGNOSTICS_COLUMNS,
     )
+    for table in (target_table, f"{target_table}_explainability", f"{target_table}_diagnostics"):
+        for column in RETIRED_COLUMNS:
+            cursor.execute(f"ALTER TABLE {_qualified(target_schema, table)} DROP COLUMN IF EXISTS {_quote_column_identifier(column)}")
 
 
 def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:

@@ -69,7 +69,6 @@ PRIMARY_SCORE_COLUMNS = [
     "2_sector_breadth_confirmation_score",
     "2_sector_internal_dispersion_score",
     "2_sector_crowding_risk_score",
-    "2_sector_liquidity_tradability_score",
     "2_sector_tradability_score",
     "2_sector_handoff_state",
     "2_sector_handoff_bias",
@@ -111,17 +110,8 @@ EXPLAINABILITY_SCORE_COLUMNS = [
 ]
 
 DIAGNOSTIC_SCORE_COLUMNS = [
-    "2_liquidity_score",
-    "2_spread_cost_score",
-    "2_optionability_score",
-    "2_capacity_score",
-    "2_tradability_score",
     "2_volatility_risk_score",
-    "2_gap_risk_score",
-    "2_event_density_score",
-    "2_abnormal_activity_score",
     "2_correlation_stress_score",
-    "2_downside_tail_risk_score",
     "2_data_quality_score",
 ]
 
@@ -359,7 +349,6 @@ def _generate_primary_row(group: SectorGroup, *, model_version: str) -> dict[str
     internal_dispersion = _clip01(None if dispersion_raw is None else dispersion_raw / 0.10)
     corr = _average([_safe_float(row.get("relative_strength_return_corr_20d")) for row in feature_rows])
     crowding_risk = _clip01(abs(corr)) if corr is not None else None
-    liquidity_tradability = None
     coverage = quality
     data_quality = quality
     state_quality = _clip01(_average([coverage, data_quality, None if transition_risk is None else 1.0 - transition_risk]))
@@ -372,7 +361,6 @@ def _generate_primary_row(group: SectorGroup, *, model_version: str) -> dict[str
                 breadth,
                 None if internal_dispersion is None else 1.0 - internal_dispersion,
                 None if crowding_risk is None else 1.0 - crowding_risk,
-                liquidity_tradability,
                 state_quality,
             ]
         )
@@ -394,7 +382,6 @@ def _generate_primary_row(group: SectorGroup, *, model_version: str) -> dict[str
         "2_sector_breadth_confirmation_score": breadth,
         "2_sector_internal_dispersion_score": internal_dispersion,
         "2_sector_crowding_risk_score": crowding_risk,
-        "2_sector_liquidity_tradability_score": liquidity_tradability,
         "2_sector_tradability_score": sector_tradability,
         "2_sector_handoff_state": handoff_state,
         "2_sector_handoff_bias": handoff_bias,
@@ -527,17 +514,8 @@ def build_diagnostics_rows(
             {
                 "available_time": group.available_time,
                 "sector_or_industry_symbol": group.symbol,
-                "2_liquidity_score": None,
-                "2_spread_cost_score": None,
-                "2_optionability_score": None,
-                "2_capacity_score": None,
-                "2_tradability_score": None,
                 "2_volatility_risk_score": None if vol_ratio is None else min(abs(vol_ratio - 1.0), 1.0),
-                "2_gap_risk_score": None,
-                "2_event_density_score": None,
-                "2_abnormal_activity_score": None,
                 "2_correlation_stress_score": None if corr is None else abs(corr),
-                "2_downside_tail_risk_score": None,
                 "2_data_quality_score": quality,
                 "diagnostic_payload_json": {
                     "artifact": DIAGNOSTICS_TABLE,

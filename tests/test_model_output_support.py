@@ -62,6 +62,23 @@ class ModelOutputSupportTests(unittest.TestCase):
         self.assertEqual(diagnostics["alpha_confidence_diagnostics"], {"status": "ok"})
         self.assertEqual(diagnostics["diagnostic_payload_json"]["primary_table"], "model_05_alpha_confidence")
 
+    def test_support_identity_omits_null_reference_columns(self) -> None:
+        rows = [
+            {
+                "available_time": "2016-01-04T09:35:00-05:00",
+                "target_candidate_id": "anon_aapl",
+                "model_output_ref": "out_1",
+                "upstream_context_ref": None,
+                "source_snapshot_ref": "src_1",
+                "payload": {"score": 0.7},
+            }
+        ]
+
+        identity = model_output_support._support_identity_columns(rows, ("model_output_ref",))
+
+        self.assertIn("source_snapshot_ref", identity)
+        self.assertNotIn("upstream_context_ref", identity)
+
 
 if __name__ == "__main__":
     unittest.main()

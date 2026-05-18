@@ -203,7 +203,53 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
         self.assertIn('u."available_time"::timestamptz >= %s::timestamptz', sql)
         self.assertIn('u."available_time"::timestamptz < %s::timestamptz', sql)
         self.assertIn('e."underlying_action_plan_ref" = u."underlying_action_plan_ref"', sql)
+        self.assertIn('s."bar_close" AS "underlying_reference_price"', sql)
         self.assertEqual(rows[0]["underlying_action_plan_ref"], "uap_1")
+
+    def test_layer_08_database_input_binds_option_candidates_when_feature_rows_exist(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_08_option_expression/generate_model_08_option_expression.py")
+
+        layer_7_rows = [
+            {
+                "available_time": "2016-01-04T09:35:00-05:00",
+                "tradeable_time": "2016-01-04T09:35:00-05:00",
+                "target_candidate_id": "anon_aapl",
+                "underlying_symbol": "AAPL",
+                "underlying_reference_price": 102.5,
+                "underlying_action_plan_ref": "uap_1",
+                "underlying_action_plan": {
+                    "planned_underlying_action_type": "open_long",
+                    "handoff_to_layer_8": {"underlying_path_direction": "bullish"},
+                },
+            }
+        ]
+        candidate_rows = [
+            {
+                "underlying": "AAPL",
+                "snapshot_time": "2016-01-04T09:35:00-05:00",
+                "snapshot_type": "entry",
+                "option_symbol": "AAPL160115C00100000",
+                "feature_payload_json": {
+                    "option_right": "call",
+                    "bid_price": 2.10,
+                    "ask_price": 2.20,
+                    "dte": 11,
+                    "delta": 0.45,
+                    "volume": 500,
+                    "open_interest": 2500,
+                    "quote_age_seconds": 15,
+                },
+                "feature_quality_diagnostics": {"quality_status": "ready"},
+            }
+        ]
+
+        rows = generator._layer_8_input_rows(layer_7_rows, candidate_rows)
+
+        self.assertEqual(rows[0]["option_chain_snapshot_ref"], "feature_08_option_expression:AAPL:2016-01-04T09:35:00-05:00")
+        self.assertEqual(rows[0]["option_quote_available_time"], "2016-01-04T09:35:00-05:00")
+        self.assertEqual(rows[0]["underlying_quote_snapshot_ref"], "source_03_target_state:anon_aapl:2016-01-04T09:35:00-05:00")
+        self.assertEqual(rows[0]["underlying_reference_price"], 102.5)
+        self.assertEqual(rows[0]["option_contract_candidates"][0]["contract_ref"], "AAPL160115C00100000")
 
     def test_layer_04_from_database_writes_target_table_by_default(self) -> None:
         script = (REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py").read_text(encoding="utf-8")

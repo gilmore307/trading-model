@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -121,9 +122,14 @@ def _fetch_layer_7_rows(cursor: Any, *, source_start: str | None, source_end: st
             f"""
             SELECT
               u.*,
+              s."symbol" AS "underlying_symbol",
+              s."bar_close" AS "underlying_reference_price",
               e."underlying_action_vector",
               e."underlying_action_plan"
             FROM {_qualified('trading_model', 'model_07_underlying_action')} AS u
+            LEFT JOIN {_qualified('trading_data', 'source_03_target_state')} AS s
+              ON s."target_candidate_id" = u."target_candidate_id"
+             AND s."available_time" = u."available_time"::timestamptz
             LEFT JOIN {_qualified('trading_model', explainability_table)} AS e
               ON e."underlying_action_plan_ref" = u."underlying_action_plan_ref"
             {where_sql}
@@ -134,8 +140,14 @@ def _fetch_layer_7_rows(cursor: Any, *, source_start: str | None, source_end: st
     else:
         cursor.execute(
             f"""
-            SELECT u.*
+            SELECT
+              u.*,
+              s."symbol" AS "underlying_symbol",
+              s."bar_close" AS "underlying_reference_price"
             FROM {_qualified('trading_model', 'model_07_underlying_action')} AS u
+            LEFT JOIN {_qualified('trading_data', 'source_03_target_state')} AS s
+              ON s."target_candidate_id" = u."target_candidate_id"
+             AND s."available_time" = u."available_time"::timestamptz
             {where_sql}
             ORDER BY u."available_time"::timestamptz ASC, u."target_candidate_id" ASC
             """,
@@ -144,14 +156,93 @@ def _fetch_layer_7_rows(cursor: Any, *, source_start: str | None, source_end: st
     return [dict(row) for row in cursor.fetchall()]
 
 
-def _layer_8_input_rows(layer_7_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+def _fetch_option_candidate_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+    feature_table = "feature_08_option_expression"
+    cursor.execute("SELECT to_regclass(%s) AS table_ref", (f"trading_data.{feature_table}",))
+    exists = cursor.fetchone()
+    if isinstance(exists, Mapping):
+        table_exists = exists.get("table_ref") is not None
+    else:
+        table_exists = bool(exists and exists[0] is not None)
+    if not table_exists:
+        return []
+    where: list[str] = []
+    params: list[Any] = []
+    if source_start:
+        where.append('f."snapshot_time" >= %s::timestamptz')
+        params.append(source_start)
+    if source_end:
+        where.append('f."snapshot_time" < %s::timestamptz')
+        params.append(source_end)
+    where_sql = " WHERE " + " AND ".join(where) if where else ""
+    cursor.execute(
+        f"""
+        SELECT
+          f."underlying",
+          f."snapshot_time",
+          f."snapshot_type",
+          f."option_symbol",
+          f."feature_payload_json",
+          f."feature_quality_diagnostics"
+        FROM {_qualified('trading_data', feature_table)} AS f
+        {where_sql}
+        ORDER BY f."underlying" ASC, f."snapshot_time" ASC, f."option_symbol" ASC
+        """,
+        params,
+    )
+    return [dict(row) for row in cursor.fetchall()]
+
+
+def _parse_time(value: Any) -> datetime | None:
+    if value in (None, ""):
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _time_key(value: Any) -> str:
+    parsed = _parse_time(value)
+    return parsed.isoformat() if parsed is not None else str(value or "")
+
+
+def _candidate_index(candidate_rows: Sequence[Mapping[str, Any]]) -> dict[tuple[str, str], list[dict[str, Any]]]:
+    index: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in candidate_rows:
+        if str(row.get("snapshot_type") or "entry").lower() != "entry":
+            continue
+        underlying = str(row.get("underlying") or "").upper()
+        snapshot_time = _time_key(row.get("snapshot_time"))
+        payload = _coerce_json_mapping(row.get("feature_payload_json"))
+        diagnostics = _coerce_json_mapping(row.get("feature_quality_diagnostics"))
+        contract_ref = str(row.get("option_symbol") or "")
+        if not underlying or not snapshot_time or not contract_ref:
+            continue
+        index.setdefault((underlying, snapshot_time), []).append(
+            {
+                "contract_ref": contract_ref,
+                "option_symbol": contract_ref,
+                "candidate_quality_diagnostics": diagnostics,
+                **payload,
+            }
+        )
+    return index
+
+
+def _layer_8_input_rows(layer_7_rows: Sequence[Mapping[str, Any]], option_candidate_rows: Sequence[Mapping[str, Any]] | None = None) -> list[dict[str, Any]]:
+    candidates_by_underlying_time = _candidate_index(option_candidate_rows or [])
     rows: list[dict[str, Any]] = []
     for row in layer_7_rows:
         underlying_plan = _coerce_json_mapping(row.get("underlying_action_plan"))
+        available_time = row.get("available_time")
+        underlying = str(row.get("underlying_symbol") or "").upper()
+        option_candidates = candidates_by_underlying_time.get((underlying, _time_key(available_time)), [])
+        option_chain_snapshot_ref = None if not option_candidates else f"feature_08_option_expression:{underlying}:{_time_key(available_time)}"
         rows.append(
             {
-                "available_time": row.get("available_time"),
-                "tradeable_time": row.get("tradeable_time") or row.get("available_time"),
+                "available_time": available_time,
+                "tradeable_time": row.get("tradeable_time") or available_time,
                 "target_candidate_id": row.get("target_candidate_id"),
                 "underlying_action_plan_ref": row.get("underlying_action_plan_ref"),
                 "underlying_action_plan": underlying_plan,
@@ -159,11 +250,11 @@ def _layer_8_input_rows(layer_7_rows: Sequence[Mapping[str, Any]]) -> list[dict[
                 "market_context_state": {},
                 "event_context_vector": {},
                 "option_expression_policy": {},
-                "option_contract_candidates": [],
-                "option_chain_snapshot_ref": None,
-                "option_quote_available_time": None,
-                "underlying_quote_snapshot_ref": None,
-                "underlying_reference_price": None,
+                "option_contract_candidates": option_candidates,
+                "option_chain_snapshot_ref": option_chain_snapshot_ref,
+                "option_quote_available_time": available_time if option_candidates else None,
+                "underlying_quote_snapshot_ref": None if not underlying else f"source_03_target_state:{row.get('target_candidate_id')}:{_time_key(available_time)}",
+                "underlying_reference_price": row.get("underlying_reference_price"),
             }
         )
     return rows
@@ -209,7 +300,8 @@ def generate_from_database(
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
             layer_7_rows = _fetch_layer_7_rows(cursor, source_start=source_start, source_end=source_end)
-            model_rows = generate_rows(_layer_8_input_rows(layer_7_rows), model_version=model_version)
+            option_candidate_rows = _fetch_option_candidate_rows(cursor, source_start=source_start, source_end=source_end)
+            model_rows = generate_rows(_layer_8_input_rows(layer_7_rows, option_candidate_rows), model_version=model_version)
             _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
     if output_jsonl:
         _write_jsonl(output_jsonl, model_rows)

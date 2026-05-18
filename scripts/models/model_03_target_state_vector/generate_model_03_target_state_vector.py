@@ -99,14 +99,47 @@ def fetch_feature_rows(
     where: list[str] = []
     params: list[Any] = []
     if source_start:
-        where.append("available_time >= %s")
+        where.append('f."available_time" >= %s')
         params.append(source_start)
     if source_end:
-        where.append("available_time < %s")
+        where.append('f."available_time" < %s')
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
     cursor.execute(
-        f"SELECT * FROM {_qualified(source_schema, source_table)}{where_sql} ORDER BY available_time ASC, target_candidate_id ASC",
+        f"""
+        SELECT
+          f.*,
+          COALESCE(
+            f."market_context_state_ref",
+            l2."market_context_state_ref",
+            'model_01_market_regime:' || replace(l1."available_time"::text, ' ', 'T')
+          ) AS "market_context_state_ref",
+          COALESCE(
+            f."sector_context_state_ref",
+            'model_02_sector_context:' || replace(l2."available_time"::text, ' ', 'T') || ':' || l2."sector_or_industry_symbol"
+          ) AS "sector_context_state_ref"
+        FROM {_qualified(source_schema, source_table)} AS f
+        LEFT JOIN {_qualified("trading_data", "source_03_target_state")} AS s
+          ON s."target_candidate_id" = f."target_candidate_id"
+         AND s."available_time" = f."available_time"
+        LEFT JOIN LATERAL (
+          SELECT *
+          FROM {_qualified("trading_model", "model_02_sector_context")} AS candidate_l2
+          WHERE candidate_l2."sector_or_industry_symbol" = s."symbol"
+            AND candidate_l2."available_time" <= f."available_time"
+          ORDER BY candidate_l2."available_time" DESC
+          LIMIT 1
+        ) AS l2 ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT *
+          FROM {_qualified("trading_model", "model_01_market_regime")} AS candidate_l1
+          WHERE candidate_l1."available_time" <= f."available_time"
+          ORDER BY candidate_l1."available_time" DESC
+          LIMIT 1
+        ) AS l1 ON TRUE
+        {where_sql}
+        ORDER BY f."available_time" ASC, f."target_candidate_id" ASC
+        """,
         params,
     )
     return [dict(row) for row in cursor.fetchall()]

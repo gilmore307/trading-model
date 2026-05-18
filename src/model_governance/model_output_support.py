@@ -78,11 +78,12 @@ def _support_identity_columns(rows: Sequence[Mapping[str, Any]], primary_key: Se
     ordered: list[str] = []
     candidates = ("available_time", "tradeable_time", "target_candidate_id", "model_id", "model_layer", "model_version", *primary_key)
     all_columns = {key for row in rows for key in row}
+    non_null_columns = {key for row in rows for key, value in row.items() if value not in (None, "")}
     for column in candidates:
         if column in all_columns and column not in ordered:
             ordered.append(column)
     for column in sorted(all_columns):
-        if column.endswith("_ref") and column not in ordered:
+        if column.endswith("_ref") and column in non_null_columns and column not in ordered:
             ordered.append(column)
     return ordered
 
