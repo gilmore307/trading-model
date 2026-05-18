@@ -16,6 +16,18 @@ from model_runtime.config import database_url_file
 DEFAULT_DB_URL_FILE = database_url_file()
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
+RETIRED_PRIMARY_COLUMNS = (
+    "1_price_behavior_factor",
+    "1_trend_certainty_factor",
+    "1_capital_flow_factor",
+    "1_sentiment_factor",
+    "1_valuation_pressure_factor",
+    "1_fundamental_strength_factor",
+    "1_macro_environment_factor",
+    "1_market_structure_factor",
+    "1_risk_stress_factor",
+    "1_transition_pressure",
+)
 
 
 def _load_generator():
@@ -125,6 +137,8 @@ def write_model_rows_sql(
         if column == "available_time":
             continue
         cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS {_quote_column_identifier(column)} DOUBLE PRECISION")
+    for column in RETIRED_PRIMARY_COLUMNS:
+        cursor.execute(f"ALTER TABLE {qualified_table} DROP COLUMN IF EXISTS {_quote_column_identifier(column)}")
 
     quoted_columns = [_quote_column_identifier(column) for column in sql_columns]
     placeholders = ", ".join(["%s"] * len(columns))

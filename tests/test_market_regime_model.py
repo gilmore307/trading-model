@@ -180,7 +180,10 @@ class MarketRegimeModelTests(unittest.TestCase):
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime"', joined_sql)
         self.assertIn('ADD COLUMN IF NOT EXISTS "1_market_trend_quality_score" DOUBLE PRECISION', joined_sql)
+        self.assertIn('DROP COLUMN IF EXISTS "1_price_behavior_factor"', joined_sql)
+        self.assertIn('DROP COLUMN IF EXISTS "1_transition_pressure"', joined_sql)
         self.assertIn('ON CONFLICT ("available_time") DO UPDATE SET', joined_sql)
+        self.assertTrue(set(sql_runner.RETIRED_PRIMARY_COLUMNS).isdisjoint(generator.OUTPUT_COLUMNS))
 
 
     def test_sql_writer_uses_layer_one_support_artifact_tables(self) -> None:

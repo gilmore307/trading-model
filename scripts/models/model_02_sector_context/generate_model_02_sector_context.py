@@ -29,6 +29,13 @@ TEXT_COLUMNS = {
     "2_eligibility_reason_codes",
 }
 INTEGER_COLUMNS = {"2_sector_handoff_rank", "2_evidence_count"}
+RETIRED_PRIMARY_COLUMNS = (
+    "2_trend_stability_score",
+    "2_trend_certainty_score",
+    "2_context_conditioned_stability_score",
+    "2_selection_readiness_score",
+    "2_sector_dispersion_crowding_score",
+)
 
 
 def _load_generator():
@@ -185,6 +192,9 @@ def write_model_rows_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, targ
         columns=generator.OUTPUT_COLUMNS,
         primary_key=("available_time", "sector_or_industry_symbol"),
     )
+    qualified_table = _qualified(target_schema, target_table)
+    for column in RETIRED_PRIMARY_COLUMNS:
+        cursor.execute(f"ALTER TABLE {qualified_table} DROP COLUMN IF EXISTS {_quote_column_identifier(column)}")
 
 
 def write_explainability_rows_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema: str, target_table: str) -> None:
