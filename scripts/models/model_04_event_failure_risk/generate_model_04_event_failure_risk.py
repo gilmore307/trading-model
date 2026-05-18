@@ -271,11 +271,13 @@ def main(argv: list[str] | None = None) -> int:
                     else (read_rows(args.input_jsonl) if args.input_jsonl else FIXTURE_INPUT_ROWS[MODEL_SURFACE])
                 )
                 rows = generate_rows(input_rows, model_version=args.model_version)
-                if args.write_database:
+                if args.from_database or args.write_database:
                     _ensure_table(cursor, schema=args.target_schema, table=args.target_table, rows=rows)
                     _insert_rows(cursor, schema=args.target_schema, table=args.target_table, rows=rows)
                 conn.commit()
         write_rows(rows, args.output_jsonl)
+        if args.from_database:
+            print(f"generated {len(rows)} rows into {args.target_schema}.{args.target_table}")
         return 0
     input_rows = read_rows(args.input_jsonl) if args.input_jsonl else FIXTURE_INPUT_ROWS[MODEL_SURFACE]
     rows = generate_layer("models.model_04_event_failure_risk", input_rows, model_version=args.model_version)

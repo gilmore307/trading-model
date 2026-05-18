@@ -120,6 +120,12 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
         model_rows = generator.generate_rows(rows)
         self.assertEqual(model_rows[0]["4_resolved_event_failure_risk_status"], "no_reviewed_event_failure_risk")
 
+    def test_layer_04_from_database_writes_target_table_by_default(self) -> None:
+        script = (REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py").read_text(encoding="utf-8")
+
+        self.assertIn("if args.from_database or args.write_database:", script)
+        self.assertIn('print(f"generated {len(rows)} rows into {args.target_schema}.{args.target_table}")', script)
+
     def test_fixture_generate_evaluate_review_defers_activation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
