@@ -255,14 +255,14 @@ def _catalog_by_key(catalog_path: Path) -> dict[str, dict[str, Any]]:
 
 def _completion_receipts(data_root: Path, family_key: str, month: str) -> list[Path]:
     if family_key in {"equity_offering_dilution", "legal_regulatory_investigation"}:
-        patterns = [data_root / f"storage/monthly_backfill_v1/sec_company_financials/{month}/completion_receipt.json"]
+        patterns = [data_root / f"storage/monthly_backfill/sec_company_financials/{month}/completion_receipt.json"]
     elif family_key == "cpi_inflation_release":
-        patterns = [data_root / f"storage/monthly_backfill_v1/trading_economics_calendar_web/{month}/completion_receipt.json"]
+        patterns = [data_root / f"storage/monthly_backfill/trading_economics_calendar_web/{month}/completion_receipt.json"]
     elif family_key == "credit_liquidity_stress":
         patterns = [
-            data_root / f"storage/monthly_backfill_v1/gdelt_news/{month}/completion_receipt.json",
-            data_root / f"storage/monthly_backfill_v1/alpaca_news/{month}/completion_receipt.json",
-            data_root / f"storage/monthly_backfill_v1/trading_economics_calendar_web/{month}/completion_receipt.json",
+            data_root / f"storage/monthly_backfill/gdelt_news/{month}/completion_receipt.json",
+            data_root / f"storage/monthly_backfill/alpaca_news/{month}/completion_receipt.json",
+            data_root / f"storage/monthly_backfill/trading_economics_calendar_web/{month}/completion_receipt.json",
         ]
     else:
         patterns = []
@@ -283,7 +283,7 @@ def _receipt_rows(path: Path) -> int:
 
 
 def _source_csvs(data_root: Path, source: str, month: str, filename: str) -> list[Path]:
-    root = data_root / f"storage/monthly_backfill_v1/{source}/{month}/runs"
+    root = data_root / f"storage/monthly_backfill/{source}/{month}/runs"
     return sorted(root.glob(f"*/saved/{filename}"))
 
 
@@ -390,7 +390,7 @@ def _daily_bars(path: Path) -> list[dict[str, Any]]:
 
 
 def _bar_path(data_root: Path, symbol: str, month: str) -> Path | None:
-    root = data_root / f"storage/monthly_backfill_v1/alpaca_bars/{symbol}/{month}/runs"
+    root = data_root / f"storage/monthly_backfill/alpaca_bars/{symbol}/{month}/runs"
     paths = sorted(root.glob("*/saved/equity_bar.csv"))
     if not paths:
         return None

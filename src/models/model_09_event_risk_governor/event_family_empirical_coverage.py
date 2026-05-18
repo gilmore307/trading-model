@@ -192,7 +192,7 @@ def _parse_int(value: Any) -> int:
 
 
 def _receipt_bar_count(root: Path) -> int:
-    return len(glob.glob(str(root / "storage/monthly_backfill_v1/alpaca_bars/*/*/completion_receipt.json")))
+    return len(glob.glob(str(root / "storage/monthly_backfill/alpaca_bars/*/*/completion_receipt.json")))
 
 
 def _source_profile(root: Path, source_rows: Mapping[str, list[dict[str, str]]]) -> LocalSourceProfile:

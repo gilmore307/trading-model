@@ -162,7 +162,7 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]], *, fieldnames: Seq
 
 
 def _calendar_months(data_root: Path) -> tuple[str, ...]:
-    root = data_root / "storage/monthly_backfill_v1/trading_economics_calendar_web"
+    root = data_root / "storage/monthly_backfill/trading_economics_calendar_web"
     months = sorted({path.relative_to(root).parts[0] for path in root.glob("*/runs/*/saved/trading_economics_calendar_event.csv")})
     return tuple(months)
 

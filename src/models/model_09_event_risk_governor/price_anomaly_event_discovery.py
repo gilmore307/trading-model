@@ -25,8 +25,8 @@ from models.model_09_event_risk_governor.event_family_empirical_coverage import 
 CONTRACT_TYPE = "price_anomaly_event_discovery_v1"
 SUMMARY_CONTRACT_TYPE = "price_anomaly_event_discovery_summary_v1"
 DEFAULT_TRADING_DATA_ROOT = trading_data_root()
-DEFAULT_BAR_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill_v1/alpaca_bars"
-DEFAULT_SOURCE_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill_v1"
+DEFAULT_BAR_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill/alpaca_bars"
+DEFAULT_SOURCE_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill"
 DEFAULT_OUTPUT_DIR = Path("storage/price_anomaly_event_discovery_20260516")
 EVENT_MONTH = "2016-01"
 ANOMALY_Z_THRESHOLD = 1.25

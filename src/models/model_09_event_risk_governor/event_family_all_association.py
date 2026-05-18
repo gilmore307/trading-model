@@ -27,8 +27,8 @@ SUMMARY_CONTRACT_TYPE = "event_family_all_association_summary_v1"
 DEFAULT_COVERAGE_PATH = Path("storage/event_family_empirical_coverage_20260516/event_family_empirical_coverage.json")
 DEFAULT_OUTPUT_DIR = Path("storage/event_family_all_association_20260516")
 DEFAULT_TRADING_DATA_ROOT = trading_data_root()
-DEFAULT_BAR_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill_v1/alpaca_bars"
-DEFAULT_SOURCE_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill_v1"
+DEFAULT_BAR_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill/alpaca_bars"
+DEFAULT_SOURCE_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill"
 DEFAULT_PROXY_SYMBOLS = ("SPY", "QQQ", "IWM", "XLF", "XLK", "XLE", "XLY", "XLP", "XLI", "XLB", "HYG", "LQD")
 EVENT_MONTH = "2016-01"
 

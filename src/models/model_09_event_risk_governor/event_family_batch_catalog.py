@@ -220,7 +220,7 @@ FAMILY_SPECS: tuple[_FamilySpec, ...] = (
         "candidate_family_for_next_packet",
         "directional_alpha_or_forced_reduce",
         ("missing_family_packet", "needs_offering_terms_parser", "needs_matched_controls"),
-        (_trading_data_ref("storage/monthly_backfill_v1/sec_company_financials/2016-01/completion_receipt.json"),),
+        (_trading_data_ref("storage/monthly_backfill/sec_company_financials/2016-01/completion_receipt.json"),),
         "Create packet and extractor for offering amount, discount, proceeds use, balance-sheet stress, and filing timing.",
     ),
     _FamilySpec(
@@ -325,7 +325,7 @@ FAMILY_SPECS: tuple[_FamilySpec, ...] = (
         "candidate_family_only",
         "news_sentiment_alpha",
         ("missing_family_packet", "needs_news_interpretation_standard"),
-        (_trading_data_ref("storage/monthly_backfill_v1/alpaca_news/2016-01/completion_receipt.json"),),
+        (_trading_data_ref("storage/monthly_backfill/alpaca_news/2016-01/completion_receipt.json"),),
         "Create product/customer news packet and source-quality rules before using headlines.",
     ),
     _FamilySpec(
@@ -400,7 +400,7 @@ FAMILY_SPECS: tuple[_FamilySpec, ...] = (
         "candidate_family_for_sector_risk",
         "broad_news_alpha",
         ("missing_family_packet", "needs_sector_scope_mapping"),
-        (_trading_data_ref("storage/monthly_backfill_v1/gdelt_news/2016-01/completion_receipt.json"),),
+        (_trading_data_ref("storage/monthly_backfill/gdelt_news/2016-01/completion_receipt.json"),),
         "Create sector-regulation packet with affected industry mapping and official-vs-news source precedence.",
     ),
     _FamilySpec(
@@ -445,7 +445,7 @@ FAMILY_SPECS: tuple[_FamilySpec, ...] = (
         "candidate_family_for_layer_1_2_risk",
         "macro_alpha_without_surprise_baseline",
         ("missing_family_packet", "needs_pit_consensus_surprise"),
-        (_trading_data_ref("storage/monthly_backfill_v1/trading_economics_calendar_web/2016-01/completion_receipt.json"),),
+        (_trading_data_ref("storage/monthly_backfill/trading_economics_calendar_web/2016-01/completion_receipt.json"),),
         "Create CPI packet with official release/source precedence, consensus/previous/revision, and rates/sector sensitivity labels.",
     ),
     _FamilySpec(

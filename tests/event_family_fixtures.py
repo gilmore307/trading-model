@@ -93,22 +93,21 @@ def _write_trading_data_fixture(trading_data_root: Path) -> None:
         },
     ]
     macro_fields = ["event_time", "event", "source_event_type", "actual", "consensus", "te_forecast", "reference"]
-    for base in ["monthly_backfill", "monthly_backfill_v1"]:
-        _write_csv(
-            trading_data_root
-            / "storage"
-            / base
-            / "trading_economics_calendar_web"
-            / "2016-01"
-            / "runs"
-            / "fixture_run"
-            / "saved"
-            / "trading_economics_calendar_event.csv",
-            macro_fields,
-            macro_rows,
-        )
+    _write_csv(
+        trading_data_root
+        / "storage"
+        / "monthly_backfill"
+        / "trading_economics_calendar_web"
+        / "2016-01"
+        / "runs"
+        / "fixture_run"
+        / "saved"
+        / "trading_economics_calendar_event.csv",
+        macro_fields,
+        macro_rows,
+    )
     _write_json(
-        trading_data_root / "storage/monthly_backfill_v1/trading_economics_calendar_web/2016-01/completion_receipt.json",
+        trading_data_root / "storage/monthly_backfill/trading_economics_calendar_web/2016-01/completion_receipt.json",
         {"runs": [{"row_counts": {"trading_economics_calendar_event": len(macro_rows)}}]},
     )
 
@@ -130,11 +129,6 @@ def _write_trading_data_fixture(trading_data_root: Path) -> None:
         },
     ]
     _write_csv(
-        trading_data_root / "storage/monthly_backfill_v1/alpaca_news/2016-01/runs/fixture_run/saved/equity_news.csv",
-        ["created_at", "timeline_headline", "summary"],
-        news_rows,
-    )
-    _write_csv(
         trading_data_root / "storage/monthly_backfill/alpaca_news/2016-01/runs/fixture_run/saved/equity_news.csv",
         ["created_at", "timeline_headline", "summary"],
         news_rows,
@@ -154,12 +148,12 @@ def _write_trading_data_fixture(trading_data_root: Path) -> None:
         )
     for symbol in ["TLT", "SPY"]:
         _write_csv(
-            trading_data_root / f"storage/monthly_backfill_v1/alpaca_bars/{symbol}/2016-01/runs/fixture_run/saved/equity_bar.csv",
+            trading_data_root / f"storage/monthly_backfill/alpaca_bars/{symbol}/2016-01/runs/fixture_run/saved/equity_bar.csv",
             ["timestamp", "bar_open", "bar_high", "bar_low", "bar_close"],
             bar_rows,
         )
         _write_json(
-            trading_data_root / f"storage/monthly_backfill_v1/alpaca_bars/{symbol}/2016-01/completion_receipt.json",
+            trading_data_root / f"storage/monthly_backfill/alpaca_bars/{symbol}/2016-01/completion_receipt.json",
             {"runs": [{"row_counts": {"equity_bar": len(bar_rows)}}]},
         )
 
@@ -255,7 +249,7 @@ def build_event_family_fixture(root: Path) -> EventFamilyFixture:
     coverage_path = coverage_dir / "event_family_empirical_coverage.json"
 
     association_dir = root / "event_family_all_association_20260516"
-    source_root = trading_data_root / "storage/monthly_backfill_v1"
+    source_root = trading_data_root / "storage/monthly_backfill"
     bar_root = source_root / "alpaca_bars"
     association = build_event_family_all_association(
         coverage_path=coverage_path,
