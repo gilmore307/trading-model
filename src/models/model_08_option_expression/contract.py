@@ -38,6 +38,7 @@ RESOLVED_FIELD_FAMILIES: Final[tuple[str, ...]] = (
 EXPRESSION_TYPES: Final[tuple[str, ...]] = (
     "long_call",
     "long_put",
+    "underlying_only_expression",
     "no_option_expression",
 )
 

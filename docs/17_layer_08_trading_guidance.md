@@ -3,7 +3,7 @@
 <!-- ACTIVE_LAYER_REVISION -->
 Status: active architecture revision. Layer 8; current V1 physical implementation surface is `src/models/model_08_option_expression/` as the option-expression subset until a dedicated broader TradingGuidanceModel implementation is accepted.
 
-Active boundary: Layer 8 outputs an optional offline `trading_guidance_record` and optional option-expression context. It consumes the Layer 7 underlying-action thesis, position/risk context, and optional point-in-time option-chain evidence; Layer 9 may later attach this record as optional expression context. It may choose direct-underlying, option-expression, or no-trade/maintain guidance as an offline decision record.
+Active boundary: Layer 8 outputs an optional offline `trading_guidance_record` and optional option-expression context. It consumes the Layer 7 underlying-action thesis, position/risk context, and optional point-in-time option-chain evidence; Layer 9 may later attach this record as optional expression context. It may choose option expression, underlying-only expression, or no-trade/maintain guidance as an offline decision record.
 
 Allowed outputs: `trading_guidance_record`, `trading_guidance_vector`, optional `option_expression_plan` / `expression_vector`, selected contract references and constraints when option expression is used, reason codes, and replay refs. Forbidden outputs: broker order id, route, time-in-force, send/cancel/replace, final order quantity, or broker/account mutation.
 
@@ -21,7 +21,7 @@ It is the first layer that may select option expression and contract constraints
 
 Layer 9 owns:
 
-- long-call, long-put, or no-option-expression selection;
+- long-call, long-put, underlying-only-expression, or no-option-expression selection;
 - option right, selected contract reference, and contract-fit diagnostics;
 - DTE, delta/moneyness, IV, vega/theta, spread/liquidity, fill-quality, and premium-risk constraints;
 - side-neutral use of Layer 7 path assumptions: entry price, target/range, stop, holding time, path quality, reversal risk, drawdown risk, and favorable/adverse move estimates;
@@ -31,7 +31,7 @@ Layer 9 does **not** own:
 
 - broker order type, route, time-in-force, send/cancel/replace flags, or broker order ids;
 - final order quantity, final approval, or account mutation;
-- multi-leg spread construction in V1; V1 historical option-expression coverage is single-leg only (`long_call`, `long_put`, or `no_option_expression`);
+- multi-leg spread construction in V1; V1 historical option-expression coverage is single-leg option expression plus non-option fallbacks (`long_call`, `long_put`, `underlying_only_expression`, or `no_option_expression`);
 - direct-underlying planned action resolution, which belongs to Layer 7;
 - real live/paper routing, which remains in `trading-execution`.
 
@@ -153,6 +153,7 @@ V1 expression types:
 ```text
 long_call
 long_put
+underlying_only_expression
 no_option_expression
 ```
 
@@ -184,7 +185,7 @@ Conceptual Layer 8 score families use the `8_` prefix and `<horizon>` suffix for
 Semantics:
 
 - eligibility is high-is-good and means the option expression is admissible under Layer 7 thesis, policy, option-chain, liquidity, IV, and risk constraints;
-- direction is signed: positive call-side/bullish expression, negative put-side/bearish expression, near zero no-option expression;
+- direction is signed: positive call-side/bullish or bullish underlying-only expression, negative put-side/bearish or bearish underlying-only expression, near zero no-option expression;
 - contract fit is high-is-good and summarizes DTE, delta/Greeks, IV, liquidity, fill quality, and reward/risk;
 - theta risk is high-is-bad;
 - expression confidence is high-is-good and remains offline model confidence, not order approval.
@@ -211,7 +212,7 @@ reason_codes
 diagnostics
 ```
 
-`selected_contract` is a point-in-time contract reference and diagnostics payload. It is not a broker order. `contract_constraints` are model constraints, not routing instructions.
+`selected_contract` is a point-in-time contract reference and diagnostics payload. It is null for `underlying_only_expression` and `no_option_expression`. It is not a broker order. `contract_constraints` are model constraints, not routing instructions.
 
 ## Deterministic V1 scaffold
 
@@ -225,7 +226,8 @@ It implements:
 
 - Layer 7 bullish thesis -> long-call candidate search;
 - Layer 7 bearish thesis or no-direct-short bearish thesis -> long-put candidate search;
-- Layer 7 `maintain` / `no_trade`, policy blocks, or pending option exposure -> `no_option_expression`;
+- Layer 7 `maintain` / `no_trade` or pending option exposure -> `no_option_expression`;
+- option policy blocks or no candidate contract passing hard filters may resolve to `underlying_only_expression` when the Layer 7 thesis still supports a direct-underlying expression;
 - reviewed no-provider/no-option database generation from completed Layer 7 rows when the manager gate review finds no active target chain;
 - deterministic selection scoring for right, bid/ask/mid, DTE range, preferred absolute delta range, stale quote age, volume/open interest, spread, adjusted-contract handling, and target-range moneyness guardrails;
 - DTE / delta / Greeks / IV / liquidity / reward-risk scoring with per-candidate reason codes;
@@ -259,8 +261,11 @@ V1 expression coverage is single-leg only:
 ```text
 long_call
 long_put
+underlying_only_expression
 no_option_expression
 ```
+
+`underlying_only_expression` is an explicit fallback when the options layer finds the underlying thesis usable but option contracts are unsuitable because of policy, liquidity, IV, Greek, DTE, quote freshness, or missing-contract evidence. It keeps selected option contract and option-fit scores empty/zero and records the direct-underlying expression preference for evaluation. It is not an order request.
 
 Multi-leg spreads remain deferred beyond V1.
 

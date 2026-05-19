@@ -71,10 +71,11 @@ class OptionExpressionModelTests(unittest.TestCase):
     def test_policy_block_outputs_no_option_expression(self) -> None:
         output = generate_rows([_base_row(option_expression_policy={"allow_option_expression": "false"})])[0]
 
-        self.assertEqual(output["8_resolved_expression_type"], "no_option_expression")
+        self.assertEqual(output["8_resolved_expression_type"], "underlying_only_expression")
         self.assertIsNone(output["8_resolved_selected_contract_ref"])
         self.assertEqual(output["8_option_expression_eligibility_score_390min"], 0.0)
         self.assertIn("option_expression_policy_blocked", output["option_expression_plan"]["reason_codes"])
+        self.assertIn("underlying_only_expression_selected", output["option_expression_plan"]["reason_codes"])
 
     def test_maintain_and_pending_option_exposure_do_not_create_overlay(self) -> None:
         maintain_output = generate_rows([_base_row(underlying_action_plan={"planned_underlying_action_type": "maintain", "action_side": "long", "dominant_horizon": "390min", "handoff_to_layer_9": _handoff()})])[0]
@@ -89,9 +90,14 @@ class OptionExpressionModelTests(unittest.TestCase):
         row = _base_row(option_contract_candidates=[{**_call_candidate(), "contract_ref": "AAPL_CALL_DEEP_OTM", "delta": 0.12}])
         output = generate_rows([row])[0]
 
-        self.assertEqual(output["8_resolved_expression_type"], "no_option_expression")
-        self.assertIn("delta_outside_policy_range", output["8_resolved_no_option_reason_codes"])
+        self.assertEqual(output["8_resolved_expression_type"], "underlying_only_expression")
+        self.assertEqual(output["8_resolved_option_right"], "none")
+        self.assertIsNone(output["8_resolved_selected_contract_ref"])
+        self.assertGreater(output["8_option_expression_direction_score_390min"], 0.0)
+        self.assertEqual(output["8_option_contract_fit_score_390min"], 0.0)
+        self.assertIn("underlying_only_expression_selected", output["option_expression_plan"]["reason_codes"])
         self.assertIn("no_contract_passed_hard_filter", output["option_expression_plan"]["reason_codes"])
+        self.assertIn("delta_outside_policy_range", output["option_expression_plan"]["reason_codes"])
 
     def test_labels_are_offline_and_join_by_plan_ref(self) -> None:
         output = generate_rows([_base_row()])[0]

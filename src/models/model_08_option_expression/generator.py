@@ -62,10 +62,15 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     }
     dominant_horizon = _dominant_horizon(horizon_payloads, underlying_plan)
     dominant = horizon_payloads[dominant_horizon]
-    if expression_type != "no_option_expression" and selected is None:
-        expression_type = "no_option_expression"
+    if expression_type not in {"no_option_expression", "underlying_only_expression"} and selected is None:
+        expression_type = _underlying_only_or_no_option(direction, underlying_plan, policy, pending)
         option_right = "none"
-        dominant = {**dominant, "expression_eligibility_score": 0.0, "expression_confidence_score": 0.0}
+        horizon_payloads = {
+            horizon: _horizon_payload(horizon, expression_type, direction, None, handoff, market, event, policy)
+            for horizon in HORIZONS
+        }
+        dominant_horizon = _dominant_horizon(horizon_payloads, underlying_plan)
+        dominant = horizon_payloads[dominant_horizon]
 
     expression_plan_ref = _stable_id("oep", target_candidate_id, available_time, model_version)
     score_payload: dict[str, Any] = {}
@@ -166,7 +171,7 @@ def _underlying_direction(underlying_plan: Mapping[str, Any], handoff: Mapping[s
 
 def _expression_type(direction: str, underlying_plan: Mapping[str, Any], policy: Mapping[str, Any], pending: Mapping[str, Any]) -> tuple[str, str]:
     if str(policy.get("option_expression_allowed") or policy.get("allow_option_expression") or "true").lower() in {"false", "0", "no", "blocked"}:
-        return "no_option_expression", "none"
+        return _underlying_only_or_no_option(direction, underlying_plan, policy, pending), "none"
     if pending.get("has_pending_option_exposure"):
         return "no_option_expression", "none"
     action_type = str(underlying_plan.get("planned_underlying_action_type") or "").lower()
@@ -177,6 +182,19 @@ def _expression_type(direction: str, underlying_plan: Mapping[str, Any], policy:
     if direction == "bearish":
         return "long_put", "put"
     return "no_option_expression", "none"
+
+
+def _underlying_only_or_no_option(direction: str, underlying_plan: Mapping[str, Any], policy: Mapping[str, Any], pending: Mapping[str, Any]) -> str:
+    if pending.get("has_pending_option_exposure"):
+        return "no_option_expression"
+    if str(policy.get("allow_underlying_only_expression") or "true").lower() in {"false", "0", "no", "blocked"}:
+        return "no_option_expression"
+    action_type = str(underlying_plan.get("planned_underlying_action_type") or "").lower()
+    if action_type in {"maintain", "no_trade"}:
+        return "no_option_expression"
+    if direction in {"bullish", "bearish"}:
+        return "underlying_only_expression"
+    return "no_option_expression"
 
 
 def _score_candidate(
@@ -313,6 +331,26 @@ def _horizon_payload(
     event: Mapping[str, Any],
     policy: Mapping[str, Any],
 ) -> dict[str, Any]:
+    if expression_type == "underlying_only_expression":
+        path_quality = _score(handoff, "path_quality_score", default=0.5)
+        reversal = _score(handoff, "reversal_risk_score", default=0.35)
+        drawdown = _score(handoff, "drawdown_risk_score", default=0.35)
+        market_liquidity = _score(market, "1_market_liquidity_support_score", default=0.65)
+        event_uncertainty = _score(event, f"9_event_uncertainty_score_{_suffix(horizon)}", default=0.15)
+        direction_score = 1.0 if direction == "bullish" else -1.0 if direction == "bearish" else 0.0
+        confidence = _clip01(0.45 * path_quality + 0.25 * market_liquidity - 0.20 * max(reversal, drawdown, event_uncertainty))
+        return {
+            "expression_eligibility_score": 0.0,
+            "expression_direction_score": direction_score,
+            "contract_fit_score": 0.0,
+            "liquidity_fit_score": 0.0,
+            "iv_fit_score": 0.0,
+            "greek_fit_score": 0.0,
+            "reward_risk_score": 0.0,
+            "theta_risk_score": 0.0,
+            "fill_quality_score": 0.0,
+            "expression_confidence_score": round(confidence, 6),
+        }
     if expression_type == "no_option_expression" or selected is None:
         return {
             "expression_eligibility_score": 0.0,
@@ -464,6 +502,8 @@ def _reason_codes(expression_type: str, selected: Mapping[str, Any] | None, domi
             reasons.append(f"underlying_action_{action_type}")
         if pending.get("has_pending_option_exposure"):
             reasons.append("pending_option_exposure_detected")
+    elif expression_type == "underlying_only_expression":
+        reasons.append("underlying_only_expression_selected")
     else:
         reasons.append(f"{expression_type}_selected")
     if selected is None and option_right != "none":
@@ -476,7 +516,7 @@ def _reason_codes(expression_type: str, selected: Mapping[str, Any] | None, domi
         reasons.append("iv_fit_downgrade")
     if str(policy.get("option_expression_allowed") or policy.get("allow_option_expression") or "true").lower() in {"false", "0", "no", "blocked"}:
         reasons.append("option_expression_policy_blocked")
-    if scored_candidates and selected is None and expression_type == "no_option_expression":
+    if scored_candidates and selected is None and expression_type in {"no_option_expression", "underlying_only_expression"}:
         reasons.append("no_contract_passed_hard_filter")
         reasons.extend(_candidate_filter_reason_summary(scored_candidates))
     if selected is not None:
