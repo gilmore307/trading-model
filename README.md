@@ -86,11 +86,12 @@ scripts/models/model_06_position_projection/
 scripts/models/model_07_underlying_action/
 scripts/models/model_09_event_risk_governor/
 scripts/models/model_08_option_expression/
+scripts/models/audit_model_output_tables.py
 scripts/models/review_layers_03_08_promotion_acceptance.py
 scripts/model_governance/
 ```
 
-Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Layer 1 also exposes `diagnose_model_01_market_regime_substrate.py`, a read-only source/feature/model substrate diagnostic for promotion-readiness triage before regeneration planning. Layer 4 event-failure-risk scripts and Layer 9 event-risk scripts use the current physical `model_04_event_failure_risk` and `model_09_event_risk_governor` surfaces. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
+Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Layer 1 also exposes `diagnose_model_01_market_regime_substrate.py`, a read-only source/feature/model substrate diagnostic for promotion-readiness triage before regeneration planning. `scripts/models/audit_model_output_tables.py` audits all nine model output/support table families for empty or sparse columns without mutating SQL. Layer 4 event-failure-risk scripts and Layer 9 event-risk scripts use the current physical `model_04_event_failure_risk` and `model_09_event_risk_governor` surfaces. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
 
 ## Docs Spine
 
@@ -116,6 +117,7 @@ docs/21_vector_taxonomy.md
 docs/22_state_vector_feature_registry.md
 docs/30_promotion_readiness.md
 docs/31_promotion_acceptance.md
+docs/32_model_output_quality.md
 docs/40_historical_dataset_scope.md
 docs/41_realtime_decision_handoff.md
 docs/50_activity_price_relationship_study.md

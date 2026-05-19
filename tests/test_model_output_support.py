@@ -79,6 +79,35 @@ class ModelOutputSupportTests(unittest.TestCase):
         self.assertIn("source_snapshot_ref", identity)
         self.assertNotIn("upstream_context_ref", identity)
 
+    def test_empty_support_payload_columns_do_not_create_support_rows(self) -> None:
+        rows = [
+            {
+                "available_time": "2016-01-04T09:35:00-05:00",
+                "model_output_ref": "out_1",
+                "5_alpha_score_390min": 0.7,
+                "alpha_confidence_vector": {},
+                "alpha_confidence_diagnostics": None,
+            }
+        ]
+        calls: list[dict[str, object]] = []
+
+        def record_write_rows(cursor, rows, *, schema, table, primary_key, drop_columns):
+            calls.append({"rows": rows, "table": table, "drop_columns": drop_columns})
+
+        with patch.object(model_output_support, "_write_rows", side_effect=record_write_rows):
+            model_output_support.write_model_output_with_support(
+                object(),
+                rows,
+                target_schema="trading_model",
+                target_table="model_05_alpha_confidence",
+                primary_key=("model_output_ref",),
+                explainability_columns={"alpha_confidence_vector"},
+                diagnostics_columns={"alpha_confidence_diagnostics"},
+            )
+
+        self.assertEqual([call["table"] for call in calls], ["model_05_alpha_confidence"])
+        self.assertEqual(calls[0]["drop_columns"], {"alpha_confidence_vector", "alpha_confidence_diagnostics"})
+
 
 if __name__ == "__main__":
     unittest.main()

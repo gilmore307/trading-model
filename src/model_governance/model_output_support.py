@@ -52,17 +52,19 @@ def write_model_output_with_support(
     explainability_rows = [
         _support_row(row, support_identity, explainability_columns, payload_column="explanation_payload_json", support_table=f"{target_table}_explainability", primary_table=target_table)
         for row in normalized_rows
-        if _has_any(row, explainability_columns)
+        if _has_non_empty(row, explainability_columns)
     ]
     diagnostics_rows = [
         _support_row(row, support_identity, diagnostics_columns, payload_column="diagnostic_payload_json", support_table=f"{target_table}_diagnostics", primary_table=target_table)
         for row in normalized_rows
-        if _has_any(row, diagnostics_columns)
+        if _has_non_empty(row, diagnostics_columns)
     ]
 
     _write_rows(cursor, primary_rows, schema=target_schema, table=target_table, primary_key=primary_key, drop_columns=moved_columns)
-    _write_rows(cursor, explainability_rows, schema=target_schema, table=f"{target_table}_explainability", primary_key=primary_key, drop_columns=set())
-    _write_rows(cursor, diagnostics_rows, schema=target_schema, table=f"{target_table}_diagnostics", primary_key=primary_key, drop_columns=set())
+    if explainability_rows:
+        _write_rows(cursor, explainability_rows, schema=target_schema, table=f"{target_table}_explainability", primary_key=primary_key, drop_columns=set())
+    if diagnostics_rows:
+        _write_rows(cursor, diagnostics_rows, schema=target_schema, table=f"{target_table}_diagnostics", primary_key=primary_key, drop_columns=set())
 
 
 def _non_scalar_columns(rows: Sequence[Mapping[str, Any]]) -> set[str]:
@@ -109,8 +111,18 @@ def _support_row(
     return output
 
 
-def _has_any(row: Mapping[str, Any], columns: set[str]) -> bool:
-    return any(column in row for column in columns)
+def _has_non_empty(row: Mapping[str, Any], columns: set[str]) -> bool:
+    return any(_is_non_empty(row.get(column)) for column in columns if column in row)
+
+
+def _is_non_empty(value: Any) -> bool:
+    if value is None or value == "":
+        return False
+    if isinstance(value, Mapping):
+        return bool(value)
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return bool(value)
+    return True
 
 
 def _write_rows(
