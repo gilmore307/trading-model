@@ -43,6 +43,8 @@ class AgentPromotionReviewTests(unittest.TestCase):
 
         self.assertIn("Return ONLY one JSON object", prompt)
         self.assertIn("Do not approve if evidence is fixture-only", prompt)
+        self.assertIn("promotion-evaluation-review", prompt)
+        self.assertIn("anonymous labels", prompt)
         self.assertIn("mdevrun_001", prompt)
 
     def test_review_validation_rejects_inconsistent_approval(self) -> None:

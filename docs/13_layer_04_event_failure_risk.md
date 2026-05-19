@@ -4,7 +4,7 @@ Status: accepted architecture revision and current physical Layer 4 scaffold. Co
 
 ## Purpose
 
-`EventFailureRiskModel` converts **agent-reviewed, empirically accepted event/strategy-failure relationships** into a point-in-time `event_failure_risk_vector` before alpha confidence is estimated.
+`EventFailureRiskModel` converts **agent-reviewed, empirically accepted event/strategy-failure relationships** into a point-in-time `event_failure_risk_vector` before alpha confidence is estimated. Agent review must use the fixed `event-strategy-promotion-review` skill.
 
 This layer exists because some event families do not need to be standalone directional alpha to matter. If reviewed evidence shows that a family reliably causes strategy failure, invalidates entry assumptions, worsens path risk, or breaks a strategy family under specific market/sector/target contexts, that evidence should condition the decision stack before alpha, position, action, or expression planning.
 
@@ -80,7 +80,7 @@ An event family can enter Layer 4 only after all of the following are true:
 2. matched controls, split stability, leakage checks, and point-in-time clocks are reviewed;
 3. the effect is strategy-failure relevant, not merely descriptive news coincidence;
 4. the family has an emitted evidence packet;
-5. agent review explicitly accepts `accept_layer_04_event_failure_risk_scope` or equivalent;
+5. agent review through `event-strategy-promotion-review` explicitly accepts `accept_layer_04_event_failure_risk_scope` or equivalent;
 6. manager registry records the accepted scope and allowed decision effects.
 
 Absent this reviewed promotion, the family remains in Layer 9 research/observation/governance only.

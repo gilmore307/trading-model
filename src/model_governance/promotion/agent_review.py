@@ -28,9 +28,12 @@ def build_market_regime_promotion_prompt(
     }
     return (
         "You are the independent promotion reviewer for trading-model MarketRegimeModel.\n"
+        "Use the fixed workspace skill promotion-evaluation-review.\n"
         "Evaluate whether this candidate can be promoted. Be strict.\n\n"
         "Hard rules:\n"
         "- Return ONLY one JSON object. No markdown, no prose outside JSON.\n"
+        "- If the review compares multiple model outputs, compare only anonymous labels; do not infer which model is new, old, active, incumbent, champion, or challenger from ids, paths, timestamps, fold order, or field order.\n"
+        "- If comparison evidence reveals model identity or recency, defer and mark identity blinding as failed in evidence_checks.\n"
         "- Do not approve if evidence is fixture-only, dry-run-only, missing real-data metrics, "
         "missing metric_value_summary, missing explicit thresholds, missing baseline/stability evidence, "
         "or missing no-future-leak checks.\n"
@@ -69,9 +72,12 @@ def build_sector_context_promotion_prompt(
     }
     return (
         "You are the independent promotion reviewer for trading-model SectorContextModel.\n"
+        "Use the fixed workspace skill promotion-evaluation-review.\n"
         "Evaluate whether this candidate can be promoted for downstream anonymous target candidate construction. Be strict.\n\n"
         "Hard rules:\n"
         "- Return ONLY one JSON object. No markdown, no prose outside JSON.\n"
+        "- If the review compares multiple model outputs, compare only anonymous labels; do not infer which model is new, old, active, incumbent, champion, or challenger from ids, paths, timestamps, fold order, or field order.\n"
+        "- If comparison evidence reveals model identity or recency, defer and mark identity blinding as failed in evidence_checks.\n"
         "- Do not approve if evidence is fixture-only, dry-run-only, missing real-data metrics, "
         "missing metric_value_summary, missing explicit thresholds, missing baseline/stability evidence, "
         "missing sector handoff evidence, or missing no-future-leak checks.\n"
