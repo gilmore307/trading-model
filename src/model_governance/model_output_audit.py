@@ -63,6 +63,19 @@ OPTIONAL_EVIDENCE_HINTS = (
 
 SUPPORT_PAYLOAD_COLUMNS = {"explanation_payload_json", "diagnostic_payload_json"}
 
+DATA_ACCUMULATION_SCORE_COLUMNS = {
+    "1_market_trend_quality_score",
+    "1_breadth_participation_score",
+    "2_sector_trend_stability_score",
+    "2_sector_transition_risk_score",
+    "2_sector_internal_dispersion_score",
+    "2_sector_crowding_risk_score",
+}
+
+OPTIONAL_SELECTION_COLUMNS = {
+    "2_sector_handoff_rank",
+}
+
 
 @dataclass(frozen=True)
 class ColumnAudit:
@@ -215,6 +228,10 @@ def _classify(table: str, column: str, sample_count: int, non_null_count: int) -
         return "all_null_reference_gap", "repair_upstream_handoff_or_backfill_reference"
     if column in SUPPORT_PAYLOAD_COLUMNS:
         return "all_null_support_payload_error", "repair_support_payload_generation"
+    if column in DATA_ACCUMULATION_SCORE_COLUMNS:
+        return "all_null_data_accumulation_gap", "backfill_longer_history_or_keep_missing_until_evidence_matures"
+    if column in OPTIONAL_SELECTION_COLUMNS:
+        return "all_null_optional_selection", "keep_as_explicit_no_selected_or_watch_rows_marker"
     if any(hint in column for hint in OPTIONAL_EVIDENCE_HINTS):
         return "all_null_optional_evidence", "keep_as_explicit_missing_evidence_marker"
     if table.endswith("_diagnostics"):
@@ -278,6 +295,14 @@ def _recent_rows(cursor: Any, *, schema: str, table: str, columns: Sequence[str]
     if not columns or sample_limit <= 0:
         return []
     column_sql = ", ".join(f'"{column}"' for column in columns)
+    if "available_time" in columns:
+        cursor.execute(
+            f'SELECT {column_sql} FROM "{schema}"."{table}" TABLESAMPLE SYSTEM (10) LIMIT %s',
+            (sample_limit,),
+        )
+        sampled_rows = [dict(row) if isinstance(row, Mapping) else dict(zip(columns, row)) for row in cursor.fetchall()]
+        if sampled_rows:
+            return sampled_rows
     cursor.execute(
         f'SELECT {column_sql} FROM "{schema}"."{table}" LIMIT %s',
         (sample_limit,),
@@ -291,6 +316,7 @@ def dump_audit_json(audit: Mapping[str, Any]) -> str:
 
 __all__ = [
     "MODEL_OUTPUT_TABLES",
+    "DATA_ACCUMULATION_SCORE_COLUMNS",
     "audit_database",
     "audit_rows",
     "cleanup_sql_for_reports",
