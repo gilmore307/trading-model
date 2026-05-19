@@ -105,6 +105,37 @@ def fetch_feature_rows(
         where.append('f."available_time" < %s')
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
+    cursor.execute("SELECT to_regclass(%s) AS table_ref", ("trading_data.source_02_target_candidate_holdings",))
+    exists = cursor.fetchone()
+    if isinstance(exists, Mapping):
+        holdings_exists = exists.get("table_ref") is not None
+    else:
+        holdings_exists = bool(exists and exists[0] is not None)
+    holdings_join = ""
+    holdings_l2_join = ""
+    holdings_ref = "NULL::text"
+    if holdings_exists:
+        holdings_join = """
+        LEFT JOIN LATERAL (
+          SELECT h."etf_symbol"
+          FROM "trading_data"."source_02_target_candidate_holdings" AS h
+          WHERE h."holding_symbol" = s."symbol"
+            AND h."available_time" <= f."available_time"
+          ORDER BY h."available_time" DESC, h."weight" DESC NULLS LAST, h."etf_symbol" ASC
+          LIMIT 1
+        ) AS h ON TRUE
+        """
+        holdings_l2_join = """
+        LEFT JOIN LATERAL (
+          SELECT *
+          FROM "trading_model"."model_02_sector_context" AS candidate_l2
+          WHERE candidate_l2."sector_or_industry_symbol" = h."etf_symbol"
+            AND candidate_l2."available_time" <= f."available_time"
+          ORDER BY candidate_l2."available_time" DESC
+          LIMIT 1
+        ) AS holding_l2 ON TRUE
+        """
+        holdings_ref = """'model_02_sector_context:' || replace(holding_l2."available_time"::text, ' ', 'T') || ':' || holding_l2."sector_or_industry_symbol" """
     cursor.execute(
         f"""
         SELECT
@@ -116,12 +147,14 @@ def fetch_feature_rows(
           ) AS "market_context_state_ref",
           COALESCE(
             f."sector_context_state_ref",
-            'model_02_sector_context:' || replace(l2."available_time"::text, ' ', 'T') || ':' || l2."sector_or_industry_symbol"
+            'model_02_sector_context:' || replace(l2."available_time"::text, ' ', 'T') || ':' || l2."sector_or_industry_symbol",
+            {holdings_ref}
           ) AS "sector_context_state_ref"
         FROM {_qualified(source_schema, source_table)} AS f
         LEFT JOIN {_qualified("trading_data", "source_03_target_state")} AS s
           ON s."target_candidate_id" = f."target_candidate_id"
          AND s."available_time" = f."available_time"
+        {holdings_join}
         LEFT JOIN LATERAL (
           SELECT *
           FROM {_qualified("trading_model", "model_02_sector_context")} AS candidate_l2
@@ -130,6 +163,7 @@ def fetch_feature_rows(
           ORDER BY candidate_l2."available_time" DESC
           LIMIT 1
         ) AS l2 ON TRUE
+        {holdings_l2_join}
         LEFT JOIN LATERAL (
           SELECT *
           FROM {_qualified("trading_model", "model_01_market_regime")} AS candidate_l1
