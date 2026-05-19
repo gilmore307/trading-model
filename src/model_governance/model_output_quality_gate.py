@@ -85,7 +85,7 @@ def evaluate_quality_gate(audit: Mapping[str, Any], *, strict_support: bool = Fa
 
     status = "blocked" if blockers else "passed"
     return {
-        "contract_type": "model_output_quality_gate_v1",
+        "contract_type": "model_output_quality_gate",
         "source_audit_contract_type": audit.get("contract_type"),
         "schema": audit.get("schema"),
         "sample_limit": audit.get("sample_limit"),

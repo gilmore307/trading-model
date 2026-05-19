@@ -169,7 +169,7 @@ def audit_database(
         "sparse_column_count": sum(int(report.get("sparse_column_count", 0)) for report in reports),
     }
     return {
-        "contract_type": "model_output_table_quality_audit_v1",
+        "contract_type": "model_output_table_quality_audit",
         "schema": schema,
         "sample_limit": sample_limit,
         "summary": summary,

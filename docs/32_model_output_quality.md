@@ -26,7 +26,7 @@ The stable read-only audit entrypoint is:
 PYTHONPATH=src python3 scripts/models/audit_model_output_tables.py --sample-limit 5000
 ```
 
-The script emits `model_output_table_quality_audit_v1`. It samples a bounded number of rows from all nine primary model tables and support tables, classifies all-null and sparse columns, and emits review-only cleanup SQL candidates. It never drops columns, rewrites model rows, performs provider calls, activates models, or mutates broker/account state.
+The script emits `model_output_table_quality_audit`. It samples a bounded number of rows from all nine primary model tables and support tables, classifies all-null and sparse columns, and emits review-only cleanup SQL candidates. It never drops columns, rewrites model rows, performs provider calls, activates models, or mutates broker/account state.
 
 The stable post-generation gate entrypoint is:
 
@@ -34,7 +34,7 @@ The stable post-generation gate entrypoint is:
 PYTHONPATH=src python3 scripts/models/run_model_output_quality_gate.py --sample-limit 5000
 ```
 
-The gate emits `model_output_quality_gate_v1` and exits non-zero when primary model outputs have missing tables, empty tables, unclassified all-null score columns, all-null required refs, support payload generation defects, or stale all-null primary columns. Known long-history/data-accumulation gaps and optional selection gaps are warnings or info, not blockers. Explainability and diagnostic all-null gaps are warnings by default because they may be reviewed support coverage gaps; pass `--strict-support` to make them blocking.
+The gate emits `model_output_quality_gate` and exits non-zero when primary model outputs have missing tables, empty tables, unclassified all-null score columns, all-null required refs, support payload generation defects, or stale all-null primary columns. Known long-history/data-accumulation gaps and optional selection gaps are warnings or info, not blockers. Explainability and diagnostic all-null gaps are warnings by default because they may be reviewed support coverage gaps; pass `--strict-support` to make them blocking.
 
 ## Generation Rule
 

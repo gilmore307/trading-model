@@ -31,8 +31,9 @@ class ModelOutputAuditTests(unittest.TestCase):
 
         cursor = FakeCursor()
 
-        audit_database(cursor, tables=("model_01_market_regime",), sample_limit=1)
+        audit = audit_database(cursor, tables=("model_01_market_regime",), sample_limit=1)
 
+        self.assertEqual(audit["contract_type"], "model_output_table_quality_audit")
         select_sql = "\n".join(cursor.executed)
         self.assertIn('TABLESAMPLE SYSTEM (10) LIMIT %s', select_sql)
 

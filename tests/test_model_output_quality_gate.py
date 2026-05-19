@@ -8,7 +8,7 @@ from model_governance.model_output_quality_gate import evaluate_quality_gate
 class ModelOutputQualityGateTests(unittest.TestCase):
     def test_primary_score_gap_blocks_gate(self) -> None:
         audit = {
-            "contract_type": "model_output_table_quality_audit_v1",
+            "contract_type": "model_output_table_quality_audit",
             "schema": "trading_model",
             "sample_limit": 5000,
             "tables": [
@@ -29,13 +29,14 @@ class ModelOutputQualityGateTests(unittest.TestCase):
 
         gate = evaluate_quality_gate(audit)
 
+        self.assertEqual(gate["contract_type"], "model_output_quality_gate")
         self.assertEqual(gate["status"], "blocked")
         self.assertEqual(gate["summary"]["blocker_count"], 1)
         self.assertEqual(gate["blockers"][0]["column"], "1_market_trend_quality_score")
 
     def test_support_gaps_warn_by_default_and_block_when_strict(self) -> None:
         audit = {
-            "contract_type": "model_output_table_quality_audit_v1",
+            "contract_type": "model_output_table_quality_audit",
             "schema": "trading_model",
             "sample_limit": 5000,
             "tables": [
@@ -59,7 +60,7 @@ class ModelOutputQualityGateTests(unittest.TestCase):
 
     def test_data_accumulation_gap_warns_without_blocking(self) -> None:
         audit = {
-            "contract_type": "model_output_table_quality_audit_v1",
+            "contract_type": "model_output_table_quality_audit",
             "schema": "trading_model",
             "sample_limit": 5000,
             "tables": [
