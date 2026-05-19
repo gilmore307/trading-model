@@ -284,7 +284,7 @@ def run_event_alone_study(inputs: EventAloneInputs) -> dict[str, Any]:
     _write_csv(inputs.output_dir / "earnings_guidance_event_control_pairs.csv", pair_rows)
     _write_csv(inputs.output_dir / "earnings_guidance_event_alone_group_stats.csv", group_stats)
     report = {
-        "schema": "earnings_guidance_event_alone_scouting_study_v1",
+        "schema": "earnings_guidance_event_alone_scouting_study",
         "status": "diagnostic_scouting_not_promotion_evidence",
         "provider_calls_performed_by_study": 0,
         "calendar_artifact_count": len(inputs.calendar_paths),

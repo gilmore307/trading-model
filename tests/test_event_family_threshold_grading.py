@@ -54,7 +54,7 @@ class EventFamilyThresholdGradingTests(unittest.TestCase):
             self.assertTrue(payload_path.exists())
             self.assertTrue(csv_path.exists())
             payload = json.loads(payload_path.read_text(encoding="utf-8"))
-            self.assertEqual(payload["contract_type"], "event_family_threshold_grading_v1")
+            self.assertEqual(payload["contract_type"], "event_family_threshold_grading")
             self.assertIn("delete_from_threshold_queue", csv_path.read_text(encoding="utf-8"))
 
 

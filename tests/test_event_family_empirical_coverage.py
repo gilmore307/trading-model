@@ -25,7 +25,7 @@ class EventFamilyEmpiricalCoverageTests(unittest.TestCase):
         coverage = build_event_family_empirical_coverage(precondition_path=self.fixture.precondition_path, trading_data_root=self.fixture.trading_data_root, model_root=self.fixture.model_root, generated_at_utc="2026-05-17T02:00:00+00:00")
         payload = coverage.to_dict()
 
-        self.assertEqual(payload["contract_type"], "event_family_empirical_coverage_v1")
+        self.assertEqual(payload["contract_type"], "event_family_empirical_coverage")
         self.assertEqual(payload["summary"]["family_count"], 29)
         self.assertEqual(payload["provider_calls"], 0)
         self.assertFalse(payload["model_training_performed"])

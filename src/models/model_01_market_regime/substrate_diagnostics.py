@@ -201,7 +201,7 @@ def diagnose_substrate(
         "model_zero_predictive_output_row_count": model["zero_predictive_output_row_count"],
     }
     return {
-        "contract_type": "model_01_market_regime_substrate_diagnostic_v1",
+        "contract_type": "model_01_market_regime_substrate_diagnostic",
         "model_id": model_id,
         "write_policy": "read_only_no_database_write",
         "source_bar_summary": source,

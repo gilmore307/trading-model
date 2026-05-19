@@ -164,7 +164,7 @@ def run_earnings_option_split_scout(inputs: EarningsOptionSplitInputs) -> dict[s
     _write_csv(inputs.output_dir / "earnings_option_abnormality_direction_counts.csv", direction_rows)
     _write_csv(inputs.output_dir / "earnings_option_abnormality_group_stats.csv", groups)
     report = {
-        "schema": "earnings_option_abnormality_split_scout_v1",
+        "schema": "earnings_option_abnormality_split_scout",
         "status": status,
         "provider_calls_performed_by_study": 0,
         "canonical_earnings_count": len(rows),

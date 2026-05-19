@@ -220,7 +220,7 @@ def run_guidance_text_candidate_scout(inputs: GuidanceTextCandidateInputs) -> di
     status_counts = Counter(str(row.get("guidance_candidate_status") or "missing") for row in rows)
     candidate_event_count = sum(1 for row in rows if row.get("guidance_candidate_status") == "candidate_guidance_text_present_review_required")
     report = {
-        "schema": "earnings_guidance_text_candidate_scout_v1",
+        "schema": "earnings_guidance_text_candidate_scout",
         "status": "blocked_missing_reviewed_guidance_interpretation_and_expectation_baseline",
         "provider_calls_performed_by_study": 0,
         "event_count": len(rows),

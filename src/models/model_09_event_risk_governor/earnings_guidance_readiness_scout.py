@@ -144,7 +144,7 @@ def run_guidance_readiness_scout(inputs: GuidanceReadinessInputs) -> dict[str, A
     expectation_ready_count = sum(1 for row in readiness_rows if row.get("expectation_baseline_status") != "missing_consensus_or_accepted_expectation_baseline")
     group_stats = _group_stats(readiness_rows, "event_risk_context_readiness")
     report = {
-        "schema": "earnings_guidance_readiness_scout_v1",
+        "schema": "earnings_guidance_readiness_scout",
         "status": "blocked_missing_guidance_and_expectation_baselines",
         "provider_calls_performed_by_study": 0,
         "event_count": len(readiness_rows),

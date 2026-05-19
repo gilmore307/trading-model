@@ -25,7 +25,7 @@ class EventFamilyPreconditionCompletionTests(unittest.TestCase):
         completion = build_event_family_precondition_completion(catalog_path=self.fixture.catalog_path, acceptance_path=self.fixture.remaining_acceptance_path, generated_at_utc="2026-05-16T22:00:00+00:00")
         payload = completion.to_dict()
 
-        self.assertEqual(payload["contract_type"], "event_family_precondition_completion_v1")
+        self.assertEqual(payload["contract_type"], "event_family_precondition_completion")
         self.assertEqual(payload["summary"]["family_count"], 29)
         self.assertEqual(payload["summary"]["packet_status_counts"]["packet_spec_completed_pending_empirical_evidence"], 26)
         self.assertEqual(payload["provider_calls"], 0)

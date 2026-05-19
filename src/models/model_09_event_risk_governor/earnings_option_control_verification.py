@@ -219,7 +219,7 @@ def summarize_earnings_option_control_verification(inputs: EarningsOptionControl
     else:
         status = "blocked_no_verified_no_option_abnormality_controls_in_sampled_contracts"
     report = {
-        "schema": "earnings_option_control_verification_v1",
+        "schema": "earnings_option_control_verification",
         "status": status,
         "provider_calls_performed_by_study": 0,
         "provider_calls_referenced_from_probe": len(probes),

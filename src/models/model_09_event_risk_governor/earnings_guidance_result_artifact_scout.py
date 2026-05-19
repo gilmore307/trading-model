@@ -301,7 +301,7 @@ def run_result_artifact_scout(inputs: ResultArtifactInputs) -> dict[str, Any]:
     _write_csv(inputs.output_dir / "official_result_metric_rows.csv", metric_rows)
     _write_csv(inputs.output_dir / "earnings_guidance_result_group_stats.csv", groups)
     report = {
-        "schema": "earnings_guidance_result_artifact_scout_v1",
+        "schema": "earnings_guidance_result_artifact_scout",
         "status": "diagnostic_scouting_not_promotion_evidence",
         "provider_calls_performed_by_study": 0,
         "event_count": len(interpreted),

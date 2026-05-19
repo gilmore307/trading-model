@@ -14,8 +14,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
-CONTRACT_TYPE = "event_layer_final_judgment_v1"
-SUMMARY_CONTRACT_TYPE = "event_layer_final_judgment_summary_v1"
+CONTRACT_TYPE = "event_layer_final_judgment"
+SUMMARY_CONTRACT_TYPE = "event_layer_final_judgment_summary"
 DEFAULT_COVERAGE_PATH = Path("storage/event_family_empirical_coverage_20260516/event_family_empirical_coverage.json")
 DEFAULT_OUTPUT_DIR = Path("storage/event_layer_final_judgment_20260516")
 

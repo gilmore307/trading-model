@@ -15,8 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
-CONTRACT_TYPE = "event_family_remaining_acceptance_v1"
-SUMMARY_CONTRACT_TYPE = "event_family_remaining_acceptance_summary_v1"
+CONTRACT_TYPE = "event_family_remaining_acceptance"
+SUMMARY_CONTRACT_TYPE = "event_family_remaining_acceptance_summary"
 DEFAULT_CATALOG_PATH = Path("storage/event_family_batch_catalog_20260516/event_family_batch_catalog.json")
 DEFAULT_OUTPUT_DIR = Path("storage/event_family_remaining_acceptance_20260516")
 

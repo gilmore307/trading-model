@@ -13,7 +13,7 @@ class EventModelAcceptanceTests(unittest.TestCase):
         report = build_event_model_acceptance_report(generated_at_utc="2026-05-16T00:00:00+00:00")
         row = report.summary_row()
 
-        self.assertEqual(row["contract_type"], "event_model_acceptance_report_v1")
+        self.assertEqual(row["contract_type"], "event_model_acceptance_report")
         self.assertEqual(row["architecture_status"], "accepted_bounded_event_risk_governor")
         self.assertIn("risk_governor_intervention_review_block_cap_reduce_flatten_hints", row["accepted_build_boundary"])
         self.assertIn("signed_earnings_guidance_alpha_without_pit_expectation_baselines", row["rejected_routes"])
@@ -46,7 +46,7 @@ class EventModelAcceptanceTests(unittest.TestCase):
             report = build_event_model_acceptance_report(generated_at_utc="2026-05-16T00:00:00+00:00")
             write_report_file(report, path)
             payload = json.loads(path.read_text(encoding="utf-8"))
-            self.assertEqual(payload["contract_type"], "event_model_acceptance_report_v1")
+            self.assertEqual(payload["contract_type"], "event_model_acceptance_report")
 
 
 if __name__ == "__main__":

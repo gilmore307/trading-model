@@ -33,7 +33,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     if not target_candidate_id:
         raise ValueError("target_candidate_id is required")
 
-    gate = _payload(row, "event_strategy_failure_gate") or _payload(row, "event_strategy_failure_gate_v1")
+    gate = _payload(row, "event_strategy_failure_gate") or _payload(row, "event_strategy_failure_gate")
     evidence = _payload(row, "event_failure_evidence_packet") or _payload(row, "event_failure_evidence")
     market = _payload(row, "market_context_state")
     sector = _payload(row, "sector_context_state")

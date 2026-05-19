@@ -25,7 +25,7 @@ class EventLayerFinalJudgmentTests(unittest.TestCase):
         judgment = build_event_layer_final_judgment(coverage_path=self.fixture.coverage_path, model_root=self.fixture.model_root, generated_at_utc="2026-05-17T02:00:00+00:00")
         payload = judgment.to_dict()
 
-        self.assertEqual(payload["contract_type"], "event_layer_final_judgment_v1")
+        self.assertEqual(payload["contract_type"], "event_layer_final_judgment")
         self.assertEqual(payload["final_model_posture"], "build_event_risk_governor_not_standalone_event_alpha")
         self.assertEqual(payload["final_alpha_decision"], "reject_standalone_directional_event_alpha_for_current_evidence")
         self.assertEqual(payload["final_risk_decision"], "accept_bounded_event_risk_intelligence_overlay")

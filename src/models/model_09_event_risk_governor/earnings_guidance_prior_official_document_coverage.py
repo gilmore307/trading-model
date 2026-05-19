@@ -100,7 +100,7 @@ def run_prior_official_document_coverage(inputs: PriorOfficialDocumentCoverageIn
     counts = Counter(str(row["prior_official_document_coverage_status"]) for row in rows)
     present = counts.get("prior_official_document_text_present_uninterpreted", 0)
     report = {
-        "schema": "earnings_guidance_prior_official_document_coverage_v1",
+        "schema": "earnings_guidance_prior_official_document_coverage",
         "status": "blocked_prior_guidance_documents_present_uninterpreted" if present else "blocked_missing_prior_official_document_text",
         "provider_calls_performed_by_study": 0,
         "event_count": len(rows),

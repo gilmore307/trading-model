@@ -189,7 +189,7 @@ def run_guidance_interpretation_review(inputs: GuidanceInterpretationReviewInput
     status_counts = Counter(str(row.get("reviewed_guidance_interpretation_status") or "missing") for row in event_rows)
     partial_count = status_counts.get("partial_official_guidance_context_reviewed", 0)
     report = {
-        "schema": "earnings_guidance_interpretation_review_v1",
+        "schema": "earnings_guidance_interpretation_review",
         "status": "blocked_missing_expectation_baselines_for_signed_claims",
         "provider_calls_performed_by_study": 0,
         "event_count": len(event_rows),

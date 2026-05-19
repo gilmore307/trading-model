@@ -16,8 +16,8 @@ import json
 
 from model_runtime.config import trading_data_root
 
-CONTRACT_TYPE = "event_family_batch_catalog_v1"
-SUMMARY_CONTRACT_TYPE = "event_family_batch_summary_v1"
+CONTRACT_TYPE = "event_family_batch_catalog"
+SUMMARY_CONTRACT_TYPE = "event_family_batch_summary"
 DEFAULT_OUTPUT_DIR = Path("storage/event_family_batch_catalog_20260516")
 
 
@@ -657,7 +657,7 @@ def write_catalog_artifacts(catalog: EventFamilyBatchCatalog, output_dir: Path) 
     with (output_dir / "event_family_first_pass_packets.jsonl").open("w", encoding="utf-8") as handle:
         for candidate in catalog.candidates:
             packet = candidate.to_row()
-            packet["contract_type"] = "event_family_first_pass_packet_v1"
+            packet["contract_type"] = "event_family_first_pass_packet"
             packet["generated_at_utc"] = catalog.generated_at_utc
             handle.write(json.dumps(packet, sort_keys=True) + "\n")
     fieldnames = list(EventFamilyCandidate("", "", "", "", (), "", "", "", "", "", (), (), "").csv_row().keys())

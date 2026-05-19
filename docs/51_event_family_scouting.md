@@ -10,7 +10,7 @@ Raw option abnormality and raw news proximity failed the current promotion stand
 
 Future event-risk work must therefore scout coherent event families before training or promotion. The unit of study is not "all news" or "all option flow". The unit is an interpreted event family with point-in-time lifecycle clocks, materiality rules, canonical source precedence, and abnormal-activity bridge rules.
 
-## Required `event_family_scouting_packet_v1`
+## Required `event_family_scouting_packet`
 
 Each event family must have a packet before model training or risk-intervention promotion work begins.
 
@@ -20,7 +20,7 @@ Event-family scouting must be deliberately fine-grained. The overview categories
 
 News must be decomposed into concrete reusable event families before association analysis. A `symbol_news` row is only a source container until interpretation assigns a narrower family such as management change, product launch, customer loss, legal action, regulatory approval/rejection, analyst-rating change, capital allocation, supply-chain disruption, or earnings/guidance narrative residual. Likewise, `macro_news` and `sector_news` must be split by policy, rates, inflation, commodity, credit/liquidity, geopolitical, regulation, demand, supply, or other reviewed mechanism.
 
-Each narrow family must run its own `event_family_scouting_packet_v1` and price/path association study. Do not pool unrelated mechanisms merely to increase row count. Cross-family composition is allowed only after family-specific evidence, clocks, controls, and failure modes are understood.
+Each narrow family must run its own `event_family_scouting_packet` and price/path association study. Do not pool unrelated mechanisms merely to increase row count. Cross-family composition is allowed only after family-specific evidence, clocks, controls, and failure modes are understood.
 
 Initial fine-grained family candidates include, but are not limited to:
 
@@ -82,7 +82,7 @@ A family may enter `pilot_training` only after scouting evidence shows at least 
 
 A family must **not** enter `accepted_active` unless evidence includes:
 
-- reviewed `event_interpretation_v1` artifacts or an accepted deterministic equivalent for the family;
+- reviewed `event_interpretation` artifacts or an accepted deterministic equivalent for the family;
 - point-in-time clocks (`published_time`, `available_time`, `interpretation_time`, and family-specific clocks such as `scheduled_time` or `resolution_time` when applicable);
 - materiality or surprise/known-status fields where relevant;
 - matched controls that are not merely same-symbol price controls when event/non-event status matters;
@@ -277,7 +277,7 @@ Output artifacts live under `storage/event_family_precondition_completion_202605
 - `event_family_scouting_packets.csv`
 - `event_family_evidence_requirements.csv`
 
-The artifact emits one maintained `event_family_scouting_packet_v1` for each of the 29 families. Each packet defines source precedence, point-in-time clock rules, identity/measure fields, baseline requirements, matched controls, label windows, residual requirements, liquidity requirements, and early-stop gates.
+The artifact emits one maintained `event_family_scouting_packet` for each of the 29 families. Each packet defines source precedence, point-in-time clock rules, identity/measure fields, baseline requirements, matched controls, label windows, residual requirements, liquidity requirements, and early-stop gates.
 
 This fills the missing-packet governance gap, but it does not claim empirical association. The final conclusion remains withheld until the required family-specific association studies exist. Remaining empirical blockers include PIT expectation/comparable baselines for earnings-result/guidance and NFP, a fuller TE expectation-history route for CPI, residual-over-base-state definitions for price/rates/market-structure residual families, liquidity/depth evidence for microstructure disruption, and a revised abnormality definition before retesting option derivatives abnormality.
 

@@ -14,8 +14,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Mapping, Sequence, TextIO
 
-CONTRACT_TYPE = "event_observation_pool_policy_v1"
-SUMMARY_CONTRACT_TYPE = "event_observation_pool_policy_summary_v1"
+CONTRACT_TYPE = "event_observation_pool_policy"
+SUMMARY_CONTRACT_TYPE = "event_observation_pool_policy_summary"
 DEFAULT_OUTPUT_DIR = Path("storage/event_observation_pool_policy_20260516")
 
 

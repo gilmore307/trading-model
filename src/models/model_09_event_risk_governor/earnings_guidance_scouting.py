@@ -201,7 +201,7 @@ def run_study(inputs: StudyInputs) -> dict[str, Any]:
     shell_true = by_shell.get("True")
     shell_false = by_shell.get("False")
     report = {
-        "schema": "earnings_guidance_event_family_scouting_study_v1",
+        "schema": "earnings_guidance_event_family_scouting_study",
         "status": "diagnostic_scouting_not_promotion_evidence",
         "provider_calls_performed_by_study": 0,
         "source_abnormal_windows": str(inputs.abnormal_windows_path),

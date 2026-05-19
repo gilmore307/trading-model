@@ -3,7 +3,7 @@
 <!-- ACTIVE_LAYER_REVISION -->
 Status: active architecture revision. Conceptual Layer 9; implementation package and scripts now use `model_09_event_risk_governor`. The upstream data source still uses `source_09_event_risk_governor` until a separate data/SQL surface migration is accepted.
 
-Active boundary: Layer 9 is the event-intelligence and event-risk governor after the base direct-underlying thesis is known. It consumes standardized point-in-time event interpretations when available (`event_interpretation_v1`) plus event evidence refs, current context states, and the Layer 7 `underlying_action_plan` as the canonical risk target. Layer 8 trading-guidance or option-expression context is optional and must not be required for direct-underlying/crypto routes.
+Active boundary: Layer 9 is the event-intelligence and event-risk governor after the base direct-underlying thesis is known. It consumes standardized point-in-time event interpretations when available (`event_interpretation`) plus event evidence refs, current context states, and the Layer 7 `underlying_action_plan` as the canonical risk target. Layer 8 trading-guidance or option-expression context is optional and must not be required for direct-underlying/crypto routes.
 
 It emits event-risk context/intervention evidence for downstream review and execution-owned risk control: block new entries, cap exposure, reduce exposure, nominate flatten/clear candidates, halt trading candidates, or require human review. It must keep the base Layer 7 underlying-action thesis and event-adjusted risk evidence side by side for audit. For crypto or other direct-underlying-only assets, Layer 9 operates on the underlying/spot action thesis and must not require option-expression evidence.
 
@@ -69,7 +69,7 @@ PYTHONPATH=src python3 scripts/models/model_09_event_risk_governor/build_residua
 
 Output: `storage/residual_anomaly_event_discovery_20260516/`.
 
-This builder starts from current physical Layer 9/governor evaluation labels over the `base_stack_layers_01_07` decision path, identifies residual anomalies such as missed no-trade moves or negative-utility actions, then searches nearby PIT event families for explanations. It emits event-family enrichment rows and, when evidence is strong enough, `event_family_strategy_promotion_review_packet_v1` rows for agent review.
+This builder starts from current physical Layer 9/governor evaluation labels over the `base_stack_layers_01_07` decision path, identifies residual anomalies such as missed no-trade moves or negative-utility actions, then searches nearby PIT event families for explanations. It emits event-family enrichment rows and, when evidence is strong enough, `event_family_strategy_promotion_review_packet` rows for agent review.
 
 The current local Layer 7 label substrate is saturated: all available `2016-01` underlying-action labels are `no_trade` with missed positive utility, so non-residual controls are unavailable in this slice. The artifact therefore connects the code/service surface but deliberately emits no observation-pool addition and no strategy-promotion packet until non-residual controls exist.
 
@@ -416,7 +416,7 @@ Clock meanings:
 - `event_actual_time` is the fact/result occurrence time reported by the source.
 - `source_published_time` / `source_updated_time` are source clocks; revisions after the decision time are not inference inputs.
 - `ingested_time` / `available_time` are system point-in-time clocks; model visibility uses `available_time`.
-- `interpretation_time` is when `event_interpretation_v1` is produced.
+- `interpretation_time` is when `event_interpretation` is produced.
 - `resolution_time` is when a delayed or multi-stage outcome becomes known.
 - `decision_time` / `tradeable_time` are downstream decision and market-action clocks.
 
@@ -450,7 +450,7 @@ Training/evaluation datasets may include realized future outcomes as labels. Inf
 
 ## Event-family scouting gate
 
-Raw news proximity and raw abnormal option flow are not enough to promote an event-risk input. Before Layer 9 uses an event family for model training or risk-intervention evidence, the family needs an `event_family_scouting_packet_v1` as defined in `docs/51_event_family_scouting.md`.
+Raw news proximity and raw abnormal option flow are not enough to promote an event-risk input. Before Layer 9 uses an event family for model training or risk-intervention evidence, the family needs an `event_family_scouting_packet` as defined in `docs/51_event_family_scouting.md`.
 
 The scouting packet must define the family, inclusion/exclusion rules, source precedence, lifecycle clocks, materiality/surprise rules, scope routing, abnormal-activity bridge rules, control design, forward labels, coverage gates, and early-stop criteria.
 

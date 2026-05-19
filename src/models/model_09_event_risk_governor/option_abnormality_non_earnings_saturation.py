@@ -146,7 +146,7 @@ def run_non_earnings_saturation_study(inputs: NonEarningsSaturationInputs) -> di
     )
     group_stats = _group(symbol_date_rows, "shell_status")
     report = {
-        "schema": "option_abnormality_non_earnings_saturation_v1",
+        "schema": "option_abnormality_non_earnings_saturation",
         "status": status,
         "provider_calls_performed_by_study": 0,
         "symbol_date_count": len(symbol_date_rows),

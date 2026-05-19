@@ -16,7 +16,7 @@ class PriceAnomalyEventDiscoveryTests(unittest.TestCase):
         discovery = build_price_anomaly_event_discovery(generated_at_utc="2026-05-17T03:00:00+00:00")
         payload = discovery.to_dict()
 
-        self.assertEqual(payload["contract_type"], "price_anomaly_event_discovery_v1")
+        self.assertEqual(payload["contract_type"], "price_anomaly_event_discovery")
         self.assertGreater(payload["summary"]["anomaly_count"], 0)
         self.assertGreater(payload["summary"]["enriched_family_count"], 0)
         self.assertEqual(payload["provider_calls"], 0)

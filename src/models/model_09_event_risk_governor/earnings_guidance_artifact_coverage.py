@@ -145,7 +145,7 @@ def run_guidance_artifact_coverage_scout(inputs: GuidanceArtifactCoverageInputs)
     expectation_count = sum(1 for row in rows if row.get("expectation_baseline_status") != "missing_consensus_or_accepted_expectation_baseline")
     signed_ready_count = sum(1 for row in rows if row.get("signed_direction_readiness") == "ready")
     report = {
-        "schema": "earnings_guidance_artifact_coverage_scout_v1",
+        "schema": "earnings_guidance_artifact_coverage_scout",
         "status": "blocked_missing_local_official_guidance_artifacts" if local_document_count == 0 else "blocked_missing_accepted_guidance_interpretation_or_expectation_baseline",
         "provider_calls_performed_by_study": 0,
         "event_count": len(rows),

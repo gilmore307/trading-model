@@ -85,7 +85,7 @@ def build_event_model_acceptance_report(*, generated_at_utc: str | None = None) 
 
     generated = generated_at_utc or datetime.now(UTC).isoformat()
     return EventModelAcceptanceReport(
-        contract_type="event_model_acceptance_report_v1",
+        contract_type="event_model_acceptance_report",
         generated_at_utc=generated,
         model_id=MODEL_ID,
         model_layer=MODEL_LAYER,
@@ -128,7 +128,7 @@ def build_event_model_acceptance_report(*, generated_at_utc: str | None = None) 
                 accepted_use="discovery_or_secondary_narrative_residual_when_tied_to_canonical_event",
                 blocked_use="raw_headline_keyword_alpha_or_broad_news_amplifier",
                 blocker_codes=("news_proximity_saturated", "canonical_source_required"),
-                next_evidence_gate="family_specific_canonical_source_led_packet_with_event_interpretation_v1",
+                next_evidence_gate="family_specific_canonical_source_led_packet_with_event_interpretation",
             ),
             EventFamilyAcceptanceStatus(
                 family_key="earnings_guidance_event_family",

@@ -25,7 +25,7 @@ class ResidualAnomalyEventDiscoveryTests(unittest.TestCase):
         discovery = build_residual_anomaly_event_discovery(runtime_root=self.fixture.runtime_root, source_root=self.fixture.source_root, generated_at_utc="2026-05-17T03:30:00+00:00")
         payload = discovery.to_dict()
 
-        self.assertEqual(payload["contract_type"], "residual_anomaly_event_discovery_v1")
+        self.assertEqual(payload["contract_type"], "residual_anomaly_event_discovery")
         self.assertGreater(payload["summary"]["residual_anomaly_count"], 0)
         self.assertGreater(payload["summary"]["enriched_family_count"], 0)
         self.assertEqual(payload["summary"]["service_integration_status"], "registered_callable_artifact_builder_only_no_daemon_start")

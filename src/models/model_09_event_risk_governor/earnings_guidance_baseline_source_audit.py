@@ -169,7 +169,7 @@ def run_baseline_source_audit(inputs: BaselineSourceAuditInputs) -> dict[str, An
     candidate_counts = Counter(str(row.get("baseline_candidate_type") or "none") for row in audit_rows)
     matched_count = sum(1 for row in audit_rows if row.get("calendar_match_status") == "matched_calendar_row")
     report = {
-        "schema": "earnings_guidance_baseline_source_audit_v1",
+        "schema": "earnings_guidance_baseline_source_audit",
         "status": "blocked_existing_calendar_artifacts_not_pit_acceptable",
         "provider_calls_performed_by_study": 0,
         "event_count": len(events),

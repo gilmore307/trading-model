@@ -299,7 +299,7 @@ def summarize_same_symbol_non_earnings_option_controls(inputs: SameSymbolNonEarn
         status = "blocked_no_verified_option_abnormality_rows_for_comparison"
 
     report = {
-        "schema": "same_symbol_non_earnings_option_control_verification_v1",
+        "schema": "same_symbol_non_earnings_option_control_verification",
         "status": status,
         "provider_calls_performed_by_study": 0,
         "provider_calls_referenced_from_option_matrix_receipts": len(receipts),

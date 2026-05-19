@@ -1,6 +1,6 @@
 # Earnings / Guidance Event-Family Scouting Packet
 
-Schema: `event_family_scouting_packet_v1`
+Schema: `event_family_scouting_packet`
 
 Status: `scouting`
 
@@ -84,7 +84,7 @@ Clock rules:
 - `source_published_time`: official release, filing accepted time, news publication, or transcript publication time.
 - `source_updated_time`: revisions or corrected articles; updates after decision time are not inference inputs.
 - `available_time`: when this system may use the source artifact.
-- `interpretation_time`: when `event_interpretation_v1` or deterministic equivalent is produced.
+- `interpretation_time`: when `event_interpretation` or deterministic equivalent is produced.
 - `resolution_time`: when the release/result phase is observable; may equal accepted filing/release time.
 - `reaction_window`: evaluation-only market/option response window; never an inference input.
 

@@ -60,7 +60,7 @@ class MarketRegimeSubstrateDiagnosticsTests(unittest.TestCase):
             min_feature_signal_coverage=0.01,
         )
 
-        self.assertEqual(summary["contract_type"], "model_01_market_regime_substrate_diagnostic_v1")
+        self.assertEqual(summary["contract_type"], "model_01_market_regime_substrate_diagnostic")
         self.assertEqual(summary["source_bar_summary"]["symbol_count"], 2)
         self.assertEqual(summary["blocker_counts"]["source_sparse_symbol_timeframe_count"], 1)
         self.assertGreater(summary["blocker_counts"]["feature_low_signal_row_count"], 0)
@@ -96,7 +96,7 @@ class MarketRegimeSubstrateDiagnosticsTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
-        self.assertEqual(payload["contract_type"], "model_01_market_regime_substrate_diagnostic_v1")
+        self.assertEqual(payload["contract_type"], "model_01_market_regime_substrate_diagnostic")
         self.assertIn("DRY RUN ONLY", result.stderr)
 
 

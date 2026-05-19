@@ -107,7 +107,7 @@ PYTHONPATH=src python3 scripts/models/model_01_market_regime/diagnose_model_01_m
 PYTHONPATH=src python3 scripts/models/model_01_market_regime/diagnose_model_01_market_regime_substrate.py --from-database --output-json /tmp/l1_substrate_diagnostic.json
 ```
 
-The diagnostic emits `model_01_market_regime_substrate_diagnostic_v1` and separates:
+The diagnostic emits `model_01_market_regime_substrate_diagnostic` and separates:
 
 - source-bar sparsity by source symbol/timeframe decision-day coverage;
 - feature lookback / non-null signal coverage gaps;

@@ -34,7 +34,7 @@ from models.model_09_event_risk_governor.event_price_association_readiness impor
     _text,
 )
 
-CONTRACT_TYPE = "cpi_inflation_association_readiness_v1"
+CONTRACT_TYPE = "cpi_inflation_association_readiness"
 DEFAULT_DATA_ROOT = trading_data_root()
 DEFAULT_OUTPUT_DIR = Path("storage/cpi_inflation_association_readiness_20260516")
 DEFAULT_PRICE_SYMBOLS = ("TLT", "XLF", "XLK", "HYG", "XLE")

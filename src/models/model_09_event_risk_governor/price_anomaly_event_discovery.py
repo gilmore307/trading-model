@@ -22,8 +22,8 @@ from typing import Any, Iterable, Mapping, Sequence, TextIO
 from model_runtime.config import trading_data_root
 from models.model_09_event_risk_governor.event_family_empirical_coverage import FAMILY_KEYWORDS
 
-CONTRACT_TYPE = "price_anomaly_event_discovery_v1"
-SUMMARY_CONTRACT_TYPE = "price_anomaly_event_discovery_summary_v1"
+CONTRACT_TYPE = "price_anomaly_event_discovery"
+SUMMARY_CONTRACT_TYPE = "price_anomaly_event_discovery_summary"
 DEFAULT_TRADING_DATA_ROOT = trading_data_root()
 DEFAULT_BAR_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill/alpaca_bars"
 DEFAULT_SOURCE_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill"

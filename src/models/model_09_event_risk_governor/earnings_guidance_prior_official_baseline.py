@@ -166,7 +166,7 @@ def run_prior_official_baseline_audit(inputs: PriorOfficialBaselineInputs) -> di
         for payload in task_keys:
             handle.write(json.dumps(payload, sort_keys=True) + "\n")
     report = {
-        "schema": "earnings_guidance_prior_official_baseline_source_audit_v1",
+        "schema": "earnings_guidance_prior_official_baseline_source_audit",
         "status": "candidate_prior_official_guidance_sources_identified" if task_keys else "blocked_missing_prior_official_guidance_source_candidates",
         "provider_calls_performed_by_study": 0,
         "event_count": len(events),

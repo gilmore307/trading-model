@@ -64,7 +64,7 @@ Conclusion: earnings/guidance deserves continued scouting, not pilot training or
 Build the event layer around four responsibilities:
 
 1. **Canonical event timeline** — lifecycle class, clocks, shell/result split, point-in-time availability, dedup/canonical refs.
-2. **Event interpretation** — reviewed `event_interpretation_v1` or deterministic family-equivalent rows for accepted event families.
+2. **Event interpretation** — reviewed `event_interpretation` or deterministic family-equivalent rows for accepted event families.
 3. **Event/activity bridge** — typed relationships such as pre-event precursor, co-event reaction, post-event absorption, divergence, and unresolved latent hazard, admitted for scoring only when the activity leg is not already counted by `base_stack_layers_01_08` or remains residual after upstream conditioning.
 4. **Risk-governor output** — uncertainty, gap/reversal/liquidity/contagion risk, human-review requirements, entry blocks, exposure caps, reduce/flatten candidates, and audit explanations.
 
@@ -315,6 +315,6 @@ Judgment update: current primary-document future-operating context is useful dir
 
 ## Acceptance artifact and regeneration policy
 
-The event-model redo is now closed as an actionable architecture decision, not as a promotion approval. `scripts/models/model_09_event_risk_governor/build_event_model_acceptance_report.py` emits `event_model_acceptance_report_v1`, which records the accepted EventRiskGovernor boundary, rejected alpha routes, current event-family statuses, required next gates, and the storage/deletion hold.
+The event-model redo is now closed as an actionable architecture decision, not as a promotion approval. `scripts/models/model_09_event_risk_governor/build_event_model_acceptance_report.py` emits `event_model_acceptance_report`, which records the accepted EventRiskGovernor boundary, rejected alpha routes, current event-family statuses, required next gates, and the storage/deletion hold.
 
 Downstream regeneration should rebuild only event-risk-governor-dependent outputs after reviewed `source_09_event_risk_governor` / `feature_09_event_risk_governor` coverage. `base_stack_layers_01_08` is not blocked by event feeds when their point-in-time inputs remain otherwise valid under the rolling-fold policy. Old event-overlay, abnormal-activity-only, or pre-coverage event-risk-governor outputs are superseded for review/regeneration, but diagnostic artifacts are preserved for audit and comparison. Dashboard snapshot and model-run metadata deletion remains dry-run only until regenerated event-risk-governor evidence has been reviewed.

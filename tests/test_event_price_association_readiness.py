@@ -25,7 +25,7 @@ class EventPriceAssociationReadinessTests(unittest.TestCase):
         batch = build_event_price_association_readiness_batch(catalog_path=self.fixture.catalog_path, data_root=self.fixture.trading_data_root, generated_at_utc="2026-05-16T12:00:00+00:00")
         payload = batch.to_dict()
 
-        self.assertEqual(payload["contract_type"], "event_price_association_readiness_batch_v1")
+        self.assertEqual(payload["contract_type"], "event_price_association_readiness_batch")
         self.assertEqual(payload["provider_calls"], 0)
         self.assertFalse(payload["model_activation_performed"])
         self.assertFalse(payload["broker_execution_performed"])
@@ -79,7 +79,7 @@ class EventPriceAssociationReadinessTests(unittest.TestCase):
             self.assertTrue(events_path.exists())
             self.assertTrue(labels_path.exists())
             payload = json.loads(batch_path.read_text(encoding="utf-8"))
-            self.assertEqual(payload["contract_type"], "event_price_association_readiness_batch_v1")
+            self.assertEqual(payload["contract_type"], "event_price_association_readiness_batch")
             self.assertIn("cpi_inflation_release", readiness_path.read_text(encoding="utf-8"))
 
 

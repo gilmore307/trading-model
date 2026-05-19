@@ -46,7 +46,7 @@ class EventObservationPoolPolicyTests(unittest.TestCase):
             self.assertTrue(pool_path.exists())
             self.assertTrue(rules_path.exists())
             payload = json.loads(payload_path.read_text(encoding="utf-8"))
-            self.assertEqual(payload["contract_type"], "event_observation_pool_policy_v1")
+            self.assertEqual(payload["contract_type"], "event_observation_pool_policy")
             self.assertIn("legal_regulatory_investigation", pool_path.read_text(encoding="utf-8"))
             self.assertIn("strategy_layer_promotion", rules_path.read_text(encoding="utf-8"))
 

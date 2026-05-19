@@ -25,7 +25,7 @@ class EventFamilyAllAssociationTests(unittest.TestCase):
         association = build_event_family_all_association(coverage_path=self.fixture.coverage_path, source_root=self.fixture.source_root, bar_root=self.fixture.bar_root, generated_at_utc="2026-05-17T03:00:00+00:00")
         payload = association.to_dict()
 
-        self.assertEqual(payload["contract_type"], "event_family_all_association_v1")
+        self.assertEqual(payload["contract_type"], "event_family_all_association")
         self.assertEqual(payload["summary"]["family_count"], 29)
         self.assertEqual(payload["provider_calls"], 0)
         self.assertFalse(payload["model_training_performed"])

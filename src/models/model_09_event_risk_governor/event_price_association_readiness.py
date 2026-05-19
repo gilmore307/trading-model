@@ -20,7 +20,7 @@ from typing import Any, Iterable, Mapping, Sequence, TextIO
 
 from model_runtime.config import trading_data_root
 
-CONTRACT_TYPE = "event_price_association_readiness_batch_v1"
+CONTRACT_TYPE = "event_price_association_readiness_batch"
 DEFAULT_CATALOG_PATH = Path("storage/event_family_batch_catalog_20260516/event_family_batch_catalog.json")
 DEFAULT_OUTPUT_DIR = Path("storage/event_price_association_readiness_20260516")
 DEFAULT_DATA_ROOT = trading_data_root()

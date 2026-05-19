@@ -29,7 +29,7 @@ class CpiInflationAssociationReadinessTests(unittest.TestCase):
             )
         payload = readiness.to_dict()
 
-        self.assertEqual(payload["contract_type"], "cpi_inflation_association_readiness_v1")
+        self.assertEqual(payload["contract_type"], "cpi_inflation_association_readiness")
         self.assertEqual(payload["provider_calls"], 0)
         self.assertFalse(payload["model_activation_performed"])
         self.assertFalse(payload["broker_execution_performed"])

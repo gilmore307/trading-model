@@ -16,7 +16,7 @@ class EventFamilyBatchCatalogTests(unittest.TestCase):
         catalog = build_event_family_batch_catalog(root=Path("."), generated_at_utc="2026-05-16T12:00:00+00:00")
         row = catalog.to_dict()
 
-        self.assertEqual(row["contract_type"], "event_family_batch_catalog_v1")
+        self.assertEqual(row["contract_type"], "event_family_batch_catalog")
         self.assertEqual(row["provider_calls"], 0)
         self.assertFalse(row["model_activation_performed"])
         self.assertFalse(row["broker_execution_performed"])
@@ -38,7 +38,7 @@ class EventFamilyBatchCatalogTests(unittest.TestCase):
         catalog = build_event_family_batch_catalog(root=Path("."), generated_at_utc="2026-05-16T12:00:00+00:00")
         summary = catalog.summary
 
-        self.assertEqual(summary["contract_type"], "event_family_batch_summary_v1")
+        self.assertEqual(summary["contract_type"], "event_family_batch_summary")
         self.assertEqual(summary["candidate_count"], len(catalog.candidates))
         self.assertGreater(summary["priority_counts"]["high"], 5)
         self.assertIn("scouting", summary["family_status_counts"])
@@ -62,9 +62,9 @@ class EventFamilyBatchCatalogTests(unittest.TestCase):
             self.assertTrue(packets_path.exists())
             self.assertTrue(blockers_path.exists())
             payload = json.loads(catalog_path.read_text(encoding="utf-8"))
-            self.assertEqual(payload["contract_type"], "event_family_batch_catalog_v1")
+            self.assertEqual(payload["contract_type"], "event_family_batch_catalog")
             self.assertIn("equity_offering_dilution", queue_path.read_text(encoding="utf-8"))
-            self.assertIn("event_family_first_pass_packet_v1", packets_path.read_text(encoding="utf-8"))
+            self.assertIn("event_family_first_pass_packet", packets_path.read_text(encoding="utf-8"))
             self.assertIn("missing_family_packet", blockers_path.read_text(encoding="utf-8"))
 
 

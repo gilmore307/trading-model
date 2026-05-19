@@ -19,8 +19,8 @@ import re
 
 from model_runtime.config import trading_data_root
 
-CONTRACT_TYPE = "event_family_empirical_coverage_v1"
-SUMMARY_CONTRACT_TYPE = "event_family_empirical_coverage_summary_v1"
+CONTRACT_TYPE = "event_family_empirical_coverage"
+SUMMARY_CONTRACT_TYPE = "event_family_empirical_coverage_summary"
 DEFAULT_PRECONDITION_PATH = Path("storage/event_family_precondition_completion_20260516/event_family_precondition_completion.json")
 DEFAULT_OUTPUT_DIR = Path("storage/event_family_empirical_coverage_20260516")
 DEFAULT_TRADING_DATA_ROOT = trading_data_root()

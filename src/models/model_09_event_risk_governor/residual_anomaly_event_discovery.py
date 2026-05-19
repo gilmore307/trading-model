@@ -21,9 +21,9 @@ from typing import Any, Mapping, Sequence, TextIO
 from model_runtime.config import trading_data_root
 from models.model_09_event_risk_governor.price_anomaly_event_discovery import _event_family_dates, _nearby, _parse_dt
 
-CONTRACT_TYPE = "residual_anomaly_event_discovery_v1"
-SUMMARY_CONTRACT_TYPE = "residual_anomaly_event_discovery_summary_v1"
-PROMOTION_REVIEW_PACKET_CONTRACT_TYPE = "event_family_strategy_promotion_review_packet_v1"
+CONTRACT_TYPE = "residual_anomaly_event_discovery"
+SUMMARY_CONTRACT_TYPE = "residual_anomaly_event_discovery_summary"
+PROMOTION_REVIEW_PACKET_CONTRACT_TYPE = "event_family_strategy_promotion_review_packet"
 DEFAULT_MODEL_RUNTIME_ROOT = Path("storage/runtime")
 DEFAULT_SOURCE_ROOT = trading_data_root() / "storage/monthly_backfill"
 DEFAULT_OUTPUT_DIR = Path("storage/residual_anomaly_event_discovery_20260516")

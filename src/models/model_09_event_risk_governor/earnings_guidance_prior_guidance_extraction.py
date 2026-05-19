@@ -140,7 +140,7 @@ def run_prior_guidance_extraction(inputs: PriorGuidanceExtractionInputs) -> dict
     counts = Counter(str(row["prior_guidance_baseline_status"]) for row in event_rows)
     accepted_events = counts.get("accepted_prior_company_guidance_context_baseline", 0)
     report = {
-        "schema": "earnings_guidance_prior_guidance_extraction_v1",
+        "schema": "earnings_guidance_prior_guidance_extraction",
         "status": "partial_prior_guidance_baseline_context_extracted" if accepted_events else "blocked_no_prior_guidance_baseline_context_extracted",
         "provider_calls_performed_by_study": 0,
         "event_count": len(event_rows),

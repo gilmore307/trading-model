@@ -147,7 +147,7 @@ def run_current_prior_comparison_readiness(inputs: CurrentPriorComparisonReadine
     current_counts = Counter(str(row["current_comparable_guidance_status"]) for row in event_rows)
     comparable_count = readiness_counts.get("current_prior_guidance_context_comparable_pending_pit_expectation_baselines", 0)
     report = {
-        "schema": "earnings_guidance_current_prior_comparison_readiness_v1",
+        "schema": "earnings_guidance_current_prior_comparison_readiness",
         "status": "blocked_missing_current_comparable_guidance_context" if comparable_count == 0 else "partial_current_prior_comparison_context_only",
         "provider_calls_performed_by_study": 0,
         "event_count": len(event_rows),

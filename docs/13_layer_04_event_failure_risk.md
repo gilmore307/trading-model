@@ -31,7 +31,7 @@ Required inputs are point-in-time and review-gated:
 - `market_context_state` / `market_context_state_ref`;
 - `sector_context_state` / `sector_context_state_ref`;
 - `target_context_state` / `target_context_state_ref`;
-- accepted `event_strategy_failure_gate_v1` or equivalent reviewed promotion record;
+- accepted `event_strategy_failure_gate` or equivalent reviewed promotion record;
 - point-in-time event identity/scope/evidence rows for only the reviewed event family;
 - strategy-family applicability metadata;
 - evidence-packet reference and agent-review decision.

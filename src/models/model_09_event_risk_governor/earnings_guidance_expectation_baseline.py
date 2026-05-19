@@ -183,7 +183,7 @@ def run_expectation_baseline_readiness(inputs: ExpectationBaselineInputs) -> dic
     partial_sets = counts.get("partial_point_in_time_expectation_baseline", 0)
     missing_sets = counts.get("missing_point_in_time_expectation_baseline", 0)
     report = {
-        "schema": "earnings_guidance_expectation_baseline_readiness_v1",
+        "schema": "earnings_guidance_expectation_baseline_readiness",
         "status": "blocked_missing_point_in_time_expectation_baselines" if accepted_sets == 0 else "partial_expectation_baseline_coverage_review_required",
         "provider_calls_performed_by_study": 0,
         "event_count": len(event_rows),

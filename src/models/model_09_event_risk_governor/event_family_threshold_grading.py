@@ -15,8 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
-CONTRACT_TYPE = "event_family_threshold_grading_v1"
-SUMMARY_CONTRACT_TYPE = "event_family_threshold_grading_summary_v1"
+CONTRACT_TYPE = "event_family_threshold_grading"
+SUMMARY_CONTRACT_TYPE = "event_family_threshold_grading_summary"
 DEFAULT_ASSOCIATION_DIR = Path("storage/event_family_all_association_20260516")
 DEFAULT_OUTPUT_DIR = Path("storage/event_family_threshold_grading_20260516")
 

@@ -22,8 +22,8 @@ import glob
 from model_runtime.config import trading_data_root
 from models.model_09_event_risk_governor.event_family_empirical_coverage import FAMILY_KEYWORDS
 
-CONTRACT_TYPE = "event_family_all_association_v1"
-SUMMARY_CONTRACT_TYPE = "event_family_all_association_summary_v1"
+CONTRACT_TYPE = "event_family_all_association"
+SUMMARY_CONTRACT_TYPE = "event_family_all_association_summary"
 DEFAULT_COVERAGE_PATH = Path("storage/event_family_empirical_coverage_20260516/event_family_empirical_coverage.json")
 DEFAULT_OUTPUT_DIR = Path("storage/event_family_all_association_20260516")
 DEFAULT_TRADING_DATA_ROOT = trading_data_root()
