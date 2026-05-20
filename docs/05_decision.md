@@ -670,14 +670,14 @@ This acceptance is superseded by the 2026-05-17 architecture revision that inser
 
 Remaining work is production hardening and control-plane integration, not new model-layer design: real point-in-time feeds, label calibration, baseline/stability proof, accepted promotion decisions, and exact unified decision-record / artifact contracts through `trading-manager`.
 
-## D026 - Layers 1-9 production promotion requires complete evidence packages
+## D026 - Layers 1-10 production promotion requires complete evidence packages
 
 Date: 2026-05-07
 Status: Accepted; expanded by D047
 
 Closing the model-design phase does not approve production promotion for any layer.
 
-Every production promotion review for active conceptual Layers 1-9 must use the complete evidence package defined in `docs/30_promotion_readiness.md`: dataset snapshot, chronological split, label refs, eval run, promotion metrics, promotion candidate, thresholds, baseline comparison, split stability, leakage/no-future checks, calibration report, and decision receipt.
+Every production promotion review for active conceptual Layers 1-10 must use the complete evidence package defined in `docs/30_promotion_readiness.md`: dataset snapshot, chronological split, label refs, eval run, promotion metrics, promotion candidate, thresholds, baseline comparison, split stability, leakage/no-future checks, calibration report, and decision receipt.
 
 Missing evidence or failed gates require a deferred promotion review. Deferred or rejected reviews must not activate configs or move production pointers. Approval can only be considered after the evidence package is complete and gates pass; durable decision and activation belong in `trading-manager`.
 
@@ -748,7 +748,7 @@ Status: Accepted
 
 Realtime execution inputs may enter `trading-model` through `execution_model_decision_input_snapshot` only after `trading-execution` has packaged capture refs into realtime feature/model-input envelopes with historical dataset snapshot refs and frozen model config refs.
 
-`trading-model` accepts `model_realtime_decision_route_plan` as the model-side route plan for fixture/shadow historical-model decision routing. The plan validates Layer 1-9 input coverage and maps each layer to its reviewed generator entrypoint, but it does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
+`trading-model` accepts `model_realtime_decision_route_plan` as the model-side route plan for fixture/shadow historical-model decision routing. The plan validates Layer 1-10 input coverage and maps each layer to its reviewed generator entrypoint, but it does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
 
 Production model activation, durable decision records, promotion approval, and execution authority remain manager/execution-owned gates, not implied by this handoff scaffold.
 
@@ -888,3 +888,26 @@ The Layer 3 candidate policy is rule-fixed rather than ticker-fixed. Live routin
 Layer 4 and later keep a single selected-target interface. When Layer 3 returns several ranked targets, orchestration runs Layer 4+ separately for each target instead of changing downstream models into multi-target batch models.
 
 Layer 3 may emit `3_target_handoff_state`, `3_target_handoff_bias`, `3_target_handoff_rank`, and `3_target_selection_reason_codes` as target-selection evidence. It still must not emit final actions, entry/exit orders, position sizes, portfolio weights, execution policy, or option contracts.
+
+## D049 - DynamicRiskPolicyModel inserted as Layer 6
+
+Accepted: 2026-05-20
+
+The conceptual model stack inserts `DynamicRiskPolicyModel` at Layer 6 and shifts the later layers forward:
+
+```text
+Layer 1: MarketRegimeModel
+Layer 2: SectorContextModel
+Layer 3: TargetStateVectorModel
+Layer 4: EventFailureRiskModel
+Layer 5: AlphaConfidenceModel
+Layer 6: DynamicRiskPolicyModel
+Layer 7: PositionProjectionModel
+Layer 8: UnderlyingActionModel
+Layer 9: TradingGuidanceModel / OptionExpressionModel
+Layer 10: EventRiskGovernor / EventIntelligenceOverlay
+```
+
+Layer 6 learns a dynamic premium/risk-budget policy from Layer 1 global market regime, systemic or broad event-risk context, Layer 5 alpha quality, and portfolio/account replay state. It must be driven primarily by whole-market state; sector or target-specific evidence can cap, skip, or haircut only the current target and must not distort the global risk budget.
+
+Hard order boundaries remain outside the model stack in execution/order gates. Layer 6 outputs model-internal `dynamic_risk_policy_state`, not broker permission and not an execution hard-limit override.

@@ -1,10 +1,10 @@
 # Architecture
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-17): Layers 1-9 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 4-9 numbering; historical/applied migration records may retain prior numbering.
+> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Downstream physical implementation paths may retain prior Layer 6-9 numbering until dedicated renumbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
-Status: accepted current route; Layers 1-9 architecture revised, Layer 4 pre-implementation contract accepted
+Status: accepted current route; Layers 1-10 architecture revised with DynamicRiskPolicyModel inserted as Layer 6
 Owner intent: keep the model stack direct, point-in-time, and current-route authoritative.
 
 ## Module Map
@@ -27,6 +27,7 @@ point-in-time data foundation
      (Layer 3 preprocessing includes anonymous target candidate construction)
   -> EventFailureRiskModel
   -> AlphaConfidenceModel
+  -> DynamicRiskPolicyModel
   -> PositionProjectionModel
   -> UnderlyingActionModel
   -> TradingGuidanceModel / OptionExpressionModel
@@ -59,12 +60,13 @@ This separation is mandatory:
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
 | 4 | `EventFailureRiskModel` | `event_failure_risk_model` | `event_failure_risk_vector` | Agent-reviewed event/strategy-failure relationships converted into pre-alpha failure-risk conditioning. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Reviewed state stack plus Layer 4 failure-risk conditioning to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
-| 6 | `PositionProjectionModel` | `position_projection_model` | `position_projection_vector` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
-| 7 | `UnderlyingActionModel` | `underlying_action_model` | `underlying_action_plan` / `underlying_action_vector` | Direct underlying/spot planned action thesis for stock, ETF, or crypto-style candidates: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and optional trading-guidance handoff. |
-| 8 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | `trading_guidance` / `option_expression_plan` / `expression_vector` | Optional offline trading guidance, including optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
-| 9 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | `event_risk_intervention` / `event_context_vector` | Point-in-time residual event-risk intervention on the direct-underlying/spot thesis; Layer 8 context is optional; may discover, block/cap/review guidance, or propose Layer 4 promotions but must not mutate broker/account state. |
+| 6 | `DynamicRiskPolicyModel` | `dynamic_risk_policy_model` | `dynamic_risk_policy_state` | Dynamic premium/risk-budget policy from global market regime, systemic event risk, alpha quality, and portfolio context; target-specific evidence may cap only the current target. |
+| 7 | `PositionProjectionModel` | `position_projection_model` | `position_projection_vector` | Final adjusted alpha plus Layer 6 risk policy, current/pending position, cost, and risk context to projected target holding state. |
+| 8 | `UnderlyingActionModel` | `underlying_action_model` | `underlying_action_plan` / `underlying_action_vector` | Direct underlying/spot planned action thesis for stock, ETF, or crypto-style candidates: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and optional trading-guidance handoff. |
+| 9 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | `trading_guidance` / `option_expression_plan` / `expression_vector` | Optional offline trading guidance, including optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
+| 10 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | `event_risk_intervention` / `event_context_vector` | Point-in-time residual event-risk intervention on the direct-underlying/spot thesis; Layer 9 context is optional; may discover, block/cap/review guidance, or propose Layer 4 promotions but must not mutate broker/account state. |
 
-Do not treat Layer 8 or Layer 9 as live execution. Broker mutation and live/paper order placement are outside `trading-model`. There is no accepted Layer 10 inside this repository; post-Layer-9 work crosses into downstream review / execution-owned boundaries.
+Do not treat Layer 9 or Layer 10 as live execution. Broker mutation and live/paper order placement are outside `trading-model`. There is no accepted Layer 11 inside this repository; post-Layer-10 work crosses into downstream review / execution-owned boundaries.
 
 ## Model Artifact Rule
 

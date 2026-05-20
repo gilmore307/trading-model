@@ -1,6 +1,6 @@
 # Contracts
 
-Status: accepted model-design acceptance for Layers 1-9
+Status: accepted model-design acceptance for Layers 1-10 architecture; DynamicRiskPolicyModel physical implementation pending
 Date: 2026-05-07
 
 ## Acceptance scope
@@ -14,20 +14,21 @@ Date: 2026-05-07
 | 3 | `TargetStateVectorModel` | `target_context_state` | accepted direction-neutral target-state contract, anonymous candidate preprocessing, deterministic implementation/evaluation scaffold |
 | 4 | `EventFailureRiskModel` | `event_failure_risk_vector` | accepted pre-implementation contract; physical implementation pending dedicated slice |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted base-alpha V1 scaffold; current physical surface `model_05_alpha_confidence` |
-| 6 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; current physical surface `model_06_position_projection` |
-| 7 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; current physical surface `model_07_underlying_action` |
-| 8 | `TradingGuidanceModel / OptionExpressionModel` | optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted optional offline trading-guidance boundary; V1 option-expression subset currently uses physical surface `model_08_option_expression` |
-| 9 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary over the Layer 7 direct-underlying thesis; current physical surface `model_09_event_risk_governor` |
+| 6 | `DynamicRiskPolicyModel` | `dynamic_risk_policy_state` | accepted architecture boundary; physical implementation pending dedicated slice |
+| 7 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; current physical surface `model_06_position_projection` until renumbering |
+| 8 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; current physical surface `model_07_underlying_action` until renumbering |
+| 9 | `TradingGuidanceModel / OptionExpressionModel` | optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted optional offline trading-guidance boundary; V1 option-expression subset currently uses physical surface `model_08_option_expression` until renumbering |
+| 10 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary over the Layer 8 direct-underlying thesis; current physical surface `model_09_event_risk_governor` until renumbering |
 
 This closes the model-design phase. It does not approve production promotion.
 
 ## Boundary acceptance
 
-Layer 8 is now TradingGuidance / OptionExpression / optional expression context and Layer 9 is EventRiskGovernor / EventIntelligenceOverlay / realtime risk handoff. There is no accepted Layer 10 inside `trading-model`.
+Layer 9 is now TradingGuidance / OptionExpression / optional expression context and Layer 10 is EventRiskGovernor / EventIntelligenceOverlay / realtime risk handoff. There is no accepted Layer 11 inside `trading-model`.
 
-After Layer 9, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
+After Layer 10, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
-Layer 7 produces the base direct-underlying action thesis. Layer 9's canonical intervention target is that Layer 7 underlying/spot thesis; it may intervene for high-severity residual event risk by blocking new entries, capping exposure, reducing exposure, or nominating flatten/halt/human-review actions. Layer 8 may compose optional offline trading guidance and option-expression context from the Layer 7 thesis. Layer 9 event-risk governance uses the Layer 7 thesis as the canonical intervention target and may attach Layer 8 context when available. For crypto/direct-underlying-only routes, option-expression evidence is not required. Layer 9 still must not directly send broker orders or mutate accounts; execution risk-control owns any resulting broker action.
+Layer 8 produces the base direct-underlying action thesis. Layer 10's canonical intervention target is that Layer 8 underlying/spot thesis; it may intervene for high-severity residual event risk by blocking new entries, capping exposure, reducing exposure, or nominating flatten/halt/human-review actions. Layer 9 may compose optional offline trading guidance and option-expression context from the Layer 8 thesis. Layer 10 event-risk governance uses the Layer 8 thesis as the canonical intervention target and may attach Layer 9 context when available. For crypto/direct-underlying-only routes, option-expression evidence is not required. Layer 10 still must not directly send broker orders or mutate accounts; execution risk-control owns any resulting broker action.
 
 ## Historical-training readiness classification
 

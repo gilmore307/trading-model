@@ -1,6 +1,6 @@
 # Promotion Readiness
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-17): Layers 1-9 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 4-9 numbering; historical/applied migration records may retain prior numbering.
+> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Downstream physical implementation paths may retain prior Layer 6-9 numbering until dedicated renumbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -9,7 +9,7 @@ Date: 2026-05-07
 
 ## Purpose
 
-Layers 1-9 are structurally revised for model design, but production promotion is a separate evidence gate. This document turns the accepted promotion/calibration rules into a single per-layer readiness matrix and checklist.
+Layers 1-10 are structurally revised for model design, but production promotion is a separate evidence gate. This document turns the accepted promotion/calibration rules into a single per-layer readiness matrix and checklist.
 
 A layer may not be treated as production-promoted merely because its contract, deterministic scaffold, fixture tests, registry score names, or local evaluation helpers exist.
 
