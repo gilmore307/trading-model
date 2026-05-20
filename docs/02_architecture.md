@@ -47,6 +47,7 @@ This separation is mandatory:
 - Layer 1 does not choose sectors, ETFs, stocks, or strategies.
 - Layer 2 does not choose final stocks or strategy parameters.
 - Layer 3 is the first target-state layer.
+- Layer 4 and later operate on one selected target per run; multiple targets are handled by repeated target-scoped runs, not by widening downstream model interfaces.
 - Real ticker/company identity is audit/routing metadata, not a fitting feature.
 
 ## Canonical Layers

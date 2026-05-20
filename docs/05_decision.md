@@ -885,4 +885,6 @@ Task execution may remain target-major across folds: one routing symbol can comp
 
 The Layer 3 candidate policy is rule-fixed rather than ticker-fixed. Live routing and promotion benchmarks construct candidates from current Layer 2 selected/watch sectors, sector constituents or reviewed proxies, current market-wide hot/liquid names, liquidity/spread/data-quality filters, optional optionability diagnostics, and controls when evaluation requires contrast.
 
+Layer 4 and later keep a single selected-target interface. When Layer 3 returns several ranked targets, orchestration runs Layer 4+ separately for each target instead of changing downstream models into multi-target batch models.
+
 Layer 3 may emit `3_target_handoff_state`, `3_target_handoff_bias`, `3_target_handoff_rank`, and `3_target_selection_reason_codes` as target-selection evidence. It still must not emit final actions, entry/exit orders, position sizes, portfolio weights, execution policy, or option contracts.
