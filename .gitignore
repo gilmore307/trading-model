@@ -33,5 +33,4 @@ credentials/
 .DS_Store
 .vscode/
 .idea/
-# Local runtime artifacts
-storage/runtime/
+# Component-local storage is not an active runtime root.

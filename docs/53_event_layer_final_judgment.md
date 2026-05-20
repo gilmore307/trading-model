@@ -33,8 +33,8 @@ The layer should govern risk, uncertainty, lifecycle timing, canonical-event ide
 
 Artifacts:
 
-- `/root/projects/trading-storage/storage/model/option_activity_matched_control_study_20260515/`
-- `/root/projects/trading-storage/storage/model/option_activity_strict_filter_study_20260515/`
+- `/root/projects/trading-storage/storage/model_artifacts/option_activity_matched_control_study_20260515/`
+- `/root/projects/trading-storage/storage/model_artifacts/option_activity_strict_filter_study_20260515/`
 
 Complete-evidence option activity looked directionally interesting before controls, especially bullish activity. After matched controls, the current abnormality definition did not prove robust incremental path or directional value. Strict OI/IV/underlying/term/skew filters did not rescue it.
 
@@ -42,7 +42,7 @@ Conclusion: option abnormality is useful evidence/provenance, but not a promoted
 
 ### 2. Raw news proximity was too broad
 
-Artifact: `/root/projects/trading-storage/storage/model/option_event_risk_amplifier_study_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/option_event_risk_amplifier_study_20260515/`
 
 Raw PIT news appeared near almost every abnormal option window, so news proximity could not separate meaningful event risk from ordinary news saturation. Broad headline-keyword families are not a valid promotion route.
 
@@ -52,8 +52,8 @@ Conclusion: event work must be family-specific and canonical-source-led.
 
 Artifacts:
 
-- `/root/projects/trading-storage/storage/model/option_event_risk_amplifier_study_20260515/`
-- `/root/projects/trading-storage/storage/model/earnings_guidance_event_scouting_20260515/`
+- `/root/projects/trading-storage/storage/model_artifacts/option_event_risk_amplifier_study_20260515/`
+- `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_event_scouting_20260515/`
 
 The initial headline-keyword earnings/guidance slice was positive but small. The canonical Nasdaq-calendar control pass improved evidence quality, but produced only 9 abnormal windows on canonical earnings-shell dates across 2 symbols. Those windows showed positive 5d absolute-return and path-range deltas, but lacked enough coverage for 10d/14d stability or promotion.
 
@@ -156,7 +156,7 @@ Prohibited EventRiskGovernor outputs:
 
 ## First itemized test after judgment — earnings/guidance event-alone
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_event_alone_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_event_alone_q4_2025_20260515/`
 
 The first one-by-one follow-up test examined canonical earnings/guidance scheduled shells alone, before option abnormality or result interpretation.
 
@@ -166,7 +166,7 @@ Judgment update: earnings/guidance remains the strongest family to continue, but
 
 ## Second itemized test — official result-artifact scout
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_result_artifact_scout_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_result_artifact_scout_q4_2025_20260515/`
 
 The next follow-up joined the Q4 2025 earnings shells to official SEC submission/companyfacts artifacts. All 12 events had an official SEC result artifact in the event window; 11 had partial XBRL metric-direction interpretation, while guidance interpretation remained missing.
 
@@ -174,7 +174,7 @@ Judgment update: official SEC result artifacts strengthen the canonical event-fa
 
 ## Third itemized test — earnings plus option-abnormality split
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_option_abnormality_split_scout_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_option_abnormality_split_scout_20260515/`
 
 The first earnings+option split check used only existing reviewed local artifacts. It found two option-covered canonical earnings rows, both with verified option abnormality, and zero verified earnings-without-option-abnormality controls.
 
@@ -182,7 +182,7 @@ Judgment update: the earnings+option amplifier claim is still blocked. The next 
 
 ## Fourth itemized test — sampled no-option-abnormality controls
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_option_no_abnormality_control_probe_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_option_no_abnormality_control_probe_20260515/`
 
 A bounded sampled-contract probe attempted to create earnings-without-option-abnormality controls for the canonical earnings set. It referenced 80 contract probes for the eight earnings rows not covered by the prior option matrix and found zero verified no sampled option-abnormality controls. Six newly probed earnings rows had verified option abnormality; two rows had partial contract coverage due ThetaData HTTP 472 but still emitted abnormality on successful sampled contracts.
 
@@ -190,7 +190,7 @@ Judgment update: the earnings+option amplifier comparison remains blocked, not p
 
 ## Fifth itemized test — same-symbol non-earnings option controls
 
-Artifact: `/root/projects/trading-storage/storage/model/same_symbol_non_earnings_option_control_verification_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/same_symbol_non_earnings_option_control_verification_20260515/`
 
 After the earnings-date sampled probe found zero clean controls, the next route changed control design: same-symbol non-earnings candidate windows from the existing local option matrix, excluding dates within ±3 calendar days of a same-symbol Nasdaq earnings shell.
 
@@ -200,7 +200,7 @@ Judgment update: the earnings+option amplifier comparison remains blocked more s
 
 ## Sixth itemized test — non-earnings option-standard saturation
 
-Artifact: `/root/projects/trading-storage/storage/model/option_abnormality_non_earnings_saturation_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/option_abnormality_non_earnings_saturation_20260515/`
 
 The reviewed option matrix already contained 34 same-symbol non-earnings symbol/date windows. Every one emitted complete option-abnormality events under the current standard, with at least 14 complete events per non-earnings symbol/date.
 
@@ -208,7 +208,7 @@ Judgment update: this explains why clean earnings-without-option-abnormality con
 
 ## Seventh itemized test — official guidance readiness
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_readiness_scout_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_readiness_scout_q4_2025_20260515/`
 
 The readiness scout found official SEC result artifacts for all 12 Q4 2025 earnings events and partial result context for 11, but found zero official guidance interpretations, zero expectation baselines, and zero signed-direction-ready rows.
 
@@ -216,7 +216,7 @@ Judgment update: earnings/guidance remains useful as direction-neutral event-ris
 
 ## Eighth itemized test — official artifact coverage gate
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_artifact_coverage_scout_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_artifact_coverage_scout_q4_2025_20260515/`
 
 The coverage scout consumed the Q4 2025 interpreted earnings/result rows and selected SEC result filing references. It performed zero provider calls and checked whether local official company document text artifacts exist for guidance/outlook interpretation.
 
@@ -226,7 +226,7 @@ Judgment update: SEC metadata and normalized facts are not enough. Earnings/guid
 
 ## Ninth itemized test — official document text acquisition
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_artifact_coverage_with_documents_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_artifact_coverage_with_documents_q4_2025_20260515/`
 
 A bounded SEC acquisition fetched the selected official result filing document text for all 12 Q4 2025 earnings events. The follow-up coverage gate found 12/12 local official document text artifacts and zero acquisition failures.
 
@@ -234,7 +234,7 @@ Judgment update: this resolves the previous local-document blocker, but not the 
 
 ## Tenth itemized test — official guidance-text candidate scout
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_text_candidate_scout_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_text_candidate_scout_q4_2025_20260515/`
 
 The scout scanned the 12 acquired official SEC documents for guidance/outlook-like candidate spans. It found 11 events with candidate non-boilerplate spans and one event with boilerplate/safe-harbor-only matches. It performed zero provider calls.
 
@@ -242,7 +242,7 @@ Judgment update: this narrows the human/reviewed interpretation queue, but it is
 
 ## Eleventh itemized test — official guidance interpretation review
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_interpretation_review_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_interpretation_review_q4_2025_20260515/`
 
 The review classified official-document candidate spans into partial future operating/financial context versus rejected boilerplate/accounting/risk language. It found 9 partial guidance-context events and 3 reviewed no accepted guidance-context events.
 
@@ -250,7 +250,7 @@ Judgment update: this is useful event context, but not signed alpha. Accepted gu
 
 ## Twelfth itemized test — expectation baseline readiness gate
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_expectation_baseline_readiness_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_expectation_baseline_readiness_q4_2025_20260515/`
 
 The readiness gate formalized point-in-time baseline acceptance before signed earnings/guidance interpretation. It accepts EPS consensus, revenue consensus, prior company guidance, or guidance consensus/analyst range artifacts only when provenance and point-in-time clocks are present and predate the event under current date-only clocks.
 
@@ -258,7 +258,7 @@ Judgment update: the diagnostic slice has 0 supplied baseline artifacts and 12 m
 
 ## Thirteenth itemized test — existing calendar baseline source audit
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_baseline_source_audit_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_baseline_source_audit_q4_2025_20260515/`
 
 The audit found matching Nasdaq earnings-calendar rows for all 12 reviewed events, and all 12 contained EPS forecast-like fields. However, all audited snapshots were captured after the historical event dates and include actual/surprise fields. The existing artifacts are not acceptable point-in-time baselines.
 
@@ -266,7 +266,7 @@ Judgment update: the current system has a plausible future EPS-consensus route, 
 
 ## Fourteenth itemized test — Nasdaq future earnings-calendar route probe
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_nasdaq_future_calendar_probe_20260518/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_nasdaq_future_calendar_probe_20260518/`
 
 A bounded future-date Nasdaq probe returned 43 future earnings rows for `2026-05-18`; 19 rows contained EPS forecast-like fields while actual EPS and surprise fields were absent. This confirms Nasdaq can be used as a future EPS-consensus snapshot candidate route.
 
@@ -276,8 +276,8 @@ Judgment update: this route is useful for future monitoring and PIT baseline cap
 
 Artifacts:
 
-- `/root/projects/trading-storage/storage/model/earnings_guidance_prior_official_baseline_source_audit_q4_2025_20260515/`
-- `/root/projects/trading-storage/storage/model/earnings_guidance_prior_official_document_coverage_q4_2025_20260515/`
+- `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_prior_official_baseline_source_audit_q4_2025_20260515/`
+- `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_prior_official_document_coverage_q4_2025_20260515/`
 
 The source audit selected prior official SEC filings for all 12 diagnostic events after consuming SEC submission rows. The document coverage pass then confirmed 12/12 prior official document texts are locally present.
 
@@ -285,7 +285,7 @@ Judgment update: the prior-company-guidance source route is now materially unblo
 
 ## Sixteenth itemized test — prior official guidance baseline extraction
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_prior_guidance_extraction_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_prior_guidance_extraction_q4_2025_20260515/`
 
 The extraction pass accepted 1/12 events as having explicit prior-company-guidance baseline context and rejected 11/12 as no prior guidance context found in the selected prior official filing.
 
@@ -293,7 +293,7 @@ Judgment update: prior-company-guidance baseline extraction is partially unblock
 
 ## Seventeenth itemized test — prior earnings-exhibit guidance extraction
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_prior_guidance_exhibit_extraction_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_prior_guidance_exhibit_extraction_q4_2025_20260515/`
 
 The refined prior-guidance route reviewed official prior-quarter earnings/outlook exhibits rather than primary 8-K wrapper filings. It found accepted `prior_company_guidance` baseline context for 7 of 12 diagnostic events, across 8 accepted exhibit documents and 42 accepted spans. Five events still have no accepted prior-guidance context in this route. The study performed zero provider calls.
 
@@ -307,7 +307,7 @@ Judgment update: revenue consensus is not fabricated from post-event pages or un
 
 ## Eighteenth itemized test — current-vs-prior guidance comparison readiness
 
-Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_current_prior_comparison_readiness_q4_2025_20260516/`
+Artifact: `/root/projects/trading-storage/storage/model_artifacts/earnings_guidance_current_prior_comparison_readiness_q4_2025_20260516/`
 
 The no-provider readiness pass joined prior-company-guidance baseline context, current official guidance-context review rows, and official result artifacts. It found 7 accepted prior-guidance baseline events and 9 current partial guidance-context events, but 0 current comparable company-guidance events, 0 accepted raise/cut rows, and 0 signed-direction-ready rows.
 
