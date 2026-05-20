@@ -19,7 +19,7 @@ from pathlib import Path
 from statistics import mean, pstdev
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
-from model_runtime.config import trading_data_root
+from model_runtime.config import data_storage_root, model_storage_root
 from models.model_10_event_risk_governor.event_price_association_readiness import (
     CPI_KEYWORDS,
     CandidateEvent,
@@ -28,6 +28,7 @@ from models.model_10_event_risk_governor.event_price_association_readiness impor
     _contains_any,
     _daily_bars,
     _fnum,
+    _monthly_backfill_root,
     _parse_date,
     _read_csv,
     _read_macro_events,
@@ -35,8 +36,8 @@ from models.model_10_event_risk_governor.event_price_association_readiness impor
 )
 
 CONTRACT_TYPE = "cpi_inflation_association_readiness"
-DEFAULT_DATA_ROOT = trading_data_root()
-DEFAULT_OUTPUT_DIR = Path("storage/cpi_inflation_association_readiness_20260516")
+DEFAULT_DATA_ROOT = data_storage_root()
+DEFAULT_OUTPUT_DIR = model_storage_root() / "cpi_inflation_association_readiness_20260516"
 DEFAULT_PRICE_SYMBOLS = ("TLT", "XLF", "XLK", "HYG", "XLE")
 DEFAULT_HORIZONS = (1, 5)
 DEFAULT_CONTROL_WINDOW_DAYS = 7
@@ -162,7 +163,7 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, Any]], *, fieldnames: Seq
 
 
 def _calendar_months(data_root: Path) -> tuple[str, ...]:
-    root = data_root / "storage/monthly_backfill/trading_economics_calendar_web"
+    root = _monthly_backfill_root(data_root) / "trading_economics_calendar_web"
     months = sorted({path.relative_to(root).parts[0] for path in root.glob("*/runs/*/saved/trading_economics_calendar_event.csv")})
     return tuple(months)
 

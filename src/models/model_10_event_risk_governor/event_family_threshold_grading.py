@@ -15,10 +15,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
+from model_runtime.config import model_storage_root
+
 CONTRACT_TYPE = "event_family_threshold_grading"
 SUMMARY_CONTRACT_TYPE = "event_family_threshold_grading_summary"
-DEFAULT_ASSOCIATION_DIR = Path("storage/event_family_all_association_20260516")
-DEFAULT_OUTPUT_DIR = Path("storage/event_family_threshold_grading_20260516")
+DEFAULT_ASSOCIATION_DIR = model_storage_root() / "event_family_all_association_20260516"
+DEFAULT_OUTPUT_DIR = model_storage_root() / "event_family_threshold_grading_20260516"
 
 ACCEPTED_RISK_CONTROL = "accepted_risk_control"
 THRESHOLD_REVIEW = "threshold_review_candidate"

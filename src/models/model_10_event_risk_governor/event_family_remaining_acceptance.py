@@ -15,10 +15,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
+from model_runtime.config import model_storage_root
+
 CONTRACT_TYPE = "event_family_remaining_acceptance"
 SUMMARY_CONTRACT_TYPE = "event_family_remaining_acceptance_summary"
-DEFAULT_CATALOG_PATH = Path("storage/event_family_batch_catalog_20260516/event_family_batch_catalog.json")
-DEFAULT_OUTPUT_DIR = Path("storage/event_family_remaining_acceptance_20260516")
+DEFAULT_CATALOG_PATH = model_storage_root() / "event_family_batch_catalog_20260516" / "event_family_batch_catalog.json"
+DEFAULT_OUTPUT_DIR = model_storage_root() / "event_family_remaining_acceptance_20260516"
 
 RISK_ONLY_FAMILIES = {"earnings_guidance_scheduled_shell", "cpi_inflation_release"}
 TEMPORARY_EVIDENCE_FAMILIES = {"cpi_inflation_release"}
@@ -43,27 +45,27 @@ EXPECTATION_BASELINE_FAMILIES = {
 
 EVIDENCE_BY_FAMILY: dict[str, tuple[str, ...]] = {
     "earnings_guidance_scheduled_shell": (
-        "storage/earnings_guidance_event_alone_q4_2025_20260515/report.json",
+        str(model_storage_root() / "earnings_guidance_event_alone_q4_2025_20260515" / "report.json"),
         "docs/52_earnings_guidance_event_family_packet.md",
     ),
     "earnings_guidance_result_metrics": (
-        "storage/earnings_guidance_readiness_scout_q4_2025_20260515/report.json",
-        "storage/earnings_guidance_result_artifact_scout_q4_2025_20260515/report.json",
+        str(model_storage_root() / "earnings_guidance_readiness_scout_q4_2025_20260515" / "report.json"),
+        str(model_storage_root() / "earnings_guidance_result_artifact_scout_q4_2025_20260515" / "report.json"),
     ),
     "earnings_guidance_raise_cut_or_withdrawal": (
-        "storage/earnings_guidance_current_prior_comparison_readiness_q4_2025_20260516/report.json",
-        "storage/earnings_guidance_prior_guidance_exhibit_extraction_q4_2025_20260515/report.json",
+        str(model_storage_root() / "earnings_guidance_current_prior_comparison_readiness_q4_2025_20260516" / "report.json"),
+        str(model_storage_root() / "earnings_guidance_prior_guidance_exhibit_extraction_q4_2025_20260515" / "report.json"),
     ),
     "cpi_inflation_release": (
-        "storage/cpi_release_correlation_study_20260516/strict_summary.json",
-        "storage/cpi_abnormal_release_correlation_study_20260516/abnormal_cpi_release_summary.json",
-        "storage/cpi_surprise_correlation_study_20260516/cpi_surprise_summary.json",
-        "storage/te_cpi_surprise_correlation_study_20260516/te_cpi_surprise_summary.json",
+        str(model_storage_root() / "cpi_release_correlation_study_20260516" / "strict_summary.json"),
+        str(model_storage_root() / "cpi_abnormal_release_correlation_study_20260516" / "abnormal_cpi_release_summary.json"),
+        str(model_storage_root() / "cpi_surprise_correlation_study_20260516" / "cpi_surprise_summary.json"),
+        str(model_storage_root() / "te_cpi_surprise_correlation_study_20260516" / "te_cpi_surprise_summary.json"),
     ),
     "option_derivatives_abnormality": (
-        "storage/option_activity_matched_control_study_20260515/",
-        "storage/option_activity_strict_filter_study_20260515/",
-        "storage/option_event_risk_amplifier_study_20260515/",
+        str(model_storage_root() / "option_activity_matched_control_study_20260515"),
+        str(model_storage_root() / "option_activity_strict_filter_study_20260515"),
+        str(model_storage_root() / "option_event_risk_amplifier_study_20260515"),
     ),
 }
 

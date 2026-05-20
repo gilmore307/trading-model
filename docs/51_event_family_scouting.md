@@ -96,7 +96,7 @@ Raw event proximity alone is explicitly insufficient.
 
 ### Option abnormality alone
 
-Artifact: `/root/projects/trading-model/storage/option_activity_matched_control_study_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model/option_activity_matched_control_study_20260515/`
 
 Result: current complete-evidence option abnormality did not prove a robust incremental relationship versus matched controls.
 
@@ -107,7 +107,7 @@ Status: `deferred_low_signal` for standalone option abnormality.
 
 ### Strict option abnormality filters
 
-Artifact: `/root/projects/trading-model/storage/option_activity_strict_filter_study_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model/option_activity_strict_filter_study_20260515/`
 
 Result: intuitive strict filters did not rescue the relationship. Bullish filters became underpowered and generally underperformed controls. Bearish filters sometimes improved directional deltas but were small and still weak on path expansion.
 
@@ -115,7 +115,7 @@ Status: `deferred_low_signal` for threshold-only option abnormality refinement.
 
 ### Raw news proximity as amplifier
 
-Artifact: `/root/projects/trading-model/storage/option_event_risk_amplifier_study_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model/option_event_risk_amplifier_study_20260515/`
 
 Result: raw Alpaca-news proximity was too broad. 147/152 abnormal windows had prior/same-day PIT news, so "near news" could not separate signal from ordinary news saturation. Overall PIT-news-proximate windows had roughly flat/negative matched-control deltas.
 
@@ -145,7 +145,7 @@ Required next evidence for this family:
 - verified no-option-abnormality controls before any earnings+option abnormality amplifier claim;
 - split stability across more dates, expiries, and symbols.
 
-Latest control update: `/root/projects/trading-model/storage/same_symbol_non_earnings_option_control_verification_20260515/` changed the blocked earnings-control search to same-symbol non-earnings option windows and still found zero verified no sampled option-abnormality controls across 24 candidates. This strengthens the block on option-abnormality amplifier promotion under the current high-emission option-event standard.
+Latest control update: `/root/projects/trading-storage/storage/model/same_symbol_non_earnings_option_control_verification_20260515/` changed the blocked earnings-control search to same-symbol non-earnings option windows and still found zero verified no sampled option-abnormality controls across 24 candidates. This strengthens the block on option-abnormality amplifier promotion under the current high-emission option-event standard.
 
 Status: `scouting`.
 

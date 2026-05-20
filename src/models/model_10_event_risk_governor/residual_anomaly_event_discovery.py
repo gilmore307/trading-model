@@ -18,15 +18,15 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, Mapping, Sequence, TextIO
 
-from model_runtime.config import trading_data_root
+from model_runtime.config import data_storage_root, model_runtime_root, model_storage_root
 from models.model_10_event_risk_governor.price_anomaly_event_discovery import _event_family_dates, _nearby, _parse_dt
 
 CONTRACT_TYPE = "residual_anomaly_event_discovery"
 SUMMARY_CONTRACT_TYPE = "residual_anomaly_event_discovery_summary"
 PROMOTION_REVIEW_PACKET_CONTRACT_TYPE = "event_family_strategy_promotion_review_packet"
-DEFAULT_MODEL_RUNTIME_ROOT = Path("storage/runtime")
-DEFAULT_SOURCE_ROOT = trading_data_root() / "storage/monthly_backfill"
-DEFAULT_OUTPUT_DIR = Path("storage/residual_anomaly_event_discovery_20260516")
+DEFAULT_MODEL_RUNTIME_ROOT = model_runtime_root()
+DEFAULT_SOURCE_ROOT = data_storage_root() / "monthly_backfill"
+DEFAULT_OUTPUT_DIR = model_storage_root() / "residual_anomaly_event_discovery_20260516"
 DEFAULT_EVALUATION_MONTH = "2016-01"
 DEFAULT_EVENT_WINDOW_DAYS = 1
 MIN_RESIDUAL_SEVERITY = 0.01

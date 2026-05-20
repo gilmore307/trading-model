@@ -19,16 +19,15 @@ from statistics import mean
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 import glob
 
-from model_runtime.config import trading_data_root
+from model_runtime.config import data_storage_root, model_storage_root
 from models.model_10_event_risk_governor.event_family_empirical_coverage import FAMILY_KEYWORDS
 
 CONTRACT_TYPE = "event_family_all_association"
 SUMMARY_CONTRACT_TYPE = "event_family_all_association_summary"
-DEFAULT_COVERAGE_PATH = Path("storage/event_family_empirical_coverage_20260516/event_family_empirical_coverage.json")
-DEFAULT_OUTPUT_DIR = Path("storage/event_family_all_association_20260516")
-DEFAULT_TRADING_DATA_ROOT = trading_data_root()
-DEFAULT_BAR_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill/alpaca_bars"
-DEFAULT_SOURCE_ROOT = DEFAULT_TRADING_DATA_ROOT / "storage/monthly_backfill"
+DEFAULT_COVERAGE_PATH = model_storage_root() / "event_family_empirical_coverage_20260516" / "event_family_empirical_coverage.json"
+DEFAULT_OUTPUT_DIR = model_storage_root() / "event_family_all_association_20260516"
+DEFAULT_BAR_ROOT = data_storage_root() / "monthly_backfill" / "alpaca_bars"
+DEFAULT_SOURCE_ROOT = data_storage_root() / "monthly_backfill"
 DEFAULT_PROXY_SYMBOLS = ("SPY", "QQQ", "IWM", "XLF", "XLK", "XLE", "XLY", "XLP", "XLI", "XLB", "HYG", "LQD")
 EVENT_MONTH = "2016-01"
 

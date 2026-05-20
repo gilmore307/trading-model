@@ -295,19 +295,19 @@ skew_forward_change
 
 Important caveat: a call-buying surge is only directionally bullish when the system has enough side/aggressor/opening evidence. Otherwise it is an option-activity path-expansion signal with `unknown_direction_activity` or `review_required` direction.
 
-Pilot evidence note: `/root/projects/trading-model/storage/option_direction_pilot_20260515_aapl/` contains a diagnostic AAPL one-date pilot using ThetaData option event timeline rows, Alpaca underlying daily bars, and ThetaData option OHLC snapshots. It validates the label shape but is not promotion evidence: one symbol/date/strike, duplicated same-day forward labels, no OI/skew/sweep/block context, and no calibrated direction confidence. The pilot also clarifies label policy: underlying directional returns are sign-adjusted by bullish/bearish hypothesis, while ask-side call/put option-contract payoff is measured as long-contract forward return and must not multiply put returns by the bearish sign.
+Pilot evidence note: `/root/projects/trading-storage/storage/model/option_direction_pilot_20260515_aapl/` contains a diagnostic AAPL one-date pilot using ThetaData option event timeline rows, Alpaca underlying daily bars, and ThetaData option OHLC snapshots. It validates the label shape but is not promotion evidence: one symbol/date/strike, duplicated same-day forward labels, no OI/skew/sweep/block context, and no calibrated direction confidence. The pilot also clarifies label policy: underlying directional returns are sign-adjusted by bullish/bearish hypothesis, while ask-side call/put option-contract payoff is measured as long-contract forward return and must not multiply put returns by the bearish sign.
 
-Cross-section pilot note: `/root/projects/trading-model/storage/option_direction_cross_section_20260515/` extends the diagnostic slice to NVDA, JPM, XOM, LLY, and RKLB on the same event date. The headline result is mixed: ask-side CALL evidence is more promising than ask-side PUT evidence, especially on symbol-weighted 10d outcomes, but neither direction can be treated as a universal rule. Ask-side PUT activity was weak as a stable bearish signal in this slice. This remains `diagnostic_only_abnormality_incomplete`: it reinforces that option direction needs OI/opening-vs-closing, skew/term-structure, sweep/block, and confidence filters before judgment.
+Cross-section pilot note: `/root/projects/trading-storage/storage/model/option_direction_cross_section_20260515/` extends the diagnostic slice to NVDA, JPM, XOM, LLY, and RKLB on the same event date. The headline result is mixed: ask-side CALL evidence is more promising than ask-side PUT evidence, especially on symbol-weighted 10d outcomes, but neither direction can be treated as a universal rule. Ask-side PUT activity was weak as a stable bearish signal in this slice. This remains `diagnostic_only_abnormality_incomplete`: it reinforces that option direction needs OI/opening-vs-closing, skew/term-structure, sweep/block, and confidence filters before judgment.
 
-Complete-coverage cross-section note: `/root/projects/trading-model/storage/option_direction_complete_coverage_cross_section_20260515/` reruns the diagnostic direction study after enabling real ThetaData OI/IV/skew/term/underlying auto-context enrichment. It emitted 239 events across AAPL, NVDA, JPM, XOM, LLY, and RKLB; 231 passed `abnormality_coverage_complete`, and all 60 auto-context endpoint requests succeeded with no hard blockers. In the complete-evidence subset, `bullish_activity` was positive on 10d/14d directional underlying labels and long-option payoffs, while `bearish_activity` remained weak/negative outside the 5d horizon. Ambiguous classes such as `mixed_or_conflicting_activity`, `bullish_activity_or_put_selling`, and `bearish_activity_or_call_selling` remain non-directional diagnostics. This is stronger than the incomplete pilot but still not promotion evidence because it is one event date and one expiration.
+Complete-coverage cross-section note: `/root/projects/trading-storage/storage/model/option_direction_complete_coverage_cross_section_20260515/` reruns the diagnostic direction study after enabling real ThetaData OI/IV/skew/term/underlying auto-context enrichment. It emitted 239 events across AAPL, NVDA, JPM, XOM, LLY, and RKLB; 231 passed `abnormality_coverage_complete`, and all 60 auto-context endpoint requests succeeded with no hard blockers. In the complete-evidence subset, `bullish_activity` was positive on 10d/14d directional underlying labels and long-option payoffs, while `bearish_activity` remained weak/negative outside the 5d horizon. Ambiguous classes such as `mixed_or_conflicting_activity`, `bullish_activity_or_put_selling`, and `bearish_activity_or_call_selling` remain non-directional diagnostics. This is stronger than the incomplete pilot but still not promotion evidence because it is one event date and one expiration.
 
-Thorough matrix note: `/root/projects/trading-model/storage/option_direction_thorough_matrix_20260515/` expands the same complete-evidence diagnostic to AAPL, MSFT, NVDA, AMD, JPM, XOM, CVX, LLY, PFE, COIN, TSLA, and RKLB across event dates 2026-04-17, 2026-04-24, and 2026-05-01. It emitted 841 events; 786 passed `abnormality_coverage_complete`; 385 auto-context endpoint requests produced 4 hard blockers, all PFE 27.5 same-strike 2026-05-22 term-structure IV HTTP 472 responses. Complete-evidence `bullish_activity` stayed positive overall (10d directional avg +5.13%, hit 55.3%, long-option 10d avg +54.2%) but was symbol-unstable. Complete-evidence `bearish_activity` did not validate overall (10d directional avg -6.10%, hit 37.4%, long-option 10d avg -51.7%). This reinforces the current rule: bullish option abnormality is a candidate conditional signal, bearish option abnormality needs stricter filters or may fail, and neither should be promoted before broader date/expiry stability and matched non-event controls.
+Thorough matrix note: `/root/projects/trading-storage/storage/model/option_direction_thorough_matrix_20260515/` expands the same complete-evidence diagnostic to AAPL, MSFT, NVDA, AMD, JPM, XOM, CVX, LLY, PFE, COIN, TSLA, and RKLB across event dates 2026-04-17, 2026-04-24, and 2026-05-01. It emitted 841 events; 786 passed `abnormality_coverage_complete`; 385 auto-context endpoint requests produced 4 hard blockers, all PFE 27.5 same-strike 2026-05-22 term-structure IV HTTP 472 responses. Complete-evidence `bullish_activity` stayed positive overall (10d directional avg +5.13%, hit 55.3%, long-option 10d avg +54.2%) but was symbol-unstable. Complete-evidence `bearish_activity` did not validate overall (10d directional avg -6.10%, hit 37.4%, long-option 10d avg -51.7%). This reinforces the current rule: bullish option abnormality is a candidate conditional signal, bearish option abnormality needs stricter filters or may fail, and neither should be promoted before broader date/expiry stability and matched non-event controls.
 
-Matched-control note: `/root/projects/trading-model/storage/option_activity_matched_control_study_20260515/` compares unique complete-evidence abnormal windows from the thorough matrix against same-symbol underlying control windows matched on prior 1d absolute return, price level, and calendar distance. It produced 152 abnormal windows and 456 matched controls. This conservative pass did **not** confirm an incremental relationship: `bullish_activity` 10d path-range delta was -0.10 percentage points and 10d directional delta was -0.98 percentage points versus controls; `bearish_activity` 10d path-range delta was -0.34 percentage points with only a small +0.78 percentage-point directional delta. Controls were not separately queried as no-option-abnormality dates, so the result blocks promotion rather than permanently rejecting refined future definitions.
+Matched-control note: `/root/projects/trading-storage/storage/model/option_activity_matched_control_study_20260515/` compares unique complete-evidence abnormal windows from the thorough matrix against same-symbol underlying control windows matched on prior 1d absolute return, price level, and calendar distance. It produced 152 abnormal windows and 456 matched controls. This conservative pass did **not** confirm an incremental relationship: `bullish_activity` 10d path-range delta was -0.10 percentage points and 10d directional delta was -0.98 percentage points versus controls; `bearish_activity` 10d path-range delta was -0.34 percentage points with only a small +0.78 percentage-point directional delta. Controls were not separately queried as no-option-abnormality dates, so the result blocks promotion rather than permanently rejecting refined future definitions.
 
-Strict-filter note: `/root/projects/trading-model/storage/option_activity_strict_filter_study_20260515/` tests intuitive stronger candidate definitions: net opening OI increase, positive IV change, underlying confirmation, front-month richening, and direction-supportive/neutral skew. These filters did **not** rescue the relationship. Bullish strict filters became underpowered and generally underperformed matched controls; e.g. `opening_iv_up` bullish had only 5 valid windows, 10d directional delta -5.95 percentage points, and 10d path-range delta -2.96 percentage points. Bearish strict filters sometimes improved directional deltas but remained small and had negative path-range deltas. Current option abnormality definitions therefore remain diagnostic/provenance evidence and should not be promoted without a different feature definition or stronger controlled evidence.
+Strict-filter note: `/root/projects/trading-storage/storage/model/option_activity_strict_filter_study_20260515/` tests intuitive stronger candidate definitions: net opening OI increase, positive IV change, underlying confirmation, front-month richening, and direction-supportive/neutral skew. These filters did **not** rescue the relationship. Bullish strict filters became underpowered and generally underperformed matched controls; e.g. `opening_iv_up` bullish had only 5 valid windows, 10d directional delta -5.95 percentage points, and 10d path-range delta -2.96 percentage points. Bearish strict filters sometimes improved directional deltas but remained small and had negative path-range deltas. Current option abnormality definitions therefore remain diagnostic/provenance evidence and should not be promoted without a different feature definition or stronger controlled evidence.
 
-Event-risk amplifier note: `/root/projects/trading-model/storage/option_event_risk_amplifier_study_20260515/` tests whether option abnormality becomes useful when near Alpaca news. Raw news proximity was too broad: 147/152 abnormal windows had prior/same-day PIT news, and overall PIT-news-proximate windows did not show a robust edge versus matched controls. Family separation was more informative: `earnings_or_guidance_news` had 20 windows across 4 symbols with 10d absolute-return delta about +3.08 percentage points and 10d path-range delta about +1.47 percentage points, while `general_company_news` was negative. This supports a narrower next route: reviewed event interpretation with material event family, lifecycle, known/surprise status, and magnitude before option abnormality is used as an event-risk amplifier.
+Event-risk amplifier note: `/root/projects/trading-storage/storage/model/option_event_risk_amplifier_study_20260515/` tests whether option abnormality becomes useful when near Alpaca news. Raw news proximity was too broad: 147/152 abnormal windows had prior/same-day PIT news, and overall PIT-news-proximate windows did not show a robust edge versus matched controls. Family separation was more informative: `earnings_or_guidance_news` had 20 windows across 4 symbols with 10d absolute-return delta about +3.08 percentage points and 10d path-range delta about +1.47 percentage points, while `general_company_news` was negative. This supports a narrower next route: reviewed event interpretation with material event family, lifecycle, known/surprise status, and magnitude before option abnormality is used as an event-risk amplifier.
 
 Directional proof metrics:
 
@@ -400,7 +400,7 @@ If the study fails:
 
 ## Canonical earnings/guidance scouting control pass — 2026-05-15
 
-Artifact: `/root/projects/trading-model/storage/earnings_guidance_event_scouting_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_event_scouting_20260515/`
 
 This pass reran the event-risk amplifier question using canonical Nasdaq earnings-calendar shells instead of Alpaca headline-keyword `earnings_or_guidance_news` labels. It used 16 reviewed local `release_calendar.csv` artifacts for the three option-abnormality event dates plus all matched-control dates. The study itself made zero provider calls; calendar acquisition happened as a bounded source-data prerequisite in `trading-execution`.
 
@@ -421,7 +421,7 @@ Interpretation:
 
 ## Itemized test 1 — earnings/guidance scheduled-shell event-alone
 
-Artifact: `/root/projects/trading-model/storage/earnings_guidance_event_alone_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_event_alone_q4_2025_20260515/`
 
 After the final event-layer judgment, the first itemized test isolated canonical earnings/guidance scheduled shells from option abnormality and raw-news proximity. The Q4 2025 12-symbol slice paired 12 earnings-shell events with 36 same-symbol non-earnings controls.
 
@@ -437,7 +437,7 @@ This supports the event-layer boundary already chosen: event evidence is current
 
 ## Itemized test 2 — earnings/guidance official result artifacts
 
-Artifact: `/root/projects/trading-model/storage/earnings_guidance_result_artifact_scout_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_result_artifact_scout_q4_2025_20260515/`
 
 The second itemized earnings/guidance test joined scheduled shells to official SEC submission/companyfacts artifacts. It found official result artifacts for all 12 Q4 2025 events and partial reported-metric interpretation for 11 events.
 
@@ -445,7 +445,7 @@ The split by simple result direction remained too small and not directionally re
 
 ## Itemized test 3 — earnings/guidance plus option abnormality split
 
-Artifact: `/root/projects/trading-model/storage/earnings_option_abnormality_split_scout_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model/earnings_option_abnormality_split_scout_20260515/`
 
 A no-provider join between canonical 2026 earnings shells and the reviewed option-direction thorough matrix found only two option-covered earnings rows (`CVX`, `XOM` on `2026-05-01`). Both had verified option abnormality; none provided a verified no-option-abnormality earnings control.
 
@@ -453,7 +453,7 @@ The amplifier comparison is therefore blocked rather than negative or positive. 
 
 ## Itemized test 4 — sampled no-option-abnormality control probe
 
-Artifact: `/root/projects/trading-model/storage/earnings_option_no_abnormality_control_probe_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model/earnings_option_no_abnormality_control_probe_20260515/`
 
 The follow-up sampled five candidate strikes and both CALL/PUT under the same option-event standard for earnings rows missing from the existing option matrix. The probe referenced 80 provider calls and the summarizing model study performed zero provider calls.
 
@@ -463,7 +463,7 @@ This blocks the amplifier comparison. It does not prove option abnormality adds 
 
 ## Itemized test 6 — option-standard saturation on non-earnings windows
 
-Artifact: `/root/projects/trading-model/storage/option_abnormality_non_earnings_saturation_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model/option_abnormality_non_earnings_saturation_20260515/`
 
 A no-provider diagnostic reused the reviewed complete-evidence option matrix. Of 36 symbol/date windows, 34 were not canonical earnings-shell dates. All 34 non-earnings windows still emitted complete option-abnormality events under the current standard; the minimum complete event count per non-earnings symbol/date was 14.
 
@@ -471,7 +471,7 @@ This is now the controlling blocker for earnings+option amplifier testing. The c
 
 ## Itemized test 7 — official guidance readiness
 
-Artifact: `/root/projects/trading-model/storage/earnings_guidance_readiness_scout_q4_2025_20260515/`
+Artifact: `/root/projects/trading-storage/storage/model/earnings_guidance_readiness_scout_q4_2025_20260515/`
 
 A no-provider readiness audit consumed the official result-artifact scout output. All 12 events had official SEC result artifacts, 11 had partial point-in-time result context, but none had official guidance interpretation or expectation baselines.
 

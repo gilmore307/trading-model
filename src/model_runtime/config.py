@@ -35,6 +35,22 @@ def trading_storage_root() -> Path:
     return _path_from_env("TRADING_STORAGE_ROOT", projects_root() / "trading-storage")
 
 
+def component_storage_root(component: str) -> Path:
+    return trading_storage_root() / "storage" / component
+
+
+def model_storage_root() -> Path:
+    return _path_from_env("TRADING_MODEL_STORAGE_ROOT", component_storage_root("model"))
+
+
+def model_runtime_root() -> Path:
+    return model_storage_root() / "runtime"
+
+
+def data_storage_root() -> Path:
+    return _path_from_env("TRADING_DATA_STORAGE_ROOT", component_storage_root("data"))
+
+
 def secret_root() -> Path:
     return _path_from_env("TRADING_SECRET_ROOT", Path("/root/secrets"))
 

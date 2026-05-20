@@ -18,12 +18,12 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
-from model_runtime.config import trading_data_root
+from model_runtime.config import data_storage_root, model_storage_root
 
 CONTRACT_TYPE = "event_price_association_readiness_batch"
-DEFAULT_CATALOG_PATH = Path("storage/event_family_batch_catalog_20260516/event_family_batch_catalog.json")
-DEFAULT_OUTPUT_DIR = Path("storage/event_price_association_readiness_20260516")
-DEFAULT_DATA_ROOT = trading_data_root()
+DEFAULT_CATALOG_PATH = model_storage_root() / "event_family_batch_catalog_20260516" / "event_family_batch_catalog.json"
+DEFAULT_OUTPUT_DIR = model_storage_root() / "event_price_association_readiness_20260516"
+DEFAULT_DATA_ROOT = data_storage_root()
 DEFAULT_MONTH = "2016-01"
 DEFAULT_FAMILY_KEYS = (
     "equity_offering_dilution",
@@ -33,6 +33,12 @@ DEFAULT_FAMILY_KEYS = (
 )
 DEFAULT_PRICE_SYMBOLS = ("TLT", "XLF", "XLK", "HYG", "XLE")
 HORIZONS = (1, 5)
+
+
+def _monthly_backfill_root(data_root: Path) -> Path:
+    if (data_root / "monthly_backfill").exists():
+        return data_root / "monthly_backfill"
+    return data_root / "storage" / "monthly_backfill"
 
 CPI_KEYWORDS = ("cpi", "consumer price", "inflation rate", "core inflation")
 LEGAL_KEYWORDS = (
@@ -255,14 +261,14 @@ def _catalog_by_key(catalog_path: Path) -> dict[str, dict[str, Any]]:
 
 def _completion_receipts(data_root: Path, family_key: str, month: str) -> list[Path]:
     if family_key in {"equity_offering_dilution", "legal_regulatory_investigation"}:
-        patterns = [data_root / f"storage/monthly_backfill/sec_company_financials/{month}/completion_receipt.json"]
+        patterns = [_monthly_backfill_root(data_root) / f"sec_company_financials/{month}/completion_receipt.json"]
     elif family_key == "cpi_inflation_release":
-        patterns = [data_root / f"storage/monthly_backfill/trading_economics_calendar_web/{month}/completion_receipt.json"]
+        patterns = [_monthly_backfill_root(data_root) / f"trading_economics_calendar_web/{month}/completion_receipt.json"]
     elif family_key == "credit_liquidity_stress":
         patterns = [
-            data_root / f"storage/monthly_backfill/gdelt_news/{month}/completion_receipt.json",
-            data_root / f"storage/monthly_backfill/alpaca_news/{month}/completion_receipt.json",
-            data_root / f"storage/monthly_backfill/trading_economics_calendar_web/{month}/completion_receipt.json",
+            _monthly_backfill_root(data_root) / f"gdelt_news/{month}/completion_receipt.json",
+            _monthly_backfill_root(data_root) / f"alpaca_news/{month}/completion_receipt.json",
+            _monthly_backfill_root(data_root) / f"trading_economics_calendar_web/{month}/completion_receipt.json",
         ]
     else:
         patterns = []
@@ -283,7 +289,7 @@ def _receipt_rows(path: Path) -> int:
 
 
 def _source_csvs(data_root: Path, source: str, month: str, filename: str) -> list[Path]:
-    root = data_root / f"storage/monthly_backfill/{source}/{month}/runs"
+    root = _monthly_backfill_root(data_root) / source / month / "runs"
     return sorted(root.glob(f"*/saved/{filename}"))
 
 
@@ -390,7 +396,7 @@ def _daily_bars(path: Path) -> list[dict[str, Any]]:
 
 
 def _bar_path(data_root: Path, symbol: str, month: str) -> Path | None:
-    root = data_root / f"storage/monthly_backfill/alpaca_bars/{symbol}/{month}/runs"
+    root = _monthly_backfill_root(data_root) / "alpaca_bars" / symbol / month / "runs"
     paths = sorted(root.glob("*/saved/equity_bar.csv"))
     if not paths:
         return None

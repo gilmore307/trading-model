@@ -14,15 +14,19 @@ from typing import Any, Iterable, TextIO
 import csv
 import json
 
-from model_runtime.config import trading_data_root
+from model_runtime.config import data_storage_root, model_storage_root
 
 CONTRACT_TYPE = "event_family_batch_catalog"
 SUMMARY_CONTRACT_TYPE = "event_family_batch_summary"
-DEFAULT_OUTPUT_DIR = Path("storage/event_family_batch_catalog_20260516")
+DEFAULT_OUTPUT_DIR = model_storage_root() / "event_family_batch_catalog_20260516"
 
 
 def _trading_data_ref(relative_path: str) -> str:
-    return str(trading_data_root() / relative_path)
+    path = Path(relative_path)
+    parts = path.parts
+    if parts and parts[0] == "storage":
+        return str(data_storage_root().joinpath(*parts[1:]))
+    return str(data_storage_root() / path)
 
 
 @dataclass(frozen=True)

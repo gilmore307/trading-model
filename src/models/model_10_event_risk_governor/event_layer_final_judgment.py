@@ -14,15 +14,17 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
+from model_runtime.config import model_storage_root
+
 CONTRACT_TYPE = "event_layer_final_judgment"
 SUMMARY_CONTRACT_TYPE = "event_layer_final_judgment_summary"
-DEFAULT_COVERAGE_PATH = Path("storage/event_family_empirical_coverage_20260516/event_family_empirical_coverage.json")
-DEFAULT_OUTPUT_DIR = Path("storage/event_layer_final_judgment_20260516")
+DEFAULT_COVERAGE_PATH = model_storage_root() / "event_family_empirical_coverage_20260516" / "event_family_empirical_coverage.json"
+DEFAULT_OUTPUT_DIR = model_storage_root() / "event_layer_final_judgment_20260516"
 
-EARNINGS_EVENT_ALONE_REPORT = Path("storage/earnings_guidance_event_alone_q4_2025_20260515/report.json")
-CPI_SURPRISE_REPORT = Path("storage/cpi_surprise_correlation_study_20260516/cpi_surprise_summary.json")
-TE_CPI_SURPRISE_REPORT = Path("storage/te_cpi_surprise_correlation_study_20260516/te_cpi_surprise_summary.json")
-OPTION_MATCHED_CONTROL_REPORT = Path("storage/option_activity_matched_control_study_20260515/report.json")
+EARNINGS_EVENT_ALONE_REPORT = model_storage_root() / "earnings_guidance_event_alone_q4_2025_20260515" / "report.json"
+CPI_SURPRISE_REPORT = model_storage_root() / "cpi_surprise_correlation_study_20260516" / "cpi_surprise_summary.json"
+TE_CPI_SURPRISE_REPORT = model_storage_root() / "te_cpi_surprise_correlation_study_20260516" / "te_cpi_surprise_summary.json"
+OPTION_MATCHED_CONTROL_REPORT = model_storage_root() / "option_activity_matched_control_study_20260515" / "report.json"
 
 FINAL_MODEL_POSTURE = "build_event_risk_governor_not_standalone_event_alpha"
 FINAL_ALPHA_DECISION = "reject_standalone_directional_event_alpha_for_current_evidence"

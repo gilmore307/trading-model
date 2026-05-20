@@ -19,12 +19,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence, TextIO
 
+from model_runtime.config import model_storage_root
+
 CONTRACT_TYPE = "event_family_precondition_completion"
 PACKET_CONTRACT_TYPE = "event_family_scouting_packet"
 SUMMARY_CONTRACT_TYPE = "event_family_precondition_completion_summary"
-DEFAULT_CATALOG_PATH = Path("storage/event_family_batch_catalog_20260516/event_family_batch_catalog.json")
-DEFAULT_ACCEPTANCE_PATH = Path("storage/event_family_remaining_acceptance_20260516/event_family_remaining_acceptance.json")
-DEFAULT_OUTPUT_DIR = Path("storage/event_family_precondition_completion_20260516")
+DEFAULT_CATALOG_PATH = model_storage_root() / "event_family_batch_catalog_20260516" / "event_family_batch_catalog.json"
+DEFAULT_ACCEPTANCE_PATH = model_storage_root() / "event_family_remaining_acceptance_20260516" / "event_family_remaining_acceptance.json"
+DEFAULT_OUTPUT_DIR = model_storage_root() / "event_family_precondition_completion_20260516"
 
 EXPECTATION_BASELINE_FAMILIES = {
     "earnings_guidance_result_metrics",

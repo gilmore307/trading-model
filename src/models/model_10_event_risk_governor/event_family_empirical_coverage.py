@@ -17,13 +17,19 @@ from typing import Any, Iterable, Mapping, Sequence, TextIO
 import glob
 import re
 
-from model_runtime.config import trading_data_root
+from model_runtime.config import data_storage_root, model_storage_root
 
 CONTRACT_TYPE = "event_family_empirical_coverage"
 SUMMARY_CONTRACT_TYPE = "event_family_empirical_coverage_summary"
-DEFAULT_PRECONDITION_PATH = Path("storage/event_family_precondition_completion_20260516/event_family_precondition_completion.json")
-DEFAULT_OUTPUT_DIR = Path("storage/event_family_empirical_coverage_20260516")
-DEFAULT_TRADING_DATA_ROOT = trading_data_root()
+DEFAULT_PRECONDITION_PATH = model_storage_root() / "event_family_precondition_completion_20260516" / "event_family_precondition_completion.json"
+DEFAULT_OUTPUT_DIR = model_storage_root() / "event_family_empirical_coverage_20260516"
+DEFAULT_TRADING_DATA_ROOT = data_storage_root()
+
+
+def _monthly_backfill_root(root: Path) -> Path:
+    if (root / "monthly_backfill").exists():
+        return root / "monthly_backfill"
+    return root / "storage" / "monthly_backfill"
 
 EXISTING_EMPIRICAL_ARTIFACTS: dict[str, tuple[str, ...]] = {
     "earnings_guidance_scheduled_shell": ("storage/earnings_guidance_event_alone_q4_2025_20260515/report.json",),
@@ -192,7 +198,7 @@ def _parse_int(value: Any) -> int:
 
 
 def _receipt_bar_count(root: Path) -> int:
-    return len(glob.glob(str(root / "storage/monthly_backfill/alpaca_bars/*/*/completion_receipt.json")))
+    return len(glob.glob(str(_monthly_backfill_root(root) / "alpaca_bars/*/*/completion_receipt.json")))
 
 
 def _source_profile(root: Path, source_rows: Mapping[str, list[dict[str, str]]]) -> LocalSourceProfile:
@@ -213,7 +219,7 @@ def _is_iso_like_event_row(row: Mapping[str, str]) -> bool:
 
 
 def _load_source_rows(root: Path) -> dict[str, list[dict[str, str]]]:
-    base = root / "storage/monthly_backfill"
+    base = _monthly_backfill_root(root)
     te_rows = _read_csv_rows(str(base / "trading_economics_calendar_web/*/runs/*/saved/trading_economics_calendar_event.csv"))
     return {
         "alpaca_news": _read_csv_rows(str(base / "alpaca_news/*/runs/*/saved/equity_news.csv")),

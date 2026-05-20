@@ -14,9 +14,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Mapping, Sequence, TextIO
 
+from model_runtime.config import model_storage_root
+
 CONTRACT_TYPE = "event_observation_pool_policy"
 SUMMARY_CONTRACT_TYPE = "event_observation_pool_policy_summary"
-DEFAULT_OUTPUT_DIR = Path("storage/event_observation_pool_policy_20260516")
+DEFAULT_OUTPUT_DIR = model_storage_root() / "event_observation_pool_policy_20260516"
 
 
 @dataclass(frozen=True)
