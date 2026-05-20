@@ -1,6 +1,6 @@
 # Realtime Decision Handoff
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Downstream physical implementation paths may retain prior Layer 6-9 numbering until dedicated renumbering; historical/applied migration records may retain prior numbering.
+> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -23,7 +23,7 @@ trading-execution realtime capture
   -> fixture/shadow historical-model generation route
 ```
 
-`model_realtime_decision_route_plan` is a route plan, not a model output. It validates required Layer 1-7 input refs, accepts Layer 8 trading-guidance / option-expression refs and Layer 9 event-risk refs when available, maps each present layer to its reviewed model generator entrypoint, and records the handoff mode. Direct-underlying routes must not require Layer 8 option refs.
+`model_realtime_decision_route_plan` is a route plan, not a model output. It validates required Layer 1-8 and Layer 10 input refs, accepts Layer 9 trading-guidance / option-expression refs when available, maps each present layer to its reviewed model generator entrypoint, and records the handoff mode. Direct-underlying routes must not require Layer 9 option refs.
 
 Accepted handoff modes:
 
@@ -40,8 +40,8 @@ The model-side planner consumes an `execution_model_decision_input_snapshot` obj
 - `historical_dataset_snapshot_ref`
 - `frozen_model_config_ref`
 - `realtime_feature_snapshot_ref`
-- exactly one required layer input for Layers 1-7 and Layer 9
-- zero or one optional Layer 8 trading-guidance / option-expression input
+- exactly one required layer input for Layers 1-8 and Layer 10
+- zero or one optional Layer 9 trading-guidance / option-expression input
 
 Each conceptual layer input must include the expected model id, expected model output, feature ref, frozen model config ref, and historical dataset snapshot ref. Implementation model ids now follow the current conceptual layer numbering; this table is conceptual-order first.
 
@@ -54,10 +54,11 @@ Each conceptual layer input must include the expected model id, expected model o
 | 3 | `model_03_target_state_vector` | `target_context_state` | `scripts/models/model_03_target_state_vector/generate_model_03_target_state_vector.py` |
 | 4 | `model_04_event_failure_risk` | `event_failure_risk_vector` | `scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py` |
 | 5 | `model_05_alpha_confidence` | `alpha_confidence_vector` | `scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py` |
-| 6 | `model_06_position_projection` | `position_projection_vector` | `scripts/models/model_06_position_projection/generate_model_06_position_projection.py` |
-| 7 | `model_07_underlying_action` | `underlying_action_plan` | `scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py` |
-| 8 | `model_08_option_expression` | optional `trading_guidance_record` with optional `option_expression_plan` | `scripts/models/model_08_option_expression/generate_model_08_option_expression.py` |
-| 9 | `model_09_event_risk_governor` | `event_risk_intervention` / `event_context_vector` | `scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py` |
+| 6 | `model_06_dynamic_risk_policy` | `dynamic_risk_policy_state` | `scripts/models/model_06_dynamic_risk_policy/generate_model_06_dynamic_risk_policy.py` |
+| 7 | `model_07_position_projection` | `position_projection_vector` | `scripts/models/model_07_position_projection/generate_model_07_position_projection.py` |
+| 8 | `model_08_underlying_action` | `underlying_action_plan` | `scripts/models/model_08_underlying_action/generate_model_08_underlying_action.py` |
+| 9 | `model_09_option_expression` | optional `trading_guidance_record` with optional `option_expression_plan` | `scripts/models/model_09_option_expression/generate_model_09_option_expression.py` |
+| 10 | `model_10_event_risk_governor` | `event_risk_intervention` / `event_context_vector` | `scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py` |
 
 ## Non-authorizations
 

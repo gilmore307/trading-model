@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from models.model_07_underlying_action import generate_rows
-from models.model_07_underlying_action.evaluation import build_plan_quality_labels
+from models.model_08_underlying_action import generate_rows
+from models.model_08_underlying_action.evaluation import build_plan_quality_labels
 
 
 FORBIDDEN_TERMS = {
@@ -32,12 +32,12 @@ class UnderlyingActionModelTests(unittest.TestCase):
             current_underlying_position_state={"current_underlying_exposure_score": 0.10},
             pending_underlying_order_state={"pending_underlying_exposure_score": 0.10, "pending_fill_probability_estimate": 0.50},
             position_projection_vector={
-                "6_dominant_projection_horizon": "390min",
-                "6_target_exposure_score_390min": 0.40,
-                "6_projection_confidence_score_390min": 0.92,
-                "6_risk_budget_fit_score_390min": 0.95,
-                "6_cost_to_adjust_position_score_390min": 0.10,
-                "6_position_state_stability_score_390min": 0.90,
+                "7_dominant_projection_horizon": "390min",
+                "7_target_exposure_score_390min": 0.40,
+                "7_projection_confidence_score_390min": 0.92,
+                "7_risk_budget_fit_score_390min": 0.95,
+                "7_cost_to_adjust_position_score_390min": 0.10,
+                "7_position_state_stability_score_390min": 0.90,
             },
         )
 
@@ -45,11 +45,11 @@ class UnderlyingActionModelTests(unittest.TestCase):
         plan = output["underlying_action_plan"]
         exposure = plan["exposure_plan"]
 
-        self.assertEqual(output["7_resolved_underlying_action_type"], "increase_long")
+        self.assertEqual(output["8_resolved_underlying_action_type"], "increase_long")
         self.assertAlmostEqual(exposure["effective_current_underlying_exposure_score"], 0.15)
         self.assertAlmostEqual(exposure["underlying_exposure_gap_score"], 0.25)
         self.assertGreater(exposure["planned_incremental_exposure_score"], 0.0)
-        self.assertEqual(plan["handoff_to_layer_8"]["underlying_path_direction"], "bullish")
+        self.assertEqual(plan["handoff_to_layer_9"]["underlying_path_direction"], "bullish")
         self.assert_no_forbidden_terms(output)
 
     def test_pending_exposure_prevents_duplicate_underlying_plan(self) -> None:
@@ -57,19 +57,19 @@ class UnderlyingActionModelTests(unittest.TestCase):
             current_underlying_position_state={"current_underlying_exposure_score": 0.10},
             pending_underlying_order_state={"pending_underlying_exposure_score": 0.30, "pending_fill_probability_estimate": 1.0},
             position_projection_vector={
-                "6_dominant_projection_horizon": "390min",
-                "6_target_exposure_score_390min": 0.40,
-                "6_projection_confidence_score_390min": 0.95,
-                "6_risk_budget_fit_score_390min": 0.95,
-                "6_cost_to_adjust_position_score_390min": 0.05,
-                "6_position_state_stability_score_390min": 0.95,
+                "7_dominant_projection_horizon": "390min",
+                "7_target_exposure_score_390min": 0.40,
+                "7_projection_confidence_score_390min": 0.95,
+                "7_risk_budget_fit_score_390min": 0.95,
+                "7_cost_to_adjust_position_score_390min": 0.05,
+                "7_position_state_stability_score_390min": 0.95,
             },
         )
 
         output = generate_rows([row])[0]
         plan = output["underlying_action_plan"]
 
-        self.assertEqual(output["7_resolved_underlying_action_type"], "maintain")
+        self.assertEqual(output["8_resolved_underlying_action_type"], "maintain")
         self.assertAlmostEqual(plan["exposure_plan"]["effective_current_underlying_exposure_score"], 0.40)
         self.assertAlmostEqual(plan["exposure_plan"]["planned_incremental_exposure_score"], 0.0)
         self.assertIn("existing_state_remains_valid_or_adjustment_not_worth_cost", plan["reason_codes"])
@@ -77,12 +77,12 @@ class UnderlyingActionModelTests(unittest.TestCase):
     def test_no_trade_is_distinct_from_maintain_for_flat_small_gap(self) -> None:
         row = _base_row(
             current_underlying_position_state={"current_underlying_exposure_score": 0.0},
-            position_projection_vector={"6_dominant_projection_horizon": "60min", "6_target_exposure_score_60min": 0.01},
+            position_projection_vector={"7_dominant_projection_horizon": "60min", "7_target_exposure_score_60min": 0.01},
         )
 
         output = generate_rows([row])[0]
 
-        self.assertEqual(output["7_resolved_underlying_action_type"], "no_trade")
+        self.assertEqual(output["8_resolved_underlying_action_type"], "no_trade")
         self.assertIn("no_new_underlying_operation", output["underlying_action_plan"]["reason_codes"])
         self.assertEqual(output["underlying_action_plan"]["entry_plan"]["entry_style"], "no_entry")
 
@@ -97,12 +97,12 @@ class UnderlyingActionModelTests(unittest.TestCase):
             },
             current_underlying_position_state={"current_underlying_exposure_score": 0.0},
             position_projection_vector={
-                "6_dominant_projection_horizon": "390min",
-                "6_target_exposure_score_390min": -0.40,
-                "6_projection_confidence_score_390min": 0.92,
-                "6_risk_budget_fit_score_390min": 0.95,
-                "6_cost_to_adjust_position_score_390min": 0.05,
-                "6_position_state_stability_score_390min": 0.90,
+                "7_dominant_projection_horizon": "390min",
+                "7_target_exposure_score_390min": -0.40,
+                "7_projection_confidence_score_390min": 0.92,
+                "7_risk_budget_fit_score_390min": 0.95,
+                "7_cost_to_adjust_position_score_390min": 0.05,
+                "7_position_state_stability_score_390min": 0.90,
             },
             underlying_borrow_state={"short_borrow_status": "unavailable"},
         )
@@ -110,7 +110,7 @@ class UnderlyingActionModelTests(unittest.TestCase):
         output = generate_rows([row])[0]
         plan = output["underlying_action_plan"]
 
-        self.assertEqual(output["7_resolved_underlying_action_type"], "bearish_underlying_path_but_no_short_allowed")
+        self.assertEqual(output["8_resolved_underlying_action_type"], "bearish_underlying_path_but_no_short_allowed")
         self.assertIn("direct_short_not_allowed", plan["reason_codes"])
         self.assert_no_forbidden_terms(output)
 
@@ -124,12 +124,12 @@ class UnderlyingActionModelTests(unittest.TestCase):
                 "5_drawdown_risk_score_390min": 0.20,
             },
             position_projection_vector={
-                "6_dominant_projection_horizon": "390min",
-                "6_target_exposure_score_390min": -0.45,
-                "6_projection_confidence_score_390min": 0.93,
-                "6_risk_budget_fit_score_390min": 0.95,
-                "6_cost_to_adjust_position_score_390min": 0.05,
-                "6_position_state_stability_score_390min": 0.92,
+                "7_dominant_projection_horizon": "390min",
+                "7_target_exposure_score_390min": -0.45,
+                "7_projection_confidence_score_390min": 0.93,
+                "7_risk_budget_fit_score_390min": 0.95,
+                "7_cost_to_adjust_position_score_390min": 0.05,
+                "7_position_state_stability_score_390min": 0.92,
             },
             underlying_borrow_state={"short_borrow_status": "available"},
         )
@@ -139,7 +139,7 @@ class UnderlyingActionModelTests(unittest.TestCase):
         entry = plan["entry_plan"]
         risk = plan["risk_plan"]
 
-        self.assertEqual(output["7_resolved_underlying_action_type"], "open_short")
+        self.assertEqual(output["8_resolved_underlying_action_type"], "open_short")
         self.assertEqual(plan["price_path_expectation"]["underlying_path_direction"], "bearish")
         self.assertLess(entry["worst_acceptable_entry_price"], entry["reference_price"])
         self.assertGreater(risk["stop_loss_price"], entry["reference_price"])
@@ -149,12 +149,12 @@ class UnderlyingActionModelTests(unittest.TestCase):
         row = _base_row(
             current_underlying_position_state={"current_underlying_exposure_score": 0.30},
             position_projection_vector={
-                "6_dominant_projection_horizon": "390min",
-                "6_target_exposure_score_390min": -0.25,
-                "6_projection_confidence_score_390min": 0.95,
-                "6_risk_budget_fit_score_390min": 0.95,
-                "6_cost_to_adjust_position_score_390min": 0.05,
-                "6_position_state_stability_score_390min": 0.90,
+                "7_dominant_projection_horizon": "390min",
+                "7_target_exposure_score_390min": -0.25,
+                "7_projection_confidence_score_390min": 0.95,
+                "7_risk_budget_fit_score_390min": 0.95,
+                "7_cost_to_adjust_position_score_390min": 0.05,
+                "7_position_state_stability_score_390min": 0.90,
             },
             underlying_borrow_state={"short_borrow_status": "available"},
         )
@@ -162,7 +162,7 @@ class UnderlyingActionModelTests(unittest.TestCase):
         output = generate_rows([row])[0]
         reasons = output["underlying_action_plan"]["reason_codes"]
 
-        self.assertEqual(output["7_resolved_underlying_action_type"], "close_long")
+        self.assertEqual(output["8_resolved_underlying_action_type"], "close_long")
         self.assertIn("opposite_exposure_detected", reasons)
         self.assertIn("close_then_reassess_candidate", reasons)
 
@@ -172,8 +172,8 @@ class UnderlyingActionModelTests(unittest.TestCase):
         output = generate_rows([row])[0]
         plan = output["underlying_action_plan"]
 
-        self.assertEqual(output["7_resolved_underlying_action_type"], "no_trade")
-        self.assertEqual(output["7_underlying_trade_eligibility_score_390min"], 0.0)
+        self.assertEqual(output["8_resolved_underlying_action_type"], "no_trade")
+        self.assertEqual(output["8_underlying_trade_eligibility_score_390min"], 0.0)
         self.assertIn("halt_status_not_active", plan["reason_codes"])
 
     def test_plan_quality_labels_are_offline_and_join_by_plan_ref(self) -> None:
@@ -226,12 +226,12 @@ def _base_row(**overrides: object) -> dict[str, object]:
             "5_drawdown_risk_score_390min": 0.20,
         },
         "position_projection_vector": {
-            "6_dominant_projection_horizon": "390min",
-            "6_target_exposure_score_390min": 0.40,
-            "6_projection_confidence_score_390min": 0.92,
-            "6_risk_budget_fit_score_390min": 0.95,
-            "6_cost_to_adjust_position_score_390min": 0.08,
-            "6_position_state_stability_score_390min": 0.90,
+            "7_dominant_projection_horizon": "390min",
+            "7_target_exposure_score_390min": 0.40,
+            "7_projection_confidence_score_390min": 0.92,
+            "7_risk_budget_fit_score_390min": 0.95,
+            "7_cost_to_adjust_position_score_390min": 0.08,
+            "7_position_state_stability_score_390min": 0.90,
         },
         "current_underlying_position_state": {"current_underlying_exposure_score": 0.0},
         "pending_underlying_order_state": {"pending_underlying_exposure_score": 0.0, "pending_fill_probability_estimate": 0.0},

@@ -1,6 +1,6 @@
 # Model Decomposition Framework
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Downstream physical implementation paths may retain prior Layer 6-9 numbering until dedicated renumbering; historical/applied migration records may retain prior numbering.
+> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -398,7 +398,7 @@ Layer 4 consumes reviewed Layer 1/2/3 context plus only agent-accepted event/str
 
 ## Layer 5: AlphaConfidenceModel
 
-Status: accepted V1 contract with deterministic scaffold complete under the current physical `model_05_alpha_confidence` surface; production promotion remains evidence-gated.
+Status: accepted V1 contract with deterministic scaffold complete under the physical `model_05_alpha_confidence` surface; production promotion remains evidence-gated.
 
 Contract owner:
 
@@ -410,48 +410,48 @@ Layer 5 converts reviewed Layer 1/2/3 state evidence plus Layer 4 `event_failure
 
 ## Layer 6: PositionProjectionModel
 
-Status: accepted V1 contract with deterministic scaffold complete under the current physical `model_06_position_projection` surface; production promotion remains evidence-gated.
+Status: accepted V1 contract with deterministic scaffold complete under the physical `model_07_position_projection` surface; production promotion remains evidence-gated.
 
 Contract owner:
 
 ```text
-docs/15_layer_06_position_projection.md
+docs/15_layer_07_position_projection.md
 ```
 
-Layer 6 maps final adjusted alpha plus point-in-time current/pending position, cost, exposure, risk-budget, and policy context into `position_projection_vector`: target holding state, abstract target exposure, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, stability, and projection confidence. It must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate accounts.
+Layer 7 maps final adjusted alpha plus point-in-time current/pending position, cost, exposure, risk-budget, and policy context into `position_projection_vector`: target holding state, abstract target exposure, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, stability, and projection confidence. It must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate accounts.
 
 ## Layer 7: UnderlyingActionModel
 
-Status: accepted V1 contract with deterministic scaffold complete under the current physical `model_07_underlying_action` surface; production promotion remains evidence-gated.
+Status: accepted V1 contract with deterministic scaffold complete under the physical `model_08_underlying_action` surface; production promotion remains evidence-gated.
 
 Contract owner:
 
 ```text
-docs/16_layer_07_underlying_action.md
+docs/16_layer_08_underlying_action.md
 ```
 
 Layer 7 maps Layer 6 target holding-state projection into a direct underlying/spot offline action thesis for stock, ETF, or crypto-style candidates. It outputs `underlying_action_plan` and `underlying_action_vector`: eligibility, planned action type, planned exposure change, entry/target/stop/time assumptions, and optional Layer 9 handoff fields. It does not output broker/exchange orders, order routing, live execution instructions, or option contracts.
 
 ## Layer 9: EventRiskGovernor / EventIntelligenceOverlay
 
-Status: accepted V1 event-risk-governor boundary with deterministic scaffold complete under the current physical `model_09_event_risk_governor` surface; production promotion remains evidence-gated.
+Status: accepted V1 event-risk-governor boundary with deterministic scaffold complete under the physical `model_10_event_risk_governor` surface; production promotion remains evidence-gated.
 
 Contract owner:
 
 ```text
-docs/18_layer_09_event_risk_governor.md
+docs/18_layer_10_event_risk_governor.md
 ```
 
-Layer 9 consumes point-in-time residual event evidence, upstream context refs, and the Layer 7 direct-underlying action thesis as its canonical risk target. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, nominate reduction/flattening candidates, maintain an observation pool, and propose future Layer 4 promotions through evidence packets and agent review. It is not a hard upstream alpha input, not trading guidance, and not a broker/account mutation surface.
+Layer 9 consumes point-in-time residual event evidence, upstream context refs, and the Layer 8 direct-underlying action thesis as its canonical risk target. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, nominate reduction/flattening candidates, maintain an observation pool, and propose future Layer 4 promotions through evidence packets and agent review. It is not a hard upstream alpha input, not trading guidance, and not a broker/account mutation surface.
 
 ## Layer 8: TradingGuidanceModel / OptionExpressionModel
 
-Status: accepted V1 contract with deterministic option-expression scaffold complete under the current physical `model_08_option_expression` subset; production promotion remains evidence-gated.
+Status: accepted V1 contract with deterministic option-expression scaffold complete under the physical `model_09_option_expression` subset; production promotion remains evidence-gated.
 
 Contract owner:
 
 ```text
-docs/17_layer_08_trading_guidance.md
+docs/18_layer_09_trading_guidance.md
 ```
 
-Layer 8 consumes Layer 7 underlying path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, position/risk context, and policy constraints. It outputs optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`. Layer 9 may attach this context when available but must not require it for direct-underlying/crypto routes. It remains offline: no broker order type, route, time-in-force, send/cancel/replace flag, broker order id, final order quantity, or broker/account mutation.
+Layer 8 consumes Layer 8 underlying path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, position/risk context, and policy constraints. It outputs optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`. Layer 9 may attach this context when available but must not require it for direct-underlying/crypto routes. It remains offline: no broker order type, route, time-in-force, send/cancel/replace flag, broker order id, final order quantity, or broker/account mutation.

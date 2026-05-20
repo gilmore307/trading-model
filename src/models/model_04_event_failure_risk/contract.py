@@ -1,4 +1,4 @@
-"""Current physical constants for Layer 4 EventFailureRiskModel."""
+"""Physical constants for Layer 4 EventFailureRiskModel."""
 from __future__ import annotations
 
 from typing import Final

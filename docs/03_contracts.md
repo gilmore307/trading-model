@@ -13,12 +13,12 @@ Date: 2026-05-07
 | 2 | `SectorContextModel` | `sector_context_state` | accepted direction-neutral contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
 | 3 | `TargetStateVectorModel` | `target_context_state` | accepted direction-neutral target-state contract, anonymous candidate preprocessing, deterministic implementation/evaluation scaffold |
 | 4 | `EventFailureRiskModel` | `event_failure_risk_vector` | accepted pre-implementation contract; physical implementation pending dedicated slice |
-| 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted base-alpha V1 scaffold; current physical surface `model_05_alpha_confidence` |
+| 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted base-alpha V1 scaffold; physical surface `model_05_alpha_confidence` |
 | 6 | `DynamicRiskPolicyModel` | `dynamic_risk_policy_state` | accepted architecture boundary; physical implementation pending dedicated slice |
-| 7 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; current physical surface `model_06_position_projection` until renumbering |
-| 8 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; current physical surface `model_07_underlying_action` until renumbering |
-| 9 | `TradingGuidanceModel / OptionExpressionModel` | optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted optional offline trading-guidance boundary; V1 option-expression subset currently uses physical surface `model_08_option_expression` until renumbering |
-| 10 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary over the Layer 8 direct-underlying thesis; current physical surface `model_09_event_risk_governor` until renumbering |
+| 7 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; physical surface `model_07_position_projection` |
+| 8 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; physical surface `model_08_underlying_action` |
+| 9 | `TradingGuidanceModel / OptionExpressionModel` | optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted optional offline trading-guidance boundary; V1 option-expression subset currently uses physical surface `model_09_option_expression` |
+| 10 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary over the Layer 8 direct-underlying thesis; physical surface `model_10_event_risk_governor` |
 
 This closes the model-design phase. It does not approve production promotion.
 

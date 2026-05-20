@@ -13,18 +13,20 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 LAYERS = {
     "model_04_event_failure_risk": "event_failure_risk",
     "model_05_alpha_confidence": "alpha_confidence",
-    "model_06_position_projection": "position_projection",
-    "model_07_underlying_action": "underlying_action",
-    "model_08_option_expression": "option_expression",
-    "model_09_event_risk_governor": "event_risk_governor",
+    "model_06_dynamic_risk_policy": "dynamic_risk_policy",
+    "model_07_position_projection": "position_projection",
+    "model_08_underlying_action": "underlying_action",
+    "model_09_option_expression": "option_expression",
+    "model_10_event_risk_governor": "event_risk_governor",
 }
 LAYER_NUMBERS = {
     "model_04_event_failure_risk": 4,
     "model_05_alpha_confidence": 5,
-    "model_06_position_projection": 6,
-    "model_07_underlying_action": 7,
-    "model_08_option_expression": 8,
-    "model_09_event_risk_governor": 9,
+    "model_06_dynamic_risk_policy": 6,
+    "model_07_position_projection": 7,
+    "model_08_underlying_action": 8,
+    "model_09_option_expression": 9,
+    "model_10_event_risk_governor": 10,
 }
 
 
@@ -60,10 +62,10 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stderr)
                     self.assertIn("usage:", result.stdout)
 
-    def test_model_09_event_sql_column_typing_uses_layer_09_prefix(self) -> None:
-        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py")
+    def test_model_10_event_sql_column_typing_uses_layer_10_prefix(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py")
 
-        self.assertEqual(generator._column_type("9_event_gap_risk_score_390min"), "DOUBLE PRECISION")
+        self.assertEqual(generator._column_type("10_event_gap_risk_score_390min"), "DOUBLE PRECISION")
         self.assertEqual(generator._column_type("8_legacy_event_score"), "TEXT")
 
     def test_active_generator_column_type_prefixes_match_layer_numbers(self) -> None:
@@ -163,8 +165,8 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
         self.assertIn('e."available_time"::timestamptz = t."available_time"::timestamptz', join_sql)
         self.assertEqual(rows[0]["state_cluster_id"], "cluster_1")
 
-    def test_layer_08_reads_underlying_action_explainability_with_qualified_time_filters(self) -> None:
-        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_08_option_expression/generate_model_08_option_expression.py")
+    def test_layer_09_reads_underlying_action_explainability_with_qualified_time_filters(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_09_option_expression/generate_model_09_option_expression.py")
 
         class FakeCursor:
             def __init__(self) -> None:
@@ -175,14 +177,14 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
             def execute(self, sql: str, params: tuple[object, ...] | list[object] | None = None) -> None:
                 self.statements.append(sql)
                 if "to_regclass" in sql:
-                    self._one = {"table_ref": "trading_model.model_07_underlying_action_explainability"}
+                    self._one = {"table_ref": "trading_model.model_08_underlying_action_explainability"}
                     return
                 self._many = [
                     {
                         "available_time": "2016-01-04T09:35:00-05:00",
                         "target_candidate_id": "anon_aapl",
                         "underlying_action_plan_ref": "uap_1",
-                        "underlying_action_plan": {"handoff_to_layer_8": {"direction": "neutral"}},
+                        "underlying_action_plan": {"handoff_to_layer_9": {"direction": "neutral"}},
                     }
                 ]
 
@@ -206,8 +208,8 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
         self.assertIn('s."bar_close" AS "underlying_reference_price"', sql)
         self.assertEqual(rows[0]["underlying_action_plan_ref"], "uap_1")
 
-    def test_layer_08_database_input_binds_option_candidates_when_feature_rows_exist(self) -> None:
-        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_08_option_expression/generate_model_08_option_expression.py")
+    def test_layer_09_database_input_binds_option_candidates_when_feature_rows_exist(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_09_option_expression/generate_model_09_option_expression.py")
 
         layer_7_rows = [
             {
@@ -219,7 +221,7 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
                 "underlying_action_plan_ref": "uap_1",
                 "underlying_action_plan": {
                     "planned_underlying_action_type": "open_long",
-                    "handoff_to_layer_8": {"underlying_path_direction": "bullish"},
+                    "handoff_to_layer_9": {"underlying_path_direction": "bullish"},
                 },
             }
         ]
@@ -245,7 +247,7 @@ class LayerFourNineScriptEntrypointTests(unittest.TestCase):
 
         rows = generator._layer_8_input_rows(layer_7_rows, candidate_rows)
 
-        self.assertEqual(rows[0]["option_chain_snapshot_ref"], "feature_08_option_expression:AAPL:2016-01-04T09:35:00-05:00")
+        self.assertEqual(rows[0]["option_chain_snapshot_ref"], "feature_09_option_expression:AAPL:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["option_quote_available_time"], "2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["underlying_quote_snapshot_ref"], "source_03_target_state:anon_aapl:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["underlying_reference_price"], 102.5)

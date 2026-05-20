@@ -1,4 +1,4 @@
-"""Current physical constants for Layer 5 AlphaConfidenceModel."""
+"""Physical constants for Layer 5 AlphaConfidenceModel."""
 from __future__ import annotations
 
 from typing import Final

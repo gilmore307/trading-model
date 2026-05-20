@@ -1,6 +1,6 @@
 # Promotion Acceptance
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Downstream physical implementation paths may retain prior Layer 6-9 numbering until dedicated renumbering; historical/applied migration records may retain prior numbering.
+> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -31,10 +31,10 @@ Durable promotion requests, review decisions, activation, rollback, and producti
 | 3 | `model_03_target_state_vector` | real PostgreSQL production-eval substrate exists | deferred: upstream Layer 1/2 approvals and Layer 3 calibration evidence missing | none |
 | 4 | `model_04_event_failure_risk` | missing EventFailureRiskModel evaluation substrate / calibrated strategy-failure labels | deferred: no production eval substrate | none |
 | 5 | `model_05_alpha_confidence` | missing production adjusted-alpha eval run / calibrated labels | deferred: no production eval substrate | none |
-| 6 | `model_06_position_projection` | missing production position-utility eval run / labels | deferred: no production eval substrate | none |
-| 7 | `model_07_underlying_action` | missing production realized-action outcome eval run | deferred: no production eval substrate | none |
-| 8 | `model_08_option_expression` | missing production option-chain replay eval run | deferred: no production eval substrate | none |
-| 9 | `model_09_event_risk_governor` | missing residual-event-governor eval run / calibrated residual-risk labels | deferred: no production eval substrate | none |
+| 6 | `model_07_position_projection` | missing production position-utility eval run / labels | deferred: no production eval substrate | none |
+| 7 | `model_08_underlying_action` | missing production realized-action outcome eval run | deferred: no production eval substrate | none |
+| 8 | `model_09_option_expression` | missing production option-chain replay eval run | deferred: no production eval substrate | none |
+| 9 | `model_10_event_risk_governor` | missing residual-event-governor eval run / calibrated residual-risk labels | deferred: no production eval substrate | none |
 
 ## Layer 1 and 2 evidence
 
@@ -63,7 +63,7 @@ Layers 4-9 remain explicit blockers, not informal work items:
 - Layer 8 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
 - Layer 9 requires real residual-event-risk labels and production evaluation metrics.
 
-The acceptance helper `scripts/models/review_layers_03_08_promotion_acceptance.py` builds blocked model-side evidence and reviewer artifacts for the base Layers 3-8 surfaces. Its name is a bounded base-stack review scope, not a Layer 9 event-risk-governor activation path. It must not persist manager decisions or activate configs.
+The acceptance helper `scripts/models/review_layers_03_08_promotion_acceptance.py` builds blocked model-side evidence and reviewer artifacts for the base Layers 3-8 surfaces. Its name is a bounded base-stack review scope, not a Layer 10 event-risk-governor activation path. It must not persist manager decisions or activate configs.
 
 ## Activation invariant
 

@@ -1,6 +1,6 @@
 # Layer 04 — EventFailureRiskModel
 
-Status: accepted architecture revision and current physical Layer 4 scaffold. Conceptual Layer 4 is inserted ahead of alpha confidence; active non-historical packages/scripts/registry rows now use the Layer 4 surface, while historical/applied migration records remain unchanged.
+Status: accepted architecture revision and physical Layer 4 scaffold. Conceptual Layer 4 is inserted ahead of alpha confidence; active non-historical packages/scripts/registry rows now use the Layer 4 surface, while historical/applied migration records remain unchanged.
 
 ## Purpose
 
@@ -70,7 +70,7 @@ Layer 5 `AlphaConfidenceModel` consumes `event_failure_risk_vector` as a **condi
 
 Layer 6-8 may consume the resolved Layer 4 conditioning indirectly through Layer 5/6 handoffs. They must not independently re-promote raw event evidence.
 
-Layer 9 remains responsible for residual discovery, unexplained anomaly review, observation-pool maintenance, and proposing future event-family promotions into Layer 4.
+Layer 10 remains responsible for residual discovery, unexplained anomaly review, observation-pool maintenance, and proposing future event-family promotions into Layer 4.
 
 ## Promotion gate into Layer 4
 

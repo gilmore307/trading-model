@@ -26,7 +26,7 @@ The stable read-only audit entrypoint is:
 PYTHONPATH=src python3 scripts/models/audit_model_output_tables.py --sample-limit 5000
 ```
 
-The script emits `model_output_table_quality_audit`. It samples a bounded number of rows from all nine primary model tables and support tables, classifies all-null and sparse columns, and emits review-only cleanup SQL candidates. It never drops columns, rewrites model rows, performs provider calls, activates models, or mutates broker/account state.
+The script emits `model_output_table_quality_audit`. It samples a bounded number of rows from all ten primary model tables and support tables, classifies all-null and sparse columns, and emits review-only cleanup SQL candidates. It never drops columns, rewrites model rows, performs provider calls, activates models, or mutates broker/account state.
 
 The stable post-generation gate entrypoint is:
 

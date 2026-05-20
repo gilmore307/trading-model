@@ -28,7 +28,7 @@ The repository does **not** place orders, mutate accounts, own provider acquisit
 - Alpha-confidence modeling from the reviewed Layer 1/2/3 state stack plus reviewed Layer 4 failure-risk conditioning when available.
 - Position-projection modeling from alpha plus current/pending position, cost, exposure, and risk-budget context; this projects target position state, not orders.
 - Underlying-action modeling for offline direct underlying/spot action thesis across stock, ETF, or crypto-style candidates, planned exposure change, price-path assumptions, and optional Layer 9 handoff; this is not broker/exchange execution.
-- Trading-guidance / option-expression modeling from the Layer 7 thesis plus optional option-chain context; this may choose offline expression/contract constraints, not routes or orders.
+- Trading-guidance / option-expression modeling from the Layer 8 thesis plus optional option-chain context; this may choose offline expression/contract constraints, not routes or orders.
 - Event-intelligence / event-risk-governor modeling after the direct-underlying thesis is known, including residual discovery and high-severity risk interventions such as blocking new entries, capping exposure, or nominating flatten/halt candidates without directly mutating broker/account state. Optional option-expression context may be used when present, but crypto/direct-underlying-only routes do not require options.
 - Model-local labels, diagnostics, explainability, fixtures, and acceptance gates.
 - Proposing shared names/contracts to `trading-manager` when model outputs need cross-repository consumption.

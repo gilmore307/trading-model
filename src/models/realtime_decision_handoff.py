@@ -21,16 +21,17 @@ MODEL_LAYER_ORDER = (
     "layer_03_target_state_vector",
     "layer_04_event_failure_risk",
     "layer_05_alpha_confidence",
-    "layer_06_position_projection",
-    "layer_07_underlying_action",
-    "layer_09_event_risk_governor",
-    "layer_08_option_expression",
+    "layer_06_dynamic_risk_policy",
+    "layer_07_position_projection",
+    "layer_08_underlying_action",
+    "layer_09_option_expression",
+    "layer_10_event_risk_governor",
 )
-# Current Layer 8 implementation is the option-expression subset of the broader
+# Current Layer 9 implementation is the option-expression subset of the broader
 # TradingGuidance/realtime-handoff boundary, so direct-underlying-only routes may
 # omit it until a full non-option TradingGuidanceModel surface is accepted.
-REQUIRED_MODEL_LAYER_ORDER = tuple(layer for layer in MODEL_LAYER_ORDER if layer != "layer_08_option_expression")
-OPTIONAL_MODEL_LAYER_ORDER = ("layer_08_option_expression",)
+REQUIRED_MODEL_LAYER_ORDER = tuple(layer for layer in MODEL_LAYER_ORDER if layer != "layer_09_option_expression")
+OPTIONAL_MODEL_LAYER_ORDER = ("layer_09_option_expression",)
 
 _LAYER_METADATA = {
     "layer_01_market_regime": {
@@ -58,26 +59,31 @@ _LAYER_METADATA = {
         "expected_model_output": "alpha_confidence_vector",
         "generator_entrypoint_ref": "trading-model/scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py",
     },
-    "layer_06_position_projection": {
+    "layer_06_dynamic_risk_policy": {
+        "model_id": "dynamic_risk_policy_model",
+        "expected_model_output": "dynamic_risk_policy_state",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_06_dynamic_risk_policy/generate_model_06_dynamic_risk_policy.py",
+    },
+    "layer_07_position_projection": {
         "model_id": "position_projection_model",
         "expected_model_output": "position_projection_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_06_position_projection/generate_model_06_position_projection.py",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_07_position_projection/generate_model_07_position_projection.py",
     },
-    "layer_07_underlying_action": {
+    "layer_08_underlying_action": {
         "model_id": "underlying_action_model",
         "expected_model_output": "underlying_action_plan",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_07_underlying_action/generate_model_07_underlying_action.py",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_08_underlying_action/generate_model_08_underlying_action.py",
     },
-    "layer_08_option_expression": {
+    "layer_09_option_expression": {
         "model_id": "option_expression_model",
         "expected_model_output": "trading_guidance_record",
         "accepted_model_outputs": ("trading_guidance_record", "option_expression_plan"),
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_08_option_expression/generate_model_08_option_expression.py",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_09_option_expression/generate_model_09_option_expression.py",
     },
-    "layer_09_event_risk_governor": {
+    "layer_10_event_risk_governor": {
         "model_id": "event_risk_governor",
         "expected_model_output": "event_context_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_09_event_risk_governor/generate_model_09_event_risk_governor.py",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py",
     },
 }
 

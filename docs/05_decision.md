@@ -233,7 +233,7 @@ V1 must not choose debit spreads, calendars, diagonals, straddles, strangles, co
 
 The model must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market-context constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade filters.
 
-Layer-numbering update: after D047 and the later Layer 8/9 swap, this decision is preserved as Layer 8 `OptionExpressionModel` / trading-guidance context after Layer 7 `UnderlyingActionModel` and Layer 9 event-risk governance. Current physical implementation names use `model_08_option_expression`.
+Layer-numbering update: after D047 and the later Layer 8/9 swap, this decision is preserved as Layer 8 `OptionExpressionModel` / trading-guidance context after Layer 7 `UnderlyingActionModel` and Layer 10 event-risk governance. Physical implementation names use `model_09_option_expression`.
 
 ## D010 - Model governance and promotion evidence stay model-local until manager control-plane acceptance
 
@@ -413,14 +413,14 @@ Status: Accepted
 
 State-vector semantics and model-local outputs may continue to mature inside `trading-model`, but final artifact, manifest, ready-signal, request, durable receipt, shared storage root, and SQL/storage destination contracts wait until all model layers are designed and `trading-manager` development begins.
 
-This keeps `base_stack_layers_01_08` model design from being constrained by premature manager/storage interface decisions. Registry state-vector values remain reviewed naming/semantic references; they do not by themselves finalize durable manager/storage contracts.
+This keeps `base_stack_layers_01_09` model design from being constrained by premature manager/storage interface decisions. Registry state-vector values remain reviewed naming/semantic references; they do not by themselves finalize durable manager/storage contracts.
 
 ## D020 - Superseded EventRiskGovernor pre-alpha ordering
 
 Date: 2026-05-06
 Status: Superseded by D039 on 2026-05-15
 
-This decision preserved the earlier EventRiskGovernor-as-Layer-4 route. D039 later moved event governance after the base trading stack, and D047 is now authoritative for exact numbering: EventFailureRiskModel is Layer 4, AlphaConfidenceModel is Layer 5, and EventRiskGovernor / EventIntelligenceOverlay is Layer 9, intervening on the Layer 7 direct-underlying/spot thesis with optional Layer 8 expression context.
+This decision preserved the earlier EventRiskGovernor-as-Layer-4 route. D039 later moved event governance after the base trading stack, and D047 is now authoritative for exact numbering: EventFailureRiskModel is Layer 4, AlphaConfidenceModel is Layer 5, and EventRiskGovernor / EventIntelligenceOverlay is Layer 9, intervening on the Layer 8 direct-underlying/spot thesis with optional Layer 8 expression context.
 
 Previous layer order:
 
@@ -435,7 +435,7 @@ market_context_state
   -> option_expression_plan / expression_vector
 ```
 
-Layer 9 consumes point-in-time event evidence such as legacy `source_09_event_risk_governor`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
+Layer 9 consumes point-in-time event evidence such as legacy `source_10_event_risk_governor`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
 
 The former hard-upstream event route must not be used as active layer ordering. Event-risk governance is now Layer 9, except for reviewed event-failure factors promoted into Layer 4.
 
@@ -444,9 +444,9 @@ The former hard-upstream event route must not be used as active layer ordering. 
 Date: 2026-05-07
 Status: Accepted
 
-Layer-numbering update after D047: `AlphaConfidenceModel` is Layer 5 with canonical model id `alpha_confidence_model`, output `alpha_confidence_vector`, current physical surface `model_05_alpha_confidence`, and `5_*` score prefixes.
+Layer-numbering update after D047: `AlphaConfidenceModel` is Layer 5 with canonical model id `alpha_confidence_model`, output `alpha_confidence_vector`, physical surface `model_05_alpha_confidence`, and `5_*` score prefixes.
 
-AlphaConfidenceModel consumes the reviewed Layer 1/2/3 state stack plus Layer 4 event-failure-risk conditioning when applicable. It is the first layer allowed to convert accepted point-in-time state/context evidence into horizon-aware alpha judgment. Raw event intelligence is not a hard upstream correction input; Layer 8 may later intervene on the Layer 7 direct-underlying/spot thesis, with optional Layer 8 expression context when present. AlphaConfidenceModel owns alpha direction, alpha strength, expected residual return, alpha confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability.
+AlphaConfidenceModel consumes the reviewed Layer 1/2/3 state stack plus Layer 4 event-failure-risk conditioning when applicable. It is the first layer allowed to convert accepted point-in-time state/context evidence into horizon-aware alpha judgment. Raw event intelligence is not a hard upstream correction input; Layer 8 may later intervene on the Layer 8 direct-underlying/spot thesis, with optional Layer 8 expression context when present. AlphaConfidenceModel owns alpha direction, alpha strength, expected residual return, alpha confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability.
 
 AlphaConfidenceModel keeps two output tiers separate:
 
@@ -484,16 +484,16 @@ PositionProjectionModel maps final adjusted alpha confidence to projected target
 The accepted V1 core output families are:
 
 ```text
-6_target_position_bias_score_<horizon>
-6_target_exposure_score_<horizon>
-6_current_position_alignment_score_<horizon>
-6_position_gap_score_<horizon>
-6_position_gap_magnitude_score_<horizon>
-6_expected_position_utility_score_<horizon>
-6_cost_to_adjust_position_score_<horizon>
-6_risk_budget_fit_score_<horizon>
-6_position_state_stability_score_<horizon>
-6_projection_confidence_score_<horizon>
+7_target_position_bias_score_<horizon>
+7_target_exposure_score_<horizon>
+7_current_position_alignment_score_<horizon>
+7_position_gap_score_<horizon>
+7_position_gap_magnitude_score_<horizon>
+7_expected_position_utility_score_<horizon>
+7_cost_to_adjust_position_score_<horizon>
+7_risk_budget_fit_score_<horizon>
+7_position_state_stability_score_<horizon>
+7_projection_confidence_score_<horizon>
 ```
 
 PositionProjectionModel uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose handoff summary fields such as dominant projection horizon, horizon conflict state, resolved target exposure, resolved position gap, resolution confidence, and reason codes so the downstream UnderlyingActionModel does not re-solve horizon conflicts.
@@ -521,16 +521,16 @@ UnderlyingActionModel converts current state, final adjusted alpha confidence, a
 The accepted V1 score families are:
 
 ```text
-7_underlying_trade_eligibility_score_<horizon>
-7_underlying_action_direction_score_<horizon>
-7_underlying_trade_intensity_score_<horizon>
-7_underlying_entry_quality_score_<horizon>
-7_underlying_expected_return_score_<horizon>
-7_underlying_adverse_risk_score_<horizon>
-7_underlying_reward_risk_score_<horizon>
-7_underlying_liquidity_fit_score_<horizon>
-7_underlying_holding_time_fit_score_<horizon>
-7_underlying_action_confidence_score_<horizon>
+8_underlying_trade_eligibility_score_<horizon>
+8_underlying_action_direction_score_<horizon>
+8_underlying_trade_intensity_score_<horizon>
+8_underlying_entry_quality_score_<horizon>
+8_underlying_expected_return_score_<horizon>
+8_underlying_adverse_risk_score_<horizon>
+8_underlying_reward_risk_score_<horizon>
+8_underlying_liquidity_fit_score_<horizon>
+8_underlying_holding_time_fit_score_<horizon>
+8_underlying_action_confidence_score_<horizon>
 ```
 
 UnderlyingActionModel uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose resolved plan fields such as `7_resolved_underlying_action_type`, action side, dominant horizon, trade eligibility, trade intensity, entry quality, action confidence, and reason codes so downstream trading guidance / option expression does not re-solve the direct-underlying thesis.
@@ -581,7 +581,7 @@ UnderlyingActionModel must not emit broker order fields, order type, route, time
 Date: 2026-05-07
 Status: Accepted
 
-Layer-numbering update after D047: `OptionExpressionModel` is the accepted Layer 8 option-expression implementation surface (`model_08_option_expression`) under the trading-guidance boundary.
+Layer-numbering update after D047: `OptionExpressionModel` is the accepted Layer 9 option-expression implementation surface (`model_09_option_expression`) under the trading-guidance boundary.
 
 It consumes Layer 7 `underlying_action_plan` / `underlying_action_vector` handoff plus point-in-time option-chain context and outputs:
 
@@ -619,9 +619,9 @@ Layer 8 must not emit broker order type, route, time-in-force, send/cancel/repla
 Date: 2026-05-10
 Status: Accepted
 
-Layer 8 option-expression bucket construction uses near-to-far listed expirations: current listed week first, then next listed week, then the following listed week, continuing outward only when coverage policy requires it.
+Layer 9 option-expression bucket construction uses near-to-far listed expirations: current listed week first, then next listed week, then the following listed week, continuing outward only when coverage policy requires it.
 
-For each selected target, the strike bucket is the listed-strike corridor from current underlying reference price to the Layer 7 underlying-action target price plus three actual listed strike levels below the corridor and three actual listed strike levels above it. Example: current `95`, target `100`, one-dollar listed strikes -> scan strikes `92` through `103`.
+For each selected target, the strike bucket is the listed-strike corridor from current underlying reference price to the Layer 8 underlying-action target price plus three actual listed strike levels below the corridor and three actual listed strike levels above it. Example: current `95`, target `100`, one-dollar listed strikes -> scan strikes `92` through `103`.
 
 Historical model construction intentionally keeps illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, and otherwise extreme contracts in the candidate bucket so the model learns robustness and failure modes. These observations may score poorly, produce reason codes, or resolve to `no_option_expression`; they must not be removed at acquisition-time solely because they are extreme.
 
@@ -644,7 +644,7 @@ storage executes lifecycle
 
 Lifecycle work caused by promotion must route through manager `storage_lifecycle_request`; `trading-storage` owns protected-set checks, physical lifecycle execution, receipts, and tombstones.
 
-## D025 - `base_stack_layers_01_08` model-design acceptance
+## D025 - `base_stack_layers_01_09` model-design acceptance
 
 Date: 2026-05-07
 Status: Superseded by D047
@@ -664,7 +664,7 @@ MarketRegimeModel
   -> OptionExpressionModel
 ```
 
-`base_stack_layers_01_08` has accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture-level verification for the current design phase.
+`base_stack_layers_01_09` has accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture-level verification for the current design phase.
 
 This acceptance is superseded by the 2026-05-17 architecture revision that inserts Layer 4 EventFailureRiskModel and makes EventRiskGovernor Layer 9. After Layer 9, downstream work belongs to review / execution-owned boundaries: broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
@@ -773,13 +773,13 @@ Rationale: the base trading path should remain runnable without mature event int
 
 Allowed event-risk-governor intervention outputs include `block_new_entries`, `max_exposure_factor`, `reduce_exposure_to`, `flatten_position_candidate`, `halt_trading_candidate`, `human_review_required`, event refs, and evidence spans. Under D047 this is Layer 9. It may modify the decision/risk record consumed by execution risk-control, but it must not directly send broker orders or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence and an accepted execution risk policy or human review path.
 
-Physical implementation surfaces now use the current nine-layer names (`model_04_event_failure_risk`, `model_05_alpha_confidence`, `model_06_position_projection`, `model_07_underlying_action`, `model_08_option_expression`, and `model_09_event_risk_governor`). Historical/applied migration records may retain earlier names.
+Physical implementation surfaces now use the current nine-layer names (`model_04_event_failure_risk`, `model_05_alpha_confidence`, `model_07_position_projection`, `model_08_underlying_action`, `model_09_option_expression`, and `model_10_event_risk_governor`). Historical/applied migration records may retain earlier names.
 
 ## D040 - Event lifecycle clocks separate scheduled catalysts from surprise events
 
 Accepted: 2026-05-15
 
-Layer 9 event intelligence must preserve event lifecycle timing instead of flattening all evidence into one `event_time`.
+Layer 10 event intelligence must preserve event lifecycle timing instead of flattening all evidence into one `event_time`.
 
 Accepted lifecycle classes are `scheduled_known_outcome_later`, `unscheduled_surprise`, `scheduled_recurring_data_release`, `multi_stage_developing_event`, and `unknown`. Required clocks, when known, include awareness, scheduled, published, available, interpretation, resolution, decision/tradeable, and reaction/evaluation windows.
 
@@ -791,7 +791,7 @@ Training and evaluation must not mix scheduled-known and surprise events under t
 
 Accepted: 2026-05-15
 
-Layer 9 abnormal-activity evidence is not a second copy of bar-derived state. Bars, volume, spread, liquidity, volatility, gap, trend, VWAP distance, and target-state behavior already belong to Layer 1-3 and direct-underlying/action inputs when those fields are part of the accepted model stack.
+Layer 10 abnormal-activity evidence is not a second copy of bar-derived state. Bars, volume, spread, liquidity, volatility, gap, trend, VWAP distance, and target-state behavior already belong to Layer 1-3 and direct-underlying/action inputs when those fields are part of the accepted model stack.
 
 EventRiskGovernor may consume abnormal activity only as trigger/provenance evidence, residual unexplained board/tape disturbance after upstream context conditioning, discrete price-action pattern evidence, or cross-source abnormal evidence not otherwise consumed by the base path. It must not treat every high return/volume/spread z-score as an independent event factor when the same information is already available in upstream context states.
 
@@ -871,9 +871,9 @@ Layer 8: TradingGuidanceModel / OptionExpressionModel
 
 Layer 4 contains only agent-accepted, empirically reviewed event/strategy-failure factors. Its output is `event_failure_risk_vector`; it may condition alpha confidence, entry permission, exposure caps, strategy disable pressure, and path-risk amplification, but it must not emit buy/sell/hold, choose expression/contract, size positions, route orders, mutate accounts, or perform destructive SQL/storage actions.
 
-Layer 9 remains the residual event-risk governor and research surface. It may explain residual anomalies, maintain the observation pool, warn/cap/block/review the direct-underlying/spot thesis, and generate event-family promotion packets. A family can move from Layer 9 discovery/observation into Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, incremental value review, and explicit agent/manager acceptance.
+Layer 10 remains the residual event-risk governor and research surface. It may explain residual anomalies, maintain the observation pool, warn/cap/block/review the direct-underlying/spot thesis, and generate event-family promotion packets. A family can move from Layer 9 discovery/observation into Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, incremental value review, and explicit agent/manager acceptance.
 
-This decision is architecture/governance only. Current physical script/package/table names now include `model_04_event_failure_risk`, `model_05_alpha_confidence`, `model_06_position_projection`, `model_07_underlying_action`, `model_08_option_expression`, `model_09_event_risk_governor`, `MODEL_09_*`, and `source_09_event_risk_governor`; historical/applied migrations may retain earlier names.
+This decision is architecture/governance only. Physical script/package/table names now include `model_04_event_failure_risk`, `model_05_alpha_confidence`, `model_07_position_projection`, `model_08_underlying_action`, `model_09_option_expression`, `model_10_event_risk_governor`, `MODEL_09_*`, and `source_10_event_risk_governor`; historical/applied migrations may retain earlier names.
 
 ## D048 - Layer 3 uses anonymous target-state ranking under a fixed candidate policy
 

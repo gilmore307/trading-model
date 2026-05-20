@@ -1,10 +1,10 @@
 # State Vector Feature Semantics Registry
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Downstream physical implementation paths may retain prior Layer 6-9 numbering until dedicated renumbering; historical/applied migration records may retain prior numbering.
+> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
-Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 4 event-failure-risk score families, Layer 5 alpha-confidence score families, Layer 6 position-projection score families, Layer 7 underlying-action score families, Layer 8 trading-guidance/option-expression score families, and Layer 9 event-risk score families.
+Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 4 event-failure-risk score families, Layer 5 alpha-confidence score families, Layer 6 position-projection score families, Layer 8 underlying-action score families, Layer 9 trading-guidance/option-expression score families, and Layer 10 event-risk score families.
 
 This registry prevents the state/context/action-vector system from mixing direction, quality, risk, scope, routing, diagnostics, plan fields, execution fields, and research-only payloads.
 
@@ -75,7 +75,7 @@ alpha confidence != option expression
 alpha confidence != final action
 ```
 
-Current physical alpha-confidence score values use `5_*` prefixes. Action/routing fields, position sizing, account-risk allocations, option-contract choices, and final verdicts are not `state_vector_value` rows for Layer 5.
+Physical alpha-confidence score values use `5_*` prefixes. Action/routing fields, position sizing, account-risk allocations, option-contract choices, and final verdicts are not `state_vector_value` rows for Layer 5.
 
 ## Layer 6 position-projection score semantics
 
@@ -93,9 +93,9 @@ projection confidence != alpha confidence
 position projection vector != final action
 ```
 
-Current physical position-projection score values use `6_*` prefixes. Buy/sell/hold/open/close/reverse, instrument selection, option-chain fields, strike/DTE/Greeks, order routing, and execution outputs are not `state_vector_value` rows for Layer 6.
+Physical position-projection score values use `6_*` prefixes. Buy/sell/hold/open/close/reverse, instrument selection, option-chain fields, strike/DTE/Greeks, order routing, and execution outputs are not `state_vector_value` rows for Layer 6.
 
-## Layer 7 underlying-action score semantics
+## Layer 8 underlying-action score semantics
 
 Conceptual Layer 7 `underlying_action_plan` and `underlying_action_vector` values must keep these axes separate:
 
@@ -113,9 +113,9 @@ underlying action plan != option expression
 underlying action plan != live execution
 ```
 
-Current physical underlying-action score families use `7_*` prefixes. Planned action types, resolved handoff fields, reason codes, entry/target/stop prices, quantities, and Layer 8 trading-guidance handoff fields are plan payload fields, not broker-order fields.
+Physical underlying-action score families use `7_*` prefixes. Planned action types, resolved handoff fields, reason codes, entry/target/stop prices, quantities, and Layer 9 trading-guidance handoff fields are plan payload fields, not broker-order fields.
 
-## Layer 8 trading-guidance / option-expression score semantics
+## Layer 9 trading-guidance / option-expression score semantics
 
 Conceptual Layer 8 `trading_guidance_record`, `option_expression_plan`, and `expression_vector` values must keep these axes separate:
 
@@ -130,9 +130,9 @@ expression confidence != final approval
 Layer 8 offline plan != live execution
 ```
 
-Current physical option-expression score families use `8_*` prefixes. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
+Physical option-expression score families use `8_*` prefixes. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
 
-## Layer 9 event-risk-context score semantics
+## Layer 10 event-risk-context score semantics
 
 Conceptual Layer 9 `event_context_vector` / `event_risk_intervention` values must keep these axes separate:
 
@@ -146,4 +146,4 @@ residual explanation != causal proof
 observation-pool addition != Layer 4 promotion
 ```
 
-Current physical event-risk scalar score values use `9_event_*` prefixes. Enum-like audit fields may share the horizon suffix in model-local contracts, but they are not `state_vector_value` registry rows. Layer 9 may emit warning/cap/block/review/flatten-candidate overlays and Layer 4 promotion packets, but it must not send orders or mutate accounts.
+Physical event-risk scalar score values use `10_event_*` prefixes. Enum-like audit fields may share the horizon suffix in model-local contracts, but they are not `state_vector_value` registry rows. Layer 9 may emit warning/cap/block/review/flatten-candidate overlays and Layer 4 promotion packets, but it must not send orders or mutate accounts.

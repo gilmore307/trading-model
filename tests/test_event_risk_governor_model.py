@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import unittest
 
-from models.model_09_event_risk_governor import generate_rows
-from models.model_09_event_risk_governor.evaluation import assert_no_label_leakage, build_event_risk_governor_labels
-from models.model_09_event_risk_governor.generator import _validate_no_forbidden_output
+from models.model_10_event_risk_governor import generate_rows
+from models.model_10_event_risk_governor.evaluation import assert_no_label_leakage, build_event_risk_governor_labels
+from models.model_10_event_risk_governor.generator import _validate_no_forbidden_output
 
 
 FORBIDDEN_TERMS = {
@@ -36,25 +36,25 @@ class EventRiskGovernorTests(unittest.TestCase):
 
         self.assertEqual(diagnostics["visible_event_count"], 2)
         self.assertEqual(diagnostics["canonical_event_count"], 1)
-        self.assertGreater(vector["9_event_presence_score_60min"], 0.0)
-        self.assertLess(vector["9_event_direction_bias_score_60min"], 0.0)
-        self.assertGreater(vector["9_event_symbol_impact_score_60min"], vector["9_event_market_impact_score_60min"])
+        self.assertGreater(vector["10_event_presence_score_60min"], 0.0)
+        self.assertLess(vector["10_event_direction_bias_score_60min"], 0.0)
+        self.assertGreater(vector["10_event_symbol_impact_score_60min"], vector["10_event_market_impact_score_60min"])
         self.assertEqual(
-            diagnostics["dominant_impact_scope_by_horizon"]["9_event_dominant_impact_scope_60min"],
+            diagnostics["dominant_impact_scope_by_horizon"]["10_event_dominant_impact_scope_60min"],
             "symbol",
         )
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
     def test_no_event_defaults_are_neutral_not_null(self) -> None:
-        row = _base_row(source_09_event_risk_governor=[])
+        row = _base_row(source_10_event_risk_governor=[])
         output = generate_rows([row])[0]
         vector = output["event_context_vector"]
 
-        self.assertEqual(vector["9_event_presence_score_390min"], 0.0)
-        self.assertEqual(vector["9_event_direction_bias_score_390min"], 0.0)
-        self.assertEqual(vector["9_event_market_impact_score_390min"], 0.0)
-        self.assertGreater(vector["9_event_context_quality_score_390min"], 0.0)
+        self.assertEqual(vector["10_event_presence_score_390min"], 0.0)
+        self.assertEqual(vector["10_event_direction_bias_score_390min"], 0.0)
+        self.assertEqual(vector["10_event_market_impact_score_390min"], 0.0)
+        self.assertGreater(vector["10_event_context_quality_score_390min"], 0.0)
 
     def test_crypto_context_uses_direct_underlying_without_option_requirement(self) -> None:
         output = generate_rows([
@@ -74,7 +74,7 @@ class EventRiskGovernorTests(unittest.TestCase):
         self.assert_no_forbidden_terms(output)
 
     def test_price_action_event_maps_to_microstructure_reversal_risk(self) -> None:
-        row = _base_row(source_09_event_risk_governor=[
+        row = _base_row(source_10_event_risk_governor=[
             {
                 "event_id": "evt_false_breakout",
                 "canonical_event_id": "evt_false_breakout",
@@ -95,8 +95,8 @@ class EventRiskGovernorTests(unittest.TestCase):
         encoded = output["event_risk_governor_diagnostics"]["encoded_events"][0]
 
         self.assertEqual(encoded["event_native_scope_type"], "price_action")
-        self.assertGreater(vector["9_event_microstructure_impact_score_15min"], 0.0)
-        self.assertGreater(vector["9_event_reversal_risk_score_15min"], 0.0)
+        self.assertGreater(vector["10_event_microstructure_impact_score_15min"], 0.0)
+        self.assertGreater(vector["10_event_reversal_risk_score_15min"], 0.0)
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
@@ -143,7 +143,7 @@ def _base_row(**overrides: object) -> dict[str, object]:
         "sector_context_state_ref": "scs_fixture",
         "target_context_state_ref": "tcs_fixture",
         "target_context_state": {"3_target_direction_score_390min": 0.5, "3_target_direction_score_60min": 0.4},
-        "source_09_event_risk_governor": [
+        "source_10_event_risk_governor": [
             {
                 "event_id": "evt_canonical",
                 "canonical_event_id": "evt_canonical",

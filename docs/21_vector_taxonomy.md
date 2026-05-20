@@ -1,6 +1,6 @@
 # Vector and State Taxonomy
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Downstream physical implementation paths may retain prior Layer 6-9 numbering until dedicated renumbering; historical/applied migration records may retain prior numbering.
+> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -241,7 +241,7 @@ Conceptual output:
 alpha_confidence_vector
 ```
 
-Current physical promoted artifact remains until renumbering:
+Physical promoted artifact remains:
 
 ```text
 trading_model.model_05_alpha_confidence
@@ -270,7 +270,7 @@ base_alpha_vector
   -> alpha_confidence_vector           # final adjusted output
 ```
 
-Layer 5 score families use `5_*` alpha fields in current physical code/SQL. The adjusted vector is alpha confidence only: not target exposure, not position sizing, not option expression, not execution, and not final action.
+Layer 5 score families use `5_*` alpha fields in physical code/SQL. The adjusted vector is alpha confidence only: not target exposure, not position sizing, not option expression, not execution, and not final action.
 
 ## Layer 6 position-projection vocabulary
 
@@ -286,10 +286,10 @@ Conceptual output:
 position_projection_vector
 ```
 
-Current physical promoted artifact remains until renumbering:
+Physical promoted artifact remains:
 
 ```text
-trading_model.model_06_position_projection
+trading_model.model_07_position_projection
 ```
 
 Primary model inputs:
@@ -304,9 +304,9 @@ risk_budget_context
 point-in-time policy gates
 ```
 
-Layer 6 maps alpha into target holding state and abstract exposure only. Current physical score families use `6_*` prefixes. It is not buy/sell/hold, open/close/reverse, instrument selection, option-chain reading, strike/DTE/Greeks, execution, or final action.
+Layer 7 maps alpha into target holding state and abstract exposure only. Physical score families use `6_*` prefixes. It is not buy/sell/hold, open/close/reverse, instrument selection, option-chain reading, strike/DTE/Greeks, execution, or final action.
 
-## Layer 7 underlying-action plan semantics
+## Layer 8 underlying-action plan semantics
 
 Conceptual Layer 7 `underlying_action_plan` and `underlying_action_vector` values must keep these axes separate:
 
@@ -324,9 +324,9 @@ underlying action plan != option expression
 underlying action plan != live execution
 ```
 
-Current physical underlying-action score families use `7_*` prefixes. Planned action types, resolved plan fields, reason codes, entry/target/stop prices, quantities, and Layer 9 handoff fields are plan payload fields, not broker-order fields.
+Physical underlying-action score families use `7_*` prefixes. Planned action types, resolved plan fields, reason codes, entry/target/stop prices, quantities, and Layer 9 handoff fields are plan payload fields, not broker-order fields.
 
-## Layer 8 trading-guidance / option-expression semantics
+## Layer 9 trading-guidance / option-expression semantics
 
 Conceptual Layer 8 `trading_guidance_record`, `option_expression_plan`, and `expression_vector` values must keep these axes separate:
 
@@ -341,9 +341,9 @@ expression confidence != final approval
 Layer 8 offline plan != live execution
 ```
 
-Current physical option-expression score families use `8_*` prefixes. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
+Physical option-expression score families use `8_*` prefixes. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
 
-## Layer 9 event-risk vocabulary
+## Layer 10 event-risk vocabulary
 
 Layer 9 model:
 
@@ -358,19 +358,19 @@ event_context_vector
 event_risk_intervention
 ```
 
-Current physical promoted artifact remains until renumbering:
+Physical promoted artifact remains:
 
 ```text
-trading_model.model_09_event_risk_governor
+trading_model.model_10_event_risk_governor
 ```
 
 Primary input source remains until a separate data/SQL migration:
 
 ```text
-trading_data.source_09_event_risk_governor
+trading_data.source_10_event_risk_governor
 ```
 
-Layer 9 is a point-in-time residual event-risk overlay whose canonical risk target is the Layer 7 direct-underlying thesis. Layer 8 trading-guidance / option-expression context is optional and absent for direct-underlying-only crypto routes:
+Layer 9 is a point-in-time residual event-risk overlay whose canonical risk target is the Layer 8 direct-underlying thesis. Layer 9 trading-guidance / option-expression context is optional and absent for direct-underlying-only crypto routes:
 
 ```text
 market_context_state
@@ -381,7 +381,7 @@ market_context_state
 + position_projection_vector
 + underlying_action_plan / vector
 + optional trading_guidance_record / option_expression_plan / expression_vector
-+ source_09_event_risk_governor
++ source_10_event_risk_governor
 + event_detail_artifacts
 + scope_mapping_metadata
 + sensitivity_metadata
@@ -389,7 +389,7 @@ market_context_state
   -> event_risk_intervention / event_context_vector
 ```
 
-Current physical event-risk score families use `9_event_*` prefixes. Layer 9 may warn, explain, block/cap/reduce/flatten-review, maintain the observation pool, and propose Layer 4 promotion packets. It is not alpha confidence, not a trading signal, not position sizing, not expression selection, and not final action.
+Physical event-risk score families use `10_event_*` prefixes. Layer 9 may warn, explain, block/cap/reduce/flatten-review, maintain the observation pool, and propose Layer 4 promotion packets. It is not alpha confidence, not a trading signal, not position sizing, not expression selection, and not final action.
 
 ## Label boundary
 

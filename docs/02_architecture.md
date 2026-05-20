@@ -1,6 +1,6 @@
 # Architecture
 <!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Downstream physical implementation paths may retain prior Layer 6-9 numbering until dedicated renumbering; historical/applied migration records may retain prior numbering.
+> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
 <!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
 
@@ -15,7 +15,7 @@ Owner intent: keep the model stack direct, point-in-time, and current-route auth
 | `20_*` | shared model-contract/taxonomy helpers | Model decomposition, vector taxonomy, and state-vector feature registry. |
 | `30_*` | `src/model_governance/promotion/`, `scripts/model_governance/` | Promotion readiness and acceptance evidence. |
 | `40_*` | historical/realtime handoff docs and governance code | Dataset scope and realtime decision handoff boundaries. |
-| `50_*` | `src/models/model_09_event_risk_governor/` event-family research helpers | Event-family scouting, packets, and final event-layer judgment. |
+| `50_*` | `src/models/model_10_event_risk_governor/` event-family research helpers | Event-family scouting, packets, and final event-layer judgment. |
 
 ## Architecture Summary
 
@@ -330,41 +330,41 @@ docs/14_layer_05_alpha_confidence.md
 It owns the mapping from alpha confidence to target holding state. It does not output buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, or mutate broker/account state. Contract owner:
 
 ```text
-docs/15_layer_06_position_projection.md
+docs/15_layer_07_position_projection.md
 ```
 
 ## Layer 7: UnderlyingActionModel
 
 `UnderlyingActionModel` consumes `position_projection_vector`, alpha-confidence refs, current/pending direct-underlying exposure, quote/liquidity state, risk-budget context, and policy gates to produce `underlying_action_plan` and `underlying_action_vector`.
 
-It owns the direct underlying/spot planned action thesis for stock, ETF, or crypto-style candidates: planned action type, planned exposure change, entry plan, target price/range, stop, thesis invalidation, time-stop, reward/risk, and side-neutral price-path assumptions for Layer 8 trading guidance / option expression. Its planned action types are offline plan values such as `open_long`, `increase_long`, `reduce_long`, `close_long`, `open_short`, `increase_short`, `reduce_short`, `cover_short`, `maintain`, and `no_trade`.
+It owns the direct underlying/spot planned action thesis for stock, ETF, or crypto-style candidates: planned action type, planned exposure change, entry plan, target price/range, stop, thesis invalidation, time-stop, reward/risk, and side-neutral price-path assumptions for Layer 9 trading guidance / option expression. Its planned action types are offline plan values such as `open_long`, `increase_long`, `reduce_long`, `close_long`, `open_short`, `increase_short`, `reduce_short`, `cover_short`, `maintain`, and `no_trade`.
 
 It does not emit broker order fields, order type, route, time-in-force, send/cancel/replace instructions, broker order ids, option strike/DTE/delta/Greeks, or account mutations. Contract owner:
 
 ```text
-docs/16_layer_07_underlying_action.md
+docs/16_layer_08_underlying_action.md
 ```
 
 ## Layer 8: TradingGuidanceModel / OptionExpressionModel
 
-`TradingGuidanceModel` / `OptionExpressionModel` consumes Layer 7 underlying price-path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market/position context to produce optional offline trading guidance and optional `option_expression_plan` / `expression_vector` rows. Layer 9 event-risk governance may attach this output as optional expression context but must not require it for direct-underlying/crypto routes.
+`TradingGuidanceModel` / `OptionExpressionModel` consumes Layer 8 underlying price-path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market/position context to produce optional offline trading guidance and optional `option_expression_plan` / `expression_vector` rows. Layer 10 event-risk governance may attach this output as optional expression context but must not require it for direct-underlying/crypto routes.
 
 It owns direct-underlying/no-trade guidance and, when options are available and allowed, long-call / long-put / no-option-expression selection, selected point-in-time contract references, contract constraints, premium-risk diagnostics, and expression-confidence scores. V1 option expression is single-leg long calls/puts only. Multi-leg structures remain deferred.
 
 It does not emit broker order type, route, time-in-force, final order quantity, send/cancel/replace flags, broker order ids, or account mutation. Contract owner:
 
 ```text
-docs/17_layer_08_trading_guidance.md
+docs/18_layer_09_trading_guidance.md
 ```
 
 ## Layer 9: EventRiskGovernor / EventIntelligenceOverlay
 
-`EventRiskGovernor` consumes point-in-time residual event evidence, upstream context refs, and the Layer 7 direct-underlying action thesis as its canonical risk target. It outputs `event_risk_intervention` plus `event_context_vector` evidence that can block new entries, cap exposure, request human review, or nominate reduction/flattening candidates under reviewed policy.
+`EventRiskGovernor` consumes point-in-time residual event evidence, upstream context refs, and the Layer 8 direct-underlying action thesis as its canonical risk target. It outputs `event_risk_intervention` plus `event_context_vector` evidence that can block new entries, cap exposure, request human review, or nominate reduction/flattening candidates under reviewed policy.
 
-It is a post-thesis event-risk governor boundary: it consumes the Layer 7 underlying thesis directly and may attach Layer 8 trading-guidance/option-expression context when available. It is not a hard upstream alpha input and not a broker/account mutation surface. Contract owner:
+It is a post-thesis event-risk governor boundary: it consumes the Layer 8 underlying thesis directly and may attach Layer 9 trading-guidance/option-expression context when available. It is not a hard upstream alpha input and not a broker/account mutation surface. Contract owner:
 
 ```text
-docs/18_layer_09_event_risk_governor.md
+docs/18_layer_10_event_risk_governor.md
 ```
 
 ## Unified Decision Record

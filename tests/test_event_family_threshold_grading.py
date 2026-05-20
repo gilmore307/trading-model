@@ -7,7 +7,7 @@ from pathlib import Path
 
 from event_family_fixtures import build_event_family_fixture
 
-from models.model_09_event_risk_governor.event_family_threshold_grading import (
+from models.model_10_event_risk_governor.event_family_threshold_grading import (
     build_event_family_threshold_grading,
     write_event_family_threshold_grading_artifacts,
 )

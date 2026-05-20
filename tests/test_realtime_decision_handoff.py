@@ -22,10 +22,11 @@ def _decision_input_snapshot() -> dict[str, object]:
         ("layer_03_target_state_vector", "target_state_vector_model", "target_context_state"),
         ("layer_04_event_failure_risk", "event_failure_risk_model", "event_failure_risk_vector"),
         ("layer_05_alpha_confidence", "alpha_confidence_model", "alpha_confidence_vector"),
-        ("layer_06_position_projection", "position_projection_model", "position_projection_vector"),
-        ("layer_07_underlying_action", "underlying_action_model", "underlying_action_plan"),
-        ("layer_09_event_risk_governor", "event_risk_governor", "event_context_vector"),
-        ("layer_08_option_expression", "option_expression_model", "trading_guidance_record"),
+        ("layer_06_dynamic_risk_policy", "dynamic_risk_policy_model", "dynamic_risk_policy_state"),
+        ("layer_07_position_projection", "position_projection_model", "position_projection_vector"),
+        ("layer_08_underlying_action", "underlying_action_model", "underlying_action_plan"),
+        ("layer_09_option_expression", "option_expression_model", "trading_guidance_record"),
+        ("layer_10_event_risk_governor", "event_risk_governor", "event_context_vector"),
     ]
     return {
         "contract_type": "execution_model_decision_input_snapshot",
@@ -65,12 +66,12 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
         self.assertEqual(result["provider_calls_performed"], 0)
         self.assertFalse(result["model_activation_performed"])
 
-    def test_layer_eight_option_expression_subset_is_optional_for_direct_underlying_route(self) -> None:
+    def test_layer_nine_option_expression_subset_is_optional_for_direct_underlying_route(self) -> None:
         snapshot = _decision_input_snapshot()
         snapshot["instrument_ref"] = "BTC-USD"
         snapshot["asset_expression_route"] = "direct_underlying_only"
         snapshot["layer_input_refs"] = [
-            row for row in snapshot["layer_input_refs"] if row["model_layer"] != "layer_08_option_expression"
+            row for row in snapshot["layer_input_refs"] if row["model_layer"] != "layer_09_option_expression"
         ]
 
         result = validate_execution_model_decision_input_snapshot(snapshot)
@@ -79,16 +80,16 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
 
         self.assertTrue(result["valid"], result["row_errors"])
         self.assertEqual(result["missing_layers"], [])
-        self.assertEqual(result["missing_optional_layers"], ["layer_08_option_expression"])
-        self.assertEqual(len(plan["layer_routes"]), 8)
+        self.assertEqual(result["missing_optional_layers"], ["layer_09_option_expression"])
+        self.assertEqual(len(plan["layer_routes"]), 9)
         self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_historical_model_decision_route")
         self.assertTrue(validation["valid"], validation["row_errors"])
-        self.assertEqual(validation["missing_optional_layers"], ["layer_08_option_expression"])
+        self.assertEqual(validation["missing_optional_layers"], ["layer_09_option_expression"])
 
-    def test_layer_eight_option_expression_plan_output_is_still_accepted(self) -> None:
+    def test_layer_nine_option_expression_plan_output_is_still_accepted(self) -> None:
         snapshot = _decision_input_snapshot()
         for row in snapshot["layer_input_refs"]:
-            if row["model_layer"] == "layer_08_option_expression":
+            if row["model_layer"] == "layer_09_option_expression":
                 row["expected_model_output"] = "option_expression_plan"
 
         result = validate_execution_model_decision_input_snapshot(snapshot)
@@ -100,21 +101,21 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
 
         self.assertEqual(plan["contract_type"], "model_realtime_decision_route_plan")
         self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_historical_model_decision_route")
-        self.assertEqual(len(plan["layer_routes"]), 9)
+        self.assertEqual(len(plan["layer_routes"]), 10)
         self.assertEqual(plan["provider_calls_performed"], 0)
         self.assertFalse(plan["model_activation_performed"])
         self.assertFalse(plan["broker_order_construction_performed"])
         layer_4 = plan["layer_routes"][3]
         self.assertEqual(layer_4["model_layer"], "layer_04_event_failure_risk")
         self.assertIn("generate_model_04_event_failure_risk.py", layer_4["generator_entrypoint_ref"])
-        layer_8 = plan["layer_routes"][7]
-        self.assertEqual(layer_8["model_layer"], "layer_09_event_risk_governor")
-        self.assertEqual(layer_8["expected_model_output"], "event_context_vector")
-        self.assertIn("generate_model_09_event_risk_governor.py", layer_8["generator_entrypoint_ref"])
+        layer_6 = plan["layer_routes"][5]
+        self.assertEqual(layer_6["model_layer"], "layer_06_dynamic_risk_policy")
+        self.assertEqual(layer_6["expected_model_output"], "dynamic_risk_policy_state")
+        self.assertIn("generate_model_06_dynamic_risk_policy.py", layer_6["generator_entrypoint_ref"])
         layer_9 = plan["layer_routes"][-1]
-        self.assertEqual(layer_9["model_layer"], "layer_08_option_expression")
-        self.assertEqual(layer_9["expected_model_output"], "trading_guidance_record")
-        self.assertIn("generate_model_08_option_expression.py", layer_9["generator_entrypoint_ref"])
+        self.assertEqual(layer_9["model_layer"], "layer_10_event_risk_governor")
+        self.assertEqual(layer_9["expected_model_output"], "event_context_vector")
+        self.assertIn("generate_model_10_event_risk_governor.py", layer_9["generator_entrypoint_ref"])
         validation = validate_realtime_decision_route_plan(plan)
         self.assertTrue(validation["valid"])
 

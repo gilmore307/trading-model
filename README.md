@@ -36,7 +36,7 @@ TradingGuidanceModel / OptionExpressionModel
   -> trading_guidance_record plus optional option_expression_plan / expression_vector
 ```
 
-Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning. Layers 5-7 convert target state and reviewed failure-risk conditioning into alpha confidence, projected position state, and a direct-underlying action thesis. Layer 8 composes optional offline trading guidance and option-expression context from that thesis. Layer 9 applies event-risk governance to the direct-underlying/spot thesis, with Layer 8 context attached only when available. Broker orders and account mutation stay outside this repository.
+Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning. Layers 5-7 convert target state and reviewed failure-risk conditioning into alpha confidence, projected position state, and a direct-underlying action thesis. Layer 9 composes optional offline trading guidance and option-expression context from that thesis. Layer 10 applies event-risk governance to the direct-underlying/spot thesis, with Layer 9 context attached only when available. Broker orders and account mutation stay outside this repository.
 
 ## Top-Level Structure
 
@@ -63,10 +63,11 @@ src/models/model_02_sector_context/       SectorContextModel.
 src/models/model_03_target_state_vector/  TargetStateVectorModel and anonymous target candidate preprocessing.
 src/models/model_04_event_failure_risk/   EventFailureRiskModel.
 src/models/model_05_alpha_confidence/     AlphaConfidenceModel.
-src/models/model_06_position_projection/  PositionProjectionModel.
-src/models/model_07_underlying_action/    UnderlyingActionModel.
-src/models/model_09_event_risk_governor/  EventRiskGovernor.
-src/models/model_08_option_expression/    OptionExpressionModel package for Layer 8 trading guidance.
+src/models/model_06_dynamic_risk_policy/  DynamicRiskPolicyModel.
+src/models/model_07_position_projection/  PositionProjectionModel.
+src/models/model_08_underlying_action/    UnderlyingActionModel.
+src/models/model_09_option_expression/    OptionExpressionModel package for Layer 9 trading guidance.
+src/models/model_10_event_risk_governor/  EventRiskGovernor.
 src/model_governance/                     Shared evaluation, promotion, SQL, and local-layer helpers.
 ```
 
@@ -82,17 +83,18 @@ scripts/models/model_02_sector_context/
 scripts/models/model_03_target_state_vector/
 scripts/models/model_04_event_failure_risk/
 scripts/models/model_05_alpha_confidence/
-scripts/models/model_06_position_projection/
-scripts/models/model_07_underlying_action/
-scripts/models/model_09_event_risk_governor/
-scripts/models/model_08_option_expression/
+scripts/models/model_06_dynamic_risk_policy/
+scripts/models/model_07_position_projection/
+scripts/models/model_08_underlying_action/
+scripts/models/model_09_option_expression/
+scripts/models/model_10_event_risk_governor/
 scripts/models/audit_model_output_tables.py
 scripts/models/run_model_output_quality_gate.py
 scripts/models/review_layers_03_08_promotion_acceptance.py
 scripts/model_governance/
 ```
 
-Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Layer 1 also exposes `diagnose_model_01_market_regime_substrate.py`, a read-only source/feature/model substrate diagnostic for promotion-readiness triage before regeneration planning. `scripts/models/audit_model_output_tables.py` audits all nine model output/support table families for empty or sparse columns without mutating SQL, and `scripts/models/run_model_output_quality_gate.py` turns that audit into a pass/block decision for post-generation acceptance. Layer 4 event-failure-risk scripts and Layer 9 event-risk scripts use the current physical `model_04_event_failure_risk` and `model_09_event_risk_governor` surfaces. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
+Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Layer 1 also exposes `diagnose_model_01_market_regime_substrate.py`, a read-only source/feature/model substrate diagnostic for promotion-readiness triage before regeneration planning. `scripts/models/audit_model_output_tables.py` audits all ten model output/support table families for empty or sparse columns without mutating SQL, and `scripts/models/run_model_output_quality_gate.py` turns that audit into a pass/block decision for post-generation acceptance. Layer 4 event-failure-risk scripts and Layer 10 event-risk scripts use the physical `model_04_event_failure_risk` and `model_10_event_risk_governor` surfaces. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
 
 ## Docs Spine
 
@@ -109,10 +111,11 @@ docs/11_layer_02_sector_context.md
 docs/12_layer_03_target_state_vector.md
 docs/13_layer_04_event_failure_risk.md
 docs/14_layer_05_alpha_confidence.md
-docs/15_layer_06_position_projection.md
-docs/16_layer_07_underlying_action.md
-docs/18_layer_09_event_risk_governor.md
-docs/17_layer_08_trading_guidance.md
+docs/15_layer_06_dynamic_risk_policy.md
+docs/16_layer_07_position_projection.md
+docs/17_layer_08_underlying_action.md
+docs/18_layer_09_trading_guidance.md
+docs/19_layer_10_event_risk_governor.md
 docs/20_model_decomposition.md
 docs/21_vector_taxonomy.md
 docs/22_state_vector_feature_registry.md
