@@ -2,7 +2,9 @@
 
 Contract-first workspace for `TargetStateVectorModel` / Layer 3.
 
-Layer 3 is direction-neutral target context/state-vector construction. Layer 3 preprocessing first produces anonymous target candidates and `anonymous_target_feature_vector` inputs; `TargetStateVectorModel` then fuses market state, sector state, and anonymous target-local state into the point-in-time `target_context_state` used by later layers. Signed current-state direction, tradability, transition risk, noise, liquidity/cost, and row quality remain separate; Layer 3 does not output event context, alpha confidence, position size, or final trade action.
+Layer 3 is direction-neutral target context/state-vector construction plus anonymous candidate-set ranking for target handoff. Layer 3 preprocessing first produces anonymous target candidates and `anonymous_target_feature_vector` inputs; `TargetStateVectorModel` then fuses market state, sector state, and anonymous target-local state into the point-in-time `target_context_state` used by later layers. Signed current-state direction, tradability, transition risk, noise, liquidity/cost, row quality, and target handoff rank remain separate; Layer 3 does not output event context, alpha confidence, position size, option expression, or final trade action.
+
+Task execution may remain target-major across folds because routing symbols only supply anonymous samples. Evaluation and promotion must still aggregate by fold and by the fixed candidate-universe policy used in live routing.
 
 Key files:
 
@@ -18,4 +20,3 @@ Current importable implementation:
 - `config/promotion_thresholds.toml` — production promotion threshold defaults for real-data review.
 
 Local/fixture evidence is useful for contract tests but must defer production promotion until real-data evaluation, split stability, baseline improvement, leakage checks, and reviewed approval are all present.
-

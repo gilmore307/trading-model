@@ -874,3 +874,15 @@ Layer 4 contains only agent-accepted, empirically reviewed event/strategy-failur
 Layer 9 remains the residual event-risk governor and research surface. It may explain residual anomalies, maintain the observation pool, warn/cap/block/review the direct-underlying/spot thesis, and generate event-family promotion packets. A family can move from Layer 9 discovery/observation into Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, incremental value review, and explicit agent/manager acceptance.
 
 This decision is architecture/governance only. Current physical script/package/table names now include `model_04_event_failure_risk`, `model_05_alpha_confidence`, `model_06_position_projection`, `model_07_underlying_action`, `model_08_option_expression`, `model_09_event_risk_governor`, `MODEL_09_*`, and `source_09_event_risk_governor`; historical/applied migrations may retain earlier names.
+
+## D048 - Layer 3 uses anonymous target-state ranking under a fixed candidate policy
+
+Accepted: 2026-05-20
+
+Layer 3 remains an anonymous `TargetStateVectorModel`: routing symbols contribute samples, but raw ticker/company identity must stay outside model-facing vectors. The model learns current anonymous target state, conditioned on Layer 1 market context and Layer 2 sector context, to future target path/tradability outcomes.
+
+Task execution may remain target-major across folds: one routing symbol can complete all assigned folds before another starts. This is a scheduler/runtime convenience only. Production evaluation and promotion must aggregate by fold and by the fixed candidate-universe policy used in live routing.
+
+The Layer 3 candidate policy is rule-fixed rather than ticker-fixed. Live routing and promotion benchmarks construct candidates from current Layer 2 selected/watch sectors, sector constituents or reviewed proxies, current market-wide hot/liquid names, liquidity/spread/data-quality filters, optional optionability diagnostics, and controls when evaluation requires contrast.
+
+Layer 3 may emit `3_target_handoff_state`, `3_target_handoff_bias`, `3_target_handoff_rank`, and `3_target_selection_reason_codes` as target-selection evidence. It still must not emit final actions, entry/exit orders, position sizes, portfolio weights, execution policy, or option contracts.

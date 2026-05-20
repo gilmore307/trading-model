@@ -10,11 +10,13 @@ Layer 3 is target state-vector construction. Earlier action/variant Layer 3 work
 
 > Given the broad market state, sector/industry state, and a single anonymous target's own tape/liquidity behavior, what is the target's current tradable market state?
 
-Layer 3 should find the relationship between **target board/tape state** and future trading outcomes. It should not begin by choosing a downstream action variant.
+Layer 3 should find the relationship between **anonymous target board/tape state** and future trading outcomes. It should not begin by choosing a downstream action variant.
 
-Layer 3 builds a point-in-time, direction-neutral `target_context_state` that later layers may use for event context, alpha confidence, position projection, underlying-action planning, and option-expression handoff. Layer 3 does not output position size, planned action, option expression, or final action.
+Layer 3 builds a point-in-time, direction-neutral `target_context_state` that later layers may use for event context, alpha confidence, position projection, underlying-action planning, and option-expression handoff. Layer 3 also supports ranking the current anonymous candidate set for target handoff. It does not output position size, planned action, option expression, or final action.
 
-Historical training may sample a broader target universe than live routing. In live routing, Layer 3 candidates commonly come from Layer 2 selected/prioritized sector baskets. In historical training, Layer 3 may include anonymous targets from other sectors, industries, styles, market caps, liquidity tiers, and ETF/stock exposure paths so it can learn sector-confirmed, sector-divergent, strong-in-weak-sector, and weak-in-strong-sector behavior. Layer 2 context remains attached as point-in-time context; it is not an unconditional historical-training filter.
+Historical training may sample a broader target universe than live routing. In live routing, Layer 3 candidates come from a fixed candidate-universe policy: current Layer 2 selected/watch sector baskets plus current market-wide hot/liquid names, filtered by point-in-time liquidity, spread, data quality, and optional optionability diagnostics. In historical training, Layer 3 may include anonymous targets from other sectors, industries, styles, market caps, liquidity tiers, and ETF/stock exposure paths so it can learn sector-confirmed, sector-divergent, strong-in-weak-sector, and weak-in-strong-sector behavior. Layer 2 context remains attached as point-in-time context; it is not an unconditional historical-training filter.
+
+Task execution may remain target-major: one routing symbol can complete all assigned folds before the next routing symbol starts. That is an implementation schedule only. The trained Layer 3 model is shared across anonymous target-state samples, and evaluation/promotion must aggregate by fold and by the candidate-universe policy rather than by one ticker's full history.
 
 ## Boundary reset
 
@@ -23,6 +25,7 @@ Layer 3 owns:
 - anonymous target candidate construction as preprocessing / sample organization, not as a separate model;
 - market-context, sector-context, and target-local feature fusion;
 - target context/state-vector generation;
+- anonymous candidate-set ranking/handoff evidence for current target selection;
 - target-state labels for future return/risk/path/tradability relationship research, kept out of inference features;
 - state-cluster / embedding / regime evidence for a single target candidate;
 - acceptance evidence that state vectors explain future tradeable outcomes better than market-only or sector-only baselines.
@@ -41,6 +44,8 @@ Layer 3 does **not** own:
 ```text
 trading_model.model_01_market_regime       # broad market_context_state
 trading_model.model_02_sector_context      # sector_context_state / selected basket context
+Layer 3 candidate policy
+                                           # top Layer 2 sectors + hot/liquid market names + quality filters
 Layer 3 preprocessing: anonymous_target_candidate_builder
                                            # point-in-time anonymous candidate rows and anonymous_target_feature_vector
 trading_data.source_03_target_state        # target-local bars, liquidity, quote/trade evidence
@@ -48,7 +53,22 @@ trading_data.feature_03_target_state_vector
                                            # deterministic target-state feature surface
 -> TargetStateVectorModel
 -> trading_model.model_03_target_state_vector
+-> candidate-set ranking / target handoff evidence
 ```
+
+## Candidate-universe policy
+
+The Layer 3 candidate set is rule-fixed, not ticker-fixed. Live routing and promotion benchmarks should construct candidates from:
+
+- the current top Layer 2 selected/watch sector or industry baskets;
+- sector constituents, high-exposure names, or reviewed proxy names for those baskets;
+- current market-wide hot/liquid names by recent point-in-time dollar volume and relative activity;
+- liquidity, spread, quote-quality, price, data-quality, and optional optionability filters;
+- control samples from weaker, lower-ranked, or blocked contexts when evaluation needs contrast.
+
+The default policy parameters are conservative until evidence tunes them: top 3 Layer 2 sectors, top 10 names per sector by point-in-time dollar volume or exposure, top 20 market-wide hot/liquid names, and a 50-100 candidate batch cap after de-duplication and quality filters.
+
+The policy fixes how candidates are generated. It must not hard-code final ticker lists for promotion benchmarks. Fixed target/window panels may remain diagnostics or stress panels, but they do not prove full Layer 3 target-selection ability.
 
 ## Core state-vector components
 
@@ -134,6 +154,13 @@ Layer 3 score families must stay separated:
 - `3_tradability_score_<window>` is direction-neutral; stable downtrends can score highly when direction strength, quality, stability, persistence, liquidity, and context support are strong while noise, transition risk, and exhaustion risk are low.
 - `3_state_quality_score`, coverage, and data-quality diagnostics describe reliability of the state row, not opportunity.
 
+Layer 3 target handoff/ranking evidence should use these active names when promoted:
+
+- `3_target_handoff_state`: `selected`, `watch`, `blocked`, or `insufficient_data`;
+- `3_target_handoff_bias`: `long_bias`, `short_bias`, `neutral`, or `mixed`;
+- `3_target_handoff_rank`: rank inside the candidate-policy batch, not a portfolio weight;
+- `3_target_selection_reason_codes`: stable reason codes for selection, watch, block, or data-quality outcomes.
+
 Context alignment should not collapse signed direction and quality. Prefer separate current-state fields such as `3_context_direction_alignment_score_<window>` for signed alignment and `3_context_support_quality_score_<window>` for direction-neutral support quality.
 
 ## Labels and learning objective
@@ -164,6 +191,7 @@ Layer 3 review should ask:
 5. Which market/sector states make a target-local pattern useful or useless?
 6. Does adding target state improve direction-neutral tradability/path outcomes versus market-only and market+sector baselines?
 7. Does the model remain useful both on broad historical target samples and under the narrower live-route candidate policy?
+8. Under the candidate-universe policy, do selected/top-ranked anonymous targets outperform watch/blocked/control candidates on future path quality, tradability, liquidity-adjusted outcomes, and fold-stable ranking metrics?
 
 ## Current implementation status
 
@@ -194,6 +222,8 @@ A Layer 3 implementation is not accepted unless it proves:
 - baselines compare market-only, market+sector, and market+sector+target vectors;
 - evaluation separates broad historical target-sample generalization from live-route simulation when the training sample includes targets outside Layer 2 selected/prioritized baskets;
 - state vectors improve at least one accepted direction-neutral forward path/tradability outcome relationship with split-stability evidence;
+- target handoff/ranking evidence improves selected/top-N candidates over watch/blocked/control candidates under the candidate-universe policy;
+- target-major task execution does not replace fold-level and candidate-policy-aware evaluation;
 - liquidity/cost diagnostics identify states that are theoretically predictive but practically untradeable;
 - audit/routing metadata can map decisions back to real symbols without leaking identity into fitting vectors;
 - generated outputs, large artifacts, and credentials stay out of Git;

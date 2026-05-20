@@ -2,7 +2,7 @@
 
 Status: Accepted V1 contract; deterministic implementation/evaluation scaffold complete; production promotion pending real-data evidence and accepted review.
 
-This file owns the model-local Layer 3 target context/state-vector output contract. Layer 3 is not a strategy-variant selector. It constructs anonymous, point-in-time, direction-neutral `target_context_state` that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context.
+This file owns the model-local Layer 3 target context/state-vector output contract. Layer 3 is not a strategy-variant selector. It constructs anonymous, point-in-time, direction-neutral `target_context_state` that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context. It may rank the current anonymous candidate-policy batch for target handoff, but it does not emit final actions, position sizes, or option expressions.
 
 `docs/21_vector_taxonomy.md` owns the vocabulary distinction: `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector, while `target_context_state` is the Layer 3 conceptual model output.
 
@@ -36,6 +36,8 @@ Required identity fields:
 | `target_context_state_ref` | Stable reference/hash for the model-facing state payload. |
 
 Routing/audit fields such as `audit_symbol_ref` and `routing_symbol_ref` must stay outside the model-facing vector. `target_candidate_id` is row identity only and must not be used as a fitting feature.
+
+Task execution may be target-major: one routing symbol can complete all assigned folds before the next routing symbol starts. That ordering is an implementation schedule, not a model boundary. Training/evaluation must pool anonymous target-state samples and report fold-level, candidate-policy-aware selection/ranking evidence.
 
 ## V1 feature blocks
 
@@ -138,6 +140,10 @@ Layer 3 outputs may include scalar summaries inside block payloads, but these sc
 | `3_context_support_quality_score_<window>` | [0, 1] | Direction-neutral support quality from sector/market/peer context. |
 | `3_tradability_score_<window>` | [0, 1] | Direction-neutral state tradability. Stable short states can score highly. It combines direction strength, trend quality, path stability, context support, liquidity, persistence, data quality, and inverted noise/transition/exhaustion risk; it must never mean “suitable long.” |
 | `3_state_quality_score` | [0, 1] | Reliability/completeness of the produced state vector, not opportunity. |
+| `3_target_handoff_state` | text | Candidate-policy batch handoff value: `selected`, `watch`, `blocked`, or `insufficient_data`. |
+| `3_target_handoff_bias` | text | Candidate-policy batch bias value: `long_bias`, `short_bias`, `neutral`, or `mixed`; separate from handoff state. |
+| `3_target_handoff_rank` | integer/null | Rank inside the candidate-policy batch. It is not a portfolio weight. |
+| `3_target_selection_reason_codes` | text/null | Stable reason codes for target selected/watch/blocked/insufficient-data outcomes. |
 
 `3_target_direction_score_<window>` is not Layer 5 alpha/direction confidence. Event context, direction-confidence calibration, target/stop/action projection, and position sizing belong to downstream consumers.
 
@@ -153,6 +159,7 @@ Labels are training/evaluation-only outputs. They must never be joined into infe
 | `reversion_pressure` | 15min, 60min, 390min | Whether stretched target states revert toward target/sector/market anchors. |
 | `liquidity_tradability_outcome` | 15min, 60min | Whether the state remains tradeable after spreads, volume, and coverage gates. |
 | `state_transition` | next accepted state row | Which target state tends to follow this state. |
+| `candidate_policy_rank_outcome` | 15min, 60min, 390min | Whether selected/top-ranked anonymous candidates outperform watch/blocked/control candidates on path quality and liquidity-adjusted tradability inside a fixed candidate-universe policy batch. |
 
 ## Baseline ladder
 
@@ -162,7 +169,7 @@ Layer 3 evaluation must compare these feature sets under identical labels and sp
 2. `market_sector_baseline` — Layer 1 + Layer 2 blocks.
 3. `market_sector_target_context` — Layer 1 + Layer 2 + target + cross-state blocks.
 
-A V1 model is not accepted just because target features improve aggregate return prediction or long-only outcomes. It must show split-stable improvement for at least one reviewed direction-neutral forward path/tradability outcome and must preserve liquidity/cost diagnostics so theoretically predictive but practically untradeable states can be identified. Preferred tradability validation buckets compare `3_tradability_score_<window>` against MFE/MAE balance, path efficiency, first-target-before-stop behavior, direction flip count, state-transition rate, and spread/liquidity degradation rather than only forward return.
+A V1 model is not accepted just because target features improve aggregate return prediction or long-only outcomes. It must show split-stable improvement for at least one reviewed direction-neutral forward path/tradability outcome and must preserve liquidity/cost diagnostics so theoretically predictive but practically untradeable states can be identified. Preferred tradability validation buckets compare `3_tradability_score_<window>` against MFE/MAE balance, path efficiency, first-target-before-stop behavior, direction flip count, state-transition rate, and spread/liquidity degradation rather than only forward return. Selection validation must also compare selected/top-N targets with watch/blocked/control candidates inside the same candidate-universe policy batch.
 
 ## Rejection rules
 
