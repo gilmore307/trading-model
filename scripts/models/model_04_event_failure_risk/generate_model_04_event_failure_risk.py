@@ -150,7 +150,7 @@ def _fetch_table_rows(
     return [dict(row) for row in cursor.fetchall()]
 
 
-def _fetch_target_context_rows(
+def _fetch_target_context_identity_rows(
     cursor: Any,
     *,
     schema: str,
@@ -158,8 +158,44 @@ def _fetch_target_context_rows(
     source_start: str | None,
     source_end: str | None,
 ) -> list[dict[str, Any]]:
+    where: list[str] = []
+    params: list[Any] = []
+    if source_start:
+        where.append('available_time::timestamptz >= %s::timestamptz')
+        params.append(source_start)
+    if source_end:
+        where.append('available_time::timestamptz < %s::timestamptz')
+        params.append(source_end)
+    where_sql = " WHERE " + " AND ".join(where) if where else ""
+    cursor.execute(
+        f"""
+        SELECT
+          "available_time",
+          "tradeable_time",
+          "target_candidate_id",
+          "market_context_state_ref",
+          "sector_context_state_ref",
+          "target_context_state_ref"
+        FROM {_qualified(schema, table)}
+        {where_sql}
+        ORDER BY "available_time"::timestamptz ASC, "target_candidate_id" ASC
+        """,
+        params,
+    )
+    return [dict(row) for row in cursor.fetchall()]
+
+
+def _fetch_target_context_rows(
+    cursor: Any,
+    *,
+    schema: str,
+    table: str,
+    source_start: str | None,
+    source_end: str | None,
+    include_explainability: bool = True,
+) -> list[dict[str, Any]]:
     explainability_table = f"{table}_explainability"
-    if not _table_exists(cursor, schema=schema, table=explainability_table):
+    if not include_explainability or not _table_exists(cursor, schema=schema, table=explainability_table):
         return _fetch_table_rows(
             cursor,
             schema=schema,
@@ -182,7 +218,6 @@ def _fetch_target_context_rows(
         SELECT
           t.*,
           e."target_context_state",
-          e."target_state_embedding",
           e."state_cluster_id"
         FROM {_qualified(schema, table)} AS t
         LEFT JOIN {_qualified(schema, explainability_table)} AS e
@@ -263,15 +298,25 @@ def _fetch_input_rows(
     source_start: str | None,
     source_end: str | None,
 ) -> list[dict[str, Any]]:
+    source_exists = _table_exists(cursor, schema=source_schema, table=source_table)
+    if not source_exists:
+        return _neutral_input_rows_from_target_context(
+            _fetch_target_context_identity_rows(
+                cursor,
+                schema=target_context_schema,
+                table=target_context_table,
+                source_start=source_start,
+                source_end=source_end,
+            )
+        )
     target_rows = _fetch_target_context_rows(
         cursor,
         schema=target_context_schema,
         table=target_context_table,
         source_start=source_start,
         source_end=source_end,
+        include_explainability=source_exists,
     )
-    if not _table_exists(cursor, schema=source_schema, table=source_table):
-        return _neutral_input_rows_from_target_context(target_rows)
     gate_rows = _fetch_table_rows(
         cursor,
         schema=source_schema,

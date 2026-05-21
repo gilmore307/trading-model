@@ -83,8 +83,10 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
             def __init__(self) -> None:
                 self._one = None
                 self._many = []
+                self.statements: list[str] = []
 
             def execute(self, sql: str, params: tuple[object, ...] | list[object] | None = None) -> None:
+                self.statements.append(sql)
                 if "to_regclass" in sql:
                     self._one = {"table_ref": None}
                     return
@@ -106,8 +108,9 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
             def fetchall(self):
                 return self._many
 
+        cursor = FakeCursor()
         rows = generator._fetch_input_rows(
-            FakeCursor(),
+            cursor,
             source_schema="trading_model",
             source_table="event_strategy_failure_gate",
             target_context_schema="trading_model",
@@ -117,6 +120,7 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
         )
 
         self.assertEqual(len(rows), 1)
+        self.assertNotIn("model_03_target_state_vector_explainability", "\n".join(cursor.statements))
         self.assertEqual(rows[0]["target_candidate_id"], "anon_aapl")
         self.assertEqual(rows[0]["event_strategy_failure_gate"]["gate_status"], "not_present")
         model_rows = generator.generate_rows(rows)
@@ -163,6 +167,7 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
 
         join_sql = "\n".join(cursor.statements)
         self.assertIn('e."available_time"::timestamptz = t."available_time"::timestamptz', join_sql)
+        self.assertNotIn('e."target_state_embedding"', join_sql)
         self.assertEqual(rows[0]["state_cluster_id"], "cluster_1")
 
     def test_layer_09_reads_underlying_action_explainability_with_qualified_time_filters(self) -> None:
