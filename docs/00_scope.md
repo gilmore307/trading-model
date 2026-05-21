@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`trading-model` is the offline modeling home for the current nine-layer trading decision stack.
+`trading-model` is the offline modeling home for the current ten-layer trading decision stack.
 
 It owns point-in-time model research, model-local generators/evaluators, validation workflows, promotion evidence, model outputs, and decision-record prototypes for:
 
@@ -11,10 +11,11 @@ It owns point-in-time model research, model-local generators/evaluators, validat
 3. `TargetStateVectorModel` -> `target_context_state`, with anonymous target candidate construction as Layer 3 preprocessing;
 4. `EventFailureRiskModel` -> `event_failure_risk_vector`;
 5. `AlphaConfidenceModel` -> `alpha_confidence_vector`;
-6. `PositionProjectionModel` -> `position_projection_vector`;
-7. `UnderlyingActionModel` -> `underlying_action_plan` / `underlying_action_vector`;
-8. `TradingGuidanceModel / OptionExpressionModel` -> `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`;
-9. `EventRiskGovernor / EventIntelligenceOverlay` -> `event_risk_intervention` / event-adjusted risk guidance.
+6. `DynamicRiskPolicyModel` -> `dynamic_risk_policy_state`;
+7. `PositionProjectionModel` -> `position_projection_vector`;
+8. `UnderlyingActionModel` -> `underlying_action_plan` / `underlying_action_vector`;
+9. `TradingGuidanceModel / OptionExpressionModel` -> `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`;
+10. `EventRiskGovernor / EventIntelligenceOverlay` -> `event_risk_intervention` / event-adjusted risk guidance.
 
 The repository does **not** place orders, mutate accounts, own provider acquisition, or become the global registry. It produces offline model artifacts and review evidence for downstream systems.
 
@@ -26,7 +27,8 @@ The repository does **not** place orders, mutate accounts, own provider acquisit
 - Anonymous target candidate construction and target state-vector modeling without ticker/company identity in fitting vectors.
 - Event-failure-risk modeling from agent-reviewed, empirically accepted event/strategy-failure relationships before alpha confidence.
 - Alpha-confidence modeling from the reviewed Layer 1/2/3 state stack plus reviewed Layer 4 failure-risk conditioning when available.
-- Position-projection modeling from alpha plus current/pending position, cost, exposure, and risk-budget context; this projects target position state, not orders.
+- Dynamic-risk-policy modeling from whole-market regime, systemic event pressure, alpha quality, and replayed portfolio/account capacity; this is model-internal policy state, not broker permission.
+- Position-projection modeling from alpha, dynamic risk policy, current/pending position, cost, exposure, and risk-budget context; this projects target position state, not orders.
 - Underlying-action modeling for offline direct underlying/spot action thesis across stock, ETF, or crypto-style candidates, planned exposure change, price-path assumptions, and optional Layer 9 handoff; this is not broker/exchange execution.
 - Trading-guidance / option-expression modeling from the Layer 8 thesis plus optional option-chain context; this may choose offline expression/contract constraints, not routes or orders.
 - Event-intelligence / event-risk-governor modeling after the direct-underlying thesis is known, including residual discovery and high-severity risk interventions such as blocking new entries, capping exposure, or nominating flatten/halt candidates without directly mutating broker/account state. Optional option-expression context may be used when present, but crypto/direct-underlying-only routes do not require options.

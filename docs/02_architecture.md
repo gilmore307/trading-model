@@ -323,17 +323,27 @@ Contract owner:
 docs/14_layer_05_alpha_confidence.md
 ```
 
-## Layer 6: PositionProjectionModel
+## Layer 6: DynamicRiskPolicyModel
 
-`PositionProjectionModel` consumes the final adjusted `alpha_confidence_vector`, current/pending position state, position-level friction, portfolio exposure context, risk-budget context, and point-in-time policy gates to project `position_projection_vector`: target position bias, target exposure, current-position alignment, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, position-state stability, and projection confidence.
+`DynamicRiskPolicyModel` consumes Layer 1 global market regime, systemic or broad event-risk context, Layer 5 alpha quality, and replayed portfolio/account capacity to produce `dynamic_risk_policy_state`: premium/risk-budget posture, sizing pressure, risk-budget efficiency, and policy reason codes. Target-specific evidence may cap or skip only the current target and must not distort the whole-market budget.
 
-It owns the mapping from alpha confidence to target holding state. It does not output buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, or mutate broker/account state. Contract owner:
+It owns model-internal risk-budget policy state. It is not broker permission, an execution hard-limit override, order routing, or account mutation. Contract owner:
 
 ```text
-docs/15_layer_07_position_projection.md
+docs/15_layer_06_dynamic_risk_policy.md
 ```
 
-## Layer 7: UnderlyingActionModel
+## Layer 7: PositionProjectionModel
+
+`PositionProjectionModel` consumes the final adjusted `alpha_confidence_vector`, Layer 6 `dynamic_risk_policy_state`, current/pending position state, position-level friction, portfolio exposure context, risk-budget context, and point-in-time policy gates to project `position_projection_vector`: target position bias, target exposure, current-position alignment, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, position-state stability, and projection confidence.
+
+It owns the mapping from alpha confidence and dynamic risk policy to target holding state. It does not output buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, or mutate broker/account state. Contract owner:
+
+```text
+docs/16_layer_07_position_projection.md
+```
+
+## Layer 8: UnderlyingActionModel
 
 `UnderlyingActionModel` consumes `position_projection_vector`, alpha-confidence refs, current/pending direct-underlying exposure, quote/liquidity state, risk-budget context, and policy gates to produce `underlying_action_plan` and `underlying_action_vector`.
 
@@ -342,10 +352,10 @@ It owns the direct underlying/spot planned action thesis for stock, ETF, or cryp
 It does not emit broker order fields, order type, route, time-in-force, send/cancel/replace instructions, broker order ids, option strike/DTE/delta/Greeks, or account mutations. Contract owner:
 
 ```text
-docs/16_layer_08_underlying_action.md
+docs/17_layer_08_underlying_action.md
 ```
 
-## Layer 8: TradingGuidanceModel / OptionExpressionModel
+## Layer 9: TradingGuidanceModel / OptionExpressionModel
 
 `TradingGuidanceModel` / `OptionExpressionModel` consumes Layer 8 underlying price-path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market/position context to produce optional offline trading guidance and optional `option_expression_plan` / `expression_vector` rows. Layer 10 event-risk governance may attach this output as optional expression context but must not require it for direct-underlying/crypto routes.
 
@@ -357,14 +367,14 @@ It does not emit broker order type, route, time-in-force, final order quantity, 
 docs/18_layer_09_trading_guidance.md
 ```
 
-## Layer 9: EventRiskGovernor / EventIntelligenceOverlay
+## Layer 10: EventRiskGovernor / EventIntelligenceOverlay
 
 `EventRiskGovernor` consumes point-in-time residual event evidence, upstream context refs, and the Layer 8 direct-underlying action thesis as its canonical risk target. It outputs `event_risk_intervention` plus `event_context_vector` evidence that can block new entries, cap exposure, request human review, or nominate reduction/flattening candidates under reviewed policy.
 
 It is a post-thesis event-risk governor boundary: it consumes the Layer 8 underlying thesis directly and may attach Layer 9 trading-guidance/option-expression context when available. It is not a hard upstream alpha input and not a broker/account mutation surface. Contract owner:
 
 ```text
-docs/18_layer_10_event_risk_governor.md
+docs/19_layer_10_event_risk_governor.md
 ```
 
 ## Unified Decision Record

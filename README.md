@@ -1,6 +1,6 @@
 # trading-model
 
-`trading-model` is the offline modeling repository for the current nine-layer trading decision stack.
+`trading-model` is the offline modeling repository for the current ten-layer trading decision stack.
 
 It owns point-in-time model research, model-local generators/evaluators, promotion evidence, and model outputs. It does **not** own raw source acquisition, global registry authority, durable storage policy, dashboards, live/paper order placement, broker/account mutation, generated runtime artifacts committed to Git, or secrets.
 
@@ -23,20 +23,23 @@ EventFailureRiskModel
 AlphaConfidenceModel
   -> alpha_confidence_vector
 
+DynamicRiskPolicyModel
+  -> dynamic_risk_policy_state
+
 PositionProjectionModel
   -> position_projection_vector
 
 UnderlyingActionModel
   -> underlying_action_plan / underlying_action_vector
 
-EventRiskGovernor / EventIntelligenceOverlay
-  -> event_risk_intervention / event-adjusted risk guidance
-
 TradingGuidanceModel / OptionExpressionModel
   -> trading_guidance_record plus optional option_expression_plan / expression_vector
+
+EventRiskGovernor / EventIntelligenceOverlay
+  -> event_risk_intervention / event-adjusted risk guidance
 ```
 
-Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning. Layers 5-7 convert target state and reviewed failure-risk conditioning into alpha confidence, projected position state, and a direct-underlying action thesis. Layer 9 composes optional offline trading guidance and option-expression context from that thesis. Layer 10 applies event-risk governance to the direct-underlying/spot thesis, with Layer 9 context attached only when available. Broker orders and account mutation stay outside this repository.
+Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning. Layers 5-8 convert target state and reviewed failure-risk conditioning into alpha confidence, dynamic risk policy, projected position state, and a direct-underlying action thesis. Layer 9 composes optional offline trading guidance and option-expression context from that thesis. Layer 10 applies event-risk governance to the direct-underlying/spot thesis, with Layer 9 context attached only when available. Broker orders and account mutation stay outside this repository.
 
 ## Top-Level Structure
 

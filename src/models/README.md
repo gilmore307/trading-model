@@ -11,9 +11,10 @@ Current packages:
 - `model_03_target_state_vector/` — Layer 3 package containing anonymous target candidate preprocessing contracts plus `TargetStateVectorModel` target-context/state-vector output contracts.
 - `model_04_event_failure_risk/` — current package for Layer 4 `EventFailureRiskModel`, producing reviewed event-failure conditioning rows without raw-event promotion, alpha, action, option, or execution leakage.
 - `model_05_alpha_confidence/` — current package for Layer 5 `AlphaConfidenceModel`, producing adjusted `alpha_confidence_vector` rows plus base-alpha diagnostics and offline alpha labels without position/action leakage.
-- `model_07_position_projection/` — current package for Layer 6 `PositionProjectionModel`, producing `position_projection_vector` rows and offline utility labels without action/execution leakage.
-- `model_08_underlying_action/` — current package for Layer 7 `UnderlyingActionModel`, producing offline `underlying_action_plan` / `underlying_action_vector` rows and plan-quality labels without broker orders or option-contract selection.
-- `model_09_option_expression/` — current package for Layer 8 `OptionExpressionModel` / trading-guidance option-expression work, producing offline `option_expression_plan` / `expression_vector` rows and option-expression labels without broker orders or account mutation.
-- `model_10_event_risk_governor/` — Layer 9 deterministic scaffold for `EventRiskGovernor`, producing point-in-time event-risk context/intervention rows and offline event-overlay labels without alpha/action leakage.
+- `model_06_dynamic_risk_policy/` — current package for Layer 6 `DynamicRiskPolicyModel`, producing model-internal `dynamic_risk_policy_state` rows without broker permission or hard execution limits.
+- `model_07_position_projection/` — current package for Layer 7 `PositionProjectionModel`, producing `position_projection_vector` rows and offline utility labels without action/execution leakage.
+- `model_08_underlying_action/` — current package for Layer 8 `UnderlyingActionModel`, producing offline `underlying_action_plan` / `underlying_action_vector` rows and plan-quality labels without broker orders or option-contract selection.
+- `model_09_option_expression/` — current package for Layer 9 `OptionExpressionModel` / trading-guidance option-expression work, producing offline `option_expression_plan` / `expression_vector` rows and option-expression labels without broker orders or account mutation.
+- `model_10_event_risk_governor/` — Layer 10 deterministic scaffold for `EventRiskGovernor`, producing point-in-time event-risk context/intervention rows and offline event-overlay labels without alpha/action leakage.
 
 Shared governance/promotion helpers stay outside this directory in `src/model_governance/`.
