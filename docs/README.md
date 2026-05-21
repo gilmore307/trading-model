@@ -16,10 +16,11 @@ This directory contains the current documentation spine for `trading-model`.
 - `12_layer_03_target_state_vector.md` — Layer 03 - TargetStateVectorModel.
 - `13_layer_04_event_failure_risk.md` — Layer 04 — EventFailureRiskModel.
 - `14_layer_05_alpha_confidence.md` — Layer 05 — AlphaConfidenceModel.
-- `15_layer_07_position_projection.md` — Layer 06 — PositionProjectionModel.
-- `16_layer_08_underlying_action.md` — Layer 07 — UnderlyingActionModel.
-- `17_layer_08_trading_guidance.md` — Layer 08 — TradingGuidanceModel / OptionExpressionModel.
-- `18_layer_10_event_risk_governor.md` — Layer 09 — EventRiskGovernor / EventIntelligenceOverlay.
+- `15_layer_06_dynamic_risk_policy.md` — Layer 06 — DynamicRiskPolicyModel.
+- `16_layer_07_position_projection.md` — Layer 07 — PositionProjectionModel.
+- `17_layer_08_underlying_action.md` — Layer 08 — UnderlyingActionModel.
+- `18_layer_09_trading_guidance.md` — Layer 09 — TradingGuidanceModel / OptionExpressionModel.
+- `19_layer_10_event_risk_governor.md` — Layer 10 — EventRiskGovernor / EventIntelligenceOverlay.
 - `20_model_decomposition.md` — Model Decomposition Framework.
 - `21_vector_taxonomy.md` — Vector and State Taxonomy.
 - `22_state_vector_feature_registry.md` — State Vector Feature Semantics Registry.

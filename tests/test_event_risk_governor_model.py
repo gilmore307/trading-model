@@ -38,7 +38,8 @@ class EventRiskGovernorTests(unittest.TestCase):
         self.assertEqual(diagnostics["canonical_event_count"], 1)
         self.assertGreater(vector["10_event_presence_score_60min"], 0.0)
         self.assertLess(vector["10_event_direction_bias_score_60min"], 0.0)
-        self.assertGreater(vector["10_event_symbol_impact_score_60min"], vector["10_event_market_impact_score_60min"])
+        self.assertLess(vector["10_event_symbol_impact_score_60min"], 0.0)
+        self.assertGreater(abs(vector["10_event_symbol_impact_score_60min"]), abs(vector["10_event_market_impact_score_60min"]))
         self.assertEqual(
             diagnostics["dominant_impact_scope_by_horizon"]["10_event_dominant_impact_scope_60min"],
             "symbol",
@@ -95,13 +96,88 @@ class EventRiskGovernorTests(unittest.TestCase):
         encoded = output["event_risk_governor_diagnostics"]["encoded_events"][0]
 
         self.assertEqual(encoded["event_native_scope_type"], "price_action")
-        self.assertGreater(vector["10_event_microstructure_impact_score_15min"], 0.0)
+        self.assertLess(vector["10_event_microstructure_impact_score_15min"], 0.0)
         self.assertGreater(vector["10_event_reversal_risk_score_15min"], 0.0)
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
-    def test_forbidden_output_diagnostic_names_layer_nine(self) -> None:
-        with self.assertRaisesRegex(ValueError, "forbidden Layer 9 output field"):
+    def test_negative_macro_impact_preserves_unsigned_risk_magnitude(self) -> None:
+        row = _base_row(source_10_event_risk_governor=[
+            {
+                "event_id": "evt_macro_shock",
+                "canonical_event_id": "evt_macro_shock",
+                "dedup_status": "canonical",
+                "event_time": "2026-05-07T10:20:00-04:00",
+                "available_time": "2026-05-07T10:21:00-04:00",
+                "event_category_type": "macro_release",
+                "scope_type": "macro",
+                "event_intensity_score": 0.8,
+                "direction_bias_score": -0.7,
+                "target_relevance_score": 0.8,
+            }
+        ])
+
+        output = generate_rows([row])[0]
+        vector = output["event_context_vector"]
+
+        self.assertLess(vector["10_event_market_impact_score_60min"], 0.0)
+        self.assertGreater(vector["10_event_scope_escalation_risk_score_60min"], 0.0)
+        self.assertGreater(vector["10_event_contagion_risk_score_60min"], 0.0)
+
+    def test_direction_neutral_macro_event_preserves_scope_impact_and_risk(self) -> None:
+        row = _base_row(source_10_event_risk_governor=[
+            {
+                "event_id": "evt_macro_uncertainty",
+                "canonical_event_id": "evt_macro_uncertainty",
+                "dedup_status": "canonical",
+                "event_time": "2026-05-07T10:20:00-04:00",
+                "available_time": "2026-05-07T10:21:00-04:00",
+                "event_category_type": "macro_release",
+                "scope_type": "macro",
+                "event_intensity_score": 0.8,
+                "target_relevance_score": 0.8,
+            }
+        ])
+
+        output = generate_rows([row])[0]
+        vector = output["event_context_vector"]
+        diagnostics = output["event_risk_governor_diagnostics"]
+
+        self.assertEqual(vector["10_event_direction_bias_score_60min"], 0.0)
+        self.assertGreater(vector["10_event_market_impact_score_60min"], 0.0)
+        self.assertGreater(vector["10_event_scope_escalation_risk_score_60min"], 0.0)
+        self.assertGreater(vector["10_event_contagion_risk_score_60min"], 0.0)
+        self.assertEqual(
+            diagnostics["dominant_impact_scope_by_horizon"]["10_event_dominant_impact_scope_60min"],
+            "market",
+        )
+
+    def test_weak_direction_bias_preserves_scope_impact_and_risk_magnitude(self) -> None:
+        row = _base_row(source_10_event_risk_governor=[
+            {
+                "event_id": "evt_macro_weak_bias",
+                "canonical_event_id": "evt_macro_weak_bias",
+                "dedup_status": "canonical",
+                "event_time": "2026-05-07T10:20:00-04:00",
+                "available_time": "2026-05-07T10:21:00-04:00",
+                "event_category_type": "macro_release",
+                "scope_type": "macro",
+                "event_intensity_score": 0.8,
+                "direction_bias_score": 0.05,
+                "target_relevance_score": 0.8,
+            }
+        ])
+
+        output = generate_rows([row])[0]
+        vector = output["event_context_vector"]
+
+        self.assertAlmostEqual(vector["10_event_direction_bias_score_60min"], 0.05)
+        self.assertGreater(vector["10_event_market_impact_score_60min"], 0.5)
+        self.assertGreater(vector["10_event_scope_escalation_risk_score_60min"], 0.25)
+        self.assertGreater(vector["10_event_contagion_risk_score_60min"], 0.3)
+
+    def test_forbidden_output_diagnostic_names_layer_ten(self) -> None:
+        with self.assertRaisesRegex(ValueError, "forbidden Layer 10 output field"):
             _validate_no_forbidden_output({"buy": True})
 
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:

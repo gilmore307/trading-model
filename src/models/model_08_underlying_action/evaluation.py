@@ -14,7 +14,7 @@ def build_plan_quality_labels(
     plan_rows: Iterable[Mapping[str, Any]],
     outcome_rows: Iterable[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Build deterministic plan-quality labels for Layer 7 plan rows.
+    """Build deterministic plan-quality labels for Layer 8 plan rows.
 
     Outcome rows join by ``underlying_action_plan_ref`` when supplied, otherwise
     by ``target_candidate_id`` + ``available_time``. Expected outcome fields are

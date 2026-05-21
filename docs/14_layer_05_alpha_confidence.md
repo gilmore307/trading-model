@@ -65,7 +65,7 @@ Layer 1/2/3
   -> alpha_confidence_vector
 ```
 
-Layer 6 should consume the `alpha_confidence_vector` by default. Layer 10 event-adjusted risk guidance, if available, is applied later against the Layer 8 direct-underlying/spot thesis and optional Layer 8 expression context rather than being a hard prerequisite here.
+Layer 6 should consume the `alpha_confidence_vector` by default. Layer 10 event-adjusted risk guidance, if available, is applied later against the Layer 8 direct-underlying/spot thesis and optional Layer 9 expression context rather than being a hard prerequisite here.
 
 ## Inputs
 
@@ -418,6 +418,6 @@ Layer 5 must not:
 
 1. **V1.0 base alpha from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics. **Done in deterministic scaffold for fixture rows.**
 2. **V1.1 final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. **Done in deterministic scaffold.**
-3. **V1.2 EventRiskDiagnosticBridge**: keep optional `event_context_vector` references diagnostic only for later Layer 9 governance; do not make event evidence a hard Layer 5 alpha input. **Deterministic scaffold uses the physical `model_05_alpha_confidence` package and `5_*` score-prefix hooks.**
+3. **V1.2 EventRiskDiagnosticBridge**: keep optional `event_context_vector` references diagnostic only for later Layer 10 governance; do not make event evidence a hard Layer 5 alpha input. **Deterministic scaffold uses the physical `model_05_alpha_confidence` package and `5_*` score-prefix hooks.**
 4. **V1.3 baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence. **Done in deterministic scaffold.**
 5. **V1.4 calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path. **Offline label/leakage helpers exist; calibrated promotion evidence remains later work.**

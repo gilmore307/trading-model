@@ -128,6 +128,28 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
         self.assertFalse(result["valid"])
         self.assertIn("model_activation", result["forbidden_actions_present"])
 
+    def test_live_dataset_role_is_not_valid_shadow_input(self) -> None:
+        snapshot = _decision_input_snapshot()
+        snapshot["dataset_role"] = "live_production"
+
+        result = validate_execution_model_decision_input_snapshot(snapshot)
+        plan = build_realtime_decision_route_plan({"decision_input_snapshot": snapshot})
+
+        self.assertFalse(result["valid"])
+        self.assertFalse(result["dataset_role_valid"])
+        self.assertEqual(plan["readiness_status"], "blocked_realtime_decision_input_validation")
+
+    def test_route_plan_validation_rechecks_model_identity_and_output(self) -> None:
+        plan = build_realtime_decision_route_plan({"decision_input_snapshot": _decision_input_snapshot()})
+        plan["layer_routes"][-1]["model_id"] = "stale_model_09_event_risk_governor"
+        plan["layer_routes"][5]["expected_model_output"] = "position_projection_vector"
+
+        validation = validate_realtime_decision_route_plan(plan)
+
+        self.assertFalse(validation["valid"])
+        self.assertIn("layer_routes[9].model_id mismatch for layer_10_event_risk_governor", validation["row_errors"])
+        self.assertIn("layer_routes[5].expected_model_output mismatch for layer_06_dynamic_risk_policy", validation["row_errors"])
+
     def test_cli_plans_and_validates_route_plan(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             input_path = Path(temp_dir) / "decision_input.json"

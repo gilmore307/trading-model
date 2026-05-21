@@ -5,10 +5,11 @@ import unittest
 from models import state_vector_feature_registry as registry
 from models.model_04_event_failure_risk import contract as layer4_contract
 from models.model_05_alpha_confidence import contract as layer5_contract
-from models.model_07_position_projection import contract as layer6_contract
-from models.model_08_underlying_action import contract as layer7_contract
-from models.model_09_option_expression import contract as layer8_contract
-from models.model_10_event_risk_governor import contract as layer9_contract
+from models.model_06_dynamic_risk_policy import contract as layer6_contract
+from models.model_07_position_projection import contract as layer7_contract
+from models.model_08_underlying_action import contract as layer8_contract
+from models.model_09_option_expression import contract as layer9_contract
+from models.model_10_event_risk_governor import contract as layer10_contract
 
 
 class StateVectorFeatureRegistryTests(unittest.TestCase):
@@ -47,7 +48,7 @@ class StateVectorFeatureRegistryTests(unittest.TestCase):
         self.assertIn("2_sector_crowding_risk_score", by_field)
         self.assertNotIn("2_sector_dispersion_crowding_score", by_field)
 
-    def test_layer_4_9_contract_score_families_are_registered(self) -> None:
+    def test_layer_4_10_contract_score_families_are_registered(self) -> None:
         by_field = registry.semantics_by_field()
         required_fields = (
             layer4_contract.SCORE_FAMILIES
@@ -55,8 +56,9 @@ class StateVectorFeatureRegistryTests(unittest.TestCase):
             + layer6_contract.SCORE_FAMILIES
             + layer7_contract.SCORE_FAMILIES
             + layer8_contract.SCORE_FAMILIES
-            + layer9_contract.CORE_SCORE_FAMILIES
-            + layer9_contract.IMPACT_SCORE_FAMILIES
+            + layer9_contract.SCORE_FAMILIES
+            + layer10_contract.CORE_SCORE_FAMILIES
+            + layer10_contract.IMPACT_SCORE_FAMILIES
         )
 
         missing = [field for field in required_fields if field not in by_field]

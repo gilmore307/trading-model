@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Agent-reviewed production-promotion acceptance for Layers 3-8.
+"""Agent-reviewed production-promotion acceptance for Layers 3-10.
 
-Layers 1-2 have real database evaluation paths. Layers 3-8 do not yet have
+Layers 1-2 have real database evaluation paths. Layers 3-10 do not yet have
 production evaluation substrate for their accepted contracts. This script builds
 blocked evaluation artifacts, creates model-side promotion candidate evidence,
 and calls a reviewer agent. Durable promotion decisions and activation remain in
@@ -63,6 +63,18 @@ LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
     },
     {
         "layer": 6,
+        "model_id": "dynamic_risk_policy_model",
+        "model_name": "DynamicRiskPolicyModel",
+        "feature_key": "dynamic_risk_policy_state",
+        "blocker": "no production dynamic risk policy evaluation run or portfolio replay labels exist",
+        "required_next_steps": [
+            "Create production dynamic-risk-policy inference rows with market, event-risk, alpha-quality, and portfolio replay context.",
+            "Generate realized risk-budget, premium-risk, exposure-cap, and portfolio-drawdown labels.",
+            "Run baseline, stability, leakage, calibration, and promotion-metric evaluation before re-review.",
+        ],
+    },
+    {
+        "layer": 7,
         "model_id": "position_projection_model",
         "model_name": "PositionProjectionModel",
         "feature_key": "position_projection_vector",
@@ -74,7 +86,7 @@ LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
         ],
     },
     {
-        "layer": 7,
+        "layer": 8,
         "model_id": "underlying_action_model",
         "model_name": "UnderlyingActionModel",
         "feature_key": "underlying_action_plan",
@@ -86,14 +98,26 @@ LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
         ],
     },
     {
-        "layer": 8,
+        "layer": 9,
         "model_id": "option_expression_model",
         "model_name": "OptionExpressionModel",
         "feature_key": "option_expression_plan",
         "blocker": "no production option-chain replay evaluation run exists",
         "required_next_steps": [
-            "Create production option-expression rows from accepted Layer 7 assumptions plus option-chain evidence.",
+            "Create production option-expression rows from accepted Layer 8 underlying-action assumptions plus option-chain evidence.",
             "Generate option-chain replay labels, premium-risk outcomes, and expression baseline comparisons.",
+            "Run baseline, stability, leakage, calibration, and promotion-metric evaluation before re-review.",
+        ],
+    },
+    {
+        "layer": 10,
+        "model_id": "event_risk_governor",
+        "model_name": "EventRiskGovernor",
+        "feature_key": "event_context_vector",
+        "blocker": "no production EventRiskGovernor evaluation run or reviewed residual event-risk labels exist",
+        "required_next_steps": [
+            "Create production EventRiskGovernor inference rows from reviewed source_10 and feature_10 event-risk evidence.",
+            "Generate direction-neutral event-risk, intervention-quality, residual-warning, and event-adjusted outcome labels.",
             "Run baseline, stability, leakage, calibration, and promotion-metric evaluation before re-review.",
         ],
     },
@@ -317,8 +341,8 @@ def build_rows(acceptance: Mapping[str, Any]) -> tuple[dict[str, list[dict[str, 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--layer", type=int, choices=[3, 4, 5, 6, 7, 8], help="Layer to review. Omit with --all.")
-    parser.add_argument("--all", action="store_true", help="Review Layers 3-8.")
+    parser.add_argument("--layer", type=int, choices=[3, 4, 5, 6, 7, 8, 9, 10], help="Layer to review. Omit with --all.")
+    parser.add_argument("--all", action="store_true", help="Review Layers 3-10.")
     parser.add_argument("--dry-run", action="store_true", help="Print evidence/prompt without invoking agent or writing manager-control-plane SQL.")
     parser.add_argument("--openclaw-bin", default="openclaw")
     parser.add_argument("--agent", default="trader")
@@ -330,7 +354,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.all and args.layer is None:
         raise SystemExit("provide --layer or --all")
-    acceptances = [acceptance_for_layer(layer) for layer in range(3, 9)] if args.all else [acceptance_for_layer(int(args.layer))]
+    acceptances = [acceptance_for_layer(layer) for layer in range(3, 11)] if args.all else [acceptance_for_layer(int(args.layer))]
     receipts: list[dict[str, Any]] = []
     for acceptance in acceptances:
         artifacts, summary, config_row, candidate_row, prompt = build_rows(acceptance)

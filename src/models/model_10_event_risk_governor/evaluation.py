@@ -42,7 +42,7 @@ def assert_no_label_leakage(model_row: Mapping[str, Any]) -> None:
 
     leaked = sorted(field for field in LABEL_FIELDS if _contains_key(model_row, field))
     if leaked:
-        raise ValueError(f"Layer 8 label fields leaked into inference row: {', '.join(leaked)}")
+        raise ValueError(f"Layer 10 label fields leaked into inference row: {', '.join(leaked)}")
 
 
 def _contains_key(value: Any, key: str) -> bool:

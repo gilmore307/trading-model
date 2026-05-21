@@ -41,7 +41,7 @@ Scripts are the runtime boundary. Reusable model logic belongs in `src/`; script
   - `generate_model_10_event_risk_governor.py`, `evaluate_model_10_event_risk_governor.py`, and `review_event_risk_governor_promotion.py` are local JSON/JSONL-safe EventRiskGovernor generation, evaluation-label, and conservative review entrypoints; generation/evaluation also support SQL-backed `--from-database` workflow rows.
 - `models/audit_model_output_tables.py` emits a read-only `model_output_table_quality_audit` over all ten model output/support table families.
 - `models/run_model_output_quality_gate.py` emits `model_output_quality_gate` and exits non-zero when post-generation primary output defects should block acceptance.
-- `models/review_layers_03_08_promotion_acceptance.py` emits explicit deferred/blocked promotion evidence artifacts for its historical acceptance scope. It must not activate configs or persist manager-control-plane decisions.
+- `models/review_layers_03_10_promotion_acceptance.py` emits explicit deferred/blocked promotion evidence artifacts for Layers 3-10. It must not activate configs or persist manager-control-plane decisions.
 - `models/plan_realtime_decision_handoff.py` builds a `model_realtime_decision_route_plan` from an execution-side realtime model decision input snapshot without running models or activating production configs.
 - `models/validate_realtime_decision_handoff.py` validates realtime decision input snapshots or route plans without side effects.
 

@@ -1,6 +1,6 @@
 """Audit model output/support tables for empty and sparse columns.
 
-The audit is intentionally read-only. It samples recent rows from the nine
+The audit is intentionally read-only. It samples recent rows from the ten
 `trading_model.model_XX_*` output surfaces and classifies empty columns as
 data gaps, stale/generated-schema residue, or expected optional evidence.
 """
@@ -27,6 +27,9 @@ MODEL_OUTPUT_TABLES: tuple[str, ...] = (
     "model_05_alpha_confidence",
     "model_05_alpha_confidence_explainability",
     "model_05_alpha_confidence_diagnostics",
+    "model_06_dynamic_risk_policy",
+    "model_06_dynamic_risk_policy_explainability",
+    "model_06_dynamic_risk_policy_diagnostics",
     "model_07_position_projection",
     "model_07_position_projection_explainability",
     "model_07_position_projection_diagnostics",

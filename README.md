@@ -93,7 +93,7 @@ scripts/models/model_09_option_expression/
 scripts/models/model_10_event_risk_governor/
 scripts/models/audit_model_output_tables.py
 scripts/models/run_model_output_quality_gate.py
-scripts/models/review_layers_03_08_promotion_acceptance.py
+scripts/models/review_layers_03_10_promotion_acceptance.py
 scripts/model_governance/
 ```
 

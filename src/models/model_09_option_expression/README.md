@@ -1,8 +1,8 @@
 # model_09_option_expression
 
-Physical package for the Layer 8 `OptionExpressionModel` / trading-guidance option-expression scaffold.
+Physical package for the Layer 9 `OptionExpressionModel` / trading-guidance option-expression scaffold.
 
-Owns local conversion from Layer 7 `underlying_action_plan` / Layer 9 trading-guidance handoff fields plus point-in-time option-chain candidates into `option_expression_plan` and `expression_vector` rows. The scaffold implements:
+Owns local conversion from Layer 8 `underlying_action_plan` / option-expression handoff fields plus point-in-time option-chain candidates into `option_expression_plan` and `expression_vector` rows. The scaffold implements:
 
 - long-call / long-put / no-option expression resolution from the Layer 8 underlying path thesis;
 - point-in-time contract candidate scoring across DTE, delta/Greeks, IV, spread/liquidity, fill quality, and reward/risk;

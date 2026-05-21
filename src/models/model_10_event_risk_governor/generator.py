@@ -118,9 +118,10 @@ def _encode_event(event: Mapping[str, Any], decision_time: datetime, row: Mappin
         or inferred_native_scope
     ).lower()
     relevance = _target_relevance(event, row, native_scope)
-    impact = {scope: _impact_score(event, native_scope, scope, relevance, intensity) for scope in SCOPE_KEYS}
+    impact = {scope: _impact_score(event, native_scope, scope, relevance, intensity, direction_bias) for scope in SCOPE_KEYS}
     scope_confidence = _clip01(_first_float(event, "scope_confidence_score") if _first_float(event, "scope_confidence_score") is not None else (0.75 if native_scope != "unknown" else 0.35))
-    escalation = _clip01(_first_float(event, "scope_escalation_risk_score") if _first_float(event, "scope_escalation_risk_score") is not None else max(impact["market"], impact["sector"], impact["theme_factor"]) * 0.5)
+    broad_impact_magnitude = max(abs(impact["market"]), abs(impact["sector"]), abs(impact["theme_factor"]))
+    escalation = _clip01(_first_float(event, "scope_escalation_risk_score") if _first_float(event, "scope_escalation_risk_score") is not None else broad_impact_magnitude * 0.5)
     gap_risk = _clip01(_first_float(event, "gap_risk_score") if _first_float(event, "gap_risk_score") is not None else intensity * (0.8 if abs_age_minutes <= 60 else 0.35))
     reversal_risk = _clip01(_first_float(event, "reversal_risk_score") if _first_float(event, "reversal_risk_score") is not None else uncertainty * max(intensity, 0.25))
     liquidity_risk = _clip01(
@@ -129,7 +130,7 @@ def _encode_event(event: Mapping[str, Any], decision_time: datetime, row: Mappin
         else intensity
         * (1.0 if native_scope in {"microstructure", "option_abnormal_activity", "equity_abnormal_activity", "price_action"} else 0.35)
     )
-    contagion = _clip01(_first_float(event, "contagion_risk_score") if _first_float(event, "contagion_risk_score") is not None else max(impact["market"], impact["sector"], escalation) * intensity)
+    contagion = _clip01(_first_float(event, "contagion_risk_score") if _first_float(event, "contagion_risk_score") is not None else max(abs(impact["market"]), abs(impact["sector"]), escalation) * intensity)
     quality = _clip01(_first_float(event, "event_context_quality_score", "quality_score") if _first_float(event, "event_context_quality_score", "quality_score") is not None else source_quality * (1.0 - uncertainty * 0.35))
     target_direction = _first_float(_payload(row, "target_context_state"), "3_target_direction_score_390min", "3_target_direction_score_60min") or 0.0
     alignment = _clip_signed(direction_bias * (1 if target_direction >= 0 else -1) * relevance)
@@ -188,8 +189,8 @@ def _horizon_scores(events: Sequence[Mapping[str, Any]], horizon: str) -> dict[s
         values = [_safe_float((event.get("impact_scores") or {}).get(scope)) for event in events]
         impact_values[f"{scope}_impact"] = _weighted_average(values, weights, default=0.0)
     scores.update(impact_values)
-    dominant = max(SCOPE_KEYS, key=lambda scope: scores[f"{scope}_impact"])
-    scores["dominant_impact_scope"] = dominant if scores[f"{dominant}_impact"] > 0 else "none"
+    dominant = max(SCOPE_KEYS, key=lambda scope: abs(float(scores[f"{scope}_impact"])))
+    scores["dominant_impact_scope"] = dominant if abs(float(scores[f"{dominant}_impact"])) > 0 else "none"
     return {key: (round(value, 6) if isinstance(value, float) else value) for key, value in scores.items()}
 
 
@@ -257,10 +258,10 @@ def _target_relevance(event: Mapping[str, Any], row: Mapping[str, Any], native_s
     return 0.25
 
 
-def _impact_score(event: Mapping[str, Any], native_scope: str, scope: str, relevance: float, intensity: float) -> float:
+def _impact_score(event: Mapping[str, Any], native_scope: str, scope: str, relevance: float, intensity: float, direction_bias: float) -> float:
     explicit = _first_float(event, f"{scope}_impact_score", f"event_{scope}_impact_score")
     if explicit is not None:
-        return _clip01(explicit)
+        return _clip_signed(explicit)
     scope_alias = {"theme_factor": "theme", "microstructure": "microstructure"}[scope] if scope in {"theme_factor", "microstructure"} else scope
     base = 1.0 if native_scope == scope_alias else 0.0
     if native_scope in {"macro", "geopolitical", "market_structure"} and scope == "market":
@@ -269,7 +270,8 @@ def _impact_score(event: Mapping[str, Any], native_scope: str, scope: str, relev
         base = {"symbol": 1.0, "peer_group": 0.45, "sector": 0.25}[scope]
     if native_scope in {"equity_abnormal_activity", "option_abnormal_activity", "price_action"} and scope in {"symbol", "microstructure"}:
         base = {"symbol": 0.8, "microstructure": 0.9}[scope]
-    return _clip01(base * max(relevance, 0.25) * max(intensity, 0.25))
+    direction_factor = -1.0 if direction_bias < 0 else 1.0
+    return _clip_signed(base * max(relevance, 0.25) * max(intensity, 0.25) * direction_factor)
 
 
 def _scope_from_category(event: Mapping[str, Any]) -> str:
@@ -423,7 +425,7 @@ def _validate_no_forbidden_output(value: Any, path: str = "output") -> None:
         for key, nested in value.items():
             key_l = str(key).lower()
             if key_l in FORBIDDEN_OUTPUT_FIELDS:
-                raise ValueError(f"forbidden Layer 9 output field at {path}.{key}: {key}")
+                raise ValueError(f"forbidden Layer 10 output field at {path}.{key}: {key}")
             _validate_no_forbidden_output(nested, f"{path}.{key}")
     elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         for index, nested in enumerate(value):

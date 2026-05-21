@@ -30,7 +30,7 @@ LAYER_NUMBERS = {
 }
 
 
-class LayerFourNineScriptEntrypointTests(unittest.TestCase):
+class LayerFourTenScriptEntrypointTests(unittest.TestCase):
     def _load_script_module(self, script: Path):
         spec = importlib.util.spec_from_file_location(script.stem, script)
         self.assertIsNotNone(spec)

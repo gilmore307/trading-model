@@ -233,7 +233,7 @@ V1 must not choose debit spreads, calendars, diagonals, straddles, strangles, co
 
 The model must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market-context constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade filters.
 
-Layer-numbering update: after D047 and the later Layer 8/9 swap, this decision is preserved as Layer 8 `OptionExpressionModel` / trading-guidance context after Layer 7 `UnderlyingActionModel` and Layer 10 event-risk governance. Physical implementation names use `model_09_option_expression`.
+Layer-numbering update: after D047, the later Layer 8/9 swap, and D049, this decision is preserved as Layer 9 `OptionExpressionModel` / trading-guidance context after Layer 8 `UnderlyingActionModel` and before Layer 10 event-risk governance. Physical implementation names use `model_09_option_expression`.
 
 ## D010 - Model governance and promotion evidence stay model-local until manager control-plane acceptance
 
@@ -688,12 +688,12 @@ Status: Superseded by D036
 
 The useful part of this decision remains: production-promotion acceptance must evaluate real evidence and must not activate on missing or failed gates. The implementation detail that `trading-model` persists durable promotion decisions is superseded. `trading-model` now emits model-side evidence/review artifacts; `trading-manager` owns durable review decisions and activation.
 
-## D032 - Layers 3-8 blocked acceptance must be agent-reviewed
+## D032 - Layers 3-10 blocked acceptance must be agent-reviewed
 
 Date: 2026-05-08
 Status: Superseded by D036
 
-Chentong clarified that Layers 3-8 should follow the same promotion principle as Layers 1-2: even when production evaluation substrate is missing, the acceptance script must call the reviewer agent. The model-side acceptance entrypoint now builds blocked evaluation artifacts and review artifacts only; durable deferred decisions belong in `trading-manager`.
+Chentong clarified that Layers 3-10 should follow the same promotion principle as Layers 1-2: even when production evaluation substrate is missing, the acceptance script must call the reviewer agent. The model-side acceptance entrypoint now builds blocked evaluation artifacts and review artifacts only; durable deferred decisions belong in `trading-manager`.
 
 ## D033 - Layer 3 production-evaluation substrate is present but not promotable
 
@@ -872,7 +872,7 @@ Layer 9: EventRiskGovernor / EventIntelligenceOverlay
 
 Layer 4 contains only agent-accepted, empirically reviewed event/strategy-failure factors. Its output is `event_failure_risk_vector`; it may condition alpha confidence, entry permission, exposure caps, strategy disable pressure, and path-risk amplification, but it must not emit buy/sell/hold, choose expression/contract, size positions, route orders, mutate accounts, or perform destructive SQL/storage actions.
 
-Layer 10 remains the residual event-risk governor and research surface. It may explain residual anomalies, maintain the observation pool, warn/cap/block/review the direct-underlying/spot thesis, and generate event-family promotion packets. A family can move from Layer 9 discovery/observation into Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, incremental value review, and explicit agent/manager acceptance.
+Layer 10 remains the residual event-risk governor and research surface. It may explain residual anomalies, maintain the observation pool, warn/cap/block/review the direct-underlying/spot thesis, and generate event-family promotion packets. A family can move from Layer 10 discovery/observation into Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, incremental value review, and explicit agent/manager acceptance.
 
 This decision is architecture/governance only. D049 now owns the current 10-layer physical numbering. Historical/applied migrations may retain earlier names.
 

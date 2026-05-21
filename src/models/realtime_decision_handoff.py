@@ -100,6 +100,7 @@ FORBIDDEN_HANDOFF_ACTIONS = (
 )
 
 ACCEPTED_HANDOFF_MODES = ("fixture_replay", "shadow_monitoring")
+ACCEPTED_DATASET_ROLES = ("fixture_replay", "forward_holdout", "shadow_monitoring")
 
 
 @dataclass(frozen=True)
@@ -161,6 +162,8 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
     missing_fields = sorted(required - present)
     contract_type_valid = candidate.get("contract_type") == "execution_model_decision_input_snapshot"
     decision_time_valid = _parse_time(candidate.get("decision_time")) is not None
+    dataset_role = str(candidate.get("dataset_role") or "")
+    dataset_role_valid = dataset_role in ACCEPTED_DATASET_ROLES
     requested_actions = set(candidate.get("requested_actions") or [])
     forbidden_actions_present = sorted(requested_actions.intersection(FORBIDDEN_HANDOFF_ACTIONS))
     rows = candidate.get("layer_input_refs") or []
@@ -198,6 +201,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
         not missing_fields
         and contract_type_valid
         and decision_time_valid
+        and dataset_role_valid
         and not forbidden_actions_present
         and not row_errors
         and not missing_layers
@@ -209,6 +213,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
         "missing_fields": missing_fields,
         "contract_type_valid": contract_type_valid,
         "decision_time_valid": decision_time_valid,
+        "dataset_role_valid": dataset_role_valid,
         "forbidden_actions_present": forbidden_actions_present,
         "missing_layers": missing_layers,
         "missing_optional_layers": missing_optional_layers,
@@ -336,6 +341,11 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
             for field in ("model_id", "expected_model_output", "feature_ref", "generator_entrypoint_ref", "generation_mode"):
                 if not row.get(field):
                     row_errors.append(f"layer_routes[{index}].{field} missing")
+            if row.get("model_id") and row.get("model_id") != metadata["model_id"]:
+                row_errors.append(f"layer_routes[{index}].model_id mismatch for {layer}")
+            accepted_outputs = metadata.get("accepted_model_outputs") or (metadata["expected_model_output"],)
+            if row.get("expected_model_output") and row.get("expected_model_output") not in accepted_outputs:
+                row_errors.append(f"layer_routes[{index}].expected_model_output mismatch for {layer}")
             if row.get("generator_entrypoint_ref") != metadata["generator_entrypoint_ref"]:
                 row_errors.append(f"layer_routes[{index}].generator_entrypoint_ref mismatch for {layer}")
     missing_layers = sorted(set(REQUIRED_MODEL_LAYER_ORDER) - layer_set)
@@ -368,6 +378,7 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
 
 __all__ = [
     "ACCEPTED_HANDOFF_MODES",
+    "ACCEPTED_DATASET_ROLES",
     "FORBIDDEN_HANDOFF_ACTIONS",
     "MODEL_LAYER_ORDER",
     "OPTIONAL_MODEL_LAYER_ORDER",

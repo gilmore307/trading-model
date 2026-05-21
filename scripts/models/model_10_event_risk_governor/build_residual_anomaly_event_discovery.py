@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Layer 9 residual-anomaly event discovery artifacts."""
+"""Build Layer 10 residual-anomaly event discovery artifacts."""
 from __future__ import annotations
 
 import argparse

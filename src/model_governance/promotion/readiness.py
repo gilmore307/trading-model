@@ -62,6 +62,14 @@ LAYER_PROMOTION_READINESS_MATRIX = (
     },
     {
         "layer": 6,
+        "model_id": "dynamic_risk_policy_model",
+        "output": "dynamic_risk_policy_state",
+        "design_status": "design_closed",
+        "production_promotion_status": "deferred_no_production_eval_substrate",
+        "blocking_gap": "no production dynamic risk policy evaluation run or portfolio replay labels exist",
+    },
+    {
+        "layer": 7,
         "model_id": "position_projection_model",
         "output": "position_projection_vector",
         "design_status": "design_closed",
@@ -69,7 +77,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "blocking_gap": "no production position-utility evaluation run or labels exist",
     },
     {
-        "layer": 7,
+        "layer": 8,
         "model_id": "underlying_action_model",
         "output": "underlying_action_plan",
         "design_status": "design_closed",
@@ -77,7 +85,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "blocking_gap": "no production realized-action outcome evaluation run exists",
     },
     {
-        "layer": 8,
+        "layer": 9,
         "model_id": "option_expression_model",
         "output": "option_expression_plan",
         "design_status": "design_closed",
@@ -85,7 +93,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "blocking_gap": "no production option-chain replay evaluation run exists",
     },
     {
-        "layer": 9,
+        "layer": 10,
         "model_id": "event_risk_governor",
         "output": "event_context_vector",
         "design_status": "design_closed",

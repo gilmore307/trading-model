@@ -52,18 +52,19 @@ Layer 3 has a real production-evaluation substrate for `feature_03_target_state_
 - Layer 1 and Layer 2 are not production-approved active upstream dependencies;
 - Layer 3 calibration evidence is missing.
 
-## Layers 4-9 blockers
+## Layers 4-10 blockers
 
-Layers 4-9 remain explicit blockers, not informal work items:
+Layers 4-10 remain explicit blockers, not informal work items:
 
 - Layer 4 requires a reviewed EventFailureRiskModel implementation/evaluation substrate for accepted event/strategy-failure conditioning.
 - Layer 5 requires calibrated adjusted-alpha outcomes.
-- Layer 6 requires position-utility/outcome labels.
-- Layer 7 requires realized underlying-action outcome evaluation.
-- Layer 8 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
-- Layer 9 requires real residual-event-risk labels and production evaluation metrics.
+- Layer 6 requires dynamic risk policy replay labels and reviewed risk-policy outcome evidence.
+- Layer 7 requires position-utility/outcome labels.
+- Layer 8 requires realized underlying-action outcome evaluation.
+- Layer 9 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
+- Layer 10 requires real residual-event-risk labels and production evaluation metrics.
 
-The acceptance helper `scripts/models/review_layers_03_08_promotion_acceptance.py` builds blocked model-side evidence and reviewer artifacts for the base Layers 3-8 surfaces. Its name is a bounded base-stack review scope, not a Layer 10 event-risk-governor activation path. It must not persist manager decisions or activate configs.
+The acceptance helper `scripts/models/review_layers_03_10_promotion_acceptance.py` builds blocked model-side evidence and reviewer artifacts for Layers 3-10. It must not persist manager decisions or activate configs.
 
 ## Activation invariant
 

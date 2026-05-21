@@ -9,24 +9,25 @@ The trading platform is split across multiple repositories so each major respons
 3. TargetStateVectorModel (`target_state_vector_model`), including anonymous target candidate construction as Layer 3 preprocessing;
 4. EventFailureRiskModel (`event_failure_risk_model`);
 5. AlphaConfidenceModel (`alpha_confidence_model`);
-6. PositionProjectionModel (`position_projection_model`);
-7. UnderlyingActionModel (`underlying_action_model`);
-8. TradingGuidanceModel / OptionExpressionModel (`trading_guidance_model` / `option_expression_model`);
-9. EventRiskGovernor / EventIntelligenceOverlay (`event_risk_governor`).
+6. DynamicRiskPolicyModel (`dynamic_risk_policy_model`);
+7. PositionProjectionModel (`position_projection_model`);
+8. UnderlyingActionModel (`underlying_action_model`);
+9. TradingGuidanceModel / OptionExpressionModel (`trading_guidance_model` / `option_expression_model`);
+10. EventRiskGovernor / EventIntelligenceOverlay (`event_risk_governor`).
 
-Layer 8 and Layer 9 plans remain offline and broker mutation stays outside this repository.
+Layer 8, Layer 9, and Layer 10 plans remain offline and broker mutation stays outside this repository.
 
-Reviewed event/strategy-failure evidence is now a Layer 4 conditioning boundary before alpha confidence. Unreviewed, residual, or discovery-stage event evidence remains a Layer 9 risk-governor/intervention boundary on the direct-underlying/spot thesis, with Layer 8 expression context only when available.
+Reviewed event/strategy-failure evidence is now a Layer 4 conditioning boundary before alpha confidence. Unreviewed, residual, or discovery-stage event evidence remains a Layer 10 risk-governor/intervention boundary on the direct-underlying/spot thesis, with Layer 9 expression context only when available.
 
 The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
 
 Current structural boundary:
 
 ```text
-broad market tradability context -> sector/industry tradability context -> anonymized target context -> reviewed event-failure risk -> confidence -> position projection -> underlying action plan -> trading guidance / option expression -> event-risk intervention
+broad market tradability context -> sector/industry tradability context -> anonymized target context -> reviewed event-failure risk -> confidence -> dynamic risk policy -> position projection -> underlying action plan -> trading guidance / option expression -> event-risk intervention
 ```
 
-`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Layer 4 `EventFailureRiskModel` applies agent-reviewed event/strategy-failure conditioning, Layer 5 `AlphaConfidenceModel` estimates event-conditioned adjusted alpha, Layers 6-8 project position/action/guidance, and Layer 9 `EventRiskGovernor` may intervene on the Layer 8 direct-underlying/spot thesis with point-in-time residual event risk while treating Layer 8 expression context as optional. Later confidence/projection/action/expression/event-risk layers may map back to real symbols only for audit, routing, and decision records.
+`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Layer 4 `EventFailureRiskModel` applies agent-reviewed event/strategy-failure conditioning, Layer 5 `AlphaConfidenceModel` estimates event-conditioned adjusted alpha, Layers 6-9 produce dynamic risk policy, position projection, underlying action, and guidance/expression plans, and Layer 10 `EventRiskGovernor` may intervene on the Layer 8 direct-underlying/spot thesis with point-in-time residual event risk while treating Layer 9 expression context as optional. Later confidence/risk-policy/projection/action/expression/event-risk layers may map back to real symbols only for audit, routing, and decision records.
 
 ## Related Systems
 

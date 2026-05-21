@@ -2,10 +2,17 @@ from __future__ import annotations
 
 import unittest
 
-from model_governance.model_output_audit import audit_rows, cleanup_sql_for_reports, audit_database
+from model_governance.model_output_audit import MODEL_OUTPUT_TABLES, audit_rows, cleanup_sql_for_reports, audit_database
 
 
 class ModelOutputAuditTests(unittest.TestCase):
+    def test_default_table_set_covers_current_ten_layer_stack(self) -> None:
+        self.assertIn("model_06_dynamic_risk_policy", MODEL_OUTPUT_TABLES)
+        self.assertIn("model_06_dynamic_risk_policy_explainability", MODEL_OUTPUT_TABLES)
+        self.assertIn("model_06_dynamic_risk_policy_diagnostics", MODEL_OUTPUT_TABLES)
+        primary_tables = [table for table in MODEL_OUTPUT_TABLES if table.startswith("model_") and not table.endswith(("_explainability", "_diagnostics"))]
+        self.assertEqual(len(primary_tables), 10)
+
     def test_audit_database_uses_fast_table_sample_before_limit_fallback(self) -> None:
         class FakeCursor:
             def __init__(self) -> None:

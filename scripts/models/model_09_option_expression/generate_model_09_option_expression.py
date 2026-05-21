@@ -3,8 +3,8 @@
 
 This is a stable local entrypoint. It supports JSON/JSONL input and deliberately
 does not activate production promotion state. The database path is safe for the
-Layer 8 no-provider case: it consumes completed Layer 7 rows and emits
-``no_option_expression`` rows when Layer 7 selected no underlying trade.
+Layer 9 no-provider case: it consumes completed Layer 8 rows and emits
+``no_option_expression`` rows when Layer 8 selected no underlying trade.
 """
 from __future__ import annotations
 

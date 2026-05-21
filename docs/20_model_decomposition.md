@@ -408,43 +408,43 @@ docs/14_layer_05_alpha_confidence.md
 
 Layer 5 converts reviewed Layer 1/2/3 state evidence plus Layer 4 `event_failure_risk_vector` when applicable into the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/no-event alpha remains auditable diagnostics. Layer 5 must not project target exposure, select option contracts, size positions, emit final actions, or mutate broker/account state.
 
-## Layer 6: PositionProjectionModel
+## Layer 6: DynamicRiskPolicyModel
+
+Status: accepted V1 contract with deterministic scaffold complete under the physical `model_06_dynamic_risk_policy` surface; production promotion remains evidence-gated.
+
+Contract owner:
+
+```text
+docs/15_layer_06_dynamic_risk_policy.md
+```
+
+Layer 6 consumes Layer 1 global market regime, systemic or broad event-risk context, Layer 5 alpha quality, and replayed portfolio/account capacity to produce `dynamic_risk_policy_state`: premium/risk-budget posture, sizing pressure, risk-budget efficiency, and policy reason codes. Target-specific evidence may cap or skip only the current target and must not distort the whole-market budget.
+
+## Layer 7: PositionProjectionModel
 
 Status: accepted V1 contract with deterministic scaffold complete under the physical `model_07_position_projection` surface; production promotion remains evidence-gated.
 
 Contract owner:
 
 ```text
-docs/15_layer_07_position_projection.md
+docs/16_layer_07_position_projection.md
 ```
 
-Layer 7 maps final adjusted alpha plus point-in-time current/pending position, cost, exposure, risk-budget, and policy context into `position_projection_vector`: target holding state, abstract target exposure, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, stability, and projection confidence. It must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate accounts.
+Layer 7 maps final adjusted alpha, Layer 6 dynamic risk policy, and point-in-time current/pending position, cost, exposure, risk-budget, and policy context into `position_projection_vector`: target holding state, abstract target exposure, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, stability, and projection confidence. It must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate accounts.
 
-## Layer 7: UnderlyingActionModel
+## Layer 8: UnderlyingActionModel
 
 Status: accepted V1 contract with deterministic scaffold complete under the physical `model_08_underlying_action` surface; production promotion remains evidence-gated.
 
 Contract owner:
 
 ```text
-docs/16_layer_08_underlying_action.md
+docs/17_layer_08_underlying_action.md
 ```
 
-Layer 7 maps Layer 6 target holding-state projection into a direct underlying/spot offline action thesis for stock, ETF, or crypto-style candidates. It outputs `underlying_action_plan` and `underlying_action_vector`: eligibility, planned action type, planned exposure change, entry/target/stop/time assumptions, and optional Layer 9 handoff fields. It does not output broker/exchange orders, order routing, live execution instructions, or option contracts.
+Layer 8 maps Layer 7 target holding-state projection into a direct underlying/spot offline action thesis for stock, ETF, or crypto-style candidates. It outputs `underlying_action_plan` and `underlying_action_vector`: eligibility, planned action type, planned exposure change, entry/target/stop/time assumptions, and optional Layer 9 handoff fields. It does not output broker/exchange orders, order routing, live execution instructions, or option contracts.
 
-## Layer 9: EventRiskGovernor / EventIntelligenceOverlay
-
-Status: accepted V1 event-risk-governor boundary with deterministic scaffold complete under the physical `model_10_event_risk_governor` surface; production promotion remains evidence-gated.
-
-Contract owner:
-
-```text
-docs/18_layer_10_event_risk_governor.md
-```
-
-Layer 9 consumes point-in-time residual event evidence, upstream context refs, and the Layer 8 direct-underlying action thesis as its canonical risk target. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, nominate reduction/flattening candidates, maintain an observation pool, and propose future Layer 4 promotions through evidence packets and agent review. It is not a hard upstream alpha input, not trading guidance, and not a broker/account mutation surface.
-
-## Layer 8: TradingGuidanceModel / OptionExpressionModel
+## Layer 9: TradingGuidanceModel / OptionExpressionModel
 
 Status: accepted V1 contract with deterministic option-expression scaffold complete under the physical `model_09_option_expression` subset; production promotion remains evidence-gated.
 
@@ -454,4 +454,16 @@ Contract owner:
 docs/18_layer_09_trading_guidance.md
 ```
 
-Layer 8 consumes Layer 8 underlying path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, position/risk context, and policy constraints. It outputs optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`. Layer 9 may attach this context when available but must not require it for direct-underlying/crypto routes. It remains offline: no broker order type, route, time-in-force, send/cancel/replace flag, broker order id, final order quantity, or broker/account mutation.
+Layer 9 consumes Layer 8 underlying path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, position/risk context, and policy constraints. It outputs optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`. Layer 10 may attach this context when available but must not require it for direct-underlying/crypto routes. It remains offline: no broker order type, route, time-in-force, send/cancel/replace flag, broker order id, final order quantity, or broker/account mutation.
+
+## Layer 10: EventRiskGovernor / EventIntelligenceOverlay
+
+Status: accepted V1 event-risk-governor boundary with deterministic scaffold complete under the physical `model_10_event_risk_governor` surface; production promotion remains evidence-gated.
+
+Contract owner:
+
+```text
+docs/19_layer_10_event_risk_governor.md
+```
+
+Layer 10 consumes point-in-time residual event evidence, upstream context refs, and the Layer 8 direct-underlying action thesis as its canonical risk target. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, nominate reduction/flattening candidates, maintain an observation pool, and propose future Layer 4 promotions through evidence packets and agent review. It is not a hard upstream alpha input, not trading guidance, and not a broker/account mutation surface.

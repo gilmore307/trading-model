@@ -16,7 +16,7 @@ from .contract import MODEL_ID, MODEL_LAYER, MODEL_SURFACE, VECTOR_OUTPUT
 
 FINAL_JUDGMENT_DOC = "trading-model/docs/53_event_layer_final_judgment.md"
 EVENT_FAMILY_PACKET_DOC = "trading-model/docs/52_earnings_guidance_event_family_packet.md"
-LAYER_CONTRACT_DOC = "trading-model/docs/18_layer_10_event_risk_governor.md"
+LAYER_CONTRACT_DOC = "trading-model/docs/19_layer_10_event_risk_governor.md"
 
 
 @dataclass(frozen=True)
@@ -103,7 +103,7 @@ def build_event_model_acceptance_report(*, generated_at_utc: str | None = None) 
             "point_in_time_event_interpretation_when_reviewed",
             "event_activity_bridge_as_provenance_and_risk_context",
             "risk_governor_intervention_review_block_cap_reduce_flatten_hints",
-            "base_layer_1_7_guidance_preserved_side_by_side_with_event_adjusted_guidance",
+            "base_layers_1_9_guidance_preserved_side_by_side_with_event_adjusted_guidance",
         ),
         rejected_routes=(
             "broad_news_sentiment_alpha",
@@ -145,7 +145,7 @@ def build_event_model_acceptance_report(*, generated_at_utc: str | None = None) 
             EventFamilyAcceptanceStatus(
                 family_key="event_risk_governor_structure",
                 status="accepted_architecture",
-                accepted_use="bounded_risk_intelligence_overlay_after_base_layer_1_7_guidance",
+                accepted_use="bounded_risk_intelligence_overlay_after_base_layers_1_9_guidance",
                 blocked_use="entry_selection_position_sizing_contract_selection_order_routing_or_account_mutation",
                 blocker_codes=("activation_requires_manager_promotion_review", "execution_mutation_out_of_scope"),
                 next_evidence_gate="rebuild_source_10_event_risk_governor_feature_10_event_risk_governor_model_10_event_risk_governor_over_reviewed_event_feeds_then_evaluate_without_activation",

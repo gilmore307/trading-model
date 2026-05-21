@@ -68,7 +68,7 @@ These items are intentionally outside the current promote-first historical-train
 
 The abnormal-activity, option-direction, matched-control, raw-news, and canonical earnings/guidance scouting slice is closed for the current judgment pass.
 
-Accepted judgment: build/keep Layer 9 as a bounded EventRiskGovernor / EventIntelligenceOverlay, not as broad event alpha or standalone option abnormality. See `docs/53_event_layer_final_judgment.md`.
+Accepted judgment: build/keep Layer 10 as a bounded EventRiskGovernor / EventIntelligenceOverlay, not as broad event alpha or standalone option abnormality. See `docs/53_event_layer_final_judgment.md`.
 
 First itemized follow-up completed: `/root/projects/trading-storage/storage/03_model_artifacts/earnings_guidance_event_alone_q4_2025_20260515/` tested 12 Q4 2025 canonical Nasdaq earnings shells against 36 same-symbol non-earnings controls. It showed direction-neutral path expansion, not directional alpha; earnings/guidance remains `scouting`.
 

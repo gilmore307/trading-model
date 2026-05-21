@@ -1,6 +1,6 @@
 """Deterministic UnderlyingActionModel V1 scaffold.
 
-Consumes point-in-time Layer 5/6 vectors plus current/pending direct-underlying
+Consumes point-in-time Layer 5 alpha and Layer 7 position-projection vectors plus current/pending direct-underlying
 state, quote/liquidity/borrow state, and risk/policy gates. Emits an offline
 ``underlying_action_plan`` and ``underlying_action_vector``. The scaffold is
 intentionally conservative: it plans direct underlying/spot actions for stock,
@@ -44,7 +44,7 @@ DEFAULT_ADVERSE_MOVE_BY_HORIZON = {
 
 
 def generate_rows(input_rows: Iterable[Mapping[str, Any]], *, model_version: str = MODEL_VERSION) -> list[dict[str, Any]]:
-    """Generate deterministic Layer 7 action-plan rows.
+    """Generate deterministic Layer 8 action-plan rows.
 
     Each input row may provide nested dictionaries or JSON strings for:
     ``alpha_confidence_vector``, ``position_projection_vector``,
@@ -55,7 +55,7 @@ def generate_rows(input_rows: Iterable[Mapping[str, Any]], *, model_version: str
 
     rows = [_normalize_input_row(row) for row in input_rows]
     if not rows:
-        raise ValueError("at least one Layer 7 input row is required")
+        raise ValueError("at least one Layer 8 input row is required")
     rows.sort(key=lambda row: (_row_time(row), str(row.get("target_candidate_id") or "")))
     outputs = [_model_row(row, model_version=model_version) for row in rows]
     return outputs
@@ -775,7 +775,7 @@ def _validate_no_forbidden_output(value: Any, path: str = "output") -> None:
         for key, nested in value.items():
             key_l = str(key).lower()
             if key_l in FORBIDDEN_OUTPUT_FIELDS:
-                raise ValueError(f"forbidden Layer 7 output field at {path}.{key}: {key}")
+                raise ValueError(f"forbidden Layer 8 output field at {path}.{key}: {key}")
             _validate_no_forbidden_output(nested, f"{path}.{key}")
     elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         for index, nested in enumerate(value):

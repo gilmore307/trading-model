@@ -109,7 +109,7 @@ storage executes lifecycle
 
 Approved/promoted model bodies and required lineage must be marked for permanent retention. Regenerable intermediates may receive retention hints, but lifecycle action must route through manager `storage_lifecycle_request` and storage protected-set execution.
 
-The current acceptance evidence creates no activation rows. Layers 3-8 route through `scripts/models/review_layers_03_08_promotion_acceptance.py`, which builds blocked evidence and reviewer artifacts without persisting manager decisions. A follow-up Layer 3 substrate run can rebuild real Layer 3 evaluation evidence, but Layers 4-9 remain blocked for missing production eval substrate. See `96_promotion_acceptance.md` for the current evidence receipt.
+The current acceptance evidence creates no activation rows. Layers 3-10 route through `scripts/models/review_layers_03_10_promotion_acceptance.py`, which builds blocked evidence and reviewer artifacts without persisting manager decisions. A follow-up Layer 3 substrate run can rebuild real Layer 3 evaluation evidence, but Layers 4-10 remain blocked for missing production eval substrate. See `docs/31_promotion_acceptance.md` for the current acceptance boundary.
 
 ## Implementation hook
 
