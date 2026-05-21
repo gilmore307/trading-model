@@ -884,7 +884,7 @@ Layer 3 remains an anonymous `TargetStateVectorModel`: routing symbols contribut
 
 Task execution may remain target-major across folds: one routing symbol can complete all assigned folds before another starts. This is a scheduler/runtime convenience only. Production evaluation and promotion must aggregate by fold and by the fixed candidate-universe policy used in live routing.
 
-The Layer 3 candidate policy is rule-fixed rather than ticker-fixed. Live routing and promotion benchmarks construct candidates from current Layer 2 selected/watch sectors, sector constituents or reviewed proxies, current market-wide hot/liquid names, liquidity/spread/data-quality filters, optional optionability diagnostics, and controls when evaluation requires contrast.
+The Layer 3 candidate policy is rule-fixed rather than ticker-fixed. Live routing and promotion replay construct candidates from current Layer 2 selected/watch sectors, sector constituents or reviewed proxies, current market-wide hot/liquid names, liquidity/spread/data-quality filters, optional optionability diagnostics, and controls when evaluation requires contrast.
 
 Layer 4 and later keep a single selected-target interface. When Layer 3 returns several ranked targets, orchestration runs Layer 4+ separately for each target instead of changing downstream models into multi-target batch models.
 

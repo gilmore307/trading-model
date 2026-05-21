@@ -58,7 +58,7 @@ trading_data.feature_03_target_state_vector
 
 ## Candidate-universe policy
 
-The Layer 3 candidate set is rule-fixed, not ticker-fixed. Live routing and promotion benchmarks should construct candidates from:
+The Layer 3 candidate set is rule-fixed, not ticker-fixed. Live routing and promotion replay should construct candidates from:
 
 - the current top Layer 2 selected/watch sector or industry baskets;
 - sector constituents, high-exposure names, or reviewed proxy names for those baskets;
@@ -68,7 +68,7 @@ The Layer 3 candidate set is rule-fixed, not ticker-fixed. Live routing and prom
 
 The default policy parameters are conservative until evidence tunes them: top 3 Layer 2 sectors, top 10 names per sector by point-in-time dollar volume or exposure, top 20 market-wide hot/liquid names, and a 50-100 candidate batch cap after de-duplication and quality filters.
 
-The policy fixes how candidates are generated. It must not hard-code final ticker lists for promotion benchmarks. Fixed target/window panels may remain diagnostics or stress panels, but they do not prove full Layer 3 target-selection ability.
+The policy fixes how candidates are generated. It must not hard-code final ticker lists for promotion replay. Fixed target/window panels may remain diagnostics or stress panels, but they do not prove full Layer 3 target-selection ability.
 
 ## Core state-vector components
 

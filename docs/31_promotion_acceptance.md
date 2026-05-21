@@ -64,6 +64,8 @@ Layers 4-10 remain explicit blockers, not informal work items:
 - Layer 9 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
 - Layer 10 requires real residual-event-risk labels and production evaluation metrics.
 
+Promotion replay uses the frozen live-flow component graph rather than selecting isolated model files manually. Layer 10 remains an independent model and is invoked inside that replay graph when its point-in-time event evidence is available; it is not downgraded into a post-evaluation task.
+
 The acceptance helper `scripts/models/review_layers_03_10_promotion_acceptance.py` builds blocked model-side evidence and reviewer artifacts for Layers 3-10. It must not persist manager decisions or activate configs.
 
 ## Activation invariant
