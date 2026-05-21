@@ -6,7 +6,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
+
+from model_governance.local_layer_scripts import write_payload
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -257,6 +260,26 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
         self.assertEqual(rows[0]["underlying_quote_snapshot_ref"], "source_03_target_state:anon_aapl:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["underlying_reference_price"], 102.5)
         self.assertEqual(rows[0]["option_contract_candidates"][0]["contract_ref"], "AAPL160115C00100000")
+
+    def test_local_layer_payload_writer_serializes_database_datetimes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output_path = Path(tmp) / "summary.json"
+            write_payload(
+                {
+                    "labels": [
+                        {
+                            "available_time": datetime(2016, 1, 4, 14, 35, tzinfo=timezone.utc),
+                            "underlying_action_plan_ref": "uap_fixture",
+                        }
+                    ],
+                    "summary": {"model_surface": "model_08_underlying_action"},
+                },
+                output_path,
+            )
+
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(payload["labels"][0]["available_time"], "2016-01-04T14:35:00+00:00")
 
     def test_layer_04_from_database_writes_target_table_by_default(self) -> None:
         script = (REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py").read_text(encoding="utf-8")

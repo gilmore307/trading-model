@@ -8,6 +8,7 @@ production promotion still requires the accepted governance substrate.
 from __future__ import annotations
 
 import json
+from datetime import date, datetime
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping
@@ -39,7 +40,7 @@ def read_rows(path: Path) -> list[dict[str, Any]]:
 def write_payload(payload: Any, path: Path | None) -> None:
     """Write payload to a path or stdout-friendly JSON when path is absent."""
 
-    text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    text = json.dumps(payload, indent=2, sort_keys=True, default=_json_default) + "\n"
     if path is None:
         print(text, end="")
         return
@@ -55,9 +56,15 @@ def write_rows(rows: list[dict[str, Any]], path: Path | None) -> None:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.suffix.lower() in {".jsonl", ".ndjson"}:
-        path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8")
+        path.write_text("".join(json.dumps(row, sort_keys=True, default=_json_default) + "\n" for row in rows), encoding="utf-8")
     else:
-        path.write_text(json.dumps(rows, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        path.write_text(json.dumps(rows, indent=2, sort_keys=True, default=_json_default) + "\n", encoding="utf-8")
+
+
+def _json_default(value: Any) -> str:
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    return str(value)
 
 
 def generate_layer(module_name: str, rows: Iterable[Mapping[str, Any]], *, model_version: str | None = None) -> list[dict[str, Any]]:
