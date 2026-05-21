@@ -137,18 +137,19 @@ def _write_rows(
     if not rows:
         return
     columns = list(rows[0].keys())
+    column_types = _column_types(rows, columns)
     q_table = qualified(schema, table)
     cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {quote_identifier(schema)}")
-    definitions = ", ".join(f"{quote_column_identifier(column)} {_column_type(rows, column)}" for column in columns)
+    definitions = ", ".join(f"{quote_column_identifier(column)} {column_types[column]}" for column in columns)
     pk_sql = ", ".join(quote_column_identifier(column) for column in primary_key)
     cursor.execute(f"CREATE TABLE IF NOT EXISTS {q_table} ({definitions}, PRIMARY KEY ({pk_sql}))")
     for column in columns:
-        cursor.execute(f"ALTER TABLE {q_table} ADD COLUMN IF NOT EXISTS {quote_column_identifier(column)} {_column_type(rows, column)}")
+        cursor.execute(f"ALTER TABLE {q_table} ADD COLUMN IF NOT EXISTS {quote_column_identifier(column)} {column_types[column]}")
     _ensure_primary_key(cursor, schema=schema, table=table, primary_key=primary_key)
     for column in drop_columns:
         cursor.execute(f"ALTER TABLE {q_table} DROP COLUMN IF EXISTS {quote_column_identifier(column)}")
 
-    placeholders = ["%s::jsonb" if _column_type(rows, column) == "JSONB" else "%s" for column in columns]
+    placeholders = ["%s::jsonb" if column_types[column] == "JSONB" else "%s" for column in columns]
     updates = ", ".join(
         f"{quote_column_identifier(column)} = EXCLUDED.{quote_column_identifier(column)}"
         for column in columns
@@ -161,7 +162,7 @@ def _write_rows(
     """
     for row in rows:
         values = [
-            json.dumps(row.get(column), sort_keys=True, default=str) if _column_type(rows, column) == "JSONB" else _jsonable(row.get(column))
+            json.dumps(row.get(column), sort_keys=True, default=str) if column_types[column] == "JSONB" else _jsonable(row.get(column))
             for column in columns
         ]
         cursor.execute(insert_sql, values)
@@ -199,6 +200,10 @@ def _column_type(rows: Sequence[Mapping[str, Any]], column: str) -> str:
     if len(column) > 2 and column[0].isdigit() and column[1] == "_" and first is None:
         return "DOUBLE PRECISION"
     return "TEXT"
+
+
+def _column_types(rows: Sequence[Mapping[str, Any]], columns: Sequence[str]) -> dict[str, str]:
+    return {column: _column_type(rows, column) for column in columns}
 
 
 def _jsonable(value: Any) -> Any:
