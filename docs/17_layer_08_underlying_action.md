@@ -1,14 +1,5 @@
 # Layer 08 — UnderlyingActionModel
 
-<!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Layer 8; physical implementation surface is `src/models/model_08_underlying_action/`.
-
-Active boundary: Layer 8 converts Layer 7 target holding-state projection into an offline direct-underlying action thesis: eligibility, planned action type, exposure-adjustment thesis, entry/target/stop/time assumptions, and handoff to Layer 9 trading guidance.
-
-It may describe a direct underlying plan for stock, ETF, or crypto spot-style candidates, but it is not broker/exchange execution and does not select option contracts. Layer 9 composes the optional offline trading-guidance candidate and option-expression context when needed. Layer 10 may cap/block/reduce/flatten the underlying thesis for event risk.
-<!-- /ACTIVE_LAYER_REVISION -->
-
-
 Status: accepted Layer 8 design route; deterministic scaffold implemented in `src/models/model_08_underlying_action/`; production validation pending.
 
 ## Purpose

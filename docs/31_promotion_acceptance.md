@@ -1,8 +1,4 @@
 # Promotion Acceptance
-<!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
-<!-- /ACTIVE_LAYER_REORDER_NOTICE -->
-
 
 Status: accepted current production-promotion evidence receipt; no production activation
 Date: 2026-05-09
@@ -31,10 +27,11 @@ Durable promotion requests, review decisions, activation, rollback, and producti
 | 3 | `model_03_target_state_vector` | real PostgreSQL production-eval substrate exists | deferred: upstream Layer 1/2 approvals and Layer 3 calibration evidence missing | none |
 | 4 | `model_04_event_failure_risk` | missing EventFailureRiskModel evaluation substrate / calibrated strategy-failure labels | deferred: no production eval substrate | none |
 | 5 | `model_05_alpha_confidence` | missing production adjusted-alpha eval run / calibrated labels | deferred: no production eval substrate | none |
-| 6 | `model_07_position_projection` | missing production position-utility eval run / labels | deferred: no production eval substrate | none |
-| 7 | `model_08_underlying_action` | missing production realized-action outcome eval run | deferred: no production eval substrate | none |
-| 8 | `model_09_option_expression` | missing production option-chain replay eval run | deferred: no production eval substrate | none |
-| 9 | `model_10_event_risk_governor` | missing residual-event-governor eval run / calibrated residual-risk labels | deferred: no production eval substrate | none |
+| 6 | `model_06_dynamic_risk_policy` | missing production risk-policy replay labels and reviewed risk-policy outcome evidence | deferred: no production eval substrate | none |
+| 7 | `model_07_position_projection` | missing production position-utility eval run / labels | deferred: no production eval substrate | none |
+| 8 | `model_08_underlying_action` | missing production realized-action outcome eval run | deferred: no production eval substrate | none |
+| 9 | `model_09_option_expression` | missing production option-chain replay eval run and base trading-guidance outcome evidence | deferred: no production eval substrate | none |
+| 10 | `model_10_event_risk_governor` | missing residual-event-governor eval run / calibrated residual-risk labels | deferred: no production eval substrate | none |
 
 ## Layer 1 and 2 evidence
 

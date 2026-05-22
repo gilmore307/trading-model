@@ -1,6 +1,6 @@
 # Layer 02 - SectorContextModel
 
-This file records the active direction-neutral `trading-model` contract and implementation target for Layer 2. The deterministic implementation, SQL writer, evaluation path, and registry surfaces now use the direction-neutral terms below.
+This file records the active direction-neutral `trading-model` contract and implementation target for Layer 2. The deterministic implementation, SQL writer, evaluation path, and registry surfaces use the direction-neutral terms below.
 
 ## Input
 
@@ -78,7 +78,7 @@ market_context_state_ref
 
 `2_sector_internal_dispersion_score` and `2_sector_crowding_risk_score` are separate because dispersion/fragmentation and one-factor crowding are different risks.
 
-`2_sector_tradability_score` is direction-neutral. It represents how clean, stable, liquid, low-noise, and low-transition-risk the sector context is for downstream anonymous target construction. It replaces legacy `2_selection_readiness_score` semantics in the active implementation.
+`2_sector_tradability_score` is direction-neutral. It represents how clean, stable, liquid, low-noise, and low-transition-risk the sector context is for downstream anonymous target construction.
 
 `2_state_quality_score`, `2_coverage_score`, and `2_data_quality_score` describe reliability/completeness of the produced state row. They are not opportunity scores and must not be blended silently with tradability or direction.
 
@@ -145,5 +145,5 @@ Current Layer 2 verification covers the V2.2 deterministic generator, SQL physic
 git diff --check
 python3 -m compileall -q src scripts tests
 PYTHONPATH=src python3 -m unittest tests.test_sector_context_contract tests.test_sector_context_model tests.test_sector_context_evaluation
-rg -n "source_02_sector_context|layer02_|SecuritySelectionModel|security_selection|2_selection_readiness_score|2_trend_certainty_score|2_context_conditioned_stability_score" docs src scripts tests
+rg -n "source_02_sector_context|layer02_|SecuritySelectionModel|security_selection" docs src scripts tests
 ```

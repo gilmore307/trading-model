@@ -1,10 +1,6 @@
 # Architecture
-<!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
-<!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
-
-Status: accepted current route; Layers 1-10 architecture revised with DynamicRiskPolicyModel inserted as Layer 6
+Status: accepted current Layers 1-10 route
 Owner intent: keep the model stack direct, point-in-time, and current-route authoritative.
 
 ## Module Map

@@ -1,8 +1,4 @@
 # State Vector Feature Semantics Registry
-<!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
-<!-- /ACTIVE_LAYER_REORDER_NOTICE -->
-
 
 Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 4 event-failure-risk score families, Layer 5 alpha-confidence score families, Layer 6 dynamic-risk-policy score families, Layer 7 position-projection score families, Layer 8 underlying-action score families, Layer 9 trading-guidance/option-expression score families, and Layer 10 event-risk score families.
 
@@ -27,7 +23,7 @@ src/models/state_vector_feature_registry.py
 
 ## Layer 2 correction
 
-`2_sector_dispersion_crowding_score` is retired from the active primary contract because dispersion and crowding are not the same state. The active split is:
+Layer 2 primary output keeps dispersion and crowding separate because they are not the same state:
 
 - `2_sector_internal_dispersion_score` — internal fragmentation/dispersion, high-is-bad for clean handoff context.
 - `2_sector_crowding_risk_score` — one-factor/crowding/co-movement pressure, high-is-bad.

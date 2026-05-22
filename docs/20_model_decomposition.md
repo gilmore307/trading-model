@@ -1,10 +1,6 @@
 # Model Decomposition Framework
-<!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
-<!-- /ACTIVE_LAYER_REORDER_NOTICE -->
 
-
-Status: accepted Layers 1-10 design spine after DynamicRiskPolicy insertion; production promotion remains evidence-gated
+Status: accepted Layers 1-10 design spine; production promotion remains evidence-gated
 Owner intent: every model layer must keep the same reviewable nine-part decomposition before production promotion expands.
 
 ## Nine-Part Structure
@@ -386,7 +382,7 @@ Must construct a direction-neutral anonymous target state vector by fusing Layer
 
 ## Layer 4: EventFailureRiskModel
 
-Status: accepted architecture revision and pre-implementation contract; production promotion remains evidence-gated.
+Status: accepted V1 contract with deterministic scaffold complete under the physical `model_04_event_failure_risk` surface; production promotion remains evidence-gated.
 
 Contract owner:
 

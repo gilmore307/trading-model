@@ -1,16 +1,5 @@
 # Layer 10 — EventRiskGovernor / EventIntelligenceOverlay
 
-<!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Conceptual Layer 10; implementation package and scripts use `model_10_event_risk_governor`. The upstream data source uses `source_10_event_risk_governor`.
-
-Active boundary: Layer 10 is the event-intelligence and event-risk governor after the base direct-underlying thesis is known. It consumes standardized point-in-time event interpretations when available (`event_interpretation`) plus event evidence refs, current context states, and the Layer 8 `underlying_action_plan` as the canonical risk target. Layer 9 trading-guidance or option-expression context is optional and must not be required for direct-underlying/crypto routes.
-
-It emits event-risk context/intervention evidence for downstream review and execution-owned risk control: block new entries, cap exposure, reduce exposure, nominate flatten/clear candidates, halt trading candidates, or require human review. It must keep the base Layer 8 underlying-action thesis and event-adjusted risk evidence side by side for audit. For crypto or other direct-underlying-only assets, Layer 10 operates on the underlying/spot action thesis and must not require option-expression evidence.
-
-Forbidden boundary: Layer 10 must not directly send broker orders, choose routes/time-in-force, or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence plus accepted execution risk policy or human review path.
-<!-- /ACTIVE_LAYER_REVISION -->
-
-
 Status: accepted Layer 10 design route; deterministic V1 scaffold implemented in `src/models/model_10_event_risk_governor/`.
 
 ## Purpose

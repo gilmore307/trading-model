@@ -1,16 +1,5 @@
 # Layer 09 — TradingGuidanceModel / OptionExpressionModel
 
-<!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Layer 9; current V1 physical implementation surface is `src/models/model_09_option_expression/` as the option-expression subset.
-
-Active boundary: Layer 9 outputs an optional offline `trading_guidance_record` and optional option-expression context. It consumes the Layer 8 underlying-action thesis, position/risk context, and optional point-in-time option-chain evidence; Layer 10 may later attach this record as optional expression context. It may choose option expression, underlying-only expression, or no-trade/maintain guidance as an offline decision record.
-
-Allowed outputs: `trading_guidance_record`, `trading_guidance_vector`, optional `option_expression_plan` / `expression_vector`, selected contract references and constraints when option expression is used, reason codes, and replay refs. Forbidden outputs: broker order id, route, time-in-force, send/cancel/replace, final order quantity, or broker/account mutation.
-
-Layer 9 is optional expression context. Crypto/direct-underlying-only routes may bypass option-expression planning, while Layer 10 event-risk governance still uses the Layer 8 thesis as its canonical intervention target.
-<!-- /ACTIVE_LAYER_REVISION -->
-
-
 Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 
 `TradingGuidanceModel / OptionExpressionModel` consumes the Layer 8 `underlying_action_plan` / `underlying_action_vector` handoff plus optional point-in-time option-chain context to produce an offline `trading_guidance_record` and, when options are available and allowed, `option_expression_plan` / `expression_vector`.

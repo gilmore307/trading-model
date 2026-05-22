@@ -143,7 +143,7 @@ def load_artifact_tables(path: Path) -> dict[str, list[dict[str, Any]]]:
 
 
 def normalize_row(table: str, row: Mapping[str, Any]) -> dict[str, Any]:
-    """Normalize known legacy/script row aliases to SQL table columns."""
+    """Normalize accepted artifact row aliases to SQL table columns."""
 
     if table not in TABLE_COLUMNS:
         raise ValueError(f"unsupported evaluation table: {table}")
@@ -198,8 +198,8 @@ def persist_artifact_tables(
 def _fill_contextual_defaults(tables: dict[str, list[dict[str, Any]]]) -> None:
     """Fill safe defaults that require neighboring table context.
 
-    Older Layer 1/2 scripts emitted ``model_eval_run`` rows without timestamps.
-    The evaluation schema has a database default for ``started_at``, but our
+    Some accepted artifact inputs omit ``model_eval_run`` timestamps. The
+    evaluation schema has a database default for ``started_at``, but our
     idempotent upsert uses explicit column lists. Use the frozen snapshot end
     time as the stable evaluation start/completion timestamp when the source
     artifact does not provide one.

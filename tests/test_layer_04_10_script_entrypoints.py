@@ -69,15 +69,15 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
         generator = self._load_script_module(REPO_ROOT / "scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py")
 
         self.assertEqual(generator._column_type("10_event_gap_risk_score_390min"), "DOUBLE PRECISION")
-        self.assertEqual(generator._column_type("8_legacy_event_score"), "TEXT")
+        self.assertEqual(generator._column_type("8_event_gap_risk_score_390min"), "TEXT")
 
     def test_active_generator_column_type_prefixes_match_layer_numbers(self) -> None:
         for surface, layer_number in LAYER_NUMBERS.items():
             with self.subTest(surface=surface):
                 generator = self._load_script_module(REPO_ROOT / f"scripts/models/{surface}/generate_{surface}.py")
                 self.assertEqual(generator._column_type(f"{layer_number}_fixture_score"), "DOUBLE PRECISION")
-                previous_layer = layer_number - 1
-                self.assertEqual(generator._column_type(f"{previous_layer}_legacy_score"), "TEXT")
+                other_layer = layer_number - 1
+                self.assertEqual(generator._column_type(f"{other_layer}_fixture_score"), "TEXT")
 
     def test_layer_04_database_input_falls_back_to_neutral_target_context_without_gate_table(self) -> None:
         generator = self._load_script_module(REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py")

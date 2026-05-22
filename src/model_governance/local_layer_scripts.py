@@ -1,4 +1,4 @@
-"""Shared local CLI helpers for deterministic Layers 4-9 scripts.
+"""Shared local CLI helpers for deterministic Layers 4-10 scripts.
 
 These helpers keep script wrappers thin while preserving the repo boundary:
 ``scripts/`` owns callable entrypoints; importable implementation remains under

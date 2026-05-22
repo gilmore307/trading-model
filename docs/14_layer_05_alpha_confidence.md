@@ -1,16 +1,5 @@
 # Layer 05 — AlphaConfidenceModel
 
-<!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Layer 5; physical implementation surface is `src/models/model_05_alpha_confidence/`.
-
-Active boundary: Layer 5 consumes the reviewed Layer 1/2/3 state stack plus Layer 4 `event_failure_risk_vector` when available and produces `alpha_confidence_vector` / base-alpha diagnostics. It does not consume arbitrary raw event evidence; only reviewed Layer 4 event-failure-risk conditioning is allowed upstream, while Layer 10 remains the residual event-risk governor.
-
-Allowed outputs: horizon-aware alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Forbidden outputs: target exposure, position size, buy/sell/hold, option contract, order fields, broker/account mutation.
-
-Supersedes older wording in this file that described EventRiskGovernor as Layer 5 before alpha. Any remaining legacy implementation references are physical-path notes only, not the conceptual stack order.
-<!-- /ACTIVE_LAYER_REVISION -->
-
-
 Status: accepted Layer 5 design route; deterministic V1 scaffold currently implemented in physical `src/models/model_05_alpha_confidence/`.
 
 ## Purpose
@@ -43,7 +32,7 @@ market_context_state
   -> alpha_confidence_vector
 ```
 
-Layer 3 `3_target_direction_score_<window>` is signed current-state direction evidence, not alpha confidence. Layer 5 owns the calibrated alpha-confidence step. Reviewed strategy-failure event evidence belongs to Layer 4; residual/unreviewed event governance belongs to Layer 9.
+Layer 3 `3_target_direction_score_<window>` is signed current-state direction evidence, not alpha confidence. Layer 5 owns the calibrated alpha-confidence step. Reviewed strategy-failure event evidence belongs to Layer 4; residual/unreviewed event governance belongs to Layer 10.
 
 ## Two-tier output policy
 

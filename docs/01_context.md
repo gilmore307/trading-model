@@ -17,7 +17,7 @@ The trading platform is split across multiple repositories so each major respons
 
 Layer 8, Layer 9, and Layer 10 plans remain offline and broker mutation stays outside this repository.
 
-Reviewed event/strategy-failure evidence is now a Layer 4 conditioning boundary before alpha confidence. Unreviewed, residual, or discovery-stage event evidence remains a Layer 10 risk-governor/intervention boundary on the direct-underlying/spot thesis, with Layer 9 expression context only when available.
+Reviewed event/strategy-failure evidence is a Layer 4 conditioning boundary before alpha confidence. Unreviewed, residual, or discovery-stage event evidence remains a Layer 10 risk-governor/intervention boundary on the direct-underlying/spot thesis, with Layer 9 expression context only when available.
 
 The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
 

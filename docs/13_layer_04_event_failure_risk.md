@@ -1,6 +1,6 @@
 # Layer 04 — EventFailureRiskModel
 
-Status: accepted architecture revision and physical Layer 4 scaffold. Conceptual Layer 4 is inserted ahead of alpha confidence; active non-historical packages/scripts/registry rows now use the Layer 4 surface, while historical/applied migration records remain unchanged.
+Status: accepted Layer 4 contract and physical scaffold.
 
 ## Purpose
 

@@ -1,14 +1,5 @@
 # Layer 07 — PositionProjectionModel
 
-<!-- ACTIVE_LAYER_REVISION -->
-Status: active architecture revision. Layer 7; physical implementation surface is `src/models/model_07_position_projection/`.
-
-Active boundary: Layer 7 consumes `alpha_confidence_vector` plus point-in-time current/pending position, cost, exposure, and risk-budget context. It outputs `position_projection_vector`: target holding-state projection and abstract exposure gap, not execution instructions.
-
-Forbidden outputs: buy/sell/hold, option/instrument selection, route, time-in-force, final quantity, broker/account mutation. Layer 8 owns direct-underlying action thesis; Layer 9 owns option expression; Layer 10 owns event-risk intervention.
-<!-- /ACTIVE_LAYER_REVISION -->
-
-
 Status: accepted Layer 7 design route; deterministic V1 scaffold implemented in `src/models/model_07_position_projection/`.
 
 ## Purpose

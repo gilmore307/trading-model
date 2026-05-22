@@ -1,8 +1,4 @@
 # Realtime Decision Handoff
-<!-- ACTIVE_LAYER_REORDER_NOTICE -->
-> Active architecture revision (2026-05-20): Layers 1-10 are MarketRegimeModel, SectorContextModel, TargetStateVectorModel, EventFailureRiskModel, AlphaConfidenceModel, DynamicRiskPolicyModel, PositionProjectionModel, UnderlyingActionModel, TradingGuidanceModel / OptionExpressionModel, and EventRiskGovernor / EventIntelligenceOverlay. Active physical implementation paths use the current Layer 1-10 numbering; historical/applied migration records may retain prior numbering.
-<!-- /ACTIVE_LAYER_REORDER_NOTICE -->
-
 
 Status: accepted scaffold  
 Date: 2026-05-11

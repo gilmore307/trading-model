@@ -1,6 +1,6 @@
 # Layer 6 Dynamic Risk Policy
 
-Status: active architecture revision. Layer 6 uses the physical implementation surface src/models/model_06_dynamic_risk_policy/.
+Status: accepted Layer 6 design route; deterministic V1 scaffold implemented in `src/models/model_06_dynamic_risk_policy/`.
 
 ## Purpose
 

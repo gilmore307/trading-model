@@ -124,11 +124,11 @@ def create_evaluation_schema_sql(schema: str = DEFAULT_SCHEMA) -> list[str]:
         """,
         f"CREATE INDEX IF NOT EXISTS \"idx_model_promotion_metric_run\" ON {metric} (\"eval_run_id\")",
         f"CREATE INDEX IF NOT EXISTS \"idx_model_promotion_metric_lookup\" ON {metric} (\"eval_run_id\", \"metric_name\", \"label_name\", \"horizon\", \"factor_name\")",
-        _legacy_metric_copy_sql(schema),
+        _existing_metric_copy_sql(schema),
     ]
 
 
-def _legacy_metric_copy_sql(schema: str) -> str:
+def _existing_metric_copy_sql(schema: str) -> str:
     q_schema = quote_identifier(schema)
     return f"""
     DO $$

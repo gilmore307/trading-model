@@ -1,6 +1,6 @@
-"""Compatibility exports for promotion agent-review helpers.
+"""Current import surface for promotion agent-review helpers.
 
-New code should import from ``model_governance.promotion.agent_review``.
+The canonical implementation lives in ``model_governance.promotion.agent_review``.
 """
 
 from model_governance.promotion.agent_review import (
