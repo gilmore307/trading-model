@@ -984,3 +984,21 @@ Layer 4 is the quantitative event-failure-risk layer. It consumes only reviewed 
 Layer 5 and later evaluation may report that Layer 4 conditioning had no incremental value, overblocked, underblocked, or was explained by a dominant co-event. That feedback routes to Layer 10 after fold close. Layer 10 may revise, split, demote, reject, or strengthen the supervision packet; Layer 4 may retrain from the revised packet only for later folds.
 
 Co-event discipline is mandatory. When multiple events occur in the same window, Layer 10 must identify dominant event candidates, confounder refs, incremental attribution score, and attribution confidence. A nearby small issuer event must not be promoted to Layer 4 if a dominant market/theme/sector event explains the failure and the small event adds no independent explanatory value.
+
+## D055 - Trading calendar closure length is base Layer 6 risk
+
+Accepted: 2026-05-23
+
+Predictable non-trading intervals are a base DynamicRiskPolicyModel input, not automatically Layer 4 events. Layer 6 owns the deterministic relationship that longer closed-market exposure increases gap/uncertainty risk unless later evaluation proves a narrower exception.
+
+The default ordering is:
+
+```text
+intraday / same-session hold < ordinary overnight < weekend < market holiday / long weekend < major long holiday closure
+```
+
+Layer 6 should represent point-in-time calendar/session exposure such as next market open, non-trading interval minutes, closure type, closure-length bucket, holiday name, early-close flag, pre-holiday-session flag, calendar gap-risk score, and calendar liquidity-thinning score.
+
+Layer 4 owns only event-amplified session-gap risk. If a reviewed event overlaps a weekend or holiday closure and Layer 10/review proves incremental failure risk beyond base calendar exposure, Layer 4 may quantify that event-amplified session-gap component. If the closure alone explains the failure, calibration belongs to Layer 6 rather than Layer 4.
+
+Layer 10 may study overnight/weekend/holiday/long-closure failures after fold close. It should decide whether the failure is base calendar risk, event-amplified calendar risk, or a co-event/confounder case before proposing any future Layer 4 supervision.

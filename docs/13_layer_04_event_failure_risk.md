@@ -131,6 +131,8 @@ Layer 5 `AlphaConfidenceModel` consumes `event_failure_risk_vector` as a **condi
 
 Layer 6-8 may consume the resolved Layer 4 conditioning indirectly through Layer 5/6 handoffs. They must not independently re-promote raw event evidence. Base calendar/session exposure that exists without a reviewed event family belongs to Layer 6 risk policy; Layer 4 only emits the event-amplified session-gap component that has reviewed evidence.
 
+Trading-calendar closures are therefore not automatically Layer 4 events. Ordinary overnight, weekend, holiday, long-weekend, early-close, Thanksgiving, Christmas, or other long-closure exposure is a Layer 6 base calendar risk. Layer 4 may score `4_event_session_gap_risk_score_<horizon>` only when a reviewed event-failure relationship shows that a point-in-time event amplifies that closure risk.
+
 Layer 10 remains responsible for residual discovery, unexplained anomaly review, observation-pool maintenance, and proposing future event-family promotions into Layer 4.
 
 ## Promotion gate into Layer 4

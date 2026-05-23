@@ -110,6 +110,19 @@ co_event_handling_status
 
 For example, if NVIDIA earnings and ALAB earnings are visible in the same window, Layer 10 must test whether ALAB adds incremental explanatory value after controlling for NVIDIA/global/theme impact. If NVIDIA explains the market/theme/sector failure and ALAB adds no independent value, ALAB should be marked `spurious_co_event`, `confounded_by_dominant_global_event`, or `no_incremental_failure_attribution`; it must not be promoted into Layer 4 except possibly as target-local observation-only evidence.
 
+## Trading-calendar closure attribution
+
+Trading-calendar closure risk is a base Layer 6 risk input, not automatically a Layer 4 event family. Layer 10 may still study closure windows during post-failure attribution:
+
+- ordinary overnight;
+- weekend;
+- market holiday;
+- long weekend;
+- Thanksgiving / Christmas / major long holiday closure;
+- early close and pre-holiday thin-liquidity sessions.
+
+Layer 10 should test whether closure length or closure class explains failures after controlling for Layer 1 market state, Layer 2 sector state, Layer 3 target state, Layer 5 alpha quality, and Layer 6 base calendar risk. If the closure alone explains the failure, the remedy belongs in Layer 6 calibration. If a reviewed event plus the closure produces additional failure risk beyond base calendar exposure, Layer 10 may propose a future Layer 4 event-amplified session-gap supervision packet.
+
 ## Residual-anomaly discovery and correction workflow
 
 The accepted event-model workflow is two-sided:
