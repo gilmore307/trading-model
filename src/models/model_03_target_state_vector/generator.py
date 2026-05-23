@@ -182,8 +182,8 @@ def _score_payload(target: Mapping[str, Any], market: Mapping[str, Any], sector:
         transition_risk = _transition_risk(target, cross, window, noise)
         persistence = _state_persistence(target, window)
         exhaustion_risk = _exhaustion_risk(target, window)
-        alignment = _context_alignment(cross, direction)
-        support = _context_support(cross, market, sector, direction)
+        alignment = _context_alignment(cross, direction, window)
+        support = _context_support(cross, market, sector, direction, window)
         tradability = _geometric_score([
             direction_strength,
             trend_quality,
@@ -334,12 +334,13 @@ def _liquidity_score(target: Mapping[str, Any]) -> float | None:
     return _average([spread_score, volume_score])
 
 
-def _context_alignment(cross: Mapping[str, Any], direction: float | None) -> float | None:
+def _context_alignment(cross: Mapping[str, Any], direction: float | None, window: str | None = None) -> float | None:
     if direction is None:
         return None
-    sector_residual = _safe_float(cross.get("target_vs_sector_residual_direction"))
-    market_residual = _safe_float(cross.get("target_vs_market_residual_direction"))
-    confirmation = str(cross.get("sector_confirmation_state") or "").lower()
+    frame = _cross_frame(cross, window)
+    sector_residual = _safe_float(frame.get("target_vs_sector_residual_direction") if frame else cross.get("target_vs_sector_residual_direction"))
+    market_residual = _safe_float(frame.get("target_vs_market_residual_direction") if frame else cross.get("target_vs_market_residual_direction"))
+    confirmation = str((frame.get("sector_confirmation_state") if frame else None) or cross.get("sector_confirmation_state") or "").lower()
     base = 1.0 if confirmation == "sector_confirmed" else -0.5 if confirmation == "sector_divergent" else 0.0
     residual_penalty = _average([abs(sector_residual) if sector_residual is not None else None, abs(market_residual) if market_residual is not None else None])
     if residual_penalty is not None:
@@ -347,11 +348,22 @@ def _context_alignment(cross: Mapping[str, Any], direction: float | None) -> flo
     return max(-1.0, min(1.0, base))
 
 
-def _context_support(cross: Mapping[str, Any], market: Mapping[str, Any], sector: Mapping[str, Any], direction: float | None) -> float | None:
-    alignment = _context_alignment(cross, direction)
+def _context_support(cross: Mapping[str, Any], market: Mapping[str, Any], sector: Mapping[str, Any], direction: float | None, window: str | None = None) -> float | None:
+    alignment = _context_alignment(cross, direction, window)
     if alignment is not None:
         return _clip01((alignment + 1.0) / 2.0)
     return _average([_generic_quality(market), _generic_quality(sector)])
+
+
+def _cross_frame(cross: Mapping[str, Any], window: str | None) -> Mapping[str, Any]:
+    if not window:
+        return {}
+    frames = cross.get("multi_frame_state")
+    if isinstance(frames, Mapping):
+        frame = frames.get(window)
+        if isinstance(frame, Mapping):
+            return frame
+    return {}
 
 
 def _quality_score(*blocks: Mapping[str, Any]) -> float:

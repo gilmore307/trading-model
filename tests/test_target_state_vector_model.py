@@ -66,13 +66,19 @@ class TargetStateVectorModelTests(unittest.TestCase):
         self.assertIn("3_state_quality_score", diagnostics_rows[0])
 
     def test_evaluation_builds_baseline_ladder_and_defers_small_fixture_thresholds(self) -> None:
-        feature_rows = [_feature_row(index) for index in range(8)]
+        feature_rows = [_feature_row(index) for index in range(40)]
         model_rows = generator.generate_rows(feature_rows)
         artifacts = evaluation.build_evaluation_artifacts(feature_rows=feature_rows, model_rows=model_rows)
         metric_names = {row["metric_name"] for row in artifacts.eval_metrics}
+        label_names = {row["label_name"] for row in artifacts.eval_labels}
+        self.assertIn("future_tradeable_path", label_names)
+        self.assertIn("forward_path_risk", label_names)
+        self.assertIn("liquidity_tradability_outcome", label_names)
+        self.assertIn("state_transition_quality", label_names)
         self.assertIn("abs_corr:market_only_baseline", metric_names)
         self.assertIn("abs_corr:market_sector_baseline", metric_names)
         self.assertIn("abs_corr:market_sector_target_context", metric_names)
+        self.assertIn("label_count:future_tradeable_path", metric_names)
         self.assertIn("threshold:minimum_feature_rows", metric_names)
         summary = evaluation.summarize_threshold_results(artifacts.eval_metrics)
         self.assertEqual(summary["promotion_gate_state"], "blocked")

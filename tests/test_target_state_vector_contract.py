@@ -48,6 +48,15 @@ class TargetStateVectorContractTests(unittest.TestCase):
         )
         self.assertEqual(contract.LABEL_HORIZONS, ("15min", "60min", "390min"))
         self.assertEqual(
+            contract.TRAINING_LABEL_FAMILIES,
+            (
+                "future_tradeable_path",
+                "forward_path_risk",
+                "liquidity_tradability_outcome",
+                "state_transition_quality",
+            ),
+        )
+        self.assertEqual(
             contract.BASELINE_LADDER,
             (
                 "market_only_baseline",

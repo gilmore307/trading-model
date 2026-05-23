@@ -76,6 +76,13 @@ LABEL_HORIZONS: Final[tuple[str, ...]] = (
     "390min",
 )
 
+TRAINING_LABEL_FAMILIES: Final[tuple[str, ...]] = (
+    "future_tradeable_path",
+    "forward_path_risk",
+    "liquidity_tradability_outcome",
+    "state_transition_quality",
+)
+
 DIRECTION_NEUTRAL_SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "3_target_direction_score_<window>",
     "3_target_direction_strength_score_<window>",

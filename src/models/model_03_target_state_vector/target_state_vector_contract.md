@@ -149,16 +149,17 @@ Layer 3 outputs may include scalar summaries inside block payloads, but these sc
 
 ## V1 label families
 
-Labels are training/evaluation-only outputs. They must never be joined into inference feature vectors. If a signed label uses direction orientation, the orientation must come from deterministic point-in-time state evidence or an out-of-sample upstream prediction, never from the same fitted target being evaluated.
+Labels are training/evaluation-only outputs. They must never be joined into inference feature vectors. If a signed label uses direction orientation, the orientation must come from deterministic point-in-time state evidence or an out-of-sample upstream prediction, never from the same fitted target being evaluated. The accepted Layer 3 training route uses completed 1-minute source rows to form multi-frame state features, then evaluates future path quality, tradability preservation, and state transition behavior over the label horizon.
 
 | Label family | Initial horizons | Role |
 |---|---|---|
 | `signed_forward_return_distribution` | 15min, 60min, 390min | Direction-neutral future return distribution using deterministic point-in-time orientation, not fitted alpha confidence. |
+| `future_tradeable_path` | 15min, 60min, 390min | Direction-oriented future path quality from path efficiency, MFE/MAE balance, and sign-flip penalty. |
 | `forward_path_risk` | 15min, 60min, 390min | MFE/MAE, chop, sign flips, gap, and adverse excursion after the state. |
 | `directional_persistence` | 15min, 60min, 390min | Whether direction persists after market/sector adjustment. |
 | `reversion_pressure` | 15min, 60min, 390min | Whether stretched target states revert toward target/sector/market anchors. |
 | `liquidity_tradability_outcome` | 15min, 60min | Whether the state remains tradeable after spreads, volume, and coverage gates. |
-| `state_transition` | next accepted state row | Which target state tends to follow this state. |
+| `state_transition_quality` | 15min, 60min, 390min | Whether the future state preserves or cleanly transitions from the current state without noisy sign flips. |
 | `candidate_policy_rank_outcome` | 15min, 60min, 390min | Whether selected/top-ranked anonymous candidates outperform watch/blocked/control candidates on path quality and liquidity-adjusted tradability inside a fixed candidate-universe policy batch. |
 
 ## Baseline ladder

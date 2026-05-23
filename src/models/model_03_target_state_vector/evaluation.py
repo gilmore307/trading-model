@@ -20,6 +20,16 @@ DEFAULT_DRY_RUN_WRITE_POLICY = "no_database_write"
 DEFAULT_DATABASE_READ_WRITE_POLICY = "database_read_only_pending_governance_persistence"
 BASELINE_LADDER = ("market_only_baseline", "market_sector_baseline", "market_sector_target_context")
 LABEL_HORIZONS = ("15min", "60min", "390min")
+PATH_LABEL_NAME = "future_tradeable_path"
+PATH_RISK_LABEL_NAME = "forward_path_risk"
+LIQUIDITY_LABEL_NAME = "liquidity_tradability_outcome"
+STATE_TRANSITION_LABEL_NAME = "state_transition_quality"
+REQUIRED_LABEL_NAMES = (
+    PATH_LABEL_NAME,
+    PATH_RISK_LABEL_NAME,
+    LIQUIDITY_LABEL_NAME,
+    STATE_TRANSITION_LABEL_NAME,
+)
 DEFAULT_PROMOTION_THRESHOLDS: dict[str, float] = {
     "minimum_feature_rows": 252.0,
     "minimum_model_rows": 252.0,
@@ -32,6 +42,9 @@ DEFAULT_PROMOTION_THRESHOLDS: dict[str, float] = {
     "maximum_stability_correlation_range": 1.50,
     "maximum_leakage_violation_count": 0.0,
     "minimum_identity_leakage_violation_count": 0.0,
+    "minimum_path_label_count": 200.0,
+    "minimum_tradability_label_count": 200.0,
+    "minimum_state_transition_label_count": 200.0,
 }
 
 
@@ -161,14 +174,46 @@ def _eval_labels(rows: Sequence[Mapping[str, Any]], *, snapshot_id: str, model_i
                 current_time = _iso(_row_time(row))
                 path_rows = candidate_rows[index : index + steps + 1]
                 path_metrics = _future_path_metrics(path_rows, signed_return=signed_return)
-                label = {
+                liquidity_metrics = _future_liquidity_metrics(path_rows)
+                transition_metrics = _future_state_transition_metrics(row, future, path_rows)
+                base_payload = {
                     "feature_available_time": current_time,
+                    "future_available_time": _iso(_row_time(future)),
+                    "horizon": horizon,
                     "signed_forward_return": signed_return,
                     "absolute_forward_return": abs(signed_return),
-                    "future_tradeable_path_label": path_metrics.get("future_tradeable_path_label"),
                     **path_metrics,
+                    **liquidity_metrics,
+                    **transition_metrics,
                 }
-                labels.append({"label_id": _stable_id("mdlbl", snapshot_id, candidate, current_time, horizon), "snapshot_id": snapshot_id, "model_id": model_id, "target_symbol": candidate, "label_name": "future_target_tradeable_path", "label_horizon": horizon, "label_available_time": _iso(_row_time(future)), "label_value": label["future_tradeable_path_label"], "label_payload_json": label})
+                label_specs = (
+                    (PATH_LABEL_NAME, path_metrics.get("future_tradeable_path_label"), {"label_family": "path", "high_value_meaning": "good"}),
+                    (PATH_RISK_LABEL_NAME, path_metrics.get("forward_path_risk_label"), {"label_family": "path_risk", "high_value_meaning": "bad"}),
+                    (LIQUIDITY_LABEL_NAME, liquidity_metrics.get("liquidity_tradability_outcome_label"), {"label_family": "tradability", "high_value_meaning": "good"}),
+                    (STATE_TRANSITION_LABEL_NAME, transition_metrics.get("state_transition_quality_label"), {"label_family": "state_transition", "high_value_meaning": "good"}),
+                )
+                for label_name, label_value, label_meta in label_specs:
+                    if label_value is None:
+                        continue
+                    payload = {
+                        **base_payload,
+                        **label_meta,
+                        "label_name": label_name,
+                        "label_value": label_value,
+                    }
+                    labels.append(
+                        {
+                            "label_id": _stable_id("mdlbl", snapshot_id, candidate, current_time, horizon, label_name),
+                            "snapshot_id": snapshot_id,
+                            "model_id": model_id,
+                            "target_symbol": candidate,
+                            "label_name": label_name,
+                            "label_horizon": horizon,
+                            "label_available_time": _iso(_row_time(future)),
+                            "label_value": label_value,
+                            "label_payload_json": payload,
+                        }
+                    )
     return labels
 
 
@@ -182,6 +227,8 @@ def _promotion_metrics(features: Sequence[Mapping[str, Any]], models: Sequence[M
     feature_by_key = {(_candidate(row), _iso(_row_time(row))): row for row in features}
     pairs: list[dict[str, Any]] = []
     for label in labels:
+        if label.get("label_name") != PATH_LABEL_NAME:
+            continue
         payload = _coerce_payload(label.get("label_payload_json"))
         current_time = payload.get("feature_available_time") if isinstance(payload, Mapping) else None
         if not current_time:
@@ -194,6 +241,8 @@ def _promotion_metrics(features: Sequence[Mapping[str, Any]], models: Sequence[M
     metrics: list[dict[str, Any]] = []
     base_values = _baseline_summary(pairs)
     metrics.extend(_metric_rows(eval_run_id, base_values))
+    label_counts = _label_counts(labels)
+    metrics.extend(_metric(eval_run_id, f"label_count:{name}", float(label_counts.get(name, 0)), {"required_label_names": REQUIRED_LABEL_NAMES}) for name in REQUIRED_LABEL_NAMES)
     threshold_values = {
         "minimum_feature_rows": float(len(features)),
         "minimum_model_rows": float(len(models)),
@@ -206,6 +255,9 @@ def _promotion_metrics(features: Sequence[Mapping[str, Any]], models: Sequence[M
         "maximum_stability_correlation_range": base_values.get("stability_correlation_range"),
         "maximum_leakage_violation_count": base_values.get("leakage_violation_count"),
         "minimum_identity_leakage_violation_count": 0.0,
+        "minimum_path_label_count": float(label_counts.get(PATH_LABEL_NAME, 0)),
+        "minimum_tradability_label_count": float(label_counts.get(LIQUIDITY_LABEL_NAME, 0)),
+        "minimum_state_transition_label_count": float(label_counts.get(STATE_TRANSITION_LABEL_NAME, 0)),
     }
     for name, observed in threshold_values.items():
         threshold = thresholds[name]
@@ -239,7 +291,11 @@ def _baseline_summary(pairs: Sequence[Mapping[str, float]]) -> dict[str, float |
     market_sector = abs(cors.get("market_sector_baseline") or 0.0)
     market = abs(cors.get("market_only_baseline") or 0.0)
     thirds = _split_pairs(pairs)
-    split_cors = [_corr([p["market_sector_target_context"] for p in split], [p["label_abs"] for p in split]) for split in thirds if len(split) >= 2]
+    split_cors = [
+        value
+        for value in (_corr([p["market_sector_target_context"] for p in split], [p["label_abs"] for p in split]) for split in thirds if len(split) >= 2)
+        if value is not None
+    ]
     signs = [1 if (value or 0) >= 0 else -1 for value in split_cors]
     sign_consistency = max(signs.count(1), signs.count(-1)) / len(signs) if signs else 0.0
     corr_range = (max(split_cors) - min(split_cors)) if split_cors else 999.0
@@ -254,6 +310,15 @@ def _metric(eval_run_id: str, name: str, value: float | None, payload: Mapping[s
     return {"metric_id": _stable_id("mdmet", eval_run_id, name), "eval_run_id": eval_run_id, "metric_name": name, "metric_value": value, "metric_payload_json": dict(payload)}
 
 
+def _label_counts(labels: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for label in labels:
+        name = str(label.get("label_name") or "")
+        if name:
+            counts[name] = counts.get(name, 0) + 1
+    return counts
+
+
 def _split_pairs(pairs: Sequence[Mapping[str, float]]) -> list[list[Mapping[str, float]]]:
     ordered = sorted(pairs, key=lambda row: row.get("time", 0.0))
     if len(ordered) < 3:
@@ -265,6 +330,12 @@ def _split_pairs(pairs: Sequence[Mapping[str, float]]) -> list[list[Mapping[str,
 def _average(values: Iterable[float | None]) -> float | None:
     clean = [value for value in values if value is not None]
     return mean(clean) if clean else None
+
+
+def _clip01(value: float | None) -> float | None:
+    if value is None:
+        return None
+    return max(0.0, min(float(value), 1.0))
 
 
 def _corr(xs: Sequence[float], ys: Sequence[float]) -> float | None:
@@ -320,6 +391,7 @@ def _future_path_metrics(path_rows: Sequence[Mapping[str, Any]], *, signed_retur
         fallback = min(abs(signed_return) / 0.05, 1.0)
         return {
             "future_tradeable_path_label": fallback,
+            "forward_path_risk_label": None if fallback is None else 1.0 - fallback,
             "path_efficiency_score": None,
             "mfe_mae_balance_score": None,
             "direction_flip_count": None,
@@ -343,6 +415,7 @@ def _future_path_metrics(path_rows: Sequence[Mapping[str, Any]], *, signed_retur
     label = _average([path_efficiency, mfe_mae_balance, flip_penalty])
     return {
         "future_tradeable_path_label": label,
+        "forward_path_risk_label": None if label is None else 1.0 - label,
         "path_efficiency_score": path_efficiency,
         "mfe_mae_balance_score": mfe_mae_balance,
         "direction_flip_count": flips,
@@ -350,6 +423,109 @@ def _future_path_metrics(path_rows: Sequence[Mapping[str, Any]], *, signed_retur
         "max_favorable_excursion": mfe,
         "max_adverse_excursion": mae,
     }
+
+
+def _future_liquidity_metrics(path_rows: Sequence[Mapping[str, Any]]) -> dict[str, float | None]:
+    scores = [_row_liquidity_score(row) for row in path_rows]
+    clean = [score for score in scores if score is not None]
+    if not clean:
+        return {
+            "liquidity_tradability_outcome_label": None,
+            "minimum_future_liquidity_score": None,
+            "mean_future_liquidity_score": None,
+            "liquidity_degradation_score": None,
+        }
+    start = clean[0]
+    minimum = min(clean)
+    mean_score = mean(clean)
+    degradation = max(0.0, start - minimum)
+    label = _clip01(_average([minimum, mean_score, 1.0 - degradation]))
+    return {
+        "liquidity_tradability_outcome_label": label,
+        "minimum_future_liquidity_score": minimum,
+        "mean_future_liquidity_score": mean_score,
+        "liquidity_degradation_score": degradation,
+    }
+
+
+def _future_state_transition_metrics(
+    current: Mapping[str, Any],
+    future: Mapping[str, Any],
+    path_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, float | int | str | None]:
+    current_state = _state_bucket(current)
+    future_state = _state_bucket(future)
+    current_sign = _state_sign(current)
+    future_sign = _state_sign(future)
+    flips = _path_sign_flip_count(path_rows)
+    same_direction = current_sign is not None and future_sign is not None and current_sign == future_sign
+    stable = same_direction and (flips is None or flips == 0)
+    transition_quality = 1.0 if stable else 0.5 if same_direction else 0.0 if current_sign is not None and future_sign is not None else None
+    return {
+        "state_transition_quality_label": transition_quality,
+        "current_state_bucket": current_state,
+        "future_state_bucket": future_state,
+        "state_transition": f"{current_state}->{future_state}" if current_state and future_state else None,
+        "state_transition_direction_preserved": same_direction if current_sign is not None and future_sign is not None else None,
+        "state_transition_path_flip_count": flips,
+    }
+
+
+def _row_liquidity_score(row: Mapping[str, Any]) -> float | None:
+    target = _coerce_payload(row.get("target_state_features"))
+    if not isinstance(target, Mapping):
+        return None
+    liquidity = target.get("target_liquidity_tradability_state")
+    if not isinstance(liquidity, Mapping):
+        return None
+    explicit = _safe_float(liquidity.get("liquidity_tradability_score"))
+    if explicit is not None:
+        return _clip01(explicit)
+    spread = _safe_float(liquidity.get("spread_bps"))
+    dollar_volume = _safe_float(liquidity.get("dollar_volume"))
+    spread_score = None if spread is None else _clip01(1.0 - min(spread / 100.0, 1.0))
+    volume_score = None if dollar_volume is None else _clip01(math.log10(max(dollar_volume, 1.0)) / 8.0)
+    return _average([spread_score, volume_score])
+
+
+def _state_bucket(row: Mapping[str, Any]) -> str | None:
+    direction = _target_return(row, "15min")
+    stability = _target_nested_float(row, "target_trend_quality_state", "path_stability_15min")
+    transition_risk = _target_nested_float(row, "target_exhaustion_decay_state", "late_trend_risk_score_15min")
+    if direction is None:
+        return None
+    sign = "up" if direction > 0 else "down" if direction < 0 else "flat"
+    if transition_risk is not None and transition_risk >= 0.65:
+        quality = "fragile"
+    elif stability is not None and stability >= 0.65:
+        quality = "stable"
+    else:
+        quality = "mixed"
+    return f"{sign}_{quality}"
+
+
+def _state_sign(row: Mapping[str, Any]) -> int | None:
+    value = _target_return(row, "15min")
+    if value is None:
+        return None
+    return 1 if value > 0 else -1 if value < 0 else 0
+
+
+def _path_sign_flip_count(path_rows: Sequence[Mapping[str, Any]]) -> int | None:
+    signs = [_state_sign(row) for row in path_rows]
+    clean = [sign for sign in signs if sign not in (None, 0)]
+    if len(clean) < 2:
+        return None
+    return sum(1 for left, right in zip(clean, clean[1:]) if left != right)
+
+
+def _target_nested_float(row: Mapping[str, Any], group_name: str, field_name: str) -> float | None:
+    target = _coerce_payload(row.get("target_state_features"))
+    if isinstance(target, Mapping):
+        group = target.get(group_name)
+        if isinstance(group, Mapping):
+            return _safe_float(group.get(field_name))
+    return None
 
 
 def _first_numeric(value: Any, keys: Sequence[str]) -> float | None:
@@ -366,7 +542,7 @@ def _first_numeric(value: Any, keys: Sequence[str]) -> float | None:
 
 
 def _horizon_steps(horizon: str) -> int:
-    return {"15min": 1, "60min": 4, "390min": 26}.get(horizon, 1)
+    return {"15min": 15, "60min": 60, "390min": 390}.get(horizon, 1)
 
 
 def _payload(row: Mapping[str, Any]) -> Mapping[str, Any]:
