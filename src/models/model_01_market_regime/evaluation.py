@@ -26,6 +26,9 @@ DEFAULT_SOURCE_KEY = "SOURCE_01_MARKET_REGIME"
 DEFAULT_FEATURE_KEY = "FEATURE_01_MARKET_REGIME"
 DEFAULT_DRY_RUN_WRITE_POLICY = "no_database_write"
 DEFAULT_DATABASE_READ_WRITE_POLICY = "database_read_only_pending_governance_persistence"
+DEFAULT_INPUT_FRAME = "30min"
+DEFAULT_PREDICTION_HORIZON = "1d"
+DEFAULT_MARKET_UNIVERSE_REF = "layer_01_02_market_context_etf_universe"
 STATE_OUTPUT_COLUMNS = (
     "1_market_direction_score",
     "1_market_direction_strength_score",
@@ -127,6 +130,31 @@ def _safe_float(value: Any) -> float | None:
 
 def _row_time(row: Mapping[str, Any], *, preferred: str) -> datetime:
     return _parse_time(row.get(preferred) or row.get("available_time") or row.get("snapshot_time"))
+
+
+def _row_input_frame(row: Mapping[str, Any]) -> str:
+    return str(row.get("input_frame") or row.get("feature_bar_grain") or DEFAULT_INPUT_FRAME)
+
+
+def _row_prediction_horizon(row: Mapping[str, Any]) -> str:
+    return str(row.get("prediction_horizon") or DEFAULT_PREDICTION_HORIZON)
+
+
+def _row_market_universe_ref(row: Mapping[str, Any]) -> str:
+    return str(row.get("market_universe_ref") or DEFAULT_MARKET_UNIVERSE_REF)
+
+
+def _row_identity_key(row: Mapping[str, Any], *, preferred: str) -> tuple[str, str, str, str]:
+    return (
+        _iso(_row_time(row, preferred=preferred)),
+        _row_input_frame(row),
+        _row_prediction_horizon(row),
+        _row_market_universe_ref(row),
+    )
+
+
+def _row_scope_key(row: Mapping[str, Any]) -> tuple[str, str, str]:
+    return (_row_input_frame(row), _row_prediction_horizon(row), _row_market_universe_ref(row))
 
 
 def _canonical_json(value: Any) -> str:
@@ -259,42 +287,54 @@ def build_eval_labels(
     write_policy: str = DEFAULT_DRY_RUN_WRITE_POLICY,
 ) -> list[dict[str, Any]]:
     labels: list[dict[str, Any]] = []
-    for index, row in enumerate(feature_rows):
-        available_time = _row_time(row, preferred="snapshot_time")
-        for spec in label_specs:
-            future_index = index + spec.horizon_steps
-            if future_index >= len(feature_rows):
-                continue
-            future_row = feature_rows[future_index]
-            label_value = _safe_float(future_row.get(spec.source_column))
-            if label_value is None:
-                continue
-            label_time = _row_time(future_row, preferred="snapshot_time")
-            label_id = _stable_id(
-                "mdlabel",
-                snapshot_id,
-                spec.label_name,
-                spec.target_symbol,
-                spec.horizon,
-                _iso(available_time),
-            )
-            labels.append(
-                {
-                    "label_id": label_id,
-                    "snapshot_id": snapshot_id,
-                    "label_name": spec.label_name,
-                    "target_symbol": spec.target_symbol,
-                    "horizon": spec.horizon,
-                    "available_time": _iso(available_time),
-                    "label_time": _iso(label_time),
-                    "label_value": label_value,
-                    "label_payload_json": {
-                        "source_column": spec.source_column,
-                        "horizon_steps": spec.horizon_steps,
-                        "write_policy": write_policy,
-                    },
-                }
-            )
+    grouped_rows: dict[tuple[str, str, str], list[Mapping[str, Any]]] = {}
+    for row in feature_rows:
+        grouped_rows.setdefault(_row_scope_key(row), []).append(row)
+
+    for (input_frame, prediction_horizon, market_universe_ref), scoped_rows in grouped_rows.items():
+        ordered_rows = sorted(scoped_rows, key=lambda item: _row_time(item, preferred="snapshot_time"))
+        for index, row in enumerate(ordered_rows):
+            available_time = _row_time(row, preferred="snapshot_time")
+            for spec in label_specs:
+                future_index = index + spec.horizon_steps
+                if future_index >= len(ordered_rows):
+                    continue
+                future_row = ordered_rows[future_index]
+                label_value = _safe_float(future_row.get(spec.source_column))
+                if label_value is None:
+                    continue
+                label_time = _row_time(future_row, preferred="snapshot_time")
+                label_id = _stable_id(
+                    "mdlabel",
+                    snapshot_id,
+                    spec.label_name,
+                    spec.target_symbol,
+                    spec.horizon,
+                    input_frame,
+                    prediction_horizon,
+                    market_universe_ref,
+                    _iso(available_time),
+                )
+                labels.append(
+                    {
+                        "label_id": label_id,
+                        "snapshot_id": snapshot_id,
+                        "label_name": spec.label_name,
+                        "target_symbol": spec.target_symbol,
+                        "horizon": spec.horizon,
+                        "available_time": _iso(available_time),
+                        "input_frame": input_frame,
+                        "prediction_horizon": prediction_horizon,
+                        "market_universe_ref": market_universe_ref,
+                        "label_time": _iso(label_time),
+                        "label_value": label_value,
+                        "label_payload_json": {
+                            "source_column": spec.source_column,
+                            "horizon_steps": spec.horizon_steps,
+                            "write_policy": write_policy,
+                        },
+                    }
+                )
     return labels
 
 
@@ -335,7 +375,7 @@ def build_eval_metrics(
     state_output_columns: Sequence[str] = PREDICTIVE_STATE_OUTPUT_COLUMNS,
     write_policy: str = DEFAULT_DRY_RUN_WRITE_POLICY,
 ) -> list[dict[str, Any]]:
-    model_by_time = {_iso(_row_time(row, preferred="available_time")): row for row in model_rows}
+    model_by_key = {_row_identity_key(row, preferred="available_time"): row for row in model_rows}
     metrics: list[dict[str, Any]] = []
     label_groups: dict[tuple[str, str, str], list[Mapping[str, Any]]] = {}
     for label in labels:
@@ -361,7 +401,7 @@ def build_eval_metrics(
             for factor in state_output_columns:
                 pairs: list[tuple[float, float]] = []
                 for label in labels_in_split:
-                    model_row = model_by_time.get(str(label["available_time"]))
+                    model_row = model_by_key.get(_row_identity_key(label, preferred="available_time"))
                     if model_row is None:
                         continue
                     factor_value = _safe_float(model_row.get(factor))
@@ -427,7 +467,7 @@ def build_baseline_metrics(
     label_specs: Sequence[LabelSpec] = DEFAULT_LABEL_SPECS,
     write_policy: str = DEFAULT_DRY_RUN_WRITE_POLICY,
 ) -> list[dict[str, Any]]:
-    feature_by_time = {_iso(_row_time(row, preferred="snapshot_time")): row for row in feature_rows}
+    feature_by_key = {_row_identity_key(row, preferred="snapshot_time"): row for row in feature_rows}
     source_by_horizon = {spec.horizon: spec.source_column for spec in label_specs}
     metrics: list[dict[str, Any]] = []
     for split in splits:
@@ -443,7 +483,7 @@ def build_baseline_metrics(
                 continue
             pairs: list[tuple[float, float]] = []
             for label in group:
-                feature_row = feature_by_time.get(str(label["available_time"]))
+                feature_row = feature_by_key.get(_row_identity_key(label, preferred="available_time"))
                 if feature_row is None:
                     continue
                 baseline_value = _safe_float(feature_row.get(source_column))
@@ -603,7 +643,7 @@ def build_leakage_metrics(
     eval_run_id: str,
     write_policy: str = DEFAULT_DRY_RUN_WRITE_POLICY,
 ) -> list[dict[str, Any]]:
-    model_times = {_iso(_row_time(row, preferred="available_time")) for row in model_rows}
+    model_keys = {_row_identity_key(row, preferred="available_time") for row in model_rows}
     label_direction_violations = 0
     missing_model_alignment = 0
     for label in labels:
@@ -611,7 +651,7 @@ def build_leakage_metrics(
         label_time = _parse_time(label["label_time"])
         if label_time <= available_time:
             label_direction_violations += 1
-        if _iso(available_time) not in model_times:
+        if _row_identity_key(label, preferred="available_time") not in model_keys:
             missing_model_alignment += 1
     split_overlap_violations = 0
     ordered_splits = sorted(splits, key=lambda split: int(split.get("split_order") or 0))

@@ -230,15 +230,19 @@ def _create_source_table(database_url: str) -> None:
 
 
 def _create_feature_table(database_url: str) -> list[str]:
-    columns = ["snapshot_time", "feature_payload_json"]
+    columns = ["snapshot_time", "input_frame", "prediction_horizon", "market_universe_ref", "feature_payload_json"]
     _run_psql(
         database_url,
         f"""
         CREATE SCHEMA IF NOT EXISTS {_ident(FEATURE_SCHEMA)};
         DROP TABLE IF EXISTS {_qualified(FEATURE_SCHEMA, FEATURE_TABLE)};
         CREATE TABLE {_qualified(FEATURE_SCHEMA, FEATURE_TABLE)} (
-          {_ident('snapshot_time')} TIMESTAMPTZ PRIMARY KEY,
-          {_ident('feature_payload_json')} JSONB NOT NULL DEFAULT '{{}}'::jsonb
+          {_ident('snapshot_time')} TIMESTAMPTZ NOT NULL,
+          {_ident('input_frame')} TEXT NOT NULL,
+          {_ident('prediction_horizon')} TEXT NOT NULL,
+          {_ident('market_universe_ref')} TEXT NOT NULL,
+          {_ident('feature_payload_json')} JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+          PRIMARY KEY ({_ident('snapshot_time')}, {_ident('input_frame')}, {_ident('prediction_horizon')}, {_ident('market_universe_ref')})
         );
         """,
     )
@@ -246,10 +250,14 @@ def _create_feature_table(database_url: str) -> list[str]:
 
 
 def _feature_storage_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    identity_columns = {"snapshot_time", "input_frame", "prediction_horizon", "market_universe_ref"}
     return [
         {
             "snapshot_time": row["snapshot_time"],
-            "feature_payload_json": {key: value for key, value in row.items() if key != "snapshot_time"},
+            "input_frame": row["input_frame"],
+            "prediction_horizon": row["prediction_horizon"],
+            "market_universe_ref": row["market_universe_ref"],
+            "feature_payload_json": {key: value for key, value in row.items() if key not in identity_columns},
         }
         for row in rows
     ]
@@ -269,8 +277,17 @@ def _flatten_feature_payload_rows(rows: Sequence[Mapping[str, Any]]) -> list[dic
 
 
 def _create_model_table(database_url: str, columns: Sequence[str]) -> None:
-    column_sql = [f"{_ident('available_time')} TIMESTAMPTZ PRIMARY KEY"]
-    column_sql.extend(f"{_ident(column)} DOUBLE PRECISION" for column in columns if column != "available_time")
+    identity_columns = {"available_time", "input_frame", "prediction_horizon", "market_universe_ref"}
+    column_sql = [
+        f"{_ident('available_time')} TIMESTAMPTZ NOT NULL",
+        f"{_ident('input_frame')} TEXT NOT NULL",
+        f"{_ident('prediction_horizon')} TEXT NOT NULL",
+        f"{_ident('market_universe_ref')} TEXT NOT NULL",
+    ]
+    column_sql.extend(f"{_ident(column)} DOUBLE PRECISION" for column in columns if column not in identity_columns)
+    column_sql.append(
+        f"PRIMARY KEY ({_ident('available_time')}, {_ident('input_frame')}, {_ident('prediction_horizon')}, {_ident('market_universe_ref')})"
+    )
     _run_psql(
         database_url,
         f"""
@@ -284,7 +301,7 @@ def _create_model_table(database_url: str, columns: Sequence[str]) -> None:
 
 
 def _create_explainability_table(database_url: str) -> list[str]:
-    columns = ["available_time", "factor_name", "factor_value", "explanation_payload_json"]
+    columns = ["available_time", "input_frame", "prediction_horizon", "market_universe_ref", "factor_name", "factor_value", "explanation_payload_json"]
     _run_psql(
         database_url,
         f"""
@@ -292,10 +309,13 @@ def _create_explainability_table(database_url: str) -> list[str]:
         DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, EXPLAINABILITY_TABLE)};
         CREATE TABLE {_qualified(MODEL_SCHEMA, EXPLAINABILITY_TABLE)} (
           {_ident('available_time')} TIMESTAMPTZ NOT NULL,
+          {_ident('input_frame')} TEXT NOT NULL,
+          {_ident('prediction_horizon')} TEXT NOT NULL,
+          {_ident('market_universe_ref')} TEXT NOT NULL,
           {_ident('factor_name')} TEXT NOT NULL,
           {_ident('factor_value')} DOUBLE PRECISION,
           {_ident('explanation_payload_json')} JSONB NOT NULL,
-          PRIMARY KEY ({_ident('available_time')}, {_ident('factor_name')})
+          PRIMARY KEY ({_ident('available_time')}, {_ident('input_frame')}, {_ident('prediction_horizon')}, {_ident('market_universe_ref')}, {_ident('factor_name')})
         );
         """,
     )
@@ -303,18 +323,22 @@ def _create_explainability_table(database_url: str) -> list[str]:
 
 
 def _create_diagnostics_table(database_url: str) -> list[str]:
-    columns = ["available_time", "present_state_output_count", "missing_state_output_count", "data_quality_score", "diagnostic_payload_json"]
+    columns = ["available_time", "input_frame", "prediction_horizon", "market_universe_ref", "present_state_output_count", "missing_state_output_count", "data_quality_score", "diagnostic_payload_json"]
     _run_psql(
         database_url,
         f"""
         CREATE SCHEMA IF NOT EXISTS {_ident(MODEL_SCHEMA)};
         DROP TABLE IF EXISTS {_qualified(MODEL_SCHEMA, DIAGNOSTICS_TABLE)};
         CREATE TABLE {_qualified(MODEL_SCHEMA, DIAGNOSTICS_TABLE)} (
-          {_ident('available_time')} TIMESTAMPTZ PRIMARY KEY,
+          {_ident('available_time')} TIMESTAMPTZ NOT NULL,
+          {_ident('input_frame')} TEXT NOT NULL,
+          {_ident('prediction_horizon')} TEXT NOT NULL,
+          {_ident('market_universe_ref')} TEXT NOT NULL,
           {_ident('present_state_output_count')} INTEGER NOT NULL,
           {_ident('missing_state_output_count')} INTEGER NOT NULL,
           {_ident('data_quality_score')} DOUBLE PRECISION,
-          {_ident('diagnostic_payload_json')} JSONB NOT NULL
+          {_ident('diagnostic_payload_json')} JSONB NOT NULL,
+          PRIMARY KEY ({_ident('available_time')}, {_ident('input_frame')}, {_ident('prediction_horizon')}, {_ident('market_universe_ref')})
         );
         """,
     )

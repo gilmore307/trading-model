@@ -39,6 +39,9 @@ class MarketRegimeModelTests(unittest.TestCase):
         self.assertEqual(len(rows), 65)
         mature = rows[-1]
         self.assertEqual(mature["available_time"], _row(65)["snapshot_time"])
+        self.assertEqual(mature["input_frame"], "30min")
+        self.assertEqual(mature["prediction_horizon"], "1d")
+        self.assertEqual(mature["market_universe_ref"], "layer_01_02_market_context_etf_universe")
         self.assertGreater(mature["1_market_direction_score"], 0)
         self.assertGreater(mature["1_market_direction_strength_score"], 0)
         self.assertGreater(mature["1_market_trend_quality_score"], 0)
@@ -62,6 +65,27 @@ class MarketRegimeModelTests(unittest.TestCase):
         rows = generator.generate_rows([row])
 
         self.assertEqual(rows[0]["available_time"], "2026-01-02T12:00:00-05:00")
+
+    def test_preserves_frame_horizon_identity_without_double_counting_scaler_history(self) -> None:
+        input_rows: list[dict[str, object]] = []
+        for index in range(1, 66):
+            base = _row(index)
+            for horizon in ("1h", "2h", "1d"):
+                row = dict(base)
+                row["input_frame"] = "30min"
+                row["prediction_horizon"] = horizon
+                row["market_universe_ref"] = "test_universe"
+                input_rows.append(row)
+
+        rows = generator.generate_rows(input_rows, lookback=120)
+
+        final_rows = [row for row in rows if row["available_time"] == _row(65)["snapshot_time"]]
+        self.assertEqual({row["prediction_horizon"] for row in final_rows}, {"1h", "2h", "1d"})
+        self.assertEqual({row["market_universe_ref"] for row in final_rows}, {"test_universe"})
+        self.assertEqual(
+            {row["1_market_direction_score"] for row in final_rows},
+            {final_rows[0]["1_market_direction_score"]},
+        )
 
     def test_rolling_standardization_does_not_use_current_or_future_rows(self) -> None:
         rows = generator.generate_rows([_row(index) for index in range(1, 62)], lookback=120)
@@ -179,10 +203,11 @@ class MarketRegimeModelTests(unittest.TestCase):
 
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime"', joined_sql)
+        self.assertIn('PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref")', joined_sql)
         self.assertIn('ADD COLUMN IF NOT EXISTS "1_market_trend_quality_score" DOUBLE PRECISION', joined_sql)
         self.assertIn('DROP COLUMN IF EXISTS "1_price_behavior_factor"', joined_sql)
         self.assertIn('DROP COLUMN IF EXISTS "1_transition_pressure"', joined_sql)
-        self.assertIn('ON CONFLICT ("available_time") DO UPDATE SET', joined_sql)
+        self.assertIn('ON CONFLICT ("available_time", "input_frame", "prediction_horizon", "market_universe_ref") DO UPDATE SET', joined_sql)
         self.assertTrue(set(sql_runner.RETIRED_PRIMARY_COLUMNS).isdisjoint(generator.OUTPUT_COLUMNS))
 
 
@@ -226,10 +251,10 @@ class MarketRegimeModelTests(unittest.TestCase):
 
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime_explainability"', joined_sql)
-        self.assertIn('PRIMARY KEY ("available_time", "factor_name")', joined_sql)
+        self.assertIn('PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref", "factor_name")', joined_sql)
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime_diagnostics"', joined_sql)
         self.assertIn('"diagnostic_payload_json" JSONB NOT NULL', joined_sql)
-        self.assertIn('ON CONFLICT ("available_time") DO UPDATE SET', joined_sql)
+        self.assertIn('ON CONFLICT ("available_time", "input_frame", "prediction_horizon", "market_universe_ref") DO UPDATE SET', joined_sql)
 
 
 if __name__ == "__main__":

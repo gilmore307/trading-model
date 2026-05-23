@@ -24,6 +24,14 @@ from zoneinfo import ZoneInfo
 ET = ZoneInfo("America/New_York")
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config" / "factor_specs.toml"
 SUPPORTED_AGGREGATIONS = {"flat", "bucketed_mean"}
+DEFAULT_MARKET_UNIVERSE_REF = "layer_01_02_market_context_etf_universe"
+INPUT_FRAME_HORIZONS: dict[str, tuple[str, ...]] = {
+    "1min": ("5min", "10min", "30min"),
+    "5min": ("15min", "30min", "60min"),
+    "30min": ("1h", "2h", "1d"),
+    "1d": ("3d", "5d", "20d"),
+}
+ROW_IDENTITY_COLUMNS = ["available_time", "input_frame", "prediction_horizon", "market_universe_ref"]
 
 
 def _mean(values: Iterable[float]) -> float:
@@ -70,6 +78,68 @@ def _parse_time(value: Any) -> datetime:
 
 def _row_available_time(row: Mapping[str, Any]) -> datetime:
     return _parse_time(row.get("available_time") or row.get("snapshot_time"))
+
+
+def normalize_input_frame(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    aliases = {
+        "1m": "1min",
+        "1min": "1min",
+        "1minute": "1min",
+        "5m": "5min",
+        "5min": "5min",
+        "5minute": "5min",
+        "30m": "30min",
+        "30min": "30min",
+        "30minute": "30min",
+        "1h": "30min",
+        "60m": "30min",
+        "60min": "30min",
+        "1d": "1d",
+        "1day": "1d",
+        "day": "1d",
+        "daily": "1d",
+    }
+    normalized = aliases.get(text)
+    if normalized is None or normalized not in INPUT_FRAME_HORIZONS:
+        raise ValueError(f"unsupported Layer 1 input frame: {value!r}")
+    return normalized
+
+
+def prediction_horizons_for_input_frame(input_frame: str) -> tuple[str, ...]:
+    return INPUT_FRAME_HORIZONS[normalize_input_frame(input_frame)]
+
+
+def _row_input_frame(row: Mapping[str, Any]) -> str:
+    return normalize_input_frame(row.get("input_frame") or row.get("feature_bar_grain") or "30min")
+
+
+def _row_prediction_horizon(row: Mapping[str, Any], input_frame: str) -> str:
+    value = str(row.get("prediction_horizon") or "").strip().lower()
+    if not value:
+        return prediction_horizons_for_input_frame(input_frame)[-1]
+    if value not in prediction_horizons_for_input_frame(input_frame):
+        raise ValueError(f"prediction horizon {value!r} is not valid for input frame {input_frame!r}")
+    return value
+
+
+def _row_market_universe_ref(row: Mapping[str, Any]) -> str:
+    return str(row.get("market_universe_ref") or DEFAULT_MARKET_UNIVERSE_REF)
+
+
+def _row_identity(row: Mapping[str, Any]) -> dict[str, str]:
+    input_frame = _row_input_frame(row)
+    return {
+        "available_time": _row_available_time(row).isoformat(),
+        "input_frame": input_frame,
+        "prediction_horizon": _row_prediction_horizon(row, input_frame),
+        "market_universe_ref": _row_market_universe_ref(row),
+    }
+
+
+def _feature_scope_key(row: Mapping[str, Any]) -> tuple[str, str, str]:
+    input_frame = _row_input_frame(row)
+    return (_row_available_time(row).isoformat(), input_frame, _row_market_universe_ref(row))
 
 
 def _bounded(values: Sequence[float]) -> float | None:
@@ -309,7 +379,7 @@ STATE_OUTPUT_COLUMNS = [
     "1_data_quality_score",
 ]
 TRANSITION_BASIS_COLUMNS = [column for column in STATE_OUTPUT_COLUMNS if column not in {"1_market_transition_risk_score", "1_coverage_score", "1_data_quality_score"}]
-OUTPUT_COLUMNS = ["available_time", *STATE_OUTPUT_COLUMNS]
+OUTPUT_COLUMNS = [*ROW_IDENTITY_COLUMNS, *STATE_OUTPUT_COLUMNS]
 EXPLAINABILITY_TABLE = "model_01_market_regime_explainability"
 DIAGNOSTICS_TABLE = "model_01_market_regime_diagnostics"
 SPEC_BY_NAME = {spec.name: spec for spec in FACTOR_SPECS}
@@ -339,16 +409,34 @@ def generate_rows(
     std_floor: float = STANDARDIZATION.std_floor,
     z_clip: float = STANDARDIZATION.z_clip,
 ) -> list[dict[str, Any]]:
-    rows = sorted(feature_rows, key=_row_available_time)
-    scaler = RollingZScore(lookback=lookback, min_history=min_history, std_floor=std_floor, z_clip=z_clip)
+    rows = sorted(feature_rows, key=lambda row: (_row_available_time(row), _row_input_frame(row), _row_market_universe_ref(row), _row_prediction_horizon(row, _row_input_frame(row))))
+    scalers: dict[tuple[str, str], RollingZScore] = {}
     output_rows: list[dict[str, Any]] = []
-    previous_state_values: dict[str, float] | None = None
+    previous_by_scope: dict[tuple[str, str], dict[str, float]] = {}
+    index = 0
 
-    for feature_row in rows:
-        output = generate_row(feature_row, scaler=scaler, previous_state_values=previous_state_values)
-        output_rows.append(output)
+    while index < len(rows):
+        feature_row = rows[index]
+        feature_key = _feature_scope_key(feature_row)
+        duplicate_rows: list[Mapping[str, Any]] = []
+        while index < len(rows) and _feature_scope_key(rows[index]) == feature_key:
+            duplicate_rows.append(rows[index])
+            index += 1
+
+        input_frame = _row_input_frame(feature_row)
+        market_universe_ref = _row_market_universe_ref(feature_row)
+        scope = (input_frame, market_universe_ref)
+        scaler = scalers.setdefault(scope, RollingZScore(lookback=lookback, min_history=min_history, std_floor=std_floor, z_clip=z_clip))
+        previous_state_values = previous_by_scope.get(scope)
+
+        base_output = generate_row(feature_row, scaler=scaler, previous_state_values=previous_state_values)
+        for duplicate_row in duplicate_rows:
+            output = dict(base_output)
+            output.update(_row_identity(duplicate_row))
+            output_rows.append(output)
+
         scaler.update(feature_row, SIGNAL_COLUMNS)
-        previous_state_values = {column: output[column] for column in TRANSITION_BASIS_COLUMNS if output.get(column) is not None}
+        previous_by_scope[scope] = {column: base_output[column] for column in TRANSITION_BASIS_COLUMNS if base_output.get(column) is not None}
 
     return output_rows
 
@@ -359,7 +447,7 @@ def generate_row(
     scaler: RollingZScore,
     previous_state_values: Mapping[str, float] | None = None,
 ) -> dict[str, Any]:
-    output: dict[str, Any] = {"available_time": _row_available_time(feature_row).isoformat()}
+    output: dict[str, Any] = _row_identity(feature_row)
     factor_values: dict[str, float] = {}
     eligible_signal_columns: set[str] = set()
     total_signals = len(SIGNAL_COLUMNS)
@@ -496,8 +584,8 @@ def build_explainability_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[d
 
     rows: list[dict[str, Any]] = []
     for model_row in model_rows:
-        available_time = str(model_row.get("available_time") or "").strip()
-        if not available_time:
+        identity = {column: str(model_row.get(column) or "").strip() for column in ROW_IDENTITY_COLUMNS}
+        if not identity["available_time"]:
             raise ValueError("model row available_time is required for explainability rows")
         for column in STATE_OUTPUT_COLUMNS:
             factor_value = _safe_float(model_row.get(column))
@@ -505,7 +593,7 @@ def build_explainability_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[d
             source_specs = [SPEC_BY_NAME[name] for name in source_factors if name in SPEC_BY_NAME]
             rows.append(
                 {
-                    "available_time": available_time,
+                    **identity,
                     "factor_name": column,
                     "factor_value": factor_value,
                     "explanation_payload_json": {
@@ -514,6 +602,7 @@ def build_explainability_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[d
                         "factor_value": factor_value,
                         "semantic_contract": "market_context_state",
                         "schema_version": 2,
+                        "row_identity": identity,
                         "source_factor_names": list(source_factors),
                         "source_signal_count": sum(len(spec.signals) for spec in source_specs),
                         "eligible_when_factor_value_present": factor_value is not None,
@@ -529,20 +618,21 @@ def build_diagnostics_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[dict
 
     rows: list[dict[str, Any]] = []
     for model_row in model_rows:
-        available_time = str(model_row.get("available_time") or "").strip()
-        if not available_time:
+        identity = {column: str(model_row.get(column) or "").strip() for column in ROW_IDENTITY_COLUMNS}
+        if not identity["available_time"]:
             raise ValueError("model row available_time is required for diagnostics rows")
         present_state_outputs = [column for column in STATE_OUTPUT_COLUMNS if _safe_float(model_row.get(column)) is not None]
         missing_state_outputs = [column for column in STATE_OUTPUT_COLUMNS if column not in present_state_outputs]
         data_quality_score = _safe_float(model_row.get("1_data_quality_score"))
         rows.append(
             {
-                "available_time": available_time,
+                **identity,
                 "present_state_output_count": len(present_state_outputs),
                 "missing_state_output_count": len(missing_state_outputs),
                 "data_quality_score": data_quality_score,
                 "diagnostic_payload_json": {
                     "artifact": DIAGNOSTICS_TABLE,
+                    "row_identity": identity,
                     "present_state_output_columns": present_state_outputs,
                     "missing_state_output_columns": missing_state_outputs,
                     "state_output_column_count": len(STATE_OUTPUT_COLUMNS),

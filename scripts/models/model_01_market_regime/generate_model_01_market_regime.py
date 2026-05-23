@@ -96,10 +96,7 @@ def fetch_derived_rows(
         where.append("snapshot_time < %s")
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
-    cursor.execute(
-        f"SELECT * FROM {_qualified(source_schema, source_table)}{where_sql} ORDER BY snapshot_time ASC",
-        params,
-    )
+    cursor.execute(f"SELECT * FROM {_qualified(source_schema, source_table)}{where_sql} ORDER BY snapshot_time ASC", params)
     rows: list[dict[str, Any]] = []
     for source_row in cursor.fetchall():
         row = dict(source_row)
@@ -128,13 +125,40 @@ def write_model_rows_sql(
     cursor.execute(
         f"""
         CREATE TABLE IF NOT EXISTS {qualified_table} (
-          "available_time" TIMESTAMPTZ PRIMARY KEY
+          "available_time" TIMESTAMPTZ NOT NULL,
+          "input_frame" TEXT NOT NULL,
+          "prediction_horizon" TEXT NOT NULL,
+          "market_universe_ref" TEXT NOT NULL,
+          PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref")
         )
+        """
+    )
+    for column in ("input_frame", "prediction_horizon", "market_universe_ref"):
+        cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS {_quote_column_identifier(column)} TEXT NOT NULL DEFAULT ''")
+    cursor.execute(
+        f"""
+        DO $$
+        DECLARE primary_key_name text;
+        BEGIN
+          SELECT conname INTO primary_key_name
+          FROM pg_constraint
+          WHERE conrelid = '{target_schema}.{target_table}'::regclass
+            AND contype = 'p';
+          IF primary_key_name IS NOT NULL THEN
+            EXECUTE format('ALTER TABLE {qualified_table} DROP CONSTRAINT %I', primary_key_name);
+          END IF;
+        END $$;
+        """
+    )
+    cursor.execute(
+        f"""
+        ALTER TABLE {qualified_table}
+        ADD PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref")
         """
     )
     sql_columns = list(columns)
     for column in sql_columns:
-        if column == "available_time":
+        if column in {"available_time", "input_frame", "prediction_horizon", "market_universe_ref"}:
             continue
         cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS {_quote_column_identifier(column)} DOUBLE PRECISION")
     for column in RETIRED_PRIMARY_COLUMNS:
@@ -150,7 +174,7 @@ def write_model_rows_sql(
     insert_sql = f"""
         INSERT INTO {qualified_table} ({", ".join(quoted_columns)})
         VALUES ({placeholders})
-        ON CONFLICT ("available_time") DO UPDATE SET {update_sql}
+        ON CONFLICT ("available_time", "input_frame", "prediction_horizon", "market_universe_ref") DO UPDATE SET {update_sql}
     """
     for row in rows:
         cursor.execute(insert_sql, [row.get(column) for column in columns])
@@ -171,17 +195,43 @@ def write_explainability_rows_sql(
         f"""
         CREATE TABLE IF NOT EXISTS {qualified_table} (
           "available_time" TIMESTAMPTZ NOT NULL,
+          "input_frame" TEXT NOT NULL,
+          "prediction_horizon" TEXT NOT NULL,
+          "market_universe_ref" TEXT NOT NULL,
           "factor_name" TEXT NOT NULL,
           "factor_value" DOUBLE PRECISION,
           "explanation_payload_json" JSONB NOT NULL,
-          PRIMARY KEY ("available_time", "factor_name")
+          PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref", "factor_name")
         )
         """
     )
+    for column in ("input_frame", "prediction_horizon", "market_universe_ref"):
+        cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS {_quote_column_identifier(column)} TEXT NOT NULL DEFAULT ''")
+    cursor.execute(
+        f"""
+        DO $$
+        DECLARE primary_key_name text;
+        BEGIN
+          SELECT conname INTO primary_key_name
+          FROM pg_constraint
+          WHERE conrelid = '{target_schema}.{target_table}'::regclass
+            AND contype = 'p';
+          IF primary_key_name IS NOT NULL THEN
+            EXECUTE format('ALTER TABLE {qualified_table} DROP CONSTRAINT %I', primary_key_name);
+          END IF;
+        END $$;
+        """
+    )
+    cursor.execute(
+        f"""
+        ALTER TABLE {qualified_table}
+        ADD PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref", "factor_name")
+        """
+    )
     insert_sql = f"""
-        INSERT INTO {qualified_table} ("available_time", "factor_name", "factor_value", "explanation_payload_json")
-        VALUES (%s, %s, %s, %s::jsonb)
-        ON CONFLICT ("available_time", "factor_name") DO UPDATE SET
+        INSERT INTO {qualified_table} ("available_time", "input_frame", "prediction_horizon", "market_universe_ref", "factor_name", "factor_value", "explanation_payload_json")
+        VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
+        ON CONFLICT ("available_time", "input_frame", "prediction_horizon", "market_universe_ref", "factor_name") DO UPDATE SET
           "factor_value" = EXCLUDED."factor_value",
           "explanation_payload_json" = EXCLUDED."explanation_payload_json"
     """
@@ -190,6 +240,9 @@ def write_explainability_rows_sql(
             insert_sql,
             [
                 row.get("available_time"),
+                row.get("input_frame"),
+                row.get("prediction_horizon"),
+                row.get("market_universe_ref"),
                 row.get("factor_name"),
                 row.get("factor_value"),
                 json.dumps(row.get("explanation_payload_json", {}), sort_keys=True),
@@ -211,24 +264,51 @@ def write_diagnostics_rows_sql(
     cursor.execute(
         f"""
         CREATE TABLE IF NOT EXISTS {qualified_table} (
-          "available_time" TIMESTAMPTZ PRIMARY KEY,
+          "available_time" TIMESTAMPTZ NOT NULL,
+          "input_frame" TEXT NOT NULL,
+          "prediction_horizon" TEXT NOT NULL,
+          "market_universe_ref" TEXT NOT NULL,
           "present_state_output_count" INTEGER,
           "missing_state_output_count" INTEGER,
           "data_quality_score" DOUBLE PRECISION,
-          "diagnostic_payload_json" JSONB NOT NULL DEFAULT '{{}}'::jsonb
+          "diagnostic_payload_json" JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+          PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref")
         )
         """
     )
+    for column in ("input_frame", "prediction_horizon", "market_universe_ref"):
+        cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS {_quote_column_identifier(column)} TEXT NOT NULL DEFAULT ''")
     cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS \"present_state_output_count\" INTEGER")
     cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS \"missing_state_output_count\" INTEGER")
     cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS \"data_quality_score\" DOUBLE PRECISION")
     cursor.execute(f"ALTER TABLE {qualified_table} ADD COLUMN IF NOT EXISTS \"diagnostic_payload_json\" JSONB NOT NULL DEFAULT '{{}}'::jsonb")
     cursor.execute(f"ALTER TABLE {qualified_table} DROP COLUMN IF EXISTS \"present_factor_count\"")
     cursor.execute(f"ALTER TABLE {qualified_table} DROP COLUMN IF EXISTS \"missing_factor_count\"")
+    cursor.execute(
+        f"""
+        DO $$
+        DECLARE primary_key_name text;
+        BEGIN
+          SELECT conname INTO primary_key_name
+          FROM pg_constraint
+          WHERE conrelid = '{target_schema}.{target_table}'::regclass
+            AND contype = 'p';
+          IF primary_key_name IS NOT NULL THEN
+            EXECUTE format('ALTER TABLE {qualified_table} DROP CONSTRAINT %I', primary_key_name);
+          END IF;
+        END $$;
+        """
+    )
+    cursor.execute(
+        f"""
+        ALTER TABLE {qualified_table}
+        ADD PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref")
+        """
+    )
     insert_sql = f"""
-        INSERT INTO {qualified_table} ("available_time", "present_state_output_count", "missing_state_output_count", "data_quality_score", "diagnostic_payload_json")
-        VALUES (%s, %s, %s, %s, %s::jsonb)
-        ON CONFLICT ("available_time") DO UPDATE SET
+        INSERT INTO {qualified_table} ("available_time", "input_frame", "prediction_horizon", "market_universe_ref", "present_state_output_count", "missing_state_output_count", "data_quality_score", "diagnostic_payload_json")
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+        ON CONFLICT ("available_time", "input_frame", "prediction_horizon", "market_universe_ref") DO UPDATE SET
           "present_state_output_count" = EXCLUDED."present_state_output_count",
           "missing_state_output_count" = EXCLUDED."missing_state_output_count",
           "data_quality_score" = EXCLUDED."data_quality_score",
@@ -239,6 +319,9 @@ def write_diagnostics_rows_sql(
             insert_sql,
             [
                 row.get("available_time"),
+                row.get("input_frame"),
+                row.get("prediction_horizon"),
+                row.get("market_universe_ref"),
                 row.get("present_state_output_count"),
                 row.get("missing_state_output_count"),
                 row.get("data_quality_score"),
