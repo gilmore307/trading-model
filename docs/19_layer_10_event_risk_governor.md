@@ -73,6 +73,8 @@ Calendar/structure dates therefore enter the stack in two phases:
 
 Persistent event regimes follow the same pool route but require interval handling. A pandemic, tariff-war period, geopolitical war/escalation period, sanctions regime, banking-system stress period, or policy crisis can remain risk-relevant without a fresh article on the decision date. Layer 10 should preserve active/shadow/decay status and test whether failures during the interval are explained by the regime after controls, rather than requiring same-day news proximity.
 
+Historical and realtime/future acquisition rules are data-owned. `trading-data/docs/23_event_source_registry.md` defines source priority, fallback posture, certainty flags, and PIT `available_time` handling. Layer 10 consumes those observations for attribution; it does not fetch or rank raw sources during model evaluation.
+
 Required attribution evidence includes:
 
 - failed or anomalous model/strategy/action context and its expected vs realized outcome;

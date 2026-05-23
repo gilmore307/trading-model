@@ -82,6 +82,8 @@ These rows are observation-only until Layer 10 sees failures or residual anomali
 
 Persistent regimes are interval observations rather than single headlines. They may remain active or shadow-active even when no fresh article appears. Their point-in-time rows should preserve regime start, current status, last material update, decay/staleness rule, scope, and evidence refs. Layer 4 may use them only after Layer 10/review accepts a failure relationship for future folds.
 
+`trading-data/docs/23_event_source_registry.md` owns how historical and realtime/future event observations are acquired. Layer 4 relies on the resulting point-in-time event observations and must not choose raw source priority itself.
+
 ## Event partitions
 
 Layer 4 event evidence is partitioned by **impact scope**, not by data source or article/source type. SEC filings, earnings releases, company news, macro releases, sector news, and political events can each be local or broad depending on their point-in-time expected and reviewed impact.

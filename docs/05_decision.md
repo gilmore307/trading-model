@@ -1022,3 +1022,13 @@ Special-period event risk is represented as a persistent event regime, not as a 
 Persistent regimes start in the global event observation pool with point-in-time interval facts: regime start, optional end, active/shadow/decay status, last material update, affected scopes, decay/staleness rule, and evidence refs. They are observation-only until Layer 10 attributes failures or residual anomalies during the interval to the regime after market, sector, target, portfolio, account, and co-event controls.
 
 If Layer 10 and review accept the relationship, the regime family/mechanism enters the watched event pool and can supervise future Layer 4 training. If the regime no longer has incremental explanatory value, it must decay, become stale, or remain observation-only rather than becoming permanent background risk.
+
+## D058 - Event source acquisition is split into historical replay and realtime maintenance
+
+Accepted: 2026-05-23
+
+Event-source acquisition is data-owned and must distinguish historical replay from realtime/future maintenance. Historical replay reconstructs what was knowable at each historical `available_time` using official archives, APIs, filings, announcement PDFs, stored local snapshots, and conservative visibility rules. Realtime maintenance keeps the global event observation pool current with bounded refreshes of official calendars, filings, issuer sources, index providers, sanctions/trade/public-health sources, and reviewed news evidence for persistent regimes.
+
+Source priority and fallback posture are documented in `trading-data/docs/23_event_source_registry.md`. Official exchange, agency, issuer, SEC, index-provider, USTR/Federal Register, OFAC, CDC, WHO, and equivalent source artifacts outrank vendor/news summaries. News can update persistent-regime context when official sources lag, but it does not by itself promote an event into Layer 4.
+
+Future events must carry certainty flags such as `confirmed`, `scheduled`, `tentative`, `estimated`, or `inferred_rule`. Rule-generated dates are allowed for deterministic structures such as option expiry, but they remain `inferred_rule` until official confirmation. All event rows remain global-pool observations until Layer 10/review promotes a relationship into the watched event pool.
