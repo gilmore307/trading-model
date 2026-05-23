@@ -84,6 +84,36 @@ Macro observations use Trading Economics as the accepted runtime event source. L
 
 Regime observations can be promoted from high-frequency news topics. Layer 10 or its scouting jobs may form `candidate_regime` packets from repeated topic/entity clusters, but a persistent regime exists only after agent review with `regime-promotion-review` accepts the topic as a regime and defines start/status/scope/decay rules. Approval can place the regime family in the focused event pool for candidate training and validation; it does not make the family an accepted production Layer 4 conditioning rule.
 
+## Semantic standardization and quantification route
+
+Layer 10 and Layer 4 must not reinterpret raw event artifacts directly. The standard route is:
+
+```text
+raw source artifact
+-> point-in-time source evidence row / artifact ref
+-> event_interpretation artifact
+-> standardized event observation row
+-> Layer 10 event_context_vector
+-> Layer 10 attribution / focused event pool
+-> Layer 4 candidate training when focused
+-> Layer 5 validation
+-> accepted_layer4_event_family when accepted
+```
+
+`event_interpretation` owns semantic analysis: lifecycle class, normalized event type, domain tags, affected scopes/entities, direction bias, intensity, uncertainty, novelty, source quality, evidence confidence, canonical/dedup relation, rationale, evidence spans, and review status.
+
+The standardized event observation row owns model-visible point-in-time facts: event identity, canonical event identity, source priority, dedup status, lifecycle clocks, expected impact scope, affected scope/entities, scope confidence, event-family key, review status, and references to source/interpreted artifacts.
+
+Layer 10 owns standardized quantification. It converts one or more visible event observations into horizon-aware score families such as presence, timing proximity, intensity, direction bias, uncertainty, gap risk, reversal risk, liquidity disruption, contagion risk, context quality, target relevance, and impact-scope scores. These scores are risk/context semantics, not alpha or trading actions.
+
+For the newly accepted event families:
+
+- trading-calendar and market-structure events standardize closure/window facts such as next market open, non-trading interval minutes, closure type, closure-length bucket, holiday name, early-close flag, pre-holiday-session flag, expiry/rebalance/triple-witching flags, index-event family, source certainty, calendar gap-risk prior, and liquidity-thinning/forced-flow prior.
+- persistent event regimes standardize interval facts such as regime family, regime status, start/end, last material update, decay/staleness rule, affected scopes/entities, source quality, and whether the regime is active, shadow-active, decaying, stale, or resolved.
+- high-frequency news topics are not themselves regimes. They first become `candidate_regime` packets, then may become persistent-regime observations and focused-pool candidates only after `regime-promotion-review`.
+
+Production Layer 4 may consume only accepted `event_failure_risk_vector` conditioning derived from accepted event families. Focused-pool event observations may support offline candidate training and validation, but they are not production inputs until accepted.
+
 Required attribution evidence includes:
 
 - failed or anomalous model/strategy/action context and its expected vs realized outcome;

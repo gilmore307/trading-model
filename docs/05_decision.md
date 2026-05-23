@@ -1048,3 +1048,29 @@ Focused-pool promotion means `trading-data` should systematically acquire and st
 Layer 5 then validates whether the Layer 4 candidate conditioning improves alpha confidence, path quality, tradability, drawdown/reversal handling, or calibration. Layer 5 feedback returns to Layer 10 as accept, narrow, split, demote, reject, overblock, underblock, no-incremental-value, or confounded evidence.
 
 Only after Layer 4 candidate training, Layer 5 validation, and Layer 10/review disposition may the family become an `accepted_layer4_event_family` or accepted `event_strategy_failure_gate` for future production Layer 4 conditioning.
+
+## D060 - New event families use event interpretation before quantification
+
+Accepted: 2026-05-23
+
+New calendar, market-structure, persistent-regime, and high-frequency-topic event families must follow the existing event standardization route before any Layer 10 or Layer 4 model use:
+
+```text
+raw source artifact
+-> point-in-time source evidence row / artifact ref
+-> event_interpretation artifact
+-> standardized event observation row
+-> Layer 10 event_context_vector
+-> Layer 10 attribution / focused event pool
+-> Layer 4 candidate training when focused
+-> Layer 5 validation
+-> accepted_layer4_event_family when accepted
+```
+
+`event_interpretation` is the semantic layer. It standardizes lifecycle class, normalized type, domain tags, affected scope/entities, direction bias, intensity, uncertainty, novelty, source quality, evidence confidence, canonical/dedup relation, rationale, evidence spans, and review status.
+
+Layer 10 is the standardized quantification layer. It converts interpreted observations into horizon-aware event-context scores: presence, timing proximity, intensity, direction bias, uncertainty, gap risk, reversal risk, liquidity disruption, contagion risk, context quality, target relevance, and impact-scope scores. These are event-risk/context scores, not alpha labels or trade actions.
+
+Trading-calendar and market-structure events require specific standardized fields such as next market open, non-trading interval minutes, closure type, closure-length bucket, holiday name, early-close flag, pre-holiday-session flag, expiry/rebalance/triple-witching flags, calendar gap-risk prior, liquidity-thinning/forced-flow prior, and source certainty.
+
+Persistent event regimes require interval fields such as regime family, status, start/end, last material update, affected scopes/entities, decay/staleness rule, source quality, and active/shadow/decay/stale/resolved state. High-frequency news topics are only discovery candidates until `regime-promotion-review` accepts a regime interpretation.
