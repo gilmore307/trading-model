@@ -934,3 +934,15 @@ windows; crypto labels observe continuous path.
 Future return, volatility, drawdown, transition, liquidity, and tradability outcomes are labels/evaluation indicators only. They must not enter same-row feature construction or model generation.
 
 The target physical `model_01_market_regime` identity is `(available_time, input_frame, prediction_horizon, market_universe_ref)`. Existing `available_time`-only rows remain a compatibility surface until a registry/schema migration lands the frame and horizon keys. Public `1_*` output names remain compact and unsuffixed inside each row.
+
+## D051 - Layer 4 event impact scope is resolved from the state stack
+
+Accepted: 2026-05-23
+
+Layer 4 event evidence is classified by impact scope, not by data source, provider, feed, document type, or article category. A company-specific event such as a major issuer earnings release can be target-local or global/common depending on point-in-time reviewed evidence and current state-stack support.
+
+`expected_impact_scope` is the inference-time scope. It must use only evidence available at `available_time`: standardized event interpretation, accepted prior event-family rules, issuer/sector/index/peer/supply-chain metadata, source materiality, reviewed scope priors, and comparison against the current Layer 1 market state, Layer 2 sector/industry/theme/peer state, and Layer 3 target state.
+
+`realized_impact_scope_label` is evaluation-only. It may use later market/sector/peer/target reaction windows for calibration, review, and future-fold promotion, but it must not be fed into the same fold as an inference fact.
+
+The scope resolver must preserve auditable support for candidate scopes: market/global, sector/industry/theme, peer/supply-chain/index basket, and target-local. If event evidence is strong but the state stack is weak or contradictory, the scope remains narrow or review-required rather than being promoted to global/common impact.
