@@ -22,7 +22,7 @@ MODEL_VERSION = "target_context_state_contract"
 PRIMARY_TABLE = "model_03_target_state_vector"
 EXPLAINABILITY_TABLE = "model_03_target_state_vector_explainability"
 DIAGNOSTICS_TABLE = "model_03_target_state_vector_diagnostics"
-STATE_WINDOWS = ("5min", "15min", "60min", "390min")
+STATE_WINDOWS = ("10min", "1h", "1D", "1W")
 JSON_BLOCKS = ("market_state_features", "sector_state_features", "target_state_features", "cross_state_features")
 FORBIDDEN_OUTPUT_FIELDS = {"ticker", "symbol", "company", "strategy_variant", "alpha_confidence", "position_size", "option_contract_id", "final_action"}
 IDENTITY_COLUMNS = [
@@ -401,13 +401,13 @@ def _diagnostics(row: Mapping[str, Any], target: Mapping[str, Any], market: Mapp
 
 
 def _embedding(scores: Mapping[str, Any]) -> list[float]:
-    keys = ["3_target_direction_score_15min", "3_target_direction_strength_score_15min", "3_target_trend_quality_score_15min", "3_target_path_stability_score_15min", "3_target_transition_risk_score_15min", "3_target_state_persistence_score_15min", "3_target_exhaustion_risk_score_15min", "3_target_liquidity_tradability_score", "3_context_support_quality_score_15min", "3_tradability_score_15min", "3_state_quality_score"]
+    keys = ["3_target_direction_score_1h", "3_target_direction_strength_score_1h", "3_target_trend_quality_score_1h", "3_target_path_stability_score_1h", "3_target_transition_risk_score_1h", "3_target_state_persistence_score_1h", "3_target_exhaustion_risk_score_1h", "3_target_liquidity_tradability_score", "3_context_support_quality_score_1h", "3_tradability_score_1h", "3_state_quality_score"]
     return [round(_safe_float(scores.get(key)) or 0.0, 8) for key in keys]
 
 
 def _cluster_id(scores: Mapping[str, Any]) -> str:
-    direction = _safe_float(scores.get("3_target_direction_score_15min")) or 0.0
-    tradability = _safe_float(scores.get("3_tradability_score_15min")) or 0.0
+    direction = _safe_float(scores.get("3_target_direction_score_1h")) or 0.0
+    tradability = _safe_float(scores.get("3_tradability_score_1h")) or 0.0
     direction_bucket = "up" if direction > 0.2 else "down" if direction < -0.2 else "flat"
     tradability_bucket = "clean" if tradability >= 0.66 else "watch" if tradability >= 0.4 else "noisy"
     return f"target_state_{direction_bucket}_{tradability_bucket}"

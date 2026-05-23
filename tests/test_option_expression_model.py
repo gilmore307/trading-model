@@ -32,8 +32,8 @@ class OptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["9_resolved_expression_type"], "long_call")
         self.assertEqual(output["9_resolved_option_right"], "call")
         self.assertEqual(output["9_resolved_selected_contract_ref"], "AAPL_CALL_GOOD")
-        self.assertGreater(output["9_option_expression_confidence_score_390min"], 0.0)
-        self.assertGreater(output["9_option_contract_fit_score_390min"], 0.0)
+        self.assertGreater(output["9_option_expression_confidence_score_1W"], 0.0)
+        self.assertGreater(output["9_option_contract_fit_score_1W"], 0.0)
         self.assertEqual(plan["selected_contract"]["contract_ref"], "AAPL_CALL_GOOD")
         self.assertEqual(plan["selected_contract"]["contract_multiplier"], 100)
         self.assertEqual(plan["selected_contract"]["exercise_style"], "american")
@@ -51,7 +51,7 @@ class OptionExpressionModelTests(unittest.TestCase):
             underlying_action_plan={
                 "planned_underlying_action_type": "bearish_underlying_path_but_no_short_allowed",
                 "action_side": "bearish_no_direct_short",
-                "dominant_horizon": "390min",
+                "dominant_horizon": "1W",
                 "handoff_to_layer_9": {
                     **_handoff(),
                     "underlying_path_direction": "bearish",
@@ -65,7 +65,7 @@ class OptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["9_resolved_expression_type"], "long_put")
         self.assertEqual(output["9_resolved_option_right"], "put")
         self.assertEqual(output["9_resolved_selected_contract_ref"], "AAPL_PUT_GOOD")
-        self.assertLess(output["9_option_expression_direction_score_390min"], 0.0)
+        self.assertLess(output["9_option_expression_direction_score_1W"], 0.0)
         self.assert_no_forbidden_terms(output)
 
     def test_policy_block_outputs_no_option_expression(self) -> None:
@@ -73,12 +73,12 @@ class OptionExpressionModelTests(unittest.TestCase):
 
         self.assertEqual(output["9_resolved_expression_type"], "underlying_only_expression")
         self.assertIsNone(output["9_resolved_selected_contract_ref"])
-        self.assertEqual(output["9_option_expression_eligibility_score_390min"], 0.0)
+        self.assertEqual(output["9_option_expression_eligibility_score_1W"], 0.0)
         self.assertIn("option_expression_policy_blocked", output["option_expression_plan"]["reason_codes"])
         self.assertIn("underlying_only_expression_selected", output["option_expression_plan"]["reason_codes"])
 
     def test_maintain_and_pending_option_exposure_do_not_create_overlay(self) -> None:
-        maintain_output = generate_rows([_base_row(underlying_action_plan={"planned_underlying_action_type": "maintain", "action_side": "long", "dominant_horizon": "390min", "handoff_to_layer_9": _handoff()})])[0]
+        maintain_output = generate_rows([_base_row(underlying_action_plan={"planned_underlying_action_type": "maintain", "action_side": "long", "dominant_horizon": "1W", "handoff_to_layer_9": _handoff()})])[0]
         pending_output = generate_rows([_base_row(pending_option_premium_exposure=250.0, pending_option_fill_probability_estimate=0.75)])[0]
 
         self.assertEqual(maintain_output["9_resolved_expression_type"], "no_option_expression")
@@ -93,8 +93,8 @@ class OptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["9_resolved_expression_type"], "underlying_only_expression")
         self.assertEqual(output["9_resolved_option_right"], "none")
         self.assertIsNone(output["9_resolved_selected_contract_ref"])
-        self.assertGreater(output["9_option_expression_direction_score_390min"], 0.0)
-        self.assertEqual(output["9_option_contract_fit_score_390min"], 0.0)
+        self.assertGreater(output["9_option_expression_direction_score_1W"], 0.0)
+        self.assertEqual(output["9_option_contract_fit_score_1W"], 0.0)
         self.assertIn("underlying_only_expression_selected", output["option_expression_plan"]["reason_codes"])
         self.assertIn("no_contract_passed_hard_filter", output["option_expression_plan"]["reason_codes"])
         self.assertIn("delta_outside_policy_range", output["option_expression_plan"]["reason_codes"])
@@ -106,16 +106,16 @@ class OptionExpressionModelTests(unittest.TestCase):
             [
                 {
                     "option_expression_plan_ref": output["option_expression_plan_ref"],
-                    "realized_option_return_390min": 0.42,
-                    "target_premium_hit_before_stop_label_390min": True,
-                    "selected_contract_regret_vs_best_candidate_390min": 0.03,
+                    "realized_option_return_1W": 0.42,
+                    "target_premium_hit_before_stop_label_1W": True,
+                    "selected_contract_regret_vs_best_candidate_1W": 0.03,
                 }
             ],
         )
 
         self.assertEqual(len(labels), 1)
-        self.assertTrue(labels[0]["target_premium_hit_before_stop_label_390min"])
-        self.assertNotIn("realized_option_return_390min", output)
+        self.assertTrue(labels[0]["target_premium_hit_before_stop_label_1W"])
+        self.assertNotIn("realized_option_return_1W", output)
 
     def assert_no_forbidden_terms(self, value: object) -> None:
         if isinstance(value, dict):
@@ -140,19 +140,19 @@ def _base_row(**overrides: object) -> dict[str, object]:
         "underlying_action_plan": {
             "planned_underlying_action_type": "increase_long",
             "action_side": "long",
-            "dominant_horizon": "390min",
+            "dominant_horizon": "1W",
             "handoff_to_layer_9": _handoff(),
         },
         "market_context_state": {"1_market_risk_stress_score": 0.20, "1_market_liquidity_support_score": 0.85},
-        "event_context_vector": {"10_event_gap_risk_score_390min": 0.20, "10_event_uncertainty_score_390min": 0.15},
+        "event_context_vector": {"10_event_gap_risk_score_1W": 0.20, "10_event_uncertainty_score_1W": 0.15},
         "option_expression_policy": {"max_option_spread_pct": 0.18, "iv_rank_ceiling": 0.75},
         "option_contract_candidates": [
             _call_candidate(),
             {
                 "contract_ref": "AAPL_CALL_WIDE",
                 "right": "call",
-                "expiration": "2026-05-15",
-                "dte": 8,
+                "expiration": "2026-06-06",
+                "dte": 30,
                 "delta": 0.48,
                 "theta": -0.07,
                 "vega": 0.11,
@@ -169,8 +169,8 @@ def _base_row(**overrides: object) -> dict[str, object]:
                 "strike": 98,
                 "contract_multiplier": 100,
                 "right": "put",
-                "expiration": "2026-05-15",
-                "dte": 8,
+                "expiration": "2026-06-06",
+                "dte": 30,
                 "delta": -0.50,
                 "gamma": 0.04,
                 "theta": -0.08,
@@ -204,8 +204,8 @@ def _call_candidate() -> dict[str, object]:
         "is_adjusted_contract": False,
         "last_trade_time": "2026-05-07T10:29:58-04:00",
         "right": "call",
-        "expiration": "2026-05-15",
-        "dte": 8,
+        "expiration": "2026-06-06",
+        "dte": 30,
         "delta": 0.52,
         "gamma": 0.04,
         "theta": -0.08,
@@ -234,7 +234,7 @@ def _handoff() -> dict[str, object]:
         "target_price_high": 106.0,
         "stop_loss_price": 98.0,
         "thesis_invalidation_price": 97.5,
-        "expected_holding_time_minutes": 390,
+        "expected_holding_time_minutes": 10080,
         "path_quality_score": 0.82,
         "reversal_risk_score": 0.18,
         "drawdown_risk_score": 0.22,

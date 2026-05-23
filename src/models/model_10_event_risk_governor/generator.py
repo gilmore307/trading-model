@@ -132,7 +132,7 @@ def _encode_event(event: Mapping[str, Any], decision_time: datetime, row: Mappin
     )
     contagion = _clip01(_first_float(event, "contagion_risk_score") if _first_float(event, "contagion_risk_score") is not None else max(abs(impact["market"]), abs(impact["sector"]), escalation) * intensity)
     quality = _clip01(_first_float(event, "event_context_quality_score", "quality_score") if _first_float(event, "event_context_quality_score", "quality_score") is not None else source_quality * (1.0 - uncertainty * 0.35))
-    target_direction = _first_float(_payload(row, "target_context_state"), "3_target_direction_score_390min", "3_target_direction_score_60min") or 0.0
+    target_direction = _first_float(_payload(row, "target_context_state"), "3_target_direction_score_1W", "3_target_direction_score_1D") or 0.0
     alignment = _clip_signed(direction_bias * (1 if target_direction >= 0 else -1) * relevance)
     return {
         "event_id": event.get("event_id"),
@@ -296,7 +296,7 @@ def _lifecycle_state(age_minutes: float) -> str:
         return "pre_event_window"
     if age_minutes <= 30:
         return "live_release_window"
-    if age_minutes <= 390:
+    if age_minutes <= 24 * 60:
         return "post_event_initial_reaction"
     return "post_event_decay"
 

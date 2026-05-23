@@ -10,7 +10,7 @@ MODEL_VERSION: Final[str] = "underlying_action_plan_contract"
 PRIMARY_OUTPUT: Final[str] = "underlying_action_plan"
 VECTOR_OUTPUT: Final[str] = "underlying_action_vector"
 
-HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
+HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "8_underlying_trade_eligibility_score_<horizon>",
@@ -88,8 +88,8 @@ FORBIDDEN_OUTPUT_FIELDS: Final[frozenset[str]] = frozenset(
 )
 
 HORIZON_MINUTES: Final[dict[str, int]] = {
-    "5min": 5,
-    "15min": 15,
-    "60min": 60,
-    "390min": 390,
+    "10min": 10,
+    "1h": 60,
+    "1D": 24 * 60,
+    "1W": 7 * 24 * 60,
 }

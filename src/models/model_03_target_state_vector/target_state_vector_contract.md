@@ -114,7 +114,7 @@ Derived relationship features. These are the main reason Layer 3 exists: they de
 The first contract uses a sparse, reviewable window set rather than many strategy-like parameter variants:
 
 ```text
-5min, 15min, 60min, 390min
+10min, 1h, 1D, 1W
 ```
 
 These windows are a synchronization contract, not merely a target-local calculation detail. `market_state_features`, `sector_state_features`, and `target_state_features` must always declare and use the same `state_observation_windows` for a row. `cross_state_features` may only compare values whose source blocks share the same window label.
@@ -153,14 +153,14 @@ Labels are training/evaluation-only outputs. They must never be joined into infe
 
 | Label family | Initial horizons | Role |
 |---|---|---|
-| `signed_forward_return_distribution` | 15min, 60min, 390min | Direction-neutral future return distribution using deterministic point-in-time orientation, not fitted alpha confidence. |
-| `future_tradeable_path` | 15min, 60min, 390min | Direction-oriented future path quality from path efficiency, MFE/MAE balance, and sign-flip penalty. |
-| `forward_path_risk` | 15min, 60min, 390min | MFE/MAE, chop, sign flips, gap, and adverse excursion after the state. |
-| `directional_persistence` | 15min, 60min, 390min | Whether direction persists after market/sector adjustment. |
-| `reversion_pressure` | 15min, 60min, 390min | Whether stretched target states revert toward target/sector/market anchors. |
-| `liquidity_tradability_outcome` | 15min, 60min | Whether the state remains tradeable after spreads, volume, and coverage gates. |
-| `state_transition_quality` | 15min, 60min, 390min | Whether the future state preserves or cleanly transitions from the current state without noisy sign flips. |
-| `candidate_policy_rank_outcome` | 15min, 60min, 390min | Whether selected/top-ranked anonymous candidates outperform watch/blocked/control candidates on path quality and liquidity-adjusted tradability inside a fixed candidate-universe policy batch. |
+| `signed_forward_return_distribution` | 10min, 1h, 1D, 1W | Direction-neutral future return distribution using deterministic point-in-time orientation, not fitted alpha confidence. |
+| `future_tradeable_path` | 10min, 1h, 1D, 1W | Direction-oriented future path quality from path efficiency, MFE/MAE balance, and sign-flip penalty. |
+| `forward_path_risk` | 10min, 1h, 1D, 1W | MFE/MAE, chop, sign flips, gap, and adverse excursion after the state. |
+| `directional_persistence` | 10min, 1h, 1D, 1W | Whether direction persists after market/sector adjustment. |
+| `reversion_pressure` | 10min, 1h, 1D, 1W | Whether stretched target states revert toward target/sector/market anchors. |
+| `liquidity_tradability_outcome` | 10min, 1h, 1D | Whether the state remains tradeable after spreads, volume, and coverage gates. |
+| `state_transition_quality` | 10min, 1h, 1D, 1W | Whether the future state preserves or cleanly transitions from the current state without noisy sign flips. |
+| `candidate_policy_rank_outcome` | 10min, 1h, 1D, 1W | Whether selected/top-ranked anonymous candidates outperform watch/blocked/control candidates on path quality and liquidity-adjusted tradability inside a fixed candidate-universe policy batch. |
 
 ## Baseline ladder
 

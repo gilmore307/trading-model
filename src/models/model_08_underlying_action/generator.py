@@ -30,16 +30,16 @@ ET = ZoneInfo("America/New_York")
 MATERIAL_GAP_THRESHOLD = 0.025
 MIN_TRADE_INTENSITY = 0.05
 DEFAULT_TARGET_RETURN_BY_HORIZON = {
-    "5min": 0.006,
-    "15min": 0.010,
-    "60min": 0.018,
-    "390min": 0.035,
+    "10min": 0.006,
+    "1h": 0.010,
+    "1D": 0.018,
+    "1W": 0.035,
 }
 DEFAULT_ADVERSE_MOVE_BY_HORIZON = {
-    "5min": 0.004,
-    "15min": 0.007,
-    "60min": 0.012,
-    "390min": 0.020,
+    "10min": 0.004,
+    "1h": 0.007,
+    "1D": 0.012,
+    "1W": 0.020,
 }
 
 
@@ -534,7 +534,7 @@ def _price_path(action: Mapping[str, str], dominant: Mapping[str, Any], quote: M
     return {
         "underlying_path_direction": "bullish" if side_sign > 0 else "bearish" if side_sign < 0 else "neutral",
         "expected_holding_time_minutes": HORIZON_MINUTES[horizon],
-        "expected_holding_time_label": "1_session" if horizon == "390min" else horizon,
+        "expected_holding_time_label": "rolling_7_calendar_days" if horizon == "1W" else horizon,
         "expected_target_price": _round_price(target),
         "target_price_low": _round_price(min(low, high)),
         "target_price_high": _round_price(max(low, high)),

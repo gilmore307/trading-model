@@ -9,7 +9,7 @@ MODEL_SURFACE: Final[str] = "model_05_alpha_confidence"
 MODEL_VERSION: Final[str] = "alpha_confidence_vector_contract"
 VECTOR_OUTPUT: Final[str] = "alpha_confidence_vector"
 BASE_DIAGNOSTIC_OUTPUT: Final[str] = "base_alpha_vector"
-HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
+HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "5_alpha_direction_score_<horizon>",
     "5_alpha_strength_score_<horizon>",

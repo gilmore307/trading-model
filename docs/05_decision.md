@@ -469,7 +469,7 @@ alpha confidence != final action
 
 AlphaConfidenceModel must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns dynamic risk policy. Layer 7 owns position projection and target exposure state. Layer 8 owns planned direct-underlying action. Layer 9 owns trading guidance / option expression. Layer 10 owns residual event-risk governance.
 
-AlphaConfidenceModel V1 uses the synchronized `5min`, `15min`, `60min`, and `390min` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.
+AlphaConfidenceModel V1 uses the synchronized `10min`, `1h`, `1D`, and `1W` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.
 
 
 ## D022 - PositionProjectionModel target holding-state boundary
@@ -496,7 +496,7 @@ The accepted V1 core output families are:
 7_projection_confidence_score_<horizon>
 ```
 
-PositionProjectionModel uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose handoff summary fields such as dominant projection horizon, horizon conflict state, resolved target exposure, resolved position gap, resolution confidence, and reason codes so the downstream UnderlyingActionModel does not re-solve horizon conflicts.
+PositionProjectionModel uses synchronized horizons `10min`, `1h`, `1D`, and `1W`. It may expose handoff summary fields such as dominant projection horizon, horizon conflict state, resolved target exposure, resolved position gap, resolution confidence, and reason codes so the downstream UnderlyingActionModel does not re-solve horizon conflicts.
 
 Accepted invariants:
 
@@ -533,7 +533,7 @@ The accepted V1 score families are:
 8_underlying_action_confidence_score_<horizon>
 ```
 
-UnderlyingActionModel uses synchronized horizons `5min`, `15min`, `60min`, and `390min`. It may expose resolved plan fields such as `8_resolved_underlying_action_type`, action side, dominant horizon, trade eligibility, trade intensity, entry quality, action confidence, and reason codes so downstream trading guidance / option expression does not re-solve the direct-underlying thesis.
+UnderlyingActionModel uses synchronized horizons `10min`, `1h`, `1D`, and `1W`. It may expose resolved plan fields such as `8_resolved_underlying_action_type`, action side, dominant horizon, trade eligibility, trade intensity, entry quality, action confidence, and reason codes so downstream trading guidance / option expression does not re-solve the direct-underlying thesis.
 
 Accepted planned action types are:
 
@@ -920,11 +920,16 @@ Accepted: 2026-05-22
 `MarketRegimeModel` must not treat market context as a single timeless state. Layer 1 training and evaluation pair each point-in-time input frame with compatible future outcome horizons:
 
 ```text
-1min  -> 5min, 10min, 30min
-5min  -> 15min, 30min, 60min
-30min -> 1h, 2h, 1d
-1d    -> 3d, 5d, 20d
+1min -> 10min
+10min -> 1h
+1h -> 1D
+1D -> 1W
 ```
+
+`1D` means a rolling 24-hour natural-time horizon after `decision_time`;
+`1W` means a rolling 7-calendar-day horizon after `decision_time`.
+Equity and ETF labels observe the actual tradable path inside those natural-time
+windows; crypto labels observe continuous path.
 
 Future return, volatility, drawdown, transition, liquidity, and tradability outcomes are labels/evaluation indicators only. They must not enter same-row feature construction or model generation.
 

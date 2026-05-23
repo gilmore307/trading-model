@@ -41,10 +41,10 @@ Layer 1 is a timeframe-aware market-context model. Short frames train and evalua
 
 Accepted frame/horizon families:
 
-- `1min` -> `5min`, `10min`, `30min`
-- `5min` -> `15min`, `30min`, `60min`
-- `30min` -> `1h`, `2h`, `1d`
-- `1d` -> `3d`, `5d`, `20d`
+- `1min` -> `10min`
+- `10min` -> `1h`
+- `1h` -> `1D`
+- `1D` -> `1W`
 
 The public `1_*` output columns keep the same meaning inside each row. `input_frame` and `prediction_horizon` identify which market context the row describes; they should not be encoded by inventing separate suffixed output columns. Future return, volatility, drawdown, transition, and tradability outcomes are labels/evaluation indicators only and must not enter same-row construction.
 

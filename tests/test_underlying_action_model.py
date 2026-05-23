@@ -32,12 +32,12 @@ class UnderlyingActionModelTests(unittest.TestCase):
             current_underlying_position_state={"current_underlying_exposure_score": 0.10},
             pending_underlying_order_state={"pending_underlying_exposure_score": 0.10, "pending_fill_probability_estimate": 0.50},
             position_projection_vector={
-                "7_dominant_projection_horizon": "390min",
-                "7_target_exposure_score_390min": 0.40,
-                "7_projection_confidence_score_390min": 0.92,
-                "7_risk_budget_fit_score_390min": 0.95,
-                "7_cost_to_adjust_position_score_390min": 0.10,
-                "7_position_state_stability_score_390min": 0.90,
+                "7_dominant_projection_horizon": "1W",
+                "7_target_exposure_score_1W": 0.40,
+                "7_projection_confidence_score_1W": 0.92,
+                "7_risk_budget_fit_score_1W": 0.95,
+                "7_cost_to_adjust_position_score_1W": 0.10,
+                "7_position_state_stability_score_1W": 0.90,
             },
         )
 
@@ -57,12 +57,12 @@ class UnderlyingActionModelTests(unittest.TestCase):
             current_underlying_position_state={"current_underlying_exposure_score": 0.10},
             pending_underlying_order_state={"pending_underlying_exposure_score": 0.30, "pending_fill_probability_estimate": 1.0},
             position_projection_vector={
-                "7_dominant_projection_horizon": "390min",
-                "7_target_exposure_score_390min": 0.40,
-                "7_projection_confidence_score_390min": 0.95,
-                "7_risk_budget_fit_score_390min": 0.95,
-                "7_cost_to_adjust_position_score_390min": 0.05,
-                "7_position_state_stability_score_390min": 0.95,
+                "7_dominant_projection_horizon": "1W",
+                "7_target_exposure_score_1W": 0.40,
+                "7_projection_confidence_score_1W": 0.95,
+                "7_risk_budget_fit_score_1W": 0.95,
+                "7_cost_to_adjust_position_score_1W": 0.05,
+                "7_position_state_stability_score_1W": 0.95,
             },
         )
 
@@ -77,7 +77,7 @@ class UnderlyingActionModelTests(unittest.TestCase):
     def test_no_trade_is_distinct_from_maintain_for_flat_small_gap(self) -> None:
         row = _base_row(
             current_underlying_position_state={"current_underlying_exposure_score": 0.0},
-            position_projection_vector={"7_dominant_projection_horizon": "60min", "7_target_exposure_score_60min": 0.01},
+            position_projection_vector={"7_dominant_projection_horizon": "1D", "7_target_exposure_score_1D": 0.01},
         )
 
         output = generate_rows([row])[0]
@@ -89,20 +89,20 @@ class UnderlyingActionModelTests(unittest.TestCase):
     def test_bearish_flat_without_short_borrow_does_not_select_option_contract(self) -> None:
         row = _base_row(
             alpha_confidence_vector={
-                "5_alpha_confidence_score_390min": 0.90,
-                "5_expected_return_score_390min": -0.05,
-                "5_path_quality_score_390min": 0.85,
-                "5_reversal_risk_score_390min": 0.10,
-                "5_drawdown_risk_score_390min": 0.20,
+                "5_alpha_confidence_score_1W": 0.90,
+                "5_expected_return_score_1W": -0.05,
+                "5_path_quality_score_1W": 0.85,
+                "5_reversal_risk_score_1W": 0.10,
+                "5_drawdown_risk_score_1W": 0.20,
             },
             current_underlying_position_state={"current_underlying_exposure_score": 0.0},
             position_projection_vector={
-                "7_dominant_projection_horizon": "390min",
-                "7_target_exposure_score_390min": -0.40,
-                "7_projection_confidence_score_390min": 0.92,
-                "7_risk_budget_fit_score_390min": 0.95,
-                "7_cost_to_adjust_position_score_390min": 0.05,
-                "7_position_state_stability_score_390min": 0.90,
+                "7_dominant_projection_horizon": "1W",
+                "7_target_exposure_score_1W": -0.40,
+                "7_projection_confidence_score_1W": 0.92,
+                "7_risk_budget_fit_score_1W": 0.95,
+                "7_cost_to_adjust_position_score_1W": 0.05,
+                "7_position_state_stability_score_1W": 0.90,
             },
             underlying_borrow_state={"short_borrow_status": "unavailable"},
         )
@@ -117,19 +117,19 @@ class UnderlyingActionModelTests(unittest.TestCase):
     def test_short_plan_uses_side_neutral_price_bounds(self) -> None:
         row = _base_row(
             alpha_confidence_vector={
-                "5_alpha_confidence_score_390min": 0.90,
-                "5_expected_return_score_390min": -0.06,
-                "5_path_quality_score_390min": 0.85,
-                "5_reversal_risk_score_390min": 0.10,
-                "5_drawdown_risk_score_390min": 0.20,
+                "5_alpha_confidence_score_1W": 0.90,
+                "5_expected_return_score_1W": -0.06,
+                "5_path_quality_score_1W": 0.85,
+                "5_reversal_risk_score_1W": 0.10,
+                "5_drawdown_risk_score_1W": 0.20,
             },
             position_projection_vector={
-                "7_dominant_projection_horizon": "390min",
-                "7_target_exposure_score_390min": -0.45,
-                "7_projection_confidence_score_390min": 0.93,
-                "7_risk_budget_fit_score_390min": 0.95,
-                "7_cost_to_adjust_position_score_390min": 0.05,
-                "7_position_state_stability_score_390min": 0.92,
+                "7_dominant_projection_horizon": "1W",
+                "7_target_exposure_score_1W": -0.45,
+                "7_projection_confidence_score_1W": 0.93,
+                "7_risk_budget_fit_score_1W": 0.95,
+                "7_cost_to_adjust_position_score_1W": 0.05,
+                "7_position_state_stability_score_1W": 0.92,
             },
             underlying_borrow_state={"short_borrow_status": "available"},
         )
@@ -149,12 +149,12 @@ class UnderlyingActionModelTests(unittest.TestCase):
         row = _base_row(
             current_underlying_position_state={"current_underlying_exposure_score": 0.30},
             position_projection_vector={
-                "7_dominant_projection_horizon": "390min",
-                "7_target_exposure_score_390min": -0.25,
-                "7_projection_confidence_score_390min": 0.95,
-                "7_risk_budget_fit_score_390min": 0.95,
-                "7_cost_to_adjust_position_score_390min": 0.05,
-                "7_position_state_stability_score_390min": 0.90,
+                "7_dominant_projection_horizon": "1W",
+                "7_target_exposure_score_1W": -0.25,
+                "7_projection_confidence_score_1W": 0.95,
+                "7_risk_budget_fit_score_1W": 0.95,
+                "7_cost_to_adjust_position_score_1W": 0.05,
+                "7_position_state_stability_score_1W": 0.90,
             },
             underlying_borrow_state={"short_borrow_status": "available"},
         )
@@ -173,7 +173,7 @@ class UnderlyingActionModelTests(unittest.TestCase):
         plan = output["underlying_action_plan"]
 
         self.assertEqual(output["8_resolved_underlying_action_type"], "no_trade")
-        self.assertEqual(output["8_underlying_trade_eligibility_score_390min"], 0.0)
+        self.assertEqual(output["8_underlying_trade_eligibility_score_1W"], 0.0)
         self.assertIn("halt_status_not_active", plan["reason_codes"])
 
     def test_plan_quality_labels_are_offline_and_join_by_plan_ref(self) -> None:
@@ -219,19 +219,19 @@ def _base_row(**overrides: object) -> dict[str, object]:
         "alpha_confidence_vector_ref": "acv_fixture",
         "position_projection_vector_ref": "ppv_fixture",
         "alpha_confidence_vector": {
-            "5_alpha_confidence_score_390min": 0.90,
-            "5_expected_return_score_390min": 0.05,
-            "5_path_quality_score_390min": 0.85,
-            "5_reversal_risk_score_390min": 0.10,
-            "5_drawdown_risk_score_390min": 0.20,
+            "5_alpha_confidence_score_1W": 0.90,
+            "5_expected_return_score_1W": 0.05,
+            "5_path_quality_score_1W": 0.85,
+            "5_reversal_risk_score_1W": 0.10,
+            "5_drawdown_risk_score_1W": 0.20,
         },
         "position_projection_vector": {
-            "7_dominant_projection_horizon": "390min",
-            "7_target_exposure_score_390min": 0.40,
-            "7_projection_confidence_score_390min": 0.92,
-            "7_risk_budget_fit_score_390min": 0.95,
-            "7_cost_to_adjust_position_score_390min": 0.08,
-            "7_position_state_stability_score_390min": 0.90,
+            "7_dominant_projection_horizon": "1W",
+            "7_target_exposure_score_1W": 0.40,
+            "7_projection_confidence_score_1W": 0.92,
+            "7_risk_budget_fit_score_1W": 0.95,
+            "7_cost_to_adjust_position_score_1W": 0.08,
+            "7_position_state_stability_score_1W": 0.90,
         },
         "current_underlying_position_state": {"current_underlying_exposure_score": 0.0},
         "pending_underlying_order_state": {"pending_underlying_exposure_score": 0.0, "pending_fill_probability_estimate": 0.0},

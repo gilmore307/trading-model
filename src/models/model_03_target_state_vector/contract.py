@@ -62,18 +62,19 @@ CROSS_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
 )
 
 SYNCHRONIZED_STATE_WINDOWS: Final[tuple[str, ...]] = (
-    "5min",
-    "15min",
-    "60min",
-    "390min",
+    "10min",
+    "1h",
+    "1D",
+    "1W",
 )
 
 TRAILING_STATE_WINDOWS: Final[tuple[str, ...]] = SYNCHRONIZED_STATE_WINDOWS
 
 LABEL_HORIZONS: Final[tuple[str, ...]] = (
-    "15min",
-    "60min",
-    "390min",
+    "10min",
+    "1h",
+    "1D",
+    "1W",
 )
 
 TRAINING_LABEL_FAMILIES: Final[tuple[str, ...]] = (

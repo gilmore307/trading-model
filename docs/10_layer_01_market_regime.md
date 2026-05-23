@@ -19,10 +19,10 @@ Layer 1 market context is horizon-aware. A current 1-minute market frame should 
 Accepted frame/horizon families:
 
 ```text
-input_frame = 1min   -> prediction_horizon = 5min, 10min, 30min
-input_frame = 5min   -> prediction_horizon = 15min, 30min, 60min
-input_frame = 30min  -> prediction_horizon = 1h, 2h, 1d
-input_frame = 1d     -> prediction_horizon = 3d, 5d, 20d
+input_frame = 1min   -> prediction_horizon = 10min
+input_frame = 10min  -> prediction_horizon = 1h
+input_frame = 1h     -> prediction_horizon = 1D
+input_frame = 1D     -> prediction_horizon = 1W
 ```
 
 The target physical contract is one market-context row per `(available_time, input_frame, prediction_horizon, market_universe_ref)`. The same public state fields keep their compact `1_*` names inside each row; horizon and frame belong in row identity fields, not in duplicated column-name suffixes. Existing single-frame rows are a compatibility surface until the registry and SQL migration add the frame/horizon keys.

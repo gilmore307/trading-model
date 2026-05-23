@@ -46,12 +46,12 @@ FORBIDDEN_MODEL_FACING_FIELD_FRAGMENTS = (
 )
 IDENTITY_VALUE_KEYS = {"symbol", "ticker", "company", "issuer", "exchange", "figi", "isin", "cusip", "cik", "audit_symbol_ref", "routing_symbol_ref"}
 NUMERIC_TARGET_EVIDENCE_KEYS = (
-    "target_return_5min",
-    "target_return_15min",
-    "target_return_60min",
-    "target_return_390min",
-    "target_realized_vol_15min",
-    "target_realized_vol_60min",
+    "target_return_10min",
+    "target_return_1h",
+    "target_return_1D",
+    "target_return_1W",
+    "target_realized_vol_1h",
+    "target_realized_vol_1D",
     "target_atr_pct",
     "target_range_position",
     "target_relative_volume",
@@ -436,7 +436,7 @@ def _exposure_vector(row: Mapping[str, Any]) -> dict[str, Any]:
 def _structural_buckets(target_row: Mapping[str, Any], exposure_row: Mapping[str, Any]) -> dict[str, Any]:
     dollar_volume = _safe_float(target_row.get("target_dollar_volume") or exposure_row.get("dollar_volume"))
     spread = _safe_float(target_row.get("target_spread_bps") or exposure_row.get("spread_bps"))
-    volatility = _safe_float(target_row.get("target_atr_pct") or target_row.get("target_realized_vol_15min"))
+    volatility = _safe_float(target_row.get("target_atr_pct") or target_row.get("target_realized_vol_1h"))
     price = _safe_float(target_row.get("target_price") or exposure_row.get("price"))
     exposure = _safe_float(exposure_row.get("sector_exposure_strength") or exposure_row.get("exposure_weight") or exposure_row.get("holding_weight"))
     return {

@@ -4,13 +4,13 @@ from __future__ import annotations
 from typing import Any, Iterable, Mapping
 
 LABEL_FIELDS = {
-    "realized_symbol_move_after_event_5min",
-    "realized_symbol_move_after_event_15min",
-    "realized_symbol_move_after_event_60min",
-    "realized_symbol_move_after_event_390min",
-    "post_event_gap_realization_390min",
-    "post_event_reversal_realization_390min",
-    "post_event_liquidity_degradation_390min",
+    "realized_symbol_move_after_event_10min",
+    "realized_symbol_move_after_event_1h",
+    "realized_symbol_move_after_event_1D",
+    "realized_symbol_move_after_event_1W",
+    "post_event_gap_realization_1W",
+    "post_event_reversal_realization_1W",
+    "post_event_liquidity_degradation_1W",
 }
 
 

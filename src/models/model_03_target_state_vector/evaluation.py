@@ -19,7 +19,7 @@ DEFAULT_MODEL_TABLE = "model_03_target_state_vector"
 DEFAULT_DRY_RUN_WRITE_POLICY = "no_database_write"
 DEFAULT_DATABASE_READ_WRITE_POLICY = "database_read_only_pending_governance_persistence"
 BASELINE_LADDER = ("market_only_baseline", "market_sector_baseline", "market_sector_target_context")
-LABEL_HORIZONS = ("15min", "60min", "390min")
+LABEL_HORIZONS = ("10min", "1h", "1D", "1W")
 PATH_LABEL_NAME = "future_tradeable_path"
 PATH_RISK_LABEL_NAME = "forward_path_risk"
 LIQUIDITY_LABEL_NAME = "liquidity_tradability_outcome"
@@ -168,7 +168,7 @@ def _eval_labels(rows: Sequence[Mapping[str, Any]], *, snapshot_id: str, model_i
                 if current_close is not None and future_close is not None and current_close != 0:
                     signed_return = future_close / current_close - 1.0
                 else:
-                    signed_return = _target_return(future, horizon) or _target_return(future, "15min")
+                    signed_return = _target_return(future, horizon) or _target_return(future, "10min")
                     if signed_return is None:
                         continue
                 current_time = _iso(_row_time(row))
@@ -279,7 +279,7 @@ def _pair(feature: Mapping[str, Any], model: Mapping[str, Any], label: Mapping[s
     label_abs = label_path if label_path is not None else abs(_safe_float(label.get("label_value")) or 0.0)
     market = abs(_market_direction(feature) or 0.0)
     sector = abs(_sector_direction(feature) or 0.0)
-    target = _safe_float(model.get("3_tradability_score_15min")) or abs(_safe_float(model.get("3_target_direction_score_15min")) or 0.0)
+    target = _safe_float(model.get("3_tradability_score_1h")) or abs(_safe_float(model.get("3_target_direction_score_1h")) or 0.0)
     return {"label_abs": label_abs, "market_only_baseline": market, "market_sector_baseline": (market + sector) / 2.0, "market_sector_target_context": target, "time": _row_time(feature).timestamp()}
 
 
@@ -354,14 +354,14 @@ def _market_direction(row: Mapping[str, Any]) -> float | None:
     market = _coerce_payload(row.get("market_state_features"))
     if not isinstance(market, Mapping):
         return None
-    return _first_numeric(market, ("market_return_15min", "1_market_direction_score", "market_direction_score"))
+    return _first_numeric(market, ("market_return_1h", "1_market_direction_score", "market_direction_score"))
 
 
 def _sector_direction(row: Mapping[str, Any]) -> float | None:
     sector = _coerce_payload(row.get("sector_state_features"))
     if not isinstance(sector, Mapping):
         return None
-    return _first_numeric(sector, ("sector_return_15min", "2_sector_relative_direction_score", "sector_relative_direction_score"))
+    return _first_numeric(sector, ("sector_return_1h", "2_sector_relative_direction_score", "sector_relative_direction_score"))
 
 
 def _target_close(row: Mapping[str, Any]) -> float | None:
@@ -489,9 +489,9 @@ def _row_liquidity_score(row: Mapping[str, Any]) -> float | None:
 
 
 def _state_bucket(row: Mapping[str, Any]) -> str | None:
-    direction = _target_return(row, "15min")
-    stability = _target_nested_float(row, "target_trend_quality_state", "path_stability_15min")
-    transition_risk = _target_nested_float(row, "target_exhaustion_decay_state", "late_trend_risk_score_15min")
+    direction = _target_return(row, "1h")
+    stability = _target_nested_float(row, "target_trend_quality_state", "path_stability_1h")
+    transition_risk = _target_nested_float(row, "target_exhaustion_decay_state", "late_trend_risk_score_1h")
     if direction is None:
         return None
     sign = "up" if direction > 0 else "down" if direction < 0 else "flat"
@@ -505,7 +505,7 @@ def _state_bucket(row: Mapping[str, Any]) -> str | None:
 
 
 def _state_sign(row: Mapping[str, Any]) -> int | None:
-    value = _target_return(row, "15min")
+    value = _target_return(row, "1h")
     if value is None:
         return None
     return 1 if value > 0 else -1 if value < 0 else 0
@@ -542,7 +542,7 @@ def _first_numeric(value: Any, keys: Sequence[str]) -> float | None:
 
 
 def _horizon_steps(horizon: str) -> int:
-    return {"15min": 15, "60min": 60, "390min": 390}.get(horizon, 1)
+    return {"10min": 10, "1h": 60, "1D": 24 * 60, "1W": 7 * 24 * 60}.get(horizon, 1)
 
 
 def _payload(row: Mapping[str, Any]) -> Mapping[str, Any]:

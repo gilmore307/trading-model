@@ -8,7 +8,7 @@ MODEL_LAYER: Final[str] = "layer_06_dynamic_risk_policy"
 MODEL_SURFACE: Final[str] = "model_06_dynamic_risk_policy"
 MODEL_VERSION: Final[str] = "dynamic_risk_policy_state_contract"
 VECTOR_OUTPUT: Final[str] = "dynamic_risk_policy_state"
-HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
+HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "6_dynamic_risk_budget_score_<horizon>",
     "6_premium_budget_score_<horizon>",

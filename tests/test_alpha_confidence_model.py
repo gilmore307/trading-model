@@ -33,11 +33,11 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         vector = output["alpha_confidence_vector"]
         base = output["base_alpha_vector"]
 
-        self.assertGreater(vector["5_alpha_direction_score_390min"], 0.0)
-        self.assertLess(vector["5_alpha_strength_score_390min"], base["5_base_alpha_strength_score_390min"])
-        self.assertGreater(vector["5_alpha_confidence_score_390min"], 0.0)
-        self.assertIn("5_base_alpha_direction_score_390min", base)
-        self.assertIn("high_quality_event_override", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["390min"])
+        self.assertGreater(vector["5_alpha_direction_score_1W"], 0.0)
+        self.assertLess(vector["5_alpha_strength_score_1W"], base["5_base_alpha_strength_score_1W"])
+        self.assertGreater(vector["5_alpha_confidence_score_1W"], 0.0)
+        self.assertIn("5_base_alpha_direction_score_1W", base)
+        self.assertIn("high_quality_event_override", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["1W"])
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
@@ -45,10 +45,10 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         output = generate_rows([_base_row(target_context_state={}, event_failure_risk_vector={})])[0]
         vector = output["alpha_confidence_vector"]
 
-        self.assertEqual(vector["5_alpha_direction_score_390min"], 0.0)
-        self.assertEqual(vector["5_alpha_strength_score_390min"], 0.0)
-        self.assertLess(vector["5_alpha_tradability_score_390min"], 0.5)
-        self.assertIn("no_material_alpha_edge", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["390min"])
+        self.assertEqual(vector["5_alpha_direction_score_1W"], 0.0)
+        self.assertEqual(vector["5_alpha_strength_score_1W"], 0.0)
+        self.assertLess(vector["5_alpha_tradability_score_1W"], 0.5)
+        self.assertIn("no_material_alpha_edge", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["1W"])
 
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:
         output = generate_rows([_base_row()])[0]
@@ -57,16 +57,16 @@ class AlphaConfidenceModelTests(unittest.TestCase):
             [
                 {
                     "alpha_confidence_vector_ref": output["alpha_confidence_vector_ref"],
-                    "forward_return_390min": -0.05,
-                    "idiosyncratic_residual_return_390min": -0.04,
-                    "alpha_tradable_label_390min": True,
+                    "forward_return_1W": -0.05,
+                    "idiosyncratic_residual_return_1W": -0.04,
+                    "alpha_tradable_label_1W": True,
                 }
             ],
         )
 
         self.assertEqual(len(labels), 1)
-        self.assertTrue(labels[0]["alpha_tradable_label_390min"])
-        self.assertNotIn("forward_return_390min", output)
+        self.assertTrue(labels[0]["alpha_tradable_label_1W"])
+        self.assertNotIn("forward_return_1W", output)
 
     def assert_no_forbidden_terms(self, value: object) -> None:
         if isinstance(value, dict):
@@ -97,25 +97,25 @@ def _base_row(**overrides: object) -> dict[str, object]:
             "2_state_quality_score": 0.88,
         },
         "target_context_state": {
-            "3_target_direction_score_390min": 0.40,
-            "3_target_trend_quality_score_390min": 0.75,
-            "3_target_path_stability_score_390min": 0.80,
-            "3_target_noise_score_390min": 0.20,
-            "3_target_transition_risk_score_390min": 0.15,
-            "3_context_direction_alignment_score_390min": 0.70,
-            "3_context_support_quality_score_390min": 0.80,
-            "3_tradability_score_390min": 0.85,
+            "3_target_direction_score_1W": 0.40,
+            "3_target_trend_quality_score_1W": 0.75,
+            "3_target_path_stability_score_1W": 0.80,
+            "3_target_noise_score_1W": 0.20,
+            "3_target_transition_risk_score_1W": 0.15,
+            "3_context_direction_alignment_score_1W": 0.70,
+            "3_context_support_quality_score_1W": 0.80,
+            "3_tradability_score_1W": 0.85,
             "3_state_quality_score": 0.90,
-            "3_beta_dependency_score_390min": 0.20,
+            "3_beta_dependency_score_1W": 0.20,
         },
         "event_failure_risk_vector": {
-            "4_event_strategy_failure_risk_score_390min": 0.85,
-            "4_event_entry_block_pressure_score_390min": 0.80,
-            "4_event_exposure_cap_pressure_score_390min": 0.45,
-            "4_event_strategy_disable_pressure_score_390min": 0.30,
-            "4_event_path_risk_amplifier_score_390min": 0.70,
-            "4_event_evidence_quality_score_390min": 0.95,
-            "4_event_applicability_confidence_score_390min": 0.90,
+            "4_event_strategy_failure_risk_score_1W": 0.85,
+            "4_event_entry_block_pressure_score_1W": 0.80,
+            "4_event_exposure_cap_pressure_score_1W": 0.45,
+            "4_event_strategy_disable_pressure_score_1W": 0.30,
+            "4_event_path_risk_amplifier_score_1W": 0.70,
+            "4_event_evidence_quality_score_1W": 0.95,
+            "4_event_applicability_confidence_score_1W": 0.90,
         },
         "quality_calibration_state": {
             "sample_support_score": 0.85,

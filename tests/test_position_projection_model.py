@@ -38,20 +38,20 @@ class PositionProjectionModelTests(unittest.TestCase):
         vector = output["position_projection_vector"]
         diagnostics = output["position_projection_diagnostics"]
 
-        self.assertGreater(vector["7_target_exposure_score_390min"], 0.0)
+        self.assertGreater(vector["7_target_exposure_score_1W"], 0.0)
         self.assertAlmostEqual(diagnostics["effective_current_exposure_score"], 0.15)
         self.assertAlmostEqual(
-            vector["7_position_gap_score_390min"],
-            round(vector["7_target_exposure_score_390min"] - 0.15, 6),
+            vector["7_position_gap_score_1W"],
+            round(vector["7_target_exposure_score_1W"] - 0.15, 6),
         )
-        self.assertEqual(vector["7_dominant_projection_horizon"], "390min")
+        self.assertEqual(vector["7_dominant_projection_horizon"], "1W")
         self.assertNotIn("buy", vector["7_horizon_resolution_reason_codes"][0])
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
     def test_gap_aware_cost_does_not_penalize_aligned_position_heavily(self) -> None:
         first = generate_rows([_base_row(current_position_state={"current_position_exposure_score": 0.0})])[0]
-        target = first["7_target_exposure_score_390min"]
+        target = first["7_target_exposure_score_1W"]
         aligned = generate_rows(
             [
                 _base_row(
@@ -62,9 +62,9 @@ class PositionProjectionModelTests(unittest.TestCase):
             ]
         )[0]
 
-        self.assertAlmostEqual(aligned["7_position_gap_magnitude_score_390min"], 0.0, places=5)
-        self.assertAlmostEqual(aligned["7_cost_to_adjust_position_score_390min"], 0.0, places=5)
-        self.assertGreater(aligned["7_current_position_alignment_score_390min"], 0.99)
+        self.assertAlmostEqual(aligned["7_position_gap_magnitude_score_1W"], 0.0, places=5)
+        self.assertAlmostEqual(aligned["7_cost_to_adjust_position_score_1W"], 0.0, places=5)
+        self.assertGreater(aligned["7_current_position_alignment_score_1W"], 0.99)
 
     def test_policy_and_risk_can_compress_projection_without_action_language(self) -> None:
         output = generate_rows(
@@ -76,11 +76,11 @@ class PositionProjectionModelTests(unittest.TestCase):
             ]
         )[0]
 
-        self.assertEqual(output["7_target_exposure_score_390min"], 0.0)
-        self.assertEqual(output["7_risk_budget_fit_score_390min"], 0.0)
+        self.assertEqual(output["7_target_exposure_score_1W"], 0.0)
+        self.assertEqual(output["7_risk_budget_fit_score_1W"], 0.0)
         self.assertIn(
             "risk_budget_compression",
-            output["position_projection_diagnostics"]["horizon_projections"]["390min"]["reason_codes"],
+            output["position_projection_diagnostics"]["horizon_projections"]["1W"]["reason_codes"],
         )
         self.assert_no_forbidden_terms(output)
 
@@ -91,16 +91,16 @@ class PositionProjectionModelTests(unittest.TestCase):
             [
                 {
                     "position_projection_vector_ref": output["position_projection_vector_ref"],
-                    "realized_position_utility_390min": 0.12,
-                    "realized_risk_budget_breach_390min": False,
-                    "candidate_exposure_utility_curve_390min": [{"exposure": 0.25, "utility": 0.12}],
+                    "realized_position_utility_1W": 0.12,
+                    "realized_risk_budget_breach_1W": False,
+                    "candidate_exposure_utility_curve_1W": [{"exposure": 0.25, "utility": 0.12}],
                 }
             ],
         )
 
         self.assertEqual(len(labels), 1)
-        self.assertAlmostEqual(labels[0]["realized_position_utility_390min"], 0.12)
-        self.assertNotIn("realized_position_utility_390min", output)
+        self.assertAlmostEqual(labels[0]["realized_position_utility_1W"], 0.12)
+        self.assertNotIn("realized_position_utility_1W", output)
 
     def assert_no_forbidden_terms(self, value: object) -> None:
         if isinstance(value, dict):
@@ -121,15 +121,15 @@ def _base_row(**overrides: object) -> dict[str, object]:
         "current_position_state_ref": "current_fixture",
         "pending_position_state_ref": "pending_fixture",
         "alpha_confidence_vector": {
-            "5_alpha_direction_score_390min": 0.80,
-            "5_alpha_strength_score_390min": 0.70,
-            "5_expected_return_score_390min": 0.06,
-            "5_alpha_confidence_score_390min": 0.90,
-            "5_signal_reliability_score_390min": 0.85,
-            "5_path_quality_score_390min": 0.80,
-            "5_reversal_risk_score_390min": 0.15,
-            "5_drawdown_risk_score_390min": 0.20,
-            "5_alpha_tradability_score_390min": 0.90,
+            "5_alpha_direction_score_1W": 0.80,
+            "5_alpha_strength_score_1W": 0.70,
+            "5_expected_return_score_1W": 0.06,
+            "5_alpha_confidence_score_1W": 0.90,
+            "5_signal_reliability_score_1W": 0.85,
+            "5_path_quality_score_1W": 0.80,
+            "5_reversal_risk_score_1W": 0.15,
+            "5_drawdown_risk_score_1W": 0.20,
+            "5_alpha_tradability_score_1W": 0.90,
         },
         "current_position_state": {"current_position_exposure_score": 0.10},
         "pending_position_state": {"pending_exposure_size": 0.10, "pending_order_fill_probability_estimate": 0.50},

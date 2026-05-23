@@ -68,8 +68,8 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
     def test_model_10_event_sql_column_typing_uses_layer_10_prefix(self) -> None:
         generator = self._load_script_module(REPO_ROOT / "scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py")
 
-        self.assertEqual(generator._column_type("10_event_gap_risk_score_390min"), "DOUBLE PRECISION")
-        self.assertEqual(generator._column_type("8_event_gap_risk_score_390min"), "TEXT")
+        self.assertEqual(generator._column_type("10_event_gap_risk_score_1W"), "DOUBLE PRECISION")
+        self.assertEqual(generator._column_type("8_event_gap_risk_score_1W"), "TEXT")
 
     def test_active_generator_column_type_prefixes_match_layer_numbers(self) -> None:
         for surface, layer_number in LAYER_NUMBERS.items():

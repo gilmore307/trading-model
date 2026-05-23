@@ -36,12 +36,12 @@ class EventRiskGovernorTests(unittest.TestCase):
 
         self.assertEqual(diagnostics["visible_event_count"], 2)
         self.assertEqual(diagnostics["canonical_event_count"], 1)
-        self.assertGreater(vector["10_event_presence_score_60min"], 0.0)
-        self.assertLess(vector["10_event_direction_bias_score_60min"], 0.0)
-        self.assertLess(vector["10_event_symbol_impact_score_60min"], 0.0)
-        self.assertGreater(abs(vector["10_event_symbol_impact_score_60min"]), abs(vector["10_event_market_impact_score_60min"]))
+        self.assertGreater(vector["10_event_presence_score_1D"], 0.0)
+        self.assertLess(vector["10_event_direction_bias_score_1D"], 0.0)
+        self.assertLess(vector["10_event_symbol_impact_score_1D"], 0.0)
+        self.assertGreater(abs(vector["10_event_symbol_impact_score_1D"]), abs(vector["10_event_market_impact_score_1D"]))
         self.assertEqual(
-            diagnostics["dominant_impact_scope_by_horizon"]["10_event_dominant_impact_scope_60min"],
+            diagnostics["dominant_impact_scope_by_horizon"]["10_event_dominant_impact_scope_1D"],
             "symbol",
         )
         assert_no_label_leakage(output)
@@ -52,10 +52,10 @@ class EventRiskGovernorTests(unittest.TestCase):
         output = generate_rows([row])[0]
         vector = output["event_context_vector"]
 
-        self.assertEqual(vector["10_event_presence_score_390min"], 0.0)
-        self.assertEqual(vector["10_event_direction_bias_score_390min"], 0.0)
-        self.assertEqual(vector["10_event_market_impact_score_390min"], 0.0)
-        self.assertGreater(vector["10_event_context_quality_score_390min"], 0.0)
+        self.assertEqual(vector["10_event_presence_score_1W"], 0.0)
+        self.assertEqual(vector["10_event_direction_bias_score_1W"], 0.0)
+        self.assertEqual(vector["10_event_market_impact_score_1W"], 0.0)
+        self.assertGreater(vector["10_event_context_quality_score_1W"], 0.0)
 
     def test_crypto_context_uses_direct_underlying_without_option_requirement(self) -> None:
         output = generate_rows([
@@ -96,8 +96,8 @@ class EventRiskGovernorTests(unittest.TestCase):
         encoded = output["event_risk_governor_diagnostics"]["encoded_events"][0]
 
         self.assertEqual(encoded["event_native_scope_type"], "price_action")
-        self.assertLess(vector["10_event_microstructure_impact_score_15min"], 0.0)
-        self.assertGreater(vector["10_event_reversal_risk_score_15min"], 0.0)
+        self.assertLess(vector["10_event_microstructure_impact_score_1h"], 0.0)
+        self.assertGreater(vector["10_event_reversal_risk_score_1h"], 0.0)
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
@@ -120,9 +120,9 @@ class EventRiskGovernorTests(unittest.TestCase):
         output = generate_rows([row])[0]
         vector = output["event_context_vector"]
 
-        self.assertLess(vector["10_event_market_impact_score_60min"], 0.0)
-        self.assertGreater(vector["10_event_scope_escalation_risk_score_60min"], 0.0)
-        self.assertGreater(vector["10_event_contagion_risk_score_60min"], 0.0)
+        self.assertLess(vector["10_event_market_impact_score_1D"], 0.0)
+        self.assertGreater(vector["10_event_scope_escalation_risk_score_1D"], 0.0)
+        self.assertGreater(vector["10_event_contagion_risk_score_1D"], 0.0)
 
     def test_direction_neutral_macro_event_preserves_scope_impact_and_risk(self) -> None:
         row = _base_row(source_10_event_risk_governor=[
@@ -143,12 +143,12 @@ class EventRiskGovernorTests(unittest.TestCase):
         vector = output["event_context_vector"]
         diagnostics = output["event_risk_governor_diagnostics"]
 
-        self.assertEqual(vector["10_event_direction_bias_score_60min"], 0.0)
-        self.assertGreater(vector["10_event_market_impact_score_60min"], 0.0)
-        self.assertGreater(vector["10_event_scope_escalation_risk_score_60min"], 0.0)
-        self.assertGreater(vector["10_event_contagion_risk_score_60min"], 0.0)
+        self.assertEqual(vector["10_event_direction_bias_score_1D"], 0.0)
+        self.assertGreater(vector["10_event_market_impact_score_1D"], 0.0)
+        self.assertGreater(vector["10_event_scope_escalation_risk_score_1D"], 0.0)
+        self.assertGreater(vector["10_event_contagion_risk_score_1D"], 0.0)
         self.assertEqual(
-            diagnostics["dominant_impact_scope_by_horizon"]["10_event_dominant_impact_scope_60min"],
+            diagnostics["dominant_impact_scope_by_horizon"]["10_event_dominant_impact_scope_1D"],
             "market",
         )
 
@@ -171,10 +171,10 @@ class EventRiskGovernorTests(unittest.TestCase):
         output = generate_rows([row])[0]
         vector = output["event_context_vector"]
 
-        self.assertAlmostEqual(vector["10_event_direction_bias_score_60min"], 0.05)
-        self.assertGreater(vector["10_event_market_impact_score_60min"], 0.5)
-        self.assertGreater(vector["10_event_scope_escalation_risk_score_60min"], 0.25)
-        self.assertGreater(vector["10_event_contagion_risk_score_60min"], 0.3)
+        self.assertAlmostEqual(vector["10_event_direction_bias_score_1D"], 0.05)
+        self.assertGreater(vector["10_event_market_impact_score_1D"], 0.5)
+        self.assertGreater(vector["10_event_scope_escalation_risk_score_1D"], 0.25)
+        self.assertGreater(vector["10_event_contagion_risk_score_1D"], 0.3)
 
     def test_forbidden_output_diagnostic_names_layer_ten(self) -> None:
         with self.assertRaisesRegex(ValueError, "forbidden Layer 10 output field"):
@@ -187,16 +187,16 @@ class EventRiskGovernorTests(unittest.TestCase):
             [
                 {
                     "event_context_vector_ref": output["event_context_vector_ref"],
-                    "realized_symbol_move_after_event_390min": -0.04,
-                    "post_event_gap_realization_390min": 0.02,
+                    "realized_symbol_move_after_event_1W": -0.04,
+                    "post_event_gap_realization_1W": 0.02,
                 }
             ],
         )
 
         self.assertEqual(len(labels), 1)
         self.assertEqual(labels[0]["event_context_vector_ref"], output["event_context_vector_ref"])
-        self.assertAlmostEqual(labels[0]["realized_symbol_move_after_event_390min"], -0.04)
-        self.assertNotIn("realized_symbol_move_after_event_390min", output)
+        self.assertAlmostEqual(labels[0]["realized_symbol_move_after_event_1W"], -0.04)
+        self.assertNotIn("realized_symbol_move_after_event_1W", output)
 
     def assert_no_forbidden_terms(self, value: object) -> None:
         if isinstance(value, dict):
@@ -218,7 +218,7 @@ def _base_row(**overrides: object) -> dict[str, object]:
         "market_context_state_ref": "mcs_fixture",
         "sector_context_state_ref": "scs_fixture",
         "target_context_state_ref": "tcs_fixture",
-        "target_context_state": {"3_target_direction_score_390min": 0.5, "3_target_direction_score_60min": 0.4},
+        "target_context_state": {"3_target_direction_score_1W": 0.5, "3_target_direction_score_1D": 0.4},
         "source_10_event_risk_governor": [
             {
                 "event_id": "evt_canonical",

@@ -50,7 +50,7 @@ class ModelOutputAuditTests(unittest.TestCase):
                 "available_time": "2016-01-04T09:35:00-05:00",
                 "target_candidate_id": "anon_aapl",
                 "model_id": "alpha_confidence_model",
-                "5_alpha_confidence_score_390min": 0.8,
+                "5_alpha_confidence_score_1W": 0.8,
                 "event_strategy_failure_gate_ref": None,
                 "stale_debug_column": None,
             },
@@ -58,7 +58,7 @@ class ModelOutputAuditTests(unittest.TestCase):
                 "available_time": "2016-01-04T09:40:00-05:00",
                 "target_candidate_id": "anon_msft",
                 "model_id": "alpha_confidence_model",
-                "5_alpha_confidence_score_390min": None,
+                "5_alpha_confidence_score_1W": None,
                 "event_strategy_failure_gate_ref": None,
                 "stale_debug_column": None,
             },
@@ -71,7 +71,7 @@ class ModelOutputAuditTests(unittest.TestCase):
                 "available_time",
                 "target_candidate_id",
                 "model_id",
-                "5_alpha_confidence_score_390min",
+                "5_alpha_confidence_score_1W",
                 "event_strategy_failure_gate_ref",
                 "stale_debug_column",
             ],
@@ -82,7 +82,7 @@ class ModelOutputAuditTests(unittest.TestCase):
         by_column = {row["column"]: row for row in report["all_null_columns"]}
         self.assertEqual(by_column["event_strategy_failure_gate_ref"]["classification"], "all_null_optional_evidence")
         self.assertEqual(by_column["stale_debug_column"]["recommended_action"], "review_drop_or_stop_emitting_column")
-        self.assertEqual(report["sparse_columns"][0]["column"], "5_alpha_confidence_score_390min")
+        self.assertEqual(report["sparse_columns"][0]["column"], "5_alpha_confidence_score_1W")
 
     def test_known_accumulation_and_selection_columns_are_not_generator_defects(self) -> None:
         report = audit_rows(

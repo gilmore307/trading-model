@@ -648,10 +648,10 @@ diagnostics_ref
 Layer 10 V1 uses the same synchronized context horizons unless later evaluation proves a different event-specific grid is needed:
 
 ```text
-5min
-15min
-60min
-390min
+10min
+1h
+1D
+1W
 ```
 
 ## V1 event-context vector score families

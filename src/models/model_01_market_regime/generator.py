@@ -26,10 +26,10 @@ DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config" / "factor_specs
 SUPPORTED_AGGREGATIONS = {"flat", "bucketed_mean"}
 DEFAULT_MARKET_UNIVERSE_REF = "layer_01_02_market_context_etf_universe"
 INPUT_FRAME_HORIZONS: dict[str, tuple[str, ...]] = {
-    "1min": ("5min", "10min", "30min"),
-    "5min": ("15min", "30min", "60min"),
-    "30min": ("1h", "2h", "1d"),
-    "1d": ("3d", "5d", "20d"),
+    "1min": ("10min",),
+    "10min": ("1h",),
+    "1h": ("1D",),
+    "1D": ("1W",),
 }
 ROW_IDENTITY_COLUMNS = ["available_time", "input_frame", "prediction_horizon", "market_universe_ref"]
 
@@ -89,18 +89,23 @@ def normalize_input_frame(value: Any) -> str:
         "5m": "5min",
         "5min": "5min",
         "5minute": "5min",
+        "10m": "10min",
+        "10min": "10min",
+        "10minute": "10min",
         "30m": "30min",
         "30min": "30min",
         "30minute": "30min",
-        "1h": "30min",
-        "60m": "30min",
-        "60min": "30min",
-        "1d": "1d",
-        "1day": "1d",
-        "day": "1d",
-        "daily": "1d",
+        "1h": "1h",
+        "60m": "1h",
+        "60min": "1h",
+        "1d": "1D",
+        "1day": "1D",
+        "day": "1D",
+        "daily": "1D",
     }
     normalized = aliases.get(text)
+    if normalized in {"5min", "30min"}:
+        normalized = {"5min": "10min", "30min": "1h"}[normalized]
     if normalized is None or normalized not in INPUT_FRAME_HORIZONS:
         raise ValueError(f"unsupported Layer 1 input frame: {value!r}")
     return normalized
@@ -111,11 +116,20 @@ def prediction_horizons_for_input_frame(input_frame: str) -> tuple[str, ...]:
 
 
 def _row_input_frame(row: Mapping[str, Any]) -> str:
-    return normalize_input_frame(row.get("input_frame") or row.get("feature_bar_grain") or "30min")
+    return normalize_input_frame(row.get("input_frame") or row.get("feature_bar_grain") or "1h")
 
 
 def _row_prediction_horizon(row: Mapping[str, Any], input_frame: str) -> str:
-    value = str(row.get("prediction_horizon") or "").strip().lower()
+    raw = str(row.get("prediction_horizon") or "").strip()
+    aliases = {
+        "1d": "1D",
+        "1day": "1D",
+        "day": "1D",
+        "1w": "1W",
+        "1week": "1W",
+        "week": "1W",
+    }
+    value = aliases.get(raw.lower(), raw)
     if not value:
         return prediction_horizons_for_input_frame(input_frame)[-1]
     if value not in prediction_horizons_for_input_frame(input_frame):

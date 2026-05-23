@@ -8,7 +8,7 @@ MODEL_LAYER: Final[str] = "layer_04_event_failure_risk"
 MODEL_SURFACE: Final[str] = "model_04_event_failure_risk"
 MODEL_VERSION: Final[str] = "event_failure_risk_vector_contract"
 VECTOR_OUTPUT: Final[str] = "event_failure_risk_vector"
-HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
+HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "4_event_strategy_failure_risk_score_<horizon>",
     "4_event_entry_block_pressure_score_<horizon>",

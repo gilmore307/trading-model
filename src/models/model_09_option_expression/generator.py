@@ -228,8 +228,8 @@ def _score_candidate(
     max_quote_age = _first_float(policy, "max_quote_age_seconds") or 300.0
     min_abs_delta = _first_float(policy, "min_abs_delta", "min_option_abs_delta") or 0.35
     max_abs_delta = _first_float(policy, "max_abs_delta", "max_option_abs_delta") or 0.65
-    min_dte, max_dte = _preferred_dte_range(float(handoff.get("expected_holding_time_minutes") or 390.0))
-    target_dte = _target_dte(float(handoff.get("expected_holding_time_minutes") or 390.0))
+    min_dte, max_dte = _preferred_dte_range(float(handoff.get("expected_holding_time_minutes") or 24 * 60))
+    target_dte = _target_dte(float(handoff.get("expected_holding_time_minutes") or 24 * 60))
     dte_fit = _triangular_fit(dte, target_dte, max((max_dte - min_dte) / 2.0, 3.0))
     delta_fit = _triangular_fit(abs(delta), _target_delta(handoff, event), 0.25)
     liquidity_fit = _clip01(0.40 * (1.0 - min(spread_pct / max(max_spread_pct, 0.01), 1.0)) + 0.30 * _clip01(volume / 250.0) + 0.30 * _clip01(open_interest / 1000.0))
@@ -438,7 +438,7 @@ def _selected_contract_payload(selected: Mapping[str, Any] | None) -> dict[str, 
 
 
 def _contract_constraints(option_right: str, handoff: Mapping[str, Any], policy: Mapping[str, Any]) -> dict[str, Any]:
-    holding = float(handoff.get("expected_holding_time_minutes") or 390.0)
+    holding = float(handoff.get("expected_holding_time_minutes") or 24 * 60)
     target_dte = _target_dte(holding)
     target_delta = _target_delta(handoff, {})
     min_dte, max_dte = _preferred_dte_range(holding)
@@ -462,7 +462,7 @@ def _contract_constraints(option_right: str, handoff: Mapping[str, Any], policy:
         "allow_single_leg_only": True,
         "allow_short_options": False,
         "iv_rank_ceiling": _iv_rank_ceiling({}, {}, policy) if option_right != "none" else None,
-        "theta_decay_tolerance": "intraday_or_defined_risk_only" if holding <= 390 else "review_required",
+        "theta_decay_tolerance": "intraday_or_defined_risk_only" if holding <= 24 * 60 else "review_required",
     }
 
 
@@ -533,28 +533,28 @@ def _candidate_filter_reason_summary(scored_candidates: Sequence[Mapping[str, An
 
 
 def _preferred_dte_range(holding_minutes: float) -> tuple[int, int]:
-    if holding_minutes <= 15:
+    if holding_minutes <= 10:
         return (3, 7)
     if holding_minutes <= 60:
         return (7, 14)
-    if holding_minutes <= 390:
+    if holding_minutes <= 24 * 60:
         return (7, 21)
     return (21, 45)
 
 
 def _target_dte(holding_minutes: float) -> int:
-    if holding_minutes <= 15:
+    if holding_minutes <= 10:
         return 3
     if holding_minutes <= 60:
         return 7
-    if holding_minutes <= 390:
+    if holding_minutes <= 24 * 60:
         return 14
     return 30
 
 
 def _target_delta(handoff: Mapping[str, Any], event: Mapping[str, Any]) -> float:
     path_quality = _score(handoff, "path_quality_score", default=0.5)
-    event_gap = _score(event, "10_event_gap_risk_score_390min", default=0.0)
+    event_gap = _score(event, "10_event_gap_risk_score_1W", default=0.0)
     return _clip01(0.40 + 0.15 * path_quality + 0.10 * event_gap)
 
 
@@ -576,7 +576,7 @@ def _iv_rank_ceiling(market: Mapping[str, Any], event: Mapping[str, Any], policy
     if explicit is not None:
         return _clip01(explicit)
     market_stress = _score(market, "1_market_risk_stress_score", default=0.25)
-    event_gap = _score(event, "10_event_gap_risk_score_390min", default=0.0)
+    event_gap = _score(event, "10_event_gap_risk_score_1W", default=0.0)
     return _clip01(0.65 + 0.15 * max(market_stress, event_gap))
 
 

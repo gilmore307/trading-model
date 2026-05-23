@@ -312,13 +312,13 @@ Composes the final `position_projection_vector`: core per-horizon scores, handof
 Layer 7 V1 uses the same synchronized horizons as Layers 5 and 6:
 
 ```text
-5min
-15min
-60min
-390min
+10min
+1h
+1D
+1W
 ```
 
-`390min` means one regular US equity session-equivalent horizon measured in tradable minutes. Label builders must document same-session vs next-session-close resolution and use purge/embargo controls for overlapping labels.
+`1D` means a rolling 24-hour natural-time horizon and `1W` means a rolling 7-calendar-day horizon. Equity and ETF labels observe tradable path inside those natural-time windows; crypto labels observe continuous path. Overlapping labels require purge/embargo controls.
 
 ## Core output contract
 
@@ -359,8 +359,8 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 Example:
 
 ```text
-7_target_position_bias_score_60min = +0.85
-7_target_exposure_score_60min = +0.25
+7_target_position_bias_score_1h = +0.85
+7_target_exposure_score_1h = +0.25
 ```
 
 This means the projection is clearly long-biased but only supports a small long exposure after constraints. It is not a buy instruction.

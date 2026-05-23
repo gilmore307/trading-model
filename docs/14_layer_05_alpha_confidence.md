@@ -8,7 +8,7 @@ Status: accepted Layer 5 design route; deterministic V1 scaffold currently imple
 
 Layer 5 answers:
 
-- Is there tradable alpha over `5min`, `15min`, `60min`, or `390min`?
+- Is there tradable alpha over `10min`, `1h`, `1D`, or `1W`?
 - Is the alpha direction biased long, biased short, mixed, or neutral?
 - How strong is the alpha, independent of direction?
 - How reliable and calibrated is this judgment?
@@ -243,13 +243,13 @@ Composes base alpha, event adjustment, baseline adjustment, path risk, quality g
 Layer 5 V1 uses synchronized alpha-confidence horizons:
 
 ```text
-5min
-15min
-60min
-390min
+10min
+1h
+1D
+1W
 ```
 
-`390min` means one regular US equity session-equivalent horizon measured in tradable minutes. Label builders must document whether a row resolves inside the same session or carries to the next regular-session close; overlapping labels require purge/embargo controls.
+`1D` means a rolling 24-hour natural-time horizon and `1W` means a rolling 7-calendar-day horizon. Equity and ETF labels observe tradable path inside those natural-time windows; crypto labels observe continuous path. Overlapping labels require purge/embargo controls.
 
 ## Final adjusted output contract
 
@@ -349,7 +349,7 @@ Layer 5 should be trained in stages:
 
 Do not train Layer 5 from in-sample Layer 1/2/3/4 model outputs. Upstream state vectors consumed by Layer 5 training must be generated with rolling/cross-fitted point-in-time discipline.
 
-Overlapping horizons, especially `60min` and `390min`, require purge and embargo.
+Overlapping horizons, especially `1D` and `1W`, require purge and embargo.
 
 ## Baselines and validation
 

@@ -4,16 +4,16 @@ from __future__ import annotations
 from typing import Any, Iterable, Mapping
 
 LABEL_FIELDS = {
-    "forward_return_5min",
-    "forward_return_15min",
-    "forward_return_60min",
-    "forward_return_390min",
-    "market_adjusted_forward_return_390min",
-    "sector_adjusted_forward_return_390min",
-    "idiosyncratic_residual_return_390min",
-    "realized_max_favorable_excursion_390min",
-    "realized_max_adverse_excursion_390min",
-    "alpha_tradable_label_390min",
+    "forward_return_10min",
+    "forward_return_1h",
+    "forward_return_1D",
+    "forward_return_1W",
+    "market_adjusted_forward_return_1W",
+    "sector_adjusted_forward_return_1W",
+    "idiosyncratic_residual_return_1W",
+    "realized_max_favorable_excursion_1W",
+    "realized_max_adverse_excursion_1W",
+    "alpha_tradable_label_1W",
 }
 
 

@@ -224,13 +224,13 @@ underlying_event_policy_block_state
 Layer 8 V1 uses the synchronized horizons already used by Layers 5 and 7:
 
 ```text
-5min
-15min
-60min
-390min
+10min
+1h
+1D
+1W
 ```
 
-`390min` means one regular US equity session-equivalent horizon measured in tradable minutes. Layer 8 must document same-session versus next-session-close label resolution and use purge/embargo controls for overlapping labels.
+`1D` means a rolling 24-hour natural-time horizon and `1W` means a rolling 7-calendar-day horizon. Equity and ETF labels observe tradable path inside those natural-time windows; crypto labels observe continuous path. Layer 8 must use purge/embargo controls for overlapping labels.
 
 ## Planned action types
 
@@ -543,7 +543,7 @@ Resolved fields are handoff/plan fields, not core scalar score-family rows. They
   "action": {
     "planned_underlying_action_type": "increase_long",
     "action_side": "long",
-    "dominant_horizon": "390min",
+    "dominant_horizon": "1W",
     "trade_eligibility_score": 0.74,
     "action_intensity_score": 0.42,
     "action_confidence_score": 0.68
@@ -569,8 +569,8 @@ Resolved fields are handoff/plan fields, not core scalar score-family rows. They
   },
   "price_path_expectation": {
     "underlying_path_direction": "bullish",
-    "expected_holding_time_minutes": 390,
-    "expected_holding_time_label": "1_session",
+    "expected_holding_time_minutes": 10080,
+    "expected_holding_time_label": "rolling_7_calendar_days",
     "expected_target_price": 191.50,
     "target_price_low": 188.80,
     "target_price_high": 193.20,
@@ -583,7 +583,7 @@ Resolved fields are handoff/plan fields, not core scalar score-family rows. They
     "stop_loss_price": 179.20,
     "thesis_invalidation_price": 178.60,
     "reward_risk_ratio": 2.05,
-    "time_stop_minutes": 390
+    "time_stop_minutes": 10080
   },
   "handoff_to_layer_9": {
     "underlying_path_direction": "bullish",
@@ -592,7 +592,7 @@ Resolved fields are handoff/plan fields, not core scalar score-family rows. They
     "target_price_low": 188.80,
     "target_price_high": 193.20,
     "stop_loss_price": 179.20,
-    "expected_holding_time_minutes": 390,
+    "expected_holding_time_minutes": 10080,
     "path_quality_score": 0.66,
     "reversal_risk_score": 0.24,
     "drawdown_risk_score": 0.31
@@ -603,7 +603,7 @@ Resolved fields are handoff/plan fields, not core scalar score-family rows. They
     "risk_budget_fit_passed",
     "cost_to_adjust_acceptable",
     "liquidity_passed",
-    "390min_projection_dominant"
+    "1W_projection_dominant"
   ]
 }
 ```

@@ -40,13 +40,13 @@ class TargetStateVectorContractTests(unittest.TestCase):
         self.assertIn("3_tradability_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
 
     def test_uses_sparse_state_windows_not_strategy_variants(self) -> None:
-        self.assertEqual(contract.SYNCHRONIZED_STATE_WINDOWS, ("5min", "15min", "60min", "390min"))
+        self.assertEqual(contract.SYNCHRONIZED_STATE_WINDOWS, ("10min", "1h", "1D", "1W"))
         self.assertEqual(contract.TRAILING_STATE_WINDOWS, contract.SYNCHRONIZED_STATE_WINDOWS)
         self.assertEqual(
             contract.STATE_WINDOW_SYNC_POLICY,
             "market_sector_target_blocks_must_share_identical_observation_windows",
         )
-        self.assertEqual(contract.LABEL_HORIZONS, ("15min", "60min", "390min"))
+        self.assertEqual(contract.LABEL_HORIZONS, ("10min", "1h", "1D", "1W"))
         self.assertEqual(
             contract.TRAINING_LABEL_FAMILIES,
             (

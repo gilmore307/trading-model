@@ -263,10 +263,10 @@ Multi-leg spreads remain deferred beyond V1.
 V1 selection/scoring uses conservative ranges rather than exact DTE points:
 
 ```text
-5min / 15min thesis -> preferred_dte_range = 3-7, no 0DTE
-60min / same-session thesis -> preferred_dte_range = 7-14
-390min / one-session thesis -> preferred_dte_range = 7-21
-multi-day thesis -> preferred_dte_range = 21-45
+10min thesis -> preferred_dte_range = 3-7, no 0DTE
+1h thesis -> preferred_dte_range = 7-14
+1D thesis -> preferred_dte_range = 7-21
+1W thesis -> preferred_dte_range = 21-45
 ```
 
 V1 selection/scoring penalizes deep OTM lottery contracts. Preferred absolute delta starts around `0.35-0.65`; future learned contract-fit models may adjust this by path quality, expected move, IV, liquidity, and theta pressure.
@@ -278,16 +278,16 @@ Layer 8 target/range fields constrain selected-contract scoring when the target 
 Offline label families may include:
 
 ```text
-realized_option_return_5min
-realized_option_return_15min
-realized_option_return_60min
-realized_option_return_390min
-realized_option_max_favorable_excursion_390min
-realized_option_max_adverse_excursion_390min
-target_premium_hit_before_stop_label_390min
-premium_stop_hit_before_target_label_390min
-option_spread_adjusted_return_390min
-selected_contract_regret_vs_best_candidate_390min
+realized_option_return_10min
+realized_option_return_1h
+realized_option_return_1D
+realized_option_return_1W
+realized_option_max_favorable_excursion_1W
+realized_option_max_adverse_excursion_1W
+target_premium_hit_before_stop_label_1W
+premium_stop_hit_before_target_label_1W
+option_spread_adjusted_return_1W
+selected_contract_regret_vs_best_candidate_1W
 realized_option_mid_return_<horizon>
 realized_option_bid_exit_return_<horizon>
 realized_option_spread_cost_<horizon>

@@ -8,8 +8,8 @@ MODEL_LAYER: Final[str] = "layer_10_event_risk_governor"
 MODEL_SURFACE: Final[str] = "model_10_event_risk_governor"
 MODEL_VERSION: Final[str] = "event_context_vector_contract"
 VECTOR_OUTPUT: Final[str] = "event_context_vector"
-HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
-HORIZON_MINUTES: Final[dict[str, int]] = {"5min": 5, "15min": 15, "60min": 60, "390min": 390}
+HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
+HORIZON_MINUTES: Final[dict[str, int]] = {"10min": 10, "1h": 60, "1D": 24 * 60, "1W": 7 * 24 * 60}
 PRICE_ACTION_EVENT_TYPES: Final[tuple[str, ...]] = (
     "false_breakout",
     "false_breakdown",

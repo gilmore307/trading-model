@@ -160,7 +160,7 @@ def _quality_payload(*, market: Mapping[str, Any], sector: Mapping[str, Any], ta
         _safe_score(market.get("1_state_quality_score"), 0.75),
         _safe_score(sector.get("2_state_quality_score"), 0.75),
         _safe_score(target.get("3_state_quality_score"), 0.75),
-        _safe_score(event.get("4_event_evidence_quality_score_390min"), 0.75),
+        _safe_score(event.get("4_event_evidence_quality_score_1W"), 0.75),
     )
     sample_support = min(1.0, _safe_score(target.get("3_evidence_count"), 0.0) / 50.0) if target.get("3_evidence_count") is not None else 0.55
     return {

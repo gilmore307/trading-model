@@ -46,7 +46,7 @@ class PromotionReadinessTests(unittest.TestCase):
 
     def test_complete_evidence_with_passing_gates_may_be_reviewed_for_approval(self) -> None:
         evidence = {field: f"{field}_001" for field in REQUIRED_PROMOTION_EVIDENCE_FIELDS}
-        evidence["eval_label_refs"] = ["label_5min", "label_390min"]
+        evidence["eval_label_refs"] = ["label_10min", "label_1W"]
         evidence["promotion_metric_refs"] = ["metric_baseline_lift", "metric_stability"]
         evidence["gate_results"] = {
             "baseline_improvement": True,

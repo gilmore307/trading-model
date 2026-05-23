@@ -8,7 +8,7 @@ MODEL_LAYER: Final[str] = "layer_07_position_projection"  # current conceptual l
 MODEL_SURFACE: Final[str] = "model_07_position_projection"
 MODEL_VERSION: Final[str] = "position_projection_vector_contract"
 VECTOR_OUTPUT: Final[str] = "position_projection_vector"
-HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
+HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "7_target_position_bias_score_<horizon>",
     "7_target_exposure_score_<horizon>",

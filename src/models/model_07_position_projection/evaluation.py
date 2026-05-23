@@ -4,17 +4,17 @@ from __future__ import annotations
 from typing import Any, Iterable, Mapping
 
 LABEL_FIELDS = {
-    "realized_position_utility_5min",
-    "realized_position_utility_15min",
-    "realized_position_utility_60min",
-    "realized_position_utility_390min",
-    "realized_target_exposure_utility_390min",
-    "realized_position_gap_utility_390min",
-    "realized_cost_to_adjust_position_390min",
-    "realized_risk_budget_breach_390min",
-    "current_position_hold_utility_390min",
-    "flat_position_utility_390min",
-    "candidate_exposure_utility_curve_390min",
+    "realized_position_utility_10min",
+    "realized_position_utility_1h",
+    "realized_position_utility_1D",
+    "realized_position_utility_1W",
+    "realized_target_exposure_utility_1W",
+    "realized_position_gap_utility_1W",
+    "realized_cost_to_adjust_position_1W",
+    "realized_risk_budget_breach_1W",
+    "current_position_hold_utility_1W",
+    "flat_position_utility_1W",
+    "candidate_exposure_utility_curve_1W",
 }
 
 

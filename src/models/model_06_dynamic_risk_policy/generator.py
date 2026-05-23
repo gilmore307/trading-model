@@ -89,8 +89,8 @@ def _horizon_policy(horizon: str, market: Mapping[str, Any], event: Mapping[str,
     liquidity = _score(market, f"1_market_liquidity_support_score_{suffix}", "1_market_liquidity_support_score", default=0.70)
     transition = _score(market, f"1_transition_risk_score_{suffix}", "1_transition_risk_score", default=0.25)
     systemic = _score(event, f"systemic_event_risk_score_{suffix}", "systemic_event_risk_score", default=0.20)
-    alpha_quality = _score(alpha, f"5_alpha_confidence_score_{suffix}", "5_alpha_confidence_score_390min", default=0.50)
-    path_quality = _score(alpha, f"5_path_quality_score_{suffix}", "5_path_quality_score_390min", default=0.50)
+    alpha_quality = _score(alpha, f"5_alpha_confidence_score_{suffix}", "5_alpha_confidence_score_1W", default=0.50)
+    path_quality = _score(alpha, f"5_path_quality_score_{suffix}", "5_path_quality_score_1W", default=0.50)
     drawdown = _score(account, "drawdown_pressure_score", default=0.20)
     cash = _score(account, "cash_capacity_score", "premium_capacity_score", default=0.70)
     concentration = _score(portfolio, "correlation_concentration_score", "concentration_score", default=0.25)
@@ -168,7 +168,7 @@ def _clip01(value: float) -> float:
 
 
 def _suffix(horizon: str) -> str:
-    return horizon.replace("min", "m")
+    return horizon
 
 
 def _row_time(row: Mapping[str, Any]) -> datetime:

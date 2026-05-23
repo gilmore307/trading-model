@@ -21,15 +21,15 @@ def _feature_row(index: int) -> dict:
         "market_context_state_ref": "mkt_001",
         "sector_context_state_ref": "sec_001",
         "target_context_state_version": "target_context_state",
-        "market_state_features": {"state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows", "market_return_15min": 0.001},
-        "sector_state_features": {"state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows", "sector_return_15min": 0.002},
+        "market_state_features": {"state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows", "market_return_1h": 0.001},
+        "sector_state_features": {"state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows", "sector_return_1h": 0.002},
         "target_state_features": {
             "state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows",
-            "target_direction_return_shape": {"return_5min": ret, "return_15min": ret * 2, "return_60min": ret * 3, "return_390min": ret * 4},
-            "target_trend_quality_state": {"trend_quality_15min": 0.8, "path_stability_15min": 0.9},
-            "target_trend_age_state": {"state_persistence_score_15min": 0.7},
-            "target_exhaustion_decay_state": {"late_trend_risk_score_15min": 0.1},
-            "target_volatility_range_state": {"realized_vol_15min": 0.02},
+            "target_direction_return_shape": {"return_10min": ret, "return_1h": ret * 2, "return_1D": ret * 3, "return_1W": ret * 4},
+            "target_trend_quality_state": {"trend_quality_1h": 0.8, "path_stability_1h": 0.9},
+            "target_trend_age_state": {"state_persistence_score_1h": 0.7},
+            "target_exhaustion_decay_state": {"late_trend_risk_score_1h": 0.1},
+            "target_volatility_range_state": {"realized_vol_1h": 0.02},
             "target_liquidity_tradability_state": {"spread_bps": 5, "dollar_volume": 1_000_000},
         },
         "cross_state_features": {"state_window_sync_policy": "market_sector_target_blocks_must_share_identical_observation_windows", "target_vs_market_residual_direction": ret, "target_vs_sector_residual_direction": ret / 2, "sector_confirmation_state": "sector_confirmed"},
@@ -43,11 +43,11 @@ class TargetStateVectorModelTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         row = rows[0]
         self.assertEqual(row["model_id"], "target_state_vector_model")
-        self.assertIn("3_target_direction_score_15min", row)
-        self.assertIn("3_target_direction_strength_score_15min", row)
-        self.assertIn("3_target_state_persistence_score_15min", row)
-        self.assertIn("3_target_exhaustion_risk_score_15min", row)
-        self.assertIn("3_tradability_score_15min", row)
+        self.assertIn("3_target_direction_score_1h", row)
+        self.assertIn("3_target_direction_strength_score_1h", row)
+        self.assertIn("3_target_state_persistence_score_1h", row)
+        self.assertIn("3_target_exhaustion_risk_score_1h", row)
+        self.assertIn("3_tradability_score_1h", row)
         self.assertIn("target_context_state", row)
         self.assertNotIn("alpha_confidence", row)
         self.assertNotIn("position_size", row)
@@ -116,7 +116,7 @@ class TargetStateVectorModelTests(unittest.TestCase):
         rows = builder.build_candidate_rows(
             sector_context_rows=[{"available_time": "2026-01-02T09:30:00-05:00", "sector_or_industry_symbol": "XLK", "2_sector_handoff_state": "selected", "2_sector_handoff_rank": 1}],
             exposure_rows=[{"available_time": "2026-01-02T09:30:00-05:00", "source_sector_or_industry_symbol": "XLK", "routing_symbol_ref": "AAPL", "holding_weight": 0.05}],
-            target_evidence_rows=[{"available_time": "2026-01-02T09:30:00-05:00", "routing_symbol_ref": "AAPL", "target_return_15min": 0.02, "target_dollar_volume": 1_000_000, "target_spread_bps": 4}],
+            target_evidence_rows=[{"available_time": "2026-01-02T09:30:00-05:00", "routing_symbol_ref": "AAPL", "target_return_1h": 0.02, "target_dollar_volume": 1_000_000, "target_spread_bps": 4}],
             anonymity_min_bucket_k=1,
         )
         self.assertEqual(len(rows), 1)

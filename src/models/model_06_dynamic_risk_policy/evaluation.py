@@ -4,11 +4,11 @@ from __future__ import annotations
 from typing import Any, Iterable, Mapping
 
 LABEL_FIELDS = {
-    "realized_premium_efficiency_390min",
-    "realized_risk_budget_efficiency_390min",
-    "realized_drawdown_pressure_390min",
-    "realized_policy_breach_390min",
-    "realized_exposure_capacity_used_390min",
+    "realized_premium_efficiency_1W",
+    "realized_risk_budget_efficiency_1W",
+    "realized_drawdown_pressure_1W",
+    "realized_policy_breach_1W",
+    "realized_exposure_capacity_used_1W",
 }
 
 

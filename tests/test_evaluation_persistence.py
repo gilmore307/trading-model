@@ -14,13 +14,13 @@ class EvaluationPersistenceTests(unittest.TestCase):
                 "snapshot_id": "snap1",
                 "label_name": "future_target_tradeable_path",
                 "target_symbol": "tcand",
-                "label_horizon": "15min",
+                "label_horizon": "1h",
                 "label_available_time": "2018-01-02T00:15:00-05:00",
                 "label_value": 1.0,
                 "label_payload_json": {"feature_available_time": "2018-01-02T00:00:00-05:00"},
             },
         )
-        self.assertEqual(row["horizon"], "15min")
+        self.assertEqual(row["horizon"], "1h")
         self.assertEqual(row["available_time"], "2018-01-02T00:00:00-05:00")
         self.assertEqual(row["label_time"], "2018-01-02T00:15:00-05:00")
 

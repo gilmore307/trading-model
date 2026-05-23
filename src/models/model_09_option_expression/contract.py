@@ -9,7 +9,7 @@ MODEL_SURFACE: Final[str] = "model_09_option_expression"
 MODEL_VERSION: Final[str] = "option_expression_plan_contract"
 PRIMARY_OUTPUT: Final[str] = "option_expression_plan"
 VECTOR_OUTPUT: Final[str] = "expression_vector"
-HORIZONS: Final[tuple[str, ...]] = ("5min", "15min", "60min", "390min")
+HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "9_option_expression_eligibility_score_<horizon>",

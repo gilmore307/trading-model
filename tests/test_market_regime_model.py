@@ -39,8 +39,8 @@ class MarketRegimeModelTests(unittest.TestCase):
         self.assertEqual(len(rows), 65)
         mature = rows[-1]
         self.assertEqual(mature["available_time"], _row(65)["snapshot_time"])
-        self.assertEqual(mature["input_frame"], "30min")
-        self.assertEqual(mature["prediction_horizon"], "1d")
+        self.assertEqual(mature["input_frame"], "1h")
+        self.assertEqual(mature["prediction_horizon"], "1D")
         self.assertEqual(mature["market_universe_ref"], "layer_01_02_market_context_etf_universe")
         self.assertGreater(mature["1_market_direction_score"], 0)
         self.assertGreater(mature["1_market_direction_strength_score"], 0)
@@ -70,9 +70,9 @@ class MarketRegimeModelTests(unittest.TestCase):
         input_rows: list[dict[str, object]] = []
         for index in range(1, 66):
             base = _row(index)
-            for horizon in ("1h", "2h", "1d"):
+            for horizon in ("1D",):
                 row = dict(base)
-                row["input_frame"] = "30min"
+                row["input_frame"] = "1h"
                 row["prediction_horizon"] = horizon
                 row["market_universe_ref"] = "test_universe"
                 input_rows.append(row)
@@ -80,7 +80,7 @@ class MarketRegimeModelTests(unittest.TestCase):
         rows = generator.generate_rows(input_rows, lookback=120)
 
         final_rows = [row for row in rows if row["available_time"] == _row(65)["snapshot_time"]]
-        self.assertEqual({row["prediction_horizon"] for row in final_rows}, {"1h", "2h", "1d"})
+        self.assertEqual({row["prediction_horizon"] for row in final_rows}, {"1D"})
         self.assertEqual({row["market_universe_ref"] for row in final_rows}, {"test_universe"})
         self.assertEqual(
             {row["1_market_direction_score"] for row in final_rows},

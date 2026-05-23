@@ -13,7 +13,7 @@ class ModelOutputSupportTests(unittest.TestCase):
                 "available_time": "2016-01-04T09:35:00-05:00",
                 "target_candidate_id": "anon_aapl",
                 "model_output_ref": "out_1",
-                "5_alpha_score_390min": 0.7,
+                "5_alpha_score_1W": 0.7,
                 "alpha_confidence_vector": {"score": 0.7},
                 "alpha_confidence_diagnostics": {"status": "ok"},
             }
@@ -49,7 +49,7 @@ class ModelOutputSupportTests(unittest.TestCase):
             "model_05_alpha_confidence_diagnostics",
         ])
         primary = calls[0]["rows"][0]
-        self.assertIn("5_alpha_score_390min", primary)
+        self.assertIn("5_alpha_score_1W", primary)
         self.assertNotIn("alpha_confidence_vector", primary)
         self.assertNotIn("alpha_confidence_diagnostics", primary)
         self.assertEqual(calls[0]["drop_columns"], {"alpha_confidence_vector", "alpha_confidence_diagnostics"})
@@ -84,7 +84,7 @@ class ModelOutputSupportTests(unittest.TestCase):
             {
                 "available_time": "2016-01-04T09:35:00-05:00",
                 "model_output_ref": "out_1",
-                "5_alpha_score_390min": 0.7,
+                "5_alpha_score_1W": 0.7,
                 "alpha_confidence_vector": {},
                 "alpha_confidence_diagnostics": None,
             }
