@@ -4,18 +4,55 @@ Status: accepted Layer 10 design route; deterministic V1 scaffold implemented in
 
 ## Purpose
 
-`EventRiskGovernor / EventIntelligenceOverlay` is Layer 10. It converts point-in-time visible event evidence into an `event_risk_intervention / event_context_vector` for the current market, sector, target, and base direct-underlying action context. Its primary risk question is whether visible event evidence changes the safety of the underlying/spot thesis with Layer 9 trading-guidance/option-expression context attached only when available.
+`EventRiskGovernor / EventIntelligenceOverlay` is Layer 10. Its primary role is **post-decision and post-fold event attribution**: when a model, strategy family, action thesis, path expectation, or risk assumption fails after the base stack has made a decision, Layer 10 searches point-in-time event observations and related evidence for plausible event causes, impact scope, failure mechanism, and repeatability.
+
+Layer 10 is paired with Layer 4:
+
+- Layer 4 consumes accepted point-in-time event observations and reviewed event/strategy-failure knowledge before alpha confidence is estimated.
+- Layer 10 investigates residual failures after outcomes are known, builds event-failure attribution evidence, and proposes future Layer 4 promotion packets only after controls, leakage checks, and review.
+
+Layer 10 may also emit narrow realtime event-risk governance only for reviewed event families already admitted to the event observation pool. That realtime path is not broad news discovery and must not reinterpret arbitrary raw events during a trading decision.
 
 Layer 10 answers:
 
-- Which events are visible at this decision time?
-- Are those events macro, sector, industry, theme, peer-group, symbol, or microstructure scoped?
-- How relevant is each event to the current anonymous target candidate?
-- Does the event support or conflict with the current `target_context_state`?
-- Does the event raise uncertainty, gap risk, reversal risk, liquidity-disruption risk, or contagion risk?
-- How reliable, fresh, complete, and conflict-free is the event evidence?
+- Did the base stack fail or leave a material residual after market, sector, target, Layer 4 event-failure risk, alpha, risk-policy, position, action, and expression context were considered?
+- Which point-in-time event observations were visible before or during the failure window?
+- Did any event plausibly explain, amplify, or contradict the observed failure after controls for market, sector, peer, target, liquidity, option, and time effects?
+- What was the realized impact scope across market/global, sector/industry/theme, peer/supply-chain/index basket, and target-local reaction windows?
+- Is the apparent relationship repeated, stable, non-leaky, and strategy-failure relevant enough to produce a review packet?
+- Should an event family remain observation-only, enter the realtime observation pool, or be proposed for Layer 4 promotion?
 
 Layer 10 does **not** answer alpha, trade, expression, sizing, or execution questions. It must not emit buy/sell/hold, final action, position size, option contract, strike, DTE, delta, order instruction, or account-specific decision fields.
+
+## Layer 4 / Layer 10 handoff
+
+Layer 10 is the discovery and governance route for new Layer 4 event-failure knowledge.
+
+```text
+base_stack_layers_01_09 decision/evaluation
++ realized path, utility, failure, residual, and calibration labels
++ point-in-time event observations visible before/during the failure window
++ later reaction windows used only as labels
+  -> Layer 10 event-failure attribution
+  -> event_failure_attribution_packet
+  -> event-strategy-promotion-review / manager review
+  -> accepted event_strategy_failure_gate and event-observation scope rules
+  -> future Layer 4 inputs only
+```
+
+Layer 10 may compute `realized_impact_scope_label` and `event_failure_attribution` labels during evaluation. These labels are not Layer 4 inference inputs for the same fold. They can only support review, calibration, future-fold event-observation rules, or future Layer 4 promotion after the accepted review gate.
+
+Required attribution evidence includes:
+
+- failed or anomalous model/strategy/action context and its expected vs realized outcome;
+- base-stack state references from Layers 1-9;
+- PIT event observations visible by the relevant decision/failure clocks;
+- candidate event family and mechanism;
+- expected vs realized impact scope comparison;
+- matched controls and non-event controls;
+- leakage checks for future event results, article revisions, filings, and market reactions;
+- split stability across dates, symbols, sectors/themes, regimes, and target states;
+- review decision and allowed Layer 4 effect if accepted.
 
 ## Residual-anomaly discovery and correction workflow
 

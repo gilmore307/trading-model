@@ -948,3 +948,15 @@ Layer 4 consumes standardized point-in-time event observation rows, not raw even
 `realized_impact_scope_label` is evaluation-only. It may use later market/sector/peer/target reaction windows for calibration, review, and future-fold promotion, but it must not be fed into the same fold as an inference fact.
 
 The scope resolver must preserve auditable support for candidate scopes: market/global, sector/industry/theme, peer/supply-chain/index basket, and target-local. If event evidence is strong but the state stack is weak or contradictory, the scope remains narrow or review-required rather than being promoted to global/common impact.
+
+## D052 - Layer 10 owns post-failure event attribution and Layer 4 promotion evidence
+
+Accepted: 2026-05-23
+
+Layer 10 `EventRiskGovernor / EventIntelligenceOverlay` is paired with Layer 4. Its primary role is post-decision and post-fold event attribution: when the model stack, a strategy family, an action thesis, path expectation, or risk assumption fails after Layers 1-9 have produced a decision/evaluation path, Layer 10 searches point-in-time event observations and related evidence for plausible event causes, realized impact scope, failure mechanism, and repeatability.
+
+Layer 10 may compute `realized_impact_scope_label` and event-failure attribution labels during evaluation. These labels must not become same-fold Layer 4 inference facts. They can support calibration, review, future-fold event-observation rules, or promotion packets only after controls, leakage checks, split stability, and `event-strategy-promotion-review` acceptance.
+
+The Layer 10 output that matters for Layer 4 is an event-failure attribution or promotion packet, not direct alpha. An accepted packet may become an `event_strategy_failure_gate` and event-observation scope rule for future Layer 4 inputs. Rejected or underpowered relationships remain observation-only or research queue.
+
+Realtime Layer 10 governance is allowed only for reviewed event families already admitted to the event observation pool. It must not become broad raw-news discovery, standalone event alpha, trade direction, position sizing, option selection, broker routing, account mutation, or artifact deletion.
