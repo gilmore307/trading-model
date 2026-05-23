@@ -78,9 +78,17 @@ Calendar, market-structure dates, and persistent event regimes start in the glob
 - halt or other scheduled/announced non-continuous-market windows when available.
 - persistent special-period regimes such as pandemic risk, tariff-war periods, geopolitical war/escalation periods, banking-system stress, sanctions regimes, or policy crisis windows.
 
-These rows are observation-only until Layer 10 sees failures or residual anomalies around them, tests controls, and promotes a specific event family/mechanism into the watched event pool. The watched event pool contains only Layer 10/review-accepted event families with supervision packets. Layer 4 trains only from watched-pool events and their accepted `event_strategy_failure_gate` rules.
+These rows are observation-only until Layer 10 sees failures or residual anomalies around them and links the failure to a candidate event family/mechanism after basic controls. At that point the family can enter the `focused_event_pool` / `watched_event_pool`: a candidate pool for systematic data collection, offline Layer 4 candidate training, and Layer 5 validation. This is not production acceptance.
 
-Persistent regimes are interval observations rather than single headlines. They may remain active or shadow-active even when no fresh article appears. Their point-in-time rows should preserve regime start, current status, last material update, decay/staleness rule, scope, and evidence refs. Layer 4 may use them only after Layer 10/review accepts a failure relationship for future folds.
+The production route has three separate pools:
+
+- `global_event_observation_pool`: point-in-time event/date/regime facts with no causal claim.
+- `focused_event_pool` / `watched_event_pool`: Layer 10-selected candidate families that deserve systematic data extraction, candidate Layer 4 training, and Layer 5 validation.
+- `accepted_layer4_event_family`: event families/mechanisms that passed Layer 4 candidate training, Layer 5 validation, and Layer 10/review disposition for future production conditioning.
+
+Layer 4 may train candidate models from focused-pool observations, but production Layer 4 conditioning may use only `accepted_layer4_event_family` rules or accepted `event_strategy_failure_gate` packets.
+
+Persistent regimes are interval observations rather than single headlines. They may remain active or shadow-active even when no fresh article appears. Their point-in-time rows should preserve regime start, current status, last material update, decay/staleness rule, scope, and evidence refs. Layer 4 may use them for candidate training after Layer 10 places the family in the focused pool, but production use still requires acceptance after Layer 5 validation and Layer 10/review disposition.
 
 `trading-data/docs/23_event_source_registry.md` owns how historical and realtime/future event observations are acquired. Layer 4 relies on the resulting point-in-time event observations and must not choose raw source priority itself.
 

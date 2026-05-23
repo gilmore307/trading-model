@@ -1009,9 +1009,9 @@ Accepted: 2026-05-23
 
 Calendar and market-structure dates must first be built as point-in-time observations in the global event pool. The system should know key dates before evaluation: ordinary overnight/weekend windows, market holidays, long weekends, early closes, pre-holiday sessions, Thanksgiving/Christmas/major long closures, triple-witching, major option-expiry windows, index reconstitution, Nasdaq-100 rebalance windows, and other scheduled/announced non-continuous-market windows.
 
-These observations are not active Layer 4 training samples by default. They remain observation-only until a model/strategy/path/tradability failure occurs and Layer 10 tests whether the date has incremental explanatory value after market, sector, target, portfolio, account, and co-event controls.
+These observations are not active production Layer 4 training samples by default. They remain observation-only until a model/strategy/path/tradability failure occurs and Layer 10 tests whether the date has incremental explanatory value after market, sector, target, portfolio, account, and co-event controls.
 
-If Layer 10 and review accept the relationship, the event family moves into the watched event pool as a supervision packet or `event_strategy_failure_gate` for future Layer 4 training. If not accepted, the date remains in the global event pool for future attribution and audit only.
+If Layer 10 finds a plausible relationship, the event family can move into the focused/watched event pool as a candidate family for systematic data extraction, Layer 4 candidate training, and Layer 5 validation. If Layer 5 validation and Layer 10/review later accept the relationship, it becomes an `accepted_layer4_event_family` or accepted `event_strategy_failure_gate` for future production conditioning. If not accepted, the date remains in the global event pool for future attribution and audit only.
 
 ## D057 - Persistent event regimes remain active without same-day news
 
@@ -1021,7 +1021,7 @@ Special-period event risk is represented as a persistent event regime, not as a 
 
 Persistent regimes start in the global event observation pool with point-in-time interval facts: regime start, optional end, active/shadow/decay status, last material update, affected scopes, decay/staleness rule, and evidence refs. They are observation-only until Layer 10 attributes failures or residual anomalies during the interval to the regime after market, sector, target, portfolio, account, and co-event controls.
 
-If Layer 10 and review accept the relationship, the regime family/mechanism enters the watched event pool and can supervise future Layer 4 training. If the regime no longer has incremental explanatory value, it must decay, become stale, or remain observation-only rather than becoming permanent background risk.
+If Layer 10 finds a plausible relationship, the regime family/mechanism enters the focused/watched event pool for candidate Layer 4 training and Layer 5 validation. If validation and review accept it, the family can become an `accepted_layer4_event_family`; if not, it must be narrowed, split, demoted, decay, become stale, or remain observation-only rather than becoming permanent background risk.
 
 ## D058 - Event source acquisition is split into historical replay and realtime maintenance
 
@@ -1031,6 +1031,20 @@ Event-source acquisition is data-owned and must distinguish historical replay fr
 
 Source priority and fallback posture are documented in `trading-data/docs/23_event_source_registry.md`. Macro event observations use Trading Economics as the accepted runtime authority because TE provides scheduled time plus expected/consensus, previous, and actual-style fields in a unified row shape. Official macro agency sources are manual incident/audit fallback, not a parallel routine source path.
 
-Future events must carry certainty flags such as `confirmed`, `scheduled`, `tentative`, `estimated`, or `inferred_rule`. Rule-generated dates are allowed for deterministic structures such as option expiry, but they remain `inferred_rule` until official confirmation. All event rows remain global-pool observations until Layer 10/review promotes a relationship into the watched event pool.
+Future events must carry certainty flags such as `confirmed`, `scheduled`, `tentative`, `estimated`, or `inferred_rule`. Rule-generated dates are allowed for deterministic structures such as option expiry, but they remain `inferred_rule` until official confirmation. All event rows remain global-pool observations until Layer 10 promotes a plausible relationship into the focused/watched event pool for candidate training and validation.
 
-Persistent regimes may be promoted from repeated high-frequency news topics. The repeatable route is `high_frequency_news_topic -> candidate_regime -> regime-promotion-review -> persistent_event_regime`. Agent review must decide whether the topic is a true regime, a short-lived cluster, duplicate coverage, or noise, and must define start/status/scope/decay rules before the regime enters the global event observation pool as an interval object.
+Persistent regimes may be promoted from repeated high-frequency news topics. The repeatable route is `high_frequency_news_topic -> candidate_regime -> regime-promotion-review -> persistent_event_regime -> focused_event_pool -> Layer 4 candidate training -> Layer 5 validation -> Layer 10 disposition`. Agent review must decide whether the topic is a true regime, a short-lived cluster, duplicate coverage, or noise, and must define start/status/scope/decay rules before the regime enters the global event observation pool as an interval object or focused-pool candidate.
+
+## D059 - Focused event pool is candidate training, not production acceptance
+
+Accepted: 2026-05-23
+
+Layer 10 model-failure attribution can promote an event family or topic into the focused/watched event pool when it plausibly explains a model, confidence, path, tradability, residual, or calibration failure after basic controls. Example: if a failure coincides with Nvidia earnings and ALAB earnings, Layer 10 may decide Nvidia is the dominant broad-market candidate while ALAB is only a possible co-event or target-local candidate.
+
+`watched_event_pool` is an alias for this focused candidate stage, not a synonym for production acceptance.
+
+Focused-pool promotion means `trading-data` should systematically acquire and standardize point-in-time observations for that family, and Layer 4 may train offline candidate event-failure models against those observations. It does not mean the family is production-approved.
+
+Layer 5 then validates whether the Layer 4 candidate conditioning improves alpha confidence, path quality, tradability, drawdown/reversal handling, or calibration. Layer 5 feedback returns to Layer 10 as accept, narrow, split, demote, reject, overblock, underblock, no-incremental-value, or confounded evidence.
+
+Only after Layer 4 candidate training, Layer 5 validation, and Layer 10/review disposition may the family become an `accepted_layer4_event_family` or accepted `event_strategy_failure_gate` for future production Layer 4 conditioning.

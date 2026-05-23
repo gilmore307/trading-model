@@ -64,12 +64,17 @@ base_stack_layers_01_09 decision/evaluation
 
 Layer 10 may compute `realized_impact_scope_label` and `event_failure_attribution` labels during evaluation. These labels are not Layer 4 inference inputs for the same fold. They can only support review, calibration, future-fold event-observation rules, or future Layer 4 promotion after the accepted review gate.
 
-Layer 10 maintains the distinction between the global event observation pool and the watched event pool. The global pool contains known point-in-time event observations, including calendar dates, market-structure dates, and persistent event-regime intervals, before any causal claim is made. The watched pool contains only event families/mechanisms that Layer 10 has connected to failures with controls and that review has accepted for future Layer 4 supervision.
+Layer 10 maintains three event-pool states:
 
-Calendar/structure dates therefore enter the stack in two phases:
+- `global_event_observation_pool`: known point-in-time event observations, including calendar dates, market-structure dates, and persistent event-regime intervals, before any causal claim is made.
+- `focused_event_pool` / `watched_event_pool`: candidate event families/mechanisms that Layer 10 has linked to model, path, confidence, tradability, or residual failures strongly enough to justify systematic data extraction, offline Layer 4 candidate training, and Layer 5 validation.
+- `accepted_layer4_event_family`: event families/mechanisms that have passed Layer 4 candidate training, Layer 5 validation, and Layer 10/review disposition and may supervise future production Layer 4 conditioning.
+
+Calendar/structure dates therefore enter the stack through the same candidate route:
 
 1. build the point-in-time calendar so the system knows the dates before decisions are evaluated;
-2. after a model/strategy/path/tradability failure, let Layer 10 test whether those dates explain the failure and, if accepted, emit a future Layer 4 supervision packet.
+2. after a model/strategy/path/tradability failure, let Layer 10 test whether those dates explain the failure and, if plausible, place the family in the focused event pool for systematic data extraction and candidate Layer 4 training;
+3. after Layer 5 validation and Layer 10/review disposition, accept, narrow, split, demote, or reject the event family for production Layer 4 use.
 
 Persistent event regimes follow the same pool route but require interval handling. A pandemic, tariff-war period, geopolitical war/escalation period, sanctions regime, banking-system stress period, or policy crisis can remain risk-relevant without a fresh article on the decision date. Layer 10 should preserve active/shadow/decay status and test whether failures during the interval are explained by the regime after controls, rather than requiring same-day news proximity.
 
@@ -77,7 +82,7 @@ Historical and realtime/future acquisition rules are data-owned. `trading-data/d
 
 Macro observations use Trading Economics as the accepted runtime event source. Layer 10 should not require parallel official macro calendars for ordinary evaluation because TE carries the useful scheduled/expected/previous/actual-style fields in one PIT route. Official macro sources are incident/audit fallback unless a later route decision replaces TE.
 
-Regime observations can be promoted from high-frequency news topics. Layer 10 or its scouting jobs may form `candidate_regime` packets from repeated topic/entity clusters, but a persistent regime exists only after agent review with `regime-promotion-review` accepts the topic as a regime and defines start/status/scope/decay rules.
+Regime observations can be promoted from high-frequency news topics. Layer 10 or its scouting jobs may form `candidate_regime` packets from repeated topic/entity clusters, but a persistent regime exists only after agent review with `regime-promotion-review` accepts the topic as a regime and defines start/status/scope/decay rules. Approval can place the regime family in the focused event pool for candidate training and validation; it does not make the family an accepted production Layer 4 conditioning rule.
 
 Required attribution evidence includes:
 
@@ -629,7 +634,7 @@ Examples: pandemic periods, tariff-war periods, US-Iran or other geopolitical wa
 Contract:
 
 - Preserve a regime interval with point-in-time `regime_start_time`, optional `regime_end_time`, `regime_status`, `last_material_update_time`, `decay_rule_ref`, affected scopes, and source/evidence refs.
-- The normal promotion route is high-frequency news topic -> candidate regime -> `regime-promotion-review` -> persistent event regime.
+- The normal promotion route is high-frequency news topic -> candidate regime -> `regime-promotion-review` -> persistent event regime -> focused event pool -> Layer 4 candidate training -> Layer 5 validation -> Layer 10 disposition.
 - The regime may remain active or shadow-active even when no fresh article appears on the decision date.
 - Same-day news proximity is not required for Layer 10 attribution, but the regime state must have been knowable before the decision through prior evidence or reviewed status updates.
 - Decay and staleness rules must be explicit. If the regime no longer explains failures after controls, Layer 10 should mark it stale or observation-only rather than carrying permanent risk pressure.
