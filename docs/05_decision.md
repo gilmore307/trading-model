@@ -960,3 +960,15 @@ Layer 10 may compute `realized_impact_scope_label` and event-failure attribution
 The Layer 10 output that matters for Layer 4 is an event-failure attribution or promotion packet, not direct alpha. An accepted packet may become an `event_strategy_failure_gate` and event-observation scope rule for future Layer 4 inputs. Rejected or underpowered relationships remain observation-only or research queue.
 
 Realtime Layer 10 governance is allowed only for reviewed event families already admitted to the event observation pool. It must not become broad raw-news discovery, standalone event alpha, trade direction, position sizing, option selection, broker routing, account mutation, or artifact deletion.
+
+## D053 - Layer 5 alpha confidence consumes Layer 4 event-failure conditioning only
+
+Accepted: 2026-05-23
+
+Layer 5 `AlphaConfidenceModel` converts reviewed Layer 1 market state, Layer 2 sector state, Layer 3 target state, accepted Layer 4 `event_failure_risk_vector`, and point-in-time calibration/quality evidence into the final `alpha_confidence_vector`.
+
+Layer 5 does not consume raw events, event observations directly, same-fold Layer 10 attribution labels, `realized_impact_scope_label`, event promotion packets, account state, position state, order state, or option-expression state. Event evidence reaches Layer 5 only after it has been standardized and accepted by Layer 4.
+
+Layer 5 may let Layer 4 event-failure conditioning reduce confidence, reliability, path quality, and alpha tradability, or raise reversal/drawdown risk and review pressure. It must not create standalone event alpha direction or strength, and it must not emit buy/sell/hold, target exposure, position size, option contract, execution instruction, or broker/account mutation.
+
+Layer 10 can improve future Layer 5 behavior only indirectly: post-failure attribution may become future Layer 4 `event_strategy_failure_gate` evidence after review; Layer 5 then consumes the resulting Layer 4 vector in later folds.

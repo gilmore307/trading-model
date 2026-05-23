@@ -2,11 +2,11 @@
 
 Physical package for Layer 5 `AlphaConfidenceModel` deterministic scaffold.
 
-Owns local conversion from reviewed Layer 1/2/3 state plus Layer 4 event-failure-risk context into the final adjusted `alpha_confidence_vector`. The scaffold keeps `base_alpha_vector` as diagnostics only and implements:
+Owns local conversion from reviewed Layer 1/2/3 state plus Layer 4 `event_failure_risk_vector` into the final adjusted `alpha_confidence_vector`. The scaffold keeps `base_alpha_vector` as diagnostics only and implements:
 
 - base state alpha encoding;
 - baseline-adjusted alpha diagnostics;
-- event adjustment and high-quality event override diagnostics;
+- Layer 4 event-failure conditioning diagnostics;
 - path-risk and confidence/reliability calibration;
 - offline alpha outcome labels and leakage assertions in `evaluation.py`.
 

@@ -4,7 +4,7 @@ Status: accepted Layer 5 design route; deterministic V1 scaffold currently imple
 
 ## Purpose
 
-`AlphaConfidenceModel` is Layer 5. It consumes the reviewed Layer 1/2/3 state stack and calibration evidence to produce the base `alpha_confidence_vector`.
+`AlphaConfidenceModel` is Layer 5. It consumes the reviewed Layer 1/2/3 state stack, accepted Layer 4 `event_failure_risk_vector`, and calibration evidence to produce the final `alpha_confidence_vector`.
 
 Layer 5 answers:
 
@@ -14,7 +14,7 @@ Layer 5 answers:
 - How reliable and calibrated is this judgment?
 - Is the expected residual return actually target-specific, or mostly market/sector beta?
 - Is the forward path likely to be tradeable, or likely to reverse/draw down first?
-- Is the alpha good enough to hand to Layer 6 for position-projection work?
+- Is the alpha good enough to hand to Layer 6 risk-policy work?
 
 Layer 5 does **not** answer trading-intent, exposure, position-size, option-contract, order-routing, or execution questions. It must not emit buy/sell/hold, final action, target exposure, account-risk allocation, option symbol, strike, DTE, delta, order type, or broker mutation fields.
 
@@ -32,19 +32,19 @@ market_context_state
   -> alpha_confidence_vector
 ```
 
-Layer 3 `3_target_direction_score_<window>` is signed current-state direction evidence, not alpha confidence. Layer 5 owns the calibrated alpha-confidence step. Reviewed strategy-failure event evidence belongs to Layer 4; residual/unreviewed event governance belongs to Layer 10.
+Layer 3 `3_target_direction_score_<window>` is signed current-state direction evidence, not alpha confidence. Layer 5 owns the calibrated alpha-confidence step. Reviewed strategy-failure event evidence reaches Layer 5 only through Layer 4 `event_failure_risk_vector`; residual/unreviewed event governance belongs to Layer 10 and future Layer 4 promotion, not direct Layer 5 inference.
 
 ## Two-tier output policy
 
 Layer 5 deliberately keeps two surfaces separate:
 
 1. **Base-alpha diagnostics**
-   - built from Layer 1/2/3 state plus separately auditable Layer 4 event-failure conditioning when applicable;
+   - built from Layer 1/2/3 state before Layer 4 event-failure conditioning;
    - used for research, debugging, audit, and calibration attribution;
    - not a trading action or exposure target.
 
 2. **Default `alpha_confidence_vector`**
-   - built from base alpha plus quality, calibration, path-risk, and point-in-time controls;
+   - built from base alpha plus Layer 4 event-failure conditioning, quality, calibration, path-risk, and point-in-time controls;
    - the only default Layer 6-facing Layer 5 output.
 
 ```text
@@ -54,7 +54,7 @@ Layer 1/2/3
   -> alpha_confidence_vector
 ```
 
-Layer 6 should consume the `alpha_confidence_vector` by default. Layer 10 event-adjusted risk guidance, if available, is applied later against the Layer 8 direct-underlying/spot thesis and optional Layer 9 expression context rather than being a hard prerequisite here.
+Layer 6 should consume the `alpha_confidence_vector` by default. Layer 10 event attribution may improve future Layer 4 gates after review, but it is not a direct Layer 5 input.
 
 ## Inputs
 
@@ -111,11 +111,17 @@ It may also use reviewed cross-state/residual features when available, such as t
 
 Layer 5 may learn that positive or negative target-state evidence has predictive value, but it must not treat Layer 3 direction evidence as a trade instruction or final confidence value.
 
-### Non-blocking Layer 10 event-risk context
+### Input D - Layer 4 event-failure risk vector
 
-Layer 10 event intelligence is not a required input for Layer 5 alpha-confidence generation. Reviewed `event_context_vector` / event-risk evidence may be referenced as diagnostics or later risk-governor context, but it must not be treated as a hard upstream prerequisite for base alpha.
+Layer 5 consumes reviewed Layer 4 `event_failure_risk_vector` as the only event-facing inference input. Layer 4 has already consumed standardized point-in-time event observations and accepted event/strategy-failure gates. Layer 5 must not reopen the raw event, news, SEC, macro, transcript, or provider artifact.
 
-Events may later enhance, weaken, contaminate, block, cap, or require review of the direct-underlying/spot thesis through the Layer 10 EventRiskGovernor boundary. Ordinary event evidence should not be folded into Layer 5 as duplicate state alpha.
+Layer 4 may reduce confidence, lower tradability, raise path/reversal/drawdown risk, or require review for an otherwise valid base alpha. It may not create standalone event alpha inside Layer 5. If Layer 4 reports `no_reviewed_event_failure_risk`, Layer 5 proceeds from the Layer 1/2/3 base-alpha path and records that no accepted event-failure conditioning applied.
+
+### Non-input Layer 10 event attribution
+
+Layer 10 event-failure attribution is not a Layer 5 inference input. Layer 10 may explain base-alpha errors, event-window risk deterioration, or event-supported improvement after outcomes are known, but accepted findings must pass review and become future Layer 4 gates before Layer 5 can consume them.
+
+Layer 5 must not consume `realized_impact_scope_label`, event-failure attribution labels, broad raw-news discovery, or Layer 10 promotion packets for the same fold.
 
 ### Input E - quality, calibration, and research memory
 
@@ -172,7 +178,7 @@ Layer 5 V1 uses six auditable submodules before any broad black-box confidence m
 ```text
 5A BaseStateAlphaEncoder
 5B BaselineAdjustedAlphaDecomposer
-5C EventRiskDiagnosticBridge
+5C Layer4EventFailureConditioning
 5D PathRiskEstimator
 5E ConfidenceCalibrationLayer
 5F AlphaVectorComposer
@@ -192,7 +198,7 @@ Uses only Layer 1/2/3 state evidence to generate the base alpha judgment. It pro
 5_base_alpha_tradability_score_<horizon>
 ```
 
-These are not the default downstream contract. They explain what the state stack said before Layer 4 event-failure conditioning and later Layer 10 event-risk review are attributed.
+These are not the default downstream contract. They explain what the state stack said before Layer 4 event-failure conditioning is applied.
 
 ### 5B - BaselineAdjustedAlphaDecomposer
 
@@ -208,19 +214,17 @@ Separates target alpha from market/sector beta. Diagnostic fields may include:
 
 If beta dependency is high and target-state lift is low, Layer 5 should avoid claiming target-specific alpha.
 
-### 5C - EventRiskDiagnosticBridge
+### 5C - Layer4EventFailureConditioning
 
-Carries optional reviewed Layer 10 event-risk diagnostics for later governance without making event evidence a hard Layer 5 alpha input. Any event-driven block/cap/review/flatten candidate remains a Layer 10 EventRiskGovernor intervention, not a Layer 5 alpha override.
+Applies reviewed Layer 4 event-failure conditioning to base alpha. The conditioning can degrade confidence, reliability, path quality, and alpha tradability, or add review/block pressure to the Layer 5 explanation. It must not create alpha direction or strength from event evidence alone.
 
 Diagnostic fields may include:
 
 ```text
-5_event_direction_adjustment_score_<horizon>
-5_event_strength_adjustment_score_<horizon>
 5_event_confidence_adjustment_score_<horizon>
 5_event_risk_adjustment_score_<horizon>
 5_event_tradability_adjustment_score_<horizon>
-5_event_override_mode_<horizon>
+5_event_conditioning_mode_<horizon>
 5_event_adjustment_reason_codes_<horizon>
 ```
 
@@ -236,7 +240,7 @@ Layer 5 alpha confidence fields use the Layer 5 semantic family in physical code
 
 ### 5F - AlphaVectorComposer
 
-Composes base alpha, event adjustment, baseline adjustment, path risk, quality gates, and calibration into the final adjusted `alpha_confidence_vector`. It performs range clipping, horizon consistency checks, risk consistency checks, reason-code attribution, and quality downgrades.
+Composes base alpha, Layer 4 event-failure conditioning, baseline adjustment, path risk, quality gates, and calibration into the final adjusted `alpha_confidence_vector`. It performs range clipping, horizon consistency checks, risk consistency checks, reason-code attribution, and quality downgrades.
 
 ## V1 horizons
 
@@ -281,9 +285,9 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 | `5_path_quality_score_<horizon>` | `[0, 1]` | direction-conditioned | path is smoother, more persistent, and easier to trade |
 | `5_reversal_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | alpha direction is more likely to be interrupted/reversed; high-is-bad |
 | `5_drawdown_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | adverse excursion/MAE risk is higher; high-is-bad |
-| `5_alpha_tradability_score_<horizon>` | `[0, 1]` | alpha-level | alpha is more suitable to hand to Layer 6 for position projection |
+| `5_alpha_tradability_score_<horizon>` | `[0, 1]` | alpha-level | alpha is more suitable to hand to Layer 6 risk-policy mapping |
 
-`5_alpha_tradability_score_<horizon>` is still not a trade instruction. It is only the Layer 5 judgment that the alpha is worth downstream position-projection mapping.
+`5_alpha_tradability_score_<horizon>` is still not a trade instruction. It is only the Layer 5 judgment that the alpha is worth downstream risk-policy and position-projection mapping.
 
 ## No-edge and null policy
 
@@ -303,7 +307,7 @@ Default no-edge policy:
 5_alpha_tradability_score_<horizon> = low
 ```
 
-A zero direction estimate is not a hold instruction. Layer 6 projects target holding state and exposure after costs, risk budget, current/pending position state, and no-trade policy are reviewed.
+A zero direction estimate is not a hold instruction. Layer 6 applies dynamic risk policy before later position projection, action planning, guidance/expression, and event-governance stages.
 
 ## Labels and outcomes
 
@@ -343,7 +347,7 @@ Labels must be materialized only in training/evaluation datasets and must not be
 Layer 5 should be trained in stages:
 
 1. **Base alpha model**: train Layer 1/2/3-only base alpha outputs.
-2. **Event-risk diagnostic bridge**: evaluate whether reviewed Layer 10 event-risk diagnostics explain base-alpha errors, event-window risk deterioration, or event-supported improvement without turning events into a hard upstream alpha input.
+2. **Layer 4 event-failure conditioning**: evaluate whether reviewed Layer 4 event-failure risk improves confidence calibration, path-risk estimates, and alpha tradability without turning events into standalone alpha.
 3. **Path/risk heads**: add MFE/MAE, first-touch, reversal, drawdown, liquidity, and event-risk labels.
 4. **Calibration layer**: calibrate confidence, reliability, and tradability using walk-forward and out-of-sample buckets.
 
@@ -359,9 +363,9 @@ Layer 5 should prove incremental value over:
 2. market/sector context only;
 3. Layer 3 direct target-state score baseline;
 4. Layer 1/2/3 base alpha only;
-5. Layer 10 event-risk context only;
-6. Layer 1/2/3 plus simple event count;
-7. Layer 1/2/3 plus full EventOverlay adjustment;
+5. Layer 4 event-failure risk only;
+6. Layer 1/2/3 plus simple event-observation count;
+7. Layer 1/2/3 plus reviewed Layer 4 event-failure conditioning;
 8. full Layer 5 with calibration.
 
 Validation must separately check:
@@ -371,8 +375,8 @@ Validation must separately check:
 - confidence: confidence buckets are calibrated out-of-sample;
 - reliability: reliable buckets generalize across years, sectors, and regimes;
 - path: path quality/reversal/drawdown match MFE, MAE, first-touch, path smoothness, and transition outcomes;
-- event adjustment: event-adjusted output improves over base only in visible point-in-time event contexts;
-- tradability: high alpha-tradability rows improve path/risk/utility quality before Layer 6 costs and portfolio constraints;
+- event conditioning: Layer 4-conditioned output improves calibration/path/tradability over base only in reviewed point-in-time event-failure contexts;
+- tradability: high alpha-tradability rows improve path/risk/utility quality before downstream risk policy, costs, and portfolio constraints;
 - leakage: all feature rows obey `available_time <= decision_time`, and labels are isolated from inference features.
 
 ## Boundary rules
@@ -407,6 +411,6 @@ Layer 5 must not:
 
 1. **V1.0 base alpha from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics. **Done in deterministic scaffold for fixture rows.**
 2. **V1.1 final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. **Done in deterministic scaffold.**
-3. **V1.2 EventRiskDiagnosticBridge**: keep optional `event_context_vector` references diagnostic only for later Layer 10 governance; do not make event evidence a hard Layer 5 alpha input. **Deterministic scaffold uses the physical `model_05_alpha_confidence` package and `5_*` score-prefix hooks.**
+3. **V1.2 Layer4EventFailureConditioning**: consume reviewed Layer 4 `event_failure_risk_vector`; do not consume raw events or same-fold Layer 10 attribution labels. **Deterministic scaffold uses the physical `model_05_alpha_confidence` package and `5_*` score-prefix hooks.**
 4. **V1.3 baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence. **Done in deterministic scaffold.**
 5. **V1.4 calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path. **Offline label/leakage helpers exist; calibrated promotion evidence remains later work.**
