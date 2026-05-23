@@ -1012,3 +1012,13 @@ Calendar and market-structure dates must first be built as point-in-time observa
 These observations are not active Layer 4 training samples by default. They remain observation-only until a model/strategy/path/tradability failure occurs and Layer 10 tests whether the date has incremental explanatory value after market, sector, target, portfolio, account, and co-event controls.
 
 If Layer 10 and review accept the relationship, the event family moves into the watched event pool as a supervision packet or `event_strategy_failure_gate` for future Layer 4 training. If not accepted, the date remains in the global event pool for future attribution and audit only.
+
+## D057 - Persistent event regimes remain active without same-day news
+
+Accepted: 2026-05-23
+
+Special-period event risk is represented as a persistent event regime, not as a requirement for daily fresh headlines. Pandemic periods, tariff-war periods, geopolitical war/escalation periods such as US-Iran risk, sanctions regimes, banking-system stress periods, and policy crisis windows can create a continuing market shadow even when no new article appears on a specific decision date.
+
+Persistent regimes start in the global event observation pool with point-in-time interval facts: regime start, optional end, active/shadow/decay status, last material update, affected scopes, decay/staleness rule, and evidence refs. They are observation-only until Layer 10 attributes failures or residual anomalies during the interval to the regime after market, sector, target, portfolio, account, and co-event controls.
+
+If Layer 10 and review accept the relationship, the regime family/mechanism enters the watched event pool and can supervise future Layer 4 training. If the regime no longer has incremental explanatory value, it must decay, become stale, or remain observation-only rather than becoming permanent background risk.

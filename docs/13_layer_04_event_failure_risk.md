@@ -68,7 +68,7 @@ Layer 4 must not consume arbitrary raw news, unreviewed event-family screening r
 
 ## Event pools
 
-Calendar and market-structure dates start in the global event observation pool, not in Layer 4 training. The first required system capability is a point-in-time calendar that knows key dates and their availability clocks:
+Calendar, market-structure dates, and persistent event regimes start in the global event observation pool, not in Layer 4 training. The first required system capability is point-in-time observation coverage that knows key dates, active periods, and availability clocks:
 
 - ordinary overnight and Friday/weekend windows;
 - market holidays, long weekends, early closes, and pre-holiday sessions;
@@ -76,8 +76,11 @@ Calendar and market-structure dates start in the global event observation pool, 
 - triple-witching and major option-expiry windows;
 - index reconstitution and Nasdaq-100 rebalance windows;
 - halt or other scheduled/announced non-continuous-market windows when available.
+- persistent special-period regimes such as pandemic risk, tariff-war periods, geopolitical war/escalation periods, banking-system stress, sanctions regimes, or policy crisis windows.
 
 These rows are observation-only until Layer 10 sees failures or residual anomalies around them, tests controls, and promotes a specific event family/mechanism into the watched event pool. The watched event pool contains only Layer 10/review-accepted event families with supervision packets. Layer 4 trains only from watched-pool events and their accepted `event_strategy_failure_gate` rules.
+
+Persistent regimes are interval observations rather than single headlines. They may remain active or shadow-active even when no fresh article appears. Their point-in-time rows should preserve regime start, current status, last material update, decay/staleness rule, scope, and evidence refs. Layer 4 may use them only after Layer 10/review accepts a failure relationship for future folds.
 
 ## Event partitions
 

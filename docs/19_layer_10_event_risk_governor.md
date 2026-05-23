@@ -64,12 +64,14 @@ base_stack_layers_01_09 decision/evaluation
 
 Layer 10 may compute `realized_impact_scope_label` and `event_failure_attribution` labels during evaluation. These labels are not Layer 4 inference inputs for the same fold. They can only support review, calibration, future-fold event-observation rules, or future Layer 4 promotion after the accepted review gate.
 
-Layer 10 maintains the distinction between the global event observation pool and the watched event pool. The global pool contains known point-in-time event observations, including calendar and market-structure dates, before any causal claim is made. The watched pool contains only event families/mechanisms that Layer 10 has connected to failures with controls and that review has accepted for future Layer 4 supervision.
+Layer 10 maintains the distinction between the global event observation pool and the watched event pool. The global pool contains known point-in-time event observations, including calendar dates, market-structure dates, and persistent event-regime intervals, before any causal claim is made. The watched pool contains only event families/mechanisms that Layer 10 has connected to failures with controls and that review has accepted for future Layer 4 supervision.
 
 Calendar/structure dates therefore enter the stack in two phases:
 
 1. build the point-in-time calendar so the system knows the dates before decisions are evaluated;
 2. after a model/strategy/path/tradability failure, let Layer 10 test whether those dates explain the failure and, if accepted, emit a future Layer 4 supervision packet.
+
+Persistent event regimes follow the same pool route but require interval handling. A pandemic, tariff-war period, geopolitical war/escalation period, sanctions regime, banking-system stress period, or policy crisis can remain risk-relevant without a fresh article on the decision date. Layer 10 should preserve active/shadow/decay status and test whether failures during the interval are explained by the regime after controls, rather than requiring same-day news proximity.
 
 Required attribution evidence includes:
 
@@ -530,6 +532,7 @@ scheduled_known_outcome_later
 unscheduled_surprise
 scheduled_recurring_data_release
 multi_stage_developing_event
+persistent_event_regime
 unknown
 ```
 
@@ -544,6 +547,8 @@ live_release_window
 post_event_initial_reaction
 post_event_decay
 developing_update
+active_shadow_period
+regime_decay
 resolved
 stale_event
 unknown
@@ -611,6 +616,17 @@ Contract:
 - Do not collapse the entire arc into the first headline or the final resolution.
 - Stage transitions should keep previous interpretations immutable and add follow-up/resolution refs rather than overwriting history.
 
+### Persistent event regimes
+
+Examples: pandemic periods, tariff-war periods, US-Iran or other geopolitical war/escalation periods, sanctions regimes, banking-system stress periods, and policy crisis windows.
+
+Contract:
+
+- Preserve a regime interval with point-in-time `regime_start_time`, optional `regime_end_time`, `regime_status`, `last_material_update_time`, `decay_rule_ref`, affected scopes, and source/evidence refs.
+- The regime may remain active or shadow-active even when no fresh article appears on the decision date.
+- Same-day news proximity is not required for Layer 10 attribution, but the regime state must have been knowable before the decision through prior evidence or reviewed status updates.
+- Decay and staleness rules must be explicit. If the regime no longer explains failures after controls, Layer 10 should mark it stale or observation-only rather than carrying permanent risk pressure.
+
 ### Golden lifecycle examples
 
 | Family | Lifecycle type | Pre-event usable facts | Result/release facts | Forbidden leakage |
@@ -618,6 +634,7 @@ Contract:
 | Earnings | `scheduled_known_outcome_later` | Earnings date/window, consensus if PIT-valid, option-implied move, prior guidance, historical gap risk. | Reported EPS/revenue, beat/miss, guidance, management commentary once released. | Using actual results, call transcript revisions, or post-release price reaction before `available_time`. |
 | CPI / macro release | `scheduled_recurring_data_release` | Calendar time, importance, consensus/previous when PIT-valid, background inflation/rates context. | Actual CPI values, revision, surprise-vs-consensus, official release text. | Treating recap news as a new independent CPI fact or using release values before publication. |
 | Surprise regulatory raid/news | `unscheduled_surprise` | Only background regulatory vulnerability already visible before the headline. | First credible headline/details and follow-up confirmations after available. | Pretending the specific raid/headline was forecastable; labeling pre-event rows with future facts. |
+| Pandemic / tariff-war / war-shadow period | `persistent_event_regime` | Regime interval, active/shadow status, last material update, affected scopes, decay rule, prior visible evidence. | Later escalation/de-escalation, policy action, official resolution, or realized reaction labels after available. | Requiring same-day news to recognize an already-visible regime, or carrying stale regime pressure without decay/review. |
 
 ## Internal model structure
 
