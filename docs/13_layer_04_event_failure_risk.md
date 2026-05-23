@@ -55,6 +55,14 @@ Layer 4 must distinguish impact scope known at inference time from scope learned
 - `expected_impact_scope`: point-in-time interpretation using only evidence available at `available_time`, accepted prior event-family rules, issuer/sector/index/peer/supply-chain metadata, source materiality, and reviewed scope priors;
 - `realized_impact_scope_label`: evaluation-only label from later market/sector/peer/target reaction windows, used for review, calibration, and future-fold promotion only.
 
+`expected_impact_scope` must be resolved by comparing the interpreted event against the current state stack:
+
+- Layer 1 `market_context_state`: broad regime, stress, liquidity, breadth, dispersion, correlation/crowding, and transition-risk context;
+- Layer 2 `sector_context_state`: affected sector/industry/theme/peer behavior, trend stability, relative strength, correlation, and sector tradability context;
+- Layer 3 `target_context_state`: target-specific liquidity, path/tradability, residual behavior, state-transition quality, and target-vs-sector/market alignment.
+
+The scope resolver should produce auditable support for each candidate scope: market/global, sector/industry/theme, peer/supply-chain/index basket, and target-local. If event evidence is strong but state-stack support is weak or contradictory, the scope should remain narrow or review-required instead of being promoted to global/common impact.
+
 For example, a large issuer earnings event can be target-local when reviewed evidence only supports issuer-specific impact, or global/common when point-in-time rules support broad market, index, sector, AI/theme, supplier/customer, or volatility/risk-appetite impact. The later fact that the whole market moved cannot be used as an inference-time scope fact for the same fold.
 
 ## Fold cleanup boundary
