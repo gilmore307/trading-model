@@ -51,6 +51,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             f"4_event_exposure_cap_pressure_score_{suffix}": scores["exposure_cap"],
             f"4_event_strategy_disable_pressure_score_{suffix}": scores["strategy_disable"],
             f"4_event_path_risk_amplifier_score_{suffix}": scores["path_risk"],
+            f"4_event_session_gap_risk_score_{suffix}": scores["session_gap_risk"],
             f"4_event_evidence_quality_score_{suffix}": scores["evidence_quality"],
             f"4_event_applicability_confidence_score_{suffix}": scores["applicability"],
         })
@@ -89,6 +90,7 @@ def _scores(horizon: str, gate: Mapping[str, Any], evidence: Mapping[str, Any], 
             "exposure_cap": 0.0,
             "strategy_disable": 0.0,
             "path_risk": 0.0,
+            "session_gap_risk": 0.0,
             "evidence_quality": 0.0,
             "applicability": 0.0,
             "reason_codes": ["no_reviewed_event_failure_risk"],
@@ -100,6 +102,18 @@ def _scores(horizon: str, gate: Mapping[str, Any], evidence: Mapping[str, Any], 
     entry = _score(gate, f"entry_block_pressure_score_{suffix}", "entry_block_pressure_score", default=max(effect - 0.1, 0.0))
     exposure = _score(gate, f"exposure_cap_pressure_score_{suffix}", "exposure_cap_pressure_score", default=max(effect - 0.2, 0.0))
     disable = _score(gate, f"strategy_disable_pressure_score_{suffix}", "strategy_disable_pressure_score", default=max(effect - 0.35, 0.0))
+    session_gap = _score(
+        gate,
+        f"session_gap_risk_score_{suffix}",
+        f"calendar_gap_risk_score_{suffix}",
+        f"overnight_gap_risk_score_{suffix}",
+        "session_gap_risk_score",
+        "calendar_gap_risk_score",
+        "overnight_gap_risk_score",
+        "weekend_gap_risk_score",
+        "holiday_gap_risk_score",
+        default=_score(evidence, "session_gap_risk_score", "calendar_gap_risk_score", default=max(path - 0.1, 0.0)),
+    )
     state_quality = min(
         _score(market, "1_state_quality_score", default=0.75),
         _score(sector, "2_state_quality_score", default=0.75),
@@ -115,12 +129,15 @@ def _scores(horizon: str, gate: Mapping[str, Any], evidence: Mapping[str, Any], 
         reason_codes.append("low_applicability_confidence")
     if failure_risk >= 0.7:
         reason_codes.append("high_event_failure_risk")
+    if session_gap >= 0.6:
+        reason_codes.append("event_session_gap_risk")
     return {
         "failure_risk": round(failure_risk, 6),
         "entry_block": round(_clip01(entry * multiplier), 6),
         "exposure_cap": round(_clip01(exposure * multiplier), 6),
         "strategy_disable": round(_clip01(disable * multiplier), 6),
         "path_risk": round(_clip01(path * multiplier), 6),
+        "session_gap_risk": round(_clip01(session_gap * multiplier), 6),
         "evidence_quality": round(evidence_quality, 6),
         "applicability": round(applicability, 6),
         "reason_codes": reason_codes,
@@ -133,7 +150,9 @@ def _resolved_status(vector: Mapping[str, Any], *, reviewed: bool) -> str:
     max_entry = max(float(value) for key, value in vector.items() if key.startswith("4_event_entry_block_pressure_score_"))
     max_disable = max(float(value) for key, value in vector.items() if key.startswith("4_event_strategy_disable_pressure_score_"))
     max_cap = max(float(value) for key, value in vector.items() if key.startswith("4_event_exposure_cap_pressure_score_"))
-    max_risk = max(float(value) for key, value in vector.items() if key.startswith("4_event_strategy_failure_risk_score_"))
+    max_failure = max(float(value) for key, value in vector.items() if key.startswith("4_event_strategy_failure_risk_score_"))
+    max_gap = max(float(value) for key, value in vector.items() if key.startswith("4_event_session_gap_risk_score_"))
+    max_risk = max(max_failure, max_gap)
     if max_disable >= 0.7:
         return "strategy_family_disable_recommended"
     if max_entry >= 0.65:

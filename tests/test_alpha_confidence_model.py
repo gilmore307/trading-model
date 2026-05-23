@@ -41,6 +41,24 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
+    def test_event_session_gap_risk_reduces_alpha_tradability(self) -> None:
+        output = generate_rows([_base_row(event_failure_risk_vector={
+            "4_event_strategy_failure_risk_score_1W": 0.10,
+            "4_event_entry_block_pressure_score_1W": 0.10,
+            "4_event_exposure_cap_pressure_score_1W": 0.10,
+            "4_event_strategy_disable_pressure_score_1W": 0.0,
+            "4_event_path_risk_amplifier_score_1W": 0.10,
+            "4_event_session_gap_risk_score_1W": 0.90,
+            "4_event_evidence_quality_score_1W": 0.95,
+            "4_event_applicability_confidence_score_1W": 0.90,
+        })])[0]
+        vector = output["alpha_confidence_vector"]
+        base = output["base_alpha_vector"]
+
+        self.assertGreater(base["5_event_risk_adjustment_score_1W"], 0.0)
+        self.assertGreater(vector["5_drawdown_risk_score_1W"], base["5_base_drawdown_risk_score_1W"])
+        self.assertLess(vector["5_alpha_tradability_score_1W"], base["5_base_alpha_tradability_score_1W"])
+
     def test_no_edge_policy_keeps_direction_strength_and_tradability_low(self) -> None:
         output = generate_rows([_base_row(target_context_state={}, event_failure_risk_vector={})])[0]
         vector = output["alpha_confidence_vector"]

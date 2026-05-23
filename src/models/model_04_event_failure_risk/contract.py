@@ -15,6 +15,7 @@ SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "4_event_exposure_cap_pressure_score_<horizon>",
     "4_event_strategy_disable_pressure_score_<horizon>",
     "4_event_path_risk_amplifier_score_<horizon>",
+    "4_event_session_gap_risk_score_<horizon>",
     "4_event_evidence_quality_score_<horizon>",
     "4_event_applicability_confidence_score_<horizon>",
 )
