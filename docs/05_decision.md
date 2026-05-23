@@ -941,6 +941,8 @@ Accepted: 2026-05-23
 
 Layer 4 event evidence is classified by impact scope, not by data source, provider, feed, document type, or article category. A company-specific event such as a major issuer earnings release can be target-local or global/common depending on point-in-time reviewed evidence and current state-stack support.
 
+Layer 4 consumes standardized point-in-time event observation rows, not raw event artifacts. The observation row must directly provide the inference-time scope fields Layer 4 may use, including `expected_impact_scope`, `affected_scope`, `affected_entities`, `scope_confidence_score`, `scope_support_evidence_ref`, `available_time`, and `review_status`.
+
 `expected_impact_scope` is the inference-time scope. It must use only evidence available at `available_time`: standardized event interpretation, accepted prior event-family rules, issuer/sector/index/peer/supply-chain metadata, source materiality, reviewed scope priors, and comparison against the current Layer 1 market state, Layer 2 sector/industry/theme/peer state, and Layer 3 target state.
 
 `realized_impact_scope_label` is evaluation-only. It may use later market/sector/peer/target reaction windows for calibration, review, and future-fold promotion, but it must not be fed into the same fold as an inference fact.

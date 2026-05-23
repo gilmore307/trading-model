@@ -33,9 +33,23 @@ Required inputs are point-in-time and review-gated:
 - `sector_context_state` / `sector_context_state_ref`;
 - `target_context_state` / `target_context_state_ref`;
 - accepted `event_strategy_failure_gate` or equivalent reviewed promotion record;
-- point-in-time event identity/scope/evidence rows for only the reviewed event family;
+- point-in-time event observation rows for only the reviewed event family;
 - strategy-family applicability metadata;
 - evidence-packet reference and agent-review decision.
+
+The event observation row is the direct event-facing input to Layer 4. It must already contain the inference-time scope facts Layer 4 is allowed to use:
+
+- `event_id` / `canonical_event_id`;
+- `available_time`;
+- `event_family` / `normalized_event_type`;
+- `expected_impact_scope`;
+- `affected_scope`;
+- `affected_entities`;
+- `scope_confidence_score`;
+- `scope_support_evidence_ref`;
+- `review_status`.
+
+Layer 4 must not infer impact scope directly from raw news, SEC text, macro pages, transcripts, or provider payloads. Raw artifacts are standardized upstream into point-in-time event observations; Layer 4 then combines those observations with Layer 1/2/3 state to decide risk conditioning for the current target.
 
 Layer 4 must not consume arbitrary raw news, unreviewed event-family screening rows, post-hoc residual-discovery candidates, future returns, broker outcomes, or unapproved event-family associations.
 
