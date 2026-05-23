@@ -25,6 +25,19 @@ Layer 1: MarketRegimeModel
 
 Layer 4 is not broad event alpha and not raw-news ingestion. It is a narrow pre-alpha failure-risk gate for event families that have already passed agent review.
 
+## Quantitative role
+
+Layer 4 is the **quantitative event-failure-risk model**. Layer 10 and review decide whether an event family/impact relationship is real enough to supervise; Layer 4 learns how large that accepted relationship is for the current point-in-time event, market state, sector state, target state, strategy family, and horizon.
+
+Layer 4 answers:
+
+- How applicable is this reviewed event-failure relationship to the current target/context?
+- How severe is the strategy-failure risk for each horizon?
+- How much should entry-block, exposure-cap, strategy-disable, path-risk, session-gap, confidence, and tradability pressure increase?
+- How strong is the evidence quality for the current event observation?
+
+Layer 4 must not decide whether a new event family is real, discover raw event causes, classify co-event dominance, or decide that a source/document type is globally important. Those are Layer 10/review responsibilities.
+
 ## Inputs
 
 Required inputs are point-in-time and review-gated:
@@ -124,7 +137,7 @@ Layer 10 remains responsible for residual discovery, unexplained anomaly review,
 
 An event family can enter Layer 4 only after all of the following are true:
 
-1. family-specific association or residual-failure evidence exists;
+1. family-specific association or residual-failure evidence exists from Layer 10 post-failure attribution;
 2. matched controls, split stability, leakage checks, and point-in-time clocks are reviewed;
 3. the effect is strategy-failure relevant, not merely descriptive news coincidence;
 4. the family has an emitted evidence packet;
@@ -132,6 +145,25 @@ An event family can enter Layer 4 only after all of the following are true:
 6. manager registry records the accepted scope and allowed decision effects.
 
 Absent this reviewed promotion, the family remains in Layer 10 research/observation/governance only.
+
+## Supervision and retraining loop
+
+Layer 4 is not an unsupervised event-discovery model. It is review-supervised by Layer 10 attribution evidence.
+
+Layer 10 supplies a reviewed supervision packet or training contract, not model weights or same-fold hindsight facts. The accepted packet should define:
+
+- `event_family_key` and mechanism;
+- expected impact-scope rule and affected scopes/entities;
+- applicable market, sector, target, and strategy-family states;
+- horizons where the relationship may apply;
+- positive failure sample definition;
+- negative and matched-control design;
+- co-event/confounder handling;
+- leakage rules;
+- minimum evidence and stability thresholds;
+- allowed Layer 4 effects.
+
+Layer 4 then trains or updates the quantitative `event_failure_risk_vector` model from point-in-time event observations, Layer 1/2/3 state, strategy context, and reviewed failure labels. If later Layer 5/6/7/8/9 evaluation shows that a Layer 4 event family has no incremental value, overblocks valid alpha, or is explained by a dominant co-event, Layer 10 must revise, demote, split, or reject the supervision packet before any future Layer 4 retraining. The changed supervision can affect only later folds.
 
 ## Hard boundaries
 

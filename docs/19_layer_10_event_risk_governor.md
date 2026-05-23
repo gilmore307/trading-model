@@ -13,6 +13,8 @@ Layer 10 is paired with Layer 4:
 
 Layer 10 may also emit narrow realtime event-risk governance only for reviewed event families already admitted to the event observation pool. That realtime path is not broad news discovery and must not reinterpret arbitrary raw events during a trading decision.
 
+Layer 10 is the **qualitative event-impact and attribution layer**. It decides whether an event relationship exists, what kind of failure mechanism it represents, what scope it affects, whether co-events or confounders explain the failure better, and whether the relationship is accepted enough to supervise Layer 4. Layer 4 is the quantitative layer that scores the size of an accepted relationship.
+
 Layer 10 answers:
 
 - Did the base stack fail or leave a material residual after market, sector, target, Layer 4 event-failure risk, alpha, risk-policy, position, action, and expression context were considered?
@@ -23,6 +25,26 @@ Layer 10 answers:
 - Should an event family remain observation-only, enter the realtime observation pool, or be proposed for Layer 4 promotion?
 
 Layer 10 does **not** answer alpha, trade, expression, sizing, or execution questions. It must not emit buy/sell/hold, final action, position size, option contract, strike, DTE, delta, order instruction, or account-specific decision fields.
+
+## Qualitative attribution and supervision output
+
+Layer 10 output for Layer 4 is a reviewed supervision packet or training contract, not model weights, online parameter overrides, or same-fold labels.
+
+The packet should define:
+
+- event family and concrete mechanism;
+- expected impact-scope rule: target-local, peer/supply-chain/index basket, sector/industry/theme, or market/global;
+- affected scopes/entities and confidence;
+- applicable market, sector, target, and strategy-family states;
+- horizons where the relationship may apply;
+- positive failure sample definition;
+- negative and matched-control sample design;
+- co-event/confounder handling;
+- leakage exclusions;
+- minimum evidence, split-stability, and review thresholds;
+- allowed Layer 4 effects, such as confidence downgrade, path-risk amplifier, entry-block pressure, exposure-cap pressure, or strategy-disable pressure.
+
+Accepted packets become future Layer 4 supervision. Rejected, underpowered, confounded, or unstable packets remain research/observation-only.
 
 ## Layer 4 / Layer 10 handoff
 
@@ -53,6 +75,40 @@ Required attribution evidence includes:
 - leakage checks for future event results, article revisions, filings, and market reactions;
 - split stability across dates, symbols, sectors/themes, regimes, and target states;
 - review decision and allowed Layer 4 effect if accepted.
+
+## Layer 5 feedback route
+
+Layer 5/6/7/8/9 evaluation results must feed Layer 10 after fold close when Layer 4 conditioning appears ineffective or harmful. Useful feedback includes high-confidence false positives, missed alpha, path failure, reversal/drawdown failure, tradability failure, event-conditioning no-incremental-value, event-conditioning overblock, and event-conditioning underblock cases.
+
+Layer 10 uses this feedback to decide whether an event-family supervision packet should be:
+
+- retained as accepted;
+- narrowed to a smaller impact scope;
+- split into finer event mechanisms;
+- demoted to observation-only;
+- marked `review_required`;
+- rejected as spurious or confounded;
+- revised with stronger co-event controls.
+
+No feedback from a fold may change Layer 4 or Layer 5 inside the same fold. Any revised supervision applies only to later folds.
+
+## Co-event and confounder discipline
+
+Layer 10 must treat same-window events as a co-event group before assigning causality. A small issuer event that coincides with a dominant market/theme event must not be promoted merely because it was nearby in time.
+
+Required co-event fields or equivalent evidence include:
+
+```text
+co_event_group_id
+dominant_event_candidate
+confounder_event_ref
+incremental_attribution_score
+attribution_confidence_score
+spurious_event_candidate_flag
+co_event_handling_status
+```
+
+For example, if NVIDIA earnings and ALAB earnings are visible in the same window, Layer 10 must test whether ALAB adds incremental explanatory value after controlling for NVIDIA/global/theme impact. If NVIDIA explains the market/theme/sector failure and ALAB adds no independent value, ALAB should be marked `spurious_co_event`, `confounded_by_dominant_global_event`, or `no_incremental_failure_attribution`; it must not be promoted into Layer 4 except possibly as target-local observation-only evidence.
 
 ## Residual-anomaly discovery and correction workflow
 

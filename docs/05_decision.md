@@ -972,3 +972,15 @@ Layer 5 does not consume raw events, event observations directly, same-fold Laye
 Layer 5 may let Layer 4 event-failure conditioning reduce confidence, reliability, path quality, and alpha tradability, or raise reversal/drawdown risk and review pressure. It must not create standalone event alpha direction or strength, and it must not emit buy/sell/hold, target exposure, position size, option contract, execution instruction, or broker/account mutation.
 
 Layer 10 can improve future Layer 5 behavior only indirectly: post-failure attribution may become future Layer 4 `event_strategy_failure_gate` evidence after review; Layer 5 then consumes the resulting Layer 4 vector in later folds.
+
+## D054 - Layer 10 qualifies event impact; Layer 4 quantifies accepted impact
+
+Accepted: 2026-05-23
+
+Layer 10 is the qualitative event-impact and post-failure attribution layer. It decides whether an event relationship exists, which event family/mechanism is involved, what scope it affects, whether the relationship has incremental explanatory value after co-event/confounder controls, and whether the evidence should supervise future Layer 4 training.
+
+Layer 4 is the quantitative event-failure-risk layer. It consumes only reviewed event observations and accepted Layer 10/review supervision packets, then scores how large the accepted event-failure relationship is for the current event, market state, sector state, target state, strategy family, and horizon.
+
+Layer 5 and later evaluation may report that Layer 4 conditioning had no incremental value, overblocked, underblocked, or was explained by a dominant co-event. That feedback routes to Layer 10 after fold close. Layer 10 may revise, split, demote, reject, or strengthen the supervision packet; Layer 4 may retrain from the revised packet only for later folds.
+
+Co-event discipline is mandatory. When multiple events occur in the same window, Layer 10 must identify dominant event candidates, confounder refs, incremental attribution score, and attribution confidence. A nearby small issuer event must not be promoted to Layer 4 if a dominant market/theme/sector event explains the failure and the small event adds no independent explanatory value.
