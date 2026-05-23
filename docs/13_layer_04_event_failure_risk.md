@@ -41,18 +41,27 @@ Layer 4 must not consume arbitrary raw news, unreviewed event-family screening r
 
 ## Event partitions
 
-Layer 4 event evidence has two required partitions:
+Layer 4 event evidence is partitioned by **impact scope**, not by data source or article/source type. SEC filings, earnings releases, company news, macro releases, sector news, and political events can each be local or broad depending on their point-in-time expected and reviewed impact.
 
-- global/common event context: macro releases, market-wide policy/geopolitical/rates/liquidity events, sector or industry news, and other reviewed events that are reusable across all targets or broad sector baskets;
-- target event context: target-specific news, SEC filings, earnings/guidance artifacts, issuer corporate actions, same-symbol option activity events, and other reviewed evidence scoped to a specific symbol, issuer, or target candidate.
+The required partitions are:
 
-Both partitions must preserve point-in-time clocks, reviewed family identity, scope, provenance, and evidence references. Model fitting may join both partitions for a target/fold, but the partitions must remain physically and logically separable so retention and replay cannot confuse reusable global context with fold-local target evidence.
+- global/common impact context: reviewed events whose expected impact is reusable across the market, a broad sector, an industry, a theme factor, supply-chain peers, index constituents, or other multi-target scope;
+- target-local impact context: reviewed events whose expected impact is limited to the specific symbol, issuer, target candidate, or same-symbol instrument set for the current fold.
+
+Both partitions must preserve point-in-time clocks, reviewed family identity, impact scope, provenance, and evidence references. Model fitting may join both partitions for a target/fold, but the partitions must remain physically and logically separable so retention and replay cannot confuse reusable global impact context with fold-local target evidence.
+
+Layer 4 must distinguish impact scope known at inference time from scope learned after the market response:
+
+- `expected_impact_scope`: point-in-time interpretation using only evidence available at `available_time`, accepted prior event-family rules, issuer/sector/index/peer/supply-chain metadata, source materiality, and reviewed scope priors;
+- `realized_impact_scope_label`: evaluation-only label from later market/sector/peer/target reaction windows, used for review, calibration, and future-fold promotion only.
+
+For example, a large issuer earnings event can be target-local when reviewed evidence only supports issuer-specific impact, or global/common when point-in-time rules support broad market, index, sector, AI/theme, supplier/customer, or volatility/risk-appetite impact. The later fact that the whole market moved cannot be used as an inference-time scope fact for the same fold.
 
 ## Fold cleanup boundary
 
 Historical-training folds may delete fold-local target event working data after the fold is accepted or abandoned. This cleanup applies only to target event rows/artifacts/materialized joins that were created for that specific fold.
 
-Fold cleanup must not delete global/common event context, reviewed global event evidence packets, macro/sector/political event stores, shared event-family acceptance artifacts, or any cross-target reusable event references. If a fold consumes global events, it should record fold-local references to those global rows rather than copying them into a deletable target-event namespace.
+Fold cleanup must not delete global/common impact context, reviewed global event evidence packets, shared event-family acceptance artifacts, or any cross-target reusable event references. If a fold consumes global/common impact events, it should record fold-local references to those global rows rather than copying them into a deletable target-event namespace.
 
 ## Output
 
