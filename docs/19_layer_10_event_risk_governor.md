@@ -110,18 +110,19 @@ co_event_handling_status
 
 For example, if NVIDIA earnings and ALAB earnings are visible in the same window, Layer 10 must test whether ALAB adds incremental explanatory value after controlling for NVIDIA/global/theme impact. If NVIDIA explains the market/theme/sector failure and ALAB adds no independent value, ALAB should be marked `spurious_co_event`, `confounded_by_dominant_global_event`, or `no_incremental_failure_attribution`; it must not be promoted into Layer 4 except possibly as target-local observation-only evidence.
 
-## Trading-calendar closure attribution
+## Trading-calendar and market-structure attribution
 
-Trading-calendar closure risk is a base Layer 6 risk input, not automatically a Layer 4 event family. Layer 10 may still study closure windows during post-failure attribution:
+Trading-calendar and market-structure dates are scheduled event-family candidates for Layer 4. Layer 10 studies these windows during post-failure attribution:
 
 - ordinary overnight;
-- weekend;
-- market holiday;
-- long weekend;
+- Friday/weekend de-risking;
+- market holiday and long weekend;
 - Thanksgiving / Christmas / major long holiday closure;
-- early close and pre-holiday thin-liquidity sessions.
+- early close and pre-holiday thin-liquidity sessions;
+- triple-witching and major option-expiry windows;
+- index reconstitution and Nasdaq-100 rebalance windows.
 
-Layer 10 should test whether closure length or closure class explains failures after controlling for Layer 1 market state, Layer 2 sector state, Layer 3 target state, Layer 5 alpha quality, and Layer 6 base calendar risk. If the closure alone explains the failure, the remedy belongs in Layer 6 calibration. If a reviewed event plus the closure produces additional failure risk beyond base calendar exposure, Layer 10 may propose a future Layer 4 event-amplified session-gap supervision packet.
+Layer 10 should test whether the calendar/structure date explains failures after controlling for Layer 1 market state, Layer 2 sector state, Layer 3 target state, Layer 5 alpha quality, portfolio/account state, and co-events. If the date has incremental explanatory value, Layer 10 may propose a future Layer 4 supervision packet. If it has no incremental value after controls, it stays observation-only and must not be smuggled into Layer 6 as a raw calendar rule.
 
 ## Residual-anomaly discovery and correction workflow
 

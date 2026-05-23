@@ -111,7 +111,7 @@ Recommended V1 score families:
 | `4_event_exposure_cap_pressure_score_<horizon>` | high is more restrictive | Pressure to cap exposure before position projection. |
 | `4_event_strategy_disable_pressure_score_<horizon>` | high is more restrictive | Pressure to disable or downweight a specific strategy family temporarily. |
 | `4_event_path_risk_amplifier_score_<horizon>` | high is bad | Event-driven amplification of adverse path/gap/volatility risk. |
-| `4_event_session_gap_risk_score_<horizon>` | high is bad | Event-amplified overnight, weekend, holiday, halt, or other non-continuous-market holding risk. |
+| `4_event_session_gap_risk_score_<horizon>` | high is bad | Scheduled calendar / market-structure event risk around overnight, weekend, holiday, expiry, rebalance, halt, or other non-continuous-market windows. |
 | `4_event_evidence_quality_score_<horizon>` | high is good | Quality of the reviewed evidence and PIT match. |
 | `4_event_applicability_confidence_score_<horizon>` | high is good | Confidence that the reviewed event family applies to this target/context/strategy. |
 
@@ -129,9 +129,11 @@ Allowed resolved statuses:
 
 Layer 5 `AlphaConfidenceModel` consumes `event_failure_risk_vector` as a **conditioning input**. It may lower confidence, increase path/drawdown risk, reduce alpha tradability, or mark alpha as review-required. It must keep the base no-event alpha and event-conditioned alpha auditable.
 
-Layer 6-8 may consume the resolved Layer 4 conditioning indirectly through Layer 5/6 handoffs. They must not independently re-promote raw event evidence. Base calendar/session exposure that exists without a reviewed event family belongs to Layer 6 risk policy; Layer 4 only emits the event-amplified session-gap component that has reviewed evidence.
+Layer 6-8 may consume the resolved Layer 4 conditioning indirectly through Layer 5/6 handoffs. They must not independently re-promote raw event evidence. Trading-calendar and market-structure dates are scheduled event families for Layer 4 when they create risk through market participant behavior or forced calendar mechanics.
 
-Trading-calendar closures are therefore not automatically Layer 4 events. Ordinary overnight, weekend, holiday, long-weekend, early-close, Thanksgiving, Christmas, or other long-closure exposure is a Layer 6 base calendar risk. Layer 4 may score `4_event_session_gap_risk_score_<horizon>` only when a reviewed event-failure relationship shows that a point-in-time event amplifies that closure risk.
+Layer 4 may score `4_event_session_gap_risk_score_<horizon>` for reviewed calendar/structure events such as ordinary overnight, Friday/weekend de-risking, holiday and long-weekend closures, early closes, Thanksgiving/Christmas closures, triple-witching, major option-expiry windows, index reconstitution, Nasdaq-100 rebalance, and other scheduled market-structure dates. The point is not the data source; it is that the calendar date itself can change behavior before, during, or after the closed/rebalance/expiry window.
+
+Layer 6 consumes the resulting risk pressure when setting budgets. It should not independently infer raw calendar-event risk or reinterpret market-structure dates outside the Layer 4 event gate.
 
 Layer 10 remains responsible for residual discovery, unexplained anomaly review, observation-pool maintenance, and proposing future event-family promotions into Layer 4.
 

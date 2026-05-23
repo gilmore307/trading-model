@@ -985,11 +985,11 @@ Layer 5 and later evaluation may report that Layer 4 conditioning had no increme
 
 Co-event discipline is mandatory. When multiple events occur in the same window, Layer 10 must identify dominant event candidates, confounder refs, incremental attribution score, and attribution confidence. A nearby small issuer event must not be promoted to Layer 4 if a dominant market/theme/sector event explains the failure and the small event adds no independent explanatory value.
 
-## D055 - Trading calendar closure length is base Layer 6 risk
+## D055 - Trading calendar and market-structure dates are Layer 4 event risk
 
 Accepted: 2026-05-23
 
-Predictable non-trading intervals are a base DynamicRiskPolicyModel input, not automatically Layer 4 events. Layer 6 owns the deterministic relationship that longer closed-market exposure increases gap/uncertainty risk unless later evaluation proves a narrower exception.
+Trading-calendar and market-structure dates are scheduled event families for Layer 4 when the date itself can change participant behavior, liquidity, gap risk, or forced flow. The effect can appear before the closure or event window, not only during the non-trading interval. Friday/weekend de-risking, holiday and long-weekend de-risking, early closes, Thanksgiving/Christmas closures, triple-witching, major option-expiry windows, index reconstitution, Nasdaq-100 rebalance, and similar scheduled structure dates belong to the Layer 4 event-risk gate when reviewed evidence supports the relationship.
 
 The default ordering is:
 
@@ -997,8 +997,8 @@ The default ordering is:
 intraday / same-session hold < ordinary overnight < weekend < market holiday / long weekend < major long holiday closure
 ```
 
-Layer 6 should represent point-in-time calendar/session exposure such as next market open, non-trading interval minutes, closure type, closure-length bucket, holiday name, early-close flag, pre-holiday-session flag, calendar gap-risk score, and calendar liquidity-thinning score.
+This ordering is a prior for Layer 4 supervision, not an automatic Layer 6 raw input. Layer 4 should represent point-in-time calendar/structure evidence such as next market open, non-trading interval minutes, closure type, closure-length bucket, holiday name, early-close flag, pre-holiday-session flag, expiry/rebalance flag, index-event family, calendar gap-risk score, and calendar liquidity-thinning score.
 
-Layer 4 owns only event-amplified session-gap risk. If a reviewed event overlaps a weekend or holiday closure and Layer 10/review proves incremental failure risk beyond base calendar exposure, Layer 4 may quantify that event-amplified session-gap component. If the closure alone explains the failure, calibration belongs to Layer 6 rather than Layer 4.
+Layer 6 consumes the accepted Layer 4 calendar-event pressure through Layer 5/6 handoffs when setting risk budget, premium budget, exposure permission, haircuts, capacity, stability, and confidence. Layer 6 does not independently promote raw calendar dates into risk events.
 
-Layer 10 may study overnight/weekend/holiday/long-closure failures after fold close. It should decide whether the failure is base calendar risk, event-amplified calendar risk, or a co-event/confounder case before proposing any future Layer 4 supervision.
+Layer 10 studies overnight/weekend/holiday/expiry/rebalance failures after fold close. It decides whether a calendar/structure event has incremental explanatory value, whether it is a co-event/confounder, and whether the evidence should supervise future Layer 4 training.
