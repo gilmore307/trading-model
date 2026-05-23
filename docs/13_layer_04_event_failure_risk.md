@@ -66,6 +66,19 @@ Layer 4 must not infer impact scope directly from raw news, SEC text, macro page
 
 Layer 4 must not consume arbitrary raw news, unreviewed event-family screening rows, post-hoc residual-discovery candidates, future returns, broker outcomes, or unapproved event-family associations.
 
+## Event pools
+
+Calendar and market-structure dates start in the global event observation pool, not in Layer 4 training. The first required system capability is a point-in-time calendar that knows key dates and their availability clocks:
+
+- ordinary overnight and Friday/weekend windows;
+- market holidays, long weekends, early closes, and pre-holiday sessions;
+- Thanksgiving, Christmas, and other major long closures;
+- triple-witching and major option-expiry windows;
+- index reconstitution and Nasdaq-100 rebalance windows;
+- halt or other scheduled/announced non-continuous-market windows when available.
+
+These rows are observation-only until Layer 10 sees failures or residual anomalies around them, tests controls, and promotes a specific event family/mechanism into the watched event pool. The watched event pool contains only Layer 10/review-accepted event families with supervision packets. Layer 4 trains only from watched-pool events and their accepted `event_strategy_failure_gate` rules.
+
 ## Event partitions
 
 Layer 4 event evidence is partitioned by **impact scope**, not by data source or article/source type. SEC filings, earnings releases, company news, macro releases, sector news, and political events can each be local or broad depending on their point-in-time expected and reviewed impact.

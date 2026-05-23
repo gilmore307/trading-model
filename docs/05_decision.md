@@ -1002,3 +1002,13 @@ This ordering is a prior for Layer 4 supervision, not an automatic Layer 6 raw i
 Layer 6 consumes the accepted Layer 4 calendar-event pressure through Layer 5/6 handoffs when setting risk budget, premium budget, exposure permission, haircuts, capacity, stability, and confidence. Layer 6 does not independently promote raw calendar dates into risk events.
 
 Layer 10 studies overnight/weekend/holiday/expiry/rebalance failures after fold close. It decides whether a calendar/structure event has incremental explanatory value, whether it is a co-event/confounder, and whether the evidence should supervise future Layer 4 training.
+
+## D056 - Calendar dates enter the global event pool before Layer 4 training
+
+Accepted: 2026-05-23
+
+Calendar and market-structure dates must first be built as point-in-time observations in the global event pool. The system should know key dates before evaluation: ordinary overnight/weekend windows, market holidays, long weekends, early closes, pre-holiday sessions, Thanksgiving/Christmas/major long closures, triple-witching, major option-expiry windows, index reconstitution, Nasdaq-100 rebalance windows, and other scheduled/announced non-continuous-market windows.
+
+These observations are not active Layer 4 training samples by default. They remain observation-only until a model/strategy/path/tradability failure occurs and Layer 10 tests whether the date has incremental explanatory value after market, sector, target, portfolio, account, and co-event controls.
+
+If Layer 10 and review accept the relationship, the event family moves into the watched event pool as a supervision packet or `event_strategy_failure_gate` for future Layer 4 training. If not accepted, the date remains in the global event pool for future attribution and audit only.

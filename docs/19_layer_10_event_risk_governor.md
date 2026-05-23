@@ -64,6 +64,13 @@ base_stack_layers_01_09 decision/evaluation
 
 Layer 10 may compute `realized_impact_scope_label` and `event_failure_attribution` labels during evaluation. These labels are not Layer 4 inference inputs for the same fold. They can only support review, calibration, future-fold event-observation rules, or future Layer 4 promotion after the accepted review gate.
 
+Layer 10 maintains the distinction between the global event observation pool and the watched event pool. The global pool contains known point-in-time event observations, including calendar and market-structure dates, before any causal claim is made. The watched pool contains only event families/mechanisms that Layer 10 has connected to failures with controls and that review has accepted for future Layer 4 supervision.
+
+Calendar/structure dates therefore enter the stack in two phases:
+
+1. build the point-in-time calendar so the system knows the dates before decisions are evaluated;
+2. after a model/strategy/path/tradability failure, let Layer 10 test whether those dates explain the failure and, if accepted, emit a future Layer 4 supervision packet.
+
 Required attribution evidence includes:
 
 - failed or anomalous model/strategy/action context and its expected vs realized outcome;
