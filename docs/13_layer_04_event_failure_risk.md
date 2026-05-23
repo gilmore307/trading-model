@@ -39,6 +39,21 @@ Required inputs are point-in-time and review-gated:
 
 Layer 4 must not consume arbitrary raw news, unreviewed event-family screening rows, post-hoc residual-discovery candidates, future returns, broker outcomes, or unapproved event-family associations.
 
+## Event partitions
+
+Layer 4 event evidence has two required partitions:
+
+- global/common event context: macro releases, market-wide policy/geopolitical/rates/liquidity events, sector or industry news, and other reviewed events that are reusable across all targets or broad sector baskets;
+- target event context: target-specific news, SEC filings, earnings/guidance artifacts, issuer corporate actions, same-symbol option activity events, and other reviewed evidence scoped to a specific symbol, issuer, or target candidate.
+
+Both partitions must preserve point-in-time clocks, reviewed family identity, scope, provenance, and evidence references. Model fitting may join both partitions for a target/fold, but the partitions must remain physically and logically separable so retention and replay cannot confuse reusable global context with fold-local target evidence.
+
+## Fold cleanup boundary
+
+Historical-training folds may delete fold-local target event working data after the fold is accepted or abandoned. This cleanup applies only to target event rows/artifacts/materialized joins that were created for that specific fold.
+
+Fold cleanup must not delete global/common event context, reviewed global event evidence packets, macro/sector/political event stores, shared event-family acceptance artifacts, or any cross-target reusable event references. If a fold consumes global events, it should record fold-local references to those global rows rather than copying them into a deletable target-event namespace.
+
 ## Output
 
 Primary output: `event_failure_risk_vector`.
