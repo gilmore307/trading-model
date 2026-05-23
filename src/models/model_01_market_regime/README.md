@@ -7,7 +7,9 @@ Boundary:
 - Input: rows from `trading_data.feature_01_market_regime`.
 - Primary output: rows for `trading_model.model_01_market_regime`.
 - Support outputs: rows for `trading_model.model_01_market_regime_explainability` and `trading_model.model_01_market_regime_diagnostics`.
-- Row key: `available_time`; explainability is keyed by `(available_time, factor_name)`.
+- Current compatibility row key: `available_time`.
+- Target row key after the accepted frame/horizon migration: `(available_time, input_frame, prediction_horizon, market_universe_ref)`.
+- Explainability is keyed by the model row identity plus `factor_name`.
 - No clustering, hard state labels, supervised regime labels, provider calls, or durable writes in the pure generator.
 
 Runtime SQL reads/writes are isolated in `scripts/generate_model_01_market_regime.py`.
@@ -32,6 +34,19 @@ Current primary output columns:
 - `1_market_liquidity_support_score`
 - `1_coverage_score`
 - `1_data_quality_score`
+
+## Frame and horizon semantics
+
+Layer 1 is a timeframe-aware market-context model. Short frames train and evaluate against short future horizons; daily frames train and evaluate against multi-day horizons.
+
+Accepted frame/horizon families:
+
+- `1min` -> `5min`, `10min`, `30min`
+- `5min` -> `15min`, `30min`, `60min`
+- `30min` -> `1h`, `2h`, `1d`
+- `1d` -> `3d`, `5d`, `20d`
+
+The public `1_*` output columns keep the same meaning inside each row. `input_frame` and `prediction_horizon` identify which market context the row describes; they should not be encoded by inventing separate suffixed output columns. Future return, volatility, drawdown, transition, and tradability outcomes are labels/evaluation indicators only and must not enter same-row construction.
 
 When writing to SQL, the runtime wrapper preserves compact model-facing keys such as `1_market_trend_quality_score` as physical column names and quotes numeric-leading identifiers where required. Explainability stores reviewed semantic-output context; diagnostics stores row-level coverage, missingness, and gating context.
 

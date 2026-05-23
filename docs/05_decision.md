@@ -912,3 +912,20 @@ Layer 10: EventRiskGovernor / EventIntelligenceOverlay
 Layer 6 learns a dynamic premium/risk-budget policy from Layer 1 global market regime, systemic or broad event-risk context, Layer 5 alpha quality, and portfolio/account replay state. It must be driven primarily by whole-market state; sector or target-specific evidence can cap, skip, or haircut only the current target and must not distort the global risk budget.
 
 Hard order boundaries remain outside the model stack in execution/order gates. Layer 6 outputs model-internal `dynamic_risk_policy_state`, not broker permission and not an execution hard-limit override.
+
+## D050 - Layer 1 market context is frame and horizon aware
+
+Accepted: 2026-05-22
+
+`MarketRegimeModel` must not treat market context as a single timeless state. Layer 1 training and evaluation pair each point-in-time input frame with compatible future outcome horizons:
+
+```text
+1min  -> 5min, 10min, 30min
+5min  -> 15min, 30min, 60min
+30min -> 1h, 2h, 1d
+1d    -> 3d, 5d, 20d
+```
+
+Future return, volatility, drawdown, transition, liquidity, and tradability outcomes are labels/evaluation indicators only. They must not enter same-row feature construction or model generation.
+
+The target physical `model_01_market_regime` identity is `(available_time, input_frame, prediction_horizon, market_universe_ref)`. Existing `available_time`-only rows remain a compatibility surface until a registry/schema migration lands the frame and horizon keys. Public `1_*` output names remain compact and unsuffixed inside each row.

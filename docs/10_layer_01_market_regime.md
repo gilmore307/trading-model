@@ -12,6 +12,23 @@ Layer 1 consumes broad-market and cross-asset evidence only. Sector/industry rot
 
 The upstream shared CSVs use `model_layer = layer_01_market_regime` to mark rows available to Layer 1 feature construction. Rows scoped to `layer_02_sector_context` belong to Layer 2 even when they live in the same static CSV asset.
 
+## Timeframe contract
+
+Layer 1 market context is horizon-aware. A current 1-minute market frame should not be trained to explain a 5-day market outcome, and a daily frame should not be treated as useful evidence for the next few minutes. Training and evaluation must pair each input frame with compatible future outcome horizons.
+
+Accepted frame/horizon families:
+
+```text
+input_frame = 1min   -> prediction_horizon = 5min, 10min, 30min
+input_frame = 5min   -> prediction_horizon = 15min, 30min, 60min
+input_frame = 30min  -> prediction_horizon = 1h, 2h, 1d
+input_frame = 1d     -> prediction_horizon = 3d, 5d, 20d
+```
+
+The target physical contract is one market-context row per `(available_time, input_frame, prediction_horizon, market_universe_ref)`. The same public state fields keep their compact `1_*` names inside each row; horizon and frame belong in row identity fields, not in duplicated column-name suffixes. Existing single-frame rows are a compatibility surface until the registry and SQL migration add the frame/horizon keys.
+
+Future outcome metrics are labels and evaluation indicators only. They may calibrate whether a state output was useful for its paired horizon, but they must not enter same-row model construction.
+
 ## Stage flow
 
 ```mermaid
@@ -41,6 +58,15 @@ trading_model.model_01_market_regime_diagnostics
 ## `model_01_market_regime` - output
 
 The primary output is the narrow downstream contract. It is keyed by `available_time` and describes whether the broad market / cross-asset background is clear, stable, low-transition-risk, liquid enough, and able to support downstream trading.
+
+The accepted target key is:
+
+```text
+available_time
+input_frame
+prediction_horizon
+market_universe_ref
+```
 
 Current fields:
 
@@ -121,11 +147,14 @@ Layer 1 model fields use compact `1_*` names in docs, model-facing payloads, and
 
 Use `docs/21_vector_taxonomy.md` for cross-layer terminology. Layer 1 outputs `market_context_state`; it does not output a target vector, sector vector, alpha confidence, or position instruction.
 
+Downstream consumers must select the market context that matches their decision horizon. Intraday entry logic should prefer short-frame contexts, risk and position logic may combine intraday and daily contexts, and swing/multi-day target work should use daily-frame contexts rather than a single undifferentiated market state.
+
 ## Layer acceptance
 
 Layer 1 changes are acceptable when they:
 
 - preserve the broad-market-only boundary and exclude sector/security/strategy/option/portfolio outcome leakage;
+- preserve the frame/horizon pairing rule and prevent short-frame evidence from being evaluated against unrelated long-horizon labels;
 - keep `trading_data.feature_01_market_regime` as the production input and `trading_model.model_01_market_regime` / `market_context_state` as the narrow downstream output;
 - keep explainability and diagnostics as review/support artifacts rather than hard downstream dependencies;
 - keep direction, direction strength, trend quality, stability, risk stress, transition risk, liquidity pressure/support, coverage, and data quality semantically separate;
