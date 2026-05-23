@@ -75,6 +75,10 @@ Persistent event regimes follow the same pool route but require interval handlin
 
 Historical and realtime/future acquisition rules are data-owned. `trading-data/docs/23_event_source_registry.md` defines source priority, fallback posture, certainty flags, and PIT `available_time` handling. Layer 10 consumes those observations for attribution; it does not fetch or rank raw sources during model evaluation.
 
+Macro observations use Trading Economics as the accepted runtime event source. Layer 10 should not require parallel official macro calendars for ordinary evaluation because TE carries the useful scheduled/expected/previous/actual-style fields in one PIT route. Official macro sources are incident/audit fallback unless a later route decision replaces TE.
+
+Regime observations can be promoted from high-frequency news topics. Layer 10 or its scouting jobs may form `candidate_regime` packets from repeated topic/entity clusters, but a persistent regime exists only after agent review accepts the topic as a regime and defines start/status/scope/decay rules.
+
 Required attribution evidence includes:
 
 - failed or anomalous model/strategy/action context and its expected vs realized outcome;
@@ -625,6 +629,7 @@ Examples: pandemic periods, tariff-war periods, US-Iran or other geopolitical wa
 Contract:
 
 - Preserve a regime interval with point-in-time `regime_start_time`, optional `regime_end_time`, `regime_status`, `last_material_update_time`, `decay_rule_ref`, affected scopes, and source/evidence refs.
+- The normal promotion route is high-frequency news topic -> candidate regime -> agent regime promotion review -> persistent event regime.
 - The regime may remain active or shadow-active even when no fresh article appears on the decision date.
 - Same-day news proximity is not required for Layer 10 attribution, but the regime state must have been knowable before the decision through prior evidence or reviewed status updates.
 - Decay and staleness rules must be explicit. If the regime no longer explains failures after controls, Layer 10 should mark it stale or observation-only rather than carrying permanent risk pressure.
