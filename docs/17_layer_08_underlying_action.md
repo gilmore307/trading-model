@@ -24,6 +24,25 @@ The Layer 8 training universe is every eligible direct-underlying/spot expressio
 
 Planned action thresholds and hard gates remain model/routing outputs. They are not acquisition-time filters for the historical training set.
 
+## Conservative Planned-Action Policy
+
+Layer 8 owns the conservative decision about whether a Layer 7 target-exposure change should become a planned underlying action. A changed `7_target_exposure_score_<horizon>` or non-zero `7_position_gap_score_<horizon>` is not sufficient reason to plan open, increase, reduce, close, or cover. Turnover, spread, slippage, pending-order duplication, horizon noise, and risk-budget compression can destroy otherwise valid alpha.
+
+Layer 8 should make `maintain` and `no_trade` first-class planned-action outcomes. It should prefer them unless the Layer 7 evidence and current underlying context jointly justify adjustment:
+
+```text
+resolved position gap is material
++ expected position utility lift is positive enough
++ cost-to-adjust pressure is acceptable
++ risk-budget fit is acceptable
++ projection/stability confidence is adequate
++ pending orders do not already cover the gap
++ quote/liquidity/borrow state supports adjustment
++ horizon conflict does not invalidate the adjustment
+```
+
+This keeps Layer 7 as a projection layer while preventing minute-level exposure noise from becoming unnecessary position churn.
+
 ## Position in the stack
 
 The accepted downstream chain is:

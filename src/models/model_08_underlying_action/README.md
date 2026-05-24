@@ -21,6 +21,8 @@ Key files:
 
 Training should use dense minute-level underlying-action state rows whenever Layer 7 projection plus point-in-time underlying quote/liquidity/policy context exist. Planned-action triggers and hard gates are outputs or routing policies, not training-row admission filters.
 
+Layer 8 owns conservative planned-action gating. It should prefer `maintain` or `no_trade` unless Layer 7 position gap, utility lift, cost, risk-budget fit, stability, confidence, pending-adjusted exposure, and current underlying quote/liquidity/borrow evidence jointly support an open/increase/reduce/close/cover plan.
+
 Boundary:
 
 ```text

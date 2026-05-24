@@ -19,7 +19,7 @@ Layer 7 does **not** answer buy/sell/hold, open/close/reverse, instrument choice
 
 ## Training Sample Granularity
 
-Layer 7 training should use dense minute-level position-projection rows whenever point-in-time Layer 5 alpha, Layer 6 policy state, and current/pending position context can be constructed. Live runtime may call Layer 7 only when an active position or routed candidate needs a fresh projection, but training only on those trigger minutes would hide the no-action and near-threshold states that make add/reduce/maintain decisions well calibrated.
+Layer 7 training should use dense minute-level position-projection rows whenever point-in-time Layer 5 alpha, Layer 6 policy state, and current/pending position context can be constructed. Live runtime may call Layer 7 only when an active position or routed candidate needs a fresh projection, but training only on those trigger minutes would hide aligned, no-gap, low-utility, and near-threshold states that later Layer 8 action planning needs to be calibrated.
 
 The Layer 7 training row universe is not `minute x every listed symbol`. It is every eligible minute-level projection state for:
 
@@ -30,21 +30,20 @@ The Layer 7 training row universe is not `minute x every listed symbol`. It is e
 
 Action triggers, exposure-change thresholds, and downstream Layer 8 handoff decisions are calibration/routing policies after projection. They must not decide which historical minutes Layer 7 is allowed to learn from.
 
-## Conservative Adjustment Policy
+## Projection Evidence Boundary
 
-A changed target exposure is not by itself a reason to change the live or paper position. Layer 7 may update its projected target holding state every minute, but downstream adjustment should require enough evidence that changing the position improves net utility after costs, liquidity, risk budget, pending orders, and stability are considered.
+A changed target exposure is not by itself a position adjustment. Layer 7 may update projected target holding state every minute, but it only emits the evidence Layer 8 needs to decide whether an adjustment plan is justified:
 
-Layer 7 should therefore make no-action and maintain states first-class outcomes. A non-zero `7_position_gap_score_<horizon>` can remain an observation when:
+- resolved target exposure;
+- resolved position gap;
+- expected position utility;
+- cost-to-adjust pressure;
+- risk-budget fit;
+- projection stability and confidence;
+- pending-adjusted effective exposure;
+- horizon conflict state and resolution reasons.
 
-- the gap is small relative to adjustment cost;
-- expected position utility lift is weak or unstable;
-- `7_position_state_stability_score_<horizon>` is low;
-- `7_projection_confidence_score_<horizon>` is low;
-- risk-budget fit is marginal;
-- pending orders already cover most of the gap;
-- horizon signals conflict or the dominant horizon is short-lived.
-
-The downstream Layer 8 handoff should be conservative by default: prefer `maintain` or `no_trade` unless the resolved position gap, projected utility lift, risk-budget fit, stability, confidence, and cost-to-adjust evidence jointly justify a planned action. This policy prevents minute-level target-exposure noise from becoming unnecessary turnover.
+Layer 7 must not emit `maintain`, `no_trade`, `open`, `increase`, `reduce`, `close`, or `cover`. Those are Layer 8 planned-action outcomes. Layer 7's job is to make target exposure and adjustment pressure explicit without turning minute-level projection changes into action policy.
 
 ## Position and input chain
 

@@ -512,13 +512,13 @@ The principle is not `minute x every listed symbol` for every layer. Each layer 
 
 Execution triggers, candidate thresholds, no-trade rules, and option-expression hard filters remain important, but they are model outputs, labels, or downstream routing policies. They are not default training-row admission filters.
 
-## D064 - Layer 7 target exposure changes are not automatic position changes
+## D064 - Layer 8 owns conservative planned-action gating
 
 Accepted: 2026-05-24
 
-Layer 7 may update projected target exposure every minute, but a changed `7_target_exposure_score_<horizon>` or non-zero `7_position_gap_score_<horizon>` is not sufficient reason to adjust the position. The system should be conservative about changing position state because turnover, spread, slippage, pending-order duplication, horizon noise, and risk-budget compression can destroy otherwise valid alpha.
+Layer 7 may update projected target exposure every minute, but a changed `7_target_exposure_score_<horizon>` or non-zero `7_position_gap_score_<horizon>` is not sufficient reason to adjust the position. Layer 7 only emits target holding-state projection and adjustment-pressure evidence. It must not emit `maintain`, `no_trade`, `open`, `increase`, `reduce`, `close`, or `cover`.
 
-Layer 7 must treat maintain/no-action states as valid learned outcomes. Downstream Layer 8 handoff should require enough combined evidence before planning an open, increase, reduce, close, or cover action:
+Layer 8 owns the conservative planned-action gate. It should treat `maintain` and `no_trade` as valid first-class outcomes and require enough combined evidence before planning an open, increase, reduce, close, or cover action:
 
 ```text
 resolved position gap is material
@@ -527,6 +527,7 @@ resolved position gap is material
 + risk-budget fit is acceptable
 + projection/stability confidence is adequate
 + pending orders do not already cover the gap
++ quote/liquidity/borrow state supports adjustment
 + horizon conflict does not invalidate the adjustment
 ```
 
@@ -988,7 +989,7 @@ target_candidate
 active_position
 ```
 
-`global` is the base row: one portfolio/account risk-policy row per eligible minute. It does not require `target_candidate_id` or a Layer 5 alpha vector. `target_candidate` rows condition the global policy on a Layer 5 alpha candidate. `active_position` rows condition the policy on an existing position that Layer 7 may need to add, reduce, maintain, or close.
+`global` is the base row: one portfolio/account risk-policy row per eligible minute. It does not require `target_candidate_id` or a Layer 5 alpha vector. `target_candidate` rows condition the global policy on a Layer 5 alpha candidate. `active_position` rows condition the policy on an existing position that Layer 7 may need to project and Layer 8 may later plan to add, reduce, maintain, or close.
 
 The training substrate is therefore not `minute x all symbols`. It is:
 
