@@ -7,35 +7,35 @@ It owns point-in-time model research, model-local generators/evaluators, promoti
 ## Current Route
 
 ```text
-MarketRegimeModel
+M01 Market Regime
   -> market_context_state
 
-SectorContextModel
+M02 Sector Context
   -> sector_context_state
 
-anonymous target candidate builder + TargetStateVectorModel
+anonymous target candidate builder + M03 Target State
   -> anonymous_target_feature_vector
   -> target_context_state
 
-EventFailureRiskModel
+M04 Event Failure Risk
   -> event_failure_risk_vector
 
-AlphaConfidenceModel
+M05 Alpha Confidence
   -> alpha_confidence_vector
 
-DynamicRiskPolicyModel
+M06 Dynamic Risk Policy
   -> dynamic_risk_policy_state
 
-PositionProjectionModel
+M07 Position Projection
   -> position_projection_vector
 
-UnderlyingActionModel
+M08 Underlying Action
   -> underlying_action_plan / underlying_action_vector
 
-TradingGuidanceModel / OptionExpressionModel
+M09 Option Expression
   -> trading_guidance_record plus optional option_expression_plan / expression_vector
 
-EventRiskGovernor / EventIntelligenceOverlay
+M10 Event Risk Governor
   -> event_risk_intervention / event-adjusted risk guidance
 ```
 
@@ -61,16 +61,17 @@ Runtime path defaults preserve the OpenClaw `/root/projects` layout but can be o
 ## Implementation Packages
 
 ```text
-src/models/model_01_market_regime/        MarketRegimeModel.
-src/models/model_02_sector_context/       SectorContextModel.
-src/models/model_03_target_state_vector/  TargetStateVectorModel and anonymous target candidate preprocessing.
-src/models/model_04_event_failure_risk/   EventFailureRiskModel.
-src/models/model_05_alpha_confidence/     AlphaConfidenceModel.
-src/models/model_06_dynamic_risk_policy/  DynamicRiskPolicyModel.
-src/models/model_07_position_projection/  PositionProjectionModel.
-src/models/model_08_underlying_action/    UnderlyingActionModel.
-src/models/model_09_option_expression/    OptionExpressionModel package for Layer 9 trading guidance.
-src/models/model_10_event_risk_governor/  EventRiskGovernor.
+src/models/model_sequence.py              M01-M10 display/order metadata.
+src/models/model_01_market_regime/        M01 Market Regime.
+src/models/model_02_sector_context/       M02 Sector Context.
+src/models/model_03_target_state_vector/  M03 Target State and anonymous target candidate preprocessing.
+src/models/model_04_event_failure_risk/   M04 Event Failure Risk.
+src/models/model_05_alpha_confidence/     M05 Alpha Confidence.
+src/models/model_06_dynamic_risk_policy/  M06 Dynamic Risk Policy.
+src/models/model_07_position_projection/  M07 Position Projection.
+src/models/model_08_underlying_action/    M08 Underlying Action.
+src/models/model_09_option_expression/    M09 Option Expression package for Layer 9 trading guidance.
+src/models/model_10_event_risk_governor/  M10 Event Risk Governor.
 src/model_governance/                     Shared evaluation, promotion, SQL, and local-layer helpers.
 ```
 

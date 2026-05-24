@@ -1,4 +1,4 @@
-# Layer 09 — TradingGuidanceModel / OptionExpressionModel
+# M09 - Option Expression / TradingGuidanceModel / OptionExpressionModel
 
 Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
 

@@ -1,4 +1,4 @@
-# Layer 04 — EventFailureRiskModel
+# M04 - Event Failure Risk / EventFailureRiskModel
 
 Status: accepted Layer 4 contract and physical scaffold.
 

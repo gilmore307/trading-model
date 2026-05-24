@@ -1,4 +1,4 @@
-# Layer 08 — UnderlyingActionModel
+# M08 - Underlying Action / UnderlyingActionModel
 
 Status: accepted Layer 8 design route; deterministic scaffold implemented in `src/models/model_08_underlying_action/`; production validation pending.
 

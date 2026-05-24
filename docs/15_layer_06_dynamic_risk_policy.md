@@ -1,4 +1,4 @@
-# Layer 6 Dynamic Risk Policy
+# M06 - Dynamic Risk Policy / DynamicRiskPolicyModel
 
 Status: accepted Layer 6 design route; deterministic V1 scaffold implemented in `src/models/model_06_dynamic_risk_policy/`.
 

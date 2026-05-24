@@ -11,16 +11,16 @@ This directory contains the current documentation spine for `trading-model`.
 - `04_task.md` — Tasks.
 - `05_decision.md` — Decisions.
 - `06_memory.md` — Memory.
-- `10_layer_01_market_regime.md` — Layer 01 - MarketRegimeModel.
-- `11_layer_02_sector_context.md` — Layer 02 - SectorContextModel.
-- `12_layer_03_target_state_vector.md` — Layer 03 - TargetStateVectorModel.
-- `13_layer_04_event_failure_risk.md` — Layer 04 — EventFailureRiskModel.
-- `14_layer_05_alpha_confidence.md` — Layer 05 — AlphaConfidenceModel.
-- `15_layer_06_dynamic_risk_policy.md` — Layer 06 — DynamicRiskPolicyModel.
-- `16_layer_07_position_projection.md` — Layer 07 — PositionProjectionModel.
-- `17_layer_08_underlying_action.md` — Layer 08 — UnderlyingActionModel.
-- `18_layer_09_trading_guidance.md` — Layer 09 — TradingGuidanceModel / OptionExpressionModel.
-- `19_layer_10_event_risk_governor.md` — Layer 10 — EventRiskGovernor / EventIntelligenceOverlay.
+- `10_layer_01_market_regime.md` — `M01` Market Regime.
+- `11_layer_02_sector_context.md` — `M02` Sector Context.
+- `12_layer_03_target_state_vector.md` — `M03` Target State.
+- `13_layer_04_event_failure_risk.md` — `M04` Event Failure Risk.
+- `14_layer_05_alpha_confidence.md` — `M05` Alpha Confidence.
+- `15_layer_06_dynamic_risk_policy.md` — `M06` Dynamic Risk Policy.
+- `16_layer_07_position_projection.md` — `M07` Position Projection.
+- `17_layer_08_underlying_action.md` — `M08` Underlying Action.
+- `18_layer_09_trading_guidance.md` — `M09` Option Expression.
+- `19_layer_10_event_risk_governor.md` — `M10` Event Risk Governor.
 - `20_model_decomposition.md` — Model Decomposition Framework.
 - `21_vector_taxonomy.md` — Vector and State Taxonomy.
 - `22_state_vector_feature_registry.md` — State Vector Feature Semantics Registry.

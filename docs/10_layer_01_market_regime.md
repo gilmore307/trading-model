@@ -1,4 +1,4 @@
-# Layer 01 - MarketRegimeModel
+# M01 - Market Regime / MarketRegimeModel
 
 This file records the active V2.2 direction-neutral market tradability/regime contract for Layer 1.
 

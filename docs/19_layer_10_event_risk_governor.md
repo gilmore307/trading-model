@@ -1,4 +1,4 @@
-# Layer 10 — EventRiskGovernor / EventIntelligenceOverlay
+# M10 - Event Risk Governor / EventIntelligenceOverlay
 
 Status: accepted Layer 10 design route; deterministic V1 scaffold implemented in `src/models/model_10_event_risk_governor/`.
 

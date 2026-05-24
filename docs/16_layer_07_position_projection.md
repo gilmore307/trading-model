@@ -1,4 +1,4 @@
-# Layer 07 — PositionProjectionModel
+# M07 - Position Projection / PositionProjectionModel
 
 Status: accepted Layer 7 design route; deterministic V1 scaffold implemented in `src/models/model_07_position_projection/`.
 

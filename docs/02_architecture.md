@@ -17,17 +17,17 @@ Owner intent: keep the model stack direct, point-in-time, and current-route auth
 
 ```text
 point-in-time data foundation
-  -> MarketRegimeModel
-  -> SectorContextModel
-  -> TargetStateVectorModel
+  -> M01 Market Regime
+  -> M02 Sector Context
+  -> M03 Target State
      (Layer 3 preprocessing includes anonymous target candidate construction)
-  -> EventFailureRiskModel
-  -> AlphaConfidenceModel
-  -> DynamicRiskPolicyModel
-  -> PositionProjectionModel
-  -> UnderlyingActionModel
-  -> TradingGuidanceModel / OptionExpressionModel
-  -> EventRiskGovernor
+  -> M04 Event Failure Risk
+  -> M05 Alpha Confidence
+  -> M06 Dynamic Risk Policy
+  -> M07 Position Projection
+  -> M08 Underlying Action
+  -> M09 Option Expression
+  -> M10 Event Risk Governor
   -> unified decision record / downstream execution handoff
 ```
 
@@ -49,18 +49,21 @@ This separation is mandatory:
 
 ## Canonical Layers
 
-| Layer | Model class | Stable id | Conceptual output | Role |
-|---|---|---|---|---|
-| 1 | `MarketRegimeModel` | `market_regime_model` | `market_context_state` | Direction-neutral broad market tradability/regime state keyed by `available_time`. |
-| 2 | `SectorContextModel` | `sector_context_model` | `sector_context_state` | Direction-neutral sector/industry tradability context under market context. |
-| 3 | `TargetStateVectorModel` | `target_state_vector_model` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
-| 4 | `EventFailureRiskModel` | `event_failure_risk_model` | `event_failure_risk_vector` | Agent-reviewed event/strategy-failure relationships converted into pre-alpha failure-risk conditioning. |
-| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | `alpha_confidence_vector` | Reviewed state stack plus Layer 4 failure-risk conditioning to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
-| 6 | `DynamicRiskPolicyModel` | `dynamic_risk_policy_model` | `dynamic_risk_policy_state` | Dynamic premium/risk-budget policy from global market regime, systemic event risk, alpha quality, and portfolio context; target-specific evidence may cap only the current target. |
-| 7 | `PositionProjectionModel` | `position_projection_model` | `position_projection_vector` | Final adjusted alpha plus Layer 6 risk policy, current/pending position, cost, and risk context to projected target holding state. |
-| 8 | `UnderlyingActionModel` | `underlying_action_model` | `underlying_action_plan` / `underlying_action_vector` | Direct underlying/spot planned action thesis for stock, ETF, or crypto-style candidates: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and optional trading-guidance handoff. |
-| 9 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | `trading_guidance` / `option_expression_plan` / `expression_vector` | Optional offline trading guidance, including optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
-| 10 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | `event_risk_intervention` / `event_context_vector` | Point-in-time residual event-risk intervention on the direct-underlying/spot thesis; Layer 9 context is optional; may discover, block/cap/review guidance, or propose Layer 4 promotions but must not mutate broker/account state. |
+| Step | Short name | Stable id | Stable surface | Conceptual output | Role |
+|---|---|---|---|---|---|
+| `M01` | Market Regime | `market_regime_model` | `model_01_market_regime` | `market_context_state` | Direction-neutral broad market tradability/regime state keyed by `available_time`. |
+| `M02` | Sector Context | `sector_context_model` | `model_02_sector_context` | `sector_context_state` | Direction-neutral sector/industry tradability context under market context. |
+| `M03` | Target State | `target_state_vector_model` | `model_03_target_state_vector` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
+| `M04` | Event Failure Risk | `event_failure_risk_model` | `model_04_event_failure_risk` | `event_failure_risk_vector` | Agent-reviewed event/strategy-failure relationships converted into pre-alpha failure-risk conditioning. |
+| `M05` | Alpha Confidence | `alpha_confidence_model` | `model_05_alpha_confidence` | `alpha_confidence_vector` | Reviewed state stack plus Layer 4 failure-risk conditioning to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
+| `M06` | Dynamic Risk Policy | `dynamic_risk_policy_model` | `model_06_dynamic_risk_policy` | `dynamic_risk_policy_state` | Dynamic premium/risk-budget policy from global market regime, systemic event risk, alpha quality, and portfolio context; target-specific evidence may cap only the current target. |
+| `M07` | Position Projection | `position_projection_model` | `model_07_position_projection` | `position_projection_vector` | Final adjusted alpha plus Layer 6 risk policy, current/pending position, cost, and risk context to projected target holding state. |
+| `M08` | Underlying Action | `underlying_action_model` | `model_08_underlying_action` | `underlying_action_plan` / `underlying_action_vector` | Direct underlying/spot planned action thesis for stock, ETF, or crypto-style candidates: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and optional trading-guidance handoff. |
+| `M09` | Option Expression | `option_expression_model` | `model_09_option_expression` | `option_expression_plan` / `expression_vector` | Optional offline trading guidance and option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
+| `M10` | Event Risk Governor | `event_risk_governor` | `model_10_event_risk_governor` | `event_risk_intervention` / `event_context_vector` | Point-in-time residual event-risk intervention on the direct-underlying/spot thesis; Layer 9 context is optional; may discover, block/cap/review guidance, or propose Layer 4 promotions but must not mutate broker/account state. |
+
+The `M01` through `M10` names are display/order fields. Stable package, script,
+table, and registry surfaces continue to use `model_01_*` through `model_10_*`.
 
 Do not treat Layer 9 or Layer 10 as live execution. Broker mutation and live/paper order placement are outside `trading-model`. There is no accepted Layer 11 inside this repository; post-Layer-10 work crosses into downstream review / execution-owned boundaries.
 

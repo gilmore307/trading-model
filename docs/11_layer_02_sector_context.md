@@ -1,4 +1,4 @@
-# Layer 02 - SectorContextModel
+# M02 - Sector Context / SectorContextModel
 
 This file records the active direction-neutral `trading-model` contract and implementation target for Layer 2. The deterministic implementation, SQL writer, evaluation path, and registry surfaces use the direction-neutral terms below.
 

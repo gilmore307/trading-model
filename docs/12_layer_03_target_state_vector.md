@@ -1,4 +1,4 @@
-# Layer 03 - TargetStateVectorModel
+# M03 - Target State / TargetStateVectorModel
 
 Status: Accepted direction-neutral tradability boundary; deterministic implementation/evaluation scaffold complete; production promotion pending real-data evidence and accepted review.
 

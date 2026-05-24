@@ -1,4 +1,4 @@
-# Layer 05 — AlphaConfidenceModel
+# M05 - Alpha Confidence / AlphaConfidenceModel
 
 Status: accepted Layer 5 design route; deterministic V1 scaffold currently implemented in physical `src/models/model_05_alpha_confidence/`.
 
