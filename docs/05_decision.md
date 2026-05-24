@@ -512,6 +512,26 @@ The principle is not `minute x every listed symbol` for every layer. Each layer 
 
 Execution triggers, candidate thresholds, no-trade rules, and option-expression hard filters remain important, but they are model outputs, labels, or downstream routing policies. They are not default training-row admission filters.
 
+## D064 - Layer 7 target exposure changes are not automatic position changes
+
+Accepted: 2026-05-24
+
+Layer 7 may update projected target exposure every minute, but a changed `7_target_exposure_score_<horizon>` or non-zero `7_position_gap_score_<horizon>` is not sufficient reason to adjust the position. The system should be conservative about changing position state because turnover, spread, slippage, pending-order duplication, horizon noise, and risk-budget compression can destroy otherwise valid alpha.
+
+Layer 7 must treat maintain/no-action states as valid learned outcomes. Downstream Layer 8 handoff should require enough combined evidence before planning an open, increase, reduce, close, or cover action:
+
+```text
+resolved position gap is material
++ expected position utility lift is positive enough
++ cost-to-adjust pressure is acceptable
++ risk-budget fit is acceptable
++ projection/stability confidence is adequate
++ pending orders do not already cover the gap
++ horizon conflict does not invalidate the adjustment
+```
+
+This preserves dense minute-level training while preventing minute-level exposure noise from becoming frequent position churn.
+
 
 ## D022 - PositionProjectionModel target holding-state boundary
 

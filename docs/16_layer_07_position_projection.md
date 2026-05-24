@@ -30,6 +30,22 @@ The Layer 7 training row universe is not `minute x every listed symbol`. It is e
 
 Action triggers, exposure-change thresholds, and downstream Layer 8 handoff decisions are calibration/routing policies after projection. They must not decide which historical minutes Layer 7 is allowed to learn from.
 
+## Conservative Adjustment Policy
+
+A changed target exposure is not by itself a reason to change the live or paper position. Layer 7 may update its projected target holding state every minute, but downstream adjustment should require enough evidence that changing the position improves net utility after costs, liquidity, risk budget, pending orders, and stability are considered.
+
+Layer 7 should therefore make no-action and maintain states first-class outcomes. A non-zero `7_position_gap_score_<horizon>` can remain an observation when:
+
+- the gap is small relative to adjustment cost;
+- expected position utility lift is weak or unstable;
+- `7_position_state_stability_score_<horizon>` is low;
+- `7_projection_confidence_score_<horizon>` is low;
+- risk-budget fit is marginal;
+- pending orders already cover most of the gap;
+- horizon signals conflict or the dominant horizon is short-lived.
+
+The downstream Layer 8 handoff should be conservative by default: prefer `maintain` or `no_trade` unless the resolved position gap, projected utility lift, risk-budget fit, stability, confidence, and cost-to-adjust evidence jointly justify a planned action. This policy prevents minute-level target-exposure noise from becoming unnecessary turnover.
+
 ## Position and input chain
 
 The accepted chain is:

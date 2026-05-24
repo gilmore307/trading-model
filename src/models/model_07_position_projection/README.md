@@ -13,4 +13,6 @@ Owns local mapping from final adjusted `alpha_confidence_vector` plus point-in-t
 
 Training should use dense minute-level projection-state rows whenever the point-in-time Layer 5/6 and position-context inputs exist. Action triggers and Layer 8 handoff thresholds are downstream routing policies, not training-row admission filters.
 
+Target exposure changes are state projections, not automatic position changes. Layer 7 should make maintain/no-action states first-class and should hand off adjustment pressure only when position gap, utility lift, cost, risk-budget fit, stability, confidence, and pending-order context jointly support changing exposure.
+
 Boundary: this package projects target position state only. It must not emit buy/sell/hold/open/close/reverse, instrument choice, option-contract fields, order routing, or broker mutation fields.
