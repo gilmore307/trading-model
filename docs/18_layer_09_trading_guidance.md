@@ -6,6 +6,14 @@ Status: accepted V1 contract with deterministic scaffold complete for the curren
 
 It is the first layer that may select option expression and contract constraints. It is still not live execution.
 
+## Training Sample Granularity
+
+Layer 9 training should use dense minute-level option-expression rows where point-in-time Layer 8 thesis context and option-chain snapshots exist. It must not train only on the finally selected contract or only on minutes where an option expression looked attractive. The model needs poor, wide-spread, high-IV, stale, illiquid, unsuitable-DTE, unsuitable-delta, and no-option cases to learn when the right output is `underlying_only_expression` or `no_option_expression`.
+
+Layer 9 is conditional on data availability: if no point-in-time option-chain snapshot exists, the row can support direct-underlying/no-option evidence but cannot pretend to evaluate missing contracts. Direct-underlying and crypto routes may bypass option-expression scoring in live operation, but historical training should still preserve eligible no-option/direct-underlying rows so bypass behavior is calibrated rather than implicit.
+
+Contract hard filters, selected-contract thresholds, and expression routes are outputs or downstream policies. They must not be used as default training-row admission filters.
+
 ## Boundary
 
 Layer 9 owns:

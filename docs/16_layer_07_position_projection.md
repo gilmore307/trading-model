@@ -17,6 +17,19 @@ Layer 7 answers:
 
 Layer 7 does **not** answer buy/sell/hold, open/close/reverse, instrument choice, option-contract choice, order type, routing, or live/paper execution questions. It projects target position state only. Layer 8 owns the direct-underlying planned action thesis; Layer 9 owns option expression. Broker mutation remains outside `trading-model`.
 
+## Training Sample Granularity
+
+Layer 7 training should use dense minute-level position-projection rows whenever point-in-time Layer 5 alpha, Layer 6 policy state, and current/pending position context can be constructed. Live runtime may call Layer 7 only when an active position or routed candidate needs a fresh projection, but training only on those trigger minutes would hide the no-action and near-threshold states that make add/reduce/maintain decisions well calibrated.
+
+The Layer 7 training row universe is not `minute x every listed symbol`. It is every eligible minute-level projection state for:
+
+- active positions;
+- routed or simulated candidate positions with point-in-time current/pending exposure context;
+- flat/no-position control rows where the model must learn that target exposure should remain zero;
+- near-threshold rows that would be easy to overtrade without cost and risk-budget discipline.
+
+Action triggers, exposure-change thresholds, and downstream Layer 8 handoff decisions are calibration/routing policies after projection. They must not decide which historical minutes Layer 7 is allowed to learn from.
+
 ## Position and input chain
 
 The accepted chain is:

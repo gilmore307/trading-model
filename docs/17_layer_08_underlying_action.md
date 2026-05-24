@@ -16,6 +16,14 @@ Layer 8 answers:
 
 Layer 8 does **not** place orders, route orders, choose order type, mutate broker/account state, or select option contracts. Its action type is a planned/offline action type, not an execution instruction. Live/paper execution remains in `trading-execution`.
 
+## Training Sample Granularity
+
+Layer 8 training should use dense minute-level underlying-action rows whenever point-in-time Layer 7 projection plus underlying quote, liquidity, policy, and exposure context can be constructed. Live operation may only request an action plan when a routed candidate or active position needs one, but training only on action-triggered rows would overstate open/increase/reduce cases and undertrain `maintain`, `no_trade`, close-then-reassess, cost-blocked, and liquidity-blocked cases.
+
+The Layer 8 training universe is every eligible direct-underlying/spot expression minute for the accepted row scope, not every listed symbol every minute. It should include open, increase, reduce, close, cover, maintain, and no-trade outcomes, including rows where a plausible alpha exists but the right plan is still no action.
+
+Planned action thresholds and hard gates remain model/routing outputs. They are not acquisition-time filters for the historical training set.
+
 ## Position in the stack
 
 The accepted downstream chain is:

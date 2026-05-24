@@ -19,6 +19,8 @@ Key files:
 - `generator.py` — deterministic point-in-time scaffold for action-plan rows.
 - `evaluation.py` — offline label helper for plan-quality evaluation; labels must not be joined into inference payloads.
 
+Training should use dense minute-level underlying-action state rows whenever Layer 7 projection plus point-in-time underlying quote/liquidity/policy context exist. Planned-action triggers and hard gates are outputs or routing policies, not training-row admission filters.
+
 Boundary:
 
 ```text

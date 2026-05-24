@@ -492,6 +492,26 @@ This is not necessarily `minute x every listed symbol`; it is every eligible min
 
 Layer 5 may still expose downstream routing statuses such as `pass_to_layer6`, `pass_with_haircut`, `watch_only`, `reject_low_confidence`, `reject_bad_path`, `reject_bad_tradability`, or `reject_event_risk`. Those thresholds are tuned by walk-forward evidence and decide downstream routing, not which rows Layer 5 is allowed to train on.
 
+## D063 - Later layers prefer dense minute-level training when feasible
+
+Accepted: 2026-05-24
+
+Layer 5 established the default rule for later decision layers: if a model can construct point-in-time minute-level state rows, historical training should use those dense rows rather than only rows that passed an execution trigger, candidate threshold, or action gate.
+
+This applies to:
+
+```text
+Layer 5: dense target-state alpha-confidence rows
+Layer 6: dense global policy rows, plus candidate/position rows when those contexts exist
+Layer 7: dense position-projection rows for active or simulated current/pending position contexts
+Layer 8: dense underlying-action rows where Layer 7 projection plus underlying quote/liquidity context exist
+Layer 9: dense option-expression rows where option-chain snapshots exist, plus no-option/direct-underlying rows
+```
+
+The principle is not `minute x every listed symbol` for every layer. Each layer has its own eligible state universe. The rule is that once a row is eligible and point-in-time complete for that layer, it should not be excluded merely because live routing would not have triggered an action at that minute.
+
+Execution triggers, candidate thresholds, no-trade rules, and option-expression hard filters remain important, but they are model outputs, labels, or downstream routing policies. They are not default training-row admission filters.
+
 
 ## D022 - PositionProjectionModel target holding-state boundary
 

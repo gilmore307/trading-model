@@ -1,6 +1,6 @@
 # model_07_position_projection
 
-Physical package for Layer 6 `PositionProjectionModel` deterministic scaffold.
+Physical package for Layer 7 `PositionProjectionModel` deterministic scaffold.
 
 Owns local mapping from final adjusted `alpha_confidence_vector` plus point-in-time current/pending position, friction, portfolio, risk-budget, and policy context into `position_projection_vector`. The scaffold implements:
 
@@ -10,5 +10,7 @@ Owns local mapping from final adjusted `alpha_confidence_vector` plus point-in-t
 - gap-aware cost-to-adjust scoring;
 - risk-budget compression and horizon resolution;
 - offline position-utility labels and leakage assertions in `evaluation.py`.
+
+Training should use dense minute-level projection-state rows whenever the point-in-time Layer 5/6 and position-context inputs exist. Action triggers and Layer 8 handoff thresholds are downstream routing policies, not training-row admission filters.
 
 Boundary: this package projects target position state only. It must not emit buy/sell/hold/open/close/reverse, instrument choice, option-contract fields, order routing, or broker mutation fields.
