@@ -79,6 +79,36 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
                 other_layer = layer_number - 1
                 self.assertEqual(generator._column_type(f"{other_layer}_fixture_score"), "TEXT")
 
+    def test_layer_08_database_input_preserves_layer_7_projection_fields(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_08_underlying_action/generate_model_08_underlying_action.py")
+
+        rows = generator._decision_rows(
+            alpha_rows=[
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "alpha_confidence_vector_ref": "acv_1",
+                    "5_alpha_confidence_score_1W": 0.82,
+                }
+            ],
+            projection_rows=[
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "alpha_confidence_vector_ref": "acv_1",
+                    "position_projection_vector_ref": "ppv_1",
+                    "7_dominant_projection_horizon": "1W",
+                    "7_target_exposure_score_1W": 0.35,
+                    "6_target_exposure_score_1W": 0.99,
+                }
+            ],
+        )
+
+        projection_payload = rows[0]["position_projection_vector"]
+        self.assertEqual(projection_payload["7_dominant_projection_horizon"], "1W")
+        self.assertEqual(projection_payload["7_target_exposure_score_1W"], 0.35)
+        self.assertNotIn("6_target_exposure_score_1W", projection_payload)
+
     def test_layer_04_database_input_falls_back_to_neutral_target_context_without_gate_table(self) -> None:
         generator = self._load_script_module(REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py")
 

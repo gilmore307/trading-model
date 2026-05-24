@@ -118,7 +118,7 @@ def _decision_rows(*, projection_rows: Sequence[Mapping[str, Any]], alpha_rows: 
                 "alpha_confidence_vector_ref": alpha_ref,
                 "position_projection_vector_ref": projection.get("position_projection_vector_ref"),
                 "alpha_confidence_vector": _prefixed_payload(alpha, "5_", "alpha_confidence_vector"),
-                "position_projection_vector": _prefixed_payload(projection, "6_", "position_projection_vector"),
+                "position_projection_vector": _prefixed_payload(projection, "7_", "position_projection_vector"),
                 "current_underlying_position_state": {"current_underlying_exposure_score": 0.0},
                 "pending_underlying_order_state": {"pending_underlying_exposure_score": 0.0, "pending_fill_probability_estimate": 0.0},
                 "underlying_quote_state": {"reference_price": 100.0, "bid_price": 99.95, "ask_price": 100.05, "halt_status": "active"},
