@@ -683,12 +683,12 @@ Contract:
 Layer 10 V1 should be auditable and structured before any broad black-box event model. The internal route is:
 
 ```text
-4A EventEncoder
-4B EventContextMatcher
-4C EventOverlayScorer
+10A EventEncoder
+10B EventContextMatcher
+10C EventOverlayScorer
 ```
 
-### 4A - EventEncoder
+### 10A - EventEncoder
 
 Consumes event overview rows and detail artifacts. It answers what the event is before target conditioning.
 
@@ -707,7 +707,7 @@ event_revision_risk
 event_staleness
 ```
 
-### 4B - EventContextMatcher
+### 10B - EventContextMatcher
 
 Consumes encoded events plus market, sector, target, mapping, and sensitivity context. It answers whether and how the event matters for this target context.
 
@@ -723,7 +723,7 @@ event_target_sensitivity_score
 event_scope_escalation_risk_score
 ```
 
-### 4C - EventOverlayScorer
+### 10C - EventOverlayScorer
 
 Aggregates visible events into horizon-aware `event_risk_intervention / event_context_vector` score families.
 

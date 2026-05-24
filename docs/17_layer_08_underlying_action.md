@@ -545,14 +545,14 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 Layer 8 also needs resolved plan fields so downstream consumers do not re-solve per-horizon action conflicts:
 
 ```text
-7_resolved_underlying_action_type
-7_resolved_action_side
-7_resolved_dominant_horizon
-7_resolved_trade_eligibility_score
-7_resolved_trade_intensity_score
-7_resolved_entry_quality_score
-7_resolved_action_confidence_score
-7_resolved_reason_codes
+8_resolved_underlying_action_type
+8_resolved_action_side
+8_resolved_dominant_horizon
+8_resolved_trade_eligibility_score
+8_resolved_trade_intensity_score
+8_resolved_entry_quality_score
+8_resolved_action_confidence_score
+8_resolved_reason_codes
 ```
 
 Resolved fields are handoff/plan fields, not core scalar score-family rows. They summarize the chosen underlying thesis and remain offline.
@@ -639,39 +639,39 @@ Resolved fields are handoff/plan fields, not core scalar score-family rows. They
 
 Layer 8 is decomposed into these components:
 
-### 7A - TradeEligibilityGate
+### 8A - TradeEligibilityGate
 
 Splits hard gates from soft gates and emits trade eligibility score, block state, and reason codes.
 
-### 7B - HorizonAndActionResolver
+### 8B - HorizonAndActionResolver
 
 Resolves conflicting Layer 5/7 per-horizon signals and chooses the dominant Layer 8 action horizon. It must not simply average a short-term long bias with a longer-term short bias.
 
-### 7C - UnderlyingActionResolver
+### 8C - UnderlyingActionResolver
 
 Maps effective exposure gap and current direct-underlying state to a planned action type.
 
-### 7D - TradeIntensitySizer
+### 8D - TradeIntensitySizer
 
 Calculates planned incremental exposure, planned notional, planned quantity, and scale-in policy from gap, confidence, risk, stability, liquidity, and cost terms.
 
-### 7E - EntryPlanBuilder
+### 8E - EntryPlanBuilder
 
 Builds side-neutral entry assumptions, worst acceptable entry price, chase limits, entry style, and entry expiry.
 
-### 7F - PricePathProjector
+### 8F - PricePathProjector
 
 Builds target price, target range, expected favorable/adverse move, holding-time expectation, and path quality assumptions.
 
-### 7G - RiskPlanBuilder
+### 8G - RiskPlanBuilder
 
 Builds take-profit, partial take-profit, stop, thesis-invalidation, time-stop, and reward/risk fields.
 
-### 7H - LayerEightHandoffBuilder
+### 8H - LayerEightHandoffBuilder
 
 Packages the underlying thesis for option-expression evaluation without leaking option contract choices into Layer 8.
 
-### 7I - UnderlyingActionComposer
+### 8I - UnderlyingActionComposer
 
 Composes `underlying_action_plan`, `underlying_action_vector`, resolved fields, diagnostics refs, reason codes, and acceptance evidence refs.
 
