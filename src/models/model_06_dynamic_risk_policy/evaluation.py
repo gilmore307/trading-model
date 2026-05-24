@@ -22,7 +22,12 @@ def build_dynamic_risk_policy_labels(model_rows: Iterable[Mapping[str, Any]], ou
         if not ref or ref not in outcomes:
             continue
         outcome = outcomes[ref]
-        label = {"dynamic_risk_policy_state_ref": ref, "target_candidate_id": model_row.get("target_candidate_id")}
+        label = {
+            "dynamic_risk_policy_state_ref": ref,
+            "policy_scope": model_row.get("policy_scope"),
+            "policy_scope_id": model_row.get("policy_scope_id"),
+            "target_candidate_id": model_row.get("target_candidate_id"),
+        }
         for field in LABEL_FIELDS:
             if field in outcome:
                 label[field] = outcome[field]

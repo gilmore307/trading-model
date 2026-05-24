@@ -1,8 +1,10 @@
 """Deterministic DynamicRiskPolicyModel scaffold.
 
-Layer 6 converts whole-market state, systemic event pressure, alpha quality,
-and replayed portfolio/account capacity into dynamic_risk_policy_state. It
-does not enforce hard order limits and does not grant broker permission.
+Layer 6 converts minute-level market, systemic event pressure, and replayed
+portfolio/account capacity into dynamic_risk_policy_state. It may also emit
+target- or position-conditioned policy rows when alpha or position context is
+present. It does not enforce hard order limits and does not grant broker
+permission.
 """
 from __future__ import annotations
 
@@ -21,16 +23,14 @@ def generate_rows(input_rows: Iterable[Mapping[str, Any]], *, model_version: str
     rows = [_normalize_input_row(row) for row in input_rows]
     if not rows:
         raise ValueError("at least one Layer 6 input row is required")
-    rows.sort(key=lambda row: (_row_time(row), str(row.get("target_candidate_id") or "")))
+    rows.sort(key=lambda row: (_row_time(row), str(row.get("policy_scope") or ""), str(row.get("policy_scope_id") or "")))
     return [_model_row(row, model_version=model_version) for row in rows]
 
 
 def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     available_time = _iso(_row_time(row))
     tradeable_time = _iso(_parse_time(row.get("tradeable_time") or available_time))
-    target_candidate_id = str(row.get("target_candidate_id") or "").strip()
-    if not target_candidate_id:
-        raise ValueError("target_candidate_id is required")
+    policy_scope, policy_scope_id, target_candidate_id = _policy_identity(row)
 
     market = _payload(row, "market_context_state")
     event = _payload(row, "systemic_event_risk_state")
@@ -59,10 +59,12 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
 
     resolved = _resolve_horizon(horizon_details)
     payload.update(resolved)
-    ref = _stable_id("drp", target_candidate_id, available_time, model_version)
+    ref = _stable_id("drp", policy_scope, policy_scope_id, available_time, model_version)
     output = {
         "available_time": available_time,
         "tradeable_time": tradeable_time,
+        "policy_scope": policy_scope,
+        "policy_scope_id": policy_scope_id,
         "target_candidate_id": target_candidate_id,
         "model_id": MODEL_ID,
         "model_layer": MODEL_LAYER,
@@ -76,6 +78,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "dynamic_risk_policy_diagnostics": {
             "horizon_policy": horizon_details,
             "global_market_driven": True,
+            "minute_level_training_row": policy_scope == "global",
             "hard_order_limits_enforced_here": False,
         },
     }
@@ -153,6 +156,31 @@ def _payload(row: Mapping[str, Any], key: str) -> dict[str, Any]:
     return {}
 
 
+def _policy_identity(row: Mapping[str, Any]) -> tuple[str, str, str | None]:
+    target_candidate_id = str(row.get("target_candidate_id") or "").strip() or None
+    position_id = str(row.get("position_id") or "").strip() or None
+    requested_scope = str(row.get("policy_scope") or "").strip()
+    if requested_scope:
+        policy_scope = requested_scope
+    elif target_candidate_id:
+        policy_scope = "target_candidate"
+    elif position_id:
+        policy_scope = "active_position"
+    else:
+        policy_scope = "global"
+    if policy_scope not in {"global", "target_candidate", "active_position"}:
+        raise ValueError(f"unsupported Layer 6 policy_scope: {policy_scope}")
+    if policy_scope == "target_candidate":
+        if not target_candidate_id:
+            raise ValueError("target_candidate_id is required for target_candidate policy_scope")
+        return policy_scope, target_candidate_id, target_candidate_id
+    if policy_scope == "active_position":
+        if not position_id:
+            raise ValueError("position_id is required for active_position policy_scope")
+        return policy_scope, position_id, target_candidate_id
+    return policy_scope, "global", target_candidate_id
+
+
 def _score(payload: Mapping[str, Any], *keys: str, default: float = 0.0) -> float:
     for key in keys:
         if key in payload and payload[key] is not None:
@@ -201,6 +229,11 @@ def _normalize_input_row(row: Mapping[str, Any]) -> dict[str, Any]:
     normalized["available_time"] = _iso(_row_time(row))
     if normalized.get("tradeable_time"):
         normalized["tradeable_time"] = _iso(_parse_time(normalized["tradeable_time"]))
+    policy_scope, policy_scope_id, target_candidate_id = _policy_identity(normalized)
+    normalized["policy_scope"] = policy_scope
+    normalized["policy_scope_id"] = policy_scope_id
+    if target_candidate_id:
+        normalized["target_candidate_id"] = target_candidate_id
     return normalized
 
 

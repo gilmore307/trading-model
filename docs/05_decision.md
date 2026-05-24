@@ -913,6 +913,33 @@ Layer 6 learns a dynamic premium/risk-budget policy from Layer 1 global market r
 
 Hard order boundaries remain outside the model stack in execution/order gates. Layer 6 outputs model-internal `dynamic_risk_policy_state`, not broker permission and not an execution hard-limit override.
 
+## D061 - Layer 6 trains on minute-level policy context
+
+Accepted: 2026-05-24
+
+Layer 6 must train on every eligible market minute of risk-policy context, even if live runtime execution triggers the component only when downstream work needs a fresh policy state. Training only on Layer 5 candidate rows would create trigger bias and would hide no-action periods where market stress, event pressure, drawdown pressure, liquidity, and portfolio capacity change.
+
+Accepted Layer 6 row scopes:
+
+```text
+global
+target_candidate
+active_position
+```
+
+`global` is the base row: one portfolio/account risk-policy row per eligible minute. It does not require `target_candidate_id` or a Layer 5 alpha vector. `target_candidate` rows condition the global policy on a Layer 5 alpha candidate. `active_position` rows condition the policy on an existing position that Layer 7 may need to add, reduce, maintain, or close.
+
+The training substrate is therefore not `minute x all symbols`. It is:
+
+```text
+minute-level global policy rows
++ candidate-conditioned rows when Layer 5 candidates exist
++ active-position rows while positions exist
++ reviewed controls / near-miss rows when needed
+```
+
+Layer 7 can then run every minute for active positions using the latest Layer 6 policy state. Layer 6 still does not emit add/reduce/close actions; it emits the risk-budget and policy state that Layer 7 uses for position projection.
+
 ## D050 - Layer 1 market context is frame and horizon aware
 
 Accepted: 2026-05-22
