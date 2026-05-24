@@ -17,6 +17,23 @@ This file owns the repository-wide vocabulary for `feature`, `vector`, `state`, 
 | `*_explainability` | Human-review attribution, evidence detail, reason-code expansion, and debug context. | Not a hard production dependency without explicit promotion. |
 | `*_label` / `*_outcome` | Future-aware training/evaluation target. | Never enters inference features or model-facing state vectors. |
 
+## Registered Abstract Terms
+
+Some modeling words are ordinary trading words with narrower system-specific meanings. These must be registered as `term` rows in `trading-manager/scripts/registry/` before they become shared contract language.
+
+Exposure-family terms use the registered meaning:
+
+```text
+normalized_risk_exposure
+target_exposure
+current_position_exposure
+pending_exposure
+effective_current_exposure
+position_gap
+```
+
+Within this model stack, exposure means signed normalized risk exposure inside the accepted model/risk-budget scale. It is not shares, contracts, notional dollars, account percentage, broker order quantity, or a final action.
+
 ## Score-family discipline
 
 Direction-neutral tradability requires separating these score meanings across layers:

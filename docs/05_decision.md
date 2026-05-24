@@ -533,6 +533,38 @@ resolved position gap is material
 
 This preserves dense minute-level training while preventing minute-level exposure noise from becoming frequent position churn.
 
+## D065 - Ambiguous abstract modeling terms must be registered
+
+Accepted: 2026-05-24
+
+System-defined modeling terms that can be confused with ordinary trading language must be registered as `term` rows in `trading-manager/scripts/registry/` before they become shared contract language. Natural-language docs may explain them, but the registry owns the durable cross-repository definition.
+
+Examples include:
+
+```text
+normalized_risk_exposure
+target_exposure
+current_position_exposure
+pending_exposure
+effective_current_exposure
+position_gap
+planned_exposure_change
+```
+
+The registry definition must state both meaning and non-meaning. For exposure-family terms, the default rule is:
+
+```text
+exposure = signed normalized risk exposure inside the accepted model/risk-budget scale
+exposure != shares
+exposure != contracts
+exposure != notional dollars
+exposure != account percentage
+exposure != broker order quantity
+exposure != final action
+```
+
+Layer docs should reference registered terms instead of redefining them differently.
+
 
 ## D022 - PositionProjectionModel target holding-state boundary
 
