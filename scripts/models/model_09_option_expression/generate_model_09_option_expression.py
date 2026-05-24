@@ -38,6 +38,7 @@ DIAGNOSTICS_COLUMNS = {"9_resolved_no_option_reason_codes", "9_resolved_reason_c
 TEXT_9_COLUMNS = {
     "9_resolved_expression_type",
     "9_resolved_option_right",
+    "9_resolved_option_surface_status",
     "9_resolved_dominant_horizon",
     "9_resolved_selected_contract_ref",
 }
@@ -100,7 +101,7 @@ def _coerce_json_mapping(value: Any) -> dict[str, Any]:
     return {}
 
 
-def _fetch_layer_7_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+def _fetch_layer_8_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
     where: list[str] = []
     params: list[Any] = []
     if source_start:
@@ -230,15 +231,16 @@ def _candidate_index(candidate_rows: Sequence[Mapping[str, Any]]) -> dict[tuple[
     return index
 
 
-def _layer_8_input_rows(layer_7_rows: Sequence[Mapping[str, Any]], option_candidate_rows: Sequence[Mapping[str, Any]] | None = None) -> list[dict[str, Any]]:
+def _layer_9_input_rows(layer_8_rows: Sequence[Mapping[str, Any]], option_candidate_rows: Sequence[Mapping[str, Any]] | None = None) -> list[dict[str, Any]]:
     candidates_by_underlying_time = _candidate_index(option_candidate_rows or [])
     rows: list[dict[str, Any]] = []
-    for row in layer_7_rows:
+    for row in layer_8_rows:
         underlying_plan = _coerce_json_mapping(row.get("underlying_action_plan"))
         available_time = row.get("available_time")
         underlying = str(row.get("underlying_symbol") or "").upper()
         option_candidates = candidates_by_underlying_time.get((underlying, _time_key(available_time)), [])
         option_chain_snapshot_ref = None if not option_candidates else f"feature_09_option_expression:{underlying}:{_time_key(available_time)}"
+        option_surface_status = "optionable_chain_available" if option_candidates else "optionable_chain_missing"
         rows.append(
             {
                 "available_time": available_time,
@@ -251,6 +253,7 @@ def _layer_8_input_rows(layer_7_rows: Sequence[Mapping[str, Any]], option_candid
                 "event_context_vector": {},
                 "option_expression_policy": {},
                 "option_contract_candidates": option_candidates,
+                "option_surface_status": option_surface_status,
                 "option_chain_snapshot_ref": option_chain_snapshot_ref,
                 "option_quote_available_time": available_time if option_candidates else None,
                 "underlying_quote_snapshot_ref": None if not underlying else f"source_03_target_state:{row.get('target_candidate_id')}:{_time_key(available_time)}",
@@ -299,9 +302,9 @@ def generate_from_database(
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
-            layer_7_rows = _fetch_layer_7_rows(cursor, source_start=source_start, source_end=source_end)
+            layer_8_rows = _fetch_layer_8_rows(cursor, source_start=source_start, source_end=source_end)
             option_candidate_rows = _fetch_option_candidate_rows(cursor, source_start=source_start, source_end=source_end)
-            model_rows = generate_rows(_layer_8_input_rows(layer_7_rows, option_candidate_rows), model_version=model_version)
+            model_rows = generate_rows(_layer_9_input_rows(layer_8_rows, option_candidate_rows), model_version=model_version)
             _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
     if output_jsonl:
         _write_jsonl(output_jsonl, model_rows)

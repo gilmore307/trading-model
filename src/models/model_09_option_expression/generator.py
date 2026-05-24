@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
-from .contract import EXPRESSION_TYPES, FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_LAYER, MODEL_VERSION
+from .contract import EXPRESSION_TYPES, FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_LAYER, MODEL_VERSION, OPTION_SURFACE_STATUSES
 
 ET = ZoneInfo("America/New_York")
 
@@ -48,10 +48,13 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     policy = _payload(row, "option_expression_policy")
     pending = _pending_option_context(row)
     candidates = _candidate_rows(row)
+    option_surface_status = _option_surface_status(row, policy, candidates)
+    if option_surface_status == "non_optionable_underlying":
+        candidates = []
     replay_context = _replay_context(row)
 
     direction = _underlying_direction(underlying_plan, handoff)
-    expression_type, option_right = _expression_type(direction, underlying_plan, policy, pending)
+    expression_type, option_right = _expression_type(direction, underlying_plan, policy, pending, option_surface_status)
     scored_candidates = [_score_candidate(candidate, option_right, handoff, market, event, policy) for candidate in candidates]
     eligible_candidates = [candidate for candidate in scored_candidates if candidate["option_right"] == option_right and candidate["eligible"]]
     selected = max(eligible_candidates, key=lambda candidate: candidate["contract_fit_score"], default=None)
@@ -90,11 +93,12 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
                 f"9_option_expression_confidence_score_{suffix}": payload["expression_confidence_score"],
             }
         )
-    reason_codes = _reason_codes(expression_type, selected, dominant, scored_candidates, option_right, policy, underlying_plan, pending)
+    reason_codes = _reason_codes(expression_type, selected, dominant, scored_candidates, option_right, policy, underlying_plan, pending, option_surface_status)
     no_option_reason_codes = [code for code in reason_codes if expression_type == "no_option_expression"]
     resolved_payload = {
         "9_resolved_expression_type": expression_type,
         "9_resolved_option_right": option_right,
+        "9_resolved_option_surface_status": option_surface_status,
         "9_resolved_dominant_horizon": dominant_horizon,
         "9_resolved_selected_contract_ref": None if selected is None else selected["contract_ref"],
         "9_resolved_contract_fit_score": dominant["contract_fit_score"],
@@ -115,6 +119,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "option_quote_available_time": replay_context["option_quote_available_time"],
         "underlying_quote_snapshot_ref": replay_context["underlying_quote_snapshot_ref"],
         "underlying_reference_price": replay_context["underlying_reference_price"],
+        "option_surface_status": option_surface_status,
         "pending_option_exposure_context": pending,
         **score_payload,
         **resolved_payload,
@@ -133,6 +138,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "premium_risk_plan": _premium_risk_plan(selected, handoff, dominant, policy),
             "underlying_thesis_ref": row.get("underlying_action_plan_ref") or underlying_plan.get("underlying_action_plan_ref"),
             "underlying_path_assumptions": handoff,
+            "option_surface_status": option_surface_status,
             "reason_codes": reason_codes,
             "diagnostics": {
                 "candidate_count_before_filter": len(candidates),
@@ -161,7 +167,7 @@ def _underlying_direction(underlying_plan: Mapping[str, Any], handoff: Mapping[s
     direction = str(handoff.get("underlying_path_direction") or "").lower()
     if direction in {"bullish", "bearish", "neutral"}:
         return direction
-    side = str(underlying_plan.get("action_side") or underlying_plan.get("9_resolved_action_side") or "").lower()
+    side = str(underlying_plan.get("action_side") or underlying_plan.get("8_resolved_action_side") or "").lower()
     if side == "long":
         return "bullish"
     if side in {"short", "bearish_no_direct_short"}:
@@ -169,7 +175,31 @@ def _underlying_direction(underlying_plan: Mapping[str, Any], handoff: Mapping[s
     return "neutral"
 
 
-def _expression_type(direction: str, underlying_plan: Mapping[str, Any], policy: Mapping[str, Any], pending: Mapping[str, Any]) -> tuple[str, str]:
+def _option_surface_status(row: Mapping[str, Any], policy: Mapping[str, Any], candidates: Sequence[Mapping[str, Any]]) -> str:
+    explicit = str(
+        row.get("option_surface_status")
+        or row.get("optionability_status")
+        or policy.get("option_surface_status")
+        or policy.get("optionability_status")
+        or ""
+    ).strip().lower()
+    if explicit in OPTION_SURFACE_STATUSES:
+        return explicit
+    optionable = row.get("is_optionable", row.get("optionable", policy.get("is_optionable", policy.get("optionable"))))
+    if optionable is not None and str(optionable).strip().lower() in {"false", "0", "no", "non_optionable", "not_optionable"}:
+        return "non_optionable_underlying"
+    return "optionable_chain_available" if candidates else "optionable_chain_missing"
+
+
+def _expression_type(
+    direction: str,
+    underlying_plan: Mapping[str, Any],
+    policy: Mapping[str, Any],
+    pending: Mapping[str, Any],
+    option_surface_status: str,
+) -> tuple[str, str]:
+    if option_surface_status == "non_optionable_underlying":
+        return _underlying_only_or_no_option(direction, underlying_plan, policy, pending), "none"
     if str(policy.get("option_expression_allowed") or policy.get("allow_option_expression") or "true").lower() in {"false", "0", "no", "blocked"}:
         return _underlying_only_or_no_option(direction, underlying_plan, policy, pending), "none"
     if pending.get("has_pending_option_exposure"):
@@ -387,7 +417,7 @@ def _horizon_payload(
 
 
 def _dominant_horizon(horizon_payloads: Mapping[str, Mapping[str, Any]], underlying_plan: Mapping[str, Any]) -> str:
-    resolved = str(underlying_plan.get("dominant_horizon") or underlying_plan.get("9_resolved_dominant_horizon") or "")
+    resolved = str(underlying_plan.get("dominant_horizon") or underlying_plan.get("8_resolved_dominant_horizon") or "")
     if resolved in HORIZONS:
         return resolved
     return max(HORIZONS, key=lambda horizon: float(horizon_payloads[horizon]["expression_confidence_score"]))
@@ -493,9 +523,24 @@ def _premium_risk_plan(selected: Mapping[str, Any] | None, handoff: Mapping[str,
     }
 
 
-def _reason_codes(expression_type: str, selected: Mapping[str, Any] | None, dominant: Mapping[str, Any], scored_candidates: Sequence[Mapping[str, Any]], option_right: str, policy: Mapping[str, Any], underlying_plan: Mapping[str, Any], pending: Mapping[str, Any]) -> list[str]:
+def _reason_codes(
+    expression_type: str,
+    selected: Mapping[str, Any] | None,
+    dominant: Mapping[str, Any],
+    scored_candidates: Sequence[Mapping[str, Any]],
+    option_right: str,
+    policy: Mapping[str, Any],
+    underlying_plan: Mapping[str, Any],
+    pending: Mapping[str, Any],
+    option_surface_status: str,
+) -> list[str]:
     reasons: list[str] = []
     action_type = str(underlying_plan.get("planned_underlying_action_type") or "").lower()
+    if option_surface_status == "non_optionable_underlying":
+        reasons.append("non_optionable_underlying")
+        reasons.append("layer_9_bypassed_option_expression_scoring")
+    elif option_surface_status == "optionable_chain_missing":
+        reasons.append("option_surface_unavailable")
     if expression_type == "no_option_expression":
         reasons.append("no_option_expression_selected")
         if action_type in {"maintain", "no_trade"}:
@@ -508,7 +553,7 @@ def _reason_codes(expression_type: str, selected: Mapping[str, Any] | None, domi
         reasons.append(f"{expression_type}_selected")
     if selected is None and option_right != "none":
         reasons.append("no_eligible_option_contract_candidate")
-    if not scored_candidates:
+    if not scored_candidates and option_surface_status != "non_optionable_underlying":
         reasons.append("missing_option_chain_candidates")
     if dominant.get("theta_risk_score", 0.0) >= 0.65:
         reasons.append("theta_risk_pressure")

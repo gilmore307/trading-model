@@ -8,9 +8,19 @@ It is the first layer that may select option expression and contract constraints
 
 ## Training Sample Granularity
 
-Layer 9 training should use dense minute-level option-expression rows where point-in-time Layer 8 thesis context and option-chain snapshots exist. It must not train only on the finally selected contract or only on minutes where an option expression looked attractive. The model needs poor, wide-spread, high-IV, stale, illiquid, unsuitable-DTE, unsuitable-delta, and no-option cases to learn when the right output is `underlying_only_expression` or `no_option_expression`.
+Layer 9 training should use dense minute-level option-expression status rows for every eligible minute where point-in-time Layer 8 thesis context exists. It must not train only on the finally selected contract or only on minutes where an option expression looked attractive. The model needs poor, wide-spread, high-IV, stale, illiquid, unsuitable-DTE, unsuitable-delta, no-option, and non-optionable-underlying cases to learn when the right output is `long_call`, `long_put`, `underlying_only_expression`, `no_option_expression`, or an explicit bypass/status row.
 
-Layer 9 is conditional on data availability: if no point-in-time option-chain snapshot exists, the row can support direct-underlying/no-option evidence but cannot pretend to evaluate missing contracts. Direct-underlying and crypto routes may bypass option-expression scoring in live operation, but historical training should still preserve eligible no-option/direct-underlying rows so bypass behavior is calibrated rather than implicit.
+Layer 9 is conditional on option-surface availability: if no point-in-time option-chain snapshot exists, the row can support direct-underlying/no-option evidence but cannot pretend to evaluate missing contracts. Direct-underlying and crypto routes may bypass option-expression scoring in live operation, but historical training should still preserve eligible status rows so bypass behavior is calibrated rather than implicit.
+
+Use separate statuses for the option surface:
+
+```text
+optionable_chain_available
+optionable_chain_missing
+non_optionable_underlying
+```
+
+`non_optionable_underlying` applies to spot/direct-underlying routes such as BTC where an option-expression surface is outside the accepted route. Such rows keep the Layer 9 minute status, resolve to `underlying_only_expression` when the Layer 8 thesis is actionable, and record bypass reason codes without scoring option-chain candidates.
 
 Contract hard filters, selected-contract thresholds, and expression routes are outputs or downstream policies. They must not be used as default training-row admission filters.
 
@@ -45,6 +55,7 @@ underlying_action_plan
 underlying_action_vector / Layer 8 resolved fields
 option_contract_candidates
 option_expression_policy
+option_surface_status
 ```
 
 Useful context inputs:
@@ -135,14 +146,15 @@ trading_guidance_vector / expression_vector
 Resolved fields:
 
 ```text
-8_resolved_expression_type
-8_resolved_option_right
-8_resolved_dominant_horizon
-8_resolved_selected_contract_ref
-8_resolved_contract_fit_score
-8_resolved_expression_confidence_score
-8_resolved_no_option_reason_codes
-8_resolved_reason_codes
+9_resolved_expression_type
+9_resolved_option_right
+9_resolved_option_surface_status
+9_resolved_dominant_horizon
+9_resolved_selected_contract_ref
+9_resolved_contract_fit_score
+9_resolved_expression_confidence_score
+9_resolved_no_option_reason_codes
+9_resolved_reason_codes
 ```
 
 V1 expression types:
@@ -224,6 +236,7 @@ It implements:
 - Layer 8 bullish thesis -> long-call candidate search;
 - Layer 8 bearish thesis or no-direct-short bearish thesis -> long-put candidate search;
 - Layer 8 `maintain` / `no_trade` or pending option exposure -> `no_option_expression`;
+- non-optionable direct-underlying routes such as BTC -> `underlying_only_expression` status row with no option-chain scoring;
 - option policy blocks or no candidate contract passing hard filters may resolve to `underlying_only_expression` when the Layer 8 thesis still supports a direct-underlying expression;
 - reviewed no-provider/no-option database generation from completed Layer 8 rows when the manager gate review finds no active target chain;
 - deterministic selection scoring for right, bid/ask/mid, DTE range, preferred absolute delta range, stale quote age, volume/open interest, spread, adjusted-contract handling, and target-range moneyness guardrails;
@@ -262,7 +275,7 @@ underlying_only_expression
 no_option_expression
 ```
 
-`underlying_only_expression` is an explicit fallback when the options layer finds the underlying thesis usable but option contracts are unsuitable because of policy, liquidity, IV, Greek, DTE, quote freshness, or missing-contract evidence. It keeps selected option contract and option-fit scores empty/zero and records the direct-underlying expression preference for evaluation. It is not an order request.
+`underlying_only_expression` is an explicit fallback when the options layer finds the underlying thesis usable but option contracts are unsuitable because of policy, liquidity, IV, Greek, DTE, quote freshness, missing-contract evidence, or a non-optionable underlying route. It keeps selected option contract and option-fit scores empty/zero and records the direct-underlying expression preference for evaluation. It is not an order request.
 
 Multi-leg spreads remain deferred beyond V1.
 

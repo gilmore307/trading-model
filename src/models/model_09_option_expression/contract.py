@@ -27,6 +27,7 @@ SCORE_FAMILIES: Final[tuple[str, ...]] = (
 RESOLVED_FIELD_FAMILIES: Final[tuple[str, ...]] = (
     "9_resolved_expression_type",
     "9_resolved_option_right",
+    "9_resolved_option_surface_status",
     "9_resolved_dominant_horizon",
     "9_resolved_selected_contract_ref",
     "9_resolved_contract_fit_score",
@@ -43,6 +44,12 @@ EXPRESSION_TYPES: Final[tuple[str, ...]] = (
 )
 
 OPTION_RIGHTS: Final[tuple[str, ...]] = ("call", "put", "none")
+
+OPTION_SURFACE_STATUSES: Final[tuple[str, ...]] = (
+    "optionable_chain_available",
+    "optionable_chain_missing",
+    "non_optionable_underlying",
+)
 
 FORBIDDEN_OUTPUT_FIELDS: Final[frozenset[str]] = frozenset(
     {

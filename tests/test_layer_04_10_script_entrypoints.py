@@ -233,7 +233,7 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
                 return self._many
 
         cursor = FakeCursor()
-        rows = generator._fetch_layer_7_rows(
+        rows = generator._fetch_layer_8_rows(
             cursor,
             source_start="2016-01-01T00:00:00-05:00",
             source_end="2016-07-01T00:00:00-04:00",
@@ -249,7 +249,7 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
     def test_layer_09_database_input_binds_option_candidates_when_feature_rows_exist(self) -> None:
         generator = self._load_script_module(REPO_ROOT / "scripts/models/model_09_option_expression/generate_model_09_option_expression.py")
 
-        layer_7_rows = [
+        layer_8_rows = [
             {
                 "available_time": "2016-01-04T09:35:00-05:00",
                 "tradeable_time": "2016-01-04T09:35:00-05:00",
@@ -283,13 +283,38 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
             }
         ]
 
-        rows = generator._layer_8_input_rows(layer_7_rows, candidate_rows)
+        rows = generator._layer_9_input_rows(layer_8_rows, candidate_rows)
 
         self.assertEqual(rows[0]["option_chain_snapshot_ref"], "feature_09_option_expression:AAPL:2016-01-04T09:35:00-05:00")
+        self.assertEqual(rows[0]["option_surface_status"], "optionable_chain_available")
         self.assertEqual(rows[0]["option_quote_available_time"], "2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["underlying_quote_snapshot_ref"], "source_03_target_state:anon_aapl:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["underlying_reference_price"], 102.5)
         self.assertEqual(rows[0]["option_contract_candidates"][0]["contract_ref"], "AAPL160115C00100000")
+
+    def test_layer_09_database_input_keeps_status_row_when_option_chain_missing(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_09_option_expression/generate_model_09_option_expression.py")
+
+        rows = generator._layer_9_input_rows(
+            [
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "tradeable_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_btc",
+                    "underlying_symbol": "BTC",
+                    "underlying_action_plan_ref": "uap_btc",
+                    "underlying_action_plan": {
+                        "planned_underlying_action_type": "open_long",
+                        "handoff_to_layer_9": {"underlying_path_direction": "bullish"},
+                    },
+                }
+            ],
+            [],
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["option_surface_status"], "optionable_chain_missing")
+        self.assertEqual(rows[0]["option_contract_candidates"], [])
 
     def test_local_layer_payload_writer_serializes_database_datetimes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
