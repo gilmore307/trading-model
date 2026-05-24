@@ -4,7 +4,7 @@
 This script is the reproducible form of the Layer 3 acceptance follow-up: read
 point-in-time ``feature_03_target_state_vector`` rows from PostgreSQL, generate
 compact ``model_03_target_state_vector`` rows, persist the model table, build
-promotion-evaluation artifacts, and ask the reviewer agent for a strict review
+promotion-evaluation artifacts, and ask Codex CLI for a strict review
 artifact.
 
 It does not persist manager-control-plane promotion decisions or activate
@@ -15,13 +15,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
 from model_governance.common.sql import database_url, quote_identifier
+from model_governance.codex_cli import DEFAULT_CODEX_MODEL, invoke_codex_cli
 from model_governance.promotion import build_model_config_ref, build_promotion_candidate_evidence
 from model_governance.promotion.agent_review import extract_json_object, validate_promotion_review, build_review_artifact_from_review
 from models.model_03_target_state_vector import evaluation, generator
@@ -311,7 +311,7 @@ def build_review_prompt(summary: Mapping[str, Any], config_row: Mapping[str, Any
 def extract_agent_text(stdout: str) -> str:
     stripped = stdout.strip()
     if not stripped:
-        raise ValueError("openclaw agent returned empty stdout")
+        raise ValueError("codex cli returned empty stdout")
     try:
         parsed = json.loads(stripped)
     except json.JSONDecodeError:
@@ -329,18 +329,8 @@ def extract_agent_text(stdout: str) -> str:
     return stripped
 
 
-def invoke_agent(*, prompt: str, openclaw_bin: str, agent: str, model: str | None, thinking: str, timeout_seconds: int) -> dict[str, Any]:
-    command = [openclaw_bin, "agent", "--agent", agent, "--message", prompt, "--json", "--thinking", thinking, "--timeout", str(timeout_seconds)]
-    if model:
-        command.extend(["--model", model])
-    result = subprocess.run(command, text=True, capture_output=True, check=False)
-    if result.returncode != 0:
-        if result.stdout:
-            print(result.stdout, file=sys.stdout)
-        if result.stderr:
-            print(result.stderr, file=sys.stderr)
-        raise SystemExit(result.returncode)
-    return validate_promotion_review(extract_json_object(extract_agent_text(result.stdout)))
+def invoke_agent(*, prompt: str, codex_bin: str, model: str | None, timeout_seconds: int) -> dict[str, Any]:
+    return validate_promotion_review(extract_json_object(extract_agent_text(invoke_codex_cli(prompt=prompt, codex_bin=codex_bin, model=model, timeout_seconds=timeout_seconds))))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -360,11 +350,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--artifacts-output", type=Path)
     parser.add_argument("--review-output", type=Path)
     parser.add_argument("--dry-run", action="store_true", help="Build evidence and prompt but do not call agent or write manager-control-plane rows.")
-    parser.add_argument("--agent", default="trader")
-    parser.add_argument("--model")
-    parser.add_argument("--thinking", default="high")
+    parser.add_argument("--model", default=DEFAULT_CODEX_MODEL)
     parser.add_argument("--timeout-seconds", type=int, default=600)
-    parser.add_argument("--openclaw-bin", default="openclaw")
+    parser.add_argument("--codex-bin", default="codex")
     args = parser.parse_args(argv)
 
     db_url = database_url(args.database_url)
@@ -424,10 +412,8 @@ def main(argv: list[str] | None = None) -> int:
 
     review = invoke_agent(
         prompt=prompt,
-        openclaw_bin=args.openclaw_bin,
-        agent=args.agent,
+        codex_bin=args.codex_bin,
         model=args.model,
-        thinking=args.thinking,
         timeout_seconds=args.timeout_seconds,
     )
     review_artifact = build_review_artifact_from_review(candidate_ref=candidate_row["candidate_ref"], review=review)

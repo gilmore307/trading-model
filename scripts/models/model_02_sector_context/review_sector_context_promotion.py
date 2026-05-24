@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ask an agent to review SectorContextModel promotion evidence.
+"""Ask Codex CLI to review SectorContextModel promotion evidence.
 
 The script emits model-side promotion evidence and a review artifact only.
 Manager request, durable decision, activation, and rollback control-plane work
@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
 from model_governance.promotion import build_model_config_ref, build_promotion_candidate_evidence
+from model_governance.codex_cli import DEFAULT_CODEX_MODEL, invoke_codex_cli
 from model_governance.promotion.agent_review import (
     build_review_artifact_from_review,
     build_sector_context_promotion_prompt,
@@ -37,7 +37,7 @@ def _load_summary(path: Path) -> dict[str, Any]:
 def _extract_agent_text(stdout: str) -> str:
     stripped = stdout.strip()
     if not stripped:
-        raise ValueError("openclaw agent returned empty stdout")
+        raise ValueError("codex cli returned empty stdout")
     try:
         parsed = json.loads(stripped)
     except json.JSONDecodeError:
@@ -63,20 +63,8 @@ def _extract_agent_text(stdout: str) -> str:
     return stripped
 
 
-def _invoke_agent(*, prompt: str, openclaw_bin: str, agent: str | None, model: str | None, thinking: str, timeout_seconds: int) -> dict[str, Any]:
-    command = [openclaw_bin, "agent", "--message", prompt, "--json", "--thinking", thinking, "--timeout", str(timeout_seconds)]
-    if agent:
-        command.extend(["--agent", agent])
-    if model:
-        command.extend(["--model", model])
-    result = subprocess.run(command, text=True, capture_output=True, check=False)
-    if result.returncode != 0:
-        if result.stdout:
-            print(result.stdout, file=sys.stdout)
-        if result.stderr:
-            print(result.stderr, file=sys.stderr)
-        raise SystemExit(result.returncode)
-    return validate_promotion_review(extract_json_object(_extract_agent_text(result.stdout)))
+def _invoke_agent(*, prompt: str, codex_bin: str, model: str | None, timeout_seconds: int) -> dict[str, Any]:
+    return validate_promotion_review(extract_json_object(_extract_agent_text(invoke_codex_cli(prompt=prompt, codex_bin=codex_bin, model=model, timeout_seconds=timeout_seconds))))
 
 
 def _fallback_review(summary: dict[str, Any]) -> dict[str, Any]:
@@ -123,11 +111,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--proposed-by", default="promotion_gate_script")
     parser.add_argument("--dry-run", action="store_true", help="Print prompt/candidate rows without invoking an agent.")
     parser.add_argument("--local-fallback-review", action="store_true", help="Use deterministic local conservative review instead of invoking an agent.")
-    parser.add_argument("--agent", default="main", help="OpenClaw agent id for openclaw agent --agent. Defaults to main.")
-    parser.add_argument("--model", help="Optional model override for openclaw agent --model.")
-    parser.add_argument("--thinking", default="high")
+    parser.add_argument("--model", default=DEFAULT_CODEX_MODEL, help="Codex model override. Defaults to gpt-5.5.")
     parser.add_argument("--timeout-seconds", type=int, default=600)
-    parser.add_argument("--openclaw-bin", default="openclaw")
+    parser.add_argument("--codex-bin", default="codex")
     args = parser.parse_args(argv)
 
     summary = _load_summary(args.evaluation_summary_json)
@@ -156,10 +142,8 @@ def main(argv: list[str] | None = None) -> int:
 
     review = _fallback_review(summary) if args.local_fallback_review else _invoke_agent(
         prompt=prompt,
-        openclaw_bin=args.openclaw_bin,
-        agent=args.agent,
+        codex_bin=args.codex_bin,
         model=args.model,
-        thinking=args.thinking,
         timeout_seconds=args.timeout_seconds,
     )
     review_artifact = build_review_artifact_from_review(candidate_ref=candidate_row["candidate_ref"], review=review)

@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""Agent-reviewed production-promotion acceptance for Layers 3-10.
+"""Codex-reviewed production-promotion acceptance for Layers 3-10.
 
 Layers 1-2 have real database evaluation paths. Layers 3-10 do not yet have
 production evaluation substrate for their accepted contracts. This script builds
 blocked evaluation artifacts, creates model-side promotion candidate evidence,
-and calls a reviewer agent. Durable promotion decisions and activation remain in
+and calls Codex CLI for reviewer evidence. Durable promotion decisions and activation remain in
 `trading-manager`.
 """
 from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 from model_governance.promotion import build_model_config_ref, build_promotion_candidate_evidence
+from model_governance.codex_cli import DEFAULT_CODEX_MODEL, invoke_codex_cli
 from model_governance.promotion.agent_review import build_review_artifact_from_review, extract_json_object, validate_promotion_review
 
 ACCEPTANCE_DATE = "2026-05-08"
@@ -269,7 +269,7 @@ def build_generic_promotion_prompt(*, acceptance: Mapping[str, Any], evaluation_
 def _extract_agent_text(stdout: str) -> str:
     stripped = stdout.strip()
     if not stripped:
-        raise ValueError("openclaw agent returned empty stdout")
+        raise ValueError("codex cli returned empty stdout")
     try:
         parsed = json.loads(stripped)
     except json.JSONDecodeError:
@@ -295,20 +295,8 @@ def _extract_agent_text(stdout: str) -> str:
     return stripped
 
 
-def invoke_agent(*, prompt: str, openclaw_bin: str, agent: str | None, model: str | None, thinking: str, timeout_seconds: int) -> dict[str, Any]:
-    command = [openclaw_bin, "agent", "--message", prompt, "--json", "--thinking", thinking, "--timeout", str(timeout_seconds)]
-    if agent:
-        command.extend(["--agent", agent])
-    if model:
-        command.extend(["--model", model])
-    result = subprocess.run(command, text=True, capture_output=True, check=False)
-    if result.returncode != 0:
-        if result.stdout:
-            print(result.stdout, file=sys.stdout)
-        if result.stderr:
-            print(result.stderr, file=sys.stderr)
-        raise SystemExit(result.returncode)
-    return validate_promotion_review(extract_json_object(_extract_agent_text(result.stdout)))
+def invoke_agent(*, prompt: str, codex_bin: str, model: str | None, timeout_seconds: int) -> dict[str, Any]:
+    return validate_promotion_review(extract_json_object(_extract_agent_text(invoke_codex_cli(prompt=prompt, codex_bin=codex_bin, model=model, timeout_seconds=timeout_seconds))))
 
 
 def build_rows(acceptance: Mapping[str, Any]) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any], dict[str, Any], dict[str, Any], str]:
@@ -344,10 +332,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--layer", type=int, choices=[3, 4, 5, 6, 7, 8, 9, 10], help="Layer to review. Omit with --all.")
     parser.add_argument("--all", action="store_true", help="Review Layers 3-10.")
     parser.add_argument("--dry-run", action="store_true", help="Print evidence/prompt without invoking agent or writing manager-control-plane SQL.")
-    parser.add_argument("--openclaw-bin", default="openclaw")
-    parser.add_argument("--agent", default="trader")
-    parser.add_argument("--model", help="Optional model override for openclaw agent --model.")
-    parser.add_argument("--thinking", default="high")
+    parser.add_argument("--codex-bin", default="codex")
+    parser.add_argument("--model", default=DEFAULT_CODEX_MODEL, help="Codex model override. Defaults to gpt-5.5.")
     parser.add_argument("--timeout-seconds", type=int, default=600)
     parser.add_argument("--output-json", type=Path, help="Optional receipt JSON path.")
     args = parser.parse_args(argv)
@@ -363,10 +349,8 @@ def main(argv: list[str] | None = None) -> int:
             continue
         review = invoke_agent(
             prompt=prompt,
-            openclaw_bin=args.openclaw_bin,
-            agent=args.agent,
+            codex_bin=args.codex_bin,
             model=args.model,
-            thinking=args.thinking,
             timeout_seconds=args.timeout_seconds,
         )
         review_artifact = build_review_artifact_from_review(
