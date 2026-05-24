@@ -214,10 +214,10 @@ def _decision_rows(
     model_02_rows: Sequence[Mapping[str, Any]],
     model_01_rows: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
-    target_by_candidate_time: dict[tuple[str, str], Mapping[str, Any]] = {}
-    for row in model_03_rows:
+    event_by_candidate_time: dict[tuple[str, str], Mapping[str, Any]] = {}
+    for row in event_failure_rows:
         if row.get("target_candidate_id") and row.get("available_time"):
-            target_by_candidate_time[(str(row["target_candidate_id"]), _iso(row["available_time"]))] = row
+            event_by_candidate_time[(str(row["target_candidate_id"]), _iso(row["available_time"]))] = row
     source_by_candidate_time: dict[tuple[str, str], Mapping[str, Any]] = {}
     for row in source_03_rows:
         if row.get("target_candidate_id") and row.get("available_time"):
@@ -229,15 +229,13 @@ def _decision_rows(
             sector_rows_by_symbol.setdefault(symbol, []).append(row)
 
     rows: list[dict[str, Any]] = []
-    for event_model in event_failure_rows:
-        candidate = str(event_model.get("target_candidate_id") or "")
-        if not candidate or not event_model.get("available_time"):
+    for target_model in model_03_rows:
+        candidate = str(target_model.get("target_candidate_id") or "")
+        if not candidate or not target_model.get("available_time"):
             continue
-        available = _parse_time(event_model["available_time"])
+        available = _parse_time(target_model["available_time"])
         available_iso = _iso(available)
-        target_model = target_by_candidate_time.get((candidate, available_iso))
-        if not target_model:
-            continue
+        event_model = event_by_candidate_time.get((candidate, available_iso), {})
         source_row = source_by_candidate_time.get((candidate, available_iso))
         symbol = str((source_row or {}).get("symbol") or "").upper()
         market = _market_payload(_latest_before(model_01_rows, available))
@@ -253,6 +251,7 @@ def _decision_rows(
                 "sector_context_state_ref": event_model.get("sector_context_state_ref") or target_model.get("sector_context_state_ref"),
                 "target_context_state_ref": event_model.get("target_context_state_ref") or target_model.get("target_context_state_ref"),
                 "event_failure_risk_vector_ref": event_model.get("event_failure_risk_vector_ref"),
+                "training_sample_scope": "dense_minute_target_state",
                 "market_context_state": market,
                 "sector_context_state": sector,
                 "target_context_state": target,

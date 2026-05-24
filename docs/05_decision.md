@@ -471,6 +471,27 @@ AlphaConfidenceModel must not emit buy/sell/hold, final action, target exposure,
 
 AlphaConfidenceModel V1 uses the synchronized `10min`, `1h`, `1D`, and `1W` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.
 
+## D062 - Layer 5 trains on dense minute-level target-state rows
+
+Accepted: 2026-05-24
+
+Layer 5 must not train only on pre-filtered alpha candidates. Candidate routing thresholds are model calibration/routing parameters after scoring, not acquisition filters for the training set. If training includes only rows that already passed an upstream candidate gate, Layer 5 will be poorly calibrated on ordinary no-edge, weak-edge, conflicted, bad-path, and event-risk-degraded minutes.
+
+Accepted Layer 5 training substrate:
+
+```text
+eligible minute-level Layer 3 target-state rows
++ Layer 1 market context
++ Layer 2 sector context
++ Layer 4 event_failure_risk_vector when present
++ quality/calibration state
++ future residual/path/tradability labels for evaluation only
+```
+
+This is not necessarily `minute x every listed symbol`; it is every eligible minute-level anonymous target-state row from the accepted Layer 3 target universe. That universe must include strong setups, weak setups, no-edge rows, near-misses, and negative/control rows after point-in-time data-quality and universe eligibility rules.
+
+Layer 5 may still expose downstream routing statuses such as `pass_to_layer6`, `pass_with_haircut`, `watch_only`, `reject_low_confidence`, `reject_bad_path`, `reject_bad_tradability`, or `reject_event_risk`. Those thresholds are tuned by walk-forward evidence and decide downstream routing, not which rows Layer 5 is allowed to train on.
+
 
 ## D022 - PositionProjectionModel target holding-state boundary
 

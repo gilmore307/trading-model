@@ -18,6 +18,27 @@ Layer 5 answers:
 
 Layer 5 does **not** answer trading-intent, exposure, position-size, option-contract, order-routing, or execution questions. It must not emit buy/sell/hold, final action, target exposure, account-risk allocation, option symbol, strike, DTE, delta, order type, or broker mutation fields.
 
+## Training Sample Granularity
+
+Layer 5 training must use minute-level dense target-state rows, not only pre-filtered alpha candidates. Live routing may only pass selected candidates downstream, but the model must learn from the broad minute-level distribution it can encounter during realtime scoring.
+
+The base Layer 5 training row is:
+
+```text
+target_candidate_id
+available_time / decision_time
+market_context_state
+sector_context_state
+target_context_state
+event_failure_risk_vector when present
+quality_calibration_state
+future alpha/path/tradability labels
+```
+
+This is not `minute x every listed symbol` by default. It is every eligible minute-level anonymous target-state row produced by the accepted Layer 3 target universe. That universe should include strong setups, weak setups, no-edge rows, near-misses, and negative/control rows, subject only to point-in-time data-quality and universe eligibility rules.
+
+Candidate/routing thresholds are downstream calibration parameters, not a training pre-filter. Layer 5 may support routing statuses such as `pass_to_layer6`, `pass_with_haircut`, `watch_only`, or rejection reasons after scoring. Those thresholds must be tuned with walk-forward evidence and must not decide which historical minutes the model is allowed to learn from.
+
 ## Position and input chain
 
 Layer 5 is the first model layer allowed to convert reviewed state/context plus reviewed event-failure-risk conditioning into horizon-aware alpha judgment. The accepted chain is:
@@ -65,6 +86,7 @@ decision_time
 available_time
 tradeable_time
 target_candidate_id
+training_sample_scope
 horizons
 session_phase
 market_context_state_ref
@@ -352,6 +374,8 @@ Layer 5 should be trained in stages:
 4. **Calibration layer**: calibrate confidence, reliability, and tradability using walk-forward and out-of-sample buckets.
 
 Do not train Layer 5 from in-sample Layer 1/2/3/4 model outputs. Upstream state vectors consumed by Layer 5 training must be generated with rolling/cross-fitted point-in-time discipline.
+
+Do not pre-filter Layer 5 training down to only rows that would have passed a candidate-routing threshold. The model must see no-edge, low-confidence, conflicted, event-risk-degraded, bad-path, and poor-tradability minutes so its output scores and thresholds are calibrated against the full eligible minute-level target-state distribution.
 
 Overlapping horizons, especially `1D` and `1W`, require purge and embargo.
 

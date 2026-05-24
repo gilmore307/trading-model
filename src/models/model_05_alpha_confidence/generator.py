@@ -87,6 +87,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "available_time": available_time,
         "tradeable_time": tradeable_time,
         "target_candidate_id": target_candidate_id,
+        "training_sample_scope": row.get("training_sample_scope") or "dense_minute_target_state",
         "model_id": MODEL_ID,
         "model_layer": MODEL_LAYER,
         "model_version": model_version,

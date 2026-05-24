@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import importlib.util
 import unittest
+from pathlib import Path
 
 from models.model_05_alpha_confidence import generate_rows
 from models.model_05_alpha_confidence.evaluation import assert_no_label_leakage, build_alpha_confidence_labels
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 FORBIDDEN_TERMS = {
@@ -66,7 +71,35 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         self.assertEqual(vector["5_alpha_direction_score_1W"], 0.0)
         self.assertEqual(vector["5_alpha_strength_score_1W"], 0.0)
         self.assertLess(vector["5_alpha_tradability_score_1W"], 0.5)
+        self.assertEqual(output["training_sample_scope"], "dense_minute_target_state")
         self.assertIn("no_material_alpha_edge", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["1W"])
+
+    def test_database_decision_rows_are_dense_target_state_not_event_gated(self) -> None:
+        script = _load_generator_script()
+        rows = script._decision_rows(
+            event_failure_rows=[],
+            model_03_rows=[
+                {
+                    "available_time": "2026-05-07T10:30:00-04:00",
+                    "target_candidate_id": "anon_target_001",
+                    "target_context_state_ref": "tcs_fixture",
+                    "3_state_quality_score": 0.80,
+                }
+            ],
+            source_03_rows=[],
+            model_02_rows=[],
+            model_01_rows=[
+                {
+                    "available_time": "2026-05-07T10:29:00-04:00",
+                    "1_market_risk_stress_score": 0.25,
+                }
+            ],
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["training_sample_scope"], "dense_minute_target_state")
+        self.assertEqual(rows[0]["target_candidate_id"], "anon_target_001")
+        self.assertEqual(rows[0]["event_failure_risk_vector"], {})
 
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:
         output = generate_rows([_base_row()])[0]
@@ -146,6 +179,16 @@ def _base_row(**overrides: object) -> dict[str, object]:
     }
     row.update(overrides)
     return row
+
+
+def _load_generator_script():
+    script = REPO_ROOT / "scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py"
+    spec = importlib.util.spec_from_file_location(script.stem, script)
+    if spec is None or spec.loader is None:
+        raise AssertionError("failed to load Layer 5 generator script")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 if __name__ == "__main__":
