@@ -8,9 +8,11 @@ It is the first layer that may select option expression and contract constraints
 
 ## Training Sample Granularity
 
-Layer 9 training should use dense minute-level option-expression status rows for every eligible minute where point-in-time Layer 8 thesis context exists. It must not train only on the finally selected contract or only on minutes where an option expression looked attractive. The model needs poor, wide-spread, high-IV, stale, illiquid, unsuitable-DTE, unsuitable-delta, no-option, and non-optionable-underlying cases to learn when the right output is `long_call`, `long_put`, `underlying_only_expression`, `no_option_expression`, or an explicit bypass/status row.
+Layer 9 training should use dense minute-level option-expression status evidence for every eligible minute where point-in-time Layer 8 thesis context exists. It must not train only on the finally selected contract or only on minutes where an option expression looked attractive. The model needs poor, wide-spread, high-IV, stale, illiquid, unsuitable-DTE, unsuitable-delta, and no-option cases to learn when the right output is `long_call`, `long_put`, `underlying_only_expression`, or `no_option_expression`.
 
-Layer 9 is conditional on option-surface availability: if no point-in-time option-chain snapshot exists, the row can support direct-underlying/no-option evidence but cannot pretend to evaluate missing contracts. Direct-underlying and crypto routes may bypass option-expression scoring in live operation, but historical training should still preserve eligible status rows so bypass behavior is calibrated rather than implicit.
+Layer 9 runtime invocation is conditional on option-surface availability. In live routing, C04 calls M09 only when `option_surface_status = optionable_chain_available` and timestamped option-chain candidates exist. If this minute has no usable option chain, or the underlying is not optionable, C04 bypasses M09 and carries an execution-side bypass/no-option expression without asking M09 to score missing contracts.
+
+Historical training and evaluation may still retain underlying-minute bypass/status rows for missing-chain and non-optionable cases so dataset coverage, labels, and fallback calibration remain explicit. These rows are status/audit evidence, not live M09 inference calls, and they do not produce per-contract candidate rows.
 
 Use separate statuses for the option surface:
 
@@ -20,7 +22,9 @@ optionable_chain_missing
 non_optionable_underlying
 ```
 
-`non_optionable_underlying` applies to spot/direct-underlying routes such as BTC where an option-expression surface is outside the accepted route. Such rows keep the Layer 9 minute status, resolve to `underlying_only_expression` when the Layer 8 thesis is actionable, and record bypass reason codes without scoring option-chain candidates.
+`optionable_chain_available` is the only status that creates per-contract candidate rows for M09 scoring. `optionable_chain_missing` and `non_optionable_underlying` keep only the underlying-minute bypass/status evidence.
+
+`non_optionable_underlying` applies to spot/direct-underlying routes such as BTC where an option-expression surface is outside the accepted route. Such rows may record bypass reason codes for training and audit, but live routing must not call M09 for them.
 
 Contract hard filters, selected-contract thresholds, and expression routes are outputs or downstream policies. They must not be used as default training-row admission filters.
 
@@ -236,7 +240,7 @@ It implements:
 - Layer 8 bullish thesis -> long-call candidate search;
 - Layer 8 bearish thesis or no-direct-short bearish thesis -> long-put candidate search;
 - Layer 8 `maintain` / `no_trade` or pending option exposure -> `no_option_expression`;
-- non-optionable direct-underlying routes such as BTC -> `underlying_only_expression` status row with no option-chain scoring;
+- non-optionable direct-underlying routes such as BTC -> offline bypass/status row with no option-chain scoring and no live M09 invocation;
 - option policy blocks or no candidate contract passing hard filters may resolve to `underlying_only_expression` when the Layer 8 thesis still supports a direct-underlying expression;
 - reviewed no-provider/no-option database generation from completed Layer 8 rows when the manager gate review finds no active target chain;
 - deterministic selection scoring for right, bid/ask/mid, DTE range, preferred absolute delta range, stale quote age, volume/open interest, spread, adjusted-contract handling, and target-range moneyness guardrails;
