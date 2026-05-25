@@ -13,6 +13,7 @@ Layer 7 answers:
 - How large and in which direction is the position gap?
 - Is changing the position state expected to have positive risk-adjusted net utility?
 - Are costs, liquidity, concentration, drawdown state, and risk budget compatible with the target exposure?
+- Does price location versus the current thesis support tactical exposure expansion, trimming, or staged entry/exit?
 - Which horizon should dominate the handoff when per-horizon projections conflict?
 
 Layer 7 does **not** answer buy/sell/hold, open/close/reverse, instrument choice, option-contract choice, order type, routing, or live/paper execution questions. It projects target position state only. Layer 8 owns the direct-underlying planned action thesis; Layer 9 owns option expression. Broker mutation remains outside `trading-model`.
@@ -26,7 +27,8 @@ The Layer 7 training row universe is not `minute x every listed symbol`. It is e
 - active positions;
 - routed or simulated candidate positions with point-in-time current/pending exposure context;
 - flat/no-position control rows where the model must learn that target exposure should remain zero;
-- near-threshold rows that would be easy to overtrade without cost and risk-budget discipline.
+- near-threshold rows that would be easy to overtrade without cost and risk-budget discipline;
+- staged entry/exit and tactical exposure-management rows where price location, drawdown risk, reversal risk, thesis strength, and risk budget justify partial add/reduce rather than all-in/all-out exposure.
 
 Action triggers, exposure-change thresholds, and downstream Layer 8 handoff decisions are calibration/routing policies after projection. They must not decide which historical minutes Layer 7 is allowed to learn from.
 
@@ -41,9 +43,12 @@ A changed target exposure is not by itself a position adjustment. Layer 7 may up
 - risk-budget fit;
 - projection stability and confidence;
 - pending-adjusted effective exposure;
+- price-location and tactical exposure-management evidence;
 - horizon conflict state and resolution reasons.
 
 Layer 7 must not emit `maintain`, `no_trade`, `open`, `increase`, `reduce`, `close`, or `cover`. Those are Layer 8 planned-action outcomes. Layer 7's job is to make target exposure and adjustment pressure explicit without turning minute-level projection changes into action policy.
+
+Layer 7 should train the difference between random short-term price wiggles and useful tactical exposure adjustment. Buying weakness or trimming strength is useful only when it improves target-exposure utility under the active thesis, risk budget, and cost context. It is not a separate high-frequency scalping objective.
 
 ## Position and input chain
 

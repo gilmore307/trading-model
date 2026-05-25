@@ -393,10 +393,16 @@ The result informs:
 planned_incremental_exposure_score
 planned_notional_usd
 planned_quantity
+tranche_plan
 scale_in_policy
+scale_out_policy
 ```
 
-`planned_quantity` and `planned_notional_usd` are pre-execution suggestions. They are not final order size. `trading-execution` may recut the quantity based on real-time bid/ask, liquidity, partial fills, buying power, lot constraints, risk limits, and order state.
+Layer 8 must explicitly train staged entry and staged exit behavior. Initial open does not have to consume the full target exposure; later `increase` actions can add a tranche when the thesis is confirmed, risk has improved, price location is favorable, or the position remains below target exposure. `reduce` can trim a tranche when price has moved into a take-profit zone, risk has risen, target exposure has compressed, or the reward/risk balance has deteriorated while the core thesis still remains usable.
+
+This includes tactical high-sell/low-buy style adjustment, but only as thesis-aware exposure management. Layer 8 should not learn standalone scalping. A price dip is not sufficient reason to add, and a price pop is not sufficient reason to reduce, unless the model evidence shows improved expected utility after risk, cost, liquidity, path quality, and portfolio constraints.
+
+`planned_quantity` and `planned_notional_usd` are pre-execution strategy suggestions. C05 Order Intent owns final execution quantity, integer contract/share discretization, and risk-cap packaging. C06 must not recut quantity.
 
 ## Entry plan
 
@@ -653,7 +659,7 @@ Maps effective exposure gap and current direct-underlying state to a planned act
 
 ### 8D - TradeIntensitySizer
 
-Calculates planned incremental exposure, planned notional, planned quantity, and scale-in policy from gap, confidence, risk, stability, liquidity, and cost terms.
+Calculates planned incremental exposure, planned notional, planned quantity, tranche plan, scale-in policy, and scale-out policy from gap, confidence, price location, risk, stability, liquidity, and cost terms.
 
 ### 8E - EntryPlanBuilder
 
