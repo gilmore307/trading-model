@@ -10,7 +10,17 @@ This document is the first pass over `trading-model` data tables. It separates m
 
 `trading-data` owns raw source acquisition, normalized source tables, and deterministic feature tables. `trading-model` may read those tables but must not treat them as model-owned schema.
 
-`trading-model` owns the physical `trading_model.model_NN_*` output tables, their `_explainability` support tables, their `_diagnostics` support tables, and model-local evaluation evidence tables.
+`trading-model` owns model-generation output tables, their `_explainability` support tables, their `_diagnostics` support tables, and model-local evaluation evidence tables.
+
+New model table surfaces follow the shared owner-domain-stage pattern:
+
+```text
+trading_model.mNN_<domain_slug>_model_generation
+trading_model.mNN_<domain_slug>_model_generation_explainability
+trading_model.mNN_<domain_slug>_model_generation_diagnostics
+```
+
+Existing `trading_model.model_NN_*` tables remain compatibility surfaces until a reviewed migration replaces them. Do not use the older `model_NN_*` pattern for newly planned tables.
 
 `trading-manager` owns durable promotion decisions, activation records, rollback records, runtime lifecycle routing, and shared registry authority. Promotion evidence rows may be produced here, but activation state must not live here.
 

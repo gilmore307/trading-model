@@ -323,9 +323,9 @@ Status: Accepted
 Model-layer outputs should preserve downstream stability without discarding review detail. Each implemented model layer should therefore separate three physical artifacts:
 
 ```text
-model_NN_<layer_slug>
-model_NN_<layer_slug>_explainability
-model_NN_<layer_slug>_diagnostics
+mNN_<domain_slug>_model_generation
+mNN_<domain_slug>_model_generation_explainability
+mNN_<domain_slug>_model_generation_diagnostics
 ```
 
 The primary `model` artifact is the narrow downstream dependency surface: identity, stable state, handoff, and eligibility/quality summary fields. `explainability` owns human-review internals such as feature/factor attribution, observed behavior, inferred attributes, conditional behavior detail, contributing evidence, and reason-code detail. `diagnostics` owns acceptance, monitoring, and gating evidence such as freshness, missingness, standardization, liquidity/spread/optionability, event/gap/volatility/correlation stress, baseline comparison, refit stability, and no-future-leak checks.

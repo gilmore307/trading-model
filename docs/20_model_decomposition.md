@@ -24,9 +24,9 @@ For each layer, define:
 Each implemented model layer should separate three artifact classes:
 
 ```text
-model_NN_<layer_slug>                 # output
-model_NN_<layer_slug>_explainability  # human review/debug/explain
-model_NN_<layer_slug>_diagnostics     # acceptance/monitoring/gating
+mNN_<domain_slug>_model_generation                  # output
+mNN_<domain_slug>_model_generation_explainability   # human review/debug/explain
+mNN_<domain_slug>_model_generation_diagnostics      # acceptance/monitoring/gating
 ```
 
 Primary `model` outputs stay narrow and stable. Explainability and diagnostics may be wider, but downstream production logic should not hard-depend on them without a reviewed promotion decision.
