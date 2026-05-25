@@ -6,6 +6,13 @@ Status: accepted Layer 10 design route; deterministic V1 scaffold implemented in
 
 `EventRiskGovernor / EventIntelligenceOverlay` is Layer 10. Its primary role is **post-decision and post-fold event attribution**: when a model, strategy family, action thesis, path expectation, or risk assumption fails after the base stack has made a decision, Layer 10 searches point-in-time event observations and related evidence for plausible event causes, impact scope, failure mechanism, and repeatability.
 
+Layer 10 training starts after concentrated live-flow replay has settled. It is
+not a pre-replay data-acquisition or feature-generation step. Replay first lets
+the component graph choose no target, one target, or a target combination under
+historical point-in-time conditions; Layer 10 then studies the resulting
+failures, residuals, misses, path deviations, overblocks, underblocks, and
+option-expression drag.
+
 Layer 10 is paired with Layer 4:
 
 - Layer 4 consumes accepted point-in-time event observations and reviewed event/strategy-failure knowledge before alpha confidence is estimated.
