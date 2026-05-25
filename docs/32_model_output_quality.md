@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the current quality gate for SQL model-output tables under `trading_model.model_01_*` through `trading_model.model_09_*`, including `_explainability` and `_diagnostics` support tables.
+This document defines the current quality gate for SQL model-output tables under `trading_model.model_01_*` through `trading_model.model_10_*`, including `_explainability` and `_diagnostics` support tables.
 
 Primary model-output tables should stay focused on row identity, upstream refs, stable scalar score/status fields, and the few resolved values downstream layers actually need. Large nested payloads, explanation blocks, reason-code detail, and row-quality evidence belong in `_explainability` or `_diagnostics` tables.
 

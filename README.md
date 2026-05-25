@@ -126,6 +126,7 @@ docs/22_state_vector_feature_registry.md
 docs/30_promotion_readiness.md
 docs/31_promotion_acceptance.md
 docs/32_model_output_quality.md
+docs/33_model_data_tables.md
 docs/40_historical_dataset_scope.md
 docs/41_realtime_decision_handoff.md
 docs/50_activity_price_relationship_study.md

@@ -7,11 +7,11 @@ Owner intent: keep the model stack direct, point-in-time, and current-route auth
 
 | Docs band | Implementation surface | Purpose |
 |---|---|---|
-| `10_*` | `src/models/model_01_*` through `src/models/model_09_*`; matching `scripts/models/model_*/` | Layer-specific model contracts and local builders. |
+| `10_*` | `src/models/model_01_*` through `src/models/model_10_*`; matching `scripts/models/model_*/` | Layer-specific model contracts and local builders. |
 | `20_*` | shared model-contract/taxonomy helpers | Model decomposition, vector taxonomy, and state-vector feature registry. |
 | `30_*` | `src/model_governance/promotion/`, `scripts/model_governance/` | Promotion readiness and acceptance evidence. |
 | `40_*` | historical/realtime handoff docs and governance code | Dataset scope and realtime decision handoff boundaries. |
-| `50_*` | `src/models/model_10_event_risk_governor/` event-family research helpers | Event-family scouting, packets, and final event-layer judgment. |
+| `50_*` | Event-family research helpers inside `src/models/model_10_event_risk_governor/` | Event-family scouting, packets, and final event-layer judgment. |
 
 ## Architecture Summary
 

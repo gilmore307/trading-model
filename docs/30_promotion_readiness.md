@@ -64,10 +64,11 @@ Realtime evidence becomes stronger as it accumulates untouched future rows, but 
 | 3 | `TargetStateVectorModel` | `target_context_state` | deferred after real production-eval substrate | upstream Layer 1/2 are not production-approved/active and Layer 3 calibration evidence is missing |
 | 4 | `EventFailureRiskModel` | `event_failure_risk_vector` | deferred: no production eval substrate | no accepted production implementation/evaluation run for reviewed event/strategy-failure conditioning exists |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | deferred: no production eval substrate | no production adjusted-alpha evaluation run or calibrated labels exist |
-| 6 | `PositionProjectionModel` | `position_projection_vector` | deferred: no production eval substrate | no production position-utility evaluation run or labels exist |
-| 7 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | deferred: no production eval substrate | no production realized-action outcome evaluation run exists |
-| 8 | `OptionExpressionModel` | `option_expression_plan` / `expression_vector` | deferred: no production eval substrate | no production option-chain replay evaluation run exists |
-| 9 | `EventRiskGovernor` | `event_context_vector` / `event_risk_intervention` | deferred: no production eval substrate | no production residual-event-governor evaluation run or calibrated labels exist |
+| 6 | `DynamicRiskPolicyModel` | `dynamic_risk_policy_state` | deferred: no production eval substrate | no production dynamic-risk-policy evaluation run or calibrated portfolio/risk labels exist |
+| 7 | `PositionProjectionModel` | `position_projection_vector` | deferred: no production eval substrate | no production position-utility evaluation run or labels exist |
+| 8 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | deferred: no production eval substrate | no production realized-action outcome evaluation run exists |
+| 9 | `OptionExpressionModel` | `option_expression_plan` / `expression_vector` | deferred: no production eval substrate | no production option-chain replay evaluation run exists |
+| 10 | `EventRiskGovernor` | `event_context_vector` / `event_risk_intervention` | deferred: no production eval substrate | no production residual-event-governor evaluation run or calibrated labels exist |
 
 No layer in this matrix is currently production-approved by this document.
 

@@ -27,10 +27,11 @@ Status: Accepted; revised by V2.2 on 2026-05-05
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target context for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
 | 4 | `EventFailureRiskModel` | `event_failure_risk_model` | Reviewed event/strategy-failure risk conditioning before alpha confidence; not a raw-news alpha layer. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
-| 6 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus current/pending position, cost, and risk context to projected target holding state. |
-| 7 | `UnderlyingActionModel` | `underlying_action_model` | Direct underlying/spot planned action thesis across stock, ETF, or crypto-style candidates: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and optional trading-guidance handoff. |
-| 8 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | Point-in-time event-risk intervention on the direct-underlying/spot thesis; may block/cap/review guidance but must not mutate broker/account state. |
-| 8 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | Optional offline trading guidance and optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
+| 6 | `DynamicRiskPolicyModel` | `dynamic_risk_policy_model` | Dynamic premium/risk-budget policy from market regime, systemic event pressure, alpha quality, and portfolio context; not broker permission. |
+| 7 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus dynamic risk policy, current/pending position, cost, exposure, and risk-budget context to projected target holding state. |
+| 8 | `UnderlyingActionModel` | `underlying_action_model` | Direct underlying/spot planned action thesis across stock, ETF, or crypto-style candidates: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and optional trading-guidance handoff. |
+| 9 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | Optional offline trading guidance and optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
+| 10 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | Point-in-time event-risk intervention on the direct-underlying/spot thesis; may block/cap/review guidance but must not mutate broker/account state. |
 
 Live/paper order placement remains outside this repository and no layer should be renamed live `ExecutionModel`.
 
@@ -54,8 +55,14 @@ TargetStateVectorModel
   -> anonymous_target_feature_vector
   -> target_context_state
 
+EventFailureRiskModel
+  -> event_failure_risk_vector
+
 AlphaConfidenceModel
   -> alpha_confidence_vector
+
+DynamicRiskPolicyModel
+  -> dynamic_risk_policy_state
 
 PositionProjectionModel
   -> position_projection_vector
@@ -63,11 +70,11 @@ PositionProjectionModel
 UnderlyingActionModel
   -> underlying_action_plan / underlying_action_vector
 
-EventRiskGovernor / EventIntelligenceOverlay
-  -> event_risk_intervention / event_context_vector
-
 TradingGuidanceModel / OptionExpressionModel
   -> trading_guidance / option_expression_plan / expression_vector
+
+EventRiskGovernor / EventIntelligenceOverlay
+  -> event_risk_intervention / event_context_vector
 ```
 
 Hard separation rules:
