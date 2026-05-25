@@ -271,6 +271,8 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
             "current_position_state": {"current_position_exposure_score": 0.10},
             "pending_position_state": {"pending_exposure_size": 0.10, "pending_order_fill_probability_estimate": 0.50},
             "position_level_friction": {"spread_cost_estimate": 0.02, "slippage_cost_estimate": 0.03, "fee_cost_estimate": 0.01, "turnover_cost_estimate": 0.02, "liquidity_capacity_score": 0.90},
+            "price_location_state": {"thesis_intact_score": 1.0, "alpha_revision_score": 0.0, "price_move_since_alpha_score": 0.0},
+            "position_lifecycle_state": {"current_unrealized_return": 0.0, "thesis_break_risk_score": 0.0},
             "portfolio_exposure_state": {"correlation_concentration_score": 0.20, "sector_exposure_limit": 0.80},
             "risk_budget_state": {"risk_budget_available_score": 0.90, "single_name_exposure_limit": 0.80},
             "policy_gate_state": {},

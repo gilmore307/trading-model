@@ -48,7 +48,13 @@ A changed target exposure is not by itself a position adjustment. Layer 7 may up
 
 Layer 7 must not emit `maintain`, `no_trade`, `open`, `increase`, `reduce`, `close`, or `cover`. Those are Layer 8 planned-action outcomes. Layer 7's job is to make target exposure and adjustment pressure explicit without turning minute-level projection changes into action policy.
 
-Layer 7 should train the difference between random short-term price wiggles and useful tactical exposure adjustment. Buying weakness or trimming strength is useful only when it improves target-exposure utility under the active thesis, risk budget, and cost context. It is not a separate high-frequency scalping objective.
+Layer 7 should train the difference between random short-term price wiggles and useful tactical exposure adjustment. Price and alpha are separate concepts:
+
+- If alpha/thesis quality remains intact while price moves favorably relative to the alpha reference price, Layer 7 may raise target exposure through `price_location_value_with_alpha_intact`.
+- If price extends favorably while alpha does not improve, Layer 7 may lower target exposure through `price_location_extension_without_alpha_improvement`.
+- If the price move reflects thesis-break, event, liquidity, or regime risk, it must reduce thesis-intact weight rather than masquerade as value.
+
+This is the model-side basis for low-adding and high-reducing behavior. Layer 7 still emits only target exposure and position gap; Layer 8 later maps that gap to `increase_*`, `reduce_*`, `close_*`, `cover_short`, `maintain`, or `no_trade`.
 
 ## Position and input chain
 
@@ -58,6 +64,8 @@ The accepted chain is:
 alpha_confidence_vector
 + current_position_state
 + pending_position_state
++ price_location_state
++ position_lifecycle_state
 + position-level friction context
 + portfolio exposure context
 + risk-budget context
@@ -182,7 +190,28 @@ liquidity_capacity_score
 
 `7_cost_to_adjust_position_score_<horizon>` should represent cost pressure for changing the current position gap, not raw market cost alone. A high spread should not heavily penalize a row when `position_gap` is near zero.
 
-### Input E - expression-specific friction hints
+### Input E - price location and position lifecycle
+
+Layer 7 may use point-in-time price-location and lifecycle evidence to separate alpha from execution position:
+
+```text
+price_location_state
+  current_price
+  alpha_reference_price
+  price_move_since_alpha_score
+  alpha_revision_score
+  thesis_intact_score
+  thesis_break_risk_score
+
+position_lifecycle_state
+  current_unrealized_return
+  thesis_intact_score
+  thesis_break_risk_score
+```
+
+`alpha_reference_price` is the price basis at which the current alpha/thesis was measured. A lower current price with intact alpha can improve target exposure utility; a higher current price without alpha improvement can reduce remaining edge and compress target exposure. These inputs must be point-in-time and must not contain future returns, realized exit outcomes, or best-action hindsight.
+
+### Input F - expression-specific friction hints
 
 Expression-specific costs may be retained as soft context or diagnostics, but they must not cause Layer 7 to choose or reject a specific instrument:
 
@@ -194,7 +223,7 @@ option_expression_cost_hint
 
 Borrow and financing costs are especially boundary-sensitive. If Layer 7 models abstract risk exposure, poor stock borrow should not automatically zero short exposure because Layer 8 may express the same exposure through options.
 
-### Input F - risk budget and portfolio context
+### Input G - risk budget and portfolio context
 
 Eligible risk/portfolio context includes:
 

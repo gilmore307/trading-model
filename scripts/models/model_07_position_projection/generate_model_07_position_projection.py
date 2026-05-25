@@ -116,6 +116,8 @@ def _decision_rows(alpha_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, An
                 "current_position_state": {"current_position_exposure_score": 0.0},
                 "pending_position_state": {"pending_exposure_size": 0.0, "pending_order_fill_probability_estimate": 0.0},
                 "position_level_friction": {"spread_cost_estimate": 0.02, "slippage_cost_estimate": 0.03, "fee_cost_estimate": 0.01, "turnover_cost_estimate": 0.02, "liquidity_capacity_score": 0.80},
+                "price_location_state": {"thesis_intact_score": 1.0, "alpha_revision_score": 0.0, "price_move_since_alpha_score": 0.0},
+                "position_lifecycle_state": {"current_unrealized_return": 0.0, "thesis_break_risk_score": 0.0},
                 "portfolio_exposure_state": {"correlation_concentration_score": 0.25, "sector_exposure_limit": 1.0},
                 "risk_budget_state": {"risk_budget_available_score": 0.75, "single_name_exposure_limit": 1.0},
                 "policy_gate_state": {"new_exposure_allowed": True},

@@ -1,8 +1,11 @@
 """Deterministic PositionProjectionModel V1 scaffold.
 
 Layer 7 maps the final adjusted ``alpha_confidence_vector`` plus point-in-time
-current/pending exposure, friction, risk-budget, and policy context into a
-``position_projection_vector``. It projects target position state only; it does
+current/pending exposure, price location, friction, risk-budget, and policy
+context into a ``position_projection_vector``. Price location and alpha are
+separate inputs: unchanged alpha can justify higher target exposure after a
+favorable price move, while price extension without alpha improvement can
+justify lower target exposure. It projects target position state only; it does
 not emit buy/sell/hold/open/close/reverse, instrument selection, broker routing,
 or option-contract fields.
 """
@@ -39,6 +42,8 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     current = _payload(row, "current_position_state")
     pending = _payload(row, "pending_position_state")
     friction = _payload(row, "position_level_friction")
+    price_location = _payload(row, "price_location_state")
+    lifecycle = _payload(row, "position_lifecycle_state")
     portfolio = _payload(row, "portfolio_exposure_state")
     risk = _payload(row, "risk_budget_state")
     policy = _payload(row, "policy_gate_state")
@@ -47,7 +52,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     payload: dict[str, Any] = {}
     horizon_details: dict[str, dict[str, Any]] = {}
     for horizon in HORIZONS:
-        detail = _horizon_projection(horizon, alpha, effective_exposure, friction, portfolio, risk, policy)
+        detail = _horizon_projection(horizon, alpha, effective_exposure, friction, price_location, lifecycle, portfolio, risk, policy)
         horizon_details[horizon] = detail
         suffix = _suffix(horizon)
         payload.update(
@@ -111,6 +116,8 @@ def _horizon_projection(
     alpha: Mapping[str, Any],
     exposure: Mapping[str, float],
     friction: Mapping[str, Any],
+    price_location: Mapping[str, Any],
+    lifecycle: Mapping[str, Any],
     portfolio: Mapping[str, Any],
     risk: Mapping[str, Any],
     policy: Mapping[str, Any],
@@ -126,9 +133,18 @@ def _horizon_projection(
     drawdown = _score(alpha, f"5_drawdown_risk_score_{suffix}", default=0.5)
     alpha_tradability = _score(alpha, f"5_alpha_tradability_score_{suffix}", default=0.0)
     risk_fit = _risk_budget_fit(portfolio, risk, policy)
+    price_adjustment = _price_location_adjustment(
+        horizon=horizon,
+        direction=direction,
+        expected_return=expected_return,
+        confidence=confidence,
+        price_location=price_location,
+        lifecycle=lifecycle,
+    )
     conversion = _clip01(0.25 * strength + 0.25 * confidence + 0.20 * reliability + 0.20 * path_quality + 0.10 * alpha_tradability)
     risk_penalty = _clip01(0.45 * reversal + 0.45 * drawdown + 0.10 * (1.0 - risk_fit))
-    raw_target = _clip_signed(direction * conversion * (1.0 - 0.55 * risk_penalty))
+    adjusted_conversion = _clip01(conversion * price_adjustment["target_exposure_multiplier"])
+    raw_target = _clip_signed(direction * adjusted_conversion * (1.0 - 0.55 * risk_penalty))
     if _policy_blocks_new_exposure(policy):
         raw_target = 0.0
         risk_fit = min(risk_fit, 0.0)
@@ -148,10 +164,14 @@ def _horizon_projection(
         reason_codes.append("adjustment_cost_pressure")
     if risk_fit <= 0.25:
         reason_codes.append("risk_budget_compression")
+    if price_adjustment["value_score"] >= 0.20:
+        reason_codes.append("price_location_value_with_alpha_intact")
+    if price_adjustment["extension_score"] >= 0.20:
+        reason_codes.append("price_location_extension_without_alpha_improvement")
     if not reason_codes:
         reason_codes.append("alpha_to_position_projection")
     return {
-        "target_position_bias": round(_clip_signed(direction * conversion), 6),
+        "target_position_bias": round(_clip_signed(direction * adjusted_conversion), 6),
         "target_exposure": round(target_exposure, 6),
         "current_position_alignment": round(alignment, 6),
         "position_gap": round(gap, 6),
@@ -161,7 +181,81 @@ def _horizon_projection(
         "risk_budget_fit": round(risk_fit, 6),
         "position_state_stability": round(stability, 6),
         "projection_confidence": round(projection_confidence, 6),
+        "price_location_value_score": round(price_adjustment["value_score"], 6),
+        "price_location_extension_score": round(price_adjustment["extension_score"], 6),
+        "alpha_price_divergence_score": round(price_adjustment["alpha_price_divergence_score"], 6),
+        "target_exposure_multiplier": round(price_adjustment["target_exposure_multiplier"], 6),
         "reason_codes": reason_codes,
+    }
+
+
+def _price_location_adjustment(
+    *,
+    horizon: str,
+    direction: float,
+    expected_return: float,
+    confidence: float,
+    price_location: Mapping[str, Any],
+    lifecycle: Mapping[str, Any],
+) -> dict[str, float]:
+    direction_sign = _sign(direction)
+    if direction_sign == 0:
+        return _neutral_price_adjustment()
+
+    current_price = _first_float(price_location, "current_price", "reference_price", "market_price")
+    alpha_reference_price = _first_float(
+        price_location,
+        "alpha_reference_price",
+        "alpha_measurement_price",
+        "thesis_reference_price",
+        "reference_price_at_alpha",
+    )
+    alpha_revision = _signed(price_location, f"alpha_revision_score_{_suffix(horizon)}", "alpha_revision_score", "alpha_change_score")
+    thesis_intact = _score(
+        price_location,
+        "thesis_intact_score",
+        "alpha_intact_score",
+        default=_score(lifecycle, "thesis_intact_score", "alpha_intact_score", default=1.0),
+    )
+    thesis_break_risk = _score(
+        price_location,
+        "thesis_break_risk_score",
+        "price_breakdown_risk_score",
+        default=_score(lifecycle, "thesis_break_risk_score", default=0.0),
+    )
+    unrealized = _signed(lifecycle, "current_unrealized_return", "unrealized_return", "position_return")
+
+    if current_price is not None and alpha_reference_price and alpha_reference_price > 0:
+        price_move_since_alpha = current_price / alpha_reference_price - 1.0
+    else:
+        price_move_since_alpha = _signed(price_location, "price_move_since_alpha_score", "price_return_since_alpha", "price_change_since_alpha")
+
+    directional_price_move = direction_sign * price_move_since_alpha
+    intact_weight = _clip01(thesis_intact * confidence * (1.0 - thesis_break_risk))
+    alpha_not_improved = _clip01(1.0 - max(direction_sign * alpha_revision, 0.0))
+    value_score = _clip01(max(-directional_price_move, 0.0) * 3.0 * intact_weight)
+    extension_score = _clip01(max(directional_price_move, 0.0) * 2.5 * intact_weight * alpha_not_improved)
+
+    if direction_sign * expected_return <= 0:
+        value_score *= 0.35
+    if direction_sign * unrealized > 0:
+        extension_score = max(extension_score, _clip01(direction_sign * unrealized * 1.5 * alpha_not_improved))
+
+    multiplier = _clip_range(1.0 + min(value_score, 0.35) - min(extension_score, 0.45), 0.55, 1.35)
+    return {
+        "value_score": value_score,
+        "extension_score": extension_score,
+        "alpha_price_divergence_score": _clip_signed(value_score - extension_score),
+        "target_exposure_multiplier": multiplier,
+    }
+
+
+def _neutral_price_adjustment() -> dict[str, float]:
+    return {
+        "value_score": 0.0,
+        "extension_score": 0.0,
+        "alpha_price_divergence_score": 0.0,
+        "target_exposure_multiplier": 1.0,
     }
 
 
@@ -234,6 +328,8 @@ def _normalize_input_row(row: Mapping[str, Any]) -> dict[str, Any]:
         "current_position_state",
         "pending_position_state",
         "position_level_friction",
+        "price_location_state",
+        "position_lifecycle_state",
         "portfolio_exposure_state",
         "risk_budget_state",
         "policy_gate_state",
@@ -275,6 +371,14 @@ def _signed(mapping: Mapping[str, Any], *keys: str) -> float:
     return 0.0
 
 
+def _first_float(mapping: Mapping[str, Any], *keys: str) -> float | None:
+    for key in keys:
+        value = _safe_float(mapping.get(key))
+        if value is not None:
+            return value
+    return None
+
+
 def _safe_float(value: Any) -> float | None:
     if value is None or value == "":
         return None
@@ -297,6 +401,12 @@ def _clip_signed(value: float | None) -> float:
     if value is None:
         return 0.0
     return max(-1.0, min(1.0, float(value)))
+
+
+def _clip_range(value: float | None, lower: float, upper: float) -> float:
+    if value is None:
+        return lower
+    return max(lower, min(upper, float(value)))
 
 
 def _sign(value: float) -> int:

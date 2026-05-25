@@ -43,6 +43,8 @@ resolved position gap is material
 
 This keeps Layer 7 as a projection layer while preventing minute-level exposure noise from becoming unnecessary position churn.
 
+Layer 8 inherits high-reducing/low-adding behavior only through Layer 7 target exposure and position gap. If Layer 7 raises target exposure because alpha is intact while price has improved, Layer 8 may resolve the gap to `open_long` or `increase_long`. If Layer 7 compresses target exposure because price extended without alpha improvement, Layer 8 may resolve the gap to `reduce_long` or `close_long`. Layer 8 must not independently treat every price dip as value or every price rise as an exit signal.
+
 ## Position in the stack
 
 The accepted downstream chain is:

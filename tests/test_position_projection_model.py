@@ -66,6 +66,50 @@ class PositionProjectionModelTests(unittest.TestCase):
         self.assertAlmostEqual(aligned["7_cost_to_adjust_position_score_1W"], 0.0, places=5)
         self.assertGreater(aligned["7_current_position_alignment_score_1W"], 0.99)
 
+    def test_price_location_value_increases_target_exposure_when_alpha_is_intact(self) -> None:
+        neutral = generate_rows([_base_row(price_location_state={"price_move_since_alpha_score": 0.0})])[0]
+        value = generate_rows(
+            [
+                _base_row(
+                    price_location_state={
+                        "alpha_reference_price": 100.0,
+                        "current_price": 92.0,
+                        "thesis_intact_score": 1.0,
+                        "alpha_revision_score": 0.0,
+                    }
+                )
+            ]
+        )[0]
+        detail = value["position_projection_diagnostics"]["horizon_projections"]["1W"]
+
+        self.assertGreater(value["7_target_exposure_score_1W"], neutral["7_target_exposure_score_1W"])
+        self.assertGreater(detail["price_location_value_score"], 0.20)
+        self.assertIn("price_location_value_with_alpha_intact", detail["reason_codes"])
+
+    def test_price_extension_reduces_target_exposure_when_alpha_does_not_improve(self) -> None:
+        neutral = generate_rows([_base_row(current_position_state={"current_position_exposure_score": 0.60})])[0]
+        extended = generate_rows(
+            [
+                _base_row(
+                    current_position_state={"current_position_exposure_score": 0.60},
+                    pending_position_state={"pending_exposure_size": 0.0, "pending_order_fill_probability_estimate": 0.0},
+                    price_location_state={
+                        "alpha_reference_price": 100.0,
+                        "current_price": 112.0,
+                        "thesis_intact_score": 1.0,
+                        "alpha_revision_score": 0.0,
+                    },
+                    position_lifecycle_state={"current_unrealized_return": 0.12},
+                )
+            ]
+        )[0]
+        detail = extended["position_projection_diagnostics"]["horizon_projections"]["1W"]
+
+        self.assertLess(extended["7_target_exposure_score_1W"], neutral["7_target_exposure_score_1W"])
+        self.assertLess(extended["7_resolved_position_gap_score"], 0.0)
+        self.assertGreater(detail["price_location_extension_score"], 0.20)
+        self.assertIn("price_location_extension_without_alpha_improvement", detail["reason_codes"])
+
     def test_policy_and_risk_can_compress_projection_without_action_language(self) -> None:
         output = generate_rows(
             [
@@ -140,6 +184,8 @@ def _base_row(**overrides: object) -> dict[str, object]:
             "turnover_cost_estimate": 0.02,
             "liquidity_capacity_score": 0.90,
         },
+        "price_location_state": {"thesis_intact_score": 1.0, "alpha_revision_score": 0.0, "price_move_since_alpha_score": 0.0},
+        "position_lifecycle_state": {"current_unrealized_return": 0.0, "thesis_break_risk_score": 0.0},
         "portfolio_exposure_state": {"correlation_concentration_score": 0.20, "sector_exposure_limit": 0.80},
         "risk_budget_state": {"risk_budget_available_score": 0.90, "single_name_exposure_limit": 0.80},
         "policy_gate_state": {},
