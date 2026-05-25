@@ -20,9 +20,9 @@ Layer 7 does **not** answer buy/sell/hold, open/close/reverse, instrument choice
 
 ## Training Sample Granularity
 
-Layer 7 training should use dense minute-level position-projection rows whenever point-in-time Layer 5 alpha, Layer 6 policy state, and current/pending position context can be constructed. Live runtime may call Layer 7 only when an active position or routed candidate needs a fresh projection, but training only on those trigger minutes would hide aligned, no-gap, low-utility, and near-threshold states that later Layer 8 action planning needs to be calibrated.
+Layer 7 training should use dense minute-level position-projection rows for each selected training target whenever point-in-time Layer 5 alpha, Layer 6 policy state, and current/pending position context can be constructed. Live runtime may call Layer 7 only when an active position or routed candidate needs a fresh projection, but training only on those trigger minutes would hide aligned, no-gap, low-utility, and near-threshold states that later Layer 8 action planning needs to be calibrated.
 
-The Layer 7 training row universe is not `minute x every listed symbol`. It is every eligible minute-level projection state for:
+For a selected stock, ETF, or spot target, Layer 7 should train across the full eligible minute sequence, including long periods where the correct target exposure remains unchanged or zero. The row universe is not an all-market discovery scan over every listed symbol every minute. It is every eligible minute-level projection state for the selected target scope:
 
 - active positions;
 - routed or simulated candidate positions with point-in-time current/pending exposure context;
