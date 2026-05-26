@@ -50,6 +50,26 @@ class ModelGovernanceCliTests(unittest.TestCase):
         self.assertIn('["psql", database_url', script_text)
         self.assertNotIn("psycopg", script_text)
 
+    def test_cleanup_cli_refuses_non_model_schema_even_in_dry_run(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/model_governance/clear_model_development_database.py",
+                "--dry-run",
+                "--schema",
+                "trading_data",
+            ],
+            cwd=repo_root,
+            env={"PYTHONPATH": "src"},
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("refusing to clean schema", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

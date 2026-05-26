@@ -358,27 +358,28 @@ def main(argv: list[str] | None = None) -> int:
     db_url = database_url(args.database_url)
     feature_rows = read_feature_rows(db_url=db_url, schema=args.feature_schema, table=args.feature_table, start=args.source_start, end=args.source_end)
     model_rows = generator.generate_rows(feature_rows)
-    persist_model_rows(db_url=db_url, schema=args.model_schema, table=args.model_table, rows=model_rows)
-    persist_support_rows(
-        db_url=db_url,
-        schema=args.model_schema,
-        table=args.explainability_table or f"{args.model_table}_explainability",
-        rows=generator.build_explainability_rows(model_rows),
-        json_columns=EXPLAINABILITY_JSON_MODEL_COLUMNS,
-    )
-    persist_support_rows(
-        db_url=db_url,
-        schema=args.model_schema,
-        table=args.diagnostics_table or f"{args.model_table}_diagnostics",
-        rows=generator.build_diagnostics_rows(model_rows),
-        json_columns=DIAGNOSTICS_JSON_MODEL_COLUMNS,
-    )
+    if not args.dry_run:
+        persist_model_rows(db_url=db_url, schema=args.model_schema, table=args.model_table, rows=model_rows)
+        persist_support_rows(
+            db_url=db_url,
+            schema=args.model_schema,
+            table=args.explainability_table or f"{args.model_table}_explainability",
+            rows=generator.build_explainability_rows(model_rows),
+            json_columns=EXPLAINABILITY_JSON_MODEL_COLUMNS,
+        )
+        persist_support_rows(
+            db_url=db_url,
+            schema=args.model_schema,
+            table=args.diagnostics_table or f"{args.model_table}_diagnostics",
+            rows=generator.build_diagnostics_rows(model_rows),
+            json_columns=DIAGNOSTICS_JSON_MODEL_COLUMNS,
+        )
     artifacts = evaluation.build_evaluation_artifacts(
         feature_rows=feature_rows,
         model_rows=model_rows,
         purpose="production_promotion_evaluation",
         request_status="completed",
-        write_policy="database_persisted_production_eval_substrate",
+        write_policy="dry_run_no_database_writes" if args.dry_run else "database_persisted_production_eval_substrate",
         evidence_source="real_database_evaluation",
     )
     persistence_rows = to_persistence_artifacts(artifacts)
@@ -407,7 +408,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.dry_run:
         print(json.dumps({"summary": summary, "model_config_ref": config_row, "promotion_candidate": candidate_row, "agent_prompt": prompt}, indent=2, sort_keys=True, default=str))
-        print("DRY RUN ONLY: model rows were generated/persisted, but no agent review or manager promotion request was written.")
+        print("DRY RUN ONLY: no model rows, support rows, agent review, or manager promotion request were written.")
         return 0
 
     review = invoke_agent(

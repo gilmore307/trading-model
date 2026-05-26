@@ -33,6 +33,8 @@ def _database_url(explicit: str | None) -> str:
 
 
 def cleanup_sql(schema: str = DEFAULT_SCHEMA) -> str:
+    if schema != DEFAULT_SCHEMA:
+        raise ValueError(f"refusing to clean schema {schema!r}; this tool is scoped to {DEFAULT_SCHEMA!r}")
     q_schema = quote_identifier(schema)
     return f"DROP SCHEMA IF EXISTS {q_schema} CASCADE;\nCREATE SCHEMA {q_schema};\n"
 

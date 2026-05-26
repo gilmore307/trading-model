@@ -182,6 +182,8 @@ def _read_csv_rows(pattern: str) -> list[dict[str, str]]:
 
 def _load_daily_points(bar_root: Path, month: str) -> dict[str, list[DailyPoint]]:
     result: dict[str, list[DailyPoint]] = {}
+    if not bar_root.exists():
+        return result
     for symbol_dir in sorted(path for path in bar_root.iterdir() if path.is_dir()):
         symbol = symbol_dir.name
         by_day: dict[date, list[tuple[datetime, float, float, float, float]]] = defaultdict(list)
