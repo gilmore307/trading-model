@@ -2,7 +2,7 @@
 """Persist model evaluation artifact table rows into trading_model governance tables.
 
 This script is idempotent and model-side only. It writes dataset/evaluation/metric
-evidence rows; it never creates manager promotion decisions, activates model
+evidence rows; it never creates promotion-readiness records, activates model
 configs, performs provider calls, or touches broker/account state.
 """
 from __future__ import annotations
@@ -31,7 +31,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     persisted = persist_artifact_tables(tables, database_url_value=args.database_url, schema=args.schema)
     print(json.dumps({"dry_run": False, "artifact_json": str(args.artifact_json), "persisted_row_counts": persisted}, indent=2, sort_keys=True))
-    print("MODEL EVIDENCE ONLY: no manager decision, model activation, provider call, broker execution, or account mutation was performed.")
+    print("MODEL EVIDENCE ONLY: no promotion readiness, model activation, provider call, broker execution, or account mutation was performed.")
     return 0
 
 

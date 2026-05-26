@@ -2,8 +2,8 @@
 
 The model repository owns the model-side dataset/evaluation evidence tables.  These
 helpers intentionally persist only governance/evaluation rows; they do not create
-manager promotion decisions, activation records, rollback records, broker orders,
-or account mutations.
+promotion-readiness records, runtime activation records, rollback records, broker
+orders, or account mutations.
 """
 from __future__ import annotations
 

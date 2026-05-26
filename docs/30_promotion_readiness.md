@@ -94,7 +94,7 @@ If baseline improvement is not positive and stable on the reviewed split windows
 
 ## Activation rule
 
-An accepted approval may activate a config only through `trading-manager` manager-control-plane review and activation. Deferred or rejected reviews must never activate or move production pointers.
+An accepted approval may admit a model only into the evaluation-owned promotion-readiness and execution-owned runtime lifecycle path. Deferred or rejected reviews must never activate or move production pointers.
 
 Promotion evidence and activation helpers may classify artifact retention intent, but they must not call cleanup, compression, archive, SQL detach/drop, or deletion executors directly. The accepted boundary is:
 
@@ -106,7 +106,7 @@ storage executes lifecycle
 
 Approved/promoted model bodies and required lineage must be marked for permanent retention. Regenerable intermediates may receive retention hints, but lifecycle action must route through manager `storage_lifecycle_request` and storage protected-set execution.
 
-The current acceptance evidence creates no activation rows. Layers 3-10 route through `scripts/models/review_layers_03_10_promotion_acceptance.py`, which builds blocked evidence and reviewer artifacts without persisting manager decisions. A follow-up Layer 3 substrate run can rebuild real Layer 3 evaluation evidence, but Layers 4-10 remain blocked for missing production eval substrate. See `docs/31_promotion_acceptance.md` for the current acceptance boundary.
+The current acceptance evidence creates no activation rows. Layers 3-10 route through `scripts/models/review_layers_03_10_promotion_acceptance.py`, which builds blocked evidence and reviewer artifacts without persisting control-plane decisions. A follow-up Layer 3 substrate run can rebuild real Layer 3 evaluation evidence, but Layers 4-10 remain blocked for missing production eval substrate. See `docs/31_promotion_acceptance.md` for the current acceptance boundary.
 
 ## Implementation hook
 

@@ -9,6 +9,6 @@ This package owns only local evidence/review artifact surfaces:
 - strict reviewer prompt/response validation;
 - review artifacts that can be handed to `trading-manager`.
 
-It does **not** own durable promotion decisions, activation records, rollback records, production pointers, or manager-control-plane SQL. Those belong in `trading-manager`.
+It does **not** own promotion-readiness records, runtime activation records, rollback records, production pointers, or control-plane SQL. Promotion readiness belongs in `trading-evaluation`; runtime lifecycle and active-pointer writes belong in `trading-execution`; manager request scheduling belongs in `trading-manager`.
 
 Dataset requests, snapshots, splits, labels, eval runs, and promotion metrics remain in `model_governance/evaluation/` as model-produced evidence.

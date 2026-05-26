@@ -22,7 +22,7 @@ trading_model.mNN_<domain_slug>_model_generation_diagnostics
 
 Old `trading_model.model_NN_*` names are migration debt, not current planning names.
 
-`trading-manager` owns durable promotion decisions, activation records, rollback records, runtime lifecycle routing, and shared registry authority. Promotion evidence rows may be produced here, but activation state must not live here.
+`trading-evaluation` owns promotion-readiness records. `trading-execution` owns runtime activation records, rollback refs, active-pointer writes, and runtime lifecycle routing. `trading-manager` owns request scheduling and shared registry authority. Promotion evidence rows may be produced here, but activation state must not live here.
 
 Execution-side repositories own broker, account, order, fill, and buying-power mutation. No model table is an order table.
 

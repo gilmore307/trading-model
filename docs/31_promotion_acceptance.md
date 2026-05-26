@@ -67,4 +67,4 @@ The acceptance helper `scripts/models/review_layers_03_10_promotion_acceptance.p
 
 ## Activation invariant
 
-No production config is active from this acceptance pass. Deferred reviews must not create activation records or move active config pointers. Any durable activation record is manager-control-plane work in `trading-manager`.
+No production config is active from this acceptance pass. Deferred reviews must not create runtime activation records or move active config pointers. Runtime activation records and active-pointer writes belong in `trading-execution`.

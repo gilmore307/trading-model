@@ -42,7 +42,7 @@ class ModelGovernanceSchemaTests(unittest.TestCase):
         self.assertIn('"factor_name" TEXT', joined)
         self.assertIn('"metric_value" DOUBLE PRECISION', joined)
 
-    def test_manager_owned_promotion_control_plane_tables_are_not_model_schema(self) -> None:
+    def test_promotion_control_plane_tables_are_not_model_schema(self) -> None:
         joined = "\n".join(schema.create_governance_schema_sql())
 
         self.assertNotIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_config_version"', joined)

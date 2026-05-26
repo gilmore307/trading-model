@@ -247,16 +247,16 @@ Layer-numbering update: after D047, the later Layer 8/9 swap, and D049, this dec
 Date: 2026-05-01
 Status: Superseded by D036
 
-Model evaluation evidence may stay model-local until it is accepted by manager-owned control-plane review. Durable promotion decisions, activation, rollback, and production pointers are no longer model-owned.
+Model evaluation evidence may stay model-local until it is accepted into the cross-repository promotion path. Promotion readiness, runtime activation, rollback refs, and production pointers are no longer model-owned.
 
-## D036 - Promotion decisions and activation belong to trading-manager
+## D036 - Promotion requests, readiness, and activation have separate owners
 
 Date: 2026-05-09
 Status: Accepted
 
 `trading-model` owns model output generation, labels, evaluation computation, promotion metrics, candidate evidence packages, and reviewer artifacts.
 
-`trading-manager` owns the unified `model_promotion_review` request path, durable review decisions, activation records, rollback references, and cross-layer production gates. Model-side review scripts must not persist manager-control-plane promotion rows or activate production pointers.
+`trading-manager` owns the unified `model_promotion_review` request path and cross-layer scheduling gate. `trading-evaluation` owns promotion readiness. `trading-execution` owns runtime activation records, rollback refs, active-pointer writes, and runtime lifecycle routing. Model-side review scripts must not persist control-plane promotion rows or activate production pointers.
 
 ## D011 - Model output keys carry layer ownership prefixes
 
@@ -780,14 +780,14 @@ Closing the model-design phase does not approve production promotion for any lay
 
 Every production promotion review for active conceptual Layers 1-10 must use the complete evidence package defined in `docs/30_promotion_readiness.md`: dataset snapshot, chronological split, label refs, eval run, promotion metrics, promotion candidate, thresholds, baseline comparison, split stability, leakage/no-future checks, calibration report, and decision receipt.
 
-Missing evidence or failed gates require a deferred promotion review. Deferred or rejected reviews must not activate configs or move production pointers. Approval can only be considered after the evidence package is complete and gates pass; durable decision and activation belong in `trading-manager`.
+Missing evidence or failed gates require a deferred promotion review. Deferred or rejected reviews must not activate configs or move production pointers. Approval can only be considered after the evidence package is complete and gates pass; promotion readiness belongs in `trading-evaluation`, while runtime activation belongs in `trading-execution`.
 
 ## D031 - Promotion acceptance records real deferrals before activation
 
 Date: 2026-05-08
 Status: Superseded by D036
 
-The useful part of this decision remains: production-promotion acceptance must evaluate real evidence and must not activate on missing or failed gates. The implementation detail that `trading-model` persists durable promotion decisions is superseded. `trading-model` now emits model-side evidence/review artifacts; `trading-manager` owns durable review decisions and activation.
+The useful part of this decision remains: production-promotion acceptance must evaluate real evidence and must not activate on missing or failed gates. The implementation detail that `trading-model` persists durable promotion decisions is superseded. `trading-model` now emits model-side evidence/review artifacts; promotion readiness belongs in `trading-evaluation`, while runtime activation belongs in `trading-execution`.
 
 ## D032 - Layers 3-10 blocked acceptance must be agent-reviewed
 

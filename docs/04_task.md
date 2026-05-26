@@ -18,7 +18,7 @@ These are run/evidence requirements for promotion readiness, not open model-desi
 - Layer 1 and Layer 2 require remediated real-data evidence before any promotion approval can be considered.
 - Layer 3 requires upstream Layer 1/2 production approval or an explicitly reviewed offline-evidence exception, plus Layer 3 calibration evidence.
 - Layers 4-10 require point-in-time datasets, labels, real evaluation metrics, baseline/stability/leakage/calibration evidence, and manager-side `model_promotion_review` requests.
-- Missing evidence or failed gates must remain deferred/rejected and must not create activation records or move production pointers.
+- Missing evidence or failed gates must remain deferred/rejected and must not create runtime activation records or move production pointers.
 
 ## Not Current Historical-Training Scope
 
@@ -26,7 +26,7 @@ These items are intentionally outside the current promote-first historical-train
 
 - realtime data/monitoring or live/shadow integration expansion before a model has an approved/promotable version;
 - broker/order/fill/account lifecycle;
-- production model activation without approved manager-side review decisions;
+- production model activation without approved evaluation readiness and execution-owned runtime lifecycle gates;
 - exact execution-owned unified decision-record artifacts beyond the current risk-cap invariant;
 - additional durable manager/storage interface ownership inside `trading-model`.
 
@@ -36,8 +36,8 @@ These items are intentionally outside the current promote-first historical-train
 - Layer 1 `MarketRegimeModel`, Layer 2 `SectorContextModel`, and Layer 3 `TargetStateVectorModel` have reviewed contracts, deterministic local implementations/evaluation scaffolds, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.
 - Layer 3 owns anonymous target candidate construction and model-facing target state-vector construction. Model-facing target context/state vectors must exclude ticker/company identity.
 - Layer 4 `EventFailureRiskModel`, Layer 5 `AlphaConfidenceModel`, Layer 6 `DynamicRiskPolicyModel`, Layer 7 `PositionProjectionModel`, Layer 8 `UnderlyingActionModel`, Layer 9 `TradingGuidanceModel / OptionExpressionModel`, and Layer 10 `EventRiskGovernor / EventIntelligenceOverlay` have accepted offline scaffold boundaries.
-- Promotion acceptance evidence is recorded in `docs/31_promotion_acceptance.md`: Layers 1-2 have real database evidence; Layers 3-10 have blocked/deferred evaluation evidence proving no production evaluation substrate exists yet. No production activation occurred, and durable decision/activation ownership is in `trading-manager`.
+- Promotion acceptance evidence is recorded in `docs/31_promotion_acceptance.md`: Layers 1-2 have real database evidence; Layers 3-10 have blocked/deferred evaluation evidence proving no production evaluation substrate exists yet. No production activation occurred; promotion readiness belongs in `trading-evaluation`, and runtime activation belongs in `trading-execution`.
 - Production-promotion readiness rules are accepted for Layers 1-10 in `docs/30_promotion_readiness.md`: every production approval requires dataset snapshot, split, labels, evaluation run, metrics, candidate, thresholds, baselines, stability, leakage, calibration, and decision evidence.
 - `docs/21_vector_taxonomy.md` owns the accepted distinction between feature surfaces, feature vectors, states, state vectors, scalar scores, diagnostics, explainability, and labels/outcomes.
-- Promotion review scripts emit model-side evidence/review artifacts only and may classify artifact retention intent. Durable promotion requests, lifecycle scheduling, decisions, activation records, rollbacks, and production pointers are manager-control-plane work owned by `trading-manager`; storage physical lifecycle execution remains `trading-storage`-owned.
+- Promotion review scripts emit model-side evidence/review artifacts only and may classify artifact retention intent. Promotion requests are manager-scheduled, readiness decisions are evaluation-owned, runtime activation/rollback pointers are execution-owned, and storage physical lifecycle execution remains `trading-storage`-owned.
 - `docs/32_model_output_quality.md` owns the table-quality policy for keeping empty support payloads and nested explanation/diagnostic payloads out of primary model tables.
