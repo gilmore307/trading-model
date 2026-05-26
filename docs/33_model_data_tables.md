@@ -12,7 +12,7 @@ This document is the first pass over `trading-model` data tables. It separates m
 
 `trading-model` owns model-generation output tables, their `_explainability` support tables, their `_diagnostics` support tables, and model-local evaluation evidence tables.
 
-New model table surfaces follow the shared owner-domain-stage pattern:
+Model table surfaces follow the shared owner-domain-stage pattern:
 
 ```text
 trading_model.mNN_<domain_slug>_model_generation
@@ -20,7 +20,7 @@ trading_model.mNN_<domain_slug>_model_generation_explainability
 trading_model.mNN_<domain_slug>_model_generation_diagnostics
 ```
 
-Existing `trading_model.model_NN_*` tables remain compatibility surfaces until a reviewed migration replaces them. Do not use the older `model_NN_*` pattern for newly planned tables.
+Old `trading_model.model_NN_*` names are migration debt, not current planning names.
 
 `trading-manager` owns durable promotion decisions, activation records, rollback records, runtime lifecycle routing, and shared registry authority. Promotion evidence rows may be produced here, but activation state must not live here.
 
@@ -32,16 +32,16 @@ Each accepted model layer has one narrow primary table and two support tables:
 
 | Layer | Primary table | Explainability table | Diagnostics table |
 |---|---|---|---|
-| M01 Market Regime | `trading_model.model_01_market_regime` | `trading_model.model_01_market_regime_explainability` | `trading_model.model_01_market_regime_diagnostics` |
-| M02 Sector Context | `trading_model.model_02_sector_context` | `trading_model.model_02_sector_context_explainability` | `trading_model.model_02_sector_context_diagnostics` |
-| M03 Target State | `trading_model.model_03_target_state_vector` | `trading_model.model_03_target_state_vector_explainability` | `trading_model.model_03_target_state_vector_diagnostics` |
-| M04 Event Failure Risk | `trading_model.model_04_event_failure_risk` | `trading_model.model_04_event_failure_risk_explainability` | `trading_model.model_04_event_failure_risk_diagnostics` |
-| M05 Alpha Confidence | `trading_model.model_05_alpha_confidence` | `trading_model.model_05_alpha_confidence_explainability` | `trading_model.model_05_alpha_confidence_diagnostics` |
-| M06 Dynamic Risk Policy | `trading_model.model_06_dynamic_risk_policy` | `trading_model.model_06_dynamic_risk_policy_explainability` | `trading_model.model_06_dynamic_risk_policy_diagnostics` |
-| M07 Position Projection | `trading_model.model_07_position_projection` | `trading_model.model_07_position_projection_explainability` | `trading_model.model_07_position_projection_diagnostics` |
-| M08 Underlying Action | `trading_model.model_08_underlying_action` | `trading_model.model_08_underlying_action_explainability` | `trading_model.model_08_underlying_action_diagnostics` |
-| M09 Option Expression | `trading_model.model_09_option_expression` | `trading_model.model_09_option_expression_explainability` | `trading_model.model_09_option_expression_diagnostics` |
-| M10 Event Risk Governor | `trading_model.model_10_event_risk_governor` | `trading_model.model_10_event_risk_governor_explainability` | `trading_model.model_10_event_risk_governor_diagnostics` |
+| M01 Market Regime | `trading_model.m01_market_regime_model_generation` | `trading_model.m01_market_regime_model_generation_explainability` | `trading_model.m01_market_regime_model_generation_diagnostics` |
+| M02 Sector Context | `trading_model.m02_sector_context_model_generation` | `trading_model.m02_sector_context_model_generation_explainability` | `trading_model.m02_sector_context_model_generation_diagnostics` |
+| M03 Target State | `trading_model.m03_target_state_vector_model_generation` | `trading_model.m03_target_state_vector_model_generation_explainability` | `trading_model.m03_target_state_vector_model_generation_diagnostics` |
+| M04 Event Failure Risk | `trading_model.m04_event_failure_risk_model_generation` | `trading_model.m04_event_failure_risk_model_generation_explainability` | `trading_model.m04_event_failure_risk_model_generation_diagnostics` |
+| M05 Alpha Confidence | `trading_model.m05_alpha_confidence_model_generation` | `trading_model.m05_alpha_confidence_model_generation_explainability` | `trading_model.m05_alpha_confidence_model_generation_diagnostics` |
+| M06 Dynamic Risk Policy | `trading_model.m06_dynamic_risk_policy_model_generation` | `trading_model.m06_dynamic_risk_policy_model_generation_explainability` | `trading_model.m06_dynamic_risk_policy_model_generation_diagnostics` |
+| M07 Position Projection | `trading_model.m07_position_projection_model_generation` | `trading_model.m07_position_projection_model_generation_explainability` | `trading_model.m07_position_projection_model_generation_diagnostics` |
+| M08 Underlying Action | `trading_model.m08_underlying_action_model_generation` | `trading_model.m08_underlying_action_model_generation_explainability` | `trading_model.m08_underlying_action_model_generation_diagnostics` |
+| M09 Option Expression | `trading_model.m09_option_expression_model_generation` | `trading_model.m09_option_expression_model_generation_explainability` | `trading_model.m09_option_expression_model_generation_diagnostics` |
+| M10 Event Risk Governor | `trading_model.m10_event_risk_governor_model_generation` | `trading_model.m10_event_risk_governor_model_generation_explainability` | `trading_model.m10_event_risk_governor_model_generation_diagnostics` |
 
 Primary tables are the downstream dependency surface. Explainability tables own human-review internals and nested vectors. Diagnostics tables own acceptance, monitoring, gating evidence, and reason-code detail.
 
@@ -53,16 +53,16 @@ The following dependencies are table-level dependencies in the current SQL gener
 
 | Model | Current upstream table dependencies |
 |---|---|
-| M01 | `trading_data.feature_01_market_regime` |
-| M02 | `trading_data.feature_02_sector_context`, `trading_model.model_01_market_regime` |
-| M03 | `trading_data.feature_03_target_state_vector`, `trading_data.source_03_target_state`, `trading_model.model_01_market_regime`, `trading_model.model_02_sector_context`; optional `trading_data.source_02_target_candidate_holdings` for ETF-holding sector context fallback |
-| M04 | `trading_model.model_03_target_state_vector`; optional `trading_model.event_strategy_failure_gate`; absent event-failure evidence produces neutral no-reviewed-event-risk rows |
-| M05 | `trading_model.model_04_event_failure_risk`, `trading_model.model_03_target_state_vector`, `trading_data.source_03_target_state`, `trading_model.model_02_sector_context`, `trading_model.model_01_market_regime` |
-| M06 | `trading_model.model_05_alpha_confidence`; broader market/systemic/portfolio context is currently fixture/default scaffold state in the SQL path |
-| M07 | `trading_model.model_05_alpha_confidence`; current SQL path does not yet join `trading_model.model_06_dynamic_risk_policy` even though the accepted model contract says dynamic risk policy should condition position projection |
-| M08 | `trading_model.model_07_position_projection`, `trading_model.model_05_alpha_confidence` |
-| M09 | `trading_model.model_08_underlying_action`, `trading_data.source_03_target_state`, optional `trading_model.model_08_underlying_action_explainability`, optional `trading_data.feature_09_option_expression` |
-| M10 | `trading_data.source_10_event_risk_governor`, `trading_data.source_03_target_state`, `trading_model.model_03_target_state_vector`, optional `trading_model.model_03_target_state_vector_explainability` |
+| M01 | `trading_data.m01_market_regime_feature_generation` |
+| M02 | `trading_data.m02_sector_context_feature_generation`, `trading_model.m01_market_regime_model_generation` |
+| M03 | `trading_data.m03_target_state_vector_feature_generation`, `trading_data.m03_target_state_vector_data_acquisition`, `trading_model.m01_market_regime_model_generation`, `trading_model.m02_sector_context_model_generation`; optional `trading_data.m02_sector_context_data_acquisition` for ETF-holding sector context fallback |
+| M04 | `trading_model.m03_target_state_vector_model_generation`; optional `trading_model.event_strategy_failure_gate`; absent event-failure evidence produces neutral no-reviewed-event-risk rows |
+| M05 | `trading_model.m04_event_failure_risk_model_generation`, `trading_model.m03_target_state_vector_model_generation`, `trading_data.m03_target_state_vector_data_acquisition`, `trading_model.m02_sector_context_model_generation`, `trading_model.m01_market_regime_model_generation` |
+| M06 | `trading_model.m05_alpha_confidence_model_generation`; broader market/systemic/portfolio context is currently fixture/default scaffold state in the SQL path |
+| M07 | `trading_model.m05_alpha_confidence_model_generation`; current SQL path does not yet join `trading_model.m06_dynamic_risk_policy_model_generation` even though the accepted model contract says dynamic risk policy should condition position projection |
+| M08 | `trading_model.m07_position_projection_model_generation`, `trading_model.m05_alpha_confidence_model_generation` |
+| M09 | `trading_model.m08_underlying_action_model_generation`, `trading_data.m03_target_state_vector_data_acquisition`, optional `trading_model.m08_underlying_action_model_generation_explainability`, optional `trading_data.m09_option_expression_feature_generation` |
+| M10 | `trading_data.m10_event_risk_governor_data_acquisition`, `trading_data.m03_target_state_vector_data_acquisition`, `trading_model.m03_target_state_vector_model_generation`, optional `trading_model.m03_target_state_vector_model_generation_explainability` |
 
 ## Evaluation And Governance Tables
 
@@ -81,7 +81,7 @@ These tables support promotion evidence. They do not approve promotion by themse
 
 ## Review Findings
 
-- Corrected in this pass: `docs/32_model_output_quality.md` now refers to `model_01_*` through `model_10_*`, because the audit code already covers all ten model table families.
-- Corrected in this pass: `docs/02_architecture.md` now treats `model_10_*` as part of the layer-specific model implementation surface; the `50_*` docs remain event-family research detail inside the Layer 10 package.
-- The M07 SQL generation path currently bypasses `model_06_dynamic_risk_policy` and injects default risk-budget/policy state. That is acceptable as a scaffold only; it is not the final table dependency shape for production evidence.
-- The M06 SQL generation path currently derives dynamic risk policy only from `model_05_alpha_confidence` plus scaffold state. Before production promotion, this path needs explicit market/systemic/portfolio context evidence or a documented reviewed exception.
+- Corrected in this pass: `docs/32_model_output_quality.md` now refers to the full M01-M10 model-generation table families.
+- Corrected in this pass: `docs/02_architecture.md` now treats the M10 model-generation tables as part of the layer-specific model implementation surface; the `50_*` docs remain event-family research detail inside the Layer 10 package.
+- The M07 SQL generation path currently bypasses `trading_model.m06_dynamic_risk_policy_model_generation` and injects default risk-budget/policy state. That is acceptable as a scaffold only; it is not the final table dependency shape for production evidence.
+- The M06 SQL generation path currently derives dynamic risk policy only from `trading_model.m05_alpha_confidence_model_generation` plus scaffold state. Before production promotion, this path needs explicit market/systemic/portfolio context evidence or a documented reviewed exception.
