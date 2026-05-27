@@ -46,6 +46,7 @@ class TargetStateVectorModelTests(unittest.TestCase):
     def test_database_entrypoints_default_to_current_feature_surface(self) -> None:
         self.assertEqual(generate_script.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
         self.assertEqual(evaluate_script.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
+        self.assertEqual(evaluation.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
 
     def test_database_evaluation_allows_empty_source_window(self) -> None:
         class EmptyCursor:
@@ -57,6 +58,9 @@ class TargetStateVectorModelTests(unittest.TestCase):
 
             def execute(self, *_args, **_kwargs):
                 return None
+
+            def fetchone(self):
+                return {"row_count": 0, "data_start_time": None, "data_end_time": None, "target_candidate_count": 0}
 
             def fetchall(self):
                 return []
@@ -105,6 +109,84 @@ class TargetStateVectorModelTests(unittest.TestCase):
         self.assertEqual(payload["empty_evaluation"]["status"], "blocked_no_rows")
         self.assertEqual(payload["empty_evaluation"]["row_counts"]["feature_rows"], 0)
         self.assertIn("minimum_feature_rows", payload["threshold_summary"]["failed_thresholds"])
+
+    def test_database_evaluation_uses_summary_queries_for_nonempty_fold(self) -> None:
+        class SummaryCursor:
+            def __init__(self):
+                self._summary_rows = [
+                    {
+                        "row_count": 300,
+                        "data_start_time": "2016-01-01T09:30:00-05:00",
+                        "data_end_time": "2016-06-30T16:00:00-05:00",
+                        "target_candidate_count": 2,
+                    },
+                    {
+                        "row_count": 300,
+                        "data_start_time": "2016-01-01T09:30:00-05:00",
+                        "data_end_time": "2016-06-30T16:00:00-05:00",
+                        "target_candidate_count": 2,
+                    },
+                ]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def execute(self, *_args, **_kwargs):
+                return None
+
+            def fetchone(self):
+                return self._summary_rows.pop(0)
+
+            def fetchall(self):
+                return [{"target_candidate_id": "tcand_001", "row_count": 300}]
+
+            def __iter__(self):
+                return iter(())
+
+        class SummaryConnection:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def cursor(self, *args, **kwargs):
+                return SummaryCursor()
+
+        class SummaryPsycopg:
+            def connect(self, *_args, **_kwargs):
+                return SummaryConnection()
+
+        original_load_psycopg = evaluate_script._load_psycopg
+        evaluate_script._load_psycopg = lambda: (SummaryPsycopg(), object())
+        try:
+            with TemporaryDirectory() as tmpdir:
+                output_path = Path(tmpdir) / "evaluation.json"
+                exit_code = evaluate_script.main(
+                    [
+                        "--from-database",
+                        "--database-url",
+                        "postgresql://redacted@localhost/redacted",
+                        "--source-start",
+                        "2016-01-01T00:00:00-05:00",
+                        "--source-end",
+                        "2016-07-01T00:00:00-05:00",
+                        "--output-json",
+                        str(output_path),
+                    ]
+                )
+                payload = json.loads(output_path.read_text(encoding="utf-8"))
+        finally:
+            evaluate_script._load_psycopg = original_load_psycopg
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(payload["database_summary_evaluation"]["status"], "completed_summary_mode")
+        self.assertEqual(payload["database_summary_evaluation"]["row_counts"]["feature_rows"], 300)
+        self.assertEqual(payload["tables"]["model_eval_label"], [])
+        self.assertIn("minimum_target_vs_market_sector_improvement_abs", payload["threshold_summary"]["failed_thresholds"])
 
     def test_database_generation_allows_empty_source_window(self) -> None:
         class EmptyCursor:

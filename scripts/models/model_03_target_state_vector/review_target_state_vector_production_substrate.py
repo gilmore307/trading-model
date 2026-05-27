@@ -2,7 +2,7 @@
 """Build and review the real Layer 3 production-evaluation substrate.
 
 This script is the reproducible form of the Layer 3 acceptance follow-up: read
-point-in-time ``feature_03_target_state_vector`` rows from PostgreSQL, generate
+point-in-time Layer 3 target-state feature rows from PostgreSQL, generate
 compact ``model_03_target_state_vector`` rows, persist the model table, build
 promotion-evaluation artifacts, and ask Codex CLI for a strict review
 artifact.
@@ -27,7 +27,7 @@ from model_governance.promotion.agent_review import extract_json_object, validat
 from models.model_03_target_state_vector import evaluation, generator
 
 DEFAULT_FEATURE_SCHEMA = "trading_data"
-DEFAULT_FEATURE_TABLE = "feature_03_target_state_vector"
+DEFAULT_FEATURE_TABLE = "m03_target_state_vector_feature_generation"
 DEFAULT_MODEL_SCHEMA = "trading_model"
 DEFAULT_MODEL_TABLE = "model_03_target_state_vector"
 DEFAULT_MODEL_ID = evaluation.DEFAULT_MODEL_ID
