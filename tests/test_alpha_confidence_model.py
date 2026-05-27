@@ -101,6 +101,56 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         self.assertEqual(rows[0]["target_candidate_id"], "anon_target_001")
         self.assertEqual(rows[0]["event_failure_risk_vector"], {})
 
+    def test_database_decision_rows_use_latest_prior_context(self) -> None:
+        script = _load_generator_script()
+        rows = script._decision_rows(
+            event_failure_rows=[],
+            model_03_rows=[
+                {
+                    "available_time": "2026-05-07T10:30:00-04:00",
+                    "target_candidate_id": "anon_target_001",
+                    "3_state_quality_score": 0.80,
+                }
+            ],
+            source_03_rows=[
+                {
+                    "available_time": "2026-05-07T10:30:00-04:00",
+                    "target_candidate_id": "anon_target_001",
+                    "symbol": "AAPL",
+                }
+            ],
+            model_02_rows=[
+                {
+                    "available_time": "2026-05-07T10:00:00-04:00",
+                    "sector_or_industry_symbol": "AAPL",
+                    "2_sector_context_support_quality_score": 0.30,
+                },
+                {
+                    "available_time": "2026-05-07T10:29:00-04:00",
+                    "sector_or_industry_symbol": "AAPL",
+                    "2_sector_context_support_quality_score": 0.70,
+                },
+                {
+                    "available_time": "2026-05-07T10:31:00-04:00",
+                    "sector_or_industry_symbol": "AAPL",
+                    "2_sector_context_support_quality_score": 0.10,
+                },
+            ],
+            model_01_rows=[
+                {
+                    "available_time": "2026-05-07T10:29:00-04:00",
+                    "1_state_quality_score": 0.60,
+                },
+                {
+                    "available_time": "2026-05-07T10:31:00-04:00",
+                    "1_state_quality_score": 0.20,
+                },
+            ],
+        )
+
+        self.assertEqual(rows[0]["market_context_state"]["1_state_quality_score"], 0.60)
+        self.assertEqual(rows[0]["sector_context_state"]["2_sector_context_support_quality_score"], 0.70)
+
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:
         output = generate_rows([_base_row()])[0]
         labels = build_alpha_confidence_labels(

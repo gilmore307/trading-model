@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import bisect
 import json
 import os
 import re
@@ -206,6 +207,23 @@ def _latest_before(rows: Sequence[Mapping[str, Any]], available_time: datetime) 
     return latest
 
 
+def _available_time_index(rows: Sequence[Mapping[str, Any]]) -> tuple[list[datetime], list[Mapping[str, Any]]]:
+    indexed = [
+        (_parse_time(row.get("available_time")), position, row)
+        for position, row in enumerate(rows)
+        if row.get("available_time")
+    ]
+    indexed.sort(key=lambda item: (item[0], item[1]))
+    return [item[0] for item in indexed], [item[2] for item in indexed]
+
+
+def _latest_from_index(times: Sequence[datetime], rows: Sequence[Mapping[str, Any]], available_time: datetime) -> Mapping[str, Any] | None:
+    index = bisect.bisect_right(times, available_time) - 1
+    if index < 0:
+        return None
+    return rows[index]
+
+
 def _decision_rows(
     *,
     event_failure_rows: Sequence[Mapping[str, Any]],
@@ -227,6 +245,11 @@ def _decision_rows(
         symbol = str(row.get("sector_or_industry_symbol") or "").upper()
         if symbol:
             sector_rows_by_symbol.setdefault(symbol, []).append(row)
+    market_times, market_rows = _available_time_index(model_01_rows)
+    sector_index_by_symbol = {
+        symbol: _available_time_index(rows)
+        for symbol, rows in sector_rows_by_symbol.items()
+    }
 
     rows: list[dict[str, Any]] = []
     for target_model in model_03_rows:
@@ -238,8 +261,9 @@ def _decision_rows(
         event_model = event_by_candidate_time.get((candidate, available_iso), {})
         source_row = source_by_candidate_time.get((candidate, available_iso))
         symbol = str((source_row or {}).get("symbol") or "").upper()
-        market = _market_payload(_latest_before(model_01_rows, available))
-        sector = _sector_payload(_latest_before(sector_rows_by_symbol.get(symbol, []), available))
+        sector_times, sector_rows = sector_index_by_symbol.get(symbol, ([], []))
+        market = _market_payload(_latest_from_index(market_times, market_rows, available))
+        sector = _sector_payload(_latest_from_index(sector_times, sector_rows, available))
         target = _target_payload(target_model)
         event = _event_payload(event_model)
         rows.append(
