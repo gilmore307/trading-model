@@ -61,6 +61,9 @@ class TargetStateVectorModelTests(unittest.TestCase):
             def fetchall(self):
                 return []
 
+            def __iter__(self):
+                return iter(())
+
         class EmptyConnection:
             def __enter__(self):
                 return self
@@ -68,7 +71,7 @@ class TargetStateVectorModelTests(unittest.TestCase):
             def __exit__(self, exc_type, exc, tb):
                 return False
 
-            def cursor(self):
+            def cursor(self, *args, **kwargs):
                 return EmptyCursor()
 
         class EmptyPsycopg:
@@ -120,6 +123,9 @@ class TargetStateVectorModelTests(unittest.TestCase):
             def fetchall(self):
                 return []
 
+            def __iter__(self):
+                return iter(())
+
         class EmptyConnection:
             def __enter__(self):
                 return self
@@ -127,7 +133,7 @@ class TargetStateVectorModelTests(unittest.TestCase):
             def __exit__(self, exc_type, exc, tb):
                 return False
 
-            def cursor(self):
+            def cursor(self, *args, **kwargs):
                 return EmptyCursor()
 
         class EmptyPsycopg:

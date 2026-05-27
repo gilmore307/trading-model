@@ -7,7 +7,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence, TextIO
 
 from model_runtime.config import database_url_file
 
@@ -24,6 +24,7 @@ RETIRED_PRIMARY_COLUMNS = ("target_context_state", "target_state_embedding", "st
 PRIMARY_KEY = ("target_candidate_id", "available_time", "model_version")
 SUPPORT_PRIMARY_KEY = ("target_candidate_id", "available_time", "model_version")
 INSERT_BATCH_SIZE = 1000
+MODEL_WRITE_BATCH_SIZE = 1000
 
 
 def _read_rows(path: Path) -> list[dict[str, Any]]:
@@ -90,14 +91,14 @@ def _column_type(column: str) -> str:
     return "TEXT"
 
 
-def fetch_feature_rows(
+def _feature_rows_query(
     cursor: Any,
     *,
     source_schema: str,
     source_table: str,
     source_start: str | None,
     source_end: str | None,
-) -> list[dict[str, Any]]:
+) -> tuple[str, list[Any]]:
     where: list[str] = []
     params: list[Any] = []
     if source_start:
@@ -138,8 +139,7 @@ def fetch_feature_rows(
         ) AS holding_l2 ON TRUE
         """
         holdings_ref = """'model_02_sector_context:' || replace(holding_l2."available_time"::text, ' ', 'T') || ':' || holding_l2."sector_or_industry_symbol" """
-    cursor.execute(
-        f"""
+    sql = f"""
         SELECT
           f.*,
           COALESCE(
@@ -175,10 +175,51 @@ def fetch_feature_rows(
         ) AS l1 ON TRUE
         {where_sql}
         ORDER BY f."available_time" ASC, f."target_candidate_id" ASC
-        """,
-        params,
+        """
+    return sql, params
+
+
+def fetch_feature_rows(
+    cursor: Any,
+    *,
+    source_schema: str,
+    source_table: str,
+    source_start: str | None,
+    source_end: str | None,
+) -> list[dict[str, Any]]:
+    query, params = _feature_rows_query(
+        cursor,
+        source_schema=source_schema,
+        source_table=source_table,
+        source_start=source_start,
+        source_end=source_end,
     )
+    cursor.execute(query, params)
     return [dict(row) for row in cursor.fetchall()]
+
+
+def stream_feature_rows(
+    conn: Any,
+    *,
+    cursor_name: str,
+    dict_row: Any,
+    source_schema: str,
+    source_table: str,
+    source_start: str | None,
+    source_end: str | None,
+) -> Iterable[dict[str, Any]]:
+    with conn.cursor() as metadata_cursor:
+        query, params = _feature_rows_query(
+            metadata_cursor,
+            source_schema=source_schema,
+            source_table=source_table,
+            source_start=source_start,
+            source_end=source_end,
+        )
+    with conn.cursor(name=cursor_name, row_factory=dict_row) as cursor:
+        cursor.execute(query, params)
+        for row in cursor:
+            yield dict(row)
 
 
 def _ensure_table(cursor: Any, *, target_schema: str, target_table: str, columns: Sequence[str]) -> None:
@@ -285,6 +326,35 @@ def write_diagnostics_rows_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *
     )
 
 
+def _write_model_batch(
+    cursor: Any,
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    output_handle: TextIO | None,
+    target_schema: str,
+    target_table: str,
+    explainability_table: str,
+    diagnostics_table: str,
+) -> None:
+    if not rows:
+        return
+    write_model_rows_sql(cursor, generator.build_primary_rows(rows), target_schema=target_schema, target_table=target_table)
+    write_explainability_rows_sql(
+        cursor,
+        generator.build_explainability_rows(rows),
+        target_schema=target_schema,
+        target_table=explainability_table,
+    )
+    write_diagnostics_rows_sql(
+        cursor,
+        generator.build_diagnostics_rows(rows),
+        target_schema=target_schema,
+        target_table=diagnostics_table,
+    )
+    if output_handle:
+        output_handle.write("".join(json.dumps(row, sort_keys=True, default=str) + "\n" for row in rows))
+
+
 def generate_from_database(
     *,
     database_url: str,
@@ -300,27 +370,63 @@ def generate_from_database(
     output: Path | None,
 ) -> int:
     psycopg, dict_row = _load_psycopg()
-    with psycopg.connect(database_url, row_factory=dict_row) as conn:
-        with conn.cursor() as cursor:
-            feature_rows = fetch_feature_rows(cursor, source_schema=feature_schema, source_table=feature_table, source_start=source_start, source_end=source_end)
-            model_rows = generator.generate_rows(feature_rows, model_version=model_version) if feature_rows else []
-            if model_rows:
-                write_model_rows_sql(cursor, generator.build_primary_rows(model_rows), target_schema=target_schema, target_table=target_table)
-                write_explainability_rows_sql(
-                    cursor,
-                    generator.build_explainability_rows(model_rows),
-                    target_schema=target_schema,
-                    target_table=explainability_table,
-                )
-                write_diagnostics_rows_sql(
-                    cursor,
-                    generator.build_diagnostics_rows(model_rows),
-                    target_schema=target_schema,
-                    target_table=diagnostics_table,
-                )
+    output_tmp = None
+    output_handle: TextIO | None = None
     if output:
-        _write_jsonl(output, model_rows)
-    return len(model_rows)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output_tmp = output.with_name(f"{output.name}.tmp")
+    try:
+        with psycopg.connect(database_url, row_factory=dict_row) as conn:
+            row_count = 0
+            batch: list[dict[str, Any]] = []
+            try:
+                if output_tmp:
+                    output_handle = output_tmp.open("w", encoding="utf-8")
+                with conn.cursor() as write_cursor:
+                    for feature_row in stream_feature_rows(
+                        conn,
+                        cursor_name="m03_target_state_vector_feature_stream",
+                        dict_row=dict_row,
+                        source_schema=feature_schema,
+                        source_table=feature_table,
+                        source_start=source_start,
+                        source_end=source_end,
+                    ):
+                        batch.append(generator.generate_ordered_row(feature_row, model_version=model_version))
+                        if len(batch) >= MODEL_WRITE_BATCH_SIZE:
+                            _write_model_batch(
+                                write_cursor,
+                                batch,
+                                output_handle=output_handle,
+                                target_schema=target_schema,
+                                target_table=target_table,
+                                explainability_table=explainability_table,
+                                diagnostics_table=diagnostics_table,
+                            )
+                            row_count += len(batch)
+                            batch.clear()
+                    if batch:
+                        _write_model_batch(
+                            write_cursor,
+                            batch,
+                            output_handle=output_handle,
+                            target_schema=target_schema,
+                            target_table=target_table,
+                            explainability_table=explainability_table,
+                            diagnostics_table=diagnostics_table,
+                        )
+                        row_count += len(batch)
+                        batch.clear()
+            finally:
+                if output_handle:
+                    output_handle.close()
+    except Exception:
+        if output_tmp:
+            output_tmp.unlink(missing_ok=True)
+        raise
+    if output_tmp and output:
+        output_tmp.replace(output)
+    return row_count
 
 
 def main(argv: list[str] | None = None) -> int:

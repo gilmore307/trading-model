@@ -69,6 +69,11 @@ def generate_rows(feature_rows: Iterable[Mapping[str, Any]], *, model_version: s
     return output
 
 
+def generate_ordered_row(feature_row: Mapping[str, Any], *, model_version: str = MODEL_VERSION) -> dict[str, Any]:
+    """Generate one model row from an already point-in-time ordered feature row."""
+    return _model_row(_normalize_feature_row(feature_row), model_version=model_version)
+
+
 def build_primary_rows(model_rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
     return [{column: row.get(column) for column in OUTPUT_COLUMNS} for row in model_rows]
 
