@@ -118,10 +118,22 @@ Internal/explainability vectors may include:
 Conceptual output state:
 
 ```text
-sector_context_state
+context_etf_state
 ```
 
-Primary Layer 2 output should be narrow: signed sector direction, direction-neutral trend/tradability state, separate handoff state and handoff bias, and row reliability. Explainability owns internal vectors; diagnostics owns gates.
+Current physical implementation and historical registry rows still use `sector_context_state`. New design work should use `context_etf_state` for the per-ETF output and reserve `cross_etf_summary` for global/group rotation summaries.
+
+Primary Layer 2 output should be narrow: signed ETF-context direction, direction-neutral trend/tradability state, separate handoff state and handoff bias, and row reliability. Explainability owns internal vectors; diagnostics owns gates.
+
+Target routing has three accepted cases:
+
+```text
+layer1_market_etf_target -> market_context_state direct + cross_etf_summary support
+layer2_context_etf_target -> own context_etf_state with self-context influence 1.0
+ordinary_target -> target_context_profile weighted blend of context_etf_state rows
+```
+
+`context_etf_cross_section_row` is not a separate downstream output when its fields are already embedded in `context_etf_state`.
 
 `2_sector_handoff_state` and `2_sector_handoff_bias` must remain separate:
 
@@ -184,7 +196,7 @@ Physical promoted artifact:
 trading_model.model_03_target_state_vector
 ```
 
-The Layer 3 conceptual output keeps the historical `TargetStateVectorModel` implementation name, but downstream prose should call the state payload `target_context_state` so it aligns with `market_context_state` and `sector_context_state`. It consists of four inspectable blocks:
+The Layer 3 conceptual output keeps the historical `TargetStateVectorModel` implementation name, but downstream prose should call the state payload `target_context_state` so it aligns with `market_context_state` and Layer 2 `context_etf_state`. It consists of four inspectable blocks:
 
 ```text
 market_state_features
@@ -219,7 +231,7 @@ Primary model inputs are reviewed, point-in-time, and promotion-gated:
 
 ```text
 market_context_state
-sector_context_state
+context_etf_state / current physical sector_context_state
 target_context_state
 accepted event/strategy-failure evidence packet
 agent review decision
@@ -264,7 +276,7 @@ Primary model inputs:
 
 ```text
 market_context_state
-sector_context_state
+context_etf_state / current physical sector_context_state
 target_context_state / target_state_vector
 event_failure_risk_vector              # Layer 4, when applicable
 point-in-time quality/calibration evidence
@@ -466,16 +478,16 @@ trading_data.feature_01_market_regime
 market_context_state
 + trading_data.feature_02_sector_context
   -> SectorContextModel
-  -> sector_context_state
+  -> context_etf_state / current physical sector_context_state
 
-sector_context_state selected/watch
+context_etf_state selected/watch
 + holdings/exposure
 + target-local point-in-time evidence
   -> Layer 3 preprocessing: anonymous target candidate builder
   -> anonymous_target_feature_vector
 
 market_context_state
-+ sector_context_state
++ context_etf_state / current physical sector_context_state
 + anonymous_target_feature_vector
   -> TargetStateVectorModel
   -> target_context_state

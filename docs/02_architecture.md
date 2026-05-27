@@ -52,7 +52,7 @@ This separation is mandatory:
 | Step | Short name | Stable id | Stable surface | Conceptual output | Role |
 |---|---|---|---|---|---|
 | `M01` | Market Regime | `market_regime_model` | `model_01_market_regime` | `market_context_state` | Direction-neutral broad market tradability/regime state keyed by `available_time`. |
-| `M02` | Sector Context | `sector_context_model` | `model_02_sector_context` | `sector_context_state` | Direction-neutral sector/industry tradability context under market context. |
+| `M02` | Sector Context | `sector_context_model` | `model_02_sector_context` | `context_etf_state` / current physical `sector_context_state` | Direction-neutral ETF-context tradability and rotation state under market context. |
 | `M03` | Target State | `target_state_vector_model` | `model_03_target_state_vector` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
 | `M04` | Event Failure Risk | `event_failure_risk_model` | `model_04_event_failure_risk` | `event_failure_risk_vector` | Agent-reviewed event/strategy-failure relationships converted into pre-alpha failure-risk conditioning. |
 | `M05` | Alpha Confidence | `alpha_confidence_model` | `model_05_alpha_confidence` | `alpha_confidence_vector` | Reviewed state stack plus Layer 4 failure-risk conditioning to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
@@ -225,17 +225,17 @@ Layer 1 must prove:
 
 ### Goal
 
-Infer direction-neutral sector/industry tradability context under broad market context.
+Infer direction-neutral ETF-context tradability and rotation state under broad market context.
 
 Conceptual output:
 
 ```text
-sector_context_state[available_time, sector_or_industry_symbol]
+context_etf_state[available_time, context_etf_symbol]
 ```
 
 Layer 2 answers:
 
-- Which sector/industry baskets have clean, stable, low-noise, low-transition-risk tradability behavior?
+- Which context ETF baskets have clean, stable, low-noise, low-transition-risk tradability behavior?
 - Under which broad market contexts does each basket trend cleanly, chop, reverse, or cycle?
 - Which basket attributes are inferred from evidence rather than pre-labeled?
 - Which baskets are eligible, watch-only, or gated out for downstream strategy work?
@@ -250,7 +250,9 @@ Layer 2 does **not** choose final stocks.
 
 ### Output semantics
 
-Layer 2 primary output is `sector_context_state`, not a pile of peer vectors. Internal/explainability vectors may include observed behavior, attributes, conditional behavior, trend stability, tradability, risk context, and quality diagnostics. The narrow downstream fields separate signed direction, trend quality, stability, transition risk, liquidity tradability, handoff state, handoff bias, and row quality.
+Layer 2 primary conceptual output is `context_etf_state`, currently stored through the physical `sector_context_state` surface. It is not a pile of peer vectors. Internal/explainability vectors may include observed behavior, attributes, conditional behavior, trend stability, tradability, risk context, quality diagnostics, and per-ETF cross-section construction evidence. The narrow downstream fields separate signed direction, trend quality, stability, transition risk, liquidity tradability, handoff state, handoff bias, cross-ETF position, and row quality.
+
+Layer 2 may also emit `cross_etf_summary` as a global/group rotation summary. It must not emit duplicated per-ETF `context_etf_cross_section_row` outputs when those fields are already embedded in `context_etf_state`.
 
 ### Boundaries
 
@@ -259,13 +261,14 @@ Layer 2 primary output is `sector_context_state`, not a pile of peer vectors. In
 - Do not use future returns as production ranking inputs.
 - Do not select final stocks in V1.
 - Do not use ETF holdings or `stock_etf_exposure` as core Layer 2 behavior-model inputs.
-- Output selected/prioritized sector basket handoff state for downstream candidate construction.
+- Output selected/prioritized ETF-context handoff state for downstream candidate construction.
+- Route targets by class: Layer 1 ETF targets use `market_context_state`, Layer 2 context ETF targets use their own `context_etf_state` with influence `1.0`, and ordinary targets use `target_context_profile` weighting across one or more ETF context states.
 
 ### Layer 3 preprocessing: Anonymous Target Candidate Builder
 
 The target candidate builder is part of Layer 3 preprocessing. It is not a separate model, not a separate layer, and not a peer to `TargetStateVectorModel`. In live routing, it creates anonymous target candidate rows from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
 
-For historical training, the builder may construct broader anonymous target samples across sectors beyond the Layer 2 baskets that would have been selected at that time. Those rows must still carry point-in-time `market_context_state_ref` and `sector_context_state_ref`, remain identity-safe for model fitting, and be evaluated separately for broad generalization versus live-route simulation.
+For historical training, the builder may construct broader anonymous target samples across sectors beyond the Layer 2 baskets that would have been selected at that time. Those rows must still carry point-in-time `market_context_state_ref` and Layer 2 context refs (`context_etf_state` conceptually, current `sector_context_state_ref` physically), remain identity-safe for model fitting, and be evaluated separately for broad generalization versus live-route simulation.
 
 The current model-local contract is:
 

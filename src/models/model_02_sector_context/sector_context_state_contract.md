@@ -1,12 +1,12 @@
-# sector_context_state V1 contract
+# context_etf_state / sector_context_state contract
 
-This file owns the direction-neutral `SectorContextModel` output contract for `sector_context_state`. The V2.2 deterministic implementation, SQL writer, evaluation path, and registry surfaces use this field set as the active dependency surface for new downstream work.
+This file owns the direction-neutral `SectorContextModel` output contract for Layer 2 ETF context state. The accepted conceptual output is `context_etf_state`; the current deterministic implementation, SQL writer, evaluation path, and registry surfaces still use the earlier physical term `sector_context_state`.
 
 ## Purpose
 
-Layer 2 answers: for each eligible sector/industry equity ETF basket, what is its market-context-conditioned direction-neutral tradability state at `available_time`? It separates signed direction evidence from trend quality, stability, transition risk, liquidity/cost, and state reliability.
+Layer 2 answers: for each eligible context ETF/basket, what is its market-context-conditioned direction-neutral tradability and rotation state at `available_time`? It separates signed direction evidence from trend quality, stability, transition risk, liquidity/cost, and state reliability.
 
-It may mark which sector/industry baskets are suitable for downstream candidate construction. It does **not** answer which final stock to buy, which strategy to run, which option contract to trade, or how much portfolio risk to allocate.
+It may mark which context ETFs are suitable for downstream target-context routing or candidate construction. It does **not** answer which final stock to buy, which strategy to run, which option contract to trade, or how much portfolio risk to allocate.
 
 ## Physical artifacts
 
@@ -27,6 +27,12 @@ Downstream production logic should not hard-depend on explainability or diagnost
 Conceptual row shape:
 
 ```text
+context_etf_state[available_time, context_etf_symbol]
+```
+
+Current physical row shape:
+
+```text
 sector_context_state[available_time, sector_or_industry_symbol]
 ```
 
@@ -35,7 +41,7 @@ Required key / identity fields:
 | Field | Type | Role |
 |---|---|---|
 | `available_time` | timestamp | Point-in-time availability of the state row. |
-| `sector_or_industry_symbol` | text | Eligible sector/industry equity ETF or basket symbol. |
+| `sector_or_industry_symbol` | text | Current physical field for the eligible context ETF or basket symbol. New contracts should use `context_etf_symbol`. |
 | `model_id` | text | Stable model id, normally `sector_context_model`. |
 | `model_version` | text | Version/config label that produced the row. |
 | `market_context_state_ref` | text/null | Reference to the Layer 1 market-context row used only as conditioning context. |
@@ -44,7 +50,25 @@ Layer 2 model fields use compact `2_*` names in docs, model-facing payloads, and
 
 Layer 2 must not copy Layer 1 market-property factor names into ETF style fields. Layer 1 provides the background condition used to compare similar market environments; Layer 2 outputs a separate conditional behavior vector learned from each ETF/basket's behavior under those environments.
 
-`sector_or_industry_symbol` is routing/audit identity for a sector/industry ETF basket. It is allowed in Layer 2 because Layer 2's unit of analysis is the sector/industry basket. It must not be propagated as raw ticker identity into anonymous target fitting vectors downstream.
+`sector_or_industry_symbol` / `context_etf_symbol` is routing/audit identity for a context ETF basket. It is allowed in Layer 2 because Layer 2's unit of analysis is the ETF-context row. It must not be propagated as raw ticker identity into anonymous target fitting vectors downstream.
+
+## Target-context routing
+
+Layer 2 distinguishes three target classes:
+
+| Target class | Examples | Required routing |
+|---|---|---|
+| Layer 1 market ETF target | `SPY`, `QQQ`, `IWM`, `DIA`, broad-market Layer 1 rows | Do not map through Layer 2 sector membership. Use Layer 1 `market_context_state` directly; Layer 2 `cross_etf_summary` is supporting context only. |
+| Layer 2 context ETF target | `XLE`, `XLK`, `SMH`, `XBI`, reviewed Layer 2 ETF rows | Use the ETF's own `context_etf_state` with self-context influence `1.0`; use `cross_etf_summary` for relative position. Layer 3 owns the target-local state for trading that ETF. |
+| Ordinary target | Common stocks and non-context targets | Consume a `target_context_profile` that maps the target to one or more ETF context states with dynamic influence weights, correlation, lead-lag direction, and confidence. Static holdings/manual mappings are seed or fallback evidence, not the final weighting standard. |
+
+`target_context_profile` is routing/influence evidence. It should not collapse into a single static sector label, and it should preserve multiple relevant ETF contexts when multiple relationships clear the reviewed threshold.
+
+## Cross-section boundary
+
+Cross-section calculations may contribute rank, percentile, breadth, dispersion, crowding, and relative-position fields inside `context_etf_state`. A separate `context_etf_cross_section_row` is not a downstream output contract when those values are already embedded in `context_etf_state`.
+
+Layer 2 may separately emit a `cross_etf_summary` for global/group rotation and attention. That summary is not a per-target context vector and should not replace per-ETF `context_etf_state`.
 
 ## `model_02_sector_context` output fields
 
@@ -149,7 +173,7 @@ Explainability may also include contributing evidence refs, reason-code expansio
 
 ## `model_02_sector_context_diagnostics` fields
 
-Diagnostics owns acceptance, monitoring, and gating evidence. These fields may gate use of the row, but they do not directly express the sector-context state itself.
+Diagnostics owns acceptance, monitoring, and gating evidence. These fields may gate use of the row, but they do not directly express the context ETF state itself.
 
 ### Tradability diagnostics
 
@@ -195,6 +219,7 @@ The following do not belong in `sector_context_state` V1:
 - portfolio size, exposure, execution policy, or kill-switch instruction;
 - future returns or realized PnL;
 - hand-written sector labels used as input truth.
+- standalone `context_etf_cross_section_row` output rows that duplicate fields already embedded in `context_etf_state`.
 
 ## Evaluation requirements
 

@@ -2,14 +2,16 @@
 
 `SectorContextModel` V2.2 package boundary.
 
-Current status: direction-neutral deterministic generator, SQL writer, evaluation path, and registry-backed field contract implemented for the accepted three-artifact contract.
+Current status: direction-neutral deterministic generator, SQL writer, evaluation path, and registry-backed field contract implemented for the accepted three-artifact contract. The current physical contract uses `sector_context_state`; new design work should treat the per-ETF Layer 2 state as `context_etf_state`.
 
 Boundary:
 
 - Input: `market_context_state`, `trading_data.feature_02_sector_context`, and ETF/basket tradability/event diagnostics available at or before `available_time`.
-- Conceptual output: `sector_context_state` keyed by `available_time + sector_or_industry_symbol`.
+- Conceptual output: `context_etf_state` keyed by `available_time + context_etf_symbol`; current physical rows remain `sector_context_state` keyed by `available_time + sector_or_industry_symbol`.
 - Physical artifacts: `trading_model.model_02_sector_context`, `trading_model.model_02_sector_context_explainability`, and `trading_model.model_02_sector_context_diagnostics`.
 - May mark sector/industry baskets as eligible/selected for downstream candidate construction.
+- Target routing distinguishes Layer 1 ETF targets, Layer 2 context ETF targets, and ordinary targets with dynamic `target_context_profile` weighting.
+- Per-ETF cross-section rows are construction evidence inside `context_etf_state`; only global/group `cross_etf_summary` should be separate.
 - No final stock selection, strategy selection, entry timing, option contract selection, final size, or portfolio weighting.
 - ETF holdings and `stock_etf_exposure` belong to the downstream anonymous target candidate builder / Layer 3 input preparation, not Layer 2 core behavior modeling.
 

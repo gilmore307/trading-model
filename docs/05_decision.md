@@ -23,7 +23,7 @@ Status: Accepted; revised by V2.2 on 2026-05-05
 | Layer | Model | Stable id | Role |
 |---|---|---|---|
 | 1 | `MarketRegimeModel` | `market_regime_model` | Broad market tradability/regime context state. |
-| 2 | `SectorContextModel` | `sector_context_model` | Market-context-conditioned sector/industry tradability context. |
+| 2 | `SectorContextModel` | `sector_context_model` | Market-context-conditioned ETF-context tradability and rotation state. |
 | 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target context for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
 | 4 | `EventFailureRiskModel` | `event_failure_risk_model` | Reviewed event/strategy-failure risk conditioning before alpha confidence; not a raw-news alpha layer. |
 | 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
@@ -47,7 +47,7 @@ MarketRegimeModel
   -> market_context_state
 
 SectorContextModel
-  -> sector_context_state
+  -> context_etf_state / current physical sector_context_state
 
 TargetStateVectorModel
   -> Layer 3 preprocessing: anonymous target candidate builder
@@ -80,7 +80,7 @@ EventRiskGovernor / EventIntelligenceOverlay
 Hard separation rules:
 
 - Layer 1 describes broad market state only.
-- Layer 2 describes sector/industry basket behavior under broad market state.
+- Layer 2 describes ETF-context basket behavior under broad market state.
 - Layer 3 is the first target-state layer.
 - Final target/security choice must be made downstream from accepted target-state evidence, not from raw identity.
 - Model-facing fitting rows for target work must anonymize ticker/company identity.
@@ -154,7 +154,7 @@ Layer 1 evaluation must test:
 Date: 2026-05-02
 Status: Accepted
 
-`SectorContextModel` V1 outputs a sector/industry context state. It studies which sector/industry ETF baskets have stable, tradable trend behavior under each broad market context.
+`SectorContextModel` V1 outputs a per-ETF context state. It studies which sector/industry/theme ETF baskets have stable, tradable trend behavior under each broad market context.
 
 Layer 1 market-property factors are conditioning context only. Layer 2 must learn a separate conditional behavior vector for each ETF/basket under similar market backgrounds; it must not reuse Layer 1 factor names as ETF style fields.
 
@@ -163,7 +163,7 @@ Conditional behavior fields should prefer signed axes over duplicated opposite f
 Conceptual output:
 
 ```text
-sector_context_state[available_time, sector_or_industry_symbol]
+context_etf_state[available_time, context_etf_symbol]
 ```
 
 Planned physical output:
@@ -190,16 +190,24 @@ optional 2_sector_selection_parameter
 
 Physical SQL columns for these model-facing keys use the same compact `2_*` names. SQL writers quote numeric-leading identifiers where required instead of creating `layer02_*` aliases.
 
-Layer 2 may select or block sector/industry baskets for downstream candidate construction. It must not choose final stocks, entry timing, strategy parameters, option contracts, final size, or portfolio weights.
+Layer 2 may select or block ETF contexts for downstream target-context routing or candidate construction. It must not choose final stocks, entry timing, strategy parameters, option contracts, final size, or portfolio weights.
+
+Layer 2 target routing has three accepted cases:
+
+- Layer 1 market ETF targets such as `SPY`, `QQQ`, and `IWM` use Layer 1 `market_context_state` directly; Layer 2 `cross_etf_summary` is supporting context only.
+- Layer 2 context ETF targets such as `XLE`, `XLK`, and `SMH` use their own `context_etf_state` directly with self-context influence `1.0`; Layer 3 still owns the target-local state for trading that ETF.
+- Ordinary targets consume a `target_context_profile` that maps the target to one or more `context_etf_state` rows with dynamic influence weights, correlation, lead-lag direction, and confidence.
+
+`context_etf_cross_section_row` is internal construction evidence when its rank/percentile/breadth/dispersion values are embedded in `context_etf_state`. A separate Layer 2 output should exist only for global/group `cross_etf_summary`, not duplicated per-ETF cross-section rows.
 
 ## D007 - ETF holdings move to downstream candidate construction
 
 Date: 2026-05-02
 Status: Accepted
 
-ETF holdings and `stock_etf_exposure` are not core inputs to Layer 2 sector behavior modeling. Layer 2 should learn ETF/basket conditional behavior from price/relative-strength/volatility/correlation/tradability/event evidence under similar market backgrounds.
+ETF holdings and `stock_etf_exposure` are not core inputs to Layer 2 ETF-context behavior modeling. Layer 2 should learn ETF/basket conditional behavior from price/relative-strength/volatility/correlation/tradability/event evidence under similar market backgrounds.
 
-After Layer 2 selects or prioritizes sector/industry baskets, the anonymous target candidate builder may use ETF holdings and `stock_etf_exposure` to transmit selected baskets into a stock candidate universe. Layer 3 target-state construction must still consume anonymous target feature vectors rather than raw ticker/company identity.
+After Layer 2 selects or prioritizes ETF contexts, the anonymous target candidate builder may use ETF holdings and `stock_etf_exposure` as seed/fallback evidence to transmit selected baskets into a stock candidate universe. The target-context relationship should migrate toward dynamic `target_context_profile` evidence based on point-in-time correlation, lead-lag, and influence direction. Layer 3 target-state construction must still consume anonymous target feature vectors rather than raw ticker/company identity.
 
 ## D008 - Target fitting must use anonymous target candidates
 
@@ -268,7 +276,7 @@ Model-facing output vectors and output fields must carry their layer owner in th
 Rules:
 
 - Layer 1 model-facing output keys use compact `1_*` names, for example `1_market_trend_quality_score`.
-- Layer 2 model-facing output keys use compact `2_*` names, for example `2_sector_context_state` and `2_sector_tradability_score`.
+- Layer 2 model-facing output keys use compact `2_*` names, for example `2_sector_tradability_score`; the conceptual row state is `context_etf_state` while current physical fields may retain `sector_context_state` vocabulary.
 - Deterministic data evidence fields from `trading-data` do not receive model-layer prefixes merely because a model consumes them.
 - Docs, model-facing payloads, and physical SQL columns use the same compact names. SQL writers should quote numeric-leading identifiers where required instead of storing semantic aliases such as `layer01_*` or `layer02_*`.
 
@@ -285,7 +293,7 @@ The model-local V1 contract is owned by:
 src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md
 ```
 
-The builder expands Layer 2 selected/prioritized sector or industry baskets into target candidates using point-in-time ETF holdings, `stock_etf_exposure`, target-local behavior, liquidity/tradability, event/risk, cost, optionability, and quality evidence.
+The builder expands Layer 2 selected/prioritized ETF contexts into target candidates using point-in-time ETF holdings or reviewed `target_context_profile` evidence, target-local behavior, liquidity/tradability, event/risk, cost, optionability, and quality evidence.
 
 It produces separate surfaces:
 
@@ -303,14 +311,14 @@ Real symbols may remain recoverable through audit/routing metadata, but that met
 Date: 2026-05-03
 Status: Accepted
 
-`SecuritySelectionModel` is no longer the accepted Layer 2 name because Layer 2 does not select final securities. Layer 2 models sector/industry basket context under the current broad market background, then hands selected/prioritized baskets to the anonymous target candidate builder.
+`SecuritySelectionModel` is no longer the accepted Layer 2 name because Layer 2 does not select final securities. Layer 2 models ETF-context behavior under the current broad market background, then hands selected/prioritized contexts to the anonymous target candidate builder.
 
 Accepted canonical names:
 
 - Class/display: `SectorContextModel`
 - Stable id: `sector_context_model`
 - Physical output table term: `model_02_sector_context`
-- Conceptual output: `sector_context_state`
+- Conceptual output: `context_etf_state`; current physical output vocabulary: `sector_context_state`
 
 Retire active-use references to `SecuritySelectionModel`, `security_selection_model`, and `model_02_security_selection`. Historical decision text may mention them only as superseded terms.
 
@@ -433,7 +441,7 @@ Previous layer order:
 
 ```text
 market_context_state
-  -> sector_context_state
+  -> sector_context_state              # superseded old Layer 2 name
   -> target_context_state
   -> event_context_vector
   -> alpha_confidence_vector

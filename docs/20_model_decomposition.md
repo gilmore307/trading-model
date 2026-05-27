@@ -255,7 +255,7 @@ Primary output keeps only the narrow downstream dependency surface: identity, si
 
 When persisted to SQL, `2_*` model-facing keys remain the physical column names. SQL writers should quote numeric-leading identifiers where required instead of creating `layer02_*` aliases.
 
-The target is clean, persistent, understandable, direction-neutral sector/industry tradability behavior under market context, not highest future return, long-only strength, and not final stock selection. Layer 2 may select/prioritize sector baskets for downstream candidate construction, including stable short-bias contexts, but it does not expand them into stock candidates.
+The target is clean, persistent, understandable, direction-neutral ETF-context tradability behavior under market context, not highest future return, long-only strength, and not final stock selection. Layer 2 may select/prioritize context ETF baskets for downstream candidate construction, including stable short-bias contexts, but it does not expand them into stock candidates.
 
 ### 4. Model mapping
 
@@ -268,7 +268,7 @@ sector behavior evidence
   + inferred attribute discovery
   + trend stability / cycle regularity scoring
   + tradability / risk diagnostics
-  -> sector_context_state
+  -> context_etf_state / current physical sector_context_state
 ```
 
 ### 5. Loss / error measure
