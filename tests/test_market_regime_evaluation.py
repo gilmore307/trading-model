@@ -6,6 +6,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from models.model_01_market_regime.evaluation import (
+    DEFAULT_FEATURE_TABLE,
     build_evaluation_artifacts,
     summarize_artifacts,
 )
@@ -186,6 +187,7 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
         text = (repo_root / "scripts" / "models" / "model_01_market_regime" / "evaluate_model_01_market_regime.py").read_text(encoding="utf-8")
 
         self.assertIn("--from-database", text)
+        self.assertIn("m01_market_regime_feature_generation", DEFAULT_FEATURE_TABLE)
         self.assertIn("READ ONLY: database rows were read", text)
         self.assertIn("DRY RUN ONLY: no database connection was opened", text)
         self.assertIn("if args.from_database:", text)

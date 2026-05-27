@@ -160,11 +160,12 @@ class MarketRegimeModelTests(unittest.TestCase):
                 ]
 
         cursor = FakeCursor()
-        rows = sql_runner.fetch_derived_rows(cursor, source_schema="trading_data", source_table="feature_01_market_regime")
+        rows = sql_runner.fetch_derived_rows(cursor, source_schema="trading_data", source_table=sql_runner.DEFAULT_SOURCE_TABLE)
 
         self.assertEqual(rows[0]["snapshot_time"], "2026-01-02T16:00:00-05:00")
         self.assertEqual(rows[0]["spy_return_1d"], 0.01)
         self.assertNotIn("feature_payload_json", rows[0])
+        self.assertIn('"trading_data"."m01_market_regime_feature_generation"', cursor.executed[0][0])
 
     def test_support_artifact_builders_emit_explainability_and_diagnostics(self) -> None:
         model_rows = generator.generate_rows([_row(index) for index in range(1, 66)], lookback=120)

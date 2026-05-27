@@ -14,6 +14,7 @@ from typing import Any, Mapping, Sequence
 from model_runtime.config import database_url_file
 
 DEFAULT_DB_URL_FILE = database_url_file()
+DEFAULT_SOURCE_TABLE = "m01_market_regime_feature_generation"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 RETIRED_PRIMARY_COLUMNS = (
@@ -376,7 +377,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", help="PostgreSQL URL. Defaults to OPENCLAW_DATABASE_URL or the local OpenClaw DB secret file.")
     parser.add_argument("--source-schema", default="trading_data")
-    parser.add_argument("--source-table", default="feature_01_market_regime")
+    parser.add_argument("--source-table", default=DEFAULT_SOURCE_TABLE)
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_01_market_regime")
     parser.add_argument("--explainability-table", help="Optional explainability artifact table. Defaults to <target-table>_explainability.")

@@ -19,7 +19,7 @@ from zoneinfo import ZoneInfo
 ET = ZoneInfo("America/New_York")
 DEFAULT_MODEL_ID = "market_regime_model"
 DEFAULT_FEATURE_SCHEMA = "trading_data"
-DEFAULT_FEATURE_TABLE = "feature_01_market_regime"
+DEFAULT_FEATURE_TABLE = "m01_market_regime_feature_generation"
 DEFAULT_MODEL_SCHEMA = "trading_model"
 DEFAULT_MODEL_TABLE = "model_01_market_regime"
 DEFAULT_SOURCE_KEY = "SOURCE_01_MARKET_REGIME"
