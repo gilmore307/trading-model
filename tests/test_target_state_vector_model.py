@@ -44,9 +44,9 @@ def _feature_row(index: int) -> dict:
 
 class TargetStateVectorModelTests(unittest.TestCase):
     def test_database_entrypoints_default_to_current_feature_surface(self) -> None:
-        self.assertEqual(generate_script.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
-        self.assertEqual(evaluate_script.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
-        self.assertEqual(evaluation.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
+        self.assertEqual(generate_script.DEFAULT_FEATURE_TABLE, "feature_03_target_state_vector")
+        self.assertEqual(evaluate_script.DEFAULT_FEATURE_TABLE, "feature_03_target_state_vector")
+        self.assertEqual(evaluation.DEFAULT_FEATURE_TABLE, "feature_03_target_state_vector")
 
     def test_database_evaluation_allows_empty_source_window(self) -> None:
         class EmptyCursor:

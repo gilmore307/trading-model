@@ -15,7 +15,7 @@ from model_runtime.config import database_url_file
 from models.model_03_target_state_vector import evaluation, generator
 
 DEFAULT_DB_URL_FILE = database_url_file()
-DEFAULT_FEATURE_TABLE = "m03_target_state_vector_feature_generation"
+DEFAULT_FEATURE_TABLE = "feature_03_target_state_vector"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 

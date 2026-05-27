@@ -92,7 +92,19 @@ def _iso(value: Any) -> str:
     return parsed.astimezone(ET).isoformat()
 
 
-def _fetch_rows(cursor: Any, *, schema: str, table: str, source_start: str | None, source_end: str | None, order_by: str) -> list[dict[str, Any]]:
+def _fetch_rows(
+    cursor: Any,
+    *,
+    schema: str,
+    table: str,
+    source_start: str | None,
+    source_end: str | None,
+    order_by: str,
+    target_symbol: str | None = None,
+    target_candidate_ids: Sequence[str] | None = None,
+) -> list[dict[str, Any]]:
+    if target_candidate_ids is not None and not target_candidate_ids:
+        return []
     where: list[str] = []
     params: list[Any] = []
     if source_start:
@@ -101,6 +113,12 @@ def _fetch_rows(cursor: Any, *, schema: str, table: str, source_start: str | Non
     if source_end:
         where.append("available_time::timestamptz < %s::timestamptz")
         params.append(source_end)
+    if target_symbol:
+        where.append("UPPER(symbol) = %s")
+        params.append(target_symbol.upper())
+    if target_candidate_ids is not None:
+        where.append("target_candidate_id = ANY(%s)")
+        params.append(list(target_candidate_ids))
     where_sql = " WHERE " + " AND ".join(where) if where else ""
     cursor.execute(f"SELECT * FROM {_qualified(schema, table)}{where_sql} ORDER BY {order_by}", params)
     return [dict(row) for row in cursor.fetchall()]
@@ -324,13 +342,15 @@ def generate_from_database(
     target_table: str,
     model_version: str,
     output_jsonl: Path | None,
+    target_symbol: str | None = None,
 ) -> int:
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
-            event_failure_rows = _fetch_rows(cursor, schema="trading_model", table="model_04_event_failure_risk", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
-            model_03_rows = _fetch_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
-            source_03_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            source_03_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, target_symbol=target_symbol, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            target_candidate_ids = sorted({str(row["target_candidate_id"]) for row in source_03_rows if row.get("target_candidate_id")})
+            event_failure_rows = _fetch_rows(cursor, schema="trading_model", table="model_04_event_failure_risk", source_start=source_start, source_end=source_end, target_candidate_ids=target_candidate_ids if target_symbol else None, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            model_03_rows = _fetch_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end, target_candidate_ids=target_candidate_ids if target_symbol else None, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             model_02_rows = _fetch_rows(cursor, schema="trading_model", table="model_02_sector_context", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, sector_or_industry_symbol ASC")
             model_01_rows = _fetch_rows(cursor, schema="trading_model", table="model_01_market_regime", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC")
             decisions = _decision_rows(event_failure_rows=event_failure_rows, model_03_rows=model_03_rows, source_03_rows=source_03_rows, model_02_rows=model_02_rows, model_01_rows=model_01_rows)
@@ -350,11 +370,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--database-url")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
+    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via source_03_target_state.")
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_05_alpha_confidence")
     args = parser.parse_args(argv)
     if args.from_database:
-        count = generate_from_database(database_url=_database_url(args.database_url), source_start=args.source_start, source_end=args.source_end, target_schema=args.target_schema, target_table=args.target_table, model_version=args.model_version, output_jsonl=args.output_jsonl)
+        count = generate_from_database(database_url=_database_url(args.database_url), source_start=args.source_start, source_end=args.source_end, target_schema=args.target_schema, target_table=args.target_table, model_version=args.model_version, output_jsonl=args.output_jsonl, target_symbol=args.target_symbol)
         print(f"generated {count} rows into {args.target_schema}.{args.target_table}")
         return 0
     input_rows = read_rows(args.input_jsonl) if args.input_jsonl else FIXTURE_INPUT_ROWS[MODEL_SURFACE]

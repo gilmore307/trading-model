@@ -157,15 +157,29 @@ def _fetch_target_context_identity_rows(
     table: str,
     source_start: str | None,
     source_end: str | None,
+    target_symbol: str | None = None,
 ) -> list[dict[str, Any]]:
     where: list[str] = []
     params: list[Any] = []
     if source_start:
-        where.append('available_time::timestamptz >= %s::timestamptz')
+        where.append('t."available_time"::timestamptz >= %s::timestamptz')
         params.append(source_start)
     if source_end:
-        where.append('available_time::timestamptz < %s::timestamptz')
+        where.append('t."available_time"::timestamptz < %s::timestamptz')
         params.append(source_end)
+    if target_symbol:
+        where.append(
+            """
+            EXISTS (
+              SELECT 1
+              FROM "trading_data"."source_03_target_state" AS s
+              WHERE s."target_candidate_id" = t."target_candidate_id"
+                AND s."available_time"::timestamptz = t."available_time"::timestamptz
+                AND UPPER(s."symbol") = %s
+            )
+            """
+        )
+        params.append(target_symbol.upper())
     where_sql = " WHERE " + " AND ".join(where) if where else ""
     cursor.execute(
         f"""
@@ -176,9 +190,9 @@ def _fetch_target_context_identity_rows(
           "market_context_state_ref",
           "sector_context_state_ref",
           "target_context_state_ref"
-        FROM {_qualified(schema, table)}
+        FROM {_qualified(schema, table)} AS t
         {where_sql}
-        ORDER BY "available_time"::timestamptz ASC, "target_candidate_id" ASC
+        ORDER BY t."available_time"::timestamptz ASC, t."target_candidate_id" ASC
         """,
         params,
     )
@@ -193,17 +207,42 @@ def _fetch_target_context_rows(
     source_start: str | None,
     source_end: str | None,
     include_explainability: bool = True,
+    target_symbol: str | None = None,
 ) -> list[dict[str, Any]]:
     explainability_table = f"{table}_explainability"
     if not include_explainability or not _table_exists(cursor, schema=schema, table=explainability_table):
-        return _fetch_table_rows(
-            cursor,
-            schema=schema,
-            table=table,
-            source_start=source_start,
-            source_end=source_end,
-            order_by="available_time::timestamptz ASC, target_candidate_id ASC",
+        where: list[str] = []
+        params: list[Any] = []
+        if source_start:
+            where.append('t."available_time"::timestamptz >= %s::timestamptz')
+            params.append(source_start)
+        if source_end:
+            where.append('t."available_time"::timestamptz < %s::timestamptz')
+            params.append(source_end)
+        if target_symbol:
+            where.append(
+                """
+                EXISTS (
+                  SELECT 1
+                  FROM "trading_data"."source_03_target_state" AS s
+                  WHERE s."target_candidate_id" = t."target_candidate_id"
+                    AND s."available_time"::timestamptz = t."available_time"::timestamptz
+                    AND UPPER(s."symbol") = %s
+                )
+                """
+            )
+            params.append(target_symbol.upper())
+        where_sql = " WHERE " + " AND ".join(where) if where else ""
+        cursor.execute(
+            f"""
+            SELECT t.*
+            FROM {_qualified(schema, table)} AS t
+            {where_sql}
+            ORDER BY t."available_time"::timestamptz ASC, t."target_candidate_id" ASC
+            """,
+            params,
         )
+        return [dict(row) for row in cursor.fetchall()]
     where: list[str] = []
     params: list[Any] = []
     if source_start:
@@ -212,6 +251,19 @@ def _fetch_target_context_rows(
     if source_end:
         where.append('t."available_time"::timestamptz < %s::timestamptz')
         params.append(source_end)
+    if target_symbol:
+        where.append(
+            """
+            EXISTS (
+              SELECT 1
+              FROM "trading_data"."source_03_target_state" AS s
+              WHERE s."target_candidate_id" = t."target_candidate_id"
+                AND s."available_time"::timestamptz = t."available_time"::timestamptz
+                AND UPPER(s."symbol") = %s
+            )
+            """
+        )
+        params.append(target_symbol.upper())
     where_sql = " WHERE " + " AND ".join(where) if where else ""
     cursor.execute(
         f"""
@@ -297,6 +349,7 @@ def _fetch_input_rows(
     target_context_table: str,
     source_start: str | None,
     source_end: str | None,
+    target_symbol: str | None = None,
 ) -> list[dict[str, Any]]:
     source_exists = _table_exists(cursor, schema=source_schema, table=source_table)
     if not source_exists:
@@ -307,6 +360,7 @@ def _fetch_input_rows(
                 table=target_context_table,
                 source_start=source_start,
                 source_end=source_end,
+                target_symbol=target_symbol,
             )
         )
     target_rows = _fetch_target_context_rows(
@@ -316,6 +370,7 @@ def _fetch_input_rows(
         source_start=source_start,
         source_end=source_end,
         include_explainability=source_exists,
+        target_symbol=target_symbol,
     )
     gate_rows = _fetch_table_rows(
         cursor,
@@ -327,6 +382,9 @@ def _fetch_input_rows(
     )
     if not gate_rows:
         return _neutral_input_rows_from_target_context(target_rows)
+    target_keys = {(str(row.get("target_candidate_id") or ""), str(row.get("available_time") or "")) for row in target_rows}
+    if target_symbol:
+        gate_rows = [row for row in gate_rows if (str(row.get("target_candidate_id") or ""), str(row.get("available_time") or "")) in target_keys]
     return _merge_gate_rows_with_target_context(gate_rows=gate_rows, target_rows=target_rows)
 
 
@@ -346,6 +404,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--target-table", default="model_04_event_failure_risk")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
+    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via source_03_target_state.")
     args = parser.parse_args(argv)
     if args.from_database or args.write_database:
         psycopg, dict_row = _load_psycopg()
@@ -360,6 +419,7 @@ def main(argv: list[str] | None = None) -> int:
                         target_context_table=args.target_context_table,
                         source_start=args.source_start,
                         source_end=args.source_end,
+                        target_symbol=args.target_symbol,
                     )
                     if args.from_database
                     else (read_rows(args.input_jsonl) if args.input_jsonl else FIXTURE_INPUT_ROWS[MODEL_SURFACE])

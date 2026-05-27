@@ -14,7 +14,7 @@ from model_runtime.config import database_url_file
 from models.model_03_target_state_vector import generator
 
 DEFAULT_DB_URL_FILE = database_url_file()
-DEFAULT_FEATURE_TABLE = "m03_target_state_vector_feature_generation"
+DEFAULT_FEATURE_TABLE = "feature_03_target_state_vector"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 PRIMARY_JSON_COLUMNS: set[str] = set()
@@ -98,6 +98,7 @@ def _feature_rows_query(
     source_table: str,
     source_start: str | None,
     source_end: str | None,
+    target_symbol: str | None = None,
 ) -> tuple[str, list[Any]]:
     where: list[str] = []
     params: list[Any] = []
@@ -107,6 +108,9 @@ def _feature_rows_query(
     if source_end:
         where.append('f."available_time" < %s')
         params.append(source_end)
+    if target_symbol:
+        where.append('UPPER(s."symbol") = %s')
+        params.append(target_symbol.upper())
     where_sql = " WHERE " + " AND ".join(where) if where else ""
     cursor.execute("SELECT to_regclass(%s) AS table_ref", ("trading_data.source_02_target_candidate_holdings",))
     exists = cursor.fetchone()
@@ -186,6 +190,7 @@ def fetch_feature_rows(
     source_table: str,
     source_start: str | None,
     source_end: str | None,
+    target_symbol: str | None = None,
 ) -> list[dict[str, Any]]:
     query, params = _feature_rows_query(
         cursor,
@@ -193,6 +198,7 @@ def fetch_feature_rows(
         source_table=source_table,
         source_start=source_start,
         source_end=source_end,
+        target_symbol=target_symbol,
     )
     cursor.execute(query, params)
     return [dict(row) for row in cursor.fetchall()]
@@ -207,6 +213,7 @@ def stream_feature_rows(
     source_table: str,
     source_start: str | None,
     source_end: str | None,
+    target_symbol: str | None = None,
 ) -> Iterable[dict[str, Any]]:
     with conn.cursor() as metadata_cursor:
         query, params = _feature_rows_query(
@@ -215,6 +222,7 @@ def stream_feature_rows(
             source_table=source_table,
             source_start=source_start,
             source_end=source_end,
+            target_symbol=target_symbol,
         )
     with conn.cursor(name=cursor_name, row_factory=dict_row) as cursor:
         cursor.execute(query, params)
@@ -366,6 +374,7 @@ def generate_from_database(
     diagnostics_table: str,
     source_start: str | None,
     source_end: str | None,
+    target_symbol: str | None = None,
     model_version: str,
     output: Path | None,
 ) -> int:
@@ -391,6 +400,7 @@ def generate_from_database(
                         source_table=feature_table,
                         source_start=source_start,
                         source_end=source_end,
+                        target_symbol=target_symbol,
                     ):
                         batch.append(generator.generate_ordered_row(feature_row, model_version=model_version))
                         if len(batch) >= MODEL_WRITE_BATCH_SIZE:
@@ -444,6 +454,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--diagnostics-table", help="Optional diagnostics artifact table. Defaults to <target-table>_diagnostics.")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
+    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via source_03_target_state.")
     args = parser.parse_args(argv)
     if args.from_database:
         row_count = generate_from_database(
@@ -456,6 +467,7 @@ def main(argv: list[str] | None = None) -> int:
             diagnostics_table=args.diagnostics_table or f"{args.target_table}_diagnostics",
             source_start=args.source_start,
             source_end=args.source_end,
+            target_symbol=args.target_symbol,
             model_version=args.model_version,
             output=args.output,
         )
