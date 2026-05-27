@@ -14,6 +14,7 @@ from model_runtime.config import database_url_file
 from models.model_03_target_state_vector import generator
 
 DEFAULT_DB_URL_FILE = database_url_file()
+DEFAULT_FEATURE_TABLE = "m03_target_state_vector_feature_generation"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 PRIMARY_JSON_COLUMNS: set[str] = set()
@@ -22,6 +23,7 @@ DIAGNOSTICS_JSON_COLUMNS = {"diagnostic_payload_json"}
 RETIRED_PRIMARY_COLUMNS = ("target_context_state", "target_state_embedding", "state_cluster_id", "state_quality_diagnostics")
 PRIMARY_KEY = ("target_candidate_id", "available_time", "model_version")
 SUPPORT_PRIMARY_KEY = ("target_candidate_id", "available_time", "model_version")
+INSERT_BATCH_SIZE = 1000
 
 
 def _read_rows(path: Path) -> list[dict[str, Any]]:
@@ -216,9 +218,15 @@ def write_model_rows_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, targ
         VALUES ({", ".join(placeholders)})
         ON CONFLICT ({conflict_sql}) DO UPDATE SET {update_sql}
     """
+    batch: list[list[Any]] = []
     for row in rows:
         values = [json.dumps(row.get(column), sort_keys=True, default=str) if column in PRIMARY_JSON_COLUMNS else row.get(column) for column in columns]
-        cursor.execute(insert_sql, values)
+        batch.append(values)
+        if len(batch) >= INSERT_BATCH_SIZE:
+            cursor.executemany(insert_sql, batch)
+            batch.clear()
+    if batch:
+        cursor.executemany(insert_sql, batch)
 
 
 def _write_support_rows_sql(
@@ -246,9 +254,15 @@ def _write_support_rows_sql(
         VALUES ({", ".join(placeholders)})
         ON CONFLICT ({conflict_sql}) DO UPDATE SET {update_sql}
     """
+    batch: list[list[Any]] = []
     for row in rows:
         values = [json.dumps(row.get(column), sort_keys=True, default=str) if column in json_columns else row.get(column) for column in columns]
-        cursor.execute(insert_sql, values)
+        batch.append(values)
+        if len(batch) >= INSERT_BATCH_SIZE:
+            cursor.executemany(insert_sql, batch)
+            batch.clear()
+    if batch:
+        cursor.executemany(insert_sql, batch)
 
 
 def write_explainability_rows_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema: str, target_table: str) -> None:
@@ -317,7 +331,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--from-database", action="store_true", help="Read feature rows from PostgreSQL and write model rows to PostgreSQL.")
     parser.add_argument("--database-url", help="PostgreSQL URL. Defaults to OPENCLAW_DATABASE_URL or local OpenClaw DB secret file.")
     parser.add_argument("--feature-schema", default="trading_data")
-    parser.add_argument("--feature-table", default="feature_03_target_state_vector")
+    parser.add_argument("--feature-table", default=DEFAULT_FEATURE_TABLE)
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_03_target_state_vector")
     parser.add_argument("--explainability-table", help="Optional explainability artifact table. Defaults to <target-table>_explainability.")

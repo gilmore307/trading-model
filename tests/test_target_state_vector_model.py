@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -7,6 +8,7 @@ from tempfile import TemporaryDirectory
 from zoneinfo import ZoneInfo
 
 import scripts.models.model_03_target_state_vector.generate_model_03_target_state_vector as generate_script
+import scripts.models.model_03_target_state_vector.evaluate_model_03_target_state_vector as evaluate_script
 import scripts.models.model_03_target_state_vector.review_target_state_vector_production_substrate as production_substrate
 from models.model_03_target_state_vector import evaluation, generator
 from models.model_03_target_state_vector.anonymous_target_candidate_builder import builder
@@ -41,6 +43,66 @@ def _feature_row(index: int) -> dict:
 
 
 class TargetStateVectorModelTests(unittest.TestCase):
+    def test_database_entrypoints_default_to_current_feature_surface(self) -> None:
+        self.assertEqual(generate_script.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
+        self.assertEqual(evaluate_script.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
+
+    def test_database_evaluation_allows_empty_source_window(self) -> None:
+        class EmptyCursor:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def execute(self, *_args, **_kwargs):
+                return None
+
+            def fetchall(self):
+                return []
+
+        class EmptyConnection:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def cursor(self):
+                return EmptyCursor()
+
+        class EmptyPsycopg:
+            def connect(self, *_args, **_kwargs):
+                return EmptyConnection()
+
+        original_load_psycopg = evaluate_script._load_psycopg
+        evaluate_script._load_psycopg = lambda: (EmptyPsycopg(), object())
+        try:
+            with TemporaryDirectory() as tmpdir:
+                output_path = Path(tmpdir) / "evaluation.json"
+                exit_code = evaluate_script.main(
+                    [
+                        "--from-database",
+                        "--database-url",
+                        "postgresql://redacted@localhost/redacted",
+                        "--source-start",
+                        "2016-01-01T00:00:00-05:00",
+                        "--source-end",
+                        "2016-07-01T00:00:00-05:00",
+                        "--output-json",
+                        str(output_path),
+                    ]
+                )
+                payload = json.loads(output_path.read_text(encoding="utf-8"))
+        finally:
+            evaluate_script._load_psycopg = original_load_psycopg
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(payload["threshold_summary"]["promotion_gate_state"], "blocked")
+        self.assertEqual(payload["empty_evaluation"]["status"], "blocked_no_rows")
+        self.assertEqual(payload["empty_evaluation"]["row_counts"]["feature_rows"], 0)
+        self.assertIn("minimum_feature_rows", payload["threshold_summary"]["failed_thresholds"])
+
     def test_database_generation_allows_empty_source_window(self) -> None:
         class EmptyCursor:
             def __enter__(self):

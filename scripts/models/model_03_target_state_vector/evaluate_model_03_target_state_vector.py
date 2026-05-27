@@ -14,6 +14,7 @@ from model_runtime.config import database_url_file
 from models.model_03_target_state_vector import evaluation, generator
 
 DEFAULT_DB_URL_FILE = database_url_file()
+DEFAULT_FEATURE_TABLE = "m03_target_state_vector_feature_generation"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
@@ -73,6 +74,39 @@ def _fetch_rows(cursor: Any, *, schema: str, table: str, source_start: str | Non
 
 
 def _build_payload(feature_rows: list[dict[str, Any]], model_rows: list[dict[str, Any]], *, evidence_source: str) -> dict[str, Any]:
+    if not feature_rows or not model_rows:
+        row_counts = {
+            "feature_rows": len(feature_rows),
+            "model_rows": len(model_rows),
+            "eval_labels": 0,
+        }
+        failed_thresholds = [
+            name
+            for name in evaluation.DEFAULT_PROMOTION_THRESHOLDS
+            if name.startswith("minimum_") and name not in {"minimum_baseline_ladder_step_count", "minimum_identity_leakage_violation_count"}
+        ]
+        return {
+            "tables": {
+                "model_dataset_request": [],
+                "model_dataset_snapshot": [],
+                "model_dataset_split": [],
+                "model_eval_label": [],
+                "model_eval_run": [],
+                "model_promotion_metric": [],
+            },
+            "threshold_summary": {
+                "threshold_count": len(evaluation.DEFAULT_PROMOTION_THRESHOLDS),
+                "passed_threshold_count": 0,
+                "failed_thresholds": failed_thresholds,
+                "promotion_gate_state": "blocked",
+            },
+            "empty_evaluation": {
+                "status": "blocked_no_rows",
+                "evidence_source": evidence_source,
+                "row_counts": row_counts,
+                "write_policy": evaluation.DEFAULT_DATABASE_READ_WRITE_POLICY if evidence_source == "real_database_evaluation" else evaluation.DEFAULT_DRY_RUN_WRITE_POLICY,
+            },
+        }
     artifacts = evaluation.build_evaluation_artifacts(
         feature_rows=feature_rows,
         model_rows=model_rows,
@@ -92,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--from-database", action="store_true", help="Read feature/model rows from PostgreSQL")
     parser.add_argument("--database-url", help="PostgreSQL URL. Defaults to OPENCLAW_DATABASE_URL or local OpenClaw DB secret file.")
     parser.add_argument("--feature-schema", default="trading_data")
-    parser.add_argument("--feature-table", default="feature_03_target_state_vector")
+    parser.add_argument("--feature-table", default=DEFAULT_FEATURE_TABLE)
     parser.add_argument("--model-schema", default="trading_model")
     parser.add_argument("--model-table", default="model_03_target_state_vector")
     parser.add_argument("--source-start")
