@@ -140,6 +140,32 @@ class SectorContextModelTests(unittest.TestCase):
         self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_02_sector_context_diagnostics"', joined_sql)
         self.assertIn('"diagnostic_payload_json" JSONB NOT NULL', joined_sql)
 
+    def test_sql_reader_uses_current_feature_generation_surface(self) -> None:
+        class FakeCursor:
+            def __init__(self) -> None:
+                self.calls: list[tuple[str, list[object] | None]] = []
+
+            def execute(self, sql: str, params: list[object] | None = None) -> None:
+                self.calls.append((sql, params))
+
+            def fetchall(self) -> list[dict[str, object]]:
+                return [
+                    {
+                        "snapshot_time": "2026-01-02T16:00:00-05:00",
+                        "candidate_symbol": "XLK",
+                        "comparison_symbol": "SPY",
+                        "rotation_pair_id": "xlk_spy",
+                        "feature_payload_json": json.dumps({"relative_strength_return": 0.02}),
+                    }
+                ]
+
+        cursor = FakeCursor()
+        rows = sql_runner.fetch_feature_rows(cursor, source_schema="trading_data", source_table=sql_runner.DEFAULT_FEATURE_TABLE)
+
+        self.assertEqual(rows[0]["candidate_symbol"], "XLK")
+        self.assertEqual(rows[0]["relative_strength_return"], 0.02)
+        self.assertIn('"trading_data"."m02_sector_context_feature_generation"', cursor.calls[0][0])
+
 
 if __name__ == "__main__":
     unittest.main()

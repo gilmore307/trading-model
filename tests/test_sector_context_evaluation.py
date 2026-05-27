@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from models.model_02_sector_context.evaluation import build_evaluation_artifacts, summarize_artifacts
+from models.model_02_sector_context.evaluation import DEFAULT_FEATURE_TABLE, build_evaluation_artifacts, summarize_artifacts
 from model_governance.promotion.agent_review import build_sector_context_promotion_prompt
 
 ET = ZoneInfo("America/New_York")
@@ -167,6 +167,7 @@ class SectorContextEvaluationTests(unittest.TestCase):
         text = EVALUATE_SCRIPT.read_text(encoding="utf-8")
 
         self.assertIn("--from-database", text)
+        self.assertIn("m02_sector_context_feature_generation", DEFAULT_FEATURE_TABLE)
         self.assertIn("READ ONLY: database rows were read", text)
         self.assertIn("DRY RUN ONLY: no database connection was opened", text)
         self.assertIn("if args.from_database:", text)
