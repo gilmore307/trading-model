@@ -165,6 +165,77 @@ class TargetStateVectorModelTests(unittest.TestCase):
         self.assertEqual(row_count, 0)
         self.assertEqual(output_text, "")
 
+    def test_database_generation_streams_feature_rows_in_batches(self) -> None:
+        class EmptyCursor:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        class EmptyConnection:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def cursor(self, *args, **kwargs):
+                return EmptyCursor()
+
+        class EmptyPsycopg:
+            def connect(self, *_args, **_kwargs):
+                return EmptyConnection()
+
+        batch_sizes: list[int] = []
+        generated_ids: list[str] = []
+
+        def fake_stream(*_args, **_kwargs):
+            for index in range(5):
+                yield {"target_candidate_id": f"tcand_{index}"}
+
+        def fake_generate_ordered_row(feature_row, *, model_version):
+            generated_ids.append(feature_row["target_candidate_id"])
+            return {"target_candidate_id": feature_row["target_candidate_id"], "model_version": model_version}
+
+        def fake_write_batch(_cursor, rows, **_kwargs):
+            batch_sizes.append(len(rows))
+
+        original_load_psycopg = generate_script._load_psycopg
+        original_stream = generate_script.stream_feature_rows
+        original_batch_size = generate_script.MODEL_WRITE_BATCH_SIZE
+        original_generate_ordered_row = generator.generate_ordered_row
+        original_write_batch = generate_script._write_model_batch
+        generate_script._load_psycopg = lambda: (EmptyPsycopg(), object())
+        generate_script.stream_feature_rows = fake_stream
+        generate_script.MODEL_WRITE_BATCH_SIZE = 2
+        generator.generate_ordered_row = fake_generate_ordered_row
+        generate_script._write_model_batch = fake_write_batch
+        try:
+            row_count = generate_script.generate_from_database(
+                database_url="postgresql://redacted@localhost/redacted",
+                feature_schema="trading_data",
+                feature_table="feature_03_target_state_vector",
+                target_schema="trading_model",
+                target_table="model_03_target_state_vector",
+                explainability_table="model_03_target_state_vector_explainability",
+                diagnostics_table="model_03_target_state_vector_diagnostics",
+                source_start="2016-01-01T00:00:00-05:00",
+                source_end="2016-07-01T00:00:00-05:00",
+                model_version=generator.MODEL_VERSION,
+                output=None,
+            )
+        finally:
+            generate_script._load_psycopg = original_load_psycopg
+            generate_script.stream_feature_rows = original_stream
+            generate_script.MODEL_WRITE_BATCH_SIZE = original_batch_size
+            generator.generate_ordered_row = original_generate_ordered_row
+            generate_script._write_model_batch = original_write_batch
+
+        self.assertEqual(row_count, 5)
+        self.assertEqual(batch_sizes, [2, 2, 1])
+        self.assertEqual(generated_ids, [f"tcand_{index}" for index in range(5)])
+
     def test_generator_emits_direction_neutral_scores_without_downstream_actions(self) -> None:
         rows = generator.generate_rows([_feature_row(15)])
         self.assertEqual(len(rows), 1)
