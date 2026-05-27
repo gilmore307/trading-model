@@ -123,9 +123,9 @@ class MarketRegimeModelTests(unittest.TestCase):
         credit_directions = {
             signal.column: signal.direction
             for signal in specs["1_capital_flow_factor"].signals
-            if signal.column in {"hyg_lqd_30m", "hyg_lqd_realized_vol_20d_ratio"}
+            if signal.column in {"hyg_lqd_1m", "hyg_lqd_realized_vol_20d_ratio"}
         }
-        self.assertEqual(credit_directions["hyg_lqd_30m"], -1)
+        self.assertEqual(credit_directions["hyg_lqd_1m"], -1)
         self.assertEqual(credit_directions["hyg_lqd_realized_vol_20d_ratio"], 1)
         self.assertNotIn("sector_rotation_factor", specs)
         self.assertEqual(specs["1_trend_certainty_factor"].aggregation, "bucketed_mean")

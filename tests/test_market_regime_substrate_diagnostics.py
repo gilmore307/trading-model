@@ -13,9 +13,9 @@ from models.model_01_market_regime.substrate_diagnostics import diagnose_substra
 
 def _feature_rows() -> list[dict[str, object]]:
     return [
-        {"snapshot_time": "2026-01-02T10:00:00-05:00", "spy_return_30m": 0.01, "qqq_spy_30m": 0.02},
-        {"snapshot_time": "2026-01-02T10:30:00-05:00", "spy_return_30m": None, "qqq_spy_30m": None},
-        {"snapshot_time": "2026-01-02T11:00:00-05:00", "spy_return_30m": 0.03, "qqq_spy_30m": None},
+        {"snapshot_time": "2026-01-02T10:00:00-05:00", "spy_return_30m": 0.01, "qqq_spy_1m": 0.02},
+        {"snapshot_time": "2026-01-02T10:30:00-05:00", "spy_return_30m": None, "qqq_spy_1m": None},
+        {"snapshot_time": "2026-01-02T11:00:00-05:00", "spy_return_30m": 0.03, "qqq_spy_1m": None},
     ]
 
 
@@ -37,7 +37,7 @@ class MarketRegimeSubstrateDiagnosticsTests(unittest.TestCase):
             source_symbol_rows=[
                 {
                     "symbol": "SPY",
-                    "timeframe": "30Min",
+                    "timeframe": "1Min",
                     "row_count": 10,
                     "decision_row_count": 10,
                     "decision_day_count": 2,
@@ -46,7 +46,7 @@ class MarketRegimeSubstrateDiagnosticsTests(unittest.TestCase):
                 },
                 {
                     "symbol": "QQQ",
-                    "timeframe": "30Min",
+                    "timeframe": "1Min",
                     "row_count": 400,
                     "decision_row_count": 400,
                     "decision_day_count": 300,

@@ -39,7 +39,7 @@ class SectorContextModelTests(unittest.TestCase):
                 "rotation_pair_id": "xlk_spy",
                 "rotation_pair_type": "sector_rotation",
                 "relative_strength_return": 0.02,
-                "relative_strength_return_30m": 0.02,
+                "relative_strength_return_1m": 0.02,
                 "relative_strength_distance_to_ma20": 0.05,
                 "relative_strength_slope_20d": 0.01,
                 "relative_strength_ma_alignment_score": 1.0,

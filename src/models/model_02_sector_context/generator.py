@@ -117,6 +117,7 @@ DIAGNOSTIC_SCORE_COLUMNS = [
 
 FEATURE_EVIDENCE_COLUMNS = [
     "relative_strength_return",
+    "relative_strength_return_1m",
     "relative_strength_return_30m",
     "relative_strength_return_1d",
     "relative_strength_distance_to_ma20",

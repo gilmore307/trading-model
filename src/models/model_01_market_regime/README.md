@@ -60,7 +60,7 @@ Missing upstream observations are expected in historical training. A not-yet-lis
 
 Supported group forms:
 
-- explicit columns: `columns = ["hyg_lqd_30m", ...]`
+- explicit columns: `columns = ["hyg_lqd_1m", ...]`
 - symbol/suffix expansion: `symbols = ["spy", "qqq"]` plus `suffixes = ["return_20d"]`
 
 Supported reducers:
