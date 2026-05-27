@@ -289,20 +289,21 @@ def generate_from_database(
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
             feature_rows = fetch_feature_rows(cursor, source_schema=feature_schema, source_table=feature_table, source_start=source_start, source_end=source_end)
-            model_rows = generator.generate_rows(feature_rows, model_version=model_version)
-            write_model_rows_sql(cursor, generator.build_primary_rows(model_rows), target_schema=target_schema, target_table=target_table)
-            write_explainability_rows_sql(
-                cursor,
-                generator.build_explainability_rows(model_rows),
-                target_schema=target_schema,
-                target_table=explainability_table,
-            )
-            write_diagnostics_rows_sql(
-                cursor,
-                generator.build_diagnostics_rows(model_rows),
-                target_schema=target_schema,
-                target_table=diagnostics_table,
-            )
+            model_rows = generator.generate_rows(feature_rows, model_version=model_version) if feature_rows else []
+            if model_rows:
+                write_model_rows_sql(cursor, generator.build_primary_rows(model_rows), target_schema=target_schema, target_table=target_table)
+                write_explainability_rows_sql(
+                    cursor,
+                    generator.build_explainability_rows(model_rows),
+                    target_schema=target_schema,
+                    target_table=explainability_table,
+                )
+                write_diagnostics_rows_sql(
+                    cursor,
+                    generator.build_diagnostics_rows(model_rows),
+                    target_schema=target_schema,
+                    target_table=diagnostics_table,
+                )
     if output:
         _write_jsonl(output, model_rows)
     return len(model_rows)

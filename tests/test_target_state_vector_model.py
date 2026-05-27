@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import unittest
 from datetime import datetime, timedelta
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from zoneinfo import ZoneInfo
 
+import scripts.models.model_03_target_state_vector.generate_model_03_target_state_vector as generate_script
 import scripts.models.model_03_target_state_vector.review_target_state_vector_production_substrate as production_substrate
 from models.model_03_target_state_vector import evaluation, generator
 from models.model_03_target_state_vector.anonymous_target_candidate_builder import builder
@@ -38,6 +41,62 @@ def _feature_row(index: int) -> dict:
 
 
 class TargetStateVectorModelTests(unittest.TestCase):
+    def test_database_generation_allows_empty_source_window(self) -> None:
+        class EmptyCursor:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def execute(self, *_args, **_kwargs):
+                return None
+
+            def fetchone(self):
+                return {"table_ref": None}
+
+            def fetchall(self):
+                return []
+
+        class EmptyConnection:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def cursor(self):
+                return EmptyCursor()
+
+        class EmptyPsycopg:
+            def connect(self, *_args, **_kwargs):
+                return EmptyConnection()
+
+        original_load_psycopg = generate_script._load_psycopg
+        generate_script._load_psycopg = lambda: (EmptyPsycopg(), object())
+        try:
+            with TemporaryDirectory() as tmpdir:
+                output_path = Path(tmpdir) / "model_rows.jsonl"
+                row_count = generate_script.generate_from_database(
+                    database_url="postgresql://redacted@localhost/redacted",
+                    feature_schema="trading_data",
+                    feature_table="feature_03_target_state_vector",
+                    target_schema="trading_model",
+                    target_table="model_03_target_state_vector",
+                    explainability_table="model_03_target_state_vector_explainability",
+                    diagnostics_table="model_03_target_state_vector_diagnostics",
+                    source_start="2016-01-01T00:00:00-05:00",
+                    source_end="2016-07-01T00:00:00-05:00",
+                    model_version=generator.MODEL_VERSION,
+                    output=output_path,
+                )
+                output_text = output_path.read_text(encoding="utf-8")
+        finally:
+            generate_script._load_psycopg = original_load_psycopg
+
+        self.assertEqual(row_count, 0)
+        self.assertEqual(output_text, "")
+
     def test_generator_emits_direction_neutral_scores_without_downstream_actions(self) -> None:
         rows = generator.generate_rows([_feature_row(15)])
         self.assertEqual(len(rows), 1)
