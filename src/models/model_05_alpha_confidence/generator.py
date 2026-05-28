@@ -15,19 +15,25 @@ from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 from .contract import FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_LAYER, MODEL_VERSION
+from .training import score_after_cost_alpha
 
 ET = ZoneInfo("America/New_York")
 
 
-def generate_rows(input_rows: Iterable[Mapping[str, Any]], *, model_version: str = MODEL_VERSION) -> list[dict[str, Any]]:
+def generate_rows(
+    input_rows: Iterable[Mapping[str, Any]],
+    *,
+    model_version: str = MODEL_VERSION,
+    after_cost_alpha_model: Mapping[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     rows = [_normalize_input_row(row) for row in input_rows]
     if not rows:
         raise ValueError("at least one Layer 5 input row is required")
     rows.sort(key=lambda row: (_row_time(row), str(row.get("target_candidate_id") or "")))
-    return [_model_row(row, model_version=model_version) for row in rows]
+    return [_model_row(row, model_version=model_version, after_cost_alpha_model=after_cost_alpha_model) for row in rows]
 
 
-def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
+def _model_row(row: Mapping[str, Any], *, model_version: str, after_cost_alpha_model: Mapping[str, Any] | None) -> dict[str, Any]:
     available_time = _iso(_row_time(row))
     tradeable_time = _iso(_parse_time(row.get("tradeable_time") or available_time))
     target_candidate_id = str(row.get("target_candidate_id") or "").strip()
@@ -48,12 +54,16 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         base = _base_alpha(horizon, market, sector, target)
         adjusted = _adjust_for_events(horizon, base, event)
         calibrated = _calibrate(horizon, adjusted, quality, market, sector, target, event)
+        trained_score = _trained_after_cost_score(row, horizon=horizon, after_cost_alpha_model=after_cost_alpha_model)
+        if trained_score is not None:
+            _apply_trained_after_cost_score(calibrated, trained_score)
         final_payload.update(
             {
                 f"5_alpha_direction_score_{suffix}": calibrated["alpha_direction"],
                 f"5_alpha_strength_score_{suffix}": calibrated["alpha_strength"],
                 f"5_expected_return_score_{suffix}": calibrated["expected_return"],
                 f"5_alpha_confidence_score_{suffix}": calibrated["alpha_confidence"],
+                f"5_after_cost_alpha_score_{suffix}": trained_score["score"] if trained_score else None,
                 f"5_signal_reliability_score_{suffix}": calibrated["signal_reliability"],
                 f"5_path_quality_score_{suffix}": calibrated["path_quality"],
                 f"5_reversal_risk_score_{suffix}": calibrated["reversal_risk"],
@@ -81,6 +91,15 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             }
         )
         diagnostics["horizon_reason_codes"][horizon] = calibrated["reason_codes"]
+        diagnostics.setdefault("after_cost_alpha_score", {})[horizon] = (
+            trained_score
+            if trained_score is not None
+            else {
+                "score": None,
+                "score_semantics": "0.5_after_cost_neutral__above_positive_edge__below_negative_edge",
+                "model_type": "no_trained_after_cost_alpha_artifact",
+            }
+        )
 
     ref = _stable_id("acv", target_candidate_id, available_time, model_version)
     output = {
@@ -231,6 +250,25 @@ def _calibrate(
         "alpha_tradability": round(tradability, 6),
         "reason_codes": reason_codes,
     }
+
+
+def _trained_after_cost_score(row: Mapping[str, Any], *, horizon: str, after_cost_alpha_model: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    if after_cost_alpha_model is None:
+        return None
+    try:
+        return score_after_cost_alpha(row, after_cost_alpha_model, horizon=horizon)
+    except ValueError as error:
+        raise ValueError(f"invalid Layer 5 after-cost alpha model artifact for {horizon}: {error}") from error
+
+
+def _apply_trained_after_cost_score(calibrated: dict[str, Any], trained_score: Mapping[str, Any]) -> None:
+    score = _clip01(_safe_float(trained_score.get("score")) or 0.5)
+    signed_edge = _clip_signed((score - 0.5) * 2.0)
+    calibrated["alpha_confidence"] = round(score, 6)
+    calibrated["alpha_direction"] = round(signed_edge, 6)
+    calibrated["alpha_strength"] = round(abs(signed_edge), 6)
+    calibrated["expected_return"] = round(signed_edge, 6)
+    calibrated["reason_codes"] = ["trained_after_cost_alpha_score"]
 
 
 def _normalize_input_row(row: Mapping[str, Any]) -> dict[str, Any]:

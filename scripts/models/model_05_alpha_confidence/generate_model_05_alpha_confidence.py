@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 from model_runtime.config import database_url_file
 
 from model_governance.model_output_support import write_model_output_with_support
-from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
+from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, read_rows, write_rows
 from models.model_05_alpha_confidence import MODEL_ID, MODEL_SURFACE, MODEL_VERSION, generate_rows
 
 DEFAULT_DB_URL_FILE = database_url_file()
@@ -343,6 +343,7 @@ def generate_from_database(
     model_version: str,
     output_jsonl: Path | None,
     target_symbol: str | None = None,
+    after_cost_alpha_model: Mapping[str, Any] | None = None,
 ) -> int:
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
@@ -354,7 +355,7 @@ def generate_from_database(
             model_02_rows = _fetch_rows(cursor, schema="trading_model", table="model_02_sector_context", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, sector_or_industry_symbol ASC")
             model_01_rows = _fetch_rows(cursor, schema="trading_model", table="model_01_market_regime", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC")
             decisions = _decision_rows(event_failure_rows=event_failure_rows, model_03_rows=model_03_rows, source_03_rows=source_03_rows, model_02_rows=model_02_rows, model_01_rows=model_01_rows)
-            model_rows = generate_rows(decisions, model_version=model_version)
+            model_rows = generate_rows(decisions, model_version=model_version, after_cost_alpha_model=after_cost_alpha_model)
             _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
     if output_jsonl:
         _write_jsonl(output_jsonl, model_rows)
@@ -366,6 +367,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--input-jsonl", type=Path, help="Local JSONL/JSON input rows. Defaults to a tiny fixture row.")
     parser.add_argument("--output-jsonl", type=Path, help="Optional output path; .jsonl writes newline-delimited JSON, otherwise JSON array.")
     parser.add_argument("--model-version", default=MODEL_VERSION)
+    parser.add_argument("--after-cost-alpha-model-json", type=Path, help="Optional trained Layer 5 after-cost alpha model artifact.")
     parser.add_argument("--from-database", action="store_true")
     parser.add_argument("--database-url")
     parser.add_argument("--source-start")
@@ -374,14 +376,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_05_alpha_confidence")
     args = parser.parse_args(argv)
+    after_cost_alpha_model = _read_json_mapping(args.after_cost_alpha_model_json)
     if args.from_database:
-        count = generate_from_database(database_url=_database_url(args.database_url), source_start=args.source_start, source_end=args.source_end, target_schema=args.target_schema, target_table=args.target_table, model_version=args.model_version, output_jsonl=args.output_jsonl, target_symbol=args.target_symbol)
+        count = generate_from_database(database_url=_database_url(args.database_url), source_start=args.source_start, source_end=args.source_end, target_schema=args.target_schema, target_table=args.target_table, model_version=args.model_version, output_jsonl=args.output_jsonl, target_symbol=args.target_symbol, after_cost_alpha_model=after_cost_alpha_model)
         print(f"generated {count} rows into {args.target_schema}.{args.target_table}")
         return 0
     input_rows = read_rows(args.input_jsonl) if args.input_jsonl else FIXTURE_INPUT_ROWS[MODEL_SURFACE]
-    rows = generate_layer("models.model_05_alpha_confidence", input_rows, model_version=args.model_version)
+    rows = generate_rows(input_rows, model_version=args.model_version, after_cost_alpha_model=after_cost_alpha_model)
     write_rows(rows, args.output_jsonl)
     return 0
+
+
+def _read_json_mapping(path: Path | None) -> dict[str, Any] | None:
+    if path is None:
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, Mapping):
+        raise SystemExit("--after-cost-alpha-model-json must contain a JSON object")
+    return dict(payload)
 
 
 if __name__ == "__main__":

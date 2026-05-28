@@ -2,6 +2,15 @@
 
 Status: accepted Layer 5 design route; deterministic V1 scaffold currently implemented in physical `src/models/model_05_alpha_confidence/`.
 
+Current route: Layer 5's primary score is a directly trained normalized after-cost alpha score. `5_alpha_confidence_score_<horizon>` keeps the existing compatibility field name, but its intended model-artifact semantics are:
+
+- `0.5` means after-cost neutral / no edge;
+- values above `0.5` mean positive expected after-cost edge;
+- values below `0.5` mean negative expected after-cost edge;
+- downstream entry policy may use `> 0.5` as the first economic boundary, with any stricter risk gates owned by Layers 6-8.
+
+The old deterministic formula remains only as a cold-start baseline and diagnostic path when no trained Layer 5 after-cost artifact is supplied. It must not be treated as the long-term score architecture.
+
 ## Purpose
 
 `AlphaConfidenceModel` is Layer 5. It consumes the reviewed Layer 1/2/3 state stack, accepted Layer 4 `event_failure_risk_vector`, and calibration evidence to produce the final `alpha_confidence_vector`.
@@ -15,6 +24,8 @@ Layer 5 answers:
 - Is the expected residual return actually target-specific, or mostly market/sector beta?
 - Is the forward path likely to be tradeable, or likely to reverse/draw down first?
 - Is the alpha good enough to hand to Layer 6 risk-policy work?
+
+The central answer is the normalized after-cost alpha score itself, not a raw confidence value later rescued by threshold search. Training should optimize the score target directly from point-in-time features and after-cost labels.
 
 Layer 5 does **not** answer trading-intent, exposure, position-size, option-contract, order-routing, or execution questions. It must not emit buy/sell/hold, final action, target exposure, account-risk allocation, option symbol, strike, DTE, delta, order type, or broker mutation fields.
 
@@ -205,6 +216,18 @@ Layer 5 V1 uses six auditable submodules before any broad black-box confidence m
 5E ConfidenceCalibrationLayer
 5F AlphaVectorComposer
 ```
+
+The current implementation adds a trained artifact path above the deterministic scaffold:
+
+```text
+point-in-time Layer 1/2/3/4 features
++ quality inputs
++ after-cost labels during training only
+  -> standardized_linear_after_cost_alpha artifact
+  -> 5_alpha_confidence_score_<horizon> where 0.5 is after-cost neutral
+```
+
+The artifact is local JSON and can be passed to `generate_model_05_alpha_confidence.py` with `--after-cost-alpha-model-json`. The training entrypoint is `train_model_05_alpha_confidence.py`; it expects local JSON/JSONL rows containing the same point-in-time inference inputs plus an after-cost return label such as `after_cost_return_1W`.
 
 ### 5A - BaseStateAlphaEncoder
 

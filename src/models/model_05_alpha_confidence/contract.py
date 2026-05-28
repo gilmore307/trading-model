@@ -15,6 +15,7 @@ SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "5_alpha_strength_score_<horizon>",
     "5_expected_return_score_<horizon>",
     "5_alpha_confidence_score_<horizon>",
+    "5_after_cost_alpha_score_<horizon>",
     "5_signal_reliability_score_<horizon>",
     "5_path_quality_score_<horizon>",
     "5_reversal_risk_score_<horizon>",

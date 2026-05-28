@@ -4,7 +4,7 @@ import importlib.util
 import unittest
 from pathlib import Path
 
-from models.model_05_alpha_confidence import generate_rows
+from models.model_05_alpha_confidence import generate_rows, train_after_cost_alpha_model
 from models.model_05_alpha_confidence.evaluation import assert_no_label_leakage, build_alpha_confidence_labels
 
 
@@ -73,6 +73,35 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         self.assertLess(vector["5_alpha_tradability_score_1W"], 0.5)
         self.assertEqual(output["training_sample_scope"], "dense_minute_target_state")
         self.assertIn("no_material_alpha_edge", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["1W"])
+
+    def test_trained_after_cost_artifact_directly_sets_neutral_alpha_score(self) -> None:
+        positive = _base_row(after_cost_return_1W=0.04)
+        neutral = _base_row(
+            target_context_state=_target_state(direction=0.0),
+            event_failure_risk_vector={},
+            after_cost_return_1W=0.0,
+        )
+        negative = _base_row(
+            target_context_state=_target_state(direction=-0.40),
+            event_failure_risk_vector={},
+            after_cost_return_1W=-0.04,
+        )
+        artifact = train_after_cost_alpha_model(
+            [positive, neutral, negative],
+            horizon="1W",
+            label_field="after_cost_return_1W",
+            iterations=900,
+            learning_rate=0.10,
+        )
+
+        positive_score = generate_rows([positive], after_cost_alpha_model=artifact)[0]["alpha_confidence_vector"]
+        negative_score = generate_rows([negative], after_cost_alpha_model=artifact)[0]["alpha_confidence_vector"]
+
+        self.assertEqual(artifact["score_semantics"], "0.5_after_cost_neutral__above_positive_edge__below_negative_edge")
+        self.assertGreater(positive_score["5_alpha_confidence_score_1W"], 0.5)
+        self.assertLess(negative_score["5_alpha_confidence_score_1W"], 0.5)
+        self.assertEqual(positive_score["5_after_cost_alpha_score_1W"], positive_score["5_alpha_confidence_score_1W"])
+        self.assertEqual(negative_score["5_after_cost_alpha_score_1W"], negative_score["5_alpha_confidence_score_1W"])
 
     def test_database_decision_rows_are_dense_target_state_not_event_gated(self) -> None:
         script = _load_generator_script()
@@ -229,6 +258,21 @@ def _base_row(**overrides: object) -> dict[str, object]:
     }
     row.update(overrides)
     return row
+
+
+def _target_state(*, direction: float) -> dict[str, object]:
+    return {
+        "3_target_direction_score_1W": direction,
+        "3_target_trend_quality_score_1W": 0.75,
+        "3_target_path_stability_score_1W": 0.80,
+        "3_target_noise_score_1W": 0.20,
+        "3_target_transition_risk_score_1W": 0.15,
+        "3_context_direction_alignment_score_1W": 0.70 if direction >= 0 else -0.70,
+        "3_context_support_quality_score_1W": 0.80,
+        "3_tradability_score_1W": 0.85,
+        "3_state_quality_score": 0.90,
+        "3_beta_dependency_score_1W": 0.20,
+    }
 
 
 def _load_generator_script():
