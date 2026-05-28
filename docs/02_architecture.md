@@ -81,6 +81,8 @@ The primary output is the narrow downstream dependency contract. Explainability 
 
 `docs/21_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual model output.
 
+`docs/23_model_learning_design.md` owns the long-term learning route for each layer. It separates conditional estimators, policy/utility optimizers, deterministic hard constraints, and post-hoc attribution so implementation work does not turn one score into prediction, sizing, action, and explanation at once.
+
 ## Historical Sampling vs Live Routing
 
 Historical training may use a broader point-in-time sampling universe than live inference routing. Live routing can be narrow because upstream layers gate or prioritize candidates; historical training should not copy those gates when doing so would remove useful contrast.

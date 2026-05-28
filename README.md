@@ -123,6 +123,7 @@ docs/19_layer_10_event_risk_governor.md
 docs/20_model_decomposition.md
 docs/21_vector_taxonomy.md
 docs/22_state_vector_feature_registry.md
+docs/23_model_learning_design.md
 docs/30_promotion_readiness.md
 docs/31_promotion_acceptance.md
 docs/32_model_output_quality.md

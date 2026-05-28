@@ -1210,3 +1210,32 @@ Layer 10 is the standardized quantification layer. It converts interpreted obser
 Trading-calendar and market-structure events require specific standardized fields such as next market open, non-trading interval minutes, closure type, closure-length bucket, holiday name, early-close flag, pre-holiday-session flag, expiry/rebalance/triple-witching flags, calendar gap-risk prior, liquidity-thinning/forced-flow prior, and source certainty.
 
 Persistent event regimes require interval fields such as regime family, status, start/end, last material update, affected scopes/entities, decay/staleness rule, source quality, and active/shadow/decay/stale/resolved state. High-frequency news topics are only discovery candidates until `regime-promotion-review` accepts a regime interpretation.
+
+## D061 - Each model layer owns one learning role
+
+Accepted: 2026-05-28
+
+The long-term model route is not "replace every deterministic scaffold with a trained model." Each layer must be classified as one clear role before implementation expands:
+
+```text
+conditional estimator
+policy / utility optimizer
+deterministic hard constraint
+post-hoc attribution
+```
+
+Layer 1 through Layer 5 are primarily calibrated conditional estimators. Layer 6 through Layer 9 are policy or utility optimization layers with deterministic hard constraints around account/broker boundaries, exposure definitions, quotes, fills, and allowed actions. Layer 10 is residual event-risk intervention plus attribution and future evidence-packet production.
+
+Layer 5 owns direct normalized after-cost alpha scoring: `0.5` is after-cost neutral, values above `0.5` imply positive expected after-cost edge, and values below `0.5` imply negative expected after-cost edge. Replay must not hide score weakness by fitting a separate alpha threshold.
+
+Layers 5, 7, 8, and 9 must not all learn the same "profitable trade" target. Their boundaries are:
+
+```text
+Layer 5 estimates edge.
+Layer 6 sets portfolio/risk policy.
+Layer 7 projects desired exposure.
+Layer 8 chooses the underlying action thesis.
+Layer 9 chooses the expression.
+```
+
+The detailed per-layer learning route is owned by `docs/23_model_learning_design.md`. A layer implementation may expand only after its objective contract defines target or utility, horizon, labels and costs, allowed inputs, forbidden inputs, baseline, walk-forward metric, leakage test, and downstream consumer.

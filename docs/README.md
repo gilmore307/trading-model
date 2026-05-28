@@ -24,8 +24,11 @@ This directory contains the current documentation spine for `trading-model`.
 - `20_model_decomposition.md` — Model Decomposition Framework.
 - `21_vector_taxonomy.md` — Vector and State Taxonomy.
 - `22_state_vector_feature_registry.md` — State Vector Feature Semantics Registry.
+- `23_model_learning_design.md` — Model Learning Design.
 - `30_promotion_readiness.md` — Promotion Readiness.
 - `31_promotion_acceptance.md` — Promotion Acceptance.
+- `32_model_output_quality.md` — Model Output Quality.
+- `33_model_data_tables.md` — Model Data Tables.
 - `40_historical_dataset_scope.md` — Historical Dataset Scope.
 - `41_realtime_decision_handoff.md` — Realtime Decision Handoff.
 - `50_activity_price_relationship_study.md` — Activity-Price Relationship Study.
