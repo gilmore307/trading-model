@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic AlphaConfidenceModel rows from local JSON/JSONL or database rows."""
+"""Generate trained AlphaConfidenceModel rows from local JSON/JSONL or database rows."""
 from __future__ import annotations
 
 import argparse
@@ -23,11 +23,11 @@ DEFAULT_DB_URL_FILE = database_url_file()
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 ET = ZoneInfo("America/New_York")
-JSON_COLUMNS = {"alpha_confidence_vector", "base_alpha_vector", "alpha_confidence_diagnostics"}
+JSON_COLUMNS = {"alpha_confidence_vector", "alpha_confidence_diagnostics"}
 PRIMARY_KEY = ("alpha_confidence_vector_ref",)
-EXPLAINABILITY_COLUMNS = {"alpha_confidence_vector", "base_alpha_vector"}
+EXPLAINABILITY_COLUMNS = {"alpha_confidence_vector"}
 DIAGNOSTICS_COLUMNS = {"alpha_confidence_diagnostics"}
-RETIRED_COLUMNS = ("event_context_vector_ref",)
+RETIRED_COLUMNS = ("event_context_vector_ref", "base_alpha_vector")
 
 
 def _database_url(explicit: str | None) -> str:
@@ -342,8 +342,8 @@ def generate_from_database(
     target_table: str,
     model_version: str,
     output_jsonl: Path | None,
+    after_cost_alpha_model: Mapping[str, Any],
     target_symbol: str | None = None,
-    after_cost_alpha_model: Mapping[str, Any] | None = None,
 ) -> int:
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
@@ -367,7 +367,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--input-jsonl", type=Path, help="Local JSONL/JSON input rows. Defaults to a tiny fixture row.")
     parser.add_argument("--output-jsonl", type=Path, help="Optional output path; .jsonl writes newline-delimited JSON, otherwise JSON array.")
     parser.add_argument("--model-version", default=MODEL_VERSION)
-    parser.add_argument("--after-cost-alpha-model-json", type=Path, help="Optional trained Layer 5 after-cost alpha model artifact.")
+    parser.add_argument("--after-cost-alpha-model-json", type=Path, required=True, help="Trained Layer 5 after-cost alpha model artifact bundle.")
     parser.add_argument("--from-database", action="store_true")
     parser.add_argument("--database-url")
     parser.add_argument("--source-start")
@@ -387,9 +387,7 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _read_json_mapping(path: Path | None) -> dict[str, Any] | None:
-    if path is None:
-        return None
+def _read_json_mapping(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, Mapping):
         raise SystemExit("--after-cost-alpha-model-json must contain a JSON object")

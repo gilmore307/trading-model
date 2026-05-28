@@ -9,8 +9,6 @@ Current route: Layer 5's primary score is a directly trained normalized after-co
 - values below `0.5` mean negative expected after-cost edge;
 - downstream entry policy may use `> 0.5` as the first economic boundary, with any stricter risk gates owned by Layers 6-8.
 
-The formula path remains only as a cold-start baseline and diagnostic path when no trained Layer 5 after-cost artifact is supplied. It must not be treated as the long-term score architecture.
-
 ## Purpose
 
 `AlphaConfidenceModel` is Layer 5. It consumes the reviewed Layer 1/2/3 state stack, accepted Layer 4 `event_failure_risk_vector`, and calibration evidence to produce the final `alpha_confidence_vector`.
@@ -66,23 +64,15 @@ market_context_state
 
 Layer 3 `3_target_direction_score_<window>` is signed current-state direction evidence, not alpha confidence. Layer 5 owns the calibrated alpha-confidence step. Reviewed strategy-failure event evidence reaches Layer 5 only through Layer 4 `event_failure_risk_vector`; residual/unreviewed event governance belongs to Layer 10 and future Layer 4 promotion, not direct Layer 5 inference.
 
-## Two-tier output policy
+## Output Policy
 
-Layer 5 deliberately keeps two surfaces separate:
-
-1. **Base-alpha diagnostics**
-   - built from Layer 1/2/3 state before Layer 4 event-failure conditioning;
-   - used for research, debugging, audit, and calibration attribution;
-   - not a trading action or exposure target.
-
-2. **Default `alpha_confidence_vector`**
-   - built from base alpha plus Layer 4 event-failure conditioning, quality, calibration, path-risk, and point-in-time controls;
-   - the only default Layer 6-facing Layer 5 output.
+Layer 5 has one model-generation output: `alpha_confidence_vector`. Generation requires trained Layer 5 after-cost alpha artifacts for every horizon. A missing artifact is a blocked model-generation state.
 
 ```text
 Layer 1/2/3
 + reviewed Layer 4 event-failure conditioning when applicable
 + quality/calibration/path-risk controls
+  -> trained Layer 5 after-cost alpha artifacts
   -> alpha_confidence_vector
 ```
 
@@ -148,11 +138,11 @@ Layer 5 may learn that positive or negative target-state evidence has predictive
 
 Layer 5 consumes reviewed Layer 4 `event_failure_risk_vector` as the only event-facing inference input. Layer 4 has already consumed standardized point-in-time event observations and accepted event/strategy-failure gates. Layer 5 must not reopen the raw event, news, SEC, macro, transcript, or provider artifact.
 
-Layer 4 may reduce confidence, lower tradability, raise path/reversal/drawdown risk, or require review for an otherwise valid base alpha. It may not create standalone event alpha inside Layer 5. If Layer 4 reports `no_reviewed_event_failure_risk`, Layer 5 proceeds from the Layer 1/2/3 base-alpha path and records that no accepted event-failure conditioning applied.
+Layer 4 may reduce confidence, lower tradability, raise path/reversal/drawdown risk, or require review for an otherwise valid state stack. It may not create standalone event alpha inside Layer 5. If Layer 4 reports `no_reviewed_event_failure_risk`, Layer 5 still scores through the trained artifact using empty or neutral Layer 4 features.
 
 ### Non-input Layer 10 event attribution
 
-Layer 10 event-failure attribution is not a Layer 5 inference input. Layer 10 may explain base-alpha errors, event-window risk deterioration, or event-supported improvement after outcomes are known, but accepted findings must pass review and become future Layer 4 gates before Layer 5 can consume them.
+Layer 10 event-failure attribution is not a Layer 5 inference input. Layer 10 may explain after-cost score errors, event-window risk deterioration, or event-supported improvement after outcomes are known, but accepted findings must pass review and become future Layer 4 gates before Layer 5 can consume them.
 
 Layer 5 must not consume `realized_impact_scope_label`, event-failure attribution labels, broad raw-news discovery, or Layer 10 promotion packets for the same fold.
 
@@ -204,20 +194,9 @@ execution_result
 
 These belong to Layer 6/7/8/9 or training-label/evaluation surfaces, not Layer 5 inference.
 
-## Internal structure
+## Internal Structure
 
-Layer 5 uses six auditable submodules:
-
-```text
-5A BaseStateAlphaEncoder
-5B BaselineAdjustedAlphaDecomposer
-5C Layer4EventFailureConditioning
-5D PathRiskEstimator
-5E ConfidenceCalibrationLayer
-5F AlphaVectorComposer
-```
-
-The current implementation includes a trained artifact path:
+The current implementation is a trained artifact path:
 
 ```text
 point-in-time Layer 1/2/3/4 features
@@ -229,63 +208,9 @@ point-in-time Layer 1/2/3/4 features
 
 The artifact is local JSON and can be passed to `generate_model_05_alpha_confidence.py` with `--after-cost-alpha-model-json`. The training entrypoint is `train_model_05_alpha_confidence.py`; it expects local JSON/JSONL rows containing the same point-in-time inference inputs plus an after-cost return label such as `after_cost_return_1W`.
 
-### 5A - BaseStateAlphaEncoder
-
-Uses only Layer 1/2/3 state evidence to generate the base alpha judgment. It produces diagnostic `base_alpha_vector` fields such as:
-
-```text
-5_base_alpha_direction_score_<horizon>
-5_base_alpha_strength_score_<horizon>
-5_base_expected_return_score_<horizon>
-5_base_path_quality_score_<horizon>
-5_base_reversal_risk_score_<horizon>
-5_base_drawdown_risk_score_<horizon>
-5_base_alpha_tradability_score_<horizon>
-```
-
-These are not the default downstream contract. They explain what the state stack said before Layer 4 event-failure conditioning is applied.
-
-### 5B - BaselineAdjustedAlphaDecomposer
-
-Separates target alpha from market/sector beta. Diagnostic fields may include:
-
-```text
-5_market_adjusted_alpha_score_<horizon>
-5_sector_adjusted_alpha_score_<horizon>
-5_target_state_lift_score_<horizon>
-5_idiosyncratic_alpha_score_<horizon>
-5_beta_dependency_score_<horizon>
-```
-
-If beta dependency is high and target-state lift is low, Layer 5 should avoid claiming target-specific alpha.
-
-### 5C - Layer4EventFailureConditioning
-
-Applies reviewed Layer 4 event-failure conditioning to base alpha. The conditioning can degrade confidence, reliability, path quality, and alpha tradability, or add review/block pressure to the Layer 5 explanation. It must not create alpha direction or strength from event evidence alone.
-
-Diagnostic fields may include:
-
-```text
-5_event_confidence_adjustment_score_<horizon>
-5_event_risk_adjustment_score_<horizon>
-5_event_tradability_adjustment_score_<horizon>
-5_event_conditioning_mode_<horizon>
-5_event_adjustment_reason_codes_<horizon>
-```
-
-### 5D - PathRiskEstimator
-
-Estimates whether the alpha path is tradeable, not merely whether the endpoint is correct. It should model MFE, MAE, first-touch behavior, direction persistence, reversal, drawdown, noise, liquidity, and event-driven path contamination.
-
-### 5E - ConfidenceCalibrationLayer
-
-Calibrates confidence and reliability from point-in-time sample support, ensemble agreement/disagreement, OOD evidence, data quality, event uncertainty, walk-forward reliability, and confidence-bucket realized calibration.
+The trained score owns target alpha separation, Layer 4 event conditioning, path-risk evidence, reliability, and calibration as model features. Deterministic code may assemble features, validate artifacts, enforce point-in-time boundaries, and derive companion output fields from the trained normalized score.
 
 Layer 5 alpha confidence fields use the Layer 5 semantic family in physical code/SQL. `alpha_confidence_score_<horizon>` means current model belief. `signal_reliability_score_<horizon>` means similar-signal historical out-of-sample reliability. They are related but not interchangeable.
-
-### 5F - AlphaVectorComposer
-
-Composes base alpha, Layer 4 event-failure conditioning, baseline adjustment, path risk, quality gates, and calibration into the final adjusted `alpha_confidence_vector`. It performs range clipping, horizon consistency checks, risk consistency checks, reason-code attribution, and quality downgrades.
 
 ## Horizons
 
@@ -300,15 +225,16 @@ Layer 5 uses synchronized alpha-confidence horizons:
 
 `1D` means a rolling 24-hour natural-time horizon and `1W` means a rolling 7-calendar-day horizon. Equity and ETF labels observe tradable path inside those natural-time windows; crypto labels observe continuous path. Overlapping labels require purge/embargo controls.
 
-## Final adjusted output contract
+## Final Output Contract
 
-The Layer 5-facing output is exactly 9 core score families per horizon, for 36 final score tokens:
+The Layer 5-facing output is exactly 10 core score families per horizon, for 40 final score tokens:
 
 ```text
 5_alpha_direction_score_<horizon>
 5_alpha_strength_score_<horizon>
 5_expected_return_score_<horizon>
 5_alpha_confidence_score_<horizon>
+5_after_cost_alpha_score_<horizon>
 5_signal_reliability_score_<horizon>
 5_path_quality_score_<horizon>
 5_reversal_risk_score_<horizon>
@@ -324,8 +250,9 @@ Physical SQL column names must avoid unquoted numeric-leading identifiers unless
 |---|---:|---|---|
 | `5_alpha_direction_score_<horizon>` | `[-1, 1]` | signed | positive = long alpha, negative = short alpha, near zero = mixed/neutral/no edge |
 | `5_alpha_strength_score_<horizon>` | `[0, 1]` | direction-neutral | stronger absolute alpha magnitude, whether long or short |
-| `5_expected_return_score_<horizon>` | `[-1, 1]` | signed | stronger standardized residual alpha expectation after market/sector baseline adjustment |
-| `5_alpha_confidence_score_<horizon>` | `[0, 1]` | direction-neutral | model is more confident in the alpha judgment |
+| `5_expected_return_score_<horizon>` | `[-1, 1]` | signed | trained signed after-cost edge mapped around neutral `0` |
+| `5_alpha_confidence_score_<horizon>` | `[0, 1]` | direction-neutral | normalized after-cost alpha score; `0.5` is neutral |
+| `5_after_cost_alpha_score_<horizon>` | `[0, 1]` | direction-neutral | same trained after-cost score exposed under explicit economic semantics |
 | `5_signal_reliability_score_<horizon>` | `[0, 1]` | direction-neutral | similar signals have been more stable out-of-sample |
 | `5_path_quality_score_<horizon>` | `[0, 1]` | direction-conditioned | path is smoother, more persistent, and easier to trade |
 | `5_reversal_risk_score_<horizon>` | `[0, 1]` | direction-conditioned | alpha direction is more likely to be interrupted/reversed; high-is-bad |
@@ -387,14 +314,14 @@ alpha_tradable_label_<horizon>
 
 Labels must be materialized only in training/evaluation datasets and must not be joined into `alpha_confidence_vector` at inference time.
 
-## Training route
+## Training Route
 
-Layer 5 should be trained in stages:
+Layer 5 trains the normalized after-cost score directly:
 
-1. **Base alpha model**: train Layer 1/2/3-only base alpha outputs.
-2. **Layer 4 event-failure conditioning**: evaluate whether reviewed Layer 4 event-failure risk improves confidence calibration, path-risk estimates, and alpha tradability without turning events into standalone alpha.
-3. **Path/risk heads**: add MFE/MAE, first-touch, reversal, drawdown, liquidity, and event-risk labels.
-4. **Calibration layer**: calibrate confidence, reliability, and tradability using walk-forward and out-of-sample buckets.
+1. Assemble point-in-time Layer 1/2/3/4 and quality features for every eligible dense target-state minute.
+2. Join after-cost return labels only in the training/evaluation dataset.
+3. Train horizon-specific artifacts whose score semantics are fixed: `0.5` neutral, above `0.5` positive after-cost edge, below `0.5` negative after-cost edge.
+4. Derive companion direction, strength, reliability, path-risk, and tradability fields from the trained score payload.
 
 Do not train Layer 5 from in-sample Layer 1/2/3/4 model outputs. Upstream state vectors consumed by Layer 5 training must be generated with rolling/cross-fitted point-in-time discipline.
 
@@ -409,7 +336,7 @@ Layer 5 should prove incremental value over:
 1. no-alpha baseline;
 2. market/sector context only;
 3. Layer 3 direct target-state score baseline;
-4. Layer 1/2/3 base alpha only;
+4. Layer 1/2/3 trained without Layer 4 features;
 5. Layer 4 event-failure risk only;
 6. Layer 1/2/3 plus simple event-observation count;
 7. Layer 1/2/3 plus reviewed Layer 4 event-failure conditioning;
@@ -422,7 +349,7 @@ Validation must separately check:
 - confidence: confidence buckets are calibrated out-of-sample;
 - reliability: reliable buckets generalize across years, sectors, and regimes;
 - path: path quality/reversal/drawdown match MFE, MAE, first-touch, path smoothness, and transition outcomes;
-- event conditioning: Layer 4-conditioned output improves calibration/path/tradability over base only in reviewed point-in-time event-failure contexts;
+- event conditioning: Layer 4-conditioned output improves calibration/path/tradability in reviewed point-in-time event-failure contexts;
 - tradability: high alpha-tradability rows improve path/risk/utility quality before downstream risk policy, costs, and portfolio constraints;
 - leakage: all feature rows obey `available_time <= decision_time`, and labels are isolated from inference features.
 
@@ -433,7 +360,7 @@ Keep these semantics separate:
 ```text
 target direction evidence != alpha confidence
 event direction bias != alpha confidence
-base alpha != final adjusted alpha
+state direction evidence != trained after-cost alpha
 alpha strength != alpha confidence
 alpha confidence != signal reliability
 expected return != target exposure

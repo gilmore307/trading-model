@@ -1,9 +1,9 @@
-"""AlphaConfidenceModel baseline generator.
+"""AlphaConfidenceModel generator.
 
 Layer 5 converts reviewed Layer 1/2/3 state plus Layer 4 event-failure-risk context into the
-final adjusted ``alpha_confidence_vector``. The generator keeps base alpha as a
-diagnostic surface and emits only alpha-confidence fields, not position/action/
-execution fields.
+final trained after-cost ``alpha_confidence_vector``. Model generation requires
+a trained Layer 5 after-cost alpha artifact; missing artifacts are a blocked
+training state.
 """
 from __future__ import annotations
 
@@ -26,6 +26,8 @@ def generate_rows(
     model_version: str = MODEL_VERSION,
     after_cost_alpha_model: Mapping[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
+    if after_cost_alpha_model is None:
+        raise ValueError("Layer 5 generation requires trained Layer 5 after-cost alpha artifacts")
     rows = [_normalize_input_row(row) for row in input_rows]
     if not rows:
         raise ValueError("at least one Layer 5 input row is required")
@@ -33,73 +35,35 @@ def generate_rows(
     return [_model_row(row, model_version=model_version, after_cost_alpha_model=after_cost_alpha_model) for row in rows]
 
 
-def _model_row(row: Mapping[str, Any], *, model_version: str, after_cost_alpha_model: Mapping[str, Any] | None) -> dict[str, Any]:
+def _model_row(row: Mapping[str, Any], *, model_version: str, after_cost_alpha_model: Mapping[str, Any]) -> dict[str, Any]:
     available_time = _iso(_row_time(row))
     tradeable_time = _iso(_parse_time(row.get("tradeable_time") or available_time))
     target_candidate_id = str(row.get("target_candidate_id") or "").strip()
     if not target_candidate_id:
         raise ValueError("target_candidate_id is required")
 
-    market = _payload(row, "market_context_state")
-    sector = _payload(row, "sector_context_state")
-    target = _payload(row, "target_context_state") or _payload(row, "target_state_vector")
-    event = _payload(row, "event_failure_risk_vector")
-    quality = _payload(row, "quality_calibration_state")
-
     final_payload: dict[str, Any] = {}
-    base_payload: dict[str, Any] = {}
     diagnostics: dict[str, Any] = {"horizon_reason_codes": {}}
     for horizon in HORIZONS:
         suffix = _suffix(horizon)
-        base = _base_alpha(horizon, market, sector, target)
-        adjusted = _adjust_for_events(horizon, base, event)
-        calibrated = _calibrate(horizon, adjusted, quality, market, sector, target, event)
-        trained_score = _trained_after_cost_score(row, horizon=horizon, after_cost_alpha_model=after_cost_alpha_model)
-        if trained_score is not None:
-            _apply_trained_after_cost_score(calibrated, trained_score)
+        score_payload = _score_with_after_cost_model(row, horizon=horizon, after_cost_alpha_model=after_cost_alpha_model)
+        vector_values = _vector_values_from_after_cost_score(score_payload)
         final_payload.update(
             {
-                f"5_alpha_direction_score_{suffix}": calibrated["alpha_direction"],
-                f"5_alpha_strength_score_{suffix}": calibrated["alpha_strength"],
-                f"5_expected_return_score_{suffix}": calibrated["expected_return"],
-                f"5_alpha_confidence_score_{suffix}": calibrated["alpha_confidence"],
-                f"5_after_cost_alpha_score_{suffix}": trained_score["score"] if trained_score else None,
-                f"5_signal_reliability_score_{suffix}": calibrated["signal_reliability"],
-                f"5_path_quality_score_{suffix}": calibrated["path_quality"],
-                f"5_reversal_risk_score_{suffix}": calibrated["reversal_risk"],
-                f"5_drawdown_risk_score_{suffix}": calibrated["drawdown_risk"],
-                f"5_alpha_tradability_score_{suffix}": calibrated["alpha_tradability"],
+                f"5_alpha_direction_score_{suffix}": vector_values["alpha_direction"],
+                f"5_alpha_strength_score_{suffix}": vector_values["alpha_strength"],
+                f"5_expected_return_score_{suffix}": vector_values["expected_return"],
+                f"5_alpha_confidence_score_{suffix}": vector_values["alpha_confidence"],
+                f"5_after_cost_alpha_score_{suffix}": vector_values["after_cost_alpha"],
+                f"5_signal_reliability_score_{suffix}": vector_values["signal_reliability"],
+                f"5_path_quality_score_{suffix}": vector_values["path_quality"],
+                f"5_reversal_risk_score_{suffix}": vector_values["reversal_risk"],
+                f"5_drawdown_risk_score_{suffix}": vector_values["drawdown_risk"],
+                f"5_alpha_tradability_score_{suffix}": vector_values["alpha_tradability"],
             }
         )
-        base_payload.update(
-            {
-                f"5_base_alpha_direction_score_{suffix}": base["direction"],
-                f"5_base_alpha_strength_score_{suffix}": base["strength"],
-                f"5_base_expected_return_score_{suffix}": base["expected_return"],
-                f"5_base_path_quality_score_{suffix}": base["path_quality"],
-                f"5_base_reversal_risk_score_{suffix}": base["reversal_risk"],
-                f"5_base_drawdown_risk_score_{suffix}": base["drawdown_risk"],
-                f"5_base_alpha_tradability_score_{suffix}": base["tradability"],
-                f"5_market_adjusted_alpha_score_{suffix}": base["market_adjusted_alpha"],
-                f"5_sector_adjusted_alpha_score_{suffix}": base["sector_adjusted_alpha"],
-                f"5_target_state_lift_score_{suffix}": base["target_state_lift"],
-                f"5_beta_dependency_score_{suffix}": base["beta_dependency"],
-                f"5_event_direction_adjustment_score_{suffix}": adjusted["event_direction_adjustment"],
-                f"5_event_strength_adjustment_score_{suffix}": adjusted["event_strength_adjustment"],
-                f"5_event_risk_adjustment_score_{suffix}": adjusted["event_risk_adjustment"],
-                f"5_event_override_mode_{suffix}": adjusted["event_override_mode"],
-            }
-        )
-        diagnostics["horizon_reason_codes"][horizon] = calibrated["reason_codes"]
-        diagnostics.setdefault("after_cost_alpha_score", {})[horizon] = (
-            trained_score
-            if trained_score is not None
-            else {
-                "score": None,
-                "score_semantics": "0.5_after_cost_neutral__above_positive_edge__below_negative_edge",
-                "model_type": "no_trained_after_cost_alpha_artifact",
-            }
-        )
+        diagnostics["horizon_reason_codes"][horizon] = vector_values["reason_codes"]
+        diagnostics.setdefault("after_cost_alpha_score", {})[horizon] = score_payload
 
     ref = _stable_id("acv", target_candidate_id, available_time, model_version)
     output = {
@@ -117,158 +81,62 @@ def _model_row(row: Mapping[str, Any], *, model_version: str, after_cost_alpha_m
         "alpha_confidence_vector_ref": ref,
         **final_payload,
         "alpha_confidence_vector": final_payload,
-        "base_alpha_vector": base_payload,
         "alpha_confidence_diagnostics": diagnostics,
     }
     _validate_no_forbidden_output(output)
     return output
 
 
-def _base_alpha(horizon: str, market: Mapping[str, Any], sector: Mapping[str, Any], target: Mapping[str, Any]) -> dict[str, float]:
-    suffix = _suffix(horizon)
-    target_direction = _signed(target, f"3_target_direction_score_{suffix}", "target_direction_score")
-    trend_quality = _score(target, f"3_target_trend_quality_score_{suffix}", "target_trend_quality_score", default=0.5)
-    path_stability = _score(target, f"3_target_path_stability_score_{suffix}", "target_path_stability_score", default=0.5)
-    noise = _score(target, f"3_target_noise_score_{suffix}", "target_noise_score", default=0.35)
-    transition_risk = _score(target, f"3_target_transition_risk_score_{suffix}", "target_transition_risk_score", default=0.35)
-    target_tradability = _score(target, f"3_tradability_score_{suffix}", "3_target_liquidity_tradability_score", default=0.65)
-    target_quality = _score(target, "3_state_quality_score", "target_state_quality_score", default=0.65)
-    context_alignment = _signed(target, f"3_context_direction_alignment_score_{suffix}", "context_direction_alignment_score")
-    context_support = _score(target, f"3_context_support_quality_score_{suffix}", "context_support_quality_score", default=0.5)
-    market_risk = _score(market, "1_market_risk_stress_score", "market_risk_stress_score", default=0.35)
-    market_liquidity = _score(market, "1_market_liquidity_support_score", "market_liquidity_support_score", default=0.65)
-    sector_support = _score(sector, "2_sector_context_support_quality_score", f"2_context_support_quality_score_{suffix}", default=0.55)
-    beta_dependency = _score(target, f"3_beta_dependency_score_{suffix}", "beta_dependency_score", default=0.35)
-
-    raw_strength = abs(target_direction) * (0.35 + 0.25 * trend_quality + 0.20 * path_stability + 0.10 * context_support + 0.10 * sector_support)
-    risk_penalty = 0.35 * transition_risk + 0.20 * noise + 0.20 * market_risk + 0.25 * beta_dependency
-    strength = _clip01(raw_strength * (1.0 - 0.45 * risk_penalty) * target_quality)
-    direction = _clip_signed(target_direction * (0.75 + 0.25 * max(context_alignment, 0.0)))
-    expected_return = _clip_signed(direction * strength * (0.6 + 0.4 * (1.0 - beta_dependency)))
-    path_quality = _clip01(0.35 * path_stability + 0.25 * trend_quality + 0.20 * (1.0 - noise) + 0.20 * market_liquidity)
-    reversal_risk = _clip01(0.45 * transition_risk + 0.25 * noise + 0.20 * (1.0 - path_stability) + 0.10 * market_risk)
-    drawdown_risk = _clip01(0.35 * market_risk + 0.25 * (1.0 - market_liquidity) + 0.20 * noise + 0.20 * transition_risk)
-    tradability = _clip01(strength * 0.35 + path_quality * 0.30 + target_tradability * 0.25 + (1.0 - max(reversal_risk, drawdown_risk)) * 0.10)
-    return {
-        "direction": round(direction, 6),
-        "strength": round(strength, 6),
-        "expected_return": round(expected_return, 6),
-        "path_quality": round(path_quality, 6),
-        "reversal_risk": round(reversal_risk, 6),
-        "drawdown_risk": round(drawdown_risk, 6),
-        "tradability": round(tradability, 6),
-        "market_adjusted_alpha": round(_clip_signed(expected_return * (1.0 - 0.5 * market_risk)), 6),
-        "sector_adjusted_alpha": round(_clip_signed(expected_return * (0.65 + 0.35 * sector_support)), 6),
-        "target_state_lift": round(_clip01(strength * (1.0 - beta_dependency)), 6),
-        "beta_dependency": round(beta_dependency, 6),
-    }
-
-
-def _adjust_for_events(horizon: str, base: Mapping[str, float], event: Mapping[str, Any]) -> dict[str, Any]:
-    suffix = _suffix(horizon)
-    applicability = _score(event, f"4_event_applicability_confidence_score_{suffix}", default=0.0)
-    failure_risk = _score(event, f"4_event_strategy_failure_risk_score_{suffix}", default=0.0)
-    entry_block = _score(event, f"4_event_entry_block_pressure_score_{suffix}", default=0.0)
-    evidence_quality = _score(event, f"4_event_evidence_quality_score_{suffix}", default=0.65)
-    disable = _score(event, f"4_event_strategy_disable_pressure_score_{suffix}", default=0.0)
-    path_gap = _score(event, f"4_event_path_risk_amplifier_score_{suffix}", default=0.0)
-    session_gap = _score(event, f"4_event_session_gap_risk_score_{suffix}", default=0.0)
-    gap = max(path_gap, session_gap)
-    exposure_cap = _score(event, f"4_event_exposure_cap_pressure_score_{suffix}", default=0.0)
-    event_weight = _clip01(applicability * max(failure_risk, entry_block, exposure_cap, disable, gap) * evidence_quality)
-    override = bool(event_weight >= 0.55 and max(entry_block, disable) >= 0.65 and evidence_quality >= 0.70)
-    direction_adjustment = 0.0
-    strength_adjustment = -0.35 * event_weight
-    risk_adjustment = _clip01((failure_risk * 0.35 + entry_block * 0.25 + gap * 0.25 + exposure_cap * 0.15) * max(applicability, event_weight))
-    adjusted_direction = _clip_signed(float(base["direction"]))
-    adjusted_strength = _clip01(float(base["strength"]) + strength_adjustment - 0.25 * risk_adjustment)
-    path_quality = _clip01(float(base["path_quality"]) - risk_adjustment * 0.35 - 0.15 * max(entry_block, disable))
-    return {
-        "direction": round(adjusted_direction, 6),
-        "strength": round(adjusted_strength, 6),
-        "expected_return": round(_clip_signed(adjusted_direction * adjusted_strength), 6),
-        "path_quality": round(path_quality, 6),
-        "reversal_risk": round(_clip01(float(base["reversal_risk"]) + entry_block * event_weight * 0.40 + risk_adjustment * 0.20), 6),
-        "drawdown_risk": round(_clip01(float(base["drawdown_risk"]) + gap * event_weight * 0.35 + exposure_cap * event_weight * 0.20), 6),
-        "tradability": round(_clip01(float(base["tradability"]) - event_weight * 0.20 - risk_adjustment * 0.35), 6),
-        "event_direction_adjustment": round(direction_adjustment, 6),
-        "event_strength_adjustment": round(strength_adjustment, 6),
-        "event_risk_adjustment": round(risk_adjustment, 6),
-        "event_override_mode": override,
-        "event_weight": round(event_weight, 6),
-    }
-
-
-def _calibrate(
-    horizon: str,
-    adjusted: Mapping[str, Any],
-    quality: Mapping[str, Any],
-    market: Mapping[str, Any],
-    sector: Mapping[str, Any],
-    target: Mapping[str, Any],
-    event: Mapping[str, Any],
-) -> dict[str, Any]:
-    suffix = _suffix(horizon)
-    sample_support = _score(quality, "state_neighborhood_sample_count_score", "sample_support_score", default=0.55)
-    stability = _score(quality, "state_neighborhood_outcome_stability", "walk_forward_reliability_score", default=0.55)
-    ensemble = _score(quality, "model_ensemble_agreement_score", default=0.60)
-    disagreement = _score(quality, "model_disagreement_score", default=0.25)
-    ood = _score(quality, "out_of_distribution_score", default=0.20)
-    data_quality = _score(quality, "data_quality_score", "feature_coverage_score", default=0.70)
-    layer_quality = min(
-        _score(market, "1_state_quality_score", default=0.75),
-        _score(sector, "2_state_quality_score", default=0.75),
-        _score(target, "3_state_quality_score", default=0.75),
-        _score(event, f"4_event_evidence_quality_score_{suffix}", default=0.75),
-        data_quality,
-    )
-    reliability = _clip01(0.25 * sample_support + 0.25 * stability + 0.20 * ensemble + 0.20 * layer_quality + 0.10 * (1.0 - max(disagreement, ood)))
-    risk = max(float(adjusted["reversal_risk"]), float(adjusted["drawdown_risk"]))
-    confidence = _clip01(float(adjusted["strength"]) * 0.40 + reliability * 0.35 + float(adjusted["path_quality"]) * 0.25)
-    confidence = _clip01(confidence * (1.0 - 0.35 * risk) * (1.0 - 0.30 * ood))
-    tradability = _clip01(float(adjusted["tradability"]) * 0.50 + confidence * 0.30 + float(adjusted["path_quality"]) * 0.20 - risk * 0.20)
-    reason_codes = []
-    if float(adjusted["strength"]) < 0.05:
-        reason_codes.append("no_material_alpha_edge")
-    if risk >= 0.65:
-        reason_codes.append("path_risk_downgrade")
-    if ood >= 0.65:
-        reason_codes.append("out_of_distribution_downgrade")
-    if adjusted.get("event_override_mode"):
-        reason_codes.append("high_quality_event_override")
-    if not reason_codes:
-        reason_codes.append("state_alpha_calibrated")
-    return {
-        "alpha_direction": round(float(adjusted["direction"]), 6),
-        "alpha_strength": round(float(adjusted["strength"]), 6),
-        "expected_return": round(float(adjusted["expected_return"]), 6),
-        "alpha_confidence": round(confidence, 6),
-        "signal_reliability": round(reliability, 6),
-        "path_quality": round(float(adjusted["path_quality"]), 6),
-        "reversal_risk": round(float(adjusted["reversal_risk"]), 6),
-        "drawdown_risk": round(float(adjusted["drawdown_risk"]), 6),
-        "alpha_tradability": round(tradability, 6),
-        "reason_codes": reason_codes,
-    }
-
-
-def _trained_after_cost_score(row: Mapping[str, Any], *, horizon: str, after_cost_alpha_model: Mapping[str, Any] | None) -> dict[str, Any] | None:
-    if after_cost_alpha_model is None:
-        return None
+def _score_with_after_cost_model(row: Mapping[str, Any], *, horizon: str, after_cost_alpha_model: Mapping[str, Any]) -> dict[str, Any]:
+    artifact = _artifact_for_horizon(after_cost_alpha_model, horizon)
     try:
-        return score_after_cost_alpha(row, after_cost_alpha_model, horizon=horizon)
+        return score_after_cost_alpha(row, artifact, horizon=horizon)
     except ValueError as error:
         raise ValueError(f"invalid Layer 5 after-cost alpha model artifact for {horizon}: {error}") from error
 
 
-def _apply_trained_after_cost_score(calibrated: dict[str, Any], trained_score: Mapping[str, Any]) -> None:
-    score = _clip01(_safe_float(trained_score.get("score")) or 0.5)
-    signed_edge = _clip_signed((score - 0.5) * 2.0)
-    calibrated["alpha_confidence"] = round(score, 6)
-    calibrated["alpha_direction"] = round(signed_edge, 6)
-    calibrated["alpha_strength"] = round(abs(signed_edge), 6)
-    calibrated["expected_return"] = round(signed_edge, 6)
-    calibrated["reason_codes"] = ["trained_after_cost_alpha_score"]
+def _artifact_for_horizon(after_cost_alpha_model: Mapping[str, Any], horizon: str) -> Mapping[str, Any]:
+    artifacts = after_cost_alpha_model.get("artifacts_by_horizon")
+    if isinstance(artifacts, Mapping):
+        artifact = artifacts.get(horizon)
+        if isinstance(artifact, Mapping):
+            return artifact
+        raise ValueError(f"Layer 5 after-cost alpha artifact bundle is missing horizon {horizon!r}")
+    if str(after_cost_alpha_model.get("horizon") or "") == horizon:
+        return after_cost_alpha_model
+    raise ValueError(f"Layer 5 after-cost alpha artifact is missing horizon {horizon!r}")
+
+
+def _vector_values_from_after_cost_score(score_payload: Mapping[str, Any]) -> dict[str, Any]:
+    raw_score = _safe_float(score_payload.get("score"))
+    raw_signed_edge = _safe_float(score_payload.get("signed_edge_score"))
+    raw_coverage = _safe_float(score_payload.get("feature_coverage_score"))
+    score = _clip01(raw_score if raw_score is not None else 0.5)
+    signed_edge = _clip_signed(raw_signed_edge if raw_signed_edge is not None else (score - 0.5) * 2.0)
+    coverage = _clip01(raw_coverage if raw_coverage is not None else 0.0)
+    abs_edge = abs(signed_edge)
+    uncertainty = 1.0 - coverage
+    path_quality = _clip01(0.50 + 0.35 * abs_edge + 0.15 * (coverage - 0.50))
+    reversal_risk = _clip01(0.50 - 0.25 * abs_edge + 0.25 * uncertainty)
+    drawdown_risk = _clip01(0.50 - 0.20 * abs_edge + 0.30 * uncertainty)
+    reason_codes = ["trained_after_cost_alpha_score"]
+    if abs_edge < 0.05:
+        reason_codes.append("no_material_alpha_edge")
+    if coverage < 0.50:
+        reason_codes.append("low_feature_coverage")
+    return {
+        "alpha_direction": round(signed_edge, 6),
+        "alpha_strength": round(abs_edge, 6),
+        "expected_return": round(signed_edge, 6),
+        "alpha_confidence": round(score, 6),
+        "after_cost_alpha": round(score, 6),
+        "signal_reliability": round(coverage, 6),
+        "path_quality": round(path_quality, 6),
+        "reversal_risk": round(reversal_risk, 6),
+        "drawdown_risk": round(drawdown_risk, 6),
+        "alpha_tradability": round(_clip01(abs_edge * coverage), 6),
+        "reason_codes": reason_codes,
+    }
 
 
 def _normalize_input_row(row: Mapping[str, Any]) -> dict[str, Any]:
@@ -276,11 +144,6 @@ def _normalize_input_row(row: Mapping[str, Any]) -> dict[str, Any]:
     for key in ("market_context_state", "sector_context_state", "target_context_state", "target_state_vector", "event_failure_risk_vector", "quality_calibration_state"):
         output[key] = _coerce_payload(output.get(key))
     return output
-
-
-def _payload(row: Mapping[str, Any], key: str) -> Mapping[str, Any]:
-    value = _coerce_payload(row.get(key))
-    return value if isinstance(value, Mapping) else {}
 
 
 def _coerce_payload(value: Any) -> Any:
@@ -293,22 +156,6 @@ def _coerce_payload(value: Any) -> Any:
         except json.JSONDecodeError:
             return {}
     return value or {}
-
-
-def _score(mapping: Mapping[str, Any], *keys: str, default: float = 0.0) -> float:
-    for key in keys:
-        value = _safe_float(mapping.get(key))
-        if value is not None:
-            return _clip01(value)
-    return _clip01(default)
-
-
-def _signed(mapping: Mapping[str, Any], *keys: str) -> float:
-    for key in keys:
-        value = _safe_float(mapping.get(key))
-        if value is not None:
-            return _clip_signed(value)
-    return 0.0
 
 
 def _safe_float(value: Any) -> float | None:

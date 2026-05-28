@@ -282,17 +282,15 @@ event_failure_risk_vector              # Layer 4, when applicable
 point-in-time quality/calibration evidence
 ```
 
-The Layer 5 alpha-confidence vector is the calibrated directional opportunity layer after target state and reviewed event-failure conditioning. Base/no-event alpha remains diagnostic:
+The Layer 5 alpha-confidence vector is the calibrated directional opportunity layer after target state and reviewed event-failure conditioning. It is produced only through trained Layer 5 after-cost alpha artifacts:
 
 ```text
 Layer 1/2/3 state stack
-  -> base_alpha_vector                 # diagnostic / no-event baseline
-
-base_alpha_vector
 + Layer 4 event_failure_risk_vector when applicable
 + quality/calibration/path-risk controls
+  -> trained Layer 5 after-cost alpha artifacts
   -> AlphaConfidenceModel
-  -> alpha_confidence_vector           # final adjusted output
+  -> alpha_confidence_vector
 ```
 
 Layer 5 score families use `5_*` alpha fields in physical code/SQL. The adjusted vector is alpha confidence only: not target exposure, not position sizing, not option expression, not execution, and not final action.

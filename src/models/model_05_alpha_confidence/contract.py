@@ -8,7 +8,6 @@ MODEL_LAYER: Final[str] = "layer_05_alpha_confidence"  # current conceptual laye
 MODEL_SURFACE: Final[str] = "model_05_alpha_confidence"
 MODEL_VERSION: Final[str] = "alpha_confidence_vector_contract"
 VECTOR_OUTPUT: Final[str] = "alpha_confidence_vector"
-BASE_DIAGNOSTIC_OUTPUT: Final[str] = "base_alpha_vector"
 HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "5_alpha_direction_score_<horizon>",

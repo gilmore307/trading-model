@@ -33,75 +33,48 @@ FORBIDDEN_TERMS = {
 
 
 class AlphaConfidenceModelTests(unittest.TestCase):
-    def test_base_state_alpha_plus_event_adjustment_produces_final_vector(self) -> None:
-        output = generate_rows([_base_row()])[0]
+    def test_generation_requires_trained_after_cost_artifacts(self) -> None:
+        with self.assertRaisesRegex(ValueError, "requires trained Layer 5 after-cost alpha artifacts"):
+            generate_rows([_base_row()])
+
+    def test_trained_after_cost_artifacts_produce_final_vector(self) -> None:
+        artifact_bundle = _artifact_bundle()
+        output = generate_rows([_positive_row()], after_cost_alpha_model=artifact_bundle)[0]
         vector = output["alpha_confidence_vector"]
-        base = output["base_alpha_vector"]
 
         self.assertGreater(vector["5_alpha_direction_score_1W"], 0.0)
-        self.assertLess(vector["5_alpha_strength_score_1W"], base["5_base_alpha_strength_score_1W"])
-        self.assertGreater(vector["5_alpha_confidence_score_1W"], 0.0)
-        self.assertIn("5_base_alpha_direction_score_1W", base)
-        self.assertIn("high_quality_event_override", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["1W"])
+        self.assertGreater(vector["5_alpha_confidence_score_1W"], 0.5)
+        self.assertEqual(vector["5_after_cost_alpha_score_1W"], vector["5_alpha_confidence_score_1W"])
+        self.assertNotIn("base_alpha_vector", output)
+        self.assertIn("trained_after_cost_alpha_score", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["1W"])
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
-    def test_event_session_gap_risk_reduces_alpha_tradability(self) -> None:
-        output = generate_rows([_base_row(event_failure_risk_vector={
-            "4_event_strategy_failure_risk_score_1W": 0.10,
-            "4_event_entry_block_pressure_score_1W": 0.10,
-            "4_event_exposure_cap_pressure_score_1W": 0.10,
-            "4_event_strategy_disable_pressure_score_1W": 0.0,
-            "4_event_path_risk_amplifier_score_1W": 0.10,
-            "4_event_session_gap_risk_score_1W": 0.90,
-            "4_event_evidence_quality_score_1W": 0.95,
-            "4_event_applicability_confidence_score_1W": 0.90,
-        })])[0]
-        vector = output["alpha_confidence_vector"]
-        base = output["base_alpha_vector"]
-
-        self.assertGreater(base["5_event_risk_adjustment_score_1W"], 0.0)
-        self.assertGreater(vector["5_drawdown_risk_score_1W"], base["5_base_drawdown_risk_score_1W"])
-        self.assertLess(vector["5_alpha_tradability_score_1W"], base["5_base_alpha_tradability_score_1W"])
-
-    def test_no_edge_policy_keeps_direction_strength_and_tradability_low(self) -> None:
-        output = generate_rows([_base_row(target_context_state={}, event_failure_risk_vector={})])[0]
+    def test_trained_negative_after_cost_score_drives_negative_direction(self) -> None:
+        artifact_bundle = _artifact_bundle()
+        output = generate_rows([_negative_row()], after_cost_alpha_model=artifact_bundle)[0]
         vector = output["alpha_confidence_vector"]
 
-        self.assertEqual(vector["5_alpha_direction_score_1W"], 0.0)
-        self.assertEqual(vector["5_alpha_strength_score_1W"], 0.0)
+        self.assertLess(vector["5_alpha_confidence_score_1W"], 0.5)
+        self.assertLess(vector["5_alpha_direction_score_1W"], 0.0)
+        self.assertGreater(vector["5_alpha_strength_score_1W"], 0.0)
+
+    def test_neutral_after_cost_score_keeps_direction_strength_and_tradability_low(self) -> None:
+        artifact_bundle = _artifact_bundle()
+        output = generate_rows([_neutral_row()], after_cost_alpha_model=artifact_bundle)[0]
+        vector = output["alpha_confidence_vector"]
+
+        self.assertAlmostEqual(vector["5_alpha_confidence_score_1W"], 0.5, delta=0.12)
+        self.assertLess(abs(vector["5_alpha_direction_score_1W"]), 0.25)
         self.assertLess(vector["5_alpha_tradability_score_1W"], 0.5)
         self.assertEqual(output["training_sample_scope"], "dense_minute_target_state")
         self.assertIn("no_material_alpha_edge", output["alpha_confidence_diagnostics"]["horizon_reason_codes"]["1W"])
 
-    def test_trained_after_cost_artifact_directly_sets_neutral_alpha_score(self) -> None:
-        positive = _base_row(after_cost_return_1W=0.04)
-        neutral = _base_row(
-            target_context_state=_target_state(direction=0.0),
-            event_failure_risk_vector={},
-            after_cost_return_1W=0.0,
-        )
-        negative = _base_row(
-            target_context_state=_target_state(direction=-0.40),
-            event_failure_risk_vector={},
-            after_cost_return_1W=-0.04,
-        )
-        artifact = train_after_cost_alpha_model(
-            [positive, neutral, negative],
-            horizon="1W",
-            label_field="after_cost_return_1W",
-            iterations=900,
-            learning_rate=0.10,
-        )
+    def test_single_horizon_artifact_must_match_horizon(self) -> None:
+        artifact = _artifact_bundle()["artifacts_by_horizon"]["1W"]
 
-        positive_score = generate_rows([positive], after_cost_alpha_model=artifact)[0]["alpha_confidence_vector"]
-        negative_score = generate_rows([negative], after_cost_alpha_model=artifact)[0]["alpha_confidence_vector"]
-
-        self.assertEqual(artifact["score_semantics"], "0.5_after_cost_neutral__above_positive_edge__below_negative_edge")
-        self.assertGreater(positive_score["5_alpha_confidence_score_1W"], 0.5)
-        self.assertLess(negative_score["5_alpha_confidence_score_1W"], 0.5)
-        self.assertEqual(positive_score["5_after_cost_alpha_score_1W"], positive_score["5_alpha_confidence_score_1W"])
-        self.assertEqual(negative_score["5_after_cost_alpha_score_1W"], negative_score["5_alpha_confidence_score_1W"])
+        with self.assertRaisesRegex(ValueError, "missing horizon '10min'"):
+            generate_rows([_positive_row()], after_cost_alpha_model=artifact)
 
     def test_database_decision_rows_are_dense_target_state_not_event_gated(self) -> None:
         script = _load_generator_script()
@@ -181,7 +154,7 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         self.assertEqual(rows[0]["sector_context_state"]["2_sector_context_support_quality_score"], 0.70)
 
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:
-        output = generate_rows([_base_row()])[0]
+        output = generate_rows([_base_row()], after_cost_alpha_model=_artifact_bundle())[0]
         labels = build_alpha_confidence_labels(
             [output],
             [
@@ -226,18 +199,7 @@ def _base_row(**overrides: object) -> dict[str, object]:
             "2_sector_context_support_quality_score": 0.80,
             "2_state_quality_score": 0.88,
         },
-        "target_context_state": {
-            "3_target_direction_score_1W": 0.40,
-            "3_target_trend_quality_score_1W": 0.75,
-            "3_target_path_stability_score_1W": 0.80,
-            "3_target_noise_score_1W": 0.20,
-            "3_target_transition_risk_score_1W": 0.15,
-            "3_context_direction_alignment_score_1W": 0.70,
-            "3_context_support_quality_score_1W": 0.80,
-            "3_tradability_score_1W": 0.85,
-            "3_state_quality_score": 0.90,
-            "3_beta_dependency_score_1W": 0.20,
-        },
+        "target_context_state": _target_state(direction=0.40),
         "event_failure_risk_vector": {
             "4_event_strategy_failure_risk_score_1W": 0.85,
             "4_event_entry_block_pressure_score_1W": 0.80,
@@ -261,17 +223,55 @@ def _base_row(**overrides: object) -> dict[str, object]:
 
 
 def _target_state(*, direction: float) -> dict[str, object]:
+    state: dict[str, object] = {"3_state_quality_score": 0.90}
+    for horizon in ("10min", "1h", "1D", "1W"):
+        state.update(
+            {
+                f"3_target_direction_score_{horizon}": direction,
+                f"3_target_trend_quality_score_{horizon}": 0.75,
+                f"3_target_path_stability_score_{horizon}": 0.80,
+                f"3_target_noise_score_{horizon}": 0.20,
+                f"3_target_transition_risk_score_{horizon}": 0.15,
+                f"3_context_direction_alignment_score_{horizon}": 0.70 if direction >= 0 else -0.70,
+                f"3_context_support_quality_score_{horizon}": 0.80,
+                f"3_tradability_score_{horizon}": 0.85,
+                f"3_beta_dependency_score_{horizon}": 0.20,
+            }
+        )
+    return state
+
+
+def _row_with_after_cost_label(direction: float, realized_return: float) -> dict[str, object]:
+    row = _base_row(target_context_state=_target_state(direction=direction), event_failure_risk_vector={})
+    row.update({f"after_cost_return_{horizon}": realized_return for horizon in ("10min", "1h", "1D", "1W")})
+    return row
+
+
+def _positive_row() -> dict[str, object]:
+    return _row_with_after_cost_label(0.70, 0.04)
+
+
+def _neutral_row() -> dict[str, object]:
+    return _row_with_after_cost_label(0.0, 0.0)
+
+
+def _negative_row() -> dict[str, object]:
+    return _row_with_after_cost_label(-0.70, -0.04)
+
+
+def _artifact_bundle() -> dict[str, object]:
+    training_rows = [_positive_row(), _neutral_row(), _negative_row()]
     return {
-        "3_target_direction_score_1W": direction,
-        "3_target_trend_quality_score_1W": 0.75,
-        "3_target_path_stability_score_1W": 0.80,
-        "3_target_noise_score_1W": 0.20,
-        "3_target_transition_risk_score_1W": 0.15,
-        "3_context_direction_alignment_score_1W": 0.70 if direction >= 0 else -0.70,
-        "3_context_support_quality_score_1W": 0.80,
-        "3_tradability_score_1W": 0.85,
-        "3_state_quality_score": 0.90,
-        "3_beta_dependency_score_1W": 0.20,
+        "artifacts_by_horizon": {
+            horizon: train_after_cost_alpha_model(
+                training_rows,
+                horizon=horizon,
+                label_field=f"after_cost_return_{horizon}",
+                iterations=900,
+                learning_rate=0.10,
+            )
+            for horizon in ("10min", "1h", "1D", "1W")
+        }
     }
 
 

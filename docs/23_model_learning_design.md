@@ -12,7 +12,7 @@ Each layer must do exactly one of these jobs:
 - enforce deterministic hard constraints, accounting, timestamps, schemas, and safety gates;
 - produce post-hoc attribution or future evidence packets.
 
-A layer must not mix prediction, policy, hard enforcement, and attribution in the same score. Deterministic scaffolds may remain as cold-start baselines, contract checks, and hard gates, but they are not the long-term modeling target when a layer needs to estimate uncertainty, expected value, or policy utility.
+A layer must not mix prediction, policy, hard enforcement, and attribution in the same score. Deterministic code may own contracts, feature assembly, timestamps, schemas, safety gates, and validation checks. It must not preserve an alternate scoring route for a layer whose current contract is trained estimation or policy optimization.
 
 ## Cross-Layer Rules
 

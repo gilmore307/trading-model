@@ -9,7 +9,9 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from model_governance.local_layer_scripts import write_payload
+from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, write_payload
+from models.model_05_alpha_confidence import train_after_cost_alpha_model
+from models.model_05_alpha_confidence.contract import HORIZONS
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -51,6 +53,29 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
             capture_output=True,
             check=False,
         )
+
+    def _write_layer_05_artifact_bundle(self, tmp_path: Path) -> Path:
+        fixture = FIXTURE_INPUT_ROWS["model_05_alpha_confidence"][0]
+        training_rows = []
+        for index, realized_return in enumerate((-0.02, 0.0, 0.02)):
+            row = dict(fixture)
+            row["target_candidate_id"] = f"layer_05_fixture_{index}"
+            row.update({f"after_cost_return_{horizon}": realized_return for horizon in HORIZONS})
+            training_rows.append(row)
+        bundle = {
+            "artifacts_by_horizon": {
+                horizon: train_after_cost_alpha_model(
+                    training_rows,
+                    horizon=horizon,
+                    label_field=f"after_cost_return_{horizon}",
+                    iterations=25,
+                )
+                for horizon in HORIZONS
+            }
+        }
+        path = tmp_path / "model_05_after_cost_alpha_artifacts.json"
+        path.write_text(json.dumps(bundle, sort_keys=True), encoding="utf-8")
+        return path
 
     def test_generate_evaluate_review_scripts_support_help(self) -> None:
         for surface, slug in LAYERS.items():
@@ -352,11 +377,17 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
                     eval_path = tmp_path / f"{surface}.eval.json"
                     review_path = tmp_path / f"{surface}.review.json"
 
-                    generate = self._run([
+                    generate_args = [
                         f"scripts/models/{surface}/generate_{surface}.py",
                         "--output-jsonl",
                         str(rows_path),
-                    ])
+                    ]
+                    if surface == "model_05_alpha_confidence":
+                        generate_args.extend([
+                            "--after-cost-alpha-model-json",
+                            str(self._write_layer_05_artifact_bundle(tmp_path)),
+                        ])
+                    generate = self._run(generate_args)
                     self.assertEqual(generate.returncode, 0, generate.stderr)
                     self.assertEqual(len(rows_path.read_text(encoding="utf-8").splitlines()), 1)
 

@@ -135,7 +135,7 @@ Layer 7 consumes the final adjusted Layer 5 `alpha_confidence_vector` by default
 5_alpha_tradability_score_<horizon>
 ```
 
-Base/unadjusted Layer 5 `5_base_*` diagnostics may be retained as explainability refs, but they must not be treated as competing default trading inputs.
+Layer 7 consumes the current Layer 5 `alpha_confidence_vector`; it must not depend on removed Layer 5 base-formula diagnostics as a competing input route.
 
 ### Input B - current position state
 
