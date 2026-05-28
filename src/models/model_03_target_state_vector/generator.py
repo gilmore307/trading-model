@@ -1,4 +1,4 @@
-"""Deterministic TargetStateVectorModel V1 generator.
+"""TargetStateVectorModel baseline generator.
 
 Consumes point-in-time ``feature_03_target_state_vector`` rows and emits the
 accepted Layer 3 target_context_state model output shape. The generator keeps signed current target

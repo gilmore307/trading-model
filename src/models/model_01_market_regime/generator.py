@@ -1,4 +1,4 @@
-"""Continuous MarketRegimeModel V2.2 market-context state generator.
+"""Continuous MarketRegimeModel market-context state generator.
 
 The generator converts point-in-time rows from
 ``trading_data.feature_01_market_regime`` into the model output table

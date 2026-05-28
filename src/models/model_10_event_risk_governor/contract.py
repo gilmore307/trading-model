@@ -1,4 +1,4 @@
-"""Layer 10 EventRiskGovernor V1 contract constants."""
+"""Layer 10 EventRiskGovernor contract constants."""
 from __future__ import annotations
 
 from typing import Final

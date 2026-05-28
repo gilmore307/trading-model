@@ -1,6 +1,6 @@
 # model_07_position_projection
 
-Physical package for Layer 7 `PositionProjectionModel` deterministic scaffold.
+Physical package for Layer 7 `PositionProjectionModel` baseline generator.
 
 Owns local mapping from final adjusted `alpha_confidence_vector` plus point-in-time current/pending position, friction, portfolio, risk-budget, and policy context into `position_projection_vector`. The scaffold implements:
 

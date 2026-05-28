@@ -1,6 +1,6 @@
-# Target context state V1 contract
+# Target context state contract
 
-Status: Accepted V1 contract; deterministic implementation/evaluation scaffold complete; production promotion pending real-data evidence and accepted review.
+Status: Accepted contract; production promotion pending real-data evidence and accepted review.
 
 This file owns the model-local Layer 3 target context/state-vector output contract. Layer 3 is not a strategy-variant selector. It constructs anonymous, point-in-time, direction-neutral `target_context_state` that lets later layers study which target board/tape states produce tradeable outcomes under the current market and sector context. It may rank the current anonymous candidate-policy batch for target handoff, but it does not emit final actions, position sizes, or option expressions.
 
@@ -30,7 +30,7 @@ Required identity fields:
 | `available_time` | When all input evidence for the state row is available. |
 | `tradeable_time` | Earliest realistic time a downstream decision may trade from this state. |
 | `target_candidate_id` | Opaque anonymous candidate key; never a categorical fitting feature. |
-| `target_context_state_version` | Reviewed V1 contract/config version. |
+| `target_context_state_version` | Reviewed contract/config version. |
 | `market_context_state_ref` | Layer 1 context row reference. |
 | `sector_context_state_ref` | Layer 2 context row reference. |
 | `target_context_state_ref` | Stable reference/hash for the model-facing state payload. |
@@ -39,9 +39,9 @@ Routing/audit fields such as `audit_symbol_ref` and `routing_symbol_ref` must st
 
 Task execution may be target-major: one routing symbol can complete all assigned folds before the next routing symbol starts. That ordering is an implementation schedule, not a model boundary. Training/evaluation must pool anonymous target-state samples and report fold-level, candidate-policy-aware selection/ranking evidence.
 
-## V1 feature blocks
+## Feature Blocks
 
-V1 `target_context_state` has four inspectable model-facing output blocks. Each block may be stored as JSONB during research, but block names and field groups must remain stable enough for tests, diagnostics, and review. Derived embeddings/clusters may support diagnostics, but they must not replace these inspectable blocks as the primary contract.
+`target_context_state` has four inspectable model-facing output blocks. Each block may be stored as JSONB during research, but block names and field groups must remain stable enough for tests, diagnostics, and review. Derived embeddings/clusters may support diagnostics, but they must not replace these inspectable blocks as the primary contract.
 
 ### `market_state_features`
 
@@ -71,7 +71,7 @@ Inherited or projected from Layer 2 for the sector/industry basket that admitted
 
 ### `target_state_features`
 
-Computed from anonymous target-local point-in-time evidence. V1 uses completed bars/quotes/trades only; no forward returns, realized PnL, or post-decision information may enter this block.
+Computed from anonymous target-local point-in-time evidence. The target-local block uses completed bars/quotes/trades only; no forward returns, realized PnL, or post-decision information may enter this block.
 
 | Field group | Meaning |
 |---|---|
@@ -109,7 +109,7 @@ Derived relationship features. These are the main reason Layer 3 exists: they de
 | `idiosyncratic_residual_state` | Residual target movement after market/sector adjustment. |
 | `relative_liquidity_tradability_state` | Target tradability/cost relative to accepted sector or universe reference. |
 
-## V1 synchronized state windows
+## Synchronized State Windows
 
 The first contract uses a sparse, reviewable window set rather than many strategy-like parameter variants:
 
@@ -147,7 +147,7 @@ Layer 3 outputs may include scalar summaries inside block payloads, but these sc
 
 `3_target_direction_score_<window>` is not Layer 5 alpha/direction confidence. Event context, direction-confidence calibration, target/stop/action projection, and position sizing belong to downstream consumers.
 
-## V1 label families
+## Label Families
 
 Labels are training/evaluation-only outputs. They must never be joined into inference feature vectors. If a signed label uses direction orientation, the orientation must come from deterministic point-in-time state evidence or an out-of-sample upstream prediction, never from the same fitted target being evaluated. The accepted Layer 3 training route uses completed 1-minute source rows to form multi-frame state features, then evaluates future path quality, tradability preservation, and state transition behavior over the label horizon.
 
@@ -170,7 +170,7 @@ Layer 3 evaluation must compare these feature sets under identical labels and sp
 2. `market_sector_baseline` — Layer 1 + Layer 2 blocks.
 3. `market_sector_target_context` — Layer 1 + Layer 2 + target + cross-state blocks.
 
-A V1 model is not accepted just because target features improve aggregate return prediction or long-only outcomes. It must show split-stable improvement for at least one reviewed direction-neutral forward path/tradability outcome and must preserve liquidity/cost diagnostics so theoretically predictive but practically untradeable states can be identified. Preferred tradability validation buckets compare `3_tradability_score_<window>` against MFE/MAE balance, path efficiency, first-target-before-stop behavior, direction flip count, state-transition rate, and spread/liquidity degradation rather than only forward return. Selection validation must also compare selected/top-N targets with watch/blocked/control candidates inside the same candidate-universe policy batch.
+A model is not accepted just because target features improve aggregate return prediction or long-only outcomes. It must show split-stable improvement for at least one reviewed direction-neutral forward path/tradability outcome and must preserve liquidity/cost diagnostics so theoretically predictive but practically untradeable states can be identified. Preferred tradability validation buckets compare `3_tradability_score_<window>` against MFE/MAE balance, path efficiency, first-target-before-stop behavior, direction flip count, state-transition rate, and spread/liquidity degradation rather than only forward return. Selection validation must also compare selected/top-N targets with watch/blocked/control candidates inside the same candidate-universe policy batch.
 
 ## Rejection rules
 

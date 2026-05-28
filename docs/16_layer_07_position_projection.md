@@ -1,6 +1,6 @@
 # M07 - Position Projection / PositionProjectionModel
 
-Status: accepted Layer 7 design route; deterministic V1 scaffold implemented in `src/models/model_07_position_projection/`.
+Status: accepted Layer 7 design route as an exposure utility optimizer.
 
 ## Purpose
 
@@ -276,7 +276,7 @@ These belong to Layer 8 underlying-action work, Layer 9 option-expression/tradin
 
 ## Internal structure
 
-Layer 7 V1 uses auditable submodules before any broad learned utility model:
+Layer 7 uses auditable submodules around the learned utility route:
 
 ```text
 7A AlphaToPositionPrior
@@ -369,9 +369,9 @@ These are Layer 7 handoff summary fields, not final actions.
 
 Composes the final `position_projection_vector`: core per-horizon scores, handoff summary, diagnostics refs, range clipping, effective-exposure adjustment, cost/risk downgrades, horizon consistency checks, and reason-code attribution.
 
-## V1 horizons
+## Horizons
 
-Layer 7 V1 uses the same synchronized horizons as Layers 5 and 6:
+Layer 7 uses the same synchronized horizons as Layers 5 and 6:
 
 ```text
 10min
@@ -384,7 +384,7 @@ Layer 7 V1 uses the same synchronized horizons as Layers 5 and 6:
 
 ## Core output contract
 
-The V1 primary `position_projection_vector` exposes 10 core score families per horizon:
+The primary `position_projection_vector` exposes 10 core score families per horizon:
 
 ```text
 7_target_position_bias_score_<horizon>
@@ -584,10 +584,10 @@ Layer 7 invariants:
 6. Layer 7 defaults to final adjusted Layer 5 alpha; base/unadjusted alpha is diagnostic-only.
 7. Layer 7 output may be compressed by risk policy, but final approval and operation remain downstream.
 
-## V1 implementation route
+## Implementation route
 
-1. **V1.0 contract and boundary**: document `PositionProjectionModel`, `position_projection_vector`, inputs, outputs, handoff summary, diagnostics, and invariants. **Done.**
-2. **V1.1 deterministic scaffold**: implement a transparent alpha-to-position projection before training a broad model. **Done for local fixture rows.**
-3. **V1.2 evaluation labels**: add cost-aware position utility labels, candidate exposure utility curves, current-vs-flat-vs-target utility, risk-budget breach labels, and turnover penalty labels. **Offline label/leakage helpers exist.**
-4. **V1.3 learned utility model**: train `Q(position_context, candidate_exposure) -> net utility` with chronological splits, purge/embargo, and no-leakage checks. **Pending later promotion work.**
-5. **V1.4 horizon resolver**: implement resolved projection summary and prove it beats simple horizon averaging, fixed-horizon, and highest-confidence-horizon baselines. **Deterministic resolver exists; baseline proof remains later promotion work.**
+1. **Contract and boundary**: document `PositionProjectionModel`, `position_projection_vector`, inputs, outputs, handoff summary, diagnostics, and invariants.
+2. **Baseline projection**: keep transparent alpha-to-position projection for fixture tests and cold-start diagnostics.
+3. **Evaluation labels**: add cost-aware position utility labels, candidate exposure utility curves, current-vs-flat-vs-target utility, risk-budget breach labels, and turnover penalty labels.
+4. **Learned utility model**: train `Q(position_context, candidate_exposure) -> net utility` with chronological splits, purge/embargo, and no-leakage checks.
+5. **Horizon resolver**: implement resolved projection summary and prove it beats simple horizon averaging, fixed-horizon, and highest-confidence-horizon baselines.

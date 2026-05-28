@@ -1,8 +1,8 @@
 # M03 - Target State / TargetStateVectorModel
 
-Status: Accepted direction-neutral tradability boundary; deterministic implementation/evaluation scaffold complete; production promotion pending real-data evidence and accepted review.
+Status: Accepted direction-neutral tradability boundary; production promotion pending real-data evidence and accepted review.
 
-Layer 3 is target state-vector construction. Earlier action/variant Layer 3 work is retired and must not be used as the active Layer 3 boundary.
+Layer 3 is target state-vector construction.
 
 ## Purpose
 
@@ -72,13 +72,13 @@ The policy fixes how candidates are generated. It must not hard-code final ticke
 
 ## Core state-vector components
 
-Detailed V1 contract:
+Detailed contract:
 
 ```text
 src/models/model_03_target_state_vector/target_state_vector_contract.md
 ```
 
-Use `docs/21_vector_taxonomy.md` for vocabulary. `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual output. Historical implementation paths still use `model_03_target_state_vector`.
+Use `docs/21_vector_taxonomy.md` for vocabulary. `anonymous_target_feature_vector` is the Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual output.
 
 Layer 3 output context/state vectors must be explicitly decomposable into four model-facing blocks.
 
@@ -195,7 +195,7 @@ Layer 3 review should ask:
 
 ## Current implementation status
 
-The first deterministic scaffold is implemented:
+The current baseline generator is implemented:
 
 - `src/models/model_03_target_state_vector/anonymous_target_candidate_builder/` builds anonymous candidate rows and checks that `anonymous_target_feature_vector` excludes raw ticker/company identity.
 - `src/models/model_03_target_state_vector/generator.py` consumes `feature_03_target_state_vector` rows and emits `model_03_target_state_vector` rows with signed target direction, direction-neutral trend/path/tradability, transition/noise risk, liquidity, state quality, embedding, cluster, and diagnostics separated.

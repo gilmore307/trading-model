@@ -1,13 +1,13 @@
 # model_01_market_regime
 
-MarketRegimeModel V2.2 broad market-context state builder.
+MarketRegimeModel broad market-context state builder.
 
 Boundary:
 
 - Input: rows from `trading_data.feature_01_market_regime`.
 - Primary output: rows for `trading_model.model_01_market_regime`.
 - Support outputs: rows for `trading_model.model_01_market_regime_explainability` and `trading_model.model_01_market_regime_diagnostics`.
-- Current compatibility row key: `available_time`.
+- Current row key: `available_time`.
 - Target row key after the accepted frame/horizon migration: `(available_time, input_frame, prediction_horizon, market_universe_ref)`.
 - Explainability is keyed by the model row identity plus `factor_name`.
 - No clustering, hard state labels, supervised regime labels, provider calls, or durable writes in the pure generator.

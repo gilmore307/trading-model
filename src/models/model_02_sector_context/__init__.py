@@ -1,1 +1,1 @@
-"""SectorContextModel V1 contract package."""
+"""SectorContextModel contract package."""

@@ -1,6 +1,6 @@
-# context_etf_state / sector_context_state contract
+# context_etf_state contract
 
-This file owns the direction-neutral `SectorContextModel` output contract for Layer 2 ETF context state. The accepted conceptual output is `context_etf_state`; the current deterministic implementation, SQL writer, evaluation path, and registry surfaces still use the earlier physical term `sector_context_state`.
+This file owns the direction-neutral `SectorContextModel` output contract for Layer 2 ETF context state. The accepted conceptual output is `context_etf_state`.
 
 ## Purpose
 
@@ -30,7 +30,7 @@ Conceptual row shape:
 context_etf_state[available_time, context_etf_symbol]
 ```
 
-Current physical row shape:
+Physical row shape:
 
 ```text
 sector_context_state[available_time, sector_or_industry_symbol]
@@ -41,7 +41,7 @@ Required key / identity fields:
 | Field | Type | Role |
 |---|---|---|
 | `available_time` | timestamp | Point-in-time availability of the state row. |
-| `sector_or_industry_symbol` | text | Current physical field for the eligible context ETF or basket symbol. New contracts should use `context_etf_symbol`. |
+| `sector_or_industry_symbol` | text | Eligible context ETF or basket symbol. |
 | `model_id` | text | Stable model id, normally `sector_context_model`. |
 | `model_version` | text | Version/config label that produced the row. |
 | `market_context_state_ref` | text/null | Reference to the Layer 1 market-context row used only as conditioning context. |
@@ -50,7 +50,7 @@ Layer 2 model fields use compact `2_*` names in docs, model-facing payloads, and
 
 Layer 2 must not copy Layer 1 market-property factor names into ETF style fields. Layer 1 provides the background condition used to compare similar market environments; Layer 2 outputs a separate conditional behavior vector learned from each ETF/basket's behavior under those environments.
 
-`sector_or_industry_symbol` / `context_etf_symbol` is routing/audit identity for a context ETF basket. It is allowed in Layer 2 because Layer 2's unit of analysis is the ETF-context row. It must not be propagated as raw ticker identity into anonymous target fitting vectors downstream.
+`sector_or_industry_symbol` is routing/audit identity for a context ETF basket. It is allowed in Layer 2 because Layer 2's unit of analysis is the ETF-context row. It must not be propagated as raw ticker identity into anonymous target fitting vectors downstream.
 
 ## Target-context routing
 
@@ -115,7 +115,7 @@ Layer 2 may identify sector/industry baskets suitable for downstream anonymous t
 
 `2_sector_handoff_state` and `2_sector_handoff_bias` must stay separate. A stable weak sector can be `selected` with `short_bias`; a rising sector with high noise or transition risk can be `watch` or `blocked` with `long_bias`.
 
-The active V2.2 deterministic output uses `2_coverage_score` / `2_state_quality_score` for reliability and `2_sector_tradability_score` for direction-neutral handoff quality.
+The active output uses `2_coverage_score` / `2_state_quality_score` for reliability and `2_sector_tradability_score` for direction-neutral handoff quality.
 
 ## `model_02_sector_context_explainability` fields
 
@@ -155,7 +155,7 @@ Human-readable labels such as `growth`, `defensive`, or `cyclical` may be shown 
 
 These fields describe how the sector/industry basket behaves under similar Layer 1 market backgrounds. They are ETF/basket behavior properties, not reused Layer 1 market-property factors.
 
-V1 prefers signed axes over duplicated opposite fields. Positive and negative values describe opposite behavior on the same reviewed axis; magnitude describes strength.
+The contract prefers signed axes over duplicated opposite fields. Positive and negative values describe opposite behavior on the same reviewed axis; magnitude describes strength.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -204,9 +204,9 @@ Diagnostics owns acceptance, monitoring, and gating evidence. These fields may g
 
 Diagnostics may also include coverage/freshness/missingness detail, baseline comparison, rolling/refit stability, chronological split evidence, and no-future-leak checks once implementation proves the concrete shape.
 
-## Excluded V1 fields
+## Excluded Fields
 
-The following do not belong in `sector_context_state` V1:
+The following do not belong in `sector_context_state`:
 
 - ETF holdings-derived stock-universe membership;
 - `stock_etf_exposure` rows or stock exposure scores;
@@ -223,7 +223,7 @@ The following do not belong in `sector_context_state` V1:
 
 ## Evaluation requirements
 
-V1 acceptance must show:
+Acceptance must show:
 
 1. point-in-time construction with no future labels in production fields;
 2. eligible baskets limited to reviewed sector/industry equity ETFs;

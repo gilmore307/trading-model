@@ -1,6 +1,6 @@
-"""Deterministic OptionExpressionModel V1 scaffold.
+"""OptionExpressionModel baseline generator.
 
-The current package consumes the Layer 8 underlying thesis plus
+This package consumes the Layer 8 underlying thesis plus
 point-in-time option-chain context and emits an offline ``option_expression_plan`` /
 ``expression_vector`` for the Layer 9 option-expression boundary.
 It can select an expression type, option right, contract reference, and contract

@@ -128,7 +128,7 @@ Fold cleanup must not delete global/common impact context, reviewed global event
 
 Primary output: `event_failure_risk_vector`.
 
-Recommended V1 score families:
+Recommended score families:
 
 | Score family | Direction | Meaning |
 | --- | --- | --- |

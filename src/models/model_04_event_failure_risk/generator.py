@@ -1,4 +1,4 @@
-"""Deterministic EventFailureRiskModel V1 scaffold.
+"""EventFailureRiskModel baseline generator.
 
 Layer 4 converts agent-reviewed event/strategy-failure gates into a
 point-in-time ``event_failure_risk_vector``. It is intentionally conservative:

@@ -5,20 +5,20 @@ Date: 2026-05-07
 
 ## Acceptance scope
 
-`trading-model` has a complete accepted local deterministic scaffold for the current offline model stack:
+`trading-model` has accepted contracts for the current offline model stack. `docs/23_model_learning_design.md` owns the learning role for each layer: conditional estimator, policy/utility optimizer, deterministic hard constraint, or post-hoc attribution.
 
 | Layer | Model | Output | Acceptance state |
 |---|---|---|---|
-| 1 | `MarketRegimeModel` | `market_context_state` | accepted V2.2 contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
-| 2 | `SectorContextModel` | `context_etf_state` / current physical `sector_context_state` | accepted direction-neutral contract, deterministic implementation/evaluation path, production promotion still evidence-gated |
-| 3 | `TargetStateVectorModel` | `target_context_state` | accepted direction-neutral target-state contract, anonymous candidate preprocessing, deterministic implementation/evaluation scaffold |
-| 4 | `EventFailureRiskModel` | `event_failure_risk_vector` | accepted V1 scaffold; physical surface `model_04_event_failure_risk` |
-| 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | accepted base-alpha V1 scaffold; physical surface `model_05_alpha_confidence` |
-| 6 | `DynamicRiskPolicyModel` | `dynamic_risk_policy_state` | accepted V1 scaffold; physical surface `model_06_dynamic_risk_policy` |
-| 7 | `PositionProjectionModel` | `position_projection_vector` | accepted V1 scaffold; physical surface `model_07_position_projection` |
-| 8 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | accepted offline direct-underlying action scaffold; physical surface `model_08_underlying_action` |
-| 9 | `TradingGuidanceModel / OptionExpressionModel` | optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | accepted optional offline trading-guidance boundary; V1 option-expression subset currently uses physical surface `model_09_option_expression` |
-| 10 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | accepted event-risk governor boundary over the Layer 8 direct-underlying thesis; physical surface `model_10_event_risk_governor` |
+| 1 | `MarketRegimeModel` | `market_context_state` | conditional market-state estimator; production promotion remains evidence-gated |
+| 2 | `SectorContextModel` | `context_etf_state` | conditional ETF-context estimator; production promotion remains evidence-gated |
+| 3 | `TargetStateVectorModel` | `target_context_state` | anonymous target-state estimator plus candidate preprocessing; production promotion remains evidence-gated |
+| 4 | `EventFailureRiskModel` | `event_failure_risk_vector` | reviewed event-failure-risk estimator; production promotion remains evidence-gated |
+| 5 | `AlphaConfidenceModel` | `alpha_confidence_vector` | calibrated after-cost edge estimator; production promotion remains evidence-gated |
+| 6 | `DynamicRiskPolicyModel` | `dynamic_risk_policy_state` | portfolio risk-policy optimizer; production promotion remains evidence-gated |
+| 7 | `PositionProjectionModel` | `position_projection_vector` | exposure utility optimizer; production promotion remains evidence-gated |
+| 8 | `UnderlyingActionModel` | `underlying_action_plan` / `underlying_action_vector` | structured underlying-action policy; production promotion remains evidence-gated |
+| 9 | `TradingGuidanceModel / OptionExpressionModel` | optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | expression utility optimizer and offline guidance boundary; production promotion remains evidence-gated |
+| 10 | `EventRiskGovernor / EventIntelligenceOverlay` | `event_risk_intervention` / event-adjusted risk guidance | residual event-risk intervention and attribution boundary; production promotion remains evidence-gated |
 
 This closes the model-design phase. It does not approve production promotion.
 
@@ -32,7 +32,7 @@ Layer 8 produces the base direct-underlying action thesis. Layer 10's canonical 
 
 ## Historical-training readiness classification
 
-There are no active model-stack design work items for the current no-broker historical-training preparation boundary. The next work is run/evidence production during formal historical-training passes:
+There are no active model-stack boundary work items for the no-broker historical-training preparation boundary. The next work is objective-contract completion and run/evidence production during formal historical-training passes:
 
 - build point-in-time inference/evaluation datasets from accepted historical source routes;
 - use `docs/30_promotion_readiness.md` as the required evidence checklist and status matrix;
@@ -43,4 +43,4 @@ There are no active model-stack design work items for the current no-broker hist
 
 Execution-facing unified decision-record artifacts remain outside the current no-broker historical-training scope unless explicitly accepted later.
 
-`trading-model` should be treated as structurally closed for the accepted Layers 1-10 architecture phase. Future changes should be scoped as production hardening, evidence/promotion work, bug fixes, or explicitly accepted contract changes.
+`trading-model` should be treated as structurally closed for the accepted Layers 1-10 architecture boundary. Future changes should be scoped as objective-contract implementation, production hardening, evidence/promotion work, bug fixes, or explicitly accepted contract changes.

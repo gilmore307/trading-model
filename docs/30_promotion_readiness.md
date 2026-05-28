@@ -7,7 +7,7 @@ Date: 2026-05-07
 
 Layers 1-10 have accepted model-design boundaries, but production promotion is a separate evidence gate. This document turns the accepted promotion/calibration rules into a single per-layer readiness matrix and checklist.
 
-A layer may not be treated as production-promoted merely because its contract, deterministic scaffold, fixture tests, registry score names, or local evaluation helpers exist.
+A layer may not be treated as production-promoted merely because its contract, baseline generator, fixture tests, registry score names, or local evaluation helpers exist.
 
 ## Required evidence package
 

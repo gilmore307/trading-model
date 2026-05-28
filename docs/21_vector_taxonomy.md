@@ -1,6 +1,6 @@
 # Vector and State Taxonomy
 
-Status: accepted naming discipline for the V2.2 direction-neutral tradability design.
+Status: accepted naming discipline for the direction-neutral tradability design.
 
 This file owns the repository-wide vocabulary for `feature`, `vector`, `state`, `score`, `diagnostics`, `explainability`, and `label` terms. It exists because the Market/Sector/Target design has multiple nested evidence blocks, and not every block should be called a model or a state vector.
 
@@ -121,7 +121,7 @@ Conceptual output state:
 context_etf_state
 ```
 
-Current physical implementation and historical registry rows still use `sector_context_state`. New design work should use `context_etf_state` for the per-ETF output and reserve `cross_etf_summary` for global/group rotation summaries.
+Use `context_etf_state` for the per-ETF Layer 2 output and reserve `cross_etf_summary` for global/group rotation summaries. The physical model surface remains `model_02_sector_context`.
 
 Primary Layer 2 output should be narrow: signed ETF-context direction, direction-neutral trend/tradability state, separate handoff state and handoff bias, and row reliability. Explainability owns internal vectors; diagnostics owns gates.
 
@@ -196,7 +196,7 @@ Physical promoted artifact:
 trading_model.model_03_target_state_vector
 ```
 
-The Layer 3 conceptual output keeps the historical `TargetStateVectorModel` implementation name, but downstream prose should call the state payload `target_context_state` so it aligns with `market_context_state` and Layer 2 `context_etf_state`. It consists of four inspectable blocks:
+The Layer 3 conceptual output is `target_context_state`, aligned with `market_context_state` and Layer 2 `context_etf_state`. It consists of four inspectable blocks:
 
 ```text
 market_state_features
@@ -231,7 +231,7 @@ Primary model inputs are reviewed, point-in-time, and promotion-gated:
 
 ```text
 market_context_state
-context_etf_state / current physical sector_context_state
+context_etf_state
 target_context_state
 accepted event/strategy-failure evidence packet
 agent review decision
@@ -276,7 +276,7 @@ Primary model inputs:
 
 ```text
 market_context_state
-context_etf_state / current physical sector_context_state
+context_etf_state
 target_context_state / target_state_vector
 event_failure_risk_vector              # Layer 4, when applicable
 point-in-time quality/calibration evidence
@@ -468,7 +468,7 @@ anonymous_target_feature_vector
 target_context_state
 ```
 
-## Clean V2.2 flow
+## Clean Flow
 
 ```text
 trading_data.feature_01_market_regime
@@ -478,7 +478,7 @@ trading_data.feature_01_market_regime
 market_context_state
 + trading_data.feature_02_sector_context
   -> SectorContextModel
-  -> context_etf_state / current physical sector_context_state
+  -> context_etf_state
 
 context_etf_state selected/watch
 + holdings/exposure
@@ -487,7 +487,7 @@ context_etf_state selected/watch
   -> anonymous_target_feature_vector
 
 market_context_state
-+ context_etf_state / current physical sector_context_state
++ context_etf_state
 + anonymous_target_feature_vector
   -> TargetStateVectorModel
   -> target_context_state

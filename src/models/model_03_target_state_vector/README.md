@@ -8,8 +8,8 @@ Task execution may remain target-major across folds because routing symbols only
 
 Key files:
 
-- `target_state_vector_contract.md` — V1 target-context/state-vector row identity, feature blocks, trailing windows, label families, baseline ladder, and rejection rules.
-- `contract.py` — importable constants for the V1 block names, feature groups, label horizons, and baseline ladder.
+- `target_state_vector_contract.md` — target-context/state-vector row identity, feature blocks, trailing windows, label families, baseline ladder, and rejection rules.
+- `contract.py` — importable constants for block names, feature groups, label horizons, and baseline ladder.
 - `anonymous_target_candidate_builder/` — candidate-preparation sub-boundary that creates anonymous target candidates before state-vector construction.
 
 Current importable implementation:

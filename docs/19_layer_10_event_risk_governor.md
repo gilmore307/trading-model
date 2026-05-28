@@ -1,6 +1,6 @@
 # M10 - Event Risk Governor / EventIntelligenceOverlay
 
-Status: accepted Layer 10 design route; deterministic V1 scaffold implemented in `src/models/model_10_event_risk_governor/`.
+Status: accepted Layer 10 event-risk attribution and intervention route.
 
 ## Purpose
 
@@ -687,7 +687,7 @@ Contract:
 
 ## Internal model structure
 
-Layer 10 V1 should be auditable and structured before any broad black-box event model. The internal route is:
+Layer 10 should be auditable and structured before any broad black-box event model. The internal route is:
 
 ```text
 10A EventEncoder
@@ -806,7 +806,7 @@ Future physical promoted model-output surface:
 trading_model.model_10_event_risk_governor
 ```
 
-The V1 output should be a point-in-time row keyed by decision context:
+The output should be a point-in-time row keyed by decision context:
 
 ```text
 available_time
@@ -823,9 +823,9 @@ diagnostics_ref
 
 `target_candidate_id` remains opaque. Raw ticker/company identity stays in source/audit/routing metadata outside fitting vectors.
 
-## V1 horizons
+## Horizons
 
-Layer 10 V1 uses the same synchronized context horizons unless later evaluation proves a different event-specific grid is needed:
+Layer 10 uses the same synchronized context horizons unless later evaluation proves a different event-specific grid is needed:
 
 ```text
 10min
@@ -834,9 +834,9 @@ Layer 10 V1 uses the same synchronized context horizons unless later evaluation 
 1W
 ```
 
-## V1 event-context vector score families
+## Event-Context Vector Score Families
 
-V1 uses two score groups: core event risk/quality and impact scope.
+Layer 10 uses two score groups: core event risk/quality and impact scope.
 
 ### A. Core event risk/quality score families
 
@@ -875,7 +875,7 @@ Optional audit/debug field, not a scalar `state_vector_value`:
 10_event_dominant_impact_scope_<horizon>
 ```
 
-V1-full therefore has 21 horizon-aware scalar score families plus one horizon-aware dominant-scope audit field across 4 horizons. V1-minimal may start with the core group only, but impact scope should remain part of the accepted contract because event intensity, event scope, and target relevance are separate semantics.
+The full score set has 21 horizon-aware scalar score families plus one horizon-aware dominant-scope audit field across 4 horizons. A minimal deployment may start with the core group only, but impact scope remains part of the accepted contract because event intensity, event scope, and target relevance are separate semantics.
 
 ## Field semantics
 
@@ -992,13 +992,13 @@ Layer 10 must not:
 - use account balance, buying power, PnL, open orders, holdings, or live execution constraints;
 - use post-event outcomes, future revisions, or future market paths as inference inputs.
 
-## V1 implementation route
+## Implementation route
 
-1. **V1.0 event registry and time replay**: preserve `event_id`, `canonical_event_id`, `dedup_status`, `source_priority`, `coverage_reason`, `covered_by_event_id`, category, scope, `available_time`, reference, dedup/revision policy, and point-in-time replay. **Done for local fixture rows.**
-2. **V1.1 EventEncoder**: emit presence, timing proximity, intensity, direction bias, uncertainty, and quality. **Done in deterministic scaffold.**
-3. **V1.2 context matching**: add target relevance, context alignment, gap/reversal/liquidity/contagion risk. **Done in deterministic scaffold.**
-4. **V1.3 impact scope vector**: add market/sector/industry/theme/peer/symbol/microstructure impact, scope confidence, escalation risk, and dominant impact scope. **Done in deterministic scaffold.**
-5. **V1.4 evaluation**: compare against no-event, count, proximity, abnormal-activity, native-scope, and impact-scope baselines with walk-forward leakage checks. **Offline label/leakage helpers exist; baseline proof remains promotion work.**
+1. **Event registry and time replay**: preserve `event_id`, `canonical_event_id`, `dedup_status`, `source_priority`, `coverage_reason`, `covered_by_event_id`, category, scope, `available_time`, reference, dedup/revision policy, and point-in-time replay.
+2. **Event encoder**: emit presence, timing proximity, intensity, direction bias, uncertainty, and quality.
+3. **Context matching**: add target relevance, context alignment, gap/reversal/liquidity/contagion risk.
+4. **Impact scope vector**: add market/sector/industry/theme/peer/symbol/microstructure impact, scope confidence, escalation risk, and dominant impact scope.
+5. **Evaluation**: compare against no-event, count, proximity, abnormal-activity, native-scope, and impact-scope baselines with walk-forward leakage checks.
 ## Final go/no-go judgment — 2026-05-15
 
 The accepted judgment is recorded in `docs/53_event_layer_final_judgment.md`.

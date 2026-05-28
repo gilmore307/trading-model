@@ -1,4 +1,4 @@
-"""Deterministic PositionProjectionModel V1 scaffold.
+"""PositionProjectionModel baseline generator.
 
 Layer 7 maps the final adjusted ``alpha_confidence_vector`` plus point-in-time
 current/pending exposure, price location, friction, risk-budget, and policy

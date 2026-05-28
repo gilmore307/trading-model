@@ -16,7 +16,7 @@ Cross-repository names, shared fields, artifact types, statuses, templates, and 
 ## D002 - Direction-neutral model stack
 
 Date: 2026-04-27
-Status: Accepted; revised by V2.2 on 2026-05-05
+Status: Accepted
 
 `trading-model` is the offline modeling home for the direction-neutral tradability decision stack:
 
@@ -47,7 +47,7 @@ MarketRegimeModel
   -> market_context_state
 
 SectorContextModel
-  -> context_etf_state / current physical sector_context_state
+  -> context_etf_state
 
 TargetStateVectorModel
   -> Layer 3 preprocessing: anonymous target candidate builder
@@ -91,7 +91,7 @@ Hard separation rules:
 Date: 2026-05-01
 Status: Accepted
 
-`MarketRegimeModel` V2.2 outputs a continuous point-in-time broad `market_context_state` keyed by `available_time`.
+`MarketRegimeModel` outputs a continuous point-in-time broad `market_context_state` keyed by `available_time`.
 
 The physical output table is:
 
@@ -128,7 +128,7 @@ ETF/sector labels such as `growth`, `defensive`, `cyclical`, `inflation_sensitiv
 Date: 2026-05-02
 Status: Accepted
 
-Layer 1 structure is settled for V2.2. Remaining Layer 1 work is evidence depth and real-sample promotion review, not boundary redesign.
+Layer 1 structure is settled. Remaining Layer 1 work is evidence depth and real-sample promotion review, not boundary redesign.
 
 For each internal signal group and public state score, maintain `src/models/model_01_market_regime/evidence_map.md` as the feature-to-state evidence map classifying feature families as:
 
@@ -154,7 +154,7 @@ Layer 1 evaluation must test:
 Date: 2026-05-02
 Status: Accepted
 
-`SectorContextModel` V1 outputs a per-ETF context state. It studies which sector/industry/theme ETF baskets have stable, tradable trend behavior under each broad market context.
+`SectorContextModel` outputs a per-ETF context state. It studies which sector/industry/theme ETF baskets have stable, tradable trend behavior under each broad market context.
 
 Layer 1 market-property factors are conditioning context only. Layer 2 must learn a separate conditional behavior vector for each ETF/basket under similar market backgrounds; it must not reuse Layer 1 factor names as ETF style fields.
 
@@ -172,7 +172,7 @@ Planned physical output:
 trading_model.model_02_sector_context
 ```
 
-The V1 field contract is owned by `src/models/model_02_sector_context/sector_context_state_contract.md` until implementation/evaluation proves which names should be shared through the registry.
+The field contract is owned by `src/models/model_02_sector_context/sector_context_state_contract.md` until implementation/evaluation proves which names should be shared through the registry.
 
 Core state blocks:
 
@@ -233,18 +233,18 @@ Excluded from model-facing fitting vectors:
 
 Real symbols may remain in audit/routing metadata and final decision records.
 
-## D009 - OptionExpressionModel V1 is single-leg long options only
+## D009 - OptionExpressionModel is single-leg long options only
 
 Date: 2026-04-28
 Status: Accepted
 
-`OptionExpressionModel` V1 supports only:
+`OptionExpressionModel` supports only:
 
 - stock/ETF direct expression as a comparison or fallback;
 - long call;
 - long put.
 
-V1 must not choose debit spreads, calendars, diagonals, straddles, strangles, condors, butterflies, ratio spreads, or naked short options.
+It must not choose debit spreads, calendars, diagonals, straddles, strangles, condors, butterflies, ratio spreads, or naked short options.
 
 The model must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market-context constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade filters.
 
@@ -276,7 +276,7 @@ Model-facing output vectors and output fields must carry their layer owner in th
 Rules:
 
 - Layer 1 model-facing output keys use compact `1_*` names, for example `1_market_trend_quality_score`.
-- Layer 2 model-facing output keys use compact `2_*` names, for example `2_sector_tradability_score`; the conceptual row state is `context_etf_state` while current physical fields may retain `sector_context_state` vocabulary.
+- Layer 2 model-facing output keys use compact `2_*` names, for example `2_sector_tradability_score`; the conceptual row state is `context_etf_state`.
 - Deterministic data evidence fields from `trading-data` do not receive model-layer prefixes merely because a model consumes them.
 - Docs, model-facing payloads, and physical SQL columns use the same compact names. SQL writers should quote numeric-leading identifiers where required instead of storing semantic aliases such as `layer01_*` or `layer02_*`.
 
@@ -287,7 +287,7 @@ Status: Accepted
 
 The boundary between `SectorContextModel` and `TargetStateVectorModel` is a Layer 3 anonymous target candidate builder, not a peer model layer and not direct ticker-aware target-state fitting.
 
-The model-local V1 contract is owned by:
+The model-local contract is owned by:
 
 ```text
 src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md
@@ -318,7 +318,7 @@ Accepted canonical names:
 - Class/display: `SectorContextModel`
 - Stable id: `sector_context_model`
 - Physical output table term: `model_02_sector_context`
-- Conceptual output: `context_etf_state`; current physical output vocabulary: `sector_context_state`
+- Conceptual output: `context_etf_state`
 
 Retire active-use references to `SecuritySelectionModel`, `security_selection_model`, and `model_02_security_selection`. Historical decision text may mention them only as superseded terms.
 
@@ -374,7 +374,7 @@ The active Layer 3 purpose is to construct an anonymous target state vector from
 2. Layer 2 sector/industry state;
 3. target-local board/tape/liquidity state.
 
-Layer 3 must focus on finding the relationship between target market state and future tradeable outcomes. Strategy-family and parameter-variant grids are frozen as legacy research and must not be expanded as the active Layer 3 boundary. Strategy/variant selection may return later only as a downstream layer or probe after target-state relationships are accepted.
+Layer 3 must focus on finding the relationship between target market state and future tradeable outcomes. Strategy-family and parameter-variant grids are outside the active Layer 3 boundary. Strategy/variant selection may return later only as a downstream layer or probe after target-state relationships are accepted.
 
 ## D017 - Three-state model uses direction-neutral tradability semantics
 
@@ -405,7 +405,7 @@ Current update: Layer 4 owns EventFailureRiskModel failure-risk conditioning; La
 Date: 2026-05-05
 Status: Accepted
 
-The V2.2 three-layer tradability design uses a strict vocabulary split:
+The three-layer tradability design uses a strict vocabulary split:
 
 - `feature_*` surfaces are deterministic point-in-time inputs owned by `trading-data`.
 - `*_feature_vector` values are model-facing input vectors.
@@ -419,7 +419,7 @@ Anonymous target candidate construction is Layer 3 preprocessing and sample orga
 
 `anonymous_target_feature_vector` is the Layer 3 model-facing input vector produced by preprocessing. `target_context_state` is the Layer 3 conceptual model output. Audit/routing metadata, including real symbol references, remains outside model-facing vectors.
 
-Layer 1 now uses V2.2 market-tradability semantics: market direction, direction strength, trend quality, stability, risk stress, transition risk, breadth participation, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality. Current `1_*_factor` names are model-local signal groups and evidence sources only; the public downstream contract is the `market_context_state` score set.
+Layer 1 uses market-tradability semantics: market direction, direction strength, trend quality, stability, risk stress, transition risk, breadth participation, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality. `1_*_factor` names are model-local signal groups and evidence sources only; the public downstream contract is the `market_context_state` score set.
 
 ## D019 - Durable manager/storage contracts are deferred until the full model stack is designed
 
@@ -484,7 +484,7 @@ alpha confidence != final action
 
 AlphaConfidenceModel must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns dynamic risk policy. Layer 7 owns position projection and target exposure state. Layer 8 owns planned direct-underlying action. Layer 9 owns trading guidance / option expression. Layer 10 owns residual event-risk governance.
 
-AlphaConfidenceModel V1 uses the synchronized `10min`, `1h`, `1D`, and `1W` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.
+AlphaConfidenceModel uses the synchronized `10min`, `1h`, `1D`, and `1W` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.
 
 ## D062 - Layer 5 trains on dense minute-level target-state rows
 
@@ -590,7 +590,7 @@ Layer-numbering update: `PositionProjectionModel` is Layer 7 with canonical mode
 
 PositionProjectionModel maps final adjusted alpha confidence to projected target holding state under current account/portfolio context. It consumes `alpha_confidence_vector`, current position state, pending position state, point-in-time position-level friction, portfolio exposure context, risk-budget context, and policy gates.
 
-The accepted V1 core output families are:
+The accepted core output families are:
 
 ```text
 7_target_position_bias_score_<horizon>
@@ -627,7 +627,7 @@ Layer-numbering update: `UnderlyingActionModel` is Layer 8 with canonical model 
 
 UnderlyingActionModel converts current state, final adjusted alpha confidence, and target holding-state projection into a direct underlying/spot offline action thesis for stock, ETF, or crypto-style candidates. It consumes `alpha_confidence_vector`, `position_projection_vector`, current/pending underlying exposure, underlying quote/liquidity/borrow state, risk-budget context, and point-in-time policy gates.
 
-The accepted V1 score families are:
+The accepted score families are:
 
 ```text
 8_underlying_trade_eligibility_score_<horizon>
@@ -699,7 +699,7 @@ option_expression_plan
 expression_vector
 ```
 
-V1 expression types are:
+Expression types are:
 
 ```text
 long_call
@@ -707,7 +707,7 @@ long_put
 no_option_expression
 ```
 
-V1 may select a point-in-time option contract reference and contract constraints for the expression. This is model output, not a broker order.
+Layer 9 may select a point-in-time option contract reference and contract constraints for the expression. This is model output, not a broker order.
 
 Accepted invariants:
 
@@ -721,7 +721,7 @@ expression confidence != final approval
 Layer 9 offline plan != live execution
 ```
 
-Layer 9 must not emit broker order type, route, time-in-force, send/cancel/replace flags, final order quantity, broker order ids, or account mutation fields. Multi-leg structures are deferred beyond V1. `trading-execution` remains the owner of live/paper broker mutation.
+Layer 9 must not emit broker order type, route, time-in-force, send/cancel/replace flags, final order quantity, broker order ids, or account mutation fields. Multi-leg structures remain deferred until a reviewed expression-policy contract accepts them. `trading-execution` remains the owner of live/paper broker mutation.
 
 ## D024A - Layer 9 historical option bucket defaults
 
@@ -734,7 +734,7 @@ For each selected target, the strike bucket is the listed-strike corridor from c
 
 Historical model construction intentionally keeps illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, and otherwise extreme contracts in the candidate bucket so the model learns robustness and failure modes. These observations may score poorly, produce reason codes, or resolve to `no_option_expression`; they must not be removed at acquisition-time solely because they are extreme.
 
-V1 expression coverage remains single-leg only: `long_call`, `long_put`, or `no_option_expression`. Multi-leg spreads remain deferred beyond V1.
+Expression coverage remains single-leg only: `long_call`, `long_put`, or `no_option_expression`. Multi-leg spreads remain deferred until a reviewed expression-policy contract accepts them.
 
 ## D024B - Promotion classifies artifacts; manager schedules lifecycle; storage executes lifecycle
 
@@ -773,7 +773,7 @@ MarketRegimeModel
   -> OptionExpressionModel
 ```
 
-`base_stack_layers_01_09` has accepted contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture-level verification for the current design phase.
+`base_stack_layers_01_09` has accepted contracts, docs, local baseline generators/evaluation helpers where in scope, registry score naming, and fixture-level verification for the current architecture boundary.
 
 This acceptance is superseded by the later architecture revisions that insert Layer 4 EventFailureRiskModel and Layer 6 DynamicRiskPolicyModel and make EventRiskGovernor Layer 10. After Layer 10, downstream work belongs to review / execution-owned boundaries: broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
@@ -1069,7 +1069,7 @@ windows; crypto labels observe continuous path.
 
 Future return, volatility, drawdown, transition, liquidity, and tradability outcomes are labels/evaluation indicators only. They must not enter same-row feature construction or model generation.
 
-The target physical `model_01_market_regime` identity is `(available_time, input_frame, prediction_horizon, market_universe_ref)`. Existing `available_time`-only rows remain a compatibility surface until a registry/schema migration lands the frame and horizon keys. Public `1_*` output names remain compact and unsuffixed inside each row.
+The target physical `model_01_market_regime` identity is `(available_time, input_frame, prediction_horizon, market_universe_ref)`. Public `1_*` output names remain compact and unsuffixed inside each row.
 
 ## D051 - Layer 4 event impact scope is resolved from the state stack
 
@@ -1215,7 +1215,7 @@ Persistent event regimes require interval fields such as regime family, status, 
 
 Accepted: 2026-05-28
 
-The long-term model route is not "replace every deterministic scaffold with a trained model." Each layer must be classified as one clear role before implementation expands:
+The long-term model route is not "replace every baseline route with a trained model." Each layer must be classified as one clear role before implementation expands:
 
 ```text
 conditional estimator

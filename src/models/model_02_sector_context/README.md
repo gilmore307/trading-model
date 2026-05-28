@@ -1,13 +1,13 @@
 # model_02_sector_context
 
-`SectorContextModel` V2.2 package boundary.
+`SectorContextModel` package boundary.
 
-Current status: direction-neutral deterministic generator, SQL writer, evaluation path, and registry-backed field contract implemented for the accepted three-artifact contract. The current physical contract uses `sector_context_state`; new design work should treat the per-ETF Layer 2 state as `context_etf_state`.
+Current status: direction-neutral baseline generator, SQL writer, evaluation path, and registry-backed field contract implemented for the accepted three-artifact contract. Treat the per-ETF Layer 2 state as `context_etf_state`.
 
 Boundary:
 
 - Input: `market_context_state`, `trading_data.feature_02_sector_context`, and ETF/basket tradability/event diagnostics available at or before `available_time`.
-- Conceptual output: `context_etf_state` keyed by `available_time + context_etf_symbol`; current physical rows remain `sector_context_state` keyed by `available_time + sector_or_industry_symbol`.
+- Conceptual output: `context_etf_state` keyed by `available_time + context_etf_symbol`.
 - Physical artifacts: `trading_model.model_02_sector_context`, `trading_model.model_02_sector_context_explainability`, and `trading_model.model_02_sector_context_diagnostics`.
 - May mark sector/industry baskets as eligible/selected for downstream candidate construction.
 - Target routing distinguishes Layer 1 ETF targets, Layer 2 context ETF targets, and ordinary targets with dynamic `target_context_profile` weighting.
@@ -17,8 +17,8 @@ Boundary:
 
 Files:
 
-- `sector_context_state_contract.md` — V1 field contract and boundary rules.
-- `generator.py` — deterministic V1 row generator for the primary output plus explainability and diagnostics support artifacts.
+- `sector_context_state_contract.md` — field contract and boundary rules.
+- `generator.py` — baseline row generator for the primary output plus explainability and diagnostics support artifacts.
 
 Runtime SQL writes are isolated in `scripts/models/model_02_sector_context/generate_model_02_sector_context.py`.
 

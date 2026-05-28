@@ -1,6 +1,6 @@
 # M09 - Option Expression / TradingGuidanceModel / OptionExpressionModel
 
-Status: accepted V1 contract with deterministic scaffold complete for the current model-design phase; production promotion remains evidence-gated.
+Status: accepted option-expression utility optimizer contract; production promotion remains evidence-gated.
 
 `TradingGuidanceModel / OptionExpressionModel` consumes the Layer 8 `underlying_action_plan` / `underlying_action_vector` handoff plus optional point-in-time option-chain context to produce an offline `trading_guidance_record` and, when options are available and allowed, `option_expression_plan` / `expression_vector`.
 
@@ -42,7 +42,7 @@ Layer 9 does **not** own:
 
 - broker order type, route, time-in-force, send/cancel/replace flags, or broker order ids;
 - final order quantity, final approval, or account mutation;
-- multi-leg spread construction in V1; V1 historical option-expression coverage is single-leg option expression plus non-option fallbacks (`long_call`, `long_put`, `underlying_only_expression`, or `no_option_expression`);
+- multi-leg spread construction; historical option-expression coverage is single-leg option expression plus non-option fallbacks (`long_call`, `long_put`, `underlying_only_expression`, or `no_option_expression`);
 - direct-underlying planned action resolution, which belongs to Layer 8;
 - real live/paper routing, which remains in `trading-execution`.
 
@@ -161,7 +161,7 @@ Resolved fields:
 9_resolved_reason_codes
 ```
 
-V1 expression types:
+Expression types:
 
 ```text
 long_call
@@ -170,7 +170,7 @@ underlying_only_expression
 no_option_expression
 ```
 
-V1 option rights:
+Option rights:
 
 ```text
 call
@@ -227,9 +227,9 @@ diagnostics
 
 `selected_contract` is a point-in-time contract reference and diagnostics payload. It is null for `underlying_only_expression` and `no_option_expression`. It is not a broker order. `contract_constraints` are model constraints, not routing instructions.
 
-## Deterministic V1 scaffold
+## Baseline Generator
 
-The local deterministic scaffold lives in:
+The local baseline generator lives in:
 
 ```text
 src/models/model_09_option_expression/
@@ -253,7 +253,7 @@ Fixture tests live in:
 tests/test_option_expression_model.py
 ```
 
-## V1 option bucket policy
+## Option Bucket Policy
 
 Historical model-construction buckets expand from near expirations to farther expirations: current listed week first, then next listed week, then the following listed week, continuing outward only when coverage policy requires it.
 
@@ -270,7 +270,7 @@ The three-level rule uses actual listed strikes, not a fixed dollar amount. If l
 
 Historical bucket construction intentionally does not prefilter out illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, or otherwise extreme contracts. Those observations are useful for robustness and must remain available as features, labels, diagnostics, and reason codes. Selection/evaluation may score them poorly or resolve `no_option_expression`, but acquisition-time bucket construction should not hide them from the model.
 
-V1 expression coverage is single-leg only:
+Expression coverage is single-leg only:
 
 ```text
 long_call
@@ -281,11 +281,11 @@ no_option_expression
 
 `underlying_only_expression` is an explicit fallback when the options layer finds the underlying thesis usable but option contracts are unsuitable because of policy, liquidity, IV, Greek, DTE, quote freshness, missing-contract evidence, or a non-optionable underlying route. It keeps selected option contract and option-fit scores empty/zero and records the direct-underlying expression preference for evaluation. It is not an order request.
 
-Multi-leg spreads remain deferred beyond V1.
+Multi-leg spreads remain deferred until an accepted expression-policy contract adds them.
 
-## V1 DTE / delta scoring policy
+## DTE / Delta Scoring Policy
 
-V1 selection/scoring uses conservative ranges rather than exact DTE points:
+Selection/scoring uses conservative ranges rather than exact DTE points:
 
 ```text
 10min thesis -> preferred_dte_range = 3-7, no 0DTE
@@ -294,9 +294,9 @@ V1 selection/scoring uses conservative ranges rather than exact DTE points:
 1W thesis -> preferred_dte_range = 21-45
 ```
 
-V1 selection/scoring penalizes deep OTM lottery contracts. Preferred absolute delta starts around `0.35-0.65`; future learned contract-fit models may adjust this by path quality, expected move, IV, liquidity, and theta pressure.
+Selection/scoring penalizes deep OTM lottery contracts. Preferred absolute delta starts around `0.35-0.65`; learned contract-fit models may adjust this by path quality, expected move, IV, liquidity, and theta pressure.
 
-Layer 8 target/range fields constrain selected-contract scoring when the target range is directionally coherent: bullish call strikes above `target_price_high` and bearish put strikes below `target_price_low` carry `strike_outside_underlying_target_range`. They remain part of historical bucket evidence, but should not be selected by the deterministic V1 selector unless a reviewed exception policy says otherwise.
+Layer 8 target/range fields constrain selected-contract scoring when the target range is directionally coherent: bullish call strikes above `target_price_high` and bearish put strikes below `target_price_low` carry `strike_outside_underlying_target_range`. They remain part of bucket evidence, but should not be selected by the baseline selector unless a reviewed exception policy says otherwise.
 
 ## Labels and evaluation
 

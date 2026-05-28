@@ -1,4 +1,4 @@
-"""SectorContextModel V1 deterministic state-vector generator.
+"""SectorContextModel baseline state generator.
 
 This module turns point-in-time rows from
 ``trading_data.feature_02_sector_context`` plus optional Layer 1
@@ -8,7 +8,7 @@ This module turns point-in-time rows from
 * ``trading_model.model_02_sector_context_explainability`` (human-review detail),
 * ``trading_model.model_02_sector_context_diagnostics`` (acceptance/gating detail).
 
-V1 is deliberately conservative: it scores reviewed sector/industry ETF behavior
+The baseline route is deliberately conservative: it scores reviewed sector/industry ETF behavior
 without ETF holdings, stock exposure, final target selection, strategy selection,
 option selection, sizing, or future-return labels.
 """

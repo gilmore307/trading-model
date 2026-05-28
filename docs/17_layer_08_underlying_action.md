@@ -1,6 +1,6 @@
 # M08 - Underlying Action / UnderlyingActionModel
 
-Status: accepted Layer 8 design route; deterministic scaffold implemented in `src/models/model_08_underlying_action/`; production validation pending.
+Status: accepted Layer 8 design route as a structured underlying-action policy; production validation pending.
 
 ## Purpose
 
@@ -248,9 +248,9 @@ underlying_event_policy_block_state
 
 `underlying_event_policy_block_state` is policy-derived. Layer 10 event-risk context does not directly issue hard trade blocks; event risk may be translated into policy state by event-risk/policy logic before trading guidance consumes it.
 
-## V1 horizons
+## Horizons
 
-Layer 8 V1 uses the synchronized horizons already used by Layers 5 and 7:
+Layer 8 uses the synchronized horizons already used by Layers 5 and 7:
 
 ```text
 10min
@@ -263,7 +263,7 @@ Layer 8 V1 uses the synchronized horizons already used by Layers 5 and 7:
 
 ## Planned action types
 
-Layer 8 V1 planned action types are:
+Layer 8 planned action types are:
 
 ```text
 open_long
@@ -294,7 +294,7 @@ short position
 
 Do not use ambiguous `empty position` / `short position` wording that can confuse flat with short.
 
-Opposite-exposure cases should be conservative in V1. Prefer reason codes such as:
+Opposite-exposure cases should be conservative. Prefer reason codes such as:
 
 ```text
 opposite_exposure_detected
@@ -373,7 +373,7 @@ The gap threshold is configurable and should be validated per horizon and liquid
 
 ## Trade intensity and planned sizing
 
-Layer 8 converts gap and confidence into action intensity. A deterministic V1 scaffold can use:
+Layer 8 converts gap and confidence into action intensity. The baseline route can use:
 
 ```text
 trade_intensity
@@ -516,7 +516,7 @@ Those belong to Layer 9 and execution-side systems.
 
 ## Core output contract
 
-The primary output is `underlying_action_plan`. The V1 score/vector output `underlying_action_vector` exposes 10 per-horizon score families:
+The primary output is `underlying_action_plan`. The `underlying_action_vector` exposes 10 per-horizon score families:
 
 ```text
 8_underlying_trade_eligibility_score_<horizon>
@@ -779,7 +779,7 @@ Layer 8 must not:
 - use future prices, future fills, future PnL, future slippage, or future event revisions as inference inputs;
 - treat `planned_quantity` or `planned_notional_usd` as final order size.
 
-## V1 implementation route
+## Implementation route
 
 Current local scaffold status:
 
@@ -798,7 +798,7 @@ Remaining implementation hardening is real-data calibration/evaluation, not cont
 Layer 8 design/implementation is not accepted for production until:
 
 - docs, registry names, and score families are synchronized;
-- deterministic scaffold passes fixture tests;
+- baseline generator passes fixture tests;
 - hard/soft gates are audited with reason-code evidence;
 - maintain and no_trade semantics are separately tested;
 - pending-adjusted effective exposure prevents duplicate planned adjustments;

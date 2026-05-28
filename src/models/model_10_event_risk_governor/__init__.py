@@ -1,4 +1,4 @@
-"""Layer 10 EventRiskGovernor deterministic scaffold."""
+"""Layer 10 EventRiskGovernor package."""
 from .contract import MODEL_ID, MODEL_LAYER, MODEL_SURFACE, MODEL_VERSION, VECTOR_OUTPUT
 from .generator import generate_rows
 

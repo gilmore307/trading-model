@@ -8,9 +8,9 @@ This is the active model task ledger. Keep it operational and tied to current ga
 - Layer learning redesign: use `docs/23_model_learning_design.md` as the active route for model expansion. Before changing a layer implementation, write or verify its objective contract: target or utility, horizon, labels/costs, allowed inputs, forbidden inputs, baseline, walk-forward metric, leakage test, and downstream consumer.
 - Model-output table quality gate: `scripts/models/audit_model_output_tables.py` audits all ten primary output tables plus `_explainability` and `_diagnostics` support tables for empty/sparse columns. `scripts/models/run_model_output_quality_gate.py` converts the audit into a post-generation pass/block result. Both paths are read-only; they do not drop columns or rewrite model rows.
 - Event-risk evidence lane: keep Layer 10 bounded as `EventRiskGovernor / EventIntelligenceOverlay`. Current evidence accepts `cpi_inflation_release` and `earnings_guidance_scheduled_shell` as risk/control candidates only, accepts zero standalone directional-alpha event families, and leaves remaining families blocked/deferred/research-queue until reviewed gates are satisfied.
-- Realtime decision handoff scaffolds remain accepted but parked until at least one model has an approved/promotable version.
+- Realtime decision handoff remains parked until at least one model has an approved/promotable version.
 
-Layers 1-10 have accepted local deterministic scaffold boundaries; see `docs/03_contracts.md`. The next work is historical evidence production, gate repair, calibration/baseline/stability/leakage evidence, and manager-side promotion review preparation, not realtime integration expansion or ad hoc repository cleanup.
+Layers 1-10 have accepted boundaries and learning roles; see `docs/03_contracts.md` and `docs/23_model_learning_design.md`. The next work is objective-contract completion, historical evidence production, gate repair, calibration/baseline/stability/leakage evidence, and manager-side promotion review preparation, not realtime integration expansion or ad hoc repository cleanup.
 
 ## Historical-Training Evidence Requirements
 
@@ -33,10 +33,10 @@ These items are intentionally outside the current promote-first historical-train
 
 ## Current Accepted Details
 
-- Repository model-stack acceptance is complete for the current design phase: Layers 1-10 have accepted architecture/contracts, docs, local deterministic scaffolds/evaluation helpers where in scope, registry score naming, and fixture evidence.
-- Layer 1 `MarketRegimeModel`, Layer 2 `SectorContextModel`, and Layer 3 `TargetStateVectorModel` have reviewed contracts, deterministic local implementations/evaluation scaffolds, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.
+- Repository model-stack acceptance is complete for the current architecture boundary: Layers 1-10 have accepted architecture/contracts, learning roles, docs, evaluation helpers where in scope, registry score naming, and fixture evidence.
+- Layer 1 `MarketRegimeModel`, Layer 2 `SectorContextModel`, and Layer 3 `TargetStateVectorModel` have reviewed contracts, local baseline implementations/evaluation helpers, docs, and registry core-score naming. Production promotion remains deferred until real-sample gates pass.
 - Layer 3 owns anonymous target candidate construction and model-facing target state-vector construction. Model-facing target context/state vectors must exclude ticker/company identity.
-- Layer 4 `EventFailureRiskModel`, Layer 5 `AlphaConfidenceModel`, Layer 6 `DynamicRiskPolicyModel`, Layer 7 `PositionProjectionModel`, Layer 8 `UnderlyingActionModel`, Layer 9 `TradingGuidanceModel / OptionExpressionModel`, and Layer 10 `EventRiskGovernor / EventIntelligenceOverlay` have accepted offline scaffold boundaries.
+- Layer 4 `EventFailureRiskModel`, Layer 5 `AlphaConfidenceModel`, Layer 6 `DynamicRiskPolicyModel`, Layer 7 `PositionProjectionModel`, Layer 8 `UnderlyingActionModel`, Layer 9 `TradingGuidanceModel / OptionExpressionModel`, and Layer 10 `EventRiskGovernor / EventIntelligenceOverlay` have accepted offline model boundaries and learning roles.
 - Promotion acceptance evidence is recorded in `docs/31_promotion_acceptance.md`: Layers 1-2 have real database evidence; Layers 3-10 have blocked/deferred evaluation evidence proving no production evaluation substrate exists yet. No production activation occurred; promotion readiness belongs in `trading-evaluation`, and runtime activation belongs in `trading-execution`.
 - Production-promotion readiness rules are accepted for Layers 1-10 in `docs/30_promotion_readiness.md`: every production approval requires dataset snapshot, split, labels, evaluation run, metrics, candidate, thresholds, baselines, stability, leakage, calibration, and decision evidence.
 - `docs/21_vector_taxonomy.md` owns the accepted distinction between feature surfaces, feature vectors, states, state vectors, scalar scores, diagnostics, explainability, and labels/outcomes.

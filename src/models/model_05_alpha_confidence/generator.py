@@ -1,7 +1,7 @@
-"""Deterministic AlphaConfidenceModel V1 scaffold.
+"""AlphaConfidenceModel baseline generator.
 
 Layer 5 converts reviewed Layer 1/2/3 state plus Layer 4 event-failure-risk context into the
-final adjusted ``alpha_confidence_vector``. The scaffold keeps base alpha as a
+final adjusted ``alpha_confidence_vector``. The generator keeps base alpha as a
 diagnostic surface and emits only alpha-confidence fields, not position/action/
 execution fields.
 """

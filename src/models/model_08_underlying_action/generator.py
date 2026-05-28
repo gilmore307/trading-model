@@ -1,4 +1,4 @@
-"""Deterministic UnderlyingActionModel V1 scaffold.
+"""UnderlyingActionModel baseline generator.
 
 Consumes point-in-time Layer 5 alpha and Layer 7 position-projection vectors plus current/pending direct-underlying
 state, quote/liquidity/borrow state, and risk/policy gates. Emits an offline

@@ -1,6 +1,6 @@
 # M01 - Market Regime / MarketRegimeModel
 
-This file records the active V2.2 direction-neutral market tradability/regime contract for Layer 1.
+This file records the active direction-neutral market tradability/regime contract for Layer 1.
 
 ## Input
 
@@ -25,7 +25,7 @@ input_frame = 1h     -> prediction_horizon = 1D
 input_frame = 1D     -> prediction_horizon = 1W
 ```
 
-The target physical contract is one market-context row per `(available_time, input_frame, prediction_horizon, market_universe_ref)`. The same public state fields keep their compact `1_*` names inside each row; horizon and frame belong in row identity fields, not in duplicated column-name suffixes. Existing single-frame rows are a compatibility surface until the registry and SQL migration add the frame/horizon keys.
+The target physical contract is one market-context row per `(available_time, input_frame, prediction_horizon, market_universe_ref)`. The same public state fields keep their compact `1_*` names inside each row; horizon and frame belong in row identity fields, not in duplicated column-name suffixes.
 
 Future outcome metrics are labels and evaluation indicators only. They may calibrate whether a state output was useful for its paired horizon, but they must not enter same-row model construction.
 

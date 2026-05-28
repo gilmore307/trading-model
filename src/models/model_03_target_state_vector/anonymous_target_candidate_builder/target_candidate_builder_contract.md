@@ -1,4 +1,4 @@
-# anonymous target candidate builder V1 contract
+# anonymous target candidate builder contract
 
 This file owns the first model-local contract for the boundary between
 `sector_context_state` and `TargetStateVectorModel` target-state fitting.
@@ -94,7 +94,7 @@ Disallowed inputs:
 
 ## Candidate generation flow
 
-V1 flow:
+Flow:
 
 ```text
 sector_context_state selected/watch baskets
@@ -111,7 +111,7 @@ target candidates. Target-state modeling starts only after Layer 3 receives anon
 
 ## Model-facing feature vector blocks
 
-The V1 `anonymous_target_feature_vector` should be structured as blocks rather
+The `anonymous_target_feature_vector` should be structured as blocks rather
 than one opaque scalar. This is the Layer 3 model-facing input vector, not a model output state vector.
 
 | Block | Meaning |
@@ -134,7 +134,7 @@ Bucket fields must be timestamp-local or reviewed-window-local where possible. T
 
 ## Eligibility and handoff fields
 
-Recommended V1 fields:
+Recommended fields:
 
 | Field | Type | Role |
 |---|---|---|
@@ -148,7 +148,7 @@ Recommended V1 fields:
 If these fields become shared cross-repository contracts, route them through
 `trading-manager` before downstream repositories depend on them.
 
-## Excluded V1 outputs
+## Excluded Outputs
 
 The builder must not output:
 
@@ -162,7 +162,7 @@ The builder must not output:
 
 ## Evaluation requirements
 
-V1 acceptance must show:
+Acceptance must show:
 
 1. every candidate row is point-in-time and keyed by evidence available at or before `available_time`;
 2. Layer 2 selected/prioritized baskets are the source of sector transmission;

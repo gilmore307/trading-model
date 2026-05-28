@@ -7,8 +7,8 @@ Each accepted model output/research boundary gets its own package under this dir
 Current packages:
 
 - `model_sequence.py` — serializable `M01` through `M10` display/order metadata for the current model stack.
-- `model_01_market_regime/` — `M01 Market Regime`, V2.2 broad market-context state implementation.
-- `model_02_sector_context/` — `M02 Sector Context`, V1 contract-first package for sector/industry context state.
+- `model_01_market_regime/` — `M01 Market Regime`, broad market-context state implementation.
+- `model_02_sector_context/` — `M02 Sector Context`, contract-first package for sector/industry context state.
 - `model_03_target_state_vector/` — `M03 Target State`, anonymous target candidate preprocessing contracts plus `TargetStateVectorModel` target-context/state-vector output contracts.
 - `model_04_event_failure_risk/` — `M04 Event Failure Risk`, producing reviewed event-failure conditioning rows without raw-event promotion, alpha, action, option, or execution leakage.
 - `model_05_alpha_confidence/` — `M05 Alpha Confidence`, producing adjusted `alpha_confidence_vector` rows plus base-alpha diagnostics and offline alpha labels without position/action leakage.

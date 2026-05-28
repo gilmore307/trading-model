@@ -1,15 +1,15 @@
 # M05 - Alpha Confidence / AlphaConfidenceModel
 
-Status: accepted Layer 5 design route; deterministic V1 scaffold currently implemented in physical `src/models/model_05_alpha_confidence/`.
+Status: accepted Layer 5 design route with trained after-cost alpha scoring.
 
-Current route: Layer 5's primary score is a directly trained normalized after-cost alpha score. `5_alpha_confidence_score_<horizon>` keeps the existing compatibility field name, but its intended model-artifact semantics are:
+Current route: Layer 5's primary score is a directly trained normalized after-cost alpha score. `5_alpha_confidence_score_<horizon>` carries these model-artifact semantics:
 
 - `0.5` means after-cost neutral / no edge;
 - values above `0.5` mean positive expected after-cost edge;
 - values below `0.5` mean negative expected after-cost edge;
 - downstream entry policy may use `> 0.5` as the first economic boundary, with any stricter risk gates owned by Layers 6-8.
 
-The old deterministic formula remains only as a cold-start baseline and diagnostic path when no trained Layer 5 after-cost artifact is supplied. It must not be treated as the long-term score architecture.
+The formula path remains only as a cold-start baseline and diagnostic path when no trained Layer 5 after-cost artifact is supplied. It must not be treated as the long-term score architecture.
 
 ## Purpose
 
@@ -206,7 +206,7 @@ These belong to Layer 6/7/8/9 or training-label/evaluation surfaces, not Layer 5
 
 ## Internal structure
 
-Layer 5 V1 uses six auditable submodules before any broad black-box confidence modeling:
+Layer 5 uses six auditable submodules:
 
 ```text
 5A BaseStateAlphaEncoder
@@ -217,7 +217,7 @@ Layer 5 V1 uses six auditable submodules before any broad black-box confidence m
 5F AlphaVectorComposer
 ```
 
-The current implementation adds a trained artifact path above the deterministic scaffold:
+The current implementation includes a trained artifact path:
 
 ```text
 point-in-time Layer 1/2/3/4 features
@@ -287,9 +287,9 @@ Layer 5 alpha confidence fields use the Layer 5 semantic family in physical code
 
 Composes base alpha, Layer 4 event-failure conditioning, baseline adjustment, path risk, quality gates, and calibration into the final adjusted `alpha_confidence_vector`. It performs range clipping, horizon consistency checks, risk consistency checks, reason-code attribution, and quality downgrades.
 
-## V1 horizons
+## Horizons
 
-Layer 5 V1 uses synchronized alpha-confidence horizons:
+Layer 5 uses synchronized alpha-confidence horizons:
 
 ```text
 10min
@@ -302,7 +302,7 @@ Layer 5 V1 uses synchronized alpha-confidence horizons:
 
 ## Final adjusted output contract
 
-The V1 Layer 5-facing output is exactly 9 core score families per horizon, for 36 final score tokens:
+The Layer 5-facing output is exactly 9 core score families per horizon, for 36 final score tokens:
 
 ```text
 5_alpha_direction_score_<horizon>
@@ -454,10 +454,11 @@ Layer 5 must not:
 - use account balance, buying power, PnL, open orders, holdings, or live execution constraints;
 - use future returns, future event revisions, future option paths, or future fills as inference inputs.
 
-## V1 implementation route
+## Implementation route
 
-1. **V1.0 base alpha from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics. **Done in deterministic scaffold for fixture rows.**
-2. **V1.1 final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. **Done in deterministic scaffold.**
-3. **V1.2 Layer4EventFailureConditioning**: consume reviewed Layer 4 `event_failure_risk_vector`; do not consume raw events or same-fold Layer 10 attribution labels. **Deterministic scaffold uses the physical `model_05_alpha_confidence` package and `5_*` score-prefix hooks.**
-4. **V1.3 baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence. **Done in deterministic scaffold.**
-5. **V1.4 calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path. **Offline label/leakage helpers exist; calibrated promotion evidence remains later work.**
+1. **Base alpha diagnostics from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics.
+2. **Final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability.
+3. **Layer 4 event-failure conditioning**: consume reviewed Layer 4 `event_failure_risk_vector`; do not consume raw events or same-fold Layer 10 attribution labels.
+4. **Baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence.
+5. **Trained after-cost score artifact**: train direct normalized after-cost alpha score with `0.5` as neutral.
+6. **Calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path.

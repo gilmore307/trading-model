@@ -1,8 +1,8 @@
 # model_10_event_risk_governor
 
-Layer 10 deterministic scaffold for `EventRiskGovernor`.
+Layer 10 package for `EventRiskGovernor`.
 
-Owns local, point-in-time conversion from visible event overview/detail rows into `event_context_vector` rows. The scaffold implements:
+Owns local, point-in-time conversion from visible event overview/detail rows into `event_context_vector` rows. The baseline generator implements:
 
 - `EventEncoder`-style event normalization and dedup discounting;
 - `EventContextMatcher`-style target/scope relevance scoring;

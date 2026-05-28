@@ -52,7 +52,7 @@ This separation is mandatory:
 | Step | Short name | Stable id | Stable surface | Conceptual output | Role |
 |---|---|---|---|---|---|
 | `M01` | Market Regime | `market_regime_model` | `model_01_market_regime` | `market_context_state` | Direction-neutral broad market tradability/regime state keyed by `available_time`. |
-| `M02` | Sector Context | `sector_context_model` | `model_02_sector_context` | `context_etf_state` / current physical `sector_context_state` | Direction-neutral ETF-context tradability and rotation state under market context. |
+| `M02` | Sector Context | `sector_context_model` | `model_02_sector_context` | `context_etf_state` | Direction-neutral ETF-context tradability and rotation state under market context. |
 | `M03` | Target State | `target_state_vector_model` | `model_03_target_state_vector` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
 | `M04` | Event Failure Risk | `event_failure_risk_model` | `model_04_event_failure_risk` | `event_failure_risk_vector` | Agent-reviewed event/strategy-failure relationships converted into pre-alpha failure-risk conditioning. |
 | `M05` | Alpha Confidence | `alpha_confidence_model` | `model_05_alpha_confidence` | `alpha_confidence_vector` | Reviewed state stack plus Layer 4 failure-risk conditioning to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
@@ -192,7 +192,7 @@ The Layer 1 generator is simple and auditable:
 rolling/expanding scaler
   -> per-signal z-score with reviewed sign direction
   -> internal signal-group reducers
-  -> public V2.2 market-context state scores
+  -> public market-context state scores
   -> explainability + diagnostics support artifacts
 ```
 
@@ -261,7 +261,7 @@ Layer 2 may also emit `cross_etf_summary` as a global/group rotation summary. It
 - Do not consume Layer 1 as a sector-ranking scalar.
 - Do not consume hard-coded labels such as `technology = growth` or `utilities = defensive`.
 - Do not use future returns as production ranking inputs.
-- Do not select final stocks in V1.
+- Do not select final stocks.
 - Do not use ETF holdings or `stock_etf_exposure` as core Layer 2 behavior-model inputs.
 - Output selected/prioritized ETF-context handoff state for downstream candidate construction.
 - Route targets by class: Layer 1 ETF targets use `market_context_state`, Layer 2 context ETF targets use their own `context_etf_state` with influence `1.0`, and ordinary targets use `target_context_profile` weighting across one or more ETF context states.
@@ -363,7 +363,7 @@ docs/17_layer_08_underlying_action.md
 
 `TradingGuidanceModel` / `OptionExpressionModel` consumes Layer 8 underlying price-path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market/position context to produce optional offline trading guidance and optional `option_expression_plan` / `expression_vector` rows. Layer 10 event-risk governance may attach this output as optional expression context but must not require it for direct-underlying/crypto routes.
 
-It owns direct-underlying/no-trade guidance and, when options are available and allowed, long-call / long-put / no-option-expression selection, selected point-in-time contract references, contract constraints, premium-risk diagnostics, and expression-confidence scores. V1 option expression is single-leg long calls/puts only. Multi-leg structures remain deferred.
+It owns direct-underlying/no-trade guidance and, when options are available and allowed, long-call / long-put / no-option-expression selection, selected point-in-time contract references, contract constraints, premium-risk diagnostics, and expression-confidence scores. Current option expression is single-leg long calls/puts only. Multi-leg structures remain deferred.
 
 It does not emit broker order type, route, time-in-force, final order quantity, send/cancel/replace flags, broker order ids, or account mutation. Contract owner:
 

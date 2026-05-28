@@ -1,6 +1,6 @@
 # M02 - Sector Context / SectorContextModel
 
-This file records the active direction-neutral `trading-model` contract and implementation target for Layer 2. The current physical implementation still uses `sector_context_state` / `model_02_sector_context`; the accepted conceptual boundary is ETF-context state construction plus target-context routing.
+This file records the active direction-neutral `trading-model` contract and implementation target for Layer 2. The accepted boundary is ETF-context state construction plus target-context routing.
 
 ## Input
 
@@ -20,7 +20,7 @@ flowchart LR
     l1["trading_model.model_01_market_regime<br/>Layer 1 market_context_state"]
     feature["trading_data.feature_02_sector_context<br/>sector/industry behavior feature surface"]
     model["SectorContextModel<br/>Layer 2 model logic"]
-    output["trading_model.model_02_sector_context<br/>primary context_etf_state / current sector_context_state surface"]
+    output["trading_model.model_02_sector_context<br/>primary context_etf_state surface"]
     explain["trading_model.model_02_sector_context_explainability<br/>human-review behavior and attribution"]
     diagnostics["trading_model.model_02_sector_context_diagnostics<br/>acceptance and gating evidence"]
     builder["anonymous target candidate builder<br/>uses selected sector context plus holdings/exposure evidence"]
@@ -42,7 +42,7 @@ trading_model.model_02_sector_context_diagnostics
 
 ## `model_02_sector_context` - context ETF state output
 
-The primary Layer 2 per-ETF output is one `context_etf_state` per eligible Layer 2 ETF at `available_time`. The current physical table and field names still use the earlier `sector_context_state` vocabulary, but downstream design should treat the row as an ETF-context state, not as a stock-sector membership row.
+The primary Layer 2 per-ETF output is one `context_etf_state` per eligible Layer 2 ETF at `available_time`. The row is ETF-context state, not stock-sector membership.
 
 The primary output is the narrow, stable downstream contract. It contains identity, direction-neutral trend/tradability state, downstream ETF-context handoff, and eligibility/quality summary fields:
 
@@ -74,7 +74,7 @@ market_context_state_ref
 2_evidence_count
 ```
 
-`sector_or_industry_symbol` currently names the context ETF/basket row. It should migrate conceptually to `context_etf_symbol` in new contracts. It is audit/routing identity for the ETF-context state and must not be copied as raw ticker identity into anonymous target fitting vectors.
+`context_etf_symbol` names the context ETF/basket row. It is audit/routing identity for the ETF-context state and must not be copied as raw ticker identity into anonymous target fitting vectors.
 
 `2_sector_relative_direction_score` is signed current sector-context direction evidence. Positive values indicate relative long bias and negative values indicate relative short bias; the sign is not a quality judgment and must not be interpreted as portfolio weight.
 
@@ -161,9 +161,9 @@ Layer 2 changes are acceptable when they:
 
 `model_02_sector_context` must not become a production-hard downstream dependency until it has a reviewed promotion candidate backed by real-data evaluation evidence. Promotion evidence must include explicit thresholds, metric values, baseline comparison, split/refit stability, sector handoff quality, and no-future-leak checks. Fixture/local dry-run evidence should defer.
 
-Current real-data status: V2.2 `model_02_sector_context` rows and real promotion evidence exist, but the latest read-only evidence remains **deferred**, not approved. Missing model rows at label decision times are tracked as alignment/completeness evidence, not future leakage; leakage means label-time or split-order violations. No-future-leak and chronological split-overlap checks pass, while current promotion remains blocked by model/label alignment, coverage/pair-count, baseline, stability, and sector handoff gates. Fixture/local dry-run evidence must defer.
+Current real-data status: `model_02_sector_context` rows and real promotion evidence exist, but the latest read-only evidence remains **deferred**, not approved. Missing model rows at label decision times are tracked as alignment/completeness evidence, not future leakage; leakage means label-time or split-order violations. No-future-leak and chronological split-overlap checks pass, while current promotion remains blocked by model/label alignment, coverage/pair-count, baseline, stability, and sector handoff gates. Fixture/local dry-run evidence must defer.
 
-Current Layer 2 verification covers the V2.2 deterministic generator, SQL physical-artifact writers, direction-neutral promotion evidence builders, and contract boundary checks:
+Current Layer 2 verification covers the baseline generator, SQL physical-artifact writers, direction-neutral promotion evidence builders, and contract boundary checks:
 
 ```bash
 git diff --check

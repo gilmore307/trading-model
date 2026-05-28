@@ -56,7 +56,7 @@ class SectorContextContractTests(unittest.TestCase):
         self.assertIn("selected/watch Layer 2 baskets", contract)
         self.assertIn("must not copy Layer 1 market-property factor names", contract)
         self.assertIn("not reused Layer 1 market-property factors", contract)
-        self.assertIn("V1 prefers signed axes", contract)
+        self.assertIn("contract prefers signed axes", contract)
         self.assertIn("positive = upside-favorable capture; negative = downside-heavy capture", contract)
         self.assertIn("A stable weak sector can be `selected` with `short_bias`", contract)
         self.assertIn("stable downtrends are not treated as failed states", contract)

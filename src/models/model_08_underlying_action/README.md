@@ -1,6 +1,6 @@
 # model_08_underlying_action
 
-Physical package for Layer 8 `UnderlyingActionModel` deterministic scaffold.
+Physical package for Layer 8 `UnderlyingActionModel` baseline generator.
 
 This package owns local/offline implementation for the accepted Layer 8 direct underlying/spot planned-action boundary across stock, ETF, or crypto-style candidates:
 

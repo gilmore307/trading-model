@@ -1,4 +1,4 @@
-"""Deterministic EventRiskGovernor V1 scaffold.
+"""EventRiskGovernor baseline generator.
 
 The generator converts point-in-time visible event overview/detail rows into an
 ``event_context_vector``. It filters by ``event.available_time <= decision
