@@ -86,6 +86,41 @@ class UnderlyingActionModelTests(unittest.TestCase):
         self.assertIn("no_new_underlying_operation", output["underlying_action_plan"]["reason_codes"])
         self.assertEqual(output["underlying_action_plan"]["entry_plan"]["entry_style"], "no_entry")
 
+    def test_validation_calibrated_trade_intensity_can_allow_small_probe(self) -> None:
+        row = _base_row(
+            position_projection_vector={
+                "7_dominant_projection_horizon": "1W",
+                "7_target_exposure_score_1W": 0.04,
+                "7_projection_confidence_score_1W": 0.92,
+                "7_risk_budget_fit_score_1W": 0.95,
+                "7_cost_to_adjust_position_score_1W": 0.08,
+                "7_position_state_stability_score_1W": 0.90,
+            },
+            policy_gate_state={"minimum_trade_intensity": 0.005},
+        )
+
+        output = generate_rows([row])[0]
+
+        self.assertEqual(output["8_resolved_underlying_action_type"], "open_long")
+        self.assertGreater(output["8_resolved_trade_intensity_score"], 0.005)
+
+    def test_validation_calibrated_alpha_threshold_blocks_weak_alpha(self) -> None:
+        row = _base_row(
+            alpha_confidence_vector={
+                "5_alpha_confidence_score_1W": 0.40,
+                "5_expected_return_score_1W": 0.05,
+                "5_path_quality_score_1W": 0.85,
+                "5_reversal_risk_score_1W": 0.10,
+                "5_drawdown_risk_score_1W": 0.20,
+            },
+            policy_gate_state={"minimum_entry_alpha_confidence": 0.60, "minimum_trade_intensity": 0.005},
+        )
+
+        output = generate_rows([row])[0]
+
+        self.assertEqual(output["8_resolved_underlying_action_type"], "no_trade")
+        self.assertIn("alpha_confidence_below_entry_threshold", output["underlying_action_plan"]["reason_codes"])
+
     def test_bearish_flat_without_short_borrow_does_not_select_option_contract(self) -> None:
         row = _base_row(
             alpha_confidence_vector={

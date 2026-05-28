@@ -29,6 +29,7 @@ from .contract import (
 ET = ZoneInfo("America/New_York")
 MATERIAL_GAP_THRESHOLD = 0.025
 MIN_TRADE_INTENSITY = 0.05
+MIN_ENTRY_ALPHA_CONFIDENCE = 0.35
 DEFAULT_TARGET_RETURN_BY_HORIZON = {
     "10min": 0.006,
     "1h": 0.010,
@@ -352,8 +353,20 @@ def _horizon_payload(
 
     hard_blocked = bool(gate_state["hard_blocked"])
     soft_reasons: list[str] = []
-    if alpha_confidence < 0.35:
-        soft_reasons.append("alpha_confidence_marginal")
+    minimum_alpha_confidence = _score(
+        policy,
+        "minimum_entry_alpha_confidence",
+        "minimum_alpha_confidence",
+        default=MIN_ENTRY_ALPHA_CONFIDENCE,
+    )
+    minimum_trade_intensity = _score(
+        policy,
+        "minimum_trade_intensity",
+        "minimum_underlying_trade_intensity",
+        default=MIN_TRADE_INTENSITY,
+    )
+    if alpha_confidence < minimum_alpha_confidence:
+        soft_reasons.append("alpha_confidence_below_entry_threshold")
     if projection_confidence < 0.35:
         soft_reasons.append("projection_confidence_marginal")
     if abs(gap) < MATERIAL_GAP_THRESHOLD:
@@ -372,7 +385,8 @@ def _horizon_payload(
     gate_components = [alpha_confidence, projection_confidence, risk_fit, liquidity_fit, _invert01(cost_to_adjust)]
     trade_eligibility = 0.0 if hard_blocked else _geometric_score(gate_components, default=0.0)
     raw_intensity = abs(gap) * alpha_confidence * projection_confidence * risk_fit * stability * liquidity_fit * _invert01(cost_to_adjust) * _invert01(drawdown_risk) * _invert01(reversal_risk)
-    trade_intensity = 0.0 if hard_blocked else _clip01(raw_intensity)
+    entry_signal_allowed = alpha_confidence >= minimum_alpha_confidence
+    trade_intensity = 0.0 if hard_blocked or not entry_signal_allowed else _clip01(raw_intensity)
     entry_quality = 0.0 if hard_blocked else _clip01(_geometric_score([liquidity_fit, path_quality, _invert01(cost_to_adjust), _invert01(reversal_risk)], default=0.0))
     adverse_risk = _clip01(_average([drawdown_risk, reversal_risk, cost_to_adjust]) or 0.0)
     expected_return_score = _clip_signed(expected_return)
@@ -399,6 +413,8 @@ def _horizon_payload(
         "reversal_risk_score": reversal_risk,
         "drawdown_risk_score": drawdown_risk,
         "risk_budget_fit_score": risk_fit,
+        "minimum_entry_alpha_confidence": minimum_alpha_confidence,
+        "minimum_trade_intensity": minimum_trade_intensity,
         "soft_gate_reason_codes": soft_reasons,
     }
 
@@ -410,7 +426,8 @@ def _dominant_horizon(horizon_payloads: Mapping[str, Mapping[str, Any]], project
     ranked = sorted(
         HORIZONS,
         key=lambda horizon: (
-            horizon_payloads[horizon]["action_confidence_score"] * max(horizon_payloads[horizon]["trade_intensity_score"], MIN_TRADE_INTENSITY),
+            horizon_payloads[horizon]["action_confidence_score"]
+            * max(horizon_payloads[horizon]["trade_intensity_score"], horizon_payloads[horizon]["minimum_trade_intensity"]),
             HORIZON_MINUTES[horizon],
         ),
         reverse=True,
@@ -448,7 +465,8 @@ def _resolve_action(
             return {"planned_underlying_action_type": "cover_short" if target >= -MATERIAL_GAP_THRESHOLD else "reduce_short", "action_side": "short_reduction"}
         return {"planned_underlying_action_type": "no_trade", "action_side": "none"}
 
-    if abs(gap) < MATERIAL_GAP_THRESHOLD or dominant["trade_intensity_score"] < MIN_TRADE_INTENSITY:
+    minimum_trade_intensity = float(dominant.get("minimum_trade_intensity") or MIN_TRADE_INTENSITY)
+    if abs(gap) < MATERIAL_GAP_THRESHOLD or dominant["trade_intensity_score"] < minimum_trade_intensity:
         return {"planned_underlying_action_type": "maintain" if current_state != "flat" else "no_trade", "action_side": "none"}
 
     if current_state == "flat":
