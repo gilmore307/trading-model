@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic DynamicRiskPolicyModel rows from local JSON/JSONL or database rows."""
+"""Generate DynamicRiskPolicyModel rows from local JSON/JSONL or database rows."""
 from __future__ import annotations
 
 import argparse
@@ -75,7 +75,7 @@ def _coerce_json_mapping(value: Any) -> dict[str, Any]:
     return {}
 
 
-def _fetch_alpha_rows(cursor: Any, *, schema: str, table: str, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+def _fetch_rows(cursor: Any, *, schema: str, table: str, source_start: str | None, source_end: str | None, order_by: str) -> list[dict[str, Any]]:
     where: list[str] = []
     params: list[Any] = []
     if source_start:
@@ -85,7 +85,7 @@ def _fetch_alpha_rows(cursor: Any, *, schema: str, table: str, source_start: str
         where.append("available_time::timestamptz < %s::timestamptz")
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
-    cursor.execute(f"SELECT * FROM {_qualified(schema, table)}{where_sql} ORDER BY available_time::timestamptz ASC, target_candidate_id ASC", params)
+    cursor.execute(f"SELECT * FROM {_qualified(schema, table)}{where_sql} ORDER BY {order_by}", params)
     return [dict(row) for row in cursor.fetchall()]
 
 
@@ -95,18 +95,81 @@ def _alpha_payload(row: Mapping[str, Any]) -> dict[str, Any]:
     return payload
 
 
-def _decision_rows(alpha_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+def _prefixed_payload(row: Mapping[str, Any] | None, prefix: str, json_column: str) -> dict[str, Any]:
+    if not row:
+        return {}
+    payload = _coerce_json_mapping(row.get(json_column))
+    payload.update({str(key): value for key, value in row.items() if str(key).startswith(prefix) and value is not None})
+    return payload
+
+
+def _iso(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    return text.replace("Z", "+00:00")
+
+
+def _available_index(rows: Sequence[Mapping[str, Any]]) -> tuple[list[str], list[Mapping[str, Any]]]:
+    ordered = sorted((row for row in rows if row.get("available_time")), key=lambda row: _iso(row.get("available_time")))
+    return [_iso(row.get("available_time")) for row in ordered], ordered
+
+
+def _latest_at_or_before(times: Sequence[str], rows: Sequence[Mapping[str, Any]], available_time: Any) -> Mapping[str, Any] | None:
+    key = _iso(available_time)
+    if not key:
+        return None
+    selected: Mapping[str, Any] | None = None
+    for time_key, row in zip(times, rows):
+        if time_key > key:
+            break
+        selected = row
+    return selected
+
+
+def _event_systemic_payload(row: Mapping[str, Any] | None) -> dict[str, Any]:
+    payload = _prefixed_payload(row, "4_", "event_failure_risk_vector")
+    if payload:
+        for horizon in ("10min", "1h", "1D", "1W"):
+            payload[f"systemic_event_risk_score_{horizon}"] = max(
+                float(payload.get(f"4_event_strategy_failure_risk_score_{horizon}") or 0.0),
+                float(payload.get(f"4_event_session_gap_risk_score_{horizon}") or 0.0),
+            )
+        payload["systemic_event_risk_score"] = max(
+            float(payload.get("systemic_event_risk_score_10min") or 0.0),
+            float(payload.get("systemic_event_risk_score_1h") or 0.0),
+            float(payload.get("systemic_event_risk_score_1D") or 0.0),
+            float(payload.get("systemic_event_risk_score_1W") or 0.0),
+        )
+    return payload
+
+
+def _decision_rows(
+    alpha_rows: Sequence[Mapping[str, Any]],
+    *,
+    market_rows: Sequence[Mapping[str, Any]] = (),
+    event_failure_rows: Sequence[Mapping[str, Any]] = (),
+) -> list[dict[str, Any]]:
+    market_times, indexed_market_rows = _available_index(market_rows)
+    event_by_candidate_time = {
+        (str(row.get("target_candidate_id")), _iso(row.get("available_time"))): row
+        for row in event_failure_rows
+        if row.get("target_candidate_id") and row.get("available_time")
+    }
     rows: list[dict[str, Any]] = []
     for row in alpha_rows:
+        available_time = row.get("available_time")
+        market_row = _latest_at_or_before(market_times, indexed_market_rows, available_time)
+        event_row = event_by_candidate_time.get((str(row.get("target_candidate_id")), _iso(available_time)))
         rows.append(
             {
-                "available_time": row.get("available_time"),
-                "tradeable_time": row.get("tradeable_time") or row.get("available_time"),
+                "available_time": available_time,
+                "tradeable_time": row.get("tradeable_time") or available_time,
                 "target_candidate_id": row.get("target_candidate_id"),
                 "market_context_state_ref": row.get("market_context_state_ref"),
                 "alpha_confidence_vector_ref": row.get("alpha_confidence_vector_ref"),
-                "market_context_state": _coerce_json_mapping(row.get("market_context_state")) or {"1_market_risk_stress_score": 0.25, "1_market_liquidity_support_score": 0.70},
-                "systemic_event_risk_state": _coerce_json_mapping(row.get("systemic_event_risk_state")),
+                "market_context_state": _prefixed_payload(market_row, "1_", "market_context_state"),
+                "systemic_event_risk_state": _event_systemic_payload(event_row),
                 "alpha_confidence_vector": _alpha_payload(row),
                 "portfolio_exposure_state": {"gross_exposure_capacity_score": 0.70, "correlation_concentration_score": 0.25},
                 "account_capacity_state": {"cash_capacity_score": 0.70, "drawdown_pressure_score": 0.20},
@@ -135,8 +198,10 @@ def generate_from_database(
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
-            alpha_rows = _fetch_alpha_rows(cursor, schema=source_schema, table=source_table, source_start=source_start, source_end=source_end)
-            model_rows = generate_rows(_decision_rows(alpha_rows), model_version=model_version)
+            alpha_rows = _fetch_rows(cursor, schema=source_schema, table=source_table, source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            market_rows = _fetch_rows(cursor, schema="trading_model", table="model_01_market_regime", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC")
+            event_failure_rows = _fetch_rows(cursor, schema="trading_model", table="model_04_event_failure_risk", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            model_rows = generate_rows(_decision_rows(alpha_rows, market_rows=market_rows, event_failure_rows=event_failure_rows), model_version=model_version)
             write_model_output_with_support(
                 cursor,
                 model_rows,

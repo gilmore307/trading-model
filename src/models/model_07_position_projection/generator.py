@@ -1,4 +1,4 @@
-"""PositionProjectionModel baseline generator.
+"""PositionProjectionModel generator.
 
 Layer 7 maps the final adjusted ``alpha_confidence_vector`` plus point-in-time
 current/pending exposure, price location, friction, risk-budget, and policy
@@ -81,6 +81,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "model_layer": MODEL_LAYER,
         "model_version": model_version,
         "alpha_confidence_vector_ref": row.get("alpha_confidence_vector_ref"),
+        "dynamic_risk_policy_state_ref": row.get("dynamic_risk_policy_state_ref"),
         "current_position_state_ref": row.get("current_position_state_ref"),
         "pending_position_state_ref": row.get("pending_position_state_ref"),
         "position_projection_vector_ref": ref,

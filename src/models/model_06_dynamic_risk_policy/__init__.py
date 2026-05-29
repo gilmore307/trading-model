@@ -1,4 +1,4 @@
-"""Current physical package for Layer 6 DynamicRiskPolicyModel scaffold."""
+"""Current physical package for Layer 6 DynamicRiskPolicyModel."""
 from .contract import MODEL_ID, MODEL_LAYER, MODEL_SURFACE, MODEL_VERSION, VECTOR_OUTPUT
 from .generator import generate_rows
 

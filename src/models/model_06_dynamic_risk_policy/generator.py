@@ -1,4 +1,4 @@
-"""Deterministic DynamicRiskPolicyModel scaffold.
+"""DynamicRiskPolicyModel generator.
 
 Layer 6 converts minute-level market, systemic event pressure, and replayed
 portfolio/account capacity into dynamic_risk_policy_state. It may also emit

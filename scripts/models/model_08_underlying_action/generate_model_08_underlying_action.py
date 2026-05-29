@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic UnderlyingActionModel rows from local JSON/JSONL or database rows."""
+"""Generate UnderlyingActionModel rows from local JSON/JSONL or database rows."""
 from __future__ import annotations
 
 import argparse
@@ -102,13 +102,35 @@ def _prefixed_payload(row: Mapping[str, Any], prefix: str, json_column: str) -> 
     return payload
 
 
-def _decision_rows(*, projection_rows: Sequence[Mapping[str, Any]], alpha_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+def _iso(value: Any) -> str:
+    return str(value or "").strip().replace("Z", "+00:00")
+
+
+def _source_rows_by_candidate_time(source_rows: Sequence[Mapping[str, Any]]) -> dict[tuple[str, str], Mapping[str, Any]]:
+    return {
+        (str(row.get("target_candidate_id")), _iso(row.get("available_time"))): row
+        for row in source_rows
+        if row.get("target_candidate_id") and row.get("available_time")
+    }
+
+
+def _decision_rows(
+    *,
+    projection_rows: Sequence[Mapping[str, Any]],
+    alpha_rows: Sequence[Mapping[str, Any]],
+    source_rows: Sequence[Mapping[str, Any]] = (),
+) -> list[dict[str, Any]]:
     alpha_by_ref = {str(row.get("alpha_confidence_vector_ref")): row for row in alpha_rows if row.get("alpha_confidence_vector_ref")}
+    source_by_candidate_time = _source_rows_by_candidate_time(source_rows)
     rows: list[dict[str, Any]] = []
     for projection in projection_rows:
         alpha_ref = str(projection.get("alpha_confidence_vector_ref") or "")
         alpha = alpha_by_ref.get(alpha_ref)
         if not alpha:
+            continue
+        source = source_by_candidate_time.get((str(projection.get("target_candidate_id")), _iso(projection.get("available_time"))))
+        reference_price = source.get("bar_close") if source else None
+        if reference_price in (None, ""):
             continue
         rows.append(
             {
@@ -121,7 +143,14 @@ def _decision_rows(*, projection_rows: Sequence[Mapping[str, Any]], alpha_rows: 
                 "position_projection_vector": _prefixed_payload(projection, "7_", "position_projection_vector"),
                 "current_underlying_position_state": {"current_underlying_exposure_score": 0.0},
                 "pending_underlying_order_state": {"pending_underlying_exposure_score": 0.0, "pending_fill_probability_estimate": 0.0},
-                "underlying_quote_state": {"reference_price": 100.0, "bid_price": 99.95, "ask_price": 100.05, "halt_status": "active"},
+                "underlying_quote_state": {
+                    "reference_price": reference_price,
+                    "last_price": reference_price,
+                    "close_price": reference_price,
+                    "symbol": source.get("symbol") if source else None,
+                    "halt_status": "active",
+                    "quote_snapshot_ref": f"source_03_target_state:{projection.get('target_candidate_id')}:{_iso(projection.get('available_time'))}",
+                },
                 "underlying_liquidity_state": {"spread_bps": 10.0, "dollar_volume": 50000000.0, "liquidity_score": 0.90},
                 "underlying_borrow_state": {"short_borrow_status": "available"},
                 "risk_budget_state": {"risk_budget_fit_score": 0.75, "risk_budget_available_score": 0.75},
@@ -172,7 +201,11 @@ def generate_from_database(
         with conn.cursor() as cursor:
             projection_rows = _fetch_rows(cursor, schema="trading_model", table="model_07_position_projection", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             alpha_rows = _fetch_rows(cursor, schema="trading_model", table="model_05_alpha_confidence", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
-            model_rows = generate_rows(_decision_rows(projection_rows=projection_rows, alpha_rows=alpha_rows), model_version=model_version)
+            source_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            decisions = _decision_rows(projection_rows=projection_rows, alpha_rows=alpha_rows, source_rows=source_rows)
+            if not decisions:
+                raise SystemExit("Layer 8 database generation found no projection rows with matching Layer 5 alpha and source target-state price rows")
+            model_rows = generate_rows(decisions, model_version=model_version)
             _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
     if output_jsonl:
         _write_jsonl(output_jsonl, model_rows)

@@ -1,8 +1,8 @@
 # model_07_position_projection
 
-Physical package for Layer 7 `PositionProjectionModel` baseline generator.
+Physical package for Layer 7 `PositionProjectionModel`.
 
-Owns local mapping from final adjusted `alpha_confidence_vector` plus point-in-time current/pending position, friction, portfolio, risk-budget, and policy context into `position_projection_vector`. The scaffold implements:
+Owns local mapping from final adjusted `alpha_confidence_vector` plus point-in-time current/pending position, friction, portfolio, risk-budget, and policy context into `position_projection_vector`. The current generator implements:
 
 - alpha-to-position prior conversion;
 - pending-adjusted effective exposure;

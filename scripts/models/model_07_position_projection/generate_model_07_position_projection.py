@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic PositionProjectionModel rows from local JSON/JSONL or database rows."""
+"""Generate PositionProjectionModel rows from local JSON/JSONL or database rows."""
 from __future__ import annotations
 
 import argparse
@@ -81,7 +81,7 @@ def _coerce_json_mapping(value: Any) -> dict[str, Any]:
     return {}
 
 
-def _fetch_alpha_rows(cursor: Any, *, schema: str, table: str, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+def _fetch_rows(cursor: Any, *, schema: str, table: str, source_start: str | None, source_end: str | None, order_by: str) -> list[dict[str, Any]]:
     where: list[str] = []
     params: list[Any] = []
     if source_start:
@@ -91,7 +91,7 @@ def _fetch_alpha_rows(cursor: Any, *, schema: str, table: str, source_start: str
         where.append("available_time::timestamptz < %s::timestamptz")
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
-    cursor.execute(f"SELECT * FROM {_qualified(schema, table)}{where_sql} ORDER BY available_time::timestamptz ASC, target_candidate_id ASC", params)
+    cursor.execute(f"SELECT * FROM {_qualified(schema, table)}{where_sql} ORDER BY {order_by}", params)
     return [dict(row) for row in cursor.fetchall()]
 
 
@@ -101,15 +101,67 @@ def _alpha_payload(row: Mapping[str, Any]) -> dict[str, Any]:
     return payload
 
 
-def _decision_rows(alpha_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+def _prefixed_payload(row: Mapping[str, Any], prefix: str, json_column: str) -> dict[str, Any]:
+    payload = _coerce_json_mapping(row.get(json_column))
+    payload.update({str(key): value for key, value in row.items() if str(key).startswith(prefix) and value is not None})
+    return payload
+
+
+def _iso(value: Any) -> str:
+    return str(value or "").strip().replace("Z", "+00:00")
+
+
+def _risk_budget_payload(risk_row: Mapping[str, Any]) -> dict[str, Any]:
+    payload = _prefixed_payload(risk_row, "6_", "dynamic_risk_policy_state")
+    if "risk_budget_available_score" not in payload:
+        payload["risk_budget_available_score"] = risk_row.get("6_resolved_dynamic_risk_budget_score")
+    if "single_name_exposure_limit" not in payload:
+        payload["single_name_exposure_limit"] = risk_row.get("6_resolved_new_exposure_permission_score")
+    return {key: value for key, value in payload.items() if value is not None}
+
+
+def _safe_float(value: Any) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _policy_gate_payload(risk_row: Mapping[str, Any]) -> dict[str, Any]:
+    permission = _safe_float(risk_row.get("6_resolved_new_exposure_permission_score"))
+    blocked = permission is not None and permission <= 0.0
+    return {
+        "new_exposure_allowed": not blocked,
+        "dynamic_risk_policy_state_ref": risk_row.get("dynamic_risk_policy_state_ref"),
+    }
+
+
+def _decision_rows(alpha_rows: Sequence[Mapping[str, Any]], *, dynamic_risk_rows: Sequence[Mapping[str, Any]] = ()) -> list[dict[str, Any]]:
+    risk_by_alpha_ref = {
+        str(row.get("alpha_confidence_vector_ref")): row
+        for row in dynamic_risk_rows
+        if row.get("alpha_confidence_vector_ref")
+    }
+    risk_by_candidate_time = {
+        (str(row.get("target_candidate_id")), _iso(row.get("available_time"))): row
+        for row in dynamic_risk_rows
+        if row.get("target_candidate_id") and row.get("available_time")
+    }
     rows: list[dict[str, Any]] = []
     for row in alpha_rows:
+        alpha_ref = str(row.get("alpha_confidence_vector_ref") or "")
+        risk_row = risk_by_alpha_ref.get(alpha_ref) or risk_by_candidate_time.get((str(row.get("target_candidate_id")), _iso(row.get("available_time"))))
+        if not risk_row:
+            continue
         rows.append(
             {
                 "available_time": row.get("available_time"),
                 "tradeable_time": row.get("tradeable_time") or row.get("available_time"),
                 "target_candidate_id": row.get("target_candidate_id"),
                 "alpha_confidence_vector_ref": row.get("alpha_confidence_vector_ref"),
+                "dynamic_risk_policy_state_ref": risk_row.get("dynamic_risk_policy_state_ref"),
                 "current_position_state_ref": "flat_current_position_state:formal_2016_01",
                 "pending_position_state_ref": "no_pending_position_state:formal_2016_01",
                 "alpha_confidence_vector": _alpha_payload(row),
@@ -119,8 +171,8 @@ def _decision_rows(alpha_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, An
                 "price_location_state": {"thesis_intact_score": 1.0, "alpha_revision_score": 0.0, "price_move_since_alpha_score": 0.0},
                 "position_lifecycle_state": {"current_unrealized_return": 0.0, "thesis_break_risk_score": 0.0},
                 "portfolio_exposure_state": {"correlation_concentration_score": 0.25, "sector_exposure_limit": 1.0},
-                "risk_budget_state": {"risk_budget_available_score": 0.75, "single_name_exposure_limit": 1.0},
-                "policy_gate_state": {"new_exposure_allowed": True},
+                "risk_budget_state": _risk_budget_payload(risk_row),
+                "policy_gate_state": _policy_gate_payload(risk_row),
             }
         )
     return rows
@@ -167,8 +219,12 @@ def generate_from_database(
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
-            alpha_rows = _fetch_alpha_rows(cursor, schema=source_schema, table=source_table, source_start=source_start, source_end=source_end)
-            model_rows = generate_rows(_decision_rows(alpha_rows), model_version=model_version)
+            alpha_rows = _fetch_rows(cursor, schema=source_schema, table=source_table, source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            dynamic_risk_rows = _fetch_rows(cursor, schema="trading_model", table="model_06_dynamic_risk_policy", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            decisions = _decision_rows(alpha_rows, dynamic_risk_rows=dynamic_risk_rows)
+            if not decisions:
+                raise SystemExit("Layer 7 database generation found no alpha rows with matching Layer 6 dynamic risk policy state")
+            model_rows = generate_rows(decisions, model_version=model_version)
             _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
     if output_jsonl:
         _write_jsonl(output_jsonl, model_rows)

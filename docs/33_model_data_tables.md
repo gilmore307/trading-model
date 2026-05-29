@@ -58,9 +58,9 @@ The following dependencies are table-level dependencies in the current SQL gener
 | M03 | `trading_data.m03_target_state_vector_feature_generation`, `trading_data.m03_target_state_vector_data_acquisition`, `trading_model.m01_market_regime_model_generation`, `trading_model.m02_sector_context_model_generation`; optional `trading_data.m02_sector_context_data_acquisition` for ETF-holding sector context fallback |
 | M04 | `trading_model.m03_target_state_vector_model_generation`; optional `trading_model.event_strategy_failure_gate`; absent event-failure evidence produces neutral no-reviewed-event-risk rows |
 | M05 | `trading_model.m04_event_failure_risk_model_generation`, `trading_model.m03_target_state_vector_model_generation`, `trading_data.m03_target_state_vector_data_acquisition`, `trading_model.m02_sector_context_model_generation`, `trading_model.m01_market_regime_model_generation` |
-| M06 | `trading_model.m05_alpha_confidence_model_generation`; broader market/systemic/portfolio context is currently fixture/default scaffold state in the SQL path |
-| M07 | `trading_model.m05_alpha_confidence_model_generation`; current SQL path does not yet join `trading_model.m06_dynamic_risk_policy_model_generation` even though the accepted model contract says dynamic risk policy should condition position projection |
-| M08 | `trading_model.m07_position_projection_model_generation`, `trading_model.m05_alpha_confidence_model_generation` |
+| M06 | `trading_model.m05_alpha_confidence_model_generation`, `trading_model.m01_market_regime_model_generation`, `trading_model.m04_event_failure_risk_model_generation` |
+| M07 | `trading_model.m05_alpha_confidence_model_generation`, `trading_model.m06_dynamic_risk_policy_model_generation` |
+| M08 | `trading_model.m07_position_projection_model_generation`, `trading_model.m05_alpha_confidence_model_generation`, `trading_data.m03_target_state_vector_data_acquisition` |
 | M09 | `trading_model.m08_underlying_action_model_generation`, `trading_data.m03_target_state_vector_data_acquisition`, optional `trading_model.m08_underlying_action_model_generation_explainability`, optional `trading_data.m09_option_expression_feature_generation` |
 | M10 | `trading_data.m10_event_risk_governor_data_acquisition`, `trading_data.m03_target_state_vector_data_acquisition`, `trading_model.m03_target_state_vector_model_generation`, optional `trading_model.m03_target_state_vector_model_generation_explainability` |
 
@@ -83,5 +83,4 @@ These tables support promotion evidence. They do not approve promotion by themse
 
 - Corrected in this pass: `docs/32_model_output_quality.md` now refers to the full M01-M10 model-generation table families.
 - Corrected in this pass: `docs/02_architecture.md` now treats the M10 model-generation tables as part of the layer-specific model implementation surface; the `50_*` docs remain event-family research detail inside the Layer 10 package.
-- The M07 SQL generation path currently bypasses `trading_model.m06_dynamic_risk_policy_model_generation` and injects default risk-budget/policy state. That is acceptable as a scaffold only; it is not the final table dependency shape for production evidence.
-- The M06 SQL generation path currently derives dynamic risk policy only from `trading_model.m05_alpha_confidence_model_generation` plus scaffold state. Before production promotion, this path needs explicit market/systemic/portfolio context evidence or a documented reviewed exception.
+- The M06-M08 SQL generation paths now consume the upstream model/source tables required by their current contracts. Missing upstream evidence should reduce produced rows or block the stage instead of silently manufacturing a complete model path from placeholder state.

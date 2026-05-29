@@ -130,12 +130,85 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
                     "6_target_exposure_score_1W": 0.99,
                 }
             ],
+            source_rows=[
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "symbol": "AAPL",
+                    "bar_close": 102.5,
+                }
+            ],
         )
 
         projection_payload = rows[0]["position_projection_vector"]
         self.assertEqual(projection_payload["7_dominant_projection_horizon"], "1W")
         self.assertEqual(projection_payload["7_target_exposure_score_1W"], 0.35)
         self.assertNotIn("6_target_exposure_score_1W", projection_payload)
+        self.assertEqual(rows[0]["underlying_quote_state"]["reference_price"], 102.5)
+
+    def test_layer_06_database_input_uses_market_and_event_model_rows(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_06_dynamic_risk_policy/generate_model_06_dynamic_risk_policy.py")
+
+        rows = generator._decision_rows(
+            [
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "alpha_confidence_vector_ref": "acv_1",
+                    "5_alpha_confidence_score_1W": 0.82,
+                }
+            ],
+            market_rows=[
+                {
+                    "available_time": "2016-01-04T09:30:00-05:00",
+                    "1_market_risk_stress_score_1W": 0.61,
+                    "1_market_liquidity_support_score_1W": 0.42,
+                }
+            ],
+            event_failure_rows=[
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "4_event_strategy_failure_risk_score_1W": 0.44,
+                    "4_event_session_gap_risk_score_1W": 0.20,
+                }
+            ],
+        )
+
+        self.assertEqual(rows[0]["market_context_state"]["1_market_risk_stress_score_1W"], 0.61)
+        self.assertEqual(rows[0]["systemic_event_risk_state"]["systemic_event_risk_score_1W"], 0.44)
+        self.assertNotEqual(rows[0]["market_context_state"], {"1_market_risk_stress_score": 0.25, "1_market_liquidity_support_score": 0.70})
+
+    def test_layer_07_database_input_requires_layer_6_policy_state(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_07_position_projection/generate_model_07_position_projection.py")
+
+        alpha_rows = [
+            {
+                "available_time": "2016-01-04T09:35:00-05:00",
+                "target_candidate_id": "anon_aapl",
+                "alpha_confidence_vector_ref": "acv_1",
+                "5_alpha_confidence_score_1W": 0.82,
+            }
+        ]
+        self.assertEqual(generator._decision_rows(alpha_rows, dynamic_risk_rows=[]), [])
+
+        rows = generator._decision_rows(
+            alpha_rows,
+            dynamic_risk_rows=[
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "alpha_confidence_vector_ref": "acv_1",
+                    "dynamic_risk_policy_state_ref": "drp_1",
+                    "6_resolved_dynamic_risk_budget_score": 0.33,
+                    "6_resolved_new_exposure_permission_score": 0.22,
+                }
+            ],
+        )
+
+        self.assertEqual(rows[0]["dynamic_risk_policy_state_ref"], "drp_1")
+        self.assertEqual(rows[0]["risk_budget_state"]["risk_budget_available_score"], 0.33)
+        self.assertEqual(rows[0]["risk_budget_state"]["single_name_exposure_limit"], 0.22)
 
     def test_layer_04_database_input_falls_back_to_neutral_target_context_without_gate_table(self) -> None:
         generator = self._load_script_module(REPO_ROOT / "scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py")

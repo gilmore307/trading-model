@@ -1,6 +1,6 @@
 # model_08_underlying_action
 
-Physical package for Layer 8 `UnderlyingActionModel` baseline generator.
+Physical package for Layer 8 `UnderlyingActionModel`.
 
 This package owns local/offline implementation for the accepted Layer 8 direct underlying/spot planned-action boundary across stock, ETF, or crypto-style candidates:
 
@@ -16,7 +16,7 @@ This package owns local/offline implementation for the accepted Layer 8 direct u
 Key files:
 
 - `contract.py` — accepted constants, score families, planned action vocabulary, and forbidden output field names.
-- `generator.py` — deterministic point-in-time scaffold for action-plan rows.
+- `generator.py` — point-in-time generator for action-plan rows.
 - `evaluation.py` — offline label helper for plan-quality evaluation; labels must not be joined into inference payloads.
 
 Training should use dense minute-level underlying-action state rows whenever Layer 7 projection plus point-in-time underlying quote/liquidity/policy context exist. Planned-action triggers and hard gates are outputs or routing policies, not training-row admission filters.

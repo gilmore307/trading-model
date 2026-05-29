@@ -1,4 +1,4 @@
-"""OptionExpressionModel baseline generator.
+"""OptionExpressionModel generator.
 
 This package consumes the Layer 8 underlying thesis plus
 point-in-time option-chain context and emits an offline ``option_expression_plan`` /

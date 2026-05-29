@@ -1,8 +1,8 @@
-"""UnderlyingActionModel baseline generator.
+"""UnderlyingActionModel generator.
 
 Consumes point-in-time Layer 5 alpha and Layer 7 position-projection vectors plus current/pending direct-underlying
 state, quote/liquidity/borrow state, and risk/policy gates. Emits an offline
-``underlying_action_plan`` and ``underlying_action_vector``. The scaffold is
+``underlying_action_plan`` and ``underlying_action_vector``. The generator is
 intentionally conservative: it plans direct underlying/spot actions for stock,
 ETF, or crypto-style candidates, uses pending exposure when calculating effective
 exposure, blocks broker/exchange order fields, and never selects option contracts.
