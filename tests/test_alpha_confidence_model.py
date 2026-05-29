@@ -153,6 +153,36 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         self.assertEqual(rows[0]["market_context_state"]["1_state_quality_score"], 0.60)
         self.assertEqual(rows[0]["sector_context_state"]["2_sector_context_support_quality_score"], 0.70)
 
+    def test_training_script_attaches_after_cost_labels_from_future_bars(self) -> None:
+        script = _load_training_script()
+        rows = script.attach_after_cost_return_labels(
+            [
+                {
+                    **_base_row(),
+                    "available_time": "2026-05-07T10:30:00-04:00",
+                    "target_candidate_id": "anon_target_001",
+                    "target_context_state": _target_state(direction=-0.40),
+                }
+            ],
+            source_03_rows=[
+                {
+                    "target_candidate_id": "anon_target_001",
+                    "available_time": "2026-05-07T10:30:00-04:00",
+                    "bar_close": 100.0,
+                },
+                {
+                    "target_candidate_id": "anon_target_001",
+                    "available_time": "2026-05-07T10:40:00-04:00",
+                    "bar_close": 99.0,
+                },
+            ],
+            cost_bps=5.0,
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertAlmostEqual(rows[0]["after_cost_return_10min"], 0.0095)
+        self.assertEqual(rows[0]["after_cost_label_time_10min"], "2026-05-07T10:40:00-04:00")
+
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:
         output = generate_rows([_base_row()], after_cost_alpha_model=_artifact_bundle())[0]
         labels = build_alpha_confidence_labels(
@@ -283,6 +313,16 @@ def _load_generator_script():
     spec = importlib.util.spec_from_file_location(script.stem, script)
     if spec is None or spec.loader is None:
         raise AssertionError("failed to load Layer 5 generator script")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_training_script():
+    script = REPO_ROOT / "scripts/models/model_05_alpha_confidence/train_model_05_alpha_confidence.py"
+    spec = importlib.util.spec_from_file_location(script.stem, script)
+    if spec is None or spec.loader is None:
+        raise AssertionError("failed to load Layer 5 training script")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
