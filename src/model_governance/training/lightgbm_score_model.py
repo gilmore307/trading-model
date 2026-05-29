@@ -4,6 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
+_BOOSTER_CACHE: dict[int, tuple[str, Any]] = {}
+
 
 @dataclass(frozen=True)
 class LightGBMScoreModelSpec:
@@ -93,12 +95,11 @@ def predict_lightgbm_score(features: Sequence[float], artifact: Mapping[str, Any
     """Run one point-in-time feature row through a serialized LightGBM score artifact."""
 
     validate_lightgbm_score_artifact(artifact)
-    lgb = _load_lightgbm()
     np = _load_numpy()
     expected_width = len(artifact["feature_names"])
     if len(features) != expected_width:
         raise ValueError(f"feature count {len(features)} does not match artifact width {expected_width}")
-    booster = lgb.Booster(model_str=str(artifact["booster_model"]))
+    booster = _booster_for_artifact(artifact)
     return float(booster.predict(np.asarray([features], dtype=float))[0])
 
 
@@ -129,6 +130,17 @@ def _load_lightgbm() -> Any:
     except ModuleNotFoundError as error:  # pragma: no cover - exercised only in minimal environments
         raise RuntimeError("LightGBM is required for model training and inference; install requirements.txt") from error
     return lgb
+
+
+def _booster_for_artifact(artifact: Mapping[str, Any]) -> Any:
+    model = str(artifact["booster_model"])
+    cache_key = id(artifact)
+    cached = _BOOSTER_CACHE.get(cache_key)
+    if cached is not None and cached[0] == model:
+        return cached[1]
+    booster = _load_lightgbm().Booster(model_str=model)
+    _BOOSTER_CACHE[cache_key] = (model, booster)
+    return booster
 
 
 def _load_numpy() -> Any:
