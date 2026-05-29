@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import bisect
 import json
 import sys
 from datetime import timedelta
@@ -198,22 +199,28 @@ def attach_after_cost_return_labels(
         candidate = str(row.get("target_candidate_id") or "")
         if candidate and _safe_float(row.get("bar_close")) is not None and row.get("available_time"):
             bars_by_candidate.setdefault(candidate, []).append(row)
-    for bars in bars_by_candidate.values():
+    bar_indexes_by_candidate: dict[str, tuple[list[Any], list[Mapping[str, Any]]]] = {}
+    for candidate, bars in bars_by_candidate.items():
         bars.sort(key=lambda item: _parse_time(item["available_time"]))
+        bar_indexes_by_candidate[candidate] = (
+            [_parse_time(item["available_time"]) for item in bars],
+            bars,
+        )
 
     labeled: list[dict[str, Any]] = []
     for row in rows:
-        bars = bars_by_candidate.get(str(row.get("target_candidate_id") or ""), [])
-        if not bars:
+        bar_index = bar_indexes_by_candidate.get(str(row.get("target_candidate_id") or ""))
+        if not bar_index:
             continue
         available_time = _parse_time(row["available_time"])
-        current = _latest_bar_at_or_before(bars, available_time)
+        bar_times, bars = bar_index
+        current = _latest_bar_at_or_before(bar_times, bars, available_time)
         current_close = _safe_float((current or {}).get("bar_close"))
         if current is None or current_close is None or current_close <= 0:
             continue
         output = dict(row)
         for horizon, delta in HORIZON_DELTAS.items():
-            future = _first_bar_at_or_after(bars, available_time + delta)
+            future = _first_bar_at_or_after(bar_times, bars, available_time + delta)
             future_close = _safe_float((future or {}).get("bar_close"))
             if future is None or future_close is None:
                 continue
@@ -226,21 +233,18 @@ def attach_after_cost_return_labels(
     return labeled
 
 
-def _latest_bar_at_or_before(rows: list[Mapping[str, Any]], timestamp: Any) -> Mapping[str, Any] | None:
-    latest: Mapping[str, Any] | None = None
-    for row in rows:
-        if _parse_time(row["available_time"]) <= timestamp:
-            latest = row
-        else:
-            break
-    return latest
+def _latest_bar_at_or_before(times: list[Any], rows: list[Mapping[str, Any]], timestamp: Any) -> Mapping[str, Any] | None:
+    index = bisect.bisect_right(times, timestamp) - 1
+    if index < 0:
+        return None
+    return rows[index]
 
 
-def _first_bar_at_or_after(rows: list[Mapping[str, Any]], timestamp: Any) -> Mapping[str, Any] | None:
-    for row in rows:
-        if _parse_time(row["available_time"]) >= timestamp:
-            return row
-    return None
+def _first_bar_at_or_after(times: list[Any], rows: list[Mapping[str, Any]], timestamp: Any) -> Mapping[str, Any] | None:
+    index = bisect.bisect_left(times, timestamp)
+    if index >= len(rows):
+        return None
+    return rows[index]
 
 
 def _direction_orientation(row: Mapping[str, Any], horizon: str) -> float:
