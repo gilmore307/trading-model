@@ -4,6 +4,8 @@ from __future__ import annotations
 import math
 from typing import Any, Iterable, Mapping, Sequence
 
+from model_governance.training import LightGBMScoreModelSpec, predict_lightgbm_score, train_lightgbm_score_model
+
 from .contract import HORIZONS, MODEL_ID, MODEL_VERSION
 
 ARTIFACT_SCHEMA_VERSION = "layer_05_after_cost_alpha_model_artifact"
@@ -12,6 +14,7 @@ DEFAULT_RETURN_SCALE = 0.02
 DEFAULT_LEARNING_RATE = 0.08
 DEFAULT_ITERATIONS = 700
 DEFAULT_L2 = 0.001
+SCORE_SEMANTICS = "0.5_after_cost_neutral__above_positive_edge__below_negative_edge"
 
 
 FEATURE_TEMPLATES: tuple[str, ...] = (
@@ -58,22 +61,6 @@ FEATURE_TEMPLATES: tuple[str, ...] = (
 )
 
 
-def _load_lightgbm() -> Any:
-    try:
-        import lightgbm as lgb  # type: ignore[import-not-found]
-    except ModuleNotFoundError as error:  # pragma: no cover - exercised only in minimal environments
-        raise RuntimeError("LightGBM is required for Layer 5 after-cost alpha training and inference; install requirements.txt") from error
-    return lgb
-
-
-def _load_numpy() -> Any:
-    try:
-        import numpy as np  # type: ignore[import-not-found]
-    except ModuleNotFoundError as error:  # pragma: no cover - LightGBM requires numpy in normal installs
-        raise RuntimeError("NumPy is required for Layer 5 after-cost alpha training and inference; install requirements.txt") from error
-    return np
-
-
 def train_after_cost_alpha_model(
     training_rows: Iterable[Mapping[str, Any]],
     *,
@@ -94,8 +81,6 @@ def train_after_cost_alpha_model(
     """
 
     _validate_horizon(horizon)
-    lgb = _load_lightgbm()
-    np = _load_numpy()
     rows = [dict(row) for row in training_rows]
     samples: list[tuple[list[float], float]] = []
     feature_names = _feature_names(horizon)
@@ -113,65 +98,39 @@ def train_after_cost_alpha_model(
     if not samples:
         raise ValueError("at least one labeled Layer 5 training row is required")
 
-    features = np.asarray([feature_row for feature_row, _target in samples], dtype=float)
-    targets = np.asarray([target for _feature_row, target in samples], dtype=float)
-    dataset = lgb.Dataset(features, label=targets, feature_name=feature_names, free_raw_data=False)
-    params = {
-        "objective": "regression",
-        "metric": "l1",
-        "boosting_type": "gbdt",
-        "learning_rate": learning_rate,
-        "lambda_l2": l2,
-        "num_leaves": min(31, max(2, len(samples))),
-        "min_data_in_leaf": 1,
-        "min_data_in_bin": 1,
-        "feature_pre_filter": False,
-        "verbosity": -1,
-        "seed": 1705,
-        "feature_fraction_seed": 1705,
-        "bagging_seed": 1705,
-        "data_random_seed": 1705,
-        "deterministic": True,
-        "force_col_wise": True,
-    }
-    booster = lgb.train(params, dataset, num_boost_round=max(1, iterations))
-    predictions = [_clip01(float(value)) for value in booster.predict(features)]
-    mae = sum(abs(prediction - target) for prediction, target in zip(predictions, targets)) / len(targets)
-    return {
-        "schema_version": ARTIFACT_SCHEMA_VERSION,
-        "model_id": MODEL_ID,
-        "model_version": model_version,
-        "model_type": MODEL_TYPE,
-        "score_semantics": "0.5_after_cost_neutral__above_positive_edge__below_negative_edge",
-        "horizon": horizon,
-        "label_field": selected_label_field,
-        "return_scale": return_scale,
-        "feature_names": feature_names,
-        "booster_model": booster.model_to_string(),
-        "booster_params": params,
-        "training_summary": {
-            "sample_count": len(samples),
-            "boosting_rounds": max(1, iterations),
-            "learning_rate": learning_rate,
-            "l2": l2,
-            "mean_target_score": round(sum(targets) / len(targets), 8),
-            "mean_absolute_error": round(mae, 8),
+    spec = LightGBMScoreModelSpec(
+        schema_version=ARTIFACT_SCHEMA_VERSION,
+        model_id=MODEL_ID,
+        model_version=model_version,
+        model_type=MODEL_TYPE,
+        score_semantics=SCORE_SEMANTICS,
+        seed=1705,
+        iterations=iterations,
+        learning_rate=learning_rate,
+        l2=l2,
+    )
+    return train_lightgbm_score_model(
+        spec=spec,
+        feature_rows=[feature_row for feature_row, _target in samples],
+        targets=[target for _feature_row, target in samples],
+        feature_names=feature_names,
+        artifact_fields={
+            "horizon": horizon,
+            "label_field": selected_label_field,
+            "return_scale": return_scale,
         },
-    }
+    )
 
 
 def score_after_cost_alpha(row: Mapping[str, Any], artifact: Mapping[str, Any], *, horizon: str) -> dict[str, Any]:
     """Score one Layer 5 input row with a trained after-cost alpha artifact."""
 
     _validate_artifact(artifact)
-    lgb = _load_lightgbm()
-    np = _load_numpy()
     artifact_horizon = str(artifact.get("horizon") or horizon)
     _validate_horizon(artifact_horizon)
     feature_names = [str(name) for name in artifact["feature_names"]]
     features = extract_after_cost_features(row, horizon=artifact_horizon, feature_names=feature_names)
-    booster = lgb.Booster(model_str=str(artifact["booster_model"]))
-    raw_score = float(booster.predict(np.asarray([features], dtype=float))[0])
+    raw_score = predict_lightgbm_score(features, artifact)
     score = _clip01(raw_score)
     coverage = sum(1 for value in features if value != 0.0) / len(features) if features else 0.0
     return {
