@@ -261,18 +261,21 @@ def _negative_row() -> dict[str, object]:
 
 def _artifact_bundle() -> dict[str, object]:
     training_rows = [_positive_row(), _neutral_row(), _negative_row()]
-    return {
-        "artifacts_by_horizon": {
-            horizon: train_after_cost_alpha_model(
-                training_rows,
-                horizon=horizon,
-                label_field=f"after_cost_return_{horizon}",
-                iterations=900,
-                learning_rate=0.10,
-            )
-            for horizon in ("10min", "1h", "1D", "1W")
+    try:
+        return {
+            "artifacts_by_horizon": {
+                horizon: train_after_cost_alpha_model(
+                    training_rows,
+                    horizon=horizon,
+                    label_field=f"after_cost_return_{horizon}",
+                    iterations=900,
+                    learning_rate=0.10,
+                )
+                for horizon in ("10min", "1h", "1D", "1W")
+            }
         }
-    }
+    except RuntimeError as error:
+        raise unittest.SkipTest(str(error)) from error
 
 
 def _load_generator_script():

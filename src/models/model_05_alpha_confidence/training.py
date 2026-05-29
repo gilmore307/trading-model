@@ -7,7 +7,7 @@ from typing import Any, Iterable, Mapping, Sequence
 from .contract import HORIZONS, MODEL_ID, MODEL_VERSION
 
 ARTIFACT_SCHEMA_VERSION = "layer_05_after_cost_alpha_model_artifact"
-MODEL_TYPE = "standardized_linear_after_cost_alpha"
+MODEL_TYPE = "lightgbm_gbdt_after_cost_alpha"
 DEFAULT_RETURN_SCALE = 0.02
 DEFAULT_LEARNING_RATE = 0.08
 DEFAULT_ITERATIONS = 700
@@ -58,6 +58,14 @@ FEATURE_TEMPLATES: tuple[str, ...] = (
 )
 
 
+def _load_lightgbm() -> Any:
+    try:
+        import lightgbm as lgb  # type: ignore[import-not-found]
+    except ModuleNotFoundError as error:  # pragma: no cover - exercised only in minimal environments
+        raise RuntimeError("LightGBM is required for Layer 5 after-cost alpha training and inference; install requirements.txt") from error
+    return lgb
+
+
 def train_after_cost_alpha_model(
     training_rows: Iterable[Mapping[str, Any]],
     *,
@@ -69,7 +77,7 @@ def train_after_cost_alpha_model(
     l2: float = DEFAULT_L2,
     model_version: str = MODEL_VERSION,
 ) -> dict[str, Any]:
-    """Train a small direct Layer 5 score model.
+    """Train a direct Layer 5 GBDT score model.
 
     The supervised target is the score itself: 0.5 means after-cost neutral,
     above 0.5 means positive after-cost edge, and below 0.5 means negative
@@ -78,6 +86,7 @@ def train_after_cost_alpha_model(
     """
 
     _validate_horizon(horizon)
+    lgb = _load_lightgbm()
     rows = [dict(row) for row in training_rows]
     samples: list[tuple[list[float], float]] = []
     feature_names = _feature_names(horizon)
@@ -95,27 +104,29 @@ def train_after_cost_alpha_model(
     if not samples:
         raise ValueError("at least one labeled Layer 5 training row is required")
 
-    means, scales = _standardization([features for features, _target in samples])
-    standardized = [(_standardize(features, means, scales), target) for features, target in samples]
-    weights = [0.0 for _name in feature_names]
-    bias = _logit(_clip_target(sum(target for _features, target in standardized) / len(standardized)))
-    for _step in range(max(1, iterations)):
-        grad_w = [0.0 for _name in feature_names]
-        grad_b = 0.0
-        for features, target in standardized:
-            prediction = _sigmoid(bias + sum(weight * value for weight, value in zip(weights, features)))
-            error = prediction - target
-            grad_b += error
-            for index, value in enumerate(features):
-                grad_w[index] += error * value
-        count = float(len(standardized))
-        bias -= learning_rate * grad_b / count
-        for index, weight in enumerate(weights):
-            regularized = grad_w[index] / count + l2 * weight
-            weights[index] = weight - learning_rate * regularized
-
-    predictions = [_sigmoid(bias + sum(weight * value for weight, value in zip(weights, features))) for features, _target in standardized]
-    targets = [target for _features, target in standardized]
+    features = [feature_row for feature_row, _target in samples]
+    targets = [target for _feature_row, target in samples]
+    dataset = lgb.Dataset(features, label=targets, feature_name=feature_names, free_raw_data=False)
+    params = {
+        "objective": "regression",
+        "metric": "l1",
+        "boosting_type": "gbdt",
+        "learning_rate": learning_rate,
+        "lambda_l2": l2,
+        "num_leaves": min(31, max(2, len(samples))),
+        "min_data_in_leaf": 1,
+        "min_data_in_bin": 1,
+        "feature_pre_filter": False,
+        "verbosity": -1,
+        "seed": 1705,
+        "feature_fraction_seed": 1705,
+        "bagging_seed": 1705,
+        "data_random_seed": 1705,
+        "deterministic": True,
+        "force_col_wise": True,
+    }
+    booster = lgb.train(params, dataset, num_boost_round=max(1, iterations))
+    predictions = [_clip01(float(value)) for value in booster.predict(features)]
     mae = sum(abs(prediction - target) for prediction, target in zip(predictions, targets)) / len(targets)
     return {
         "schema_version": ARTIFACT_SCHEMA_VERSION,
@@ -127,13 +138,11 @@ def train_after_cost_alpha_model(
         "label_field": selected_label_field,
         "return_scale": return_scale,
         "feature_names": feature_names,
-        "feature_means": means,
-        "feature_scales": scales,
-        "weights": [round(weight, 12) for weight in weights],
-        "bias": round(bias, 12),
+        "booster_model": booster.model_to_string(),
+        "booster_params": params,
         "training_summary": {
             "sample_count": len(samples),
-            "iterations": max(1, iterations),
+            "boosting_rounds": max(1, iterations),
             "learning_rate": learning_rate,
             "l2": l2,
             "mean_target_score": round(sum(targets) / len(targets), 8),
@@ -146,21 +155,19 @@ def score_after_cost_alpha(row: Mapping[str, Any], artifact: Mapping[str, Any], 
     """Score one Layer 5 input row with a trained after-cost alpha artifact."""
 
     _validate_artifact(artifact)
+    lgb = _load_lightgbm()
     artifact_horizon = str(artifact.get("horizon") or horizon)
     _validate_horizon(artifact_horizon)
     feature_names = [str(name) for name in artifact["feature_names"]]
     features = extract_after_cost_features(row, horizon=artifact_horizon, feature_names=feature_names)
-    means = [float(value) for value in artifact["feature_means"]]
-    scales = [float(value) for value in artifact["feature_scales"]]
-    weights = [float(value) for value in artifact["weights"]]
-    standardized = _standardize(features, means, scales)
-    raw_logit = float(artifact["bias"]) + sum(weight * value for weight, value in zip(weights, standardized))
-    score = _sigmoid(raw_logit)
+    booster = lgb.Booster(model_str=str(artifact["booster_model"]))
+    raw_score = float(booster.predict([features])[0])
+    score = _clip01(raw_score)
     coverage = sum(1 for value in features if value != 0.0) / len(features) if features else 0.0
     return {
         "score": round(score, 6),
         "signed_edge_score": round((score - 0.5) * 2.0, 6),
-        "raw_logit": round(raw_logit, 6),
+        "raw_score": round(raw_score, 6),
         "feature_coverage_score": round(coverage, 6),
         "model_type": str(artifact.get("model_type")),
         "score_semantics": str(artifact.get("score_semantics")),
@@ -227,30 +234,12 @@ def _validate_horizon(horizon: str) -> None:
 def _validate_artifact(artifact: Mapping[str, Any]) -> None:
     if artifact.get("schema_version") != ARTIFACT_SCHEMA_VERSION:
         raise ValueError("unsupported Layer 5 after-cost alpha model artifact schema")
-    required = ("feature_names", "feature_means", "feature_scales", "weights", "bias")
+    if artifact.get("model_type") != MODEL_TYPE:
+        raise ValueError(f"unsupported Layer 5 after-cost alpha model type: {artifact.get('model_type')!r}")
+    required = ("feature_names", "booster_model")
     missing = [field for field in required if field not in artifact]
     if missing:
         raise ValueError(f"Layer 5 after-cost alpha model artifact missing fields: {', '.join(missing)}")
-    lengths = {len(artifact["feature_names"]), len(artifact["feature_means"]), len(artifact["feature_scales"]), len(artifact["weights"])}
-    if len(lengths) != 1:
-        raise ValueError("Layer 5 after-cost alpha model artifact vector lengths do not match")
-
-
-def _standardization(samples: Sequence[Sequence[float]]) -> tuple[list[float], list[float]]:
-    means: list[float] = []
-    scales: list[float] = []
-    width = len(samples[0]) if samples else 0
-    for index in range(width):
-        column = [sample[index] for sample in samples]
-        mean = sum(column) / len(column)
-        variance = sum((value - mean) ** 2 for value in column) / len(column)
-        means.append(mean)
-        scales.append(max(math.sqrt(variance), 1e-6))
-    return means, scales
-
-
-def _standardize(features: Sequence[float], means: Sequence[float], scales: Sequence[float]) -> list[float]:
-    return [(value - mean) / scale for value, mean, scale in zip(features, means, scales)]
 
 
 def _return_to_score(realized_return: float, *, return_scale: float) -> float:
@@ -258,25 +247,8 @@ def _return_to_score(realized_return: float, *, return_scale: float) -> float:
     return _clip01(0.5 + 0.5 * math.tanh(realized_return / scale))
 
 
-def _clip_target(value: float) -> float:
-    return max(1e-6, min(1.0 - 1e-6, value))
-
-
 def _clip01(value: float) -> float:
     return max(0.0, min(1.0, value))
-
-
-def _sigmoid(value: float) -> float:
-    if value >= 0:
-        z = math.exp(-value)
-        return 1.0 / (1.0 + z)
-    z = math.exp(value)
-    return z / (1.0 + z)
-
-
-def _logit(value: float) -> float:
-    clipped = _clip_target(value)
-    return math.log(clipped / (1.0 - clipped))
 
 
 def _mapping(value: Any) -> Mapping[str, Any]:

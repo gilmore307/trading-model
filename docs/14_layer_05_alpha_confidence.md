@@ -202,11 +202,11 @@ The current implementation is a trained artifact path:
 point-in-time Layer 1/2/3/4 features
 + quality inputs
 + after-cost labels during training only
-  -> standardized_linear_after_cost_alpha artifact
+  -> lightgbm_gbdt_after_cost_alpha artifact
   -> 5_alpha_confidence_score_<horizon> where 0.5 is after-cost neutral
 ```
 
-The artifact is local JSON and can be passed to `generate_model_05_alpha_confidence.py` with `--after-cost-alpha-model-json`. The training entrypoint is `train_model_05_alpha_confidence.py`; it expects local JSON/JSONL rows containing the same point-in-time inference inputs plus an after-cost return label such as `after_cost_return_1W`.
+The artifact is local JSON containing a serialized LightGBM booster and can be passed to `generate_model_05_alpha_confidence.py` with `--after-cost-alpha-model-json`. The training entrypoint is `train_model_05_alpha_confidence.py`; it expects local JSON/JSONL rows containing the same point-in-time inference inputs plus an after-cost return label such as `after_cost_return_1W`.
 
 The trained score owns target alpha separation, Layer 4 event conditioning, path-risk evidence, reliability, and calibration as model features. Deterministic code may assemble features, validate artifacts, enforce point-in-time boundaries, and derive companion output fields from the trained normalized score.
 
