@@ -66,6 +66,14 @@ def _load_lightgbm() -> Any:
     return lgb
 
 
+def _load_numpy() -> Any:
+    try:
+        import numpy as np  # type: ignore[import-not-found]
+    except ModuleNotFoundError as error:  # pragma: no cover - LightGBM requires numpy in normal installs
+        raise RuntimeError("NumPy is required for Layer 5 after-cost alpha training and inference; install requirements.txt") from error
+    return np
+
+
 def train_after_cost_alpha_model(
     training_rows: Iterable[Mapping[str, Any]],
     *,
@@ -87,6 +95,7 @@ def train_after_cost_alpha_model(
 
     _validate_horizon(horizon)
     lgb = _load_lightgbm()
+    np = _load_numpy()
     rows = [dict(row) for row in training_rows]
     samples: list[tuple[list[float], float]] = []
     feature_names = _feature_names(horizon)
@@ -104,8 +113,8 @@ def train_after_cost_alpha_model(
     if not samples:
         raise ValueError("at least one labeled Layer 5 training row is required")
 
-    features = [feature_row for feature_row, _target in samples]
-    targets = [target for _feature_row, target in samples]
+    features = np.asarray([feature_row for feature_row, _target in samples], dtype=float)
+    targets = np.asarray([target for _feature_row, target in samples], dtype=float)
     dataset = lgb.Dataset(features, label=targets, feature_name=feature_names, free_raw_data=False)
     params = {
         "objective": "regression",
@@ -156,12 +165,13 @@ def score_after_cost_alpha(row: Mapping[str, Any], artifact: Mapping[str, Any], 
 
     _validate_artifact(artifact)
     lgb = _load_lightgbm()
+    np = _load_numpy()
     artifact_horizon = str(artifact.get("horizon") or horizon)
     _validate_horizon(artifact_horizon)
     feature_names = [str(name) for name in artifact["feature_names"]]
     features = extract_after_cost_features(row, horizon=artifact_horizon, feature_names=feature_names)
     booster = lgb.Booster(model_str=str(artifact["booster_model"]))
-    raw_score = float(booster.predict([features])[0])
+    raw_score = float(booster.predict(np.asarray([features], dtype=float))[0])
     score = _clip01(raw_score)
     coverage = sum(1 for value in features if value != 0.0) / len(features) if features else 0.0
     return {
