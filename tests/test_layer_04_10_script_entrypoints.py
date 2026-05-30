@@ -371,10 +371,10 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
                 "snapshot_type": "entry",
                 "option_symbol": "AAPL160115C00100000",
                 "feature_payload_json": {
-                    "option_right": "call",
+                    "option_right_type": "CALL",
                     "bid_price": 2.10,
                     "ask_price": 2.20,
-                    "dte": 11,
+                    "days_to_expiration": 11,
                     "delta": 0.45,
                     "volume": 500,
                     "open_interest": 2500,
@@ -386,12 +386,14 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
 
         rows = generator._layer_9_input_rows(layer_8_rows, candidate_rows)
 
-        self.assertEqual(rows[0]["option_chain_snapshot_ref"], "feature_09_option_expression:AAPL:2016-01-04T09:35:00-05:00")
+        self.assertEqual(rows[0]["option_chain_snapshot_ref"], "m09_option_expression_feature_generation:AAPL:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["option_surface_status"], "optionable_chain_available")
         self.assertEqual(rows[0]["option_quote_available_time"], "2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["underlying_quote_snapshot_ref"], "source_03_target_state:anon_aapl:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["underlying_reference_price"], 102.5)
         self.assertEqual(rows[0]["option_contract_candidates"][0]["contract_ref"], "AAPL160115C00100000")
+        self.assertEqual(rows[0]["option_contract_candidates"][0]["option_right"], "CALL")
+        self.assertEqual(rows[0]["option_contract_candidates"][0]["dte"], 11)
 
     def test_layer_09_database_input_keeps_status_row_when_option_chain_missing(self) -> None:
         generator = self._load_script_module(REPO_ROOT / "scripts/models/model_09_option_expression/generate_model_09_option_expression.py")

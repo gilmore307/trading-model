@@ -158,7 +158,7 @@ def _fetch_layer_8_rows(cursor: Any, *, source_start: str | None, source_end: st
 
 
 def _fetch_option_candidate_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
-    feature_table = "feature_09_option_expression"
+    feature_table = "m09_option_expression_feature_generation"
     cursor.execute("SELECT to_regclass(%s) AS table_ref", (f"trading_data.{feature_table}",))
     exists = cursor.fetchone()
     if isinstance(exists, Mapping):
@@ -220,10 +220,24 @@ def _candidate_index(candidate_rows: Sequence[Mapping[str, Any]]) -> dict[tuple[
         contract_ref = str(row.get("option_symbol") or "")
         if not underlying or not snapshot_time or not contract_ref:
             continue
+        option_right = payload.get("option_right") or payload.get("right") or payload.get("option_right_type")
+        expiration = payload.get("expiration") or row.get("expiration")
+        dte = payload.get("dte") or payload.get("days_to_expiration")
+        mid = payload.get("mid_price") or payload.get("mid")
+        implied_vol = payload.get("iv") or payload.get("implied_volatility") or payload.get("implied_vol")
         index.setdefault((underlying, snapshot_time), []).append(
             {
                 "contract_ref": contract_ref,
                 "option_symbol": contract_ref,
+                "option_right": option_right,
+                "right": option_right,
+                "expiration": expiration,
+                "dte": dte,
+                "days_to_expiration": dte,
+                "mid_price": mid,
+                "mid": mid,
+                "iv": implied_vol,
+                "implied_volatility": implied_vol,
                 "candidate_quality_diagnostics": diagnostics,
                 **payload,
             }
@@ -239,7 +253,7 @@ def _layer_9_input_rows(layer_8_rows: Sequence[Mapping[str, Any]], option_candid
         available_time = row.get("available_time")
         underlying = str(row.get("underlying_symbol") or "").upper()
         option_candidates = candidates_by_underlying_time.get((underlying, _time_key(available_time)), [])
-        option_chain_snapshot_ref = None if not option_candidates else f"feature_09_option_expression:{underlying}:{_time_key(available_time)}"
+        option_chain_snapshot_ref = None if not option_candidates else f"m09_option_expression_feature_generation:{underlying}:{_time_key(available_time)}"
         option_surface_status = "optionable_chain_available" if option_candidates else "optionable_chain_missing"
         rows.append(
             {
