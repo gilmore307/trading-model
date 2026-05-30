@@ -732,6 +732,8 @@ Layer 9 option-expression bucket construction uses near-to-far listed expiration
 
 For each selected target, the strike bucket is the listed-strike corridor from current underlying reference price to the Layer 8 underlying-action target price plus three actual listed strike levels below the corridor and three actual listed strike levels above it. Example: current `95`, target `100`, one-dollar listed strikes -> scan strikes `92` through `103`.
 
+Current runtime acquisition closes this loop through manager request previews for `m09_option_expression_data_acquisition` with `max_dte = 45`, `strike_range = 5`, and `option_bucket_policy_ref = LAYER_09_OPTION_BUCKET_STRIKE_POLICY`.
+
 Historical model construction intentionally keeps illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, and otherwise extreme contracts in the candidate bucket so the model learns robustness and failure modes. These observations may score poorly, produce reason codes, or resolve to `no_option_expression`; they must not be removed at acquisition-time solely because they are extreme.
 
 Expression coverage remains single-leg only: `long_call`, `long_put`, or `no_option_expression`. Multi-leg spreads remain deferred until a reviewed expression-policy contract accepts them.

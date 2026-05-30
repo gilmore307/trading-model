@@ -268,6 +268,8 @@ candidate strike bucket = 92 through 103
 
 The three-level rule uses actual listed strikes, not a fixed dollar amount. If listed strikes are five-dollar increments, use three listed increments outside the corridor.
 
+Current closed-loop acquisition uses manager request previews for `source_05_option_expression` / `m09_option_expression_data_acquisition` with `max_dte = 45`, `strike_range = 5`, and `option_bucket_policy_ref = LAYER_09_OPTION_BUCKET_STRIKE_POLICY`. The `strike_range = 5` ThetaData bound is the accepted provider-side runtime default for the current bucket loop; model-side selection still applies the target-range moneyness guardrail below.
+
 Historical bucket construction intentionally does not prefilter out illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, or otherwise extreme contracts. Those observations are useful for robustness and must remain available as features, labels, diagnostics, and reason codes. Selection/evaluation may score them poorly or resolve `no_option_expression`, but acquisition-time bucket construction should not hide them from the model.
 
 Expression coverage is single-leg only:
