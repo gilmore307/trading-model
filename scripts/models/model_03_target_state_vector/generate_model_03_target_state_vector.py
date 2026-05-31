@@ -159,7 +159,7 @@ def _feature_rows_query(
         holdings_l2_join = """
         LEFT JOIN LATERAL (
           SELECT *
-          FROM "trading_model"."model_02_sector_context" AS candidate_l2
+          FROM "trading_model"."m02_sector_context_model_generation" AS candidate_l2
           WHERE candidate_l2."sector_or_industry_symbol" = h."etf_symbol"
             AND candidate_l2."available_time" <= f."available_time"
           ORDER BY candidate_l2."available_time" DESC
@@ -187,7 +187,7 @@ def _feature_rows_query(
         {holdings_join}
         LEFT JOIN LATERAL (
           SELECT *
-          FROM {_qualified("trading_model", "model_02_sector_context")} AS candidate_l2
+          FROM {_qualified("trading_model", "m02_sector_context_model_generation")} AS candidate_l2
           WHERE candidate_l2."sector_or_industry_symbol" = s."symbol"
             AND candidate_l2."available_time" <= f."available_time"
           ORDER BY candidate_l2."available_time" DESC
@@ -196,7 +196,7 @@ def _feature_rows_query(
         {holdings_l2_join}
         LEFT JOIN LATERAL (
           SELECT *
-          FROM {_qualified("trading_model", "model_01_market_regime")} AS candidate_l1
+          FROM {_qualified("trading_model", "m01_market_regime_model_generation")} AS candidate_l1
           WHERE candidate_l1."available_time" <= f."available_time"
           ORDER BY candidate_l1."available_time" DESC
           LIMIT 1

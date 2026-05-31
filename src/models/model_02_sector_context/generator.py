@@ -4,9 +4,9 @@ This module turns point-in-time rows from
 ``trading_data.m02_sector_context_feature_generation`` plus optional Layer 1
 ``market_context_state`` rows into the three accepted Layer 2 physical artifacts:
 
-* ``trading_model.model_02_sector_context`` (narrow downstream contract),
-* ``trading_model.model_02_sector_context_explainability`` (human-review detail),
-* ``trading_model.model_02_sector_context_diagnostics`` (acceptance/gating detail).
+* ``trading_model.m02_sector_context_model_generation`` (narrow downstream contract),
+* ``trading_model.m02_sector_context_model_generation_explainability`` (human-review detail),
+* ``trading_model.m02_sector_context_model_generation_diagnostics`` (acceptance/gating detail).
 
 The baseline route is deliberately conservative: it scores reviewed sector/industry ETF behavior
 without ETF holdings, stock exposure, final target selection, strategy selection,
@@ -45,9 +45,9 @@ def _pstdev(values: Iterable[float]) -> float:
 
 MODEL_ID = "sector_context_model"
 MODEL_VERSION = "sector_context_model_contract"
-PRIMARY_TABLE = "model_02_sector_context"
-EXPLAINABILITY_TABLE = "model_02_sector_context_explainability"
-DIAGNOSTICS_TABLE = "model_02_sector_context_diagnostics"
+PRIMARY_TABLE = "m02_sector_context_model_generation"
+EXPLAINABILITY_TABLE = "m02_sector_context_model_generation_explainability"
+DIAGNOSTICS_TABLE = "m02_sector_context_model_generation_diagnostics"
 SUMMARY_CANDIDATE = "SECTOR_OBSERVATION_UNIVERSE"
 
 HANDOFF_STATES = {"selected", "watch", "blocked", "insufficient_data"}
@@ -86,7 +86,6 @@ OUTPUT_COLUMNS = [*IDENTITY_COLUMNS, *PRIMARY_SCORE_COLUMNS]
 EXPLAINABILITY_SCORE_COLUMNS = [
     "2_relative_strength_score",
     "2_trend_direction_score",
-    "2_trend_persistence_score",
     "2_volatility_adjusted_trend_score",
     "2_breadth_participation_score",
     "2_dispersion_score",
@@ -95,16 +94,12 @@ EXPLAINABILITY_SCORE_COLUMNS = [
     "2_growth_sensitivity_score",
     "2_defensive_sensitivity_score",
     "2_cyclical_sensitivity_score",
-    "2_rate_sensitivity_score",
-    "2_dollar_sensitivity_score",
-    "2_commodity_sensitivity_score",
     "2_risk_appetite_sensitivity_score",
     "2_attribute_certainty_score",
     "2_conditional_beta_score",
     "2_directional_coupling_score",
     "2_volatility_response_score",
     "2_capture_asymmetry_score",
-    "2_response_convexity_score",
     "2_context_support_score",
     "2_transition_sensitivity_score",
 ]
@@ -291,7 +286,7 @@ def generate_rows(
     *,
     model_version: str = MODEL_VERSION,
 ) -> list[dict[str, Any]]:
-    """Generate primary ``model_02_sector_context`` rows."""
+    """Generate primary ``m02_sector_context_model_generation`` rows."""
 
     provisional = [_generate_primary_row(group, model_version=model_version) for group in _sector_groups(feature_rows, market_context_rows)]
     ranked = [row for row in provisional if _safe_float(row.get("2_sector_tradability_score")) is not None and row.get("2_sector_handoff_state") in {"selected", "watch"}]
@@ -445,7 +440,6 @@ def build_explainability_rows(
     for group in _sector_groups(feature_rows, market_context_rows):
         rel_returns = [_safe_float(row.get("relative_strength_return")) for row in group.feature_rows]
         trend_direction = _bounded(_average(rel_returns), scale=0.04)
-        trend_persistence = _bounded(_average([_safe_float(row.get("relative_strength_ma_alignment_score")) for row in group.feature_rows]), scale=1.0)
         vol_ratio = _average([_safe_float(row.get("relative_strength_realized_vol_20d_ratio")) for row in group.feature_rows])
         vol_adjusted = None if trend_direction is None else trend_direction / max(vol_ratio or 1.0, 0.01)
         corr = _average([_safe_float(row.get("relative_strength_return_corr_20d")) for row in group.feature_rows])
@@ -457,7 +451,6 @@ def build_explainability_rows(
         values = {
             "2_relative_strength_score": _bounded(_average(rel_returns), scale=0.04),
             "2_trend_direction_score": trend_direction,
-            "2_trend_persistence_score": trend_persistence,
             "2_volatility_adjusted_trend_score": vol_adjusted,
             "2_breadth_participation_score": breadth,
             "2_dispersion_score": dispersion,
@@ -466,16 +459,12 @@ def build_explainability_rows(
             "2_growth_sensitivity_score": _average([trend_direction, corr]),
             "2_defensive_sensitivity_score": None if trend_direction is None else -trend_direction,
             "2_cyclical_sensitivity_score": _average([trend_direction, breadth]),
-            "2_rate_sensitivity_score": None,
-            "2_dollar_sensitivity_score": None,
-            "2_commodity_sensitivity_score": None,
             "2_risk_appetite_sensitivity_score": _average([trend_direction, context_support]),
             "2_attribute_certainty_score": _quality_score(_evidence_count(group.feature_rows), len(group.feature_rows) * len(FEATURE_EVIDENCE_COLUMNS)),
             "2_conditional_beta_score": corr,
             "2_directional_coupling_score": corr,
             "2_volatility_response_score": None if vol_ratio is None else vol_ratio - 1.0,
             "2_capture_asymmetry_score": trend_direction,
-            "2_response_convexity_score": None,
             "2_context_support_score": context_support,
             "2_transition_sensitivity_score": corr_change,
         }

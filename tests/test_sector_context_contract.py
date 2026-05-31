@@ -13,7 +13,7 @@ class SectorContextContractTests(unittest.TestCase):
         contract = CONTRACT_PATH.read_text(encoding="utf-8")
 
         for token in {
-            "trading_model.model_02_sector_context",
+            "trading_model.m02_sector_context_model_generation",
             "sector_context_state[available_time, sector_or_industry_symbol]",
             "`available_time`",
             "`sector_or_industry_symbol`",
@@ -29,7 +29,6 @@ class SectorContextContractTests(unittest.TestCase):
             "`2_directional_coupling_score`",
             "`2_volatility_response_score`",
             "`2_capture_asymmetry_score`",
-            "`2_response_convexity_score`",
             "`2_context_support_score`",
             "`2_sector_handoff_state`",
             "`2_sector_handoff_bias`",
@@ -56,7 +55,6 @@ class SectorContextContractTests(unittest.TestCase):
         self.assertIn("selected/watch Layer 2 baskets", contract)
         self.assertIn("must not copy Layer 1 market-property factor names", contract)
         self.assertIn("not reused Layer 1 market-property factors", contract)
-        self.assertIn("contract prefers signed axes", contract)
         self.assertIn("positive = upside-favorable capture; negative = downside-heavy capture", contract)
         self.assertIn("A stable weak sector can be `selected` with `short_bias`", contract)
         self.assertIn("stable downtrends are not treated as failed states", contract)

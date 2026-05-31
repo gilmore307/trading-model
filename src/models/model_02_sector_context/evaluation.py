@@ -1,7 +1,7 @@
 """SectorContextModel evaluation artifact builder.
 
 The core evaluator has no database dependency. It builds governance/promotion
-rows from supplied point-in-time Layer 2 feature rows and ``model_02_sector_context``
+rows from supplied point-in-time Layer 2 feature rows and ``m02_sector_context_model_generation``
 rows. Runtime wrappers may supply fixture/local JSONL rows or perform an explicit
 read-only PostgreSQL fetch.
 """
@@ -21,7 +21,7 @@ DEFAULT_MODEL_ID = "sector_context_model"
 DEFAULT_FEATURE_SCHEMA = "trading_data"
 DEFAULT_FEATURE_TABLE = "m02_sector_context_feature_generation"
 DEFAULT_MODEL_SCHEMA = "trading_model"
-DEFAULT_MODEL_TABLE = "model_02_sector_context"
+DEFAULT_MODEL_TABLE = "m02_sector_context_model_generation"
 DEFAULT_SOURCE_KEY = "M01_MARKET_REGIME_DATA_ACQUISITION"
 DEFAULT_FEATURE_KEY = "M02_SECTOR_CONTEXT_FEATURE_GENERATION"
 DEFAULT_DRY_RUN_WRITE_POLICY = "no_database_write"

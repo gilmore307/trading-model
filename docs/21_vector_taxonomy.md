@@ -121,7 +121,7 @@ Conceptual output state:
 context_etf_state
 ```
 
-Use `context_etf_state` for the per-ETF Layer 2 output and reserve `cross_etf_summary` for global/group rotation summaries. The physical model surface remains `model_02_sector_context`.
+Use `context_etf_state` for the per-ETF Layer 2 output and reserve `cross_etf_summary` for global/group rotation summaries. The physical model table is `trading_model.m02_sector_context_model_generation`.
 
 Primary Layer 2 output should be narrow: signed ETF-context direction, direction-neutral trend/tradability state, separate handoff state and handoff bias, and row reliability. Explainability owns internal vectors; diagnostics owns gates.
 

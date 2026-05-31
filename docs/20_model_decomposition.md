@@ -103,12 +103,12 @@ Layer 1 has no supervised construction target and no required regime label. The 
 Physical artifacts:
 
 ```text
-trading_model.model_01_market_regime
-trading_model.model_01_market_regime_explainability
-trading_model.model_01_market_regime_diagnostics
+trading_model.m01_market_regime_model_generation
+trading_model.m01_market_regime_model_generation_explainability
+trading_model.m01_market_regime_model_generation_diagnostics
 ```
 
-The primary output carries the narrow downstream market-context state. Reviewed per-state attribution context, evidence-role refs, and config refs belong to `model_01_market_regime_explainability`; detailed source-contribution and bucket-score rows may be added there only when a reviewed implementation needs them. Missingness/freshness, minimum-history, standardization, z-score clipping, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness, baseline comparison, and no-future-leak checks belong to `model_01_market_regime_diagnostics`.
+The primary output carries the narrow downstream market-context state. Reviewed per-state attribution context, evidence-role refs, and config refs belong to `m01_market_regime_model_generation_explainability`; detailed source-contribution and bucket-score rows may be added there only when a reviewed implementation needs them. Missingness/freshness, minimum-history, standardization, z-score clipping, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness, baseline comparison, and no-future-leak checks belong to `m01_market_regime_model_generation_diagnostics`.
 
 Conceptual output:
 
@@ -248,14 +248,14 @@ sector_context_state[available_time, sector_or_industry_symbol]
 Planned physical artifacts:
 
 ```text
-trading_model.model_02_sector_context
-trading_model.model_02_sector_context_explainability
-trading_model.model_02_sector_context_diagnostics
+trading_model.m02_sector_context_model_generation
+trading_model.m02_sector_context_model_generation_explainability
+trading_model.m02_sector_context_model_generation_diagnostics
 ```
 
 The field contract is owned by `src/models/model_02_sector_context/sector_context_state_contract.md`.
 
-Primary output keeps only the narrow downstream dependency surface: identity, signed sector direction evidence, direction-neutral trend/tradability state, separate handoff state and handoff bias, and eligibility/quality summary. Observed behavior, inferred attributes, conditional behavior internals, contributing evidence, and reason-code detail belong to `model_02_sector_context_explainability`. Liquidity/spread/optionability, event/gap/volatility/correlation stress, freshness/missingness, baseline comparison, refit stability, and no-future-leak evidence belong to `model_02_sector_context_diagnostics`.
+Primary output keeps only the narrow downstream dependency surface: identity, signed sector direction evidence, direction-neutral trend/tradability state, separate handoff state and handoff bias, and eligibility/quality summary. Observed behavior, inferred attributes, conditional behavior internals, contributing evidence, and reason-code detail belong to `m02_sector_context_model_generation_explainability`. Liquidity/spread/optionability, event/gap/volatility/correlation stress, freshness/missingness, baseline comparison, refit stability, and no-future-leak evidence belong to `m02_sector_context_model_generation_diagnostics`.
 
 When persisted to SQL, `2_*` model-facing keys remain the physical column names. SQL writers should quote numeric-leading identifiers where required instead of creating `layer02_*` aliases.
 

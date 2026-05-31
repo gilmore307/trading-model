@@ -13,12 +13,12 @@ It may mark which context ETFs are suitable for downstream target-context routin
 Layer 2 uses three physical artifacts so the downstream contract stays narrow without discarding review and gating evidence:
 
 ```text
-trading_model.model_02_sector_context                  # output
-trading_model.model_02_sector_context_explainability   # explainability
-trading_model.model_02_sector_context_diagnostics      # diagnostics
+trading_model.m02_sector_context_model_generation                  # output
+trading_model.m02_sector_context_model_generation_explainability   # explainability
+trading_model.m02_sector_context_model_generation_diagnostics      # diagnostics
 ```
 
-`model_02_sector_context` is the stable downstream dependency surface. `model_02_sector_context_explainability` is for human review/debug/explain. `model_02_sector_context_diagnostics` is for acceptance, monitoring, and gating.
+`m02_sector_context_model_generation` is the stable downstream dependency table. `m02_sector_context_model_generation_explainability` is for human review/debug/explain. `m02_sector_context_model_generation_diagnostics` is for acceptance, monitoring, and gating.
 
 Downstream production logic should not hard-depend on explainability or diagnostics fields without a later reviewed promotion decision.
 
@@ -70,7 +70,7 @@ Cross-section calculations may contribute rank, percentile, breadth, dispersion,
 
 Layer 2 may separately emit a `cross_etf_summary` for global/group rotation and attention. That summary is not a per-target context vector and should not replace per-ETF `context_etf_state`.
 
-## `model_02_sector_context` output fields
+## `m02_sector_context_model_generation` output fields
 
 The primary output is intentionally narrow: identity, direction-neutral sector tradability state, downstream sector handoff, and eligibility/quality summary.
 
@@ -117,7 +117,7 @@ Layer 2 may identify sector/industry baskets suitable for downstream anonymous t
 
 The active output uses `2_coverage_score` / `2_state_quality_score` for reliability and `2_sector_tradability_score` for direction-neutral handoff quality.
 
-## `model_02_sector_context_explainability` fields
+## `m02_sector_context_model_generation_explainability` fields
 
 Explainability owns behavior and attribution detail for human review. These fields are allowed to be wider and more detailed than the primary output, but they should not become hard downstream dependencies.
 
@@ -127,7 +127,6 @@ Explainability owns behavior and attribution detail for human review. These fiel
 |---|---|---|
 | `2_relative_strength_score` | float/null | Market-relative strength of the basket using current point-in-time evidence. |
 | `2_trend_direction_score` | float/null | Directional trend score after reviewed sign/scale handling. |
-| `2_trend_persistence_score` | float/null | Evidence that trend behavior persists across recent windows. |
 | `2_volatility_adjusted_trend_score` | float/null | Trend strength adjusted for realized volatility/chop. |
 | `2_breadth_participation_score` | float/null | Breadth/participation support inside the basket or comparable sector universe. |
 | `2_dispersion_score` | float/null | Cross-component dispersion; high dispersion weakens clean basket interpretation. |
@@ -143,9 +142,6 @@ Posterior attributes are model outputs, not hand-written labels and not Layer 1 
 | `2_growth_sensitivity_score` | float/null | Inferred sensitivity to growth/speculative market behavior. |
 | `2_defensive_sensitivity_score` | float/null | Inferred sensitivity to defensive/risk-off behavior. |
 | `2_cyclical_sensitivity_score` | float/null | Inferred sensitivity to cyclical/economic-activity behavior. |
-| `2_rate_sensitivity_score` | float/null | Inferred sensitivity to rate/duration pressure. |
-| `2_dollar_sensitivity_score` | float/null | Inferred sensitivity to dollar/liquidity pressure. |
-| `2_commodity_sensitivity_score` | float/null | Inferred sensitivity to commodity/inflation pressure. |
 | `2_risk_appetite_sensitivity_score` | float/null | Inferred sensitivity to broad risk appetite. |
 | `2_attribute_certainty_score` | float/null | Stability/certainty of inferred attributes across refits/windows. |
 
@@ -163,7 +159,6 @@ The contract prefers signed axes over duplicated opposite fields. Positive and n
 | `2_directional_coupling_score` | float/null | Signed direction coupling: positive = moves with broad market direction; negative = inverse behavior. |
 | `2_volatility_response_score` | float/null | Signed volatility response: positive = amplifies broad-market volatility; negative = dampens it. |
 | `2_capture_asymmetry_score` | float/null | Signed conditional capture: positive = upside-favorable capture; negative = downside-heavy capture. |
-| `2_response_convexity_score` | float/null | Signed nonlinear response: positive = favorable convexity; negative = adverse concavity. |
 | `2_context_support_score` | float/null | Signed current-context support: positive = tailwind; negative = headwind. |
 | `2_transition_sensitivity_score` | float/null | Sensitivity to changing/unstable market context. |
 
@@ -171,7 +166,7 @@ The contract prefers signed axes over duplicated opposite fields. Positive and n
 
 Explainability may also include contributing evidence refs, reason-code expansions, bucket/subscore detail, config refs, and feature-family contribution detail once implementation proves the concrete shape.
 
-## `model_02_sector_context_diagnostics` fields
+## `m02_sector_context_model_generation_diagnostics` fields
 
 Diagnostics owns acceptance, monitoring, and gating evidence. These fields may gate use of the row, but they do not directly express the context ETF state itself.
 

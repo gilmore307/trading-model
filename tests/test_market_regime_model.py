@@ -199,11 +199,11 @@ class MarketRegimeModelTests(unittest.TestCase):
             cursor,
             [{"available_time": "2026-01-02T10:00:00-05:00", "1_market_trend_quality_score": 0.5}],
             target_schema="trading_model",
-            target_table="model_01_market_regime",
+            target_table="m01_market_regime_model_generation",
         )
 
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
-        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime"', joined_sql)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."m01_market_regime_model_generation"', joined_sql)
         self.assertIn('PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref")', joined_sql)
         self.assertIn('ADD COLUMN IF NOT EXISTS "1_market_trend_quality_score" DOUBLE PRECISION', joined_sql)
         self.assertIn('DROP COLUMN IF EXISTS "1_price_behavior_factor"', joined_sql)
@@ -233,7 +233,7 @@ class MarketRegimeModelTests(unittest.TestCase):
                 }
             ],
             target_schema="trading_model",
-            target_table="model_01_market_regime_explainability",
+            target_table="m01_market_regime_model_generation_explainability",
         )
         sql_runner.write_diagnostics_rows_sql(
             cursor,
@@ -247,13 +247,13 @@ class MarketRegimeModelTests(unittest.TestCase):
                 }
             ],
             target_schema="trading_model",
-            target_table="model_01_market_regime_diagnostics",
+            target_table="m01_market_regime_model_generation_diagnostics",
         )
 
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
-        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime_explainability"', joined_sql)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."m01_market_regime_model_generation_explainability"', joined_sql)
         self.assertIn('PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref", "factor_name")', joined_sql)
-        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime_diagnostics"', joined_sql)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."m01_market_regime_model_generation_diagnostics"', joined_sql)
         self.assertIn('"diagnostic_payload_json" JSONB NOT NULL', joined_sql)
         self.assertIn('ON CONFLICT ("available_time", "input_frame", "prediction_horizon", "market_universe_ref") DO UPDATE SET', joined_sql)
 

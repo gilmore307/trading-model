@@ -36,9 +36,9 @@ flowchart LR
     source["trading_data source evidence<br/>point-in-time broad-market and cross-asset data"]
     feature["trading_data.m01_market_regime_feature_generation<br/>deterministic Layer 1 feature surface"]
     model["MarketRegimeModel<br/>Layer 1 model logic"]
-    output["trading_model.model_01_market_regime<br/>primary market_context_state"]
-    explain["trading_model.model_01_market_regime_explainability<br/>human-review state attribution"]
-    diagnostics["trading_model.model_01_market_regime_diagnostics<br/>acceptance and gating evidence"]
+    output["trading_model.m01_market_regime_model_generation<br/>primary market_context_state"]
+    explain["trading_model.m01_market_regime_model_generation_explainability<br/>human-review state attribution"]
+    diagnostics["trading_model.m01_market_regime_model_generation_diagnostics<br/>acceptance and gating evidence"]
     downstream["Layer 2+ conditioning context<br/>not sector/security selection"]
 
     source --> feature --> model
@@ -50,12 +50,12 @@ flowchart LR
 ## Physical artifacts
 
 ```text
-trading_model.model_01_market_regime
-trading_model.model_01_market_regime_explainability
-trading_model.model_01_market_regime_diagnostics
+trading_model.m01_market_regime_model_generation
+trading_model.m01_market_regime_model_generation_explainability
+trading_model.m01_market_regime_model_generation_diagnostics
 ```
 
-## `model_01_market_regime` - output
+## `m01_market_regime_model_generation` - output
 
 The primary output is the narrow downstream contract. It is keyed by `available_time` and describes whether the broad market / cross-asset background is clear, stable, low-transition-risk, liquid enough, and able to support downstream trading.
 
@@ -97,7 +97,7 @@ Layer 1 must tolerate missing upstream observations when the absence is point-in
 
 The model may degrade confidence or withhold downstream unlocks when coverage is too low, but absence must stay explicit as evidence. Valid no-data evidence is different from provider failure, schema failure, leakage, or unreviewed stale data.
 
-## `model_01_market_regime_explainability` - explainability
+## `m01_market_regime_model_generation_explainability` - explainability
 
 Explainability owns human-review detail that should not become a hard downstream dependency. It uses one row per `(available_time, factor_name)` with:
 
@@ -110,7 +110,7 @@ explanation_payload_json
 
 `factor_name` stores the public state-output name being explained. `explanation_payload_json` owns semantic contract metadata, source signal-group references, signal counts, evidence-role references, config references, and future accepted reason-code detail.
 
-## `model_01_market_regime_diagnostics` - diagnostics
+## `m01_market_regime_model_generation_diagnostics` - diagnostics
 
 Diagnostics owns acceptance, monitoring, and gating evidence. It uses one row per `available_time` with:
 
@@ -155,7 +155,7 @@ Layer 1 changes are acceptable when they:
 
 - preserve the broad-market-only boundary and exclude sector/security/strategy/option/portfolio outcome leakage;
 - preserve the frame/horizon pairing rule and prevent short-frame evidence from being evaluated against unrelated long-horizon labels;
-- keep `trading_data.m01_market_regime_feature_generation` as the production input and `trading_model.model_01_market_regime` / `market_context_state` as the narrow downstream output;
+- keep `trading_data.m01_market_regime_feature_generation` as the production input and `trading_model.m01_market_regime_model_generation` / `market_context_state` as the narrow downstream output;
 - keep explainability and diagnostics as review/support artifacts rather than hard downstream dependencies;
 - keep direction, direction strength, trend quality, stability, risk stress, transition risk, liquidity pressure/support, coverage, and data quality semantically separate;
 - provide evidence-backed verification for generation, evaluation, smoke, and promotion-review paths when implementation changes;

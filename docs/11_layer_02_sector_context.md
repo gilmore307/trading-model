@@ -5,7 +5,7 @@ This file records the active direction-neutral `trading-model` contract and impl
 ## Input
 
 ```text
-trading_model.model_01_market_regime   # Layer 1 primary output, consumed conceptually as market_context_state
+trading_model.m01_market_regime_model_generation   # Layer 1 primary output, consumed conceptually as market_context_state
 trading_data.m02_sector_context_feature_generation
 ```
 
@@ -17,12 +17,12 @@ Layer 2 consumes sector/industry/theme ETF behavior evidence from `m02_sector_co
 
 ```mermaid
 flowchart LR
-    l1["trading_model.model_01_market_regime<br/>Layer 1 market_context_state"]
+    l1["trading_model.m01_market_regime_model_generation<br/>Layer 1 market_context_state"]
     feature["trading_data.m02_sector_context_feature_generation<br/>sector/industry behavior feature surface"]
     model["SectorContextModel<br/>Layer 2 model logic"]
-    output["trading_model.model_02_sector_context<br/>primary context_etf_state surface"]
-    explain["trading_model.model_02_sector_context_explainability<br/>human-review behavior and attribution"]
-    diagnostics["trading_model.model_02_sector_context_diagnostics<br/>acceptance and gating evidence"]
+    output["trading_model.m02_sector_context_model_generation<br/>primary context_etf_state surface"]
+    explain["trading_model.m02_sector_context_model_generation_explainability<br/>human-review behavior and attribution"]
+    diagnostics["trading_model.m02_sector_context_model_generation_diagnostics<br/>acceptance and gating evidence"]
     builder["anonymous target candidate builder<br/>uses selected sector context plus holdings/exposure evidence"]
 
     l1 --> model
@@ -35,12 +35,12 @@ flowchart LR
 ## Physical artifacts
 
 ```text
-trading_model.model_02_sector_context
-trading_model.model_02_sector_context_explainability
-trading_model.model_02_sector_context_diagnostics
+trading_model.m02_sector_context_model_generation
+trading_model.m02_sector_context_model_generation_explainability
+trading_model.m02_sector_context_model_generation_diagnostics
 ```
 
-## `model_02_sector_context` - context ETF state output
+## `m02_sector_context_model_generation` - context ETF state output
 
 The primary Layer 2 per-ETF output is one `context_etf_state` per eligible Layer 2 ETF at `available_time`. The row is ETF-context state, not stock-sector membership.
 
@@ -120,16 +120,16 @@ Layer 2 may emit a global or group-level `cross_etf_summary` that ranks and summ
 
 Per-ETF cross-section calculations are internal construction evidence for `context_etf_state`. A `context_etf_cross_section_row` must not become a separate downstream output when the same information is already embedded in `context_etf_state`; otherwise consumers would have two competing sources for one state.
 
-## `model_02_sector_context_explainability` - explainability
+## `m02_sector_context_model_generation_explainability` - explainability
 
 Explainability owns human-review detail that should not become a hard downstream dependency:
 
 - observed behavior internals such as relative strength, trend direction, volatility-adjusted trend, breadth, dispersion, correlation, and chop;
-- inferred attribute internals such as growth/defensive/cyclical/rate/dollar/commodity/risk-appetite sensitivity and attribute certainty;
-- conditional behavior internals such as beta, directional coupling, volatility response, capture asymmetry, response convexity, context support, and transition sensitivity;
+- inferred attribute internals such as growth/defensive/cyclical/risk-appetite sensitivity and attribute certainty;
+- conditional behavior internals such as beta, directional coupling, volatility response, capture asymmetry, context support, and transition sensitivity;
 - contributing evidence and reason-code detail.
 
-## `model_02_sector_context_diagnostics` - diagnostics
+## `m02_sector_context_model_generation_diagnostics` - diagnostics
 
 Diagnostics owns acceptance, monitoring, and gating evidence:
 
@@ -148,10 +148,10 @@ Layer 2 model fields use compact `2_*` names in docs, model-facing payloads, and
 
 Layer 2 changes are acceptable when they:
 
-- consume `trading_model.model_01_market_regime` / `market_context_state` as conditioning context plus `trading_data.m02_sector_context_feature_generation` as the deterministic feature surface;
+- consume `trading_model.m01_market_regime_model_generation` / `market_context_state` as conditioning context plus `trading_data.m02_sector_context_feature_generation` as the deterministic feature surface;
 - keep Layer 1 context from becoming sector, ETF, stock, strategy, option, or portfolio selection by itself;
 - exclude ETF holdings and `stock_etf_exposure` from core Layer 2 behavior modeling unless a later accepted contract moves that boundary;
-- preserve `model_02_sector_context` as the current narrow downstream ETF-context output surface and keep explainability/diagnostics as support surfaces;
+- preserve `m02_sector_context_model_generation` as the current narrow downstream ETF-context output table and keep explainability/diagnostics as support surfaces;
 - implement target routing with the three accepted cases: Layer 1 ETF target, Layer 2 context ETF target, and ordinary target with dynamic context-profile weighting;
 - avoid promoting `context_etf_cross_section_row` as a separate output when it is only construction evidence for `context_etf_state`;
 - keep sector direction, trend quality, transition risk, tradability, state quality, and handoff bias as separate semantics rather than collapsing them into a single readiness score;
@@ -159,9 +159,9 @@ Layer 2 changes are acceptable when they:
 
 ## Production promotion
 
-`model_02_sector_context` must not become a production-hard downstream dependency until it has a reviewed promotion candidate backed by real-data evaluation evidence. Promotion evidence must include explicit thresholds, metric values, baseline comparison, split/refit stability, sector handoff quality, and no-future-leak checks. Fixture/local dry-run evidence should defer.
+`m02_sector_context_model_generation` must not become a production-hard downstream dependency until it has a reviewed promotion candidate backed by real-data evaluation evidence. Promotion evidence must include explicit thresholds, metric values, baseline comparison, split/refit stability, sector handoff quality, and no-future-leak checks. Fixture/local dry-run evidence should defer.
 
-Current real-data status: `model_02_sector_context` rows and real promotion evidence exist, but the latest read-only evidence remains **deferred**, not approved. Missing model rows at label decision times are tracked as alignment/completeness evidence, not future leakage; leakage means label-time or split-order violations. No-future-leak and chronological split-overlap checks pass, while current promotion remains blocked by model/label alignment, coverage/pair-count, baseline, stability, and sector handoff gates. Fixture/local dry-run evidence must defer.
+Current real-data status: `m02_sector_context_model_generation` rows and real promotion evidence exist, but the latest read-only evidence remains **deferred**, not approved. Missing model rows at label decision times are tracked as alignment/completeness evidence, not future leakage; leakage means label-time or split-order violations. No-future-leak and chronological split-overlap checks pass, while current promotion remains blocked by model/label alignment, coverage/pair-count, baseline, stability, and sector handoff gates. Fixture/local dry-run evidence must defer.
 
 Current Layer 2 verification covers the baseline generator, SQL physical-artifact writers, direction-neutral promotion evidence builders, and contract boundary checks:
 
@@ -169,5 +169,4 @@ Current Layer 2 verification covers the baseline generator, SQL physical-artifac
 git diff --check
 python3 -m compileall -q src scripts tests
 PYTHONPATH=src python3 -m unittest tests.test_sector_context_contract tests.test_sector_context_model tests.test_sector_context_evaluation
-rg -n "source_02_sector_context|layer02_|SecuritySelectionModel|security_selection" docs src scripts tests
 ```

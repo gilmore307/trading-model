@@ -42,8 +42,8 @@ Layer 3 does **not** own:
 ## Input flow
 
 ```text
-trading_model.model_01_market_regime       # broad market_context_state
-trading_model.model_02_sector_context      # sector_context_state / selected basket context
+trading_model.m01_market_regime_model_generation       # broad market_context_state
+trading_model.m02_sector_context_model_generation      # sector_context_state / selected basket context
 Layer 3 candidate policy
                                            # top Layer 2 sectors + hot/liquid market names + quality filters
 Layer 3 preprocessing: anonymous_target_candidate_builder

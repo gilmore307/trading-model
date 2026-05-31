@@ -45,9 +45,9 @@ SOURCE_TABLE = "m01_market_regime_data_acquisition"
 FEATURE_SCHEMA = DEVELOPMENT_SCHEMA
 FEATURE_TABLE = "m01_market_regime_feature_generation"
 MODEL_SCHEMA = DEVELOPMENT_SCHEMA
-MODEL_TABLE = "model_01_market_regime"
-EXPLAINABILITY_TABLE = "model_01_market_regime_explainability"
-DIAGNOSTICS_TABLE = "model_01_market_regime_diagnostics"
+MODEL_TABLE = "m01_market_regime_model_generation"
+EXPLAINABILITY_TABLE = "m01_market_regime_model_generation_explainability"
+DIAGNOSTICS_TABLE = "m01_market_regime_model_generation_diagnostics"
 
 
 def _require_database_mutation_confirmation(args: argparse.Namespace) -> None:

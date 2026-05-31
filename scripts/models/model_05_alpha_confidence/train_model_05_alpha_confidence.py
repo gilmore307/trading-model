@@ -162,7 +162,7 @@ def read_training_rows_from_database(
             model_02_rows = _fetch_rows(
                 cursor,
                 schema="trading_model",
-                table="model_02_sector_context",
+                table="m02_sector_context_model_generation",
                 source_start=source_start,
                 source_end=source_end,
                 order_by="available_time::timestamptz ASC, sector_or_industry_symbol ASC",
@@ -170,7 +170,7 @@ def read_training_rows_from_database(
             model_01_rows = _fetch_rows(
                 cursor,
                 schema="trading_model",
-                table="model_01_market_regime",
+                table="m01_market_regime_model_generation",
                 source_start=source_start,
                 source_end=source_end,
                 order_by="available_time::timestamptz ASC",

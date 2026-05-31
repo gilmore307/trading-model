@@ -32,14 +32,14 @@ def model_sequence() -> tuple[ModelSequenceEntry, ...]:
             model_step="M01",
             model_name="Market Regime",
             model_id="market_regime_model",
-            model_surface="model_01_market_regime",
+            model_surface="m01_market_regime_model_generation",
             conceptual_output="market_context_state",
         ),
         ModelSequenceEntry(
             model_step="M02",
             model_name="Sector Context",
             model_id="sector_context_model",
-            model_surface="model_02_sector_context",
+            model_surface="m02_sector_context_model_generation",
             conceptual_output="sector_context_state",
         ),
         ModelSequenceEntry(

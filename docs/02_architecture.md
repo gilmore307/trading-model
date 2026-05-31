@@ -129,7 +129,7 @@ Describe the broad market/cross-asset environment as a point-in-time direction-n
 Physical output:
 
 ```text
-trading_model.model_01_market_regime
+trading_model.m01_market_regime_model_generation
 ```
 
 Conceptual downstream output:

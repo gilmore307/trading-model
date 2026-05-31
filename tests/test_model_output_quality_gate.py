@@ -13,7 +13,7 @@ class ModelOutputQualityGateTests(unittest.TestCase):
             "sample_limit": 5000,
             "tables": [
                 {
-                    "table": "model_01_market_regime",
+                    "table": "m01_market_regime_model_generation",
                     "status": "sampled",
                     "all_null_columns": [
                         {
@@ -41,11 +41,11 @@ class ModelOutputQualityGateTests(unittest.TestCase):
             "sample_limit": 5000,
             "tables": [
                 {
-                    "table": "model_02_sector_context_explainability",
+                    "table": "m02_sector_context_model_generation_explainability",
                     "status": "sampled",
                     "all_null_columns": [
                         {
-                            "column": "2_rate_sensitivity_score",
+                            "column": "unimplemented_explainability_score",
                             "classification": "all_null_explainability_gap",
                             "recommended_action": "repair_explainability_generation_or_stop_emitting_column",
                         }
@@ -65,7 +65,7 @@ class ModelOutputQualityGateTests(unittest.TestCase):
             "sample_limit": 5000,
             "tables": [
                 {
-                    "table": "model_02_sector_context",
+                    "table": "m02_sector_context_model_generation",
                     "status": "sampled",
                     "all_null_columns": [
                         {
