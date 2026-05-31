@@ -99,6 +99,11 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
         self.assertEqual(generator._column_type("10_event_gap_risk_score_1W"), "DOUBLE PRECISION")
         self.assertEqual(generator._column_type("8_event_gap_risk_score_1W"), "TEXT")
 
+    def test_model_10_database_generation_allows_empty_decisions(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py")
+
+        self.assertEqual(generator._database_model_rows([], model_version="fixture"), [])
+
     def test_active_generator_column_type_prefixes_match_layer_numbers(self) -> None:
         for surface, layer_number in LAYER_NUMBERS.items():
             with self.subTest(surface=surface):

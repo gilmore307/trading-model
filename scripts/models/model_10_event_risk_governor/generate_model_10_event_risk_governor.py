@@ -219,6 +219,12 @@ def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
     path.write_text("".join(json.dumps(row, sort_keys=True, default=str) + "\n" for row in rows), encoding="utf-8")
 
 
+def _database_model_rows(decisions: Sequence[Mapping[str, Any]], *, model_version: str) -> list[dict[str, Any]]:
+    if not decisions:
+        return []
+    return generate_rows(decisions, model_version=model_version)
+
+
 def generate_from_database(
     *,
     database_url: str,
@@ -236,8 +242,9 @@ def generate_from_database(
             source_03_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, order_by="available_time ASC, target_candidate_id ASC")
             model_03_rows = _fetch_target_context_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end)
             decisions = _decision_rows(source_rows=source_rows, source_03_rows=source_03_rows, model_03_rows=model_03_rows)
-            model_rows = generate_rows(decisions, model_version=model_version)
-            _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
+            model_rows = _database_model_rows(decisions, model_version=model_version)
+            if model_rows:
+                _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
     if output_jsonl:
         _write_jsonl(output_jsonl, model_rows)
     return len(model_rows)
