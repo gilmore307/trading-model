@@ -75,7 +75,7 @@ def _database_url(explicit: str | None) -> str:
 def _load_modules(trading_data_src: Path):
     sys.path.insert(0, str(trading_data_src))
     sys.path.insert(0, str(REPO_ROOT / "src"))
-    from data_feature.feature_01_market_regime import generator as feature_generator  # type: ignore
+    from data_feature.m01_market_regime_feature_generation import generator as feature_generator  # type: ignore
     from models.model_01_market_regime.evaluation import build_evaluation_artifacts, summarize_artifacts
     from models.model_01_market_regime import generator as model_generator
 

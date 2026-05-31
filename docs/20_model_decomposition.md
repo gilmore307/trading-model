@@ -53,7 +53,7 @@ Status: accepted market-state estimator contract; production promotion remains e
 Primary input:
 
 ```text
-trading_data.feature_01_market_regime
+trading_data.m01_market_regime_feature_generation
 ```
 
 Eligible evidence: broad-market, cross-asset, credit/rate/dollar/commodity, volatility, breadth, correlation, concentration, trend, liquidity/funding, sentiment/risk-appetite, and market-structure signals available at or before `available_time`.
@@ -62,7 +62,7 @@ Excluded construction inputs: sector/industry rotation conclusions, ETF/sector b
 
 ### 2. Features
 
-`X` is the point-in-time feature vector from `feature_01_market_regime`.
+`X` is the point-in-time feature vector from `m01_market_regime_feature_generation`.
 
 Evidence roles:
 
@@ -206,7 +206,7 @@ Primary inputs:
 
 ```text
 market_context_state                 # Layer 1, conditioning only
-trading_data.feature_02_sector_context
+trading_data.m02_sector_context_feature_generation
 ETF liquidity / optionability / event evidence
 ```
 

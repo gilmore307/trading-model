@@ -6,19 +6,19 @@ This file records the active direction-neutral `trading-model` contract and impl
 
 ```text
 trading_model.model_01_market_regime   # Layer 1 primary output, consumed conceptually as market_context_state
-trading_data.feature_02_sector_context
+trading_data.m02_sector_context_feature_generation
 ```
 
 Layer 2 needs the Layer 1 output in addition to the Layer 2 data feature surface. `model_01_market_regime` / `market_context_state` is conditioning context only; it should shape interpretation of sector behavior but should not become sector, ETF, stock, or strategy selection by itself.
 
-Layer 2 consumes sector/industry/theme ETF behavior evidence from `feature_02_sector_context`. The data-owned source rows behind that feature surface are provenance/construction evidence, not a separate direct model dependency unless a later accepted contract creates one. ETF holdings and `stock_etf_exposure` are not Layer 2 core behavior inputs; they belong downstream to anonymous target candidate construction unless a later accepted dynamic influence profile supersedes the static holdings route.
+Layer 2 consumes sector/industry/theme ETF behavior evidence from `m02_sector_context_feature_generation`. The data-owned source rows behind that feature surface are provenance/construction evidence, not a separate direct model dependency unless a later accepted contract creates one. ETF holdings and `stock_etf_exposure` are not Layer 2 core behavior inputs; they belong downstream to anonymous target candidate construction unless a later accepted dynamic influence profile supersedes the static holdings route.
 
 ## Stage flow
 
 ```mermaid
 flowchart LR
     l1["trading_model.model_01_market_regime<br/>Layer 1 market_context_state"]
-    feature["trading_data.feature_02_sector_context<br/>sector/industry behavior feature surface"]
+    feature["trading_data.m02_sector_context_feature_generation<br/>sector/industry behavior feature surface"]
     model["SectorContextModel<br/>Layer 2 model logic"]
     output["trading_model.model_02_sector_context<br/>primary context_etf_state surface"]
     explain["trading_model.model_02_sector_context_explainability<br/>human-review behavior and attribution"]
@@ -148,7 +148,7 @@ Layer 2 model fields use compact `2_*` names in docs, model-facing payloads, and
 
 Layer 2 changes are acceptable when they:
 
-- consume `trading_model.model_01_market_regime` / `market_context_state` as conditioning context plus `trading_data.feature_02_sector_context` as the deterministic feature surface;
+- consume `trading_model.model_01_market_regime` / `market_context_state` as conditioning context plus `trading_data.m02_sector_context_feature_generation` as the deterministic feature surface;
 - keep Layer 1 context from becoming sector, ETF, stock, strategy, option, or portfolio selection by itself;
 - exclude ETF holdings and `stock_etf_exposure` from core Layer 2 behavior modeling unless a later accepted contract moves that boundary;
 - preserve `model_02_sector_context` as the current narrow downstream ETF-context output surface and keep explainability/diagnostics as support surfaces;

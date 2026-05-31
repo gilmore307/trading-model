@@ -63,7 +63,7 @@ direction != quality != tradability != confidence != position size
 Input surface:
 
 ```text
-trading_data.feature_01_market_regime
+trading_data.m01_market_regime_feature_generation
 ```
 
 Conceptual output state:
@@ -100,7 +100,7 @@ Input surfaces:
 
 ```text
 market_context_state
-trading_data.feature_02_sector_context
+trading_data.m02_sector_context_feature_generation
 ```
 
 Internal/explainability vectors may include:
@@ -469,12 +469,12 @@ target_context_state
 ## Clean Flow
 
 ```text
-trading_data.feature_01_market_regime
+trading_data.m01_market_regime_feature_generation
   -> MarketRegimeModel
   -> market_context_state
 
 market_context_state
-+ trading_data.feature_02_sector_context
++ trading_data.m02_sector_context_feature_generation
   -> SectorContextModel
   -> context_etf_state
 

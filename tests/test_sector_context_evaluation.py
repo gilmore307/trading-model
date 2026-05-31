@@ -70,7 +70,7 @@ class SectorContextEvaluationTests(unittest.TestCase):
         self.assertEqual(len(table_rows["model_dataset_split"]), 3)
         self.assertGreater(len(table_rows["model_eval_label"]), 0)
         self.assertGreater(len(table_rows["model_promotion_metric"]), 0)
-        self.assertEqual(artifacts.dataset_request["required_feature_key"], "FEATURE_02_SECTOR_CONTEXT")
+        self.assertEqual(artifacts.dataset_request["required_feature_key"], "M02_SECTOR_CONTEXT_FEATURE_GENERATION")
         self.assertEqual(artifacts.eval_run["model_id"], "sector_context_model")
 
     def test_future_labels_are_symbol_specific(self) -> None:

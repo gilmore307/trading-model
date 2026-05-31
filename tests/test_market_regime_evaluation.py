@@ -54,7 +54,7 @@ class MarketRegimeEvaluationTests(unittest.TestCase):
         self.assertGreater(len(table_rows["model_promotion_metric"]), 0)
         self.assertEqual(artifacts.dataset_request["request_status"], "dry_run_only")
         self.assertEqual(artifacts.eval_run["run_status"], "dry_run_only")
-        self.assertEqual(artifacts.dataset_request["required_feature_key"], "FEATURE_01_MARKET_REGIME")
+        self.assertEqual(artifacts.dataset_request["required_feature_key"], "M01_MARKET_REGIME_FEATURE_GENERATION")
         self.assertNotIn("required_derived_key", artifacts.dataset_request)
 
     def test_splits_are_chronological(self) -> None:

@@ -164,7 +164,7 @@ Downstream layers should depend on these public state fields rather than impleme
 Primary feature surface:
 
 ```text
-trading_data.feature_01_market_regime
+trading_data.m01_market_regime_feature_generation
 ```
 
 Eligible evidence includes broad market returns, trend/momentum persistence, volatility, correlation, breadth, concentration, credit/rate/dollar/commodity pressure, funding/liquidity proxies, and market-wide risk-appetite evidence.
@@ -247,7 +247,7 @@ Layer 2 does **not** choose final stocks.
 ### Inputs
 
 - `market_context_state` from Layer 1 as conditioning context only.
-- `trading_data.feature_02_sector_context` for sector/industry relative strength, trend, volatility, correlation, breadth, and dispersion evidence.
+- `trading_data.m02_sector_context_feature_generation` for sector/industry relative strength, trend, volatility, correlation, breadth, and dispersion evidence.
 - ETF liquidity, optionability, gap/chop behavior, event density, and abnormal activity evidence.
 
 ### Output semantics

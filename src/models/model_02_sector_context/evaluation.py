@@ -22,8 +22,8 @@ DEFAULT_FEATURE_SCHEMA = "trading_data"
 DEFAULT_FEATURE_TABLE = "m02_sector_context_feature_generation"
 DEFAULT_MODEL_SCHEMA = "trading_model"
 DEFAULT_MODEL_TABLE = "model_02_sector_context"
-DEFAULT_SOURCE_KEY = "SOURCE_01_MARKET_REGIME"
-DEFAULT_FEATURE_KEY = "FEATURE_02_SECTOR_CONTEXT"
+DEFAULT_SOURCE_KEY = "M01_MARKET_REGIME_DATA_ACQUISITION"
+DEFAULT_FEATURE_KEY = "M02_SECTOR_CONTEXT_FEATURE_GENERATION"
 DEFAULT_DRY_RUN_WRITE_POLICY = "no_database_write"
 DEFAULT_DATABASE_READ_WRITE_POLICY = "database_read_only_pending_governance_persistence"
 SUMMARY_CANDIDATE = "SECTOR_OBSERVATION_UNIVERSE"
@@ -207,7 +207,7 @@ def build_dataset_request(
         "required_source_key": DEFAULT_SOURCE_KEY,
         "required_feature_key": DEFAULT_FEATURE_KEY,
         "request_status": request_status,
-        "request_payload_json": {"write_policy": write_policy, "evidence_source": evidence_source, "layer_input_contract": "market_context_state_plus_feature_02_sector_context"},
+        "request_payload_json": {"write_policy": write_policy, "evidence_source": evidence_source, "layer_input_contract": "market_context_state_plus_m02_sector_context_feature_generation"},
     }
 
 

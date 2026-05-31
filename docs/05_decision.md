@@ -824,7 +824,7 @@ The measured Layer 3 thresholds passed, but promotion remains deferred because L
 Date: 2026-05-08
 Status: Accepted
 
-A follow-up Layer 1/2 gate repair found and fixed a stale feature-generation problem before re-reviewing promotion. The repair regenerated `feature_01_market_regime`, `feature_02_sector_context`, `model_01_market_regime`, and `model_02_sector_context` from real PostgreSQL source data instead of lowering thresholds.
+A follow-up Layer 1/2 gate repair found and fixed a stale feature-generation problem before re-reviewing promotion. The repair regenerated `m01_market_regime_feature_generation`, `m02_sector_context_feature_generation`, `model_01_market_regime`, and `model_02_sector_context` from real PostgreSQL source data instead of lowering thresholds.
 
 Latest Layer 1 evidence fixed the stale row-count and leakage failures. A later scoring repair also excluded `1_coverage_score` and `1_data_quality_score` from predictive-return factor scoring, leaving split-stability passing; promotion still fails baseline improvement, eval-label count, pair-count, and coverage gates.
 

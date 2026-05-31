@@ -5,7 +5,7 @@ This file records the active direction-neutral market tradability/regime contrac
 ## Input
 
 ```text
-trading_data.feature_01_market_regime
+trading_data.m01_market_regime_feature_generation
 ```
 
 Layer 1 consumes broad-market and cross-asset evidence only. Sector/industry rotation, sector/industry ETF leadership, ETF holdings, selected securities, strategies, option contracts, portfolio actions, and future-return labels are excluded from production construction.
@@ -34,7 +34,7 @@ Future outcome metrics are labels and evaluation indicators only. They may calib
 ```mermaid
 flowchart LR
     source["trading_data source evidence<br/>point-in-time broad-market and cross-asset data"]
-    feature["trading_data.feature_01_market_regime<br/>deterministic Layer 1 feature surface"]
+    feature["trading_data.m01_market_regime_feature_generation<br/>deterministic Layer 1 feature surface"]
     model["MarketRegimeModel<br/>Layer 1 model logic"]
     output["trading_model.model_01_market_regime<br/>primary market_context_state"]
     explain["trading_model.model_01_market_regime_explainability<br/>human-review state attribution"]
@@ -155,7 +155,7 @@ Layer 1 changes are acceptable when they:
 
 - preserve the broad-market-only boundary and exclude sector/security/strategy/option/portfolio outcome leakage;
 - preserve the frame/horizon pairing rule and prevent short-frame evidence from being evaluated against unrelated long-horizon labels;
-- keep `trading_data.feature_01_market_regime` as the production input and `trading_model.model_01_market_regime` / `market_context_state` as the narrow downstream output;
+- keep `trading_data.m01_market_regime_feature_generation` as the production input and `trading_model.model_01_market_regime` / `market_context_state` as the narrow downstream output;
 - keep explainability and diagnostics as review/support artifacts rather than hard downstream dependencies;
 - keep direction, direction strength, trend quality, stability, risk stress, transition risk, liquidity pressure/support, coverage, and data quality semantically separate;
 - provide evidence-backed verification for generation, evaluation, smoke, and promotion-review paths when implementation changes;
