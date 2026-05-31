@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 
 from model_runtime.config import database_url_file
 
-from model_governance.model_output_support import write_model_output_with_support
+from model_governance.model_output_support import drop_absent_retired_horizon_columns, write_model_output_with_support
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
 from models.model_10_event_risk_governor import MODEL_ID, MODEL_SURFACE, MODEL_VERSION, generate_rows
 
@@ -168,16 +168,54 @@ def _fetch_event_source_rows(cursor: Any, *, schema: str, source_start: str | No
     )
 
 
-def _decision_rows(*, source_rows: Sequence[Mapping[str, Any]], source_03_rows: Sequence[Mapping[str, Any]], model_03_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+def _decision_rows(
+    *,
+    source_rows: Sequence[Mapping[str, Any]],
+    source_03_rows: Sequence[Mapping[str, Any]],
+    model_03_rows: Sequence[Mapping[str, Any]],
+    model_09_rows: Sequence[Mapping[str, Any]] = (),
+) -> list[dict[str, Any]]:
     target_by_symbol_time: dict[tuple[str, str], Mapping[str, Any]] = {}
+    source_by_candidate_time: dict[tuple[str, str], Mapping[str, Any]] = {}
     for row in source_03_rows:
         if row.get("symbol") and row.get("available_time"):
             target_by_symbol_time[(str(row["symbol"]).upper(), _iso(row["available_time"]))] = row
+        if row.get("target_candidate_id") and row.get("available_time"):
+            source_by_candidate_time[(str(row["target_candidate_id"]), _iso(row["available_time"]))] = row
     model_by_candidate_time: dict[tuple[str, str], Mapping[str, Any]] = {}
     for row in model_03_rows:
         if row.get("target_candidate_id") and row.get("available_time"):
             model_by_candidate_time[(str(row["target_candidate_id"]), _iso(row["available_time"]))] = row
+    option_by_candidate_time = {
+        (str(row.get("target_candidate_id")), _iso(row.get("available_time"))): row
+        for row in model_09_rows
+        if row.get("target_candidate_id") and row.get("available_time")
+    }
     rows: list[dict[str, Any]] = []
+    if not source_rows:
+        for target_model in model_03_rows:
+            candidate = str(target_model.get("target_candidate_id") or "")
+            available = _iso(target_model.get("available_time"))
+            if not candidate or not available:
+                continue
+            target_source = source_by_candidate_time.get((candidate, available), {})
+            option_row = option_by_candidate_time.get((candidate, available), {})
+            rows.append(
+                {
+                    "available_time": available,
+                    "tradeable_time": _iso(target_model.get("tradeable_time") or available),
+                    "target_candidate_id": candidate,
+                    "symbol_for_join_only": target_source.get("symbol"),
+                    "sector_type": target_source.get("sector_type"),
+                    "market_context_state_ref": target_model.get("market_context_state_ref"),
+                    "sector_context_state_ref": target_model.get("sector_context_state_ref"),
+                    "target_context_state_ref": target_model.get("target_context_state_ref"),
+                    "target_context_state": target_model.get("target_context_state"),
+                    "underlying_action_plan_ref": option_row.get("underlying_action_plan_ref"),
+                    "event_rows": [],
+                }
+            )
+        return rows
     for event in source_rows:
         symbol = str(event.get("symbol") or "").upper()
         available = _iso(event.get("available_time"))
@@ -188,6 +226,7 @@ def _decision_rows(*, source_rows: Sequence[Mapping[str, Any]], source_03_rows: 
         target_model = model_by_candidate_time.get((candidate, available))
         if not target_model:
             continue
+        option_row = option_by_candidate_time.get((candidate, available), {})
         rows.append(
             {
                 "available_time": available,
@@ -199,6 +238,7 @@ def _decision_rows(*, source_rows: Sequence[Mapping[str, Any]], source_03_rows: 
                 "sector_context_state_ref": target_model.get("sector_context_state_ref"),
                 "target_context_state_ref": target_model.get("target_context_state_ref"),
                 "target_context_state": target_model.get("target_context_state"),
+                "underlying_action_plan_ref": option_row.get("underlying_action_plan_ref"),
                 "event_rows": [dict(event)],
             }
         )
@@ -253,10 +293,13 @@ def generate_from_database(
             source_rows = _fetch_event_source_rows(cursor, schema="trading_data", source_start=source_start, source_end=source_end)
             source_03_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, order_by="available_time ASC, target_candidate_id ASC")
             model_03_rows = _fetch_target_context_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end)
-            decisions = _decision_rows(source_rows=source_rows, source_03_rows=source_03_rows, model_03_rows=model_03_rows)
+            model_09_rows = _fetch_rows(cursor, schema="trading_model", table="model_09_option_expression", source_start=source_start, source_end=source_end, order_by="available_time ASC, target_candidate_id ASC")
+            decisions = _decision_rows(source_rows=source_rows, source_03_rows=source_03_rows, model_03_rows=model_03_rows, model_09_rows=model_09_rows)
             model_rows = _database_model_rows(decisions, model_version=model_version)
             if model_rows:
                 _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
+            else:
+                drop_absent_retired_horizon_columns(cursor, schema=target_schema, table=target_table)
     if output_jsonl:
         _write_jsonl(output_jsonl, model_rows)
     return len(model_rows)

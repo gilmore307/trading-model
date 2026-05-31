@@ -159,15 +159,17 @@ def _decision_rows(
     rows: list[dict[str, Any]] = []
     for row in alpha_rows:
         available_time = row.get("available_time")
+        target_candidate_id = row.get("target_candidate_id")
         market_row = _latest_at_or_before(market_times, indexed_market_rows, available_time)
-        event_row = event_by_candidate_time.get((str(row.get("target_candidate_id")), _iso(available_time)))
+        event_row = event_by_candidate_time.get((str(target_candidate_id), _iso(available_time)))
         rows.append(
             {
                 "available_time": available_time,
                 "tradeable_time": row.get("tradeable_time") or available_time,
-                "target_candidate_id": row.get("target_candidate_id"),
+                "target_candidate_id": target_candidate_id,
                 "market_context_state_ref": row.get("market_context_state_ref"),
                 "alpha_confidence_vector_ref": row.get("alpha_confidence_vector_ref"),
+                "portfolio_exposure_state_ref": f"portfolio_exposure_state:neutral_replay:{target_candidate_id}:{_iso(available_time)}",
                 "market_context_state": _prefixed_payload(market_row, "1_", "market_context_state"),
                 "systemic_event_risk_state": _event_systemic_payload(event_row),
                 "alpha_confidence_vector": _alpha_payload(row),

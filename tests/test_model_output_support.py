@@ -21,7 +21,7 @@ class ModelOutputSupportTests(unittest.TestCase):
 
         calls: list[dict[str, object]] = []
 
-        def record_write_rows(cursor, rows, *, schema, table, primary_key, drop_columns):
+        def record_write_rows(cursor, rows, *, schema, table, primary_key, drop_columns, drop_absent_retired_horizon_columns=False):
             calls.append(
                 {
                     "rows": rows,
@@ -29,6 +29,7 @@ class ModelOutputSupportTests(unittest.TestCase):
                     "table": table,
                     "primary_key": primary_key,
                     "drop_columns": drop_columns,
+                    "drop_absent_retired_horizon_columns": drop_absent_retired_horizon_columns,
                 }
             )
 
@@ -53,10 +54,12 @@ class ModelOutputSupportTests(unittest.TestCase):
         self.assertNotIn("alpha_confidence_vector", primary)
         self.assertNotIn("alpha_confidence_diagnostics", primary)
         self.assertEqual(calls[0]["drop_columns"], {"alpha_confidence_vector", "alpha_confidence_diagnostics"})
+        self.assertTrue(calls[0]["drop_absent_retired_horizon_columns"])
 
         explainability = calls[1]["rows"][0]
         self.assertEqual(explainability["alpha_confidence_vector"], {"score": 0.7})
         self.assertEqual(explainability["explanation_payload_json"]["primary_table"], "model_05_alpha_confidence")
+        self.assertFalse(calls[1]["drop_absent_retired_horizon_columns"])
 
         diagnostics = calls[2]["rows"][0]
         self.assertEqual(diagnostics["alpha_confidence_diagnostics"], {"status": "ok"})
@@ -91,8 +94,15 @@ class ModelOutputSupportTests(unittest.TestCase):
         ]
         calls: list[dict[str, object]] = []
 
-        def record_write_rows(cursor, rows, *, schema, table, primary_key, drop_columns):
-            calls.append({"rows": rows, "table": table, "drop_columns": drop_columns})
+        def record_write_rows(cursor, rows, *, schema, table, primary_key, drop_columns, drop_absent_retired_horizon_columns=False):
+            calls.append(
+                {
+                    "rows": rows,
+                    "table": table,
+                    "drop_columns": drop_columns,
+                    "drop_absent_retired_horizon_columns": drop_absent_retired_horizon_columns,
+                }
+            )
 
         with patch.object(model_output_support, "_write_rows", side_effect=record_write_rows):
             model_output_support.write_model_output_with_support(
@@ -107,6 +117,13 @@ class ModelOutputSupportTests(unittest.TestCase):
 
         self.assertEqual([call["table"] for call in calls], ["model_05_alpha_confidence"])
         self.assertEqual(calls[0]["drop_columns"], {"alpha_confidence_vector", "alpha_confidence_diagnostics"})
+        self.assertTrue(calls[0]["drop_absent_retired_horizon_columns"])
+
+    def test_retired_horizon_columns_are_current_contract_only(self) -> None:
+        self.assertTrue(model_output_support._is_retired_horizon_column("5_alpha_score_5min"))
+        self.assertTrue(model_output_support._is_retired_horizon_column("6_risk_score_390m"))
+        self.assertFalse(model_output_support._is_retired_horizon_column("5_alpha_score_10min"))
+        self.assertFalse(model_output_support._is_retired_horizon_column("target_context_state"))
 
 
 if __name__ == "__main__":

@@ -104,6 +104,62 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
 
         self.assertEqual(generator._database_model_rows([], model_version="fixture"), [])
 
+    def test_model_10_database_input_emits_no_event_decisions_from_target_context(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py")
+
+        rows = generator._decision_rows(
+            source_rows=[],
+            source_03_rows=[
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "symbol": "AAPL",
+                }
+            ],
+            model_03_rows=[
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "tradeable_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "market_context_state_ref": "m01_1",
+                    "sector_context_state_ref": "m02_1",
+                    "target_context_state_ref": "m03_1",
+                    "target_context_state": {"3_target_direction_score_1W": 0.1},
+                }
+            ],
+            model_09_rows=[
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "underlying_action_plan_ref": "uap_1",
+                }
+            ],
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["event_rows"], [])
+        self.assertEqual(rows[0]["symbol_for_join_only"], "AAPL")
+        self.assertEqual(rows[0]["target_context_state_ref"], "m03_1")
+        self.assertEqual(rows[0]["underlying_action_plan_ref"], "uap_1")
+
+    def test_layer_06_database_input_marks_neutral_replay_portfolio_ref(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_06_dynamic_risk_policy/generate_model_06_dynamic_risk_policy.py")
+
+        rows = generator._decision_rows(
+            [
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "alpha_confidence_vector_ref": "acv_1",
+                }
+            ]
+        )
+
+        self.assertEqual(
+            rows[0]["portfolio_exposure_state_ref"],
+            "portfolio_exposure_state:neutral_replay:anon_aapl:2016-01-04T09:35:00-05:00",
+        )
+
     def test_model_10_database_generation_reads_current_event_source_table(self) -> None:
         generator = self._load_script_module(REPO_ROOT / "scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py")
 

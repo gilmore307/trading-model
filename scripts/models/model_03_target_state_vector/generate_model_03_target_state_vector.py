@@ -20,7 +20,31 @@ COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 PRIMARY_JSON_COLUMNS: set[str] = set()
 EXPLAINABILITY_JSON_COLUMNS = {"target_context_state", "target_state_embedding", "explanation_payload_json"}
 DIAGNOSTICS_JSON_COLUMNS = {"diagnostic_payload_json"}
-RETIRED_PRIMARY_COLUMNS = ("target_context_state", "target_state_embedding", "state_cluster_id", "state_quality_diagnostics")
+RETIRED_STATE_WINDOWS = ("5min", "15min", "60min", "390min")
+RETIRED_WINDOWED_SCORE_NAMES = (
+    "target_direction_score",
+    "target_direction_strength_score",
+    "target_trend_quality_score",
+    "target_path_stability_score",
+    "target_noise_score",
+    "target_transition_risk_score",
+    "target_state_persistence_score",
+    "target_exhaustion_risk_score",
+    "context_direction_alignment_score",
+    "context_support_quality_score",
+    "tradability_score",
+)
+RETIRED_PRIMARY_COLUMNS = (
+    "target_context_state",
+    "target_state_embedding",
+    "state_cluster_id",
+    "state_quality_diagnostics",
+    *(
+        f"3_{score_name}_{window}"
+        for window in RETIRED_STATE_WINDOWS
+        for score_name in RETIRED_WINDOWED_SCORE_NAMES
+    ),
+)
 PRIMARY_KEY = ("target_candidate_id", "available_time", "model_version")
 SUPPORT_PRIMARY_KEY = ("target_candidate_id", "available_time", "model_version")
 INSERT_BATCH_SIZE = 1000

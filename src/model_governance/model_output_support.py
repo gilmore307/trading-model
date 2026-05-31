@@ -9,6 +9,7 @@ from typing import Any
 
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
+RETIRED_HORIZON_SUFFIXES = ("5min", "15min", "60min", "390min", "5m", "15m", "60m", "390m")
 
 
 def quote_identifier(identifier: str) -> str:
@@ -60,11 +61,33 @@ def write_model_output_with_support(
         if _has_non_empty(row, diagnostics_columns)
     ]
 
-    _write_rows(cursor, primary_rows, schema=target_schema, table=target_table, primary_key=primary_key, drop_columns=moved_columns)
+    _write_rows(
+        cursor,
+        primary_rows,
+        schema=target_schema,
+        table=target_table,
+        primary_key=primary_key,
+        drop_columns=moved_columns,
+        drop_absent_retired_horizon_columns=True,
+    )
     if explainability_rows:
-        _write_rows(cursor, explainability_rows, schema=target_schema, table=f"{target_table}_explainability", primary_key=primary_key, drop_columns=set())
+        _write_rows(
+            cursor,
+            explainability_rows,
+            schema=target_schema,
+            table=f"{target_table}_explainability",
+            primary_key=primary_key,
+            drop_columns=set(),
+        )
     if diagnostics_rows:
-        _write_rows(cursor, diagnostics_rows, schema=target_schema, table=f"{target_table}_diagnostics", primary_key=primary_key, drop_columns=set())
+        _write_rows(
+            cursor,
+            diagnostics_rows,
+            schema=target_schema,
+            table=f"{target_table}_diagnostics",
+            primary_key=primary_key,
+            drop_columns=set(),
+        )
 
 
 def _non_scalar_columns(rows: Sequence[Mapping[str, Any]]) -> set[str]:
@@ -133,6 +156,7 @@ def _write_rows(
     table: str,
     primary_key: Sequence[str],
     drop_columns: set[str],
+    drop_absent_retired_horizon_columns: bool = False,
 ) -> None:
     if not rows:
         return
@@ -146,7 +170,17 @@ def _write_rows(
     for column in columns:
         cursor.execute(f"ALTER TABLE {q_table} ADD COLUMN IF NOT EXISTS {quote_column_identifier(column)} {column_types[column]}")
     _ensure_primary_key(cursor, schema=schema, table=table, primary_key=primary_key)
-    for column in drop_columns:
+    columns_to_drop = set(drop_columns)
+    if drop_absent_retired_horizon_columns:
+        columns_to_drop.update(
+            absent_retired_horizon_columns(
+                cursor,
+                schema=schema,
+                table=table,
+                current_columns=set(columns),
+            )
+        )
+    for column in columns_to_drop:
         cursor.execute(f"ALTER TABLE {q_table} DROP COLUMN IF EXISTS {quote_column_identifier(column)}")
 
     placeholders = ["%s::jsonb" if column_types[column] == "JSONB" else "%s" for column in columns]
@@ -182,6 +216,50 @@ def _ensure_primary_key(cursor: Any, *, schema: str, table: str, primary_key: Se
     q_table = qualified(schema, table)
     pk_sql = ", ".join(quote_column_identifier(column) for column in primary_key)
     cursor.execute(f"ALTER TABLE {q_table} ADD PRIMARY KEY ({pk_sql})")
+
+
+def drop_absent_retired_horizon_columns(
+    cursor: Any,
+    *,
+    schema: str,
+    table: str,
+    current_columns: set[str] | None = None,
+) -> None:
+    q_table = qualified(schema, table)
+    for column in absent_retired_horizon_columns(
+        cursor,
+        schema=schema,
+        table=table,
+        current_columns=current_columns or set(),
+    ):
+        cursor.execute(f"ALTER TABLE {q_table} DROP COLUMN IF EXISTS {quote_column_identifier(column)}")
+
+
+def absent_retired_horizon_columns(cursor: Any, *, schema: str, table: str, current_columns: set[str]) -> set[str]:
+    cursor.execute(
+        """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = %s AND table_name = %s
+        """,
+        (schema, table),
+    )
+    return {
+        str(_row_value(row, "column_name"))
+        for row in cursor.fetchall()
+        if str(_row_value(row, "column_name")) not in current_columns
+        and _is_retired_horizon_column(str(_row_value(row, "column_name")))
+    }
+
+
+def _row_value(row: Any, key: str) -> Any:
+    if isinstance(row, Mapping):
+        return row.get(key)
+    return row[0]
+
+
+def _is_retired_horizon_column(column: str) -> bool:
+    return bool(re.match(r"^\d+_", column)) and any(column.endswith(f"_{suffix}") for suffix in RETIRED_HORIZON_SUFFIXES)
 
 
 def _column_type(rows: Sequence[Mapping[str, Any]], column: str) -> str:
