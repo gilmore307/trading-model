@@ -26,6 +26,8 @@ JSON_COLUMNS = {"event_context_vector", "event_risk_governor_diagnostics"}
 PRIMARY_KEY = ("event_context_vector_ref",)
 EXPLAINABILITY_COLUMNS = {"event_context_vector"}
 DIAGNOSTICS_COLUMNS = {"event_risk_governor_diagnostics"}
+CURRENT_SOURCE_TABLE = "m10_event_risk_governor_data_acquisition"
+LEGACY_SOURCE_TABLE = "source_10_event_risk_governor"
 
 
 def _database_url(explicit: str | None) -> str:
@@ -156,6 +158,20 @@ def _fetch_target_context_rows(cursor: Any, *, schema: str, table: str, source_s
     return [dict(row) for row in cursor.fetchall()]
 
 
+def _fetch_event_source_rows(cursor: Any, *, schema: str, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+    table = CURRENT_SOURCE_TABLE
+    if not _table_exists(cursor, schema=schema, table=table):
+        table = LEGACY_SOURCE_TABLE
+    return _fetch_rows(
+        cursor,
+        schema=schema,
+        table=table,
+        source_start=source_start,
+        source_end=source_end,
+        order_by="available_time ASC, event_id ASC",
+    )
+
+
 def _decision_rows(*, source_rows: Sequence[Mapping[str, Any]], source_03_rows: Sequence[Mapping[str, Any]], model_03_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     target_by_symbol_time: dict[tuple[str, str], Mapping[str, Any]] = {}
     for row in source_03_rows:
@@ -238,7 +254,7 @@ def generate_from_database(
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
-            source_rows = _fetch_rows(cursor, schema="trading_data", table="source_10_event_risk_governor", source_start=source_start, source_end=source_end, order_by="available_time ASC, event_id ASC")
+            source_rows = _fetch_event_source_rows(cursor, schema="trading_data", source_start=source_start, source_end=source_end)
             source_03_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, order_by="available_time ASC, target_candidate_id ASC")
             model_03_rows = _fetch_target_context_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end)
             decisions = _decision_rows(source_rows=source_rows, source_03_rows=source_03_rows, model_03_rows=model_03_rows)

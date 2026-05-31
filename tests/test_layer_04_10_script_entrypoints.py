@@ -104,6 +104,27 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
 
         self.assertEqual(generator._database_model_rows([], model_version="fixture"), [])
 
+    def test_model_10_database_generation_reads_current_event_source_table(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py")
+
+        class Cursor:
+            def __init__(self) -> None:
+                self.queries: list[tuple[str, list[object] | tuple[object, ...]]] = []
+
+            def execute(self, query: str, params: list[object] | tuple[object, ...] = ()) -> None:
+                self.queries.append((query, params))
+
+            def fetchone(self):
+                return {"table_ref": "trading_data.m10_event_risk_governor_data_acquisition"}
+
+            def fetchall(self):
+                return []
+
+        cursor = Cursor()
+        generator._fetch_event_source_rows(cursor, schema="trading_data", source_start=None, source_end=None)
+
+        self.assertIn('"trading_data"."m10_event_risk_governor_data_acquisition"', cursor.queries[-1][0])
+
     def test_active_generator_column_type_prefixes_match_layer_numbers(self) -> None:
         for surface, layer_number in LAYER_NUMBERS.items():
             with self.subTest(surface=surface):
