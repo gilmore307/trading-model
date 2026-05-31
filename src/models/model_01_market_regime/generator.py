@@ -1,7 +1,7 @@
 """Continuous MarketRegimeModel market-context state generator.
 
 The generator converts point-in-time rows from
-``trading_data.feature_01_market_regime`` into the model output table
+``trading_data.m01_market_regime_feature_generation`` into the model output table
 ``trading_model.model_01_market_regime``. The generator intentionally avoids
 clustering, hard state ids, supervised labels, and human-readable regime labels.
 The primary output is a bounded direction-neutral tradability/context vector

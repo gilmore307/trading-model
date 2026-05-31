@@ -136,7 +136,7 @@ def _feature_rows_query(
         where.append('UPPER(s."symbol") = %s')
         params.append(target_symbol.upper())
     where_sql = " WHERE " + " AND ".join(where) if where else ""
-    cursor.execute("SELECT to_regclass(%s) AS table_ref", ("trading_data.source_02_target_candidate_holdings",))
+    cursor.execute("SELECT to_regclass(%s) AS table_ref", ("trading_data.m02_sector_context_data_acquisition",))
     exists = cursor.fetchone()
     if isinstance(exists, Mapping):
         holdings_exists = exists.get("table_ref") is not None
@@ -149,7 +149,7 @@ def _feature_rows_query(
         holdings_join = """
         LEFT JOIN LATERAL (
           SELECT h."etf_symbol"
-          FROM "trading_data"."source_02_target_candidate_holdings" AS h
+          FROM "trading_data"."m02_sector_context_data_acquisition" AS h
           WHERE h."holding_symbol" = s."symbol"
             AND h."available_time" <= f."available_time"
           ORDER BY h."available_time" DESC, h."weight" DESC NULLS LAST, h."etf_symbol" ASC

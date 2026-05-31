@@ -41,9 +41,9 @@ DEVELOPMENT_SCHEMA = "trading_model_development_smoke"
 CONFIRM_DATABASE_MUTATION_TOKEN = "I_UNDERSTAND_THIS_MUTATES_DEVELOPMENT_DB"
 
 SOURCE_SCHEMA = DEVELOPMENT_SCHEMA
-SOURCE_TABLE = "source_01_market_regime"
+SOURCE_TABLE = "m01_market_regime_data_acquisition"
 FEATURE_SCHEMA = DEVELOPMENT_SCHEMA
-FEATURE_TABLE = "feature_01_market_regime"
+FEATURE_TABLE = "m01_market_regime_feature_generation"
 MODEL_SCHEMA = DEVELOPMENT_SCHEMA
 MODEL_TABLE = "model_01_market_regime"
 EXPLAINABILITY_TABLE = "model_01_market_regime_explainability"

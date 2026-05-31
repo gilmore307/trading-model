@@ -6,7 +6,7 @@ Current status: direction-neutral baseline generator, SQL writer, evaluation pat
 
 Boundary:
 
-- Input: `market_context_state`, `trading_data.feature_02_sector_context`, and ETF/basket tradability/event diagnostics available at or before `available_time`.
+- Input: `market_context_state`, `trading_data.m02_sector_context_feature_generation`, and ETF/basket tradability/event diagnostics available at or before `available_time`.
 - Conceptual output: `context_etf_state` keyed by `available_time + context_etf_symbol`.
 - Physical artifacts: `trading_model.model_02_sector_context`, `trading_model.model_02_sector_context_explainability`, and `trading_model.model_02_sector_context_diagnostics`.
 - May mark sector/industry baskets as eligible/selected for downstream candidate construction.

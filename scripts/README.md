@@ -12,7 +12,7 @@ Scripts are the runtime boundary. Reusable model logic belongs in `src/`; script
 ## Model entrypoints
 
 - `models/model_01_market_regime/`
-  - `generate_model_01_market_regime.py` reads `trading_data.feature_01_market_regime`, writes `trading_model.model_01_market_regime`, and writes explainability/diagnostics support rows.
+  - `generate_model_01_market_regime.py` reads `trading_data.m01_market_regime_feature_generation`, writes `trading_model.model_01_market_regime`, and writes explainability/diagnostics support rows.
   - `evaluate_model_01_market_regime.py` builds MarketRegimeModel evaluation evidence from fixture/local rows or read-only PostgreSQL rows with `--from-database`.
   - `review_market_regime_promotion.py` builds evaluation-backed promotion candidate evidence and a review artifact; manager-control-plane decision/activation stays in `trading-manager`.
   - `run_market_regime_development_smoke.py` runs a deterministic development DB smoke chain under the isolated `trading_model_development_smoke` schema; it requires explicit `--database-url` plus the database-mutation confirmation token and cleans temporary tables by default.

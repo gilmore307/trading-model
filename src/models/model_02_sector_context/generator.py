@@ -1,7 +1,7 @@
 """SectorContextModel baseline state generator.
 
 This module turns point-in-time rows from
-``trading_data.feature_02_sector_context`` plus optional Layer 1
+``trading_data.m02_sector_context_feature_generation`` plus optional Layer 1
 ``market_context_state`` rows into the three accepted Layer 2 physical artifacts:
 
 * ``trading_model.model_02_sector_context`` (narrow downstream contract),
