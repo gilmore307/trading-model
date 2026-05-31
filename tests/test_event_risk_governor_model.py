@@ -48,7 +48,7 @@ class EventRiskGovernorTests(unittest.TestCase):
         self.assert_no_forbidden_terms(output)
 
     def test_no_event_defaults_are_neutral_not_null(self) -> None:
-        row = _base_row(source_10_event_risk_governor=[])
+        row = _base_row(m10_event_risk_governor_data_acquisition=[])
         output = generate_rows([row])[0]
         vector = output["event_context_vector"]
 
@@ -75,7 +75,7 @@ class EventRiskGovernorTests(unittest.TestCase):
         self.assert_no_forbidden_terms(output)
 
     def test_price_action_event_maps_to_microstructure_reversal_risk(self) -> None:
-        row = _base_row(source_10_event_risk_governor=[
+        row = _base_row(m10_event_risk_governor_data_acquisition=[
             {
                 "event_id": "evt_false_breakout",
                 "canonical_event_id": "evt_false_breakout",
@@ -102,7 +102,7 @@ class EventRiskGovernorTests(unittest.TestCase):
         self.assert_no_forbidden_terms(output)
 
     def test_negative_macro_impact_preserves_unsigned_risk_magnitude(self) -> None:
-        row = _base_row(source_10_event_risk_governor=[
+        row = _base_row(m10_event_risk_governor_data_acquisition=[
             {
                 "event_id": "evt_macro_shock",
                 "canonical_event_id": "evt_macro_shock",
@@ -125,7 +125,7 @@ class EventRiskGovernorTests(unittest.TestCase):
         self.assertGreater(vector["10_event_contagion_risk_score_1D"], 0.0)
 
     def test_direction_neutral_macro_event_preserves_scope_impact_and_risk(self) -> None:
-        row = _base_row(source_10_event_risk_governor=[
+        row = _base_row(m10_event_risk_governor_data_acquisition=[
             {
                 "event_id": "evt_macro_uncertainty",
                 "canonical_event_id": "evt_macro_uncertainty",
@@ -153,7 +153,7 @@ class EventRiskGovernorTests(unittest.TestCase):
         )
 
     def test_weak_direction_bias_preserves_scope_impact_and_risk_magnitude(self) -> None:
-        row = _base_row(source_10_event_risk_governor=[
+        row = _base_row(m10_event_risk_governor_data_acquisition=[
             {
                 "event_id": "evt_macro_weak_bias",
                 "canonical_event_id": "evt_macro_weak_bias",
@@ -219,7 +219,7 @@ def _base_row(**overrides: object) -> dict[str, object]:
         "sector_context_state_ref": "scs_fixture",
         "target_context_state_ref": "tcs_fixture",
         "target_context_state": {"3_target_direction_score_1W": 0.5, "3_target_direction_score_1D": 0.4},
-        "source_10_event_risk_governor": [
+        "m10_event_risk_governor_data_acquisition": [
             {
                 "event_id": "evt_canonical",
                 "canonical_event_id": "evt_canonical",

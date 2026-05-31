@@ -114,9 +114,6 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
             def execute(self, query: str, params: list[object] | tuple[object, ...] = ()) -> None:
                 self.queries.append((query, params))
 
-            def fetchone(self):
-                return {"table_ref": "trading_data.m10_event_risk_governor_data_acquisition"}
-
             def fetchall(self):
                 return []
 

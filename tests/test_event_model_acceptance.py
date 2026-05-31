@@ -28,14 +28,14 @@ class EventModelAcceptanceTests(unittest.TestCase):
         self.assertIn("missing_pit_revenue_consensus_baseline", families["earnings_guidance_event_family"]["blocker_codes"])
         governor = families["event_risk_governor_structure"]
         self.assertEqual(governor["status"], "accepted_architecture")
-        self.assertIn("source_10_event_risk_governor", governor["next_evidence_gate"])
+        self.assertIn("m10_event_risk_governor_data_acquisition", governor["next_evidence_gate"])
         self.assertIn("feature_10_event_risk_governor", governor["next_evidence_gate"])
         self.assertIn("model_10_event_risk_governor", governor["next_evidence_gate"])
         self.assertNotIn("source_08", governor["next_evidence_gate"])
         self.assertNotIn("feature_08", governor["next_evidence_gate"])
         self.assertNotIn("model_" + "08_" + "event_risk_governor", governor["next_evidence_gate"])
 
-        self.assertIn("source_10_event_risk_governor", row["downstream_regeneration_policy"])
+        self.assertIn("m10_event_risk_governor_data_acquisition", row["downstream_regeneration_policy"])
         self.assertIn("feature_10_event_risk_governor", row["downstream_regeneration_policy"])
         self.assertIn("model_10_event_risk_governor", row["downstream_regeneration_policy"])
         self.assertNotIn("source_08", row["downstream_regeneration_policy"])

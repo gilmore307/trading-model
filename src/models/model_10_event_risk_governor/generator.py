@@ -82,7 +82,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
 
 
 def _visible_events(row: Mapping[str, Any], decision_available_time: datetime) -> list[Mapping[str, Any]]:
-    event_rows = row.get("source_10_event_risk_governor") or row.get("event_rows") or row.get("events") or []
+    event_rows = row.get("m10_event_risk_governor_data_acquisition") or row.get("event_rows") or row.get("events") or []
     if isinstance(event_rows, Mapping):
         event_rows = [event_rows]
     visible: list[Mapping[str, Any]] = []
@@ -305,7 +305,7 @@ def _normalize_row(row: Mapping[str, Any]) -> dict[str, Any]:
     output = dict(row)
     for key in ("market_context_state", "sector_context_state", "target_context_state"):
         output[key] = _coerce_payload(output.get(key))
-    events = output.get("source_10_event_risk_governor") or output.get("event_rows") or output.get("events") or []
+    events = output.get("m10_event_risk_governor_data_acquisition") or output.get("event_rows") or output.get("events") or []
     if isinstance(events, str):
         events = _coerce_payload(events)
     output["event_rows"] = events if isinstance(events, list) else [events] if isinstance(events, Mapping) else []

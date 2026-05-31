@@ -450,7 +450,7 @@ market_context_state
   -> option_expression_plan / expression_vector
 ```
 
-Layer 10 consumes point-in-time event evidence such as `source_10_event_risk_governor`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
+Layer 10 consumes point-in-time event evidence such as `m10_event_risk_governor_data_acquisition`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
 
 The former hard-upstream event route must not be used as active layer ordering. Event-risk governance is now Layer 10, except for reviewed event-failure factors promoted into Layer 4.
 

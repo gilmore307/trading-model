@@ -237,7 +237,7 @@ market_context_state
 + underlying_action_plan / underlying_action_vector
 + optional trading_guidance_record
 + optional option_expression_plan / expression_vector
-+ source_10_event_risk_governor
++ m10_event_risk_governor_data_acquisition
 + event_detail_artifacts
 + scope_mapping_metadata
 + sensitivity_metadata
@@ -262,19 +262,19 @@ underlying_action_vector_ref
 optional trading_guidance_record_ref
 optional option_expression_plan_ref
 asset_expression_route (`direct_underlying_primary`, `direct_underlying_only`, or `option_expression_context_available`)
-source_10_event_risk_governor rows visible by available_time
+m10_event_risk_governor_data_acquisition rows visible by available_time
 canonical-event and dedup metadata visible by available_time
 event_detail_artifact references visible by available_time
 scope_mapping_metadata visible by available_time
 sensitivity_metadata visible by available_time
 ```
 
-### Input A - `source_10_event_risk_governor`
+### Input A - `m10_event_risk_governor_data_acquisition`
 
 `trading-data` owns the current one-row-per-event overview table:
 
 ```text
-source_10_event_risk_governor
+m10_event_risk_governor_data_acquisition
 ```
 
 Current SQL overview fields:

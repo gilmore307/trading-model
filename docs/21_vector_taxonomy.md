@@ -422,7 +422,7 @@ trading_model.model_10_event_risk_governor
 Primary input source remains until a separate data/SQL migration:
 
 ```text
-trading_data.source_10_event_risk_governor
+trading_data.m10_event_risk_governor_data_acquisition
 ```
 
 Layer 10 is a point-in-time residual event-risk overlay whose canonical risk target is the Layer 8 direct-underlying thesis. Layer 9 trading-guidance / option-expression context is optional and absent for direct-underlying-only crypto routes:
@@ -436,7 +436,7 @@ market_context_state
 + position_projection_vector
 + underlying_action_plan / vector
 + optional trading_guidance_record / option_expression_plan / expression_vector
-+ source_10_event_risk_governor
++ m10_event_risk_governor_data_acquisition
 + event_detail_artifacts
 + scope_mapping_metadata
 + sensitivity_metadata
