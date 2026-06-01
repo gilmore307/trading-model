@@ -108,6 +108,10 @@ class TargetStateVectorModelTests(unittest.TestCase):
         self.assertEqual(payload["threshold_summary"]["promotion_gate_state"], "blocked")
         self.assertEqual(payload["empty_evaluation"]["status"], "blocked_no_rows")
         self.assertEqual(payload["empty_evaluation"]["row_counts"]["feature_rows"], 0)
+        self.assertIn("acceptance_thresholds", payload)
+        self.assertIn("threshold_results", payload)
+        self.assertEqual(payload["acceptance_thresholds"]["minimum_feature_rows"], 252.0)
+        self.assertFalse(payload["threshold_results"]["minimum_feature_rows"]["passed"])
         self.assertIn("minimum_feature_rows", payload["threshold_summary"]["failed_thresholds"])
 
     def test_database_evaluation_uses_summary_queries_for_nonempty_fold(self) -> None:
@@ -186,6 +190,10 @@ class TargetStateVectorModelTests(unittest.TestCase):
         self.assertEqual(payload["database_summary_evaluation"]["status"], "completed_summary_mode")
         self.assertEqual(payload["database_summary_evaluation"]["row_counts"]["feature_rows"], 300)
         self.assertEqual(payload["tables"]["model_eval_label"], [])
+        self.assertIn("acceptance_thresholds", payload)
+        self.assertIn("threshold_results", payload)
+        self.assertEqual(payload["acceptance_thresholds"]["minimum_feature_rows"], 252.0)
+        self.assertTrue(payload["threshold_results"]["minimum_feature_rows"]["passed"])
         self.assertIn("minimum_target_vs_market_sector_improvement_abs", payload["threshold_summary"]["failed_thresholds"])
 
     def test_database_generation_allows_empty_source_window(self) -> None:
@@ -361,7 +369,11 @@ class TargetStateVectorModelTests(unittest.TestCase):
         self.assertIn("label_count:future_tradeable_path", metric_names)
         self.assertIn("threshold:minimum_feature_rows", metric_names)
         summary = evaluation.summarize_threshold_results(artifacts.eval_metrics)
+        thresholds = evaluation.acceptance_thresholds(artifacts.eval_metrics)
+        threshold_results = evaluation.threshold_results(artifacts.eval_metrics)
         self.assertEqual(summary["promotion_gate_state"], "blocked")
+        self.assertEqual(thresholds["minimum_feature_rows"], 252.0)
+        self.assertFalse(threshold_results["minimum_feature_rows"]["passed"])
         self.assertIn("minimum_feature_rows", summary["failed_thresholds"])
 
     def test_production_substrate_conversion_matches_governance_persistence_shape(self) -> None:

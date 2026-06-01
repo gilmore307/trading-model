@@ -96,6 +96,19 @@ def evaluate_layer(
             except ValueError as exc:
                 leakage_errors.append(f"row[{index}]: {exc}")
     labels = label_builder(model_rows, outcome_rows)
+    acceptance_thresholds = _acceptance_thresholds()
+    threshold_results = _threshold_results(
+        acceptance_thresholds,
+        model_rows=model_rows,
+        outcome_rows=outcome_rows,
+        labels=labels,
+        leakage_errors=leakage_errors,
+    )
+    failed_thresholds = {
+        name: result
+        for name, result in threshold_results.items()
+        if not bool(result.get("passed"))
+    }
     summary = {
         "layer_number": layer_number,
         "model_surface": model_surface,
@@ -107,10 +120,16 @@ def evaluate_layer(
         "label_join_coverage_rate": round(len(labels) / len(model_rows), 6) if model_rows else 0.0,
         "leakage_check_passed": not leakage_errors,
         "leakage_errors": leakage_errors,
-        "promotion_gate_state": "deferred",
+        "promotion_gate_state": "deferred" if not failed_thresholds else "blocked",
         "reason_codes": _reason_codes(leakage_errors=leakage_errors, model_rows=model_rows, labels=labels, evidence_source=evidence_source),
     }
-    return {"summary": summary, "labels": labels}
+    return {
+        "summary": summary,
+        "acceptance_thresholds": acceptance_thresholds,
+        "threshold_results": threshold_results,
+        "failed_thresholds": failed_thresholds,
+        "labels": labels,
+    }
 
 
 def conservative_review(summary: Mapping[str, Any]) -> dict[str, Any]:
@@ -147,6 +166,39 @@ def _reason_codes(*, leakage_errors: list[str], model_rows: list[dict[str, Any]]
         reasons.append("fixture_or_local_evidence_must_defer")
     reasons.append("no_production_activation_from_local_layer_script")
     return reasons
+
+
+def _acceptance_thresholds() -> dict[str, float]:
+    return {
+        "minimum_model_rows": 1.0,
+        "minimum_outcome_rows": 1.0,
+        "minimum_eval_labels": 1.0,
+        "minimum_label_join_coverage_rate": 1.0,
+        "maximum_leakage_error_count": 0.0,
+    }
+
+
+def _threshold_results(
+    thresholds: Mapping[str, float],
+    *,
+    model_rows: list[dict[str, Any]],
+    outcome_rows: list[dict[str, Any]],
+    labels: list[dict[str, Any]],
+    leakage_errors: list[str],
+) -> dict[str, dict[str, Any]]:
+    actuals = {
+        "minimum_model_rows": float(len(model_rows)),
+        "minimum_outcome_rows": float(len(outcome_rows)),
+        "minimum_eval_labels": float(len(labels)),
+        "minimum_label_join_coverage_rate": round(len(labels) / len(model_rows), 6) if model_rows else 0.0,
+        "maximum_leakage_error_count": float(len(leakage_errors)),
+    }
+    results: dict[str, dict[str, Any]] = {}
+    for name, threshold in thresholds.items():
+        actual = actuals.get(name)
+        passed = actual <= threshold if name.startswith("maximum_") else actual >= threshold
+        results[name] = {"actual": actual, "threshold": threshold, "passed": passed}
+    return results
 
 
 # Fixture rows are intentionally tiny. They exercise each layer's deterministic

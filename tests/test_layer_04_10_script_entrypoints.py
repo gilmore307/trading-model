@@ -562,6 +562,11 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
                     self.assertEqual(evaluation["summary"]["label_row_count"], 1)
                     self.assertTrue(evaluation["summary"]["leakage_check_passed"])
                     self.assertIn("fixture_or_local_evidence_must_defer", evaluation["summary"]["reason_codes"])
+                    self.assertIn("acceptance_thresholds", evaluation)
+                    self.assertIn("threshold_results", evaluation)
+                    self.assertEqual(evaluation["acceptance_thresholds"]["minimum_eval_labels"], 1.0)
+                    self.assertTrue(evaluation["threshold_results"]["minimum_eval_labels"]["passed"])
+                    self.assertEqual(evaluation["failed_thresholds"], {})
 
                     review = self._run([
                         f"scripts/models/{surface}/review_{slug}_promotion.py",

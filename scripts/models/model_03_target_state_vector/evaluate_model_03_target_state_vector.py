@@ -285,6 +285,8 @@ def _build_database_summary_payload(
             ],
             "model_promotion_metric": metrics,
         },
+        "acceptance_thresholds": evaluation.acceptance_thresholds(metrics),
+        "threshold_results": evaluation.threshold_results(metrics),
         "threshold_summary": evaluation.summarize_threshold_results(metrics),
         "database_summary_evaluation": {
             "status": "completed_summary_mode",
@@ -319,6 +321,15 @@ def _build_payload(feature_rows: list[dict[str, Any]], model_rows: list[dict[str
                 "model_eval_run": [],
                 "model_promotion_metric": [],
             },
+            "acceptance_thresholds": evaluation.DEFAULT_PROMOTION_THRESHOLDS,
+            "threshold_results": {
+                name: {
+                    "actual": row_counts.get("feature_rows") if name == "minimum_feature_rows" else row_counts.get("model_rows") if name == "minimum_model_rows" else row_counts.get("eval_labels") if name == "minimum_eval_labels" else None,
+                    "threshold": threshold,
+                    "passed": False,
+                }
+                for name, threshold in evaluation.DEFAULT_PROMOTION_THRESHOLDS.items()
+            },
             "threshold_summary": {
                 "threshold_count": len(evaluation.DEFAULT_PROMOTION_THRESHOLDS),
                 "passed_threshold_count": 0,
@@ -340,7 +351,12 @@ def _build_payload(feature_rows: list[dict[str, Any]], model_rows: list[dict[str
         request_status="evaluated",
         write_policy=evaluation.DEFAULT_DATABASE_READ_WRITE_POLICY if evidence_source == "real_database_evaluation" else evaluation.DEFAULT_DRY_RUN_WRITE_POLICY,
     )
-    return {"tables": artifacts.as_table_rows(), "threshold_summary": evaluation.summarize_threshold_results(artifacts.eval_metrics)}
+    return {
+        "tables": artifacts.as_table_rows(),
+        "acceptance_thresholds": evaluation.acceptance_thresholds(artifacts.eval_metrics),
+        "threshold_results": evaluation.threshold_results(artifacts.eval_metrics),
+        "threshold_summary": evaluation.summarize_threshold_results(artifacts.eval_metrics),
+    }
 
 
 def main(argv: list[str] | None = None) -> int:

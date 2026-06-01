@@ -92,14 +92,45 @@ def build_evaluation_artifacts(
 
 
 def summarize_threshold_results(metrics: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    threshold_rows = [row for row in metrics if str(row.get("metric_name", "")).startswith("threshold:")]
-    failed = [row for row in threshold_rows if not bool(_payload(row).get("passed"))]
+    results = threshold_results(metrics)
+    failed = [name for name, result in results.items() if not bool(result.get("passed"))]
     return {
-        "threshold_count": len(threshold_rows),
-        "passed_threshold_count": len(threshold_rows) - len(failed),
-        "failed_thresholds": [str(row.get("metric_name", "")).replace("threshold:", "") for row in failed],
-        "promotion_gate_state": "passed" if threshold_rows and not failed else "blocked",
+        "threshold_count": len(results),
+        "passed_threshold_count": len(results) - len(failed),
+        "failed_thresholds": failed,
+        "promotion_gate_state": "passed" if results and not failed else "blocked",
     }
+
+
+def acceptance_thresholds(metrics: Sequence[Mapping[str, Any]] | None = None) -> dict[str, float]:
+    """Return the threshold contract published by Layer 3 evaluation summaries."""
+
+    if metrics is None:
+        return dict(DEFAULT_PROMOTION_THRESHOLDS)
+    thresholds: dict[str, float] = {}
+    for name, result in threshold_results(metrics).items():
+        threshold = result.get("threshold")
+        if isinstance(threshold, (int, float)):
+            thresholds[name] = float(threshold)
+    return thresholds
+
+
+def threshold_results(metrics: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Expand ``threshold:*`` metric rows into dashboard-ready threshold results."""
+
+    results: dict[str, dict[str, Any]] = {}
+    for row in metrics:
+        metric_name = str(row.get("metric_name") or "")
+        if not metric_name.startswith("threshold:"):
+            continue
+        threshold_name = metric_name.replace("threshold:", "", 1)
+        payload = _payload(row)
+        results[threshold_name] = {
+            "actual": row.get("metric_value"),
+            "threshold": payload.get("threshold"),
+            "passed": bool(payload.get("passed")),
+        }
+    return results
 
 
 def _ordered_feature_rows(rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
