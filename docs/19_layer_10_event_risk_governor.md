@@ -1,6 +1,6 @@
 # M10 - Event Risk Governor / EventIntelligenceOverlay
 
-Status: accepted Layer 10 event-risk attribution and intervention route.
+Status: accepted final learned residual event-risk governance and attribution contract.
 
 ## Purpose
 
@@ -32,6 +32,47 @@ Layer 10 answers:
 - Should an event family remain observation-only, enter the realtime observation pool, or be proposed for Layer 4 promotion?
 
 Layer 10 does **not** answer alpha, trade, expression, sizing, or execution questions. It must not emit buy/sell/hold, final action, position size, option contract, strike, DTE, delta, order instruction, or account-specific decision fields.
+
+Layer 10 must be specified directly in its final learned-model contract form. It must not introduce a temporary learned contract, compatibility bridge, or learned-looking deterministic substitute. A final-contract Layer 10 artifact may move through evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are lifecycle evidence, not alternate architecture versions. Only a promoted artifact may affect production decisions.
+
+## Learned Objective
+
+Layer 10 learns calibrated residual event-risk governance after Layers 1-9 have already produced a point-in-time thesis:
+
+```text
+U_10(z_t, candidate_residual_event_intervention) -> expected_residual_intervention_utility
+```
+
+`z_t` is the point-in-time base-stack decision context, Layer 8 direct-underlying thesis, optional Layer 9 expression context, visible standardized event observations, co-event/confounder context, residual anomaly context, event-family state, mapping/sensitivity metadata, and prior-layer diagnostics needed to prove residuality.
+
+The candidate intervention state is:
+
+```text
+maintain
+warn
+cap
+block_entry
+reduce_or_flatten_review
+request_human_review
+```
+
+Layer 10 optimizes residual intervention utility and attribution confidence. It also decides whether evidence is strong enough to produce a future Layer 4 review packet. It is not event alpha, directional return prediction, Layer 4 accepted-event scoring, underlying action choice, option expression, position sizing, broker/account mutation, or execution.
+
+## Training Sample Granularity
+
+Layer 10 training rows are:
+
+```text
+decision_context
+candidate_thesis
+event_window
+horizon
+candidate_residual_event_intervention
+```
+
+`candidate_thesis` is the Layer 8 underlying thesis, with optional Layer 9 expression context only for risk double-count checks and expression-specific cap/block reasoning. Event granularity must preserve canonical event identity, co-event group, event family, lifecycle phase, impact scope, residual anomaly context, and visible clocks.
+
+Same-window events must be grouped before attribution. Layer 10 must not assign causal credit event-by-event until co-event dominance, confounders, market/sector/peer controls, and residuality checks have been applied.
 
 ## Qualitative attribution and supervision output
 
@@ -268,6 +309,20 @@ event_detail_artifact references visible by available_time
 scope_mapping_metadata visible by available_time
 sensitivity_metadata visible by available_time
 ```
+
+## Allowed Learned Inputs
+
+Layer 10 learned inputs are point-in-time fields available at or before `available_time`:
+
+- opaque decision, target, thesis, scope, and artifact refs;
+- Layer 1-9 point-in-time outputs and diagnostics needed to define residual risk: market context, sector context, target state, accepted Layer 4 event-failure risk, Layer 5 alpha confidence, Layer 6 risk policy, Layer 7 position projection, Layer 8 underlying thesis, and optional Layer 9 expression context;
+- standardized event observations visible by `available_time`, including canonical identity, family, lifecycle clocks, source quality, dedup status, interpretation artifact refs, affected scopes, event intensity, uncertainty, and direction-bias semantics;
+- co-event group, dominant event candidate, confounder refs, and incremental attribution evidence;
+- mapping/sensitivity metadata for target relevance, including sector, industry, peer/theme/index/supply-chain/country/rate/oil/dollar/volatility sensitivities;
+- residual-only abnormal activity evidence when non-overlap with upstream features is proven;
+- prior fold review dispositions and accepted event-family state, when they were accepted before the current decision/fold.
+
+Ticker, symbol, issuer, and company identity may be used for event matching, routing, and audit. Model-facing fitting vectors must receive derived relevance/impact scores rather than raw identity.
 
 ### Input A - `m10_event_risk_governor_data_acquisition`
 
@@ -604,18 +659,50 @@ unknown
 
 Training/evaluation datasets may include realized future outcomes as labels. Inference rows and `event_risk_intervention / event_context_vector` must not include post-event outcomes, hindsight event interpretations, future source revisions, or future price/option paths.
 
+## Forbidden Learned Inputs
+
+Layer 10 learned training and inference must exclude anything that turns it into a hindsight event-alpha oracle, duplicated price model, upstream Layer 4 shortcut, or execution/risk-account model:
+
+```text
+future return
+future price path
+future option movement
+future liquidity / spread state
+realized PnL
+post-event revision
+later event interpretation
+resolution facts not visible by available_time
+future source update
+future market reaction
+raw ticker / company identity as fitting feature
+account balance
+buying power
+holdings
+open orders
+broker status
+broker order id
+execution constraint
+raw bars already consumed by Layers 1-9
+raw volume already consumed by Layers 1-9
+raw spread/liquidity already consumed by Layers 1-9
+raw option surface already consumed by Layer 9
+same-fold Layer 10 discovery as Layer 4 input
+same-fold Layer 10 discovery as upstream model input
+buy / sell / hold
+position size
+option contract
+order instruction
+```
+
+Post-outcome residual discoveries are labels and review evidence only. They can train later folds or produce future Layer 4 review packets only after review; they must never feed the same fold's Layer 4, Layer 5, Layer 6, Layer 7, Layer 8, or Layer 9 inference path.
+
 ## Event-family scouting gate
 
 Raw news proximity and raw abnormal option flow are not enough to promote an event-risk input. Before Layer 10 uses an event family for model training or risk-intervention evidence, the family needs an `event_family_scouting_packet` as defined in `docs/51_event_family_scouting.md`.
 
 The scouting packet must define the family, inclusion/exclusion rules, source precedence, lifecycle clocks, materiality/surprise rules, scope routing, abnormal-activity bridge rules, control design, forward labels, coverage gates, and early-stop criteria.
 
-Current accepted status from the option/news diagnostics:
-
-- standalone option abnormality: `deferred_low_signal`;
-- threshold-only strict option abnormality refinement: `deferred_low_signal`;
-- raw option abnormality + raw news proximity: `deferred_low_signal`;
-- earnings/guidance event family: `scouting` only, not promotion evidence; packet details live in `docs/52_earnings_guidance_event_family_packet.md`.
+Family-specific evidence status, including option abnormality and earnings/guidance scouting, lives in the event-family evidence docs. This contract only defines the Layer 10 model boundary and requires each family to satisfy its packet, control, leakage, and review gates before it can affect learned intervention or future Layer 4 promotion.
 
 ## Event lifecycle contract
 
@@ -875,7 +962,7 @@ Optional audit/debug field, not a scalar `state_vector_value`:
 10_event_dominant_impact_scope_<horizon>
 ```
 
-The full score set has 21 horizon-aware scalar score families plus one horizon-aware dominant-scope audit field across 4 horizons. A minimal deployment may start with the core group only, but impact scope remains part of the accepted contract because event intensity, event scope, and target relevance are separate semantics.
+The full score set has 21 horizon-aware scalar score families plus one horizon-aware dominant-scope audit field across 4 horizons. Impact scope remains part of the accepted contract because event intensity, event scope, and target relevance are separate semantics; an artifact with insufficient impact-scope evidence remains unpromoted rather than defining a smaller architecture.
 
 ## Field semantics
 
@@ -950,6 +1037,61 @@ peer_adjusted_post_event_return_<horizon>
 
 Labels must be materialized only in training/evaluation datasets and must not be joined into `event_risk_intervention / event_context_vector` at inference time.
 
+Layer 10 labels evaluate residual intervention utility versus the ungoverned Layer 8/9 thesis, after realistic costs and opportunity loss:
+
+```text
+residual_intervention_utility
+= avoided_tail_loss
+  + avoided_gap_reversal_liquidity_contagion_loss
+  + avoided_thesis_invalidity_loss
+  + avoided_overconfidence_loss
+  - opportunity_destruction_cost
+  - churn_or_unnecessary_review_cost
+  - false_block_cost
+  - delayed_action_cost
+  - review_burden_cost
+```
+
+Positive intervention labels require material avoided downside, gap, reversal, liquidity failure, contagion, overconfidence, or thesis invalidation that was not already handled by Layers 1-9. Negative labels must include successful trades with nearby events, no-event controls, matched market/sector/peer controls, and overblock cases.
+
+Future Layer 4 packet labels/artifacts are separate from realtime intervention labels. They must define event family, mechanism, impact scope, applicable states, positive and negative sample definitions, controls, confounders, leakage exclusions, allowed Layer 4 effects, split stability, review thresholds, and review disposition. Discovery labels can train later folds only after review; they never supervise the same fold.
+
+## Final Learned Residual Governance Route
+
+Layer 10 learns:
+
+```text
+score(PIT_context, candidate_residual_event_intervention)
+  -> intervention utility, residual risk heads, attribution heads, confidence, explanations
+```
+
+Valid model families include:
+
+- calibrated residual-risk intervention classifiers;
+- constrained GBDT utility scorers;
+- candidate-intervention rankers;
+- multi-head models for intervention utility, residual failure probability, scope attribution, co-event dominance, packet eligibility, confidence, and uncertainty;
+- anomaly detection only as a residual candidate generator, not as the final decision substitute;
+- family-pooling models for accepted or scouted event families when holdout validation by family, time, and scope is preserved.
+
+Deterministic gates may enforce point-in-time visibility, accepted event-family scope, same-fold quarantine, hard known-event blocks, source provenance, co-event grouping, residual non-overlap, and broker/account mutation exclusion. They must remain boundary enforcement and candidate filtering, not an alternate learned scoring route.
+
+## Learned Artifact And Explainability
+
+A promoted or promotion-candidate Layer 10 artifact must include:
+
+- model id, schema version, training window, replay window, fold boundaries, feature schema hash, and lifecycle evidence state;
+- training manifest and residual-intervention label lineage;
+- event observation and interpretation lineage;
+- candidate intervention schema and selected intervention schema;
+- trained artifact payload;
+- selected intervention state, calibrated intervention utility, residual risk probabilities by horizon, confidence, uncertainty, dominant risk mechanism, impact-scope attribution vector, co-event/confounder status, and review requirement;
+- top event refs, visible clocks, lifecycle phase, source quality, dedup quality, upstream residual refs, matched-control summary, non-overlap proof for abnormal activity, and reason codes;
+- proposed Layer 4 packet refs, including family/mechanism, sample design, controls, leakage checks, split stability, allowed downstream effect, and disposition state;
+- PIT, revision-visibility, identity-leakage, duplicate-feature, same-fold quarantine, co-event dominance, overblock, family-holdout, stale-regime, and regime-robustness audits.
+
+Explainability must answer why the residual event intervention is justified after Layers 1-9, why the selected intervention is better than maintain/no-warning, and why the evidence is not merely duplicated upstream price/liquidity/option state. It must not imply alpha, action selection, option selection, sizing, order routing, or broker mutation.
+
 ## Baselines and validation
 
 Layer 10 should prove incremental value over:
@@ -960,7 +1102,8 @@ Layer 10 should prove incremental value over:
 4. residual abnormal-activity-only baseline, excluding bar/liquidity fields already represented in upstream context states;
 5. native-scope-only baseline;
 6. impact-scope-vector baseline;
-7. full EventRiskGovernor / EventRiskGovernor.
+7. current deterministic `event_context_vector` baseline;
+8. final-contract Layer 10 residual intervention model.
 
 Validation should check:
 
@@ -968,7 +1111,12 @@ Validation should check:
 - risk: gap/reversal/liquidity/contagion risks correspond to realized post-event path behavior;
 - alignment: positive alignment supports current target context more often than negative alignment;
 - quality: low-quality/conflicting/revised events are correctly gated or discounted;
-- leakage: all feature rows obey `available_time <= decision_time` and artifact revision visibility.
+- utility: intervention score buckets map to realized residual harm, avoided tail loss, and overblock cost;
+- replay: Layer 10 reduces tail failures and improves risk-adjusted utility without excessive opportunity destruction;
+- attribution: claimed market/sector/target impact matches realized scope after controls;
+- calibration: maintain/warn/cap/block/review buckets are calibrated out of sample;
+- robustness: walk-forward, family holdout, symbol split, sector split, co-event stress, stale-regime decay, and event-source-quality buckets hold;
+- leakage: all feature rows obey `available_time <= decision_time`, artifact revision visibility, identity leakage, duplicate-feature leakage, and same-fold quarantine tests.
 
 ## Boundary rules
 
@@ -992,30 +1140,19 @@ Layer 10 must not:
 - use account balance, buying power, PnL, open orders, holdings, or live execution constraints;
 - use post-event outcomes, future revisions, or future market paths as inference inputs.
 
-## Implementation route
+## Final Contract Implementation Packet
 
-1. **Event registry and time replay**: preserve `event_id`, `canonical_event_id`, `dedup_status`, `source_priority`, `coverage_reason`, `covered_by_event_id`, category, scope, `available_time`, reference, dedup/revision policy, and point-in-time replay.
-2. **Event encoder**: emit presence, timing proximity, intensity, direction bias, uncertainty, and quality.
-3. **Context matching**: add target relevance, context alignment, gap/reversal/liquidity/contagion risk.
-4. **Impact scope vector**: add market/sector/industry/theme/peer/symbol/microstructure impact, scope confidence, escalation risk, and dominant impact scope.
-5. **Evaluation**: compare against no-event, count, proximity, abnormal-activity, native-scope, and impact-scope baselines with walk-forward leakage checks.
-## Final go/no-go judgment — 2026-05-15
+Layer 10 implementation work must target the final contract directly. It may deliver pieces in evidence-gated execution batches, but those batches must not define alternate learned contracts.
 
-The accepted judgment is recorded in `docs/53_event_layer_final_judgment.md`.
+The accepted implementation packet contains:
 
-Layer 10 is worth building as a bounded EventRiskGovernor / EventIntelligenceOverlay. It is not currently worth promoting as broad event alpha, standalone option abnormality alpha, or a separate `EventActivityBridgeModel`.
+1. **Final contract and boundary**: `EventRiskGovernor` / `EventIntelligenceOverlay`, `event_risk_intervention`, `event_context_vector`, candidate intervention schema, selected intervention schema, and forbidden alpha/action/execution fields.
+2. **Training rows**: dense point-in-time decision-context rows expanded across candidate residual event interventions, event windows, horizons, co-event groups, impact scopes, and residual anomaly contexts.
+3. **Event registry and time replay**: canonical event identity, dedup status, source priority, coverage reason, covered-by refs, event family, lifecycle clocks, `available_time`, interpretation refs, source provenance, and point-in-time replay.
+4. **Residual candidate construction**: residual anomaly evidence after Layers 1-9, co-event/confounder groups, non-overlap proof for abnormal activity, matched controls, no-event controls, market/sector/peer controls, and event-family state.
+5. **Utility labels**: residual intervention utility, avoided tail loss, avoided gap/reversal/liquidity/contagion loss, avoided thesis invalidity, opportunity destruction, false block, overblock, review burden, and future Layer 4 packet eligibility.
+6. **Learned artifact**: final-contract scorer/ranker for `score(context, candidate_intervention) -> intervention utility, residual risk heads, attribution heads, confidence, explanations`.
+7. **Selector**: constrained selected intervention under accepted event-family scope, same-fold quarantine, source/revision visibility, co-event dominance, residuality, stale-regime decay, and broker/account exclusion.
+8. **Explainability and validation**: candidate intervention comparison, event refs, visible clocks, reason codes, matched-control summary, non-overlap proof, attribution, calibration, overblock accounting, PIT audit, identity-leakage audit, duplicate-feature audit, same-fold quarantine audit, family holdout, co-event stress, stale-regime decay, and regime robustness.
 
-Accepted active boundary:
-
-- preserve canonical event timelines, shell/result split, lifecycle clocks, and point-in-time availability;
-- consume reviewed event-family interpretations when available;
-- use abnormal activity and option flow as provenance, risk, and bridge evidence only unless a family-specific proof clears controls;
-- emit risk governance outputs such as uncertainty, review/block/cap/reduce/flatten hints, not broker orders or account mutation.
-
-Current status after the first canonical earnings/guidance scouting pass:
-
-- standalone option abnormality: `deferred_low_signal`;
-- strict option abnormality filters: `deferred_low_signal`;
-- raw option abnormality plus raw news proximity: `deferred_low_signal`;
-- earnings/guidance: `scouting`, with canonical shell/control route proven structurally but still underpowered;
-- EventRiskGovernor structural layer: `accepted_architecture`.
+Related event-family research and acceptance detail lives in the `docs/51_*` through `docs/53_*` event-family evidence docs. Those files provide evidence packets and review history; this file owns the current Layer 10 model contract.
