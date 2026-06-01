@@ -1,6 +1,6 @@
 # M08 - Underlying Action / UnderlyingActionModel
 
-Status: accepted Layer 8 design route as a structured underlying-action policy; production validation pending.
+Status: accepted final learned contract for Layer 8 as a structured underlying-action policy.
 
 ## Purpose
 
@@ -16,6 +16,20 @@ Layer 8 answers:
 
 Layer 8 does **not** place orders, route orders, choose order type, mutate broker/account state, or select option contracts. Its action type is a planned/offline action type, not an execution instruction. Live/paper execution remains in `trading-execution`.
 
+Layer 8 must be specified directly in its final learned-model contract form. It must not introduce a temporary learned contract, compatibility bridge, or learned-looking deterministic substitute. A final-contract Layer 8 artifact may move through evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are lifecycle evidence, not alternate architecture versions. Only a promoted artifact may affect production decisions.
+
+## Learned Objective
+
+Layer 8 learns a constrained offline underlying-action plan utility function:
+
+```text
+U_8(z_t, candidate_underlying_action_plan) -> expected_plan_utility
+```
+
+`z_t` is the point-in-time Layer 5 alpha summary, Layer 7 position projection, current/pending direct-underlying exposure, quote/liquidity/borrow state, portfolio/risk context, and policy gates. `candidate_underlying_action_plan` is an offline action thesis, not an order template.
+
+Layer 8 ranks valid candidate plans and selects the highest-utility offline thesis after hard gates, soft gates, liquidity, borrow, exposure, risk, and policy constraints. It emits `underlying_action_plan`, `underlying_action_vector`, entry/target/stop/time-stop thesis, side-neutral price-path thesis, and Layer 9 handoff fields. It optimizes constrained plan utility, not raw PnL, historical action imitation, order execution, or option selection.
+
 ## Training Sample Granularity
 
 Layer 8 training should use dense minute-level underlying-action rows for each selected training target whenever point-in-time Layer 7 projection plus underlying quote, liquidity, policy, and exposure context can be constructed. Live operation may only request an action plan when a routed candidate or active position needs one, but training only on action-triggered rows would overstate open/increase/reduce cases and undertrain `maintain`, `no_trade`, close-then-reassess, cost-blocked, and liquidity-blocked cases.
@@ -23,6 +37,16 @@ Layer 8 training should use dense minute-level underlying-action rows for each s
 For a selected stock, ETF, or spot target, Layer 8 should train across the full eligible minute sequence, including the many normal minutes where the correct plan is `maintain` or `no_trade`. The training universe is every eligible direct-underlying/spot expression minute for the selected target scope, not an all-market discovery scan over every listed symbol every minute. It should include open, increase, reduce, close, cover, maintain, and no-trade outcomes, including rows where a plausible alpha exists but the right plan is still no action.
 
 Planned action thresholds and hard gates remain model/routing outputs. They are not acquisition-time filters for the historical training set.
+
+For learned training, each point-in-time decision row must expand into valid candidate offline action plans produced by the same deterministic candidate generator used at inference time. Candidate plans are thesis templates, not order templates. The candidate space includes:
+
+- `open_long`, `increase_long`, `reduce_long`, `close_long`;
+- `open_short`, `increase_short`, `reduce_short`, `cover_short`;
+- `maintain`;
+- `no_trade`;
+- `bearish_underlying_path_but_no_short_allowed`.
+
+Each candidate plan may specify planned action type, action side, intensity bucket, entry thesis, target thesis, stop thesis, time-stop thesis, side-neutral price-path thesis, and Layer 9 handoff fields. It must not contain order type, route, time-in-force, broker order fields, or option-contract fields. Historical real actions may be used for audit and coverage analysis; they must not be supervised labels for Layer 8.
 
 ## Conservative Planned-Action Policy
 
@@ -132,6 +156,20 @@ state_version
 ```
 
 Training/evaluation inputs may include future outcomes as labels, but labels must stay outside inference features.
+
+## Allowed Learned Inputs
+
+Layer 8 learned inputs are the final point-in-time summaries and market state that belong to the planned-underlying-action boundary:
+
+- final adjusted Layer 5 `alpha_confidence_vector`, including direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and tradability summaries;
+- Layer 7 `position_projection_vector`, including resolved target exposure, position gap, expected position utility, cost pressure, risk-budget fit, stability, confidence, and horizon resolution;
+- current and pending direct-underlying exposure, including pending fill probability available at `available_time`;
+- point-in-time underlying quote, spread, depth, volume, liquidity, realized volatility/ATR, halt state, trading restriction state, and borrow availability/cost;
+- risk-budget, portfolio exposure, symbol concentration, kill-switch, loss-limit, and policy-gate summaries;
+- candidate plan fields produced by the deterministic candidate generator;
+- deterministic eligibility flags such as direct-short allowed, borrow available, liquidity sufficient, or policy blocked.
+
+Layer 8 may consume Layer 5 and Layer 7 summaries only as upstream state. It must not reconstruct raw alpha features or replace Layer 7's target-exposure projection.
 
 ### Input A - Layer 5 final adjusted alpha
 
@@ -514,6 +552,35 @@ option_order_type
 
 Those belong to Layer 9 and execution-side systems.
 
+## Forbidden Learned Inputs
+
+Layer 8 learned training and inference must exclude anything that turns it into an execution model, historical action imitator, alpha learner, exposure learner, or option-expression model:
+
+```text
+future price
+future high / low / close
+future volume
+future borrow state
+future fill state
+real fill price
+real execution venue
+real order type
+historical actual action as supervision
+broker order fields
+route / time_in_force / limit offset
+option contract selection
+post-decision option Greeks
+option execution outcome
+future PnL
+future position state
+future order outcome
+post-event Layer 5 or Layer 7 output
+realized target/stop hit as an input
+raw PnL as the only objective
+```
+
+Action-label leakage is a hard failure. If Layer 8 learns from historical `open`, `increase`, `reduce`, `close`, `maintain`, or `no_trade` decisions as labels, it becomes a historical strategy imitator instead of a candidate-plan utility model.
+
 ## Core output contract
 
 The primary output is `underlying_action_plan`. The `underlying_action_vector` exposes 10 per-horizon score families:
@@ -713,15 +780,81 @@ reward_risk_realized_ratio
 
 Labels must be materialized only in training/evaluation datasets and must not be joined into `underlying_action_plan` at inference time.
 
-## Training route
+Layer 8 labels evaluate candidate plan utility, not historical action labels. For each candidate plan and evaluation horizon, utility should be:
 
-Layer 8 should be trained or calibrated in stages:
+```text
+candidate_plan_utility
+= adjusted_plan_return
+  - downside_risk_penalty
+  - stop_violation_penalty
+  - adverse_excursion_penalty
+  - churn_penalty
+  - liquidity_slippage_penalty
+  - borrow_penalty
+  - policy_violation_penalty
+  + target_quality_reward
+  + no_trade_avoidance_reward
+  + maintain_quality_reward
+  + layer_9_handoff_usefulness_reward
+```
 
-1. **Deterministic policy scaffold**: map Layer 5/6 scores plus quote/risk gates to planned action, intensity, entry, target, stop, and time-stop.
-2. **Candidate action utility evaluation**: evaluate `no_trade`, `maintain`, open/increase/reduce/close candidates, and direct short candidates where allowed.
-3. **Entry and risk-plan calibration**: learn fill probability, target-before-stop, stop-before-target, MFE/MAE, and reward/risk quality.
-4. **Plan confidence calibration**: calibrate `8_underlying_action_confidence_score_<horizon>` by out-of-sample plan utility buckets.
-5. **Layer 9 handoff validation**: prove that Layer 8 price-path assumptions improve option-expression selection versus raw alpha/projection-only baselines.
+Entry, target, stop, and time-stop labels must use a conservative, uniform, non-order hypothetical fill/price-touch rule. They must not use real broker fills, real order type, real route, or idealized future-path hindsight. Fill realism is a first-class validation gate because unrealistic entry assumptions would turn Layer 8 into a paper execution backtest.
+
+## Final Learned Plan Route
+
+Layer 8 learns:
+
+```text
+score(PIT_context, candidate_underlying_action_plan)
+  -> plan utility, risk heads, confidence, explanations
+```
+
+At inference time, Layer 8 ranks valid candidate plans and selects the top constrained offline thesis. Valid model families include:
+
+- pairwise/listwise candidate-plan rankers;
+- calibrated utility regressors;
+- multi-head models with utility, risk, `no_trade`, `maintain`, entry-fill, and target/stop heads;
+- contextual-bandit or off-policy evaluation frameworks when they remain offline and do not grant execution authority;
+- stronger tabular/policy optimizers only when they preserve point-in-time lineage, fill realism, explainability, and boundary constraints.
+
+The final contract does not prefer a weaker non-final implementation. Candidate implementations compete under the same final validation gates.
+
+## Learned Artifact And Explainability
+
+A promoted or promotion-candidate Layer 8 artifact must include:
+
+- model id, schema version, training window, replay window, fold boundaries, and feature schema hash;
+- training manifest and label/utility lineage;
+- deterministic candidate generator definition;
+- candidate action-plan schema and selected plan schema;
+- hypothetical entry/fill/target/stop/time-stop rule definition;
+- trained artifact payload;
+- candidate utility scores and top-k candidate comparison;
+- selected `underlying_action_plan` and `underlying_action_vector`;
+- calibrated confidence and uncertainty;
+- `no_trade` and `maintain` rationale scores;
+- expected target-before-stop, stop-before-target, MFE/MAE bucket, slippage/spread burden, churn risk, bad-adjustment risk, and reward/risk quality;
+- risk/policy gate reasons and constraint-binding flags;
+- Layer 9 handoff usefulness evidence;
+- feature attribution at context and candidate-plan level;
+- PIT, execution-leakage, action-label-leakage, target-leakage, fill-realism, no-trade, maintain, churn, handoff, calibration, and regime-robustness audits;
+- known invalid regimes and insufficient-evidence conditions.
+
+Explainability must answer why one offline thesis is better than other valid offline theses. It must not imply an order type, route, broker instruction, or option contract.
+
+## Final Contract Implementation Packet
+
+Layer 8 implementation work must target the final contract directly. It may deliver pieces in evidence-gated execution batches, but those batches must not define alternate learned contracts.
+
+The accepted implementation packet contains:
+
+1. **Final contract and boundary**: `UnderlyingActionModel`, `underlying_action_plan`, `underlying_action_vector`, candidate action-plan schema, selected plan schema, Layer 9 handoff fields, and forbidden execution/option fields.
+2. **Training rows**: dense point-in-time decision rows expanded across valid candidate offline action plans.
+3. **Candidate generator**: deterministic training/inference generator for open/increase/reduce/close/cover/maintain/no_trade/bearish-path candidates.
+4. **Utility labels**: candidate plan utility, conservative hypothetical fill, target-before-stop, stop-before-target, MFE/MAE, slippage/spread/borrow penalty, churn penalty, `no_trade` opportunity/avoidance, `maintain` quality, and Layer 9 handoff usefulness.
+5. **Learned artifact**: final-contract scorer or ranker for `score(context, candidate_plan) -> utility, risk heads, confidence, explanations`.
+6. **Selector**: constrained top-valid-candidate selector under hard/soft gates, risk/policy constraints, quote/liquidity/borrow constraints, and current/pending exposure accounting.
+7. **Explainability and validation**: candidate utility comparison, plan-driver attribution, fill-realism audit, no-action-label audit, execution-leakage audit, no-trade/maintain calibration, churn reduction, handoff validation, and regime robustness.
 
 Do not train Layer 8 from in-sample upstream model outputs. Upstream vectors consumed by Layer 8 training must be generated with rolling/cross-fitted point-in-time discipline.
 
@@ -730,13 +863,15 @@ Do not train Layer 8 from in-sample upstream model outputs. Upstream vectors con
 Layer 8 should prove incremental value over:
 
 1. no-trade baseline;
-2. always-trade-on-alpha baseline;
-3. Layer 8 gap-only threshold baseline;
-4. market-entry baseline without entry planning;
-5. target/stop-less holding-time baseline;
-6. deterministic policy scaffold;
-7. calibrated candidate-action utility model;
-8. full Layer 8 with Layer 9 handoff fields.
+2. always-maintain baseline;
+3. always-trade-on-alpha baseline;
+4. Layer 7 exposure-only rebalance baseline;
+5. Layer 8 gap-only threshold baseline;
+6. simple threshold-alpha planned-action rule;
+7. market-entry baseline without entry planning;
+8. target/stop-less holding-time baseline;
+9. current deterministic Layer 8 heuristic;
+10. historical action imitation diagnostic baseline, used only as a leakage/diagnostic contrast and not as the target model.
 
 Validation must separately check:
 
@@ -748,7 +883,13 @@ Validation must separately check:
 - risk: stops and thesis invalidation limit realized MAE without excessive good-trade truncation;
 - confidence: action-confidence buckets are calibrated out-of-sample;
 - no-trade: no-trade avoids bad trades without unacceptable missed-positive-utility cost;
+- maintain: maintain is a calibrated first-class plan and not merely a residual default class;
+- churn: learned plans reduce bad adjustments and unnecessary increase/reduce/close churn versus baselines;
+- fill realism: entry, target, stop, and time-stop labels use conservative hypothetical rules and do not depend on real broker fills or idealized future-path assumptions;
 - handoff: Layer 9 option expression improves when it uses Layer 8 price-path assumptions;
+- action isolation: historical action labels do not drive model performance or dominate attribution;
+- execution isolation: no order, route, broker, option-contract, or execution fields appear in outputs or feature attribution;
+- robustness: performance holds across market regime, liquidity, borrow, volatility, direction, and exposure-state buckets;
 - leakage: all feature rows obey `available_time <= decision_time`, and labels are isolated from inference features.
 
 ## Boundary rules
@@ -779,20 +920,6 @@ Layer 8 must not:
 - use future prices, future fills, future PnL, future slippage, or future event revisions as inference inputs;
 - treat `planned_quantity` or `planned_notional_usd` as final order size.
 
-## Implementation route
-
-Current local scaffold status:
-
-1. Deterministic `model_08_underlying_action` scaffold exists using Layer 5/6 fixture vectors, quote/liquidity fixtures, and risk/policy fixtures.
-2. Effective-current-underlying-exposure calculation with pending fill probability is implemented.
-3. Hard-gate/soft-gate decision trace and planned action resolver are implemented.
-4. Entry, price-path, risk-plan, and Layer 9 handoff builders are implemented.
-5. Fixture tests cover maintain vs no_trade, pending-exposure avoidance, side-neutral price fields, conservative opposite-exposure handling, and no order/option-field leakage.
-6. Local evaluation-label helper covers target-before-stop, entry fill probability, no-trade opportunity/avoidance, slippage/spread-adjusted return, and realized reward/risk.
-7. Shared names were promoted through `trading-manager` before cross-repository dependence.
-
-Remaining implementation hardening is real-data calibration/evaluation, not contract-definition work.
-
 ## Acceptance gates
 
 Layer 8 design/implementation is not accepted for production until:
@@ -805,5 +932,9 @@ Layer 8 design/implementation is not accepted for production until:
 - side-neutral entry/risk fields work for long and short plans;
 - no broker order fields or option-contract fields leak into Layer 8 outputs;
 - plan-quality labels are point-in-time and separated from inference features;
+- candidate action plans and selected plans follow the final learned contract without temporary learned substitutes;
+- action-label, execution-leakage, target-leakage, and fill-realism audits pass;
+- `maintain` and `no_trade` pass first-class utility calibration, not residual fallback checks only;
+- candidate-plan utility explainability shows offline thesis selection, not order selection;
 - walk-forward validation beats the accepted baselines;
-- Layer 9 handoff fields improve option-expression evaluation or are explicitly deferred.
+- Layer 9 handoff fields improve option-expression evaluation or the artifact remains unpromoted.
