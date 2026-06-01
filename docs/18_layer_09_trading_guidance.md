@@ -1,10 +1,24 @@
 # M09 - Option Expression / TradingGuidanceModel / OptionExpressionModel
 
-Status: accepted option-expression utility optimizer contract; production promotion remains evidence-gated.
+Status: accepted final learned option-expression utility optimizer contract.
 
 `TradingGuidanceModel / OptionExpressionModel` consumes the Layer 8 `underlying_action_plan` / `underlying_action_vector` handoff plus optional point-in-time option-chain context to produce an offline `trading_guidance_record` and, when options are available and allowed, `option_expression_plan` / `expression_vector`.
 
 It is the first layer that may select option expression and contract constraints. It is still not live execution.
+
+Layer 9 must be specified directly in its final learned-model contract form. It must not introduce a temporary learned contract, compatibility bridge, or learned-looking deterministic substitute. A final-contract Layer 9 artifact may move through evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are lifecycle evidence, not alternate architecture versions. Only a promoted artifact may affect production decisions.
+
+## Learned Objective
+
+Layer 9 learns constrained option-expression utility for a completed Layer 8 underlying thesis:
+
+```text
+U_9(z_t, candidate_option_expression) -> expected_expression_utility
+```
+
+`z_t` is the point-in-time Layer 8 thesis, option-surface state, timestamped option-chain candidates, current/pending option exposure, prior-layer market/risk context, and option-expression policy. `candidate_option_expression` is one of `long_call`, `long_put`, `underlying_only_expression`, or `no_option_expression`.
+
+Layer 9 chooses whether options are a better expression than direct underlying or no option under option-chain, liquidity, IV, Greeks, fill, premium-risk, and policy constraints. It optimizes after-cost expression utility, not alpha discovery, direct-underlying action choice, order routing, sizing, approval, broker mutation, historical action imitation, or hindsight best-contract PnL.
 
 ## Training Sample Granularity
 
@@ -27,6 +41,20 @@ non_optionable_underlying
 `non_optionable_underlying` applies to spot/direct-underlying routes such as BTC where an option-expression surface is outside the accepted route. Such rows may record bypass reason codes for training and audit, but live routing must not call M09 for them.
 
 Contract hard filters, selected-contract thresholds, and expression routes are outputs or downstream policies. They must not be used as default training-row admission filters.
+
+For learned training, the primary row is:
+
+```text
+available_time
+target_candidate_id
+Layer 8 thesis
+option surface snapshot/status
+candidate option expression
+```
+
+When `optionable_chain_available`, the row set must expand across all timestamped contract candidates plus explicit `underlying_only_expression` and `no_option_expression` alternatives. It must include bad candidates: stale quotes, wide spreads, high IV, unsuitable DTE, unsuitable delta, adjusted contracts, low volume, low open interest, unsuitable moneyness, and low fill-quality candidates.
+
+When `optionable_chain_missing` or `non_optionable_underlying`, training keeps minute-level status/bypass rows for calibration and audit but does not create fake contract candidates. These rows train the no-option/underlying-only fallback boundary; they are not live M09 scoring requests.
 
 ## Boundary
 
@@ -133,6 +161,50 @@ theoretical_value
 
 Future realized option returns, target/stop outcomes, and best-contract hindsight are evaluation labels only and must not be present in inference rows.
 
+## Allowed Learned Inputs
+
+Layer 9 learned inputs are point-in-time fields available at or before `available_time`:
+
+- Layer 8 thesis fields: direction, entry assumption, target/range, stop, expected holding period, favorable/adverse move, path quality, reversal risk, drawdown risk, and handoff usefulness context;
+- option-surface status and exact replay identities: `option_surface_status`, `option_chain_snapshot_ref`, `option_quote_available_time`, `underlying_quote_snapshot_ref`, and `underlying_reference_price`;
+- timestamped option candidate observations: contract ref, right, strike, expiration, DTE, bid/ask/mid, quote age, volume, open interest, bid/ask size, IV/rank, Greeks, intrinsic/extrinsic value, multiplier, exercise style, settlement style, weekly/monthly flag, and adjusted-contract flag;
+- prior-layer point-in-time summaries: market, sector, target state, reviewed event context, Layer 6 risk policy, Layer 7 exposure/position projection, and Layer 8 action-plan confidence;
+- current and pending option exposure/orders, pending premium exposure, pending fill probability, cancellable state, and premium-risk context;
+- option-expression policy constraints such as allowed structures, premium budget, DTE/delta guardrails, spread/liquidity constraints, IV/Greek constraints, and no-option fallback policy.
+
+Layer 9 may consume prior-layer summaries only as upstream state. It must not reconstruct Layer 5 alpha, replace Layer 8 action selection, or override Layer 6/7 risk/exposure policy.
+
+## Forbidden Learned Inputs
+
+Layer 9 learned training and inference must exclude anything that turns it into a hindsight option selector, execution model, action model, or alpha learner:
+
+```text
+future option return
+future option high / low / close
+future option volume / open interest
+future IV / Greek change
+future spread change
+post-decision quote revision
+target/stop outcome as input
+best-contract hindsight
+realized fill outcome
+real broker fill price
+broker order id
+final order quantity
+route
+time_in_force
+order type
+execution instruction
+future position state
+future order state
+same-fold Layer 10 discovery
+future event attribution
+historical selected contract as supervision
+raw selected-contract PnL as the only objective
+```
+
+Best-contract regret and realized option outcomes are evaluation-only labels. If Layer 9 learns from historical selected contracts as the supervised answer, it becomes a historical option-selector imitator instead of a candidate-expression utility model.
+
 ## Outputs
 
 Primary output:
@@ -227,7 +299,7 @@ diagnostics
 
 `selected_contract` is a point-in-time contract reference and diagnostics payload. It is null for `underlying_only_expression` and `no_option_expression`. It is not a broker order. `contract_constraints` are model constraints, not routing instructions.
 
-## Baseline Generator
+## Deterministic Baseline Generator
 
 The local baseline generator lives in:
 
@@ -246,6 +318,8 @@ It implements:
 - deterministic selection scoring for right, bid/ask/mid, DTE range, preferred absolute delta range, stale quote age, volume/open interest, spread, adjusted-contract handling, and target-range moneyness guardrails;
 - DTE / delta / Greeks / IV / liquidity / reward-risk scoring with per-candidate reason codes;
 - offline label join helpers and leakage assertions.
+
+This generator may remain as a schema fixture, deterministic policy baseline, and validation contrast. It must not be promoted as a learned substitute or treated as an intermediate learned architecture.
 
 Fixture tests live in:
 
@@ -283,7 +357,7 @@ no_option_expression
 
 `underlying_only_expression` is an explicit fallback when the options layer finds the underlying thesis usable but option contracts are unsuitable because of policy, liquidity, IV, Greek, DTE, quote freshness, missing-contract evidence, or a non-optionable underlying route. It keeps selected option contract and option-fit scores empty/zero and records the direct-underlying expression preference for evaluation. It is not an order request.
 
-Multi-leg spreads remain deferred until an accepted expression-policy contract adds them.
+The accepted expression universe is single-leg long premium plus non-option alternatives. Multi-leg structures are outside this contract unless an accepted expression-policy contract expands the allowed structure set with its own point-in-time candidate construction, utility labels, and validation gates.
 
 ## DTE / Delta Scoring Policy
 
@@ -327,15 +401,105 @@ option_expression_avoided_loss_value_<horizon>
 candidate_contract_utility_curve_<horizon>
 ```
 
+Layer 9 labels evaluate expression utility, not selected-contract hindsight. For each candidate expression and horizon, utility should be:
+
+```text
+candidate_expression_utility
+= realistic_exit_value
+  - conservative_entry_cost
+  - spread_slippage_penalty
+  - commission_fee_penalty
+  - quote_staleness_penalty
+  - partial_or_unfillable_penalty
+  - theta_decay_penalty
+  - adverse_iv_change_penalty
+  - premium_drawdown_penalty
+  - wrong_horizon_penalty
+  - churn_or_duplicate_exposure_penalty
+  + underlying_only_relative_value
+  + no_option_avoided_loss_value
+```
+
+Option entry should use a conservative adverse-side fill assumption such as ask-side entry for long premium or a stricter reviewed fill model. Exit should use bid-side or conservative liquidation value. Labels must include spread/slippage, quote age, commissions/fees, partial/unfillable penalties, theta decay, IV crush/expansion, and holding-time consistency. They must compare `long_call`/`long_put` against `underlying_only_expression` and `no_option_expression`, not just rank option contracts.
+
+`no_option_expression` can be the correct learned output when the option surface is absent, stale, too wide, too expensive, too high theta/IV risk, pending exposure already exists, or the Layer 8 thesis is `maintain` / `no_trade`. `underlying_only_expression` can be correct when the Layer 8 thesis remains useful but option contracts are inferior after realistic costs and fills.
+
+## Final Learned Expression Route
+
+Layer 9 learns:
+
+```text
+score(PIT_context, candidate_option_expression)
+  -> expression utility, risk heads, confidence, explanations
+```
+
+Valid model families include:
+
+- pairwise/listwise contract and expression rankers;
+- calibrated utility regressors over option-expression candidates;
+- multi-head models with utility, fill-quality, no-option, underlying-only, liquidity, IV, Greek, theta, and premium-risk heads;
+- constrained expected-utility optimizers over candidate expressions;
+- distributional payoff simulation only when point-in-time chain labels are mature and the model still preserves the same expression boundary.
+
+Deterministic hard gates may reject impossible or prohibited structures, missing chains, non-optionable underlyings, stale quotes, blocked policies, or broker/execution fields. They must remain boundary enforcement and candidate filtering, not an alternate scoring route.
+
+## Learned Artifact And Explainability
+
+A promoted or promotion-candidate Layer 9 artifact must include:
+
+- model id, schema version, training window, replay window, fold boundaries, feature schema hash, and lifecycle evidence state;
+- training manifest and expression-utility label lineage;
+- candidate expression schema and selected expression schema;
+- option-chain snapshot lineage and quote/fill realism rule definition;
+- trained artifact payload;
+- candidate utility scores and top-k candidate comparison;
+- selected `option_expression_plan` and `expression_vector`;
+- resolved expression type, option right, surface status, dominant horizon, selected contract ref, contract fit, expression confidence, no-option reason codes, and general reason codes;
+- candidate count, candidate rejection reasons, selected contract snapshot, and per-component scores for liquidity, IV, Greeks, theta, fill quality, reward/risk, and premium risk;
+- replay snapshot refs and pending option exposure context;
+- calibration, uncertainty, and feature attribution at context and candidate-expression level;
+- PIT, target-leakage, best-contract-hindsight, execution-leakage, fill-realism, no-option, underlying-only, chain-coverage, target-identity, and regime-robustness audits.
+
+Explainability must answer why the selected offline expression is better than other feasible expressions. It must not imply an order type, route, time-in-force, broker instruction, or final quantity.
+
+## Final Contract Implementation Packet
+
+Layer 9 implementation work must target the final contract directly. It may deliver pieces in evidence-gated execution batches, but those batches must not define alternate learned contracts.
+
+The accepted implementation packet contains:
+
+1. **Final contract and boundary**: `TradingGuidanceModel` / `OptionExpressionModel`, `trading_guidance_record`, `option_expression_plan`, `expression_vector`, candidate expression schema, selected expression schema, and forbidden broker/order fields.
+2. **Training rows**: dense point-in-time Layer 8 thesis rows expanded across timestamped option-contract candidates plus explicit `underlying_only_expression` and `no_option_expression` alternatives.
+3. **Candidate construction**: deterministic chain/status expansion for optionable, missing-chain, and non-optionable cases without fake contracts.
+4. **Utility labels**: candidate expression utility with conservative fills, spread/slippage, commissions/fees, quote age, partial/unfillable penalties, theta/IV effects, premium drawdown, horizon consistency, no-option avoided loss, and underlying-only relative value.
+5. **Learned artifact**: final-contract scorer/ranker for `score(context, candidate_expression) -> utility, risk heads, confidence, explanations`.
+6. **Selector**: constrained top-valid-candidate selector under option-surface, policy, liquidity, IV, Greek, fill-quality, premium-risk, and pending-exposure constraints.
+7. **Explainability and validation**: candidate utility comparison, rejection reasons, feature attribution, PIT audit, no best-contract hindsight audit, no execution leakage audit, fill-realism audit, no-option/underlying-only calibration, chain coverage, target-identity robustness, and regime robustness.
+
 Evaluation must prove that Layer 9 improves option-expression outcomes versus simpler baselines:
 
 1. no option expression;
 2. underlying-only Layer 8 expression;
 3. naive ATM nearest-expiration call/put from Layer 8 direction;
 4. fixed-delta/fixed-DTE expression;
-5. Layer 9 full contract-fit and risk-aware expression.
+5. current deterministic contract-fit baseline;
+6. final-contract Layer 9 expression-utility model.
 
-Promotion remains deferred until real point-in-time option feeds, calibration, leakage controls, baseline improvement, and stability evidence pass review.
+Validation must separately check:
+
+- after-cost expression utility versus baselines;
+- regret versus the best feasible candidate as evaluation-only evidence;
+- calibration by expression-confidence and contract-fit buckets;
+- no-option calibration and avoided-loss quality;
+- underlying-only fallback calibration;
+- fill-realism sensitivity across spread, quote age, liquidity, and bid/ask assumptions;
+- spread/liquidity stress, high-IV stress, theta stress, and chain-missing stress;
+- horizon stability and churn/duplicate-exposure control;
+- target-identity robustness and target-permutation checks;
+- chain coverage across DTE, delta, moneyness, IV, liquidity, volume, open interest, and adjusted-contract buckets;
+- point-in-time, label-isolation, best-contract-hindsight, execution-leakage, same-fold Layer 10, and future-event leakage audits.
+
+Promotion remains gated until real point-in-time option feeds, realistic fill/cost labels, calibration, leakage controls, baseline improvement, and stability evidence pass review. If Layer 9 cannot beat no-option, underlying-only, naive option, fixed-delta/DTE, and deterministic contract-fit baselines after realistic fills and slippage, the artifact remains unpromoted.
 
 ## Invariants
 
