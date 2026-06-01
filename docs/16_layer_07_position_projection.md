@@ -1,6 +1,6 @@
 # M07 - Position Projection / PositionProjectionModel
 
-Status: accepted Layer 7 design route as an exposure utility optimizer.
+Status: accepted final learned contract for Layer 7 as an exposure utility optimizer.
 
 ## Purpose
 
@@ -18,6 +18,20 @@ Layer 7 answers:
 
 Layer 7 does **not** answer buy/sell/hold, open/close/reverse, instrument choice, option-contract choice, order type, routing, or live/paper execution questions. It projects target position state only. Layer 8 owns the direct-underlying planned action thesis; Layer 9 owns option expression. Broker mutation remains outside `trading-model`.
 
+Layer 7 must be specified directly in its final learned-model contract form. It must not introduce a temporary learned contract, compatibility bridge, or learned-looking deterministic substitute. A final-contract Layer 7 artifact may move through evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are lifecycle evidence, not alternate architecture versions. Only a promoted artifact may affect production decisions.
+
+## Learned Objective
+
+Layer 7 learns a constrained target-exposure utility function:
+
+```text
+U_7(z_t, candidate_target_exposure) -> expected_position_utility
+```
+
+`z_t` is the point-in-time Layer 5 alpha summary, Layer 6 risk-policy state, current/pending position state, cost/friction state, portfolio/risk context, price-location context, and policy gates. `candidate_target_exposure` is an abstract target holding state, not an action or order.
+
+Layer 7 selects the target exposure state with the highest estimated utility after Layer 6 risk-budget, exposure-cap, liquidity/friction, and policy constraints. It emits `position_projection_vector`, current alignment, position gap, expected utility, cost/risk compatibility, tactical price-location adjustment, horizon resolution, and explainability. It must not emit action labels or route decisions.
+
 ## Training Sample Granularity
 
 Layer 7 training should use dense minute-level position-projection rows for each selected training target whenever point-in-time Layer 5 alpha, Layer 6 policy state, and current/pending position context can be constructed. Live runtime may call Layer 7 only when an active position or routed candidate needs a fresh projection, but training only on those trigger minutes would hide aligned, no-gap, low-utility, and near-threshold states that later Layer 8 action planning needs to be calibrated.
@@ -31,6 +45,14 @@ For a selected stock, ETF, or spot target, Layer 7 should train across the full 
 - staged entry/exit and tactical exposure-management rows where price location, drawdown risk, reversal risk, thesis strength, and risk budget justify partial add/reduce rather than all-in/all-out exposure.
 
 Action triggers, exposure-change thresholds, and downstream Layer 8 handoff decisions are calibration/routing policies after projection. They must not decide which historical minutes Layer 7 is allowed to learn from.
+
+For learned training, each point-in-time projection state must expand into candidate target exposure states. The candidate space is a state space, not an action space. It may include flat exposure, effective current exposure, Layer 6 maximum allowed exposure, confidence-scaled exposure, price-location-adjusted exposure, and a reviewed discrete exposure grid such as:
+
+```text
+-1.00, -0.75, -0.50, -0.25, 0.00, +0.25, +0.50, +0.75, +1.00
+```
+
+The learned model scores candidate target exposure states. It must not encode how to trade from the current state to the candidate state. Layer 8 owns that translation after it consumes the position gap.
 
 ## Projection Evidence Boundary
 
@@ -118,6 +140,20 @@ state_version
 ```
 
 Training/evaluation inputs may include future outcomes as labels, but those labels must stay outside inference features.
+
+## Allowed Learned Inputs
+
+Layer 7 learned inputs are the final point-in-time summaries that belong to the position-projection boundary:
+
+- final adjusted Layer 5 `alpha_confidence_vector`, including horizon, confidence, uncertainty, path-quality, drawdown-risk, reversal-risk, and tradability summaries;
+- Layer 6 `dynamic_risk_policy_state`, risk-budget, premium-budget, exposure-permission, haircut, capacity, stability, confidence, and policy-gate summaries;
+- current position state and pending position state;
+- portfolio exposure context, concentration context, correlation/crowding context, and risk-budget context;
+- price-location state and position-lifecycle state known at `available_time`;
+- position-level friction: spread, slippage, fees, turnover cost, borrow/financing hints, liquidity capacity, and fill-probability estimates available before the decision;
+- session/calendar context known at the decision time when it is already represented as accepted upstream market/event pressure or point-in-time market-structure context.
+
+Layer 5 inputs are allowed only as the accepted upstream alpha summary. Layer 7 must not reconstruct the raw alpha feature set or train an alternate alpha learner.
 
 ### Input A - Layer 5 final adjusted alpha
 
@@ -273,6 +309,21 @@ broker_order_id
 ```
 
 These belong to Layer 8 underlying-action work, Layer 9 option-expression/trading-guidance work, or execution-side repositories.
+
+Layer 7 learned training must also exclude anything that turns target-exposure projection into alpha prediction or action learning:
+
+```text
+actual submitted action
+historical buy/sell/hold/open/close/reverse label
+order type or route
+L8 planned-action output as a label
+L9 selected instrument or option contract as a feature
+future portfolio state
+raw alpha research features not already summarized by final Layer 5 output
+features that reveal the label horizon outcome
+```
+
+Historical actions may be used for audit and coverage analysis. They must not be supervised labels for Layer 7.
 
 ## Internal structure
 
@@ -483,9 +534,9 @@ reason codes include the policy gate
 
 Final approval, forced close, cancel, or do-not-trade action remains downstream.
 
-## Training and evaluation route
+## Final Learned Utility Route
 
-Layer 7 should avoid training only a single hindsight-best exposure target. Instead, prefer a candidate-exposure utility curve:
+Layer 7 must avoid training only a single hindsight-best exposure target. It learns a candidate-exposure utility curve:
 
 ```text
 Q(z_t, e) -> utility
@@ -510,6 +561,19 @@ Candidate exposure values may start as a reviewed discrete grid:
 
 At inference time, Layer 7 selects the target exposure with the best point-in-time estimated utility after constraints. The selected target exposure remains a target holding state, not an order quantity.
 
+The final selector is:
+
+```text
+argmax_e Q(z_t, e)
+subject to Layer 6 risk budget,
+           policy gates,
+           exposure caps,
+           liquidity/friction constraints,
+           current/pending exposure accounting
+```
+
+Model implementations may use pairwise/listwise ranking, regret minimization, calibrated utility regression, monotonic constrained GBDT, or stronger tabular/policy optimizers when they preserve point-in-time lineage, constraints, explainability, and validation gates. The final contract does not prefer a weaker non-final implementation.
+
 ## Labels and outcomes
 
 Training/evaluation labels may include future outcomes, but inference features may not.
@@ -533,6 +597,44 @@ target_exposure_regret_vs_best_candidate_<horizon>
 
 Labels must be materialized only in training/evaluation datasets and must not be joined into `position_projection_vector` at inference time.
 
+The utility for each candidate exposure should be:
+
+```text
+candidate_exposure_utility
+= alpha_aligned_forward_value
+  - realized_risk_penalty
+  - drawdown_penalty
+  - turnover_penalty(current_exposure -> candidate_exposure)
+  - friction_penalty
+  - risk_budget_breach_penalty
+  - concentration_penalty
+  - horizon_mismatch_penalty
+```
+
+`alpha_aligned_forward_value` must not collapse into naked future-return maximization. It is admissible only inside the constrained exposure-state utility after costs, Layer 6 budget, drawdown risk, and price-location context are applied.
+
+## Learned Artifact And Explainability
+
+A promoted or promotion-candidate Layer 7 artifact must include:
+
+- model id, schema version, training window, replay window, fold boundaries, and feature schema hash;
+- training manifest and label/utility lineage;
+- candidate exposure state schema and selected exposure state schema;
+- deterministic constraint selector definition;
+- trained artifact payload;
+- candidate exposure utility curve outputs;
+- selected target exposure state, current exposure score, flat exposure score, best candidate score, regret versus current, and regret versus flat;
+- position gap, risk-budget compatibility, cost compatibility, price-location adjustment reason, horizon resolution, and constraint-binding flags;
+- feature importance, SHAP, monotonic constraint, utility-driver, or candidate-ranking attribution report;
+- calibration by horizon, confidence, risk, liquidity, and exposure bucket;
+- leakage audit;
+- no-action-label audit;
+- alpha-relearn audit;
+- per-regime, per-sector, and liquidity-bucket performance;
+- known invalid regimes and insufficient-evidence conditions.
+
+Explainability must answer why one target exposure state is better than current exposure, flat exposure, or other candidate states. It must not explain why to buy, sell, open, close, or route an order.
+
 ## Baselines and validation
 
 Layer 7 should prove incremental value over:
@@ -545,7 +647,8 @@ Layer 7 should prove incremental value over:
 6. risk-budget-blind position projection;
 7. simple horizon averaging baseline;
 8. highest-confidence-horizon baseline;
-9. full PositionProjectionModel.
+9. price-location-blind projection baseline;
+10. no-turnover-penalty baseline.
 
 Validation must separately check:
 
@@ -557,6 +660,11 @@ Validation must separately check:
 - stability: `7_position_state_stability_score_<horizon>` distinguishes durable target states from horizon/cost/risk-conflicted states;
 - horizon resolution: resolved summaries improve over simple averaging or fixed-horizon baselines;
 - leakage: all position, pending, cost, and risk inputs are point-in-time.
+- regret: selected exposure reduces regret versus the best candidate exposure under the evaluation utility;
+- churn: the learned projection lowers unnecessary turnover versus alpha-only and fixed-confidence exposure baselines;
+- action isolation: historical action labels do not explain model performance or dominate feature attribution;
+- alpha isolation: Layer 7 consumes final Layer 5 output but does not relearn raw alpha; L5 permutation/ablation behaves as expected;
+- robustness: performance holds across regimes, sectors, liquidity buckets, and exposure/cost buckets.
 
 ## Boundary rules and invariants
 
@@ -584,10 +692,16 @@ Layer 7 invariants:
 6. Layer 7 defaults to final adjusted Layer 5 alpha; base/unadjusted alpha is diagnostic-only.
 7. Layer 7 output may be compressed by risk policy, but final approval and operation remain downstream.
 
-## Implementation route
+## Final Contract Implementation Packet
 
-1. **Contract and boundary**: document `PositionProjectionModel`, `position_projection_vector`, inputs, outputs, handoff summary, diagnostics, and invariants.
-2. **Baseline projection**: keep transparent alpha-to-position projection for fixture tests and cold-start diagnostics.
-3. **Evaluation labels**: add cost-aware position utility labels, candidate exposure utility curves, current-vs-flat-vs-target utility, risk-budget breach labels, and turnover penalty labels.
-4. **Learned utility model**: train `Q(position_context, candidate_exposure) -> net utility` with chronological splits, purge/embargo, and no-leakage checks.
-5. **Horizon resolver**: implement resolved projection summary and prove it beats simple horizon averaging, fixed-horizon, and highest-confidence-horizon baselines.
+Layer 7 implementation work must target the final contract directly. It may deliver pieces in evidence-gated execution batches, but those batches must not define alternate learned contracts.
+
+The accepted implementation packet contains:
+
+1. **Final contract and boundary**: `PositionProjectionModel`, `position_projection_vector`, candidate exposure state schema, selected exposure state schema, inputs, outputs, handoff summary, diagnostics, and invariants.
+2. **Training rows**: dense point-in-time projection rows expanded across candidate target exposure states.
+3. **Utility labels**: cost-aware candidate exposure utility curves, current-vs-flat-vs-candidate utility, regret versus best candidate, risk-budget breach labels, drawdown labels, turnover penalties, and horizon mismatch penalties.
+4. **Constraint selector**: deterministic enforcement of Layer 6 policy gates, exposure caps, liquidity/friction constraints, and current/pending exposure accounting before final target exposure selection.
+5. **Learned artifact**: final-contract `Q(position_context, candidate_exposure) -> net utility` or equivalent ranking/utility model with chronological splits, purge/embargo, point-in-time lineage, and no-leakage checks.
+6. **Horizon resolver**: resolved projection summary that beats simple horizon averaging, fixed-horizon, highest-confidence-horizon, and price-location-blind baselines.
+7. **Explainability and validation**: candidate utility curves, utility-driver attribution, calibration buckets, action-isolation audit, alpha-relearn audit, and baseline comparison evidence.
