@@ -16,13 +16,13 @@ Layer 9 learns constrained option-expression utility for a completed Layer 8 und
 U_9(z_t, candidate_option_expression) -> expected_expression_utility
 ```
 
-`z_t` is the point-in-time Layer 8 thesis, option-surface state, timestamped option-chain candidates, current/pending option exposure, prior-layer market/risk context, and option-expression policy. `candidate_option_expression` is one of `long_call`, `long_put`, `underlying_only_expression`, or `no_option_expression`.
+`z_t` is the point-in-time Layer 8 thesis, option-surface state, timestamped option-chain candidates, current/pending option exposure, prior-layer market/risk context, and option-expression policy. When `option_surface_status = optionable_chain_available`, `candidate_option_expression` is one of `long_call`, `long_put`, or `underlying_only_expression`. `no_option_expression` is a status/bypass expression for minutes where the option route is unavailable or not applicable; it is not a contract-competing candidate when a usable option universe exists.
 
-Layer 9 chooses whether options are a better expression than direct underlying or no option under option-chain, liquidity, IV, Greeks, fill, premium-risk, and policy constraints. It optimizes after-cost expression utility, not alpha discovery, direct-underlying action choice, order routing, sizing, approval, broker mutation, historical action imitation, or hindsight best-contract PnL.
+When an option universe is available, Layer 9 chooses whether an option is a better expression than direct underlying under liquidity, IV, Greeks, fill, premium-risk, and policy constraints. When the option route is unavailable or not applicable, the row resolves to `no_option_expression` bypass/status evidence instead of scoring fake candidates. It optimizes after-cost expression utility, not alpha discovery, direct-underlying action choice, order routing, sizing, approval, broker mutation, historical action imitation, or hindsight best-contract PnL.
 
 ## Training Sample Granularity
 
-Layer 9 training should use dense minute-level option-expression status evidence for every eligible minute where point-in-time Layer 8 thesis context exists. It must not train only on the finally selected contract or only on minutes where an option expression looked attractive. The model needs poor, wide-spread, high-IV, stale, illiquid, unsuitable-DTE, unsuitable-delta, and no-option cases to learn when the right output is `long_call`, `long_put`, `underlying_only_expression`, or `no_option_expression`.
+Layer 9 training should use dense minute-level option-expression status evidence for every eligible minute where point-in-time Layer 8 thesis context exists. It must not train only on the finally selected contract or only on minutes where an option expression looked attractive. The model needs poor, wide-spread, high-IV, stale, illiquid, unsuitable-DTE, unsuitable-delta, and unavailable-surface cases to learn when the right output is `long_call`, `long_put`, `underlying_only_expression`, or `no_option_expression`.
 
 Layer 9 runtime invocation is conditional on option-surface availability. In live routing, C04 calls M09 only when `option_surface_status = optionable_chain_available` and timestamped option-chain candidates exist. If this minute has no usable option chain, or the underlying is not optionable, C04 bypasses M09 and carries an execution-side bypass/no-option expression without asking M09 to score missing contracts.
 
@@ -52,9 +52,14 @@ option surface snapshot/status
 candidate option expression
 ```
 
-When `optionable_chain_available`, the row set must expand across all timestamped contract candidates plus explicit `underlying_only_expression` and `no_option_expression` alternatives. It must include bad candidates: stale quotes, wide spreads, high IV, unsuitable DTE, unsuitable delta, adjusted contracts, low volume, low open interest, unsuitable moneyness, and low fill-quality candidates.
+When `optionable_chain_available`, the row set must expand across all timestamped contract candidates plus the explicit `underlying_only_expression` alternative. It must include bad candidates: stale quotes, wide spreads, high IV, unsuitable DTE, unsuitable delta, adjusted contracts, low volume, low open interest, unsuitable moneyness, and low fill-quality candidates.
 
-When `optionable_chain_missing` or `non_optionable_underlying`, training keeps minute-level status/bypass rows for calibration and audit but does not create fake contract candidates. These rows train the no-option/underlying-only fallback boundary; they are not live M09 scoring requests.
+When `optionable_chain_missing` or `non_optionable_underlying`, training keeps minute-level status/bypass rows for calibration and audit but does not create fake contract candidates. These rows resolve to `no_option_expression`; they are not live M09 scoring requests and must not train `underlying_only_expression`.
+
+`underlying_only_expression` and `no_option_expression` are distinct:
+
+- `underlying_only_expression` means the option universe was available, the candidate set was frozen/evaluated, and the best utility is still the direct-underlying expression instead of any option contract.
+- `no_option_expression` means there is no usable option route to evaluate, such as a non-optionable underlying, missing chain/snapshot, no listed/orderable candidates, pending option exposure block, or a Layer 8 `maintain` / `no_trade` thesis. It is bypass/status evidence, not proof that evaluated option candidates were worse than the underlying.
 
 ## Boundary
 
@@ -311,7 +316,7 @@ It implements:
 
 - Layer 8 bullish thesis -> long-call candidate search;
 - Layer 8 bearish thesis or no-direct-short bearish thesis -> long-put candidate search;
-- Layer 8 `maintain` / `no_trade` or pending option exposure -> `no_option_expression`;
+- Layer 8 `maintain` / `no_trade`, pending option exposure, missing option chain, or non-optionable underlying -> `no_option_expression`;
 - non-optionable direct-underlying routes such as BTC -> offline bypass/status row with no option-chain scoring and no live M09 invocation;
 - option policy blocks or no candidate contract passing hard filters may resolve to `underlying_only_expression` when the Layer 8 thesis still supports a direct-underlying expression;
 - reviewed no-provider/no-option database generation from completed Layer 8 rows when the manager gate review finds no active target chain;
@@ -344,7 +349,7 @@ The three-level rule uses actual listed strikes, not a fixed dollar amount. If l
 
 Current closed-loop acquisition uses manager request previews for `source_05_option_expression` / `m09_option_expression_data_acquisition` with `max_dte = 45`, `strike_range = 5`, and `option_bucket_policy_ref = LAYER_09_OPTION_BUCKET_STRIKE_POLICY`. The `strike_range = 5` ThetaData bound is the accepted provider-side runtime default for the current bucket loop; model-side selection still applies the target-range moneyness guardrail below.
 
-Historical bucket construction intentionally does not prefilter out illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, or otherwise extreme contracts. Those observations are useful for robustness and must remain available as features, labels, diagnostics, and reason codes. Selection/evaluation may score them poorly or resolve `no_option_expression`, but acquisition-time bucket construction should not hide them from the model.
+Historical bucket construction intentionally does not prefilter out illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, or otherwise extreme contracts. Those observations are useful for robustness and must remain available as features, labels, diagnostics, and reason codes. Selection/evaluation may score them poorly or resolve `underlying_only_expression`, but acquisition-time bucket construction should not hide them from the model.
 
 Expression coverage is single-leg only:
 
@@ -355,7 +360,9 @@ underlying_only_expression
 no_option_expression
 ```
 
-`underlying_only_expression` is an explicit fallback when the options layer finds the underlying thesis usable but option contracts are unsuitable because of policy, liquidity, IV, Greek, DTE, quote freshness, missing-contract evidence, or a non-optionable underlying route. It keeps selected option contract and option-fit scores empty/zero and records the direct-underlying expression preference for evaluation. It is not an order request.
+`underlying_only_expression` is an explicit fallback when the options layer has an available point-in-time option universe and finds the underlying thesis usable but option contracts are inferior because of policy, liquidity, IV, Greek, DTE, quote freshness, or hard-filter evidence. It keeps selected option contract and option-fit scores empty/zero and records the direct-underlying expression preference for evaluation. It is not an order request.
+
+`no_option_expression` is the explicit status when there is no usable option route to evaluate. It covers missing chain/snapshot evidence, non-optionable underlyings, no listed/orderable candidates, pending option exposure blocks, and Layer 8 `maintain` / `no_trade` theses. It must not be used to label evaluated contracts as merely unattractive.
 
 The accepted expression universe is single-leg long premium plus non-option alternatives. Multi-leg structures are outside this contract unless an accepted expression-policy contract expands the allowed structure set with its own point-in-time candidate construction, utility labels, and validation gates.
 
@@ -420,9 +427,9 @@ candidate_expression_utility
   + no_option_avoided_loss_value
 ```
 
-Option entry should use a conservative adverse-side fill assumption such as ask-side entry for long premium or a stricter reviewed fill model. Exit should use bid-side or conservative liquidation value. Labels must include spread/slippage, quote age, commissions/fees, partial/unfillable penalties, theta decay, IV crush/expansion, and holding-time consistency. They must compare `long_call`/`long_put` against `underlying_only_expression` and `no_option_expression`, not just rank option contracts.
+Option entry should use a conservative adverse-side fill assumption such as ask-side entry for long premium or a stricter reviewed fill model. Exit should use bid-side or conservative liquidation value. Labels must include spread/slippage, quote age, commissions/fees, partial/unfillable penalties, theta decay, IV crush/expansion, and holding-time consistency. When an option universe exists, labels must compare `long_call`/`long_put` against `underlying_only_expression`, not just rank option contracts. `no_option_expression` labels are calibrated separately from bypass/status rows where no option route was available.
 
-`no_option_expression` can be the correct learned output when the option surface is absent, stale, too wide, too expensive, too high theta/IV risk, pending exposure already exists, or the Layer 8 thesis is `maintain` / `no_trade`. `underlying_only_expression` can be correct when the Layer 8 thesis remains useful but option contracts are inferior after realistic costs and fills.
+`no_option_expression` can be the correct output when the option surface is absent, no candidate universe can be frozen, pending exposure already exists, or the Layer 8 thesis is `maintain` / `no_trade`. `underlying_only_expression` can be correct when the Layer 8 thesis remains useful but evaluated option contracts are stale, too wide, too expensive, too high theta/IV risk, or otherwise inferior after realistic costs and fills.
 
 ## Final Learned Expression Route
 
@@ -469,8 +476,8 @@ Layer 9 implementation work must target the final contract directly. It may deli
 The accepted implementation packet contains:
 
 1. **Final contract and boundary**: `TradingGuidanceModel` / `OptionExpressionModel`, `trading_guidance_record`, `option_expression_plan`, `expression_vector`, candidate expression schema, selected expression schema, and forbidden broker/order fields.
-2. **Training rows**: dense point-in-time Layer 8 thesis rows expanded across timestamped option-contract candidates plus explicit `underlying_only_expression` and `no_option_expression` alternatives.
-3. **Candidate construction**: deterministic chain/status expansion for optionable, missing-chain, and non-optionable cases without fake contracts.
+2. **Training rows**: dense point-in-time Layer 8 thesis rows expanded across timestamped option-contract candidates plus explicit `underlying_only_expression` alternatives when the option surface is available; separate `no_option_expression` status rows exist only for unavailable/not-applicable option routes.
+3. **Candidate construction**: deterministic chain/status expansion for optionable, missing-chain, and non-optionable cases without fake contracts or fake no-option competitors.
 4. **Utility labels**: candidate expression utility with conservative fills, spread/slippage, commissions/fees, quote age, partial/unfillable penalties, theta/IV effects, premium drawdown, horizon consistency, no-option avoided loss, and underlying-only relative value.
 5. **Learned artifact**: final-contract scorer/ranker for `score(context, candidate_expression) -> utility, risk heads, confidence, explanations`.
 6. **Selector**: constrained top-valid-candidate selector under option-surface, policy, liquidity, IV, Greek, fill-quality, premium-risk, and pending-exposure constraints.

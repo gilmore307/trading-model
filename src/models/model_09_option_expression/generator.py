@@ -135,7 +135,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "replay_context": replay_context,
             "selected_contract": _selected_contract_payload(selected),
             "contract_constraints": _contract_constraints(option_right, handoff, policy),
-            "premium_risk_plan": _premium_risk_plan(selected, handoff, dominant, policy),
+            "premium_risk_plan": _premium_risk_plan(selected, handoff, dominant, policy, expression_type),
             "underlying_thesis_ref": row.get("underlying_action_plan_ref") or underlying_plan.get("underlying_action_plan_ref"),
             "underlying_path_assumptions": handoff,
             "option_surface_status": option_surface_status,
@@ -198,15 +198,15 @@ def _expression_type(
     pending: Mapping[str, Any],
     option_surface_status: str,
 ) -> tuple[str, str]:
-    if option_surface_status == "non_optionable_underlying":
-        return _underlying_only_or_no_option(direction, underlying_plan, policy, pending), "none"
-    if str(policy.get("option_expression_allowed") or policy.get("allow_option_expression") or "true").lower() in {"false", "0", "no", "blocked"}:
-        return _underlying_only_or_no_option(direction, underlying_plan, policy, pending), "none"
     if pending.get("has_pending_option_exposure"):
         return "no_option_expression", "none"
     action_type = str(underlying_plan.get("planned_underlying_action_type") or "").lower()
     if action_type in {"maintain", "no_trade"}:
         return "no_option_expression", "none"
+    if option_surface_status in {"non_optionable_underlying", "optionable_chain_missing"}:
+        return "no_option_expression", "none"
+    if str(policy.get("option_expression_allowed") or policy.get("allow_option_expression") or "true").lower() in {"false", "0", "no", "blocked"}:
+        return _underlying_only_or_no_option(direction, underlying_plan, policy, pending), "none"
     if direction == "bullish":
         return "long_call", "call"
     if direction == "bearish":
@@ -496,7 +496,7 @@ def _contract_constraints(option_right: str, handoff: Mapping[str, Any], policy:
     }
 
 
-def _premium_risk_plan(selected: Mapping[str, Any] | None, handoff: Mapping[str, Any], dominant: Mapping[str, Any], policy: Mapping[str, Any]) -> dict[str, Any]:
+def _premium_risk_plan(selected: Mapping[str, Any] | None, handoff: Mapping[str, Any], dominant: Mapping[str, Any], policy: Mapping[str, Any], expression_type: str) -> dict[str, Any]:
     if selected is None:
         return {
             "planned_premium_budget_score": 0.0,
@@ -506,7 +506,7 @@ def _premium_risk_plan(selected: Mapping[str, Any] | None, handoff: Mapping[str,
             "premium_time_stop_minutes": handoff.get("expected_holding_time_minutes"),
             "premium_decay_tolerance_score": 0.0,
             "max_loss_is_premium_paid_flag": True,
-            "risk_plan_reason_codes": ["no_option_expression_selected"],
+            "risk_plan_reason_codes": [f"{expression_type}_selected"],
         }
     budget_score = _score(policy, "planned_premium_budget_score", default=0.18)
     return {

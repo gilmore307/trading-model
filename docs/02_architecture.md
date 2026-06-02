@@ -365,7 +365,7 @@ docs/17_layer_08_underlying_action.md
 
 `TradingGuidanceModel` / `OptionExpressionModel` consumes Layer 8 underlying price-path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market/position context to produce optional offline trading guidance and optional `option_expression_plan` / `expression_vector` rows. Layer 10 event-risk governance may attach this output as optional expression context but must not require it for direct-underlying/crypto routes.
 
-It owns direct-underlying/no-trade guidance and, when options are available and allowed, long-call / long-put / no-option-expression selection, selected point-in-time contract references, contract constraints, premium-risk diagnostics, and expression-confidence scores. Current option expression is single-leg long calls/puts only. Multi-leg structures remain deferred.
+It owns option-expression utility for the completed Layer 8 thesis: long-call / long-put selection, `underlying_only_expression` after an available option universe has been evaluated, `no_option_expression` bypass/status evidence when no option route is available, selected point-in-time contract references, contract constraints, premium-risk diagnostics, and expression-confidence scores. Current option expression is single-leg long calls/puts only. Multi-leg structures remain deferred.
 
 It does not emit broker order type, route, time-in-force, final order quantity, send/cancel/replace flags, broker order ids, or account mutation. Contract owner:
 

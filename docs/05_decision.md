@@ -704,6 +704,7 @@ Expression types are:
 ```text
 long_call
 long_put
+underlying_only_expression
 no_option_expression
 ```
 
@@ -734,9 +735,9 @@ For each selected target, the strike bucket is the listed-strike corridor from c
 
 Current runtime acquisition closes this loop through manager request previews for `m09_option_expression_data_acquisition` with `max_dte = 45`, `strike_range = 5`, and `option_bucket_policy_ref = LAYER_09_OPTION_BUCKET_STRIKE_POLICY`.
 
-Historical model construction intentionally keeps illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, and otherwise extreme contracts in the candidate bucket so the model learns robustness and failure modes. These observations may score poorly, produce reason codes, or resolve to `no_option_expression`; they must not be removed at acquisition-time solely because they are extreme.
+Historical model construction intentionally keeps illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, and otherwise extreme contracts in the candidate bucket so the model learns robustness and failure modes. These observations may score poorly, produce reason codes, or resolve to `underlying_only_expression`; they must not be removed at acquisition-time solely because they are extreme.
 
-Expression coverage remains single-leg only: `long_call`, `long_put`, or `no_option_expression`. Multi-leg spreads remain deferred until a reviewed expression-policy contract accepts them.
+Expression coverage remains single-leg only: `long_call`, `long_put`, `underlying_only_expression`, or `no_option_expression`. `underlying_only_expression` is only for an evaluated available option universe where direct underlying expression wins; `no_option_expression` is the missing/non-optionable/no-route status. Multi-leg spreads remain deferred until a reviewed expression-policy contract accepts them.
 
 ## D024B - Promotion classifies artifacts; manager schedules lifecycle; storage executes lifecycle
 

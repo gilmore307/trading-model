@@ -85,7 +85,7 @@ class OptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["9_resolved_option_right"], "put")
         self.assertEqual(output["9_resolved_dominant_horizon"], "1D")
 
-    def test_policy_block_outputs_no_option_expression(self) -> None:
+    def test_policy_block_resolves_to_underlying_only_after_surface_gate(self) -> None:
         output = generate_rows([_base_row(option_expression_policy={"allow_option_expression": "false"})])[0]
 
         self.assertEqual(output["9_resolved_expression_type"], "underlying_only_expression")
@@ -118,19 +118,34 @@ class OptionExpressionModelTests(unittest.TestCase):
         output = generate_rows([row])[0]
         plan = output["option_expression_plan"]
 
-        self.assertEqual(output["9_resolved_expression_type"], "underlying_only_expression")
+        self.assertEqual(output["9_resolved_expression_type"], "no_option_expression")
         self.assertEqual(output["9_resolved_option_right"], "none")
         self.assertEqual(output["9_resolved_option_surface_status"], "non_optionable_underlying")
         self.assertIsNone(output["9_resolved_selected_contract_ref"])
         self.assertEqual(output["9_option_contract_fit_score_1W"], 0.0)
+        self.assertEqual(output["9_option_expression_confidence_score_1W"], 0.0)
         self.assertEqual(plan["diagnostics"]["candidate_count_before_filter"], 0)
         self.assertEqual(plan["diagnostics"]["scored_candidates"], [])
         self.assertIn("non_optionable_underlying", plan["reason_codes"])
+        self.assertIn("no_option_expression_selected", plan["reason_codes"])
         self.assertIn("layer_9_bypassed_option_expression_scoring", plan["reason_codes"])
         self.assertNotIn("missing_option_chain_candidates", plan["reason_codes"])
         self.assert_no_forbidden_terms(output)
 
-    def test_deep_otm_delta_outside_policy_resolves_to_no_option(self) -> None:
+    def test_optionable_missing_chain_is_no_option_status_not_underlying_only(self) -> None:
+        output = generate_rows([_base_row(option_contract_candidates=[])])[0]
+        plan = output["option_expression_plan"]
+
+        self.assertEqual(output["9_resolved_expression_type"], "no_option_expression")
+        self.assertEqual(output["9_resolved_option_right"], "none")
+        self.assertEqual(output["9_resolved_option_surface_status"], "optionable_chain_missing")
+        self.assertEqual(output["9_option_expression_direction_score_1W"], 0.0)
+        self.assertIn("option_surface_unavailable", plan["reason_codes"])
+        self.assertIn("no_option_expression_selected", plan["reason_codes"])
+        self.assertIn("missing_option_chain_candidates", plan["reason_codes"])
+        self.assertNotIn("underlying_only_expression_selected", plan["reason_codes"])
+
+    def test_optionable_surface_with_no_valid_contract_resolves_to_underlying_only(self) -> None:
         row = _base_row(option_contract_candidates=[{**_call_candidate(), "contract_ref": "AAPL_CALL_DEEP_OTM", "delta": 0.12}])
         output = generate_rows([row])[0]
 
