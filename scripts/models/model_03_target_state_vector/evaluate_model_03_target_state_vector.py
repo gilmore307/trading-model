@@ -15,7 +15,7 @@ from model_runtime.config import database_url_file
 from models.model_03_target_state_vector import evaluation, generator
 
 DEFAULT_DB_URL_FILE = database_url_file()
-DEFAULT_FEATURE_TABLE = "feature_03_target_state_vector"
+DEFAULT_FEATURE_TABLE = "m03_target_state_vector_feature_generation"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
@@ -244,8 +244,8 @@ def _build_database_summary_payload(
                     "purpose": purpose,
                     "required_data_start_time": start,
                     "required_data_end_time": end,
-                    "required_source_key": "SOURCE_03_TARGET_STATE",
-                    "required_feature_key": "FEATURE_03_TARGET_STATE_VECTOR",
+                    "required_source_key": "M03_TARGET_STATE_VECTOR_DATA_ACQUISITION",
+                    "required_feature_key": "M03_TARGET_STATE_VECTOR_FEATURE_GENERATION",
                     "request_status": "evaluated",
                     "request_payload_json": {"write_policy": write_policy, "evidence_source": evidence_source},
                 }

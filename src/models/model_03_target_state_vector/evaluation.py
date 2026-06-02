@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 ET = ZoneInfo("America/New_York")
 DEFAULT_MODEL_ID = "target_state_vector_model"
 DEFAULT_FEATURE_SCHEMA = "trading_data"
-DEFAULT_FEATURE_TABLE = "feature_03_target_state_vector"
+DEFAULT_FEATURE_TABLE = "m03_target_state_vector_feature_generation"
 DEFAULT_MODEL_SCHEMA = "trading_model"
 DEFAULT_MODEL_TABLE = "model_03_target_state_vector"
 DEFAULT_DRY_RUN_WRITE_POLICY = "no_database_write"
@@ -152,7 +152,7 @@ def _ordered_model_rows(rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any
 def _dataset_request(rows: Sequence[Mapping[str, Any]], *, model_id: str, purpose: str, request_status: str, write_policy: str, evidence_source: str) -> dict[str, Any]:
     start, end = _bounds(rows)
     request_id = _stable_id("mdreq", model_id, purpose, _iso(start), _iso(end), evidence_source)
-    return {"request_id": request_id, "model_id": model_id, "purpose": purpose, "required_data_start_time": _iso(start), "required_data_end_time": _iso(end), "required_source_key": "SOURCE_03_TARGET_STATE", "required_feature_key": "FEATURE_03_TARGET_STATE_VECTOR", "request_status": request_status, "request_payload_json": {"write_policy": write_policy, "evidence_source": evidence_source, "layer_input_contract": "market_context_state_plus_sector_context_state_plus_target_context_state"}}
+    return {"request_id": request_id, "model_id": model_id, "purpose": purpose, "required_data_start_time": _iso(start), "required_data_end_time": _iso(end), "required_source_key": "M03_TARGET_STATE_VECTOR_DATA_ACQUISITION", "required_feature_key": "M03_TARGET_STATE_VECTOR_FEATURE_GENERATION", "request_status": request_status, "request_payload_json": {"write_policy": write_policy, "evidence_source": evidence_source, "layer_input_contract": "market_context_state_plus_sector_context_state_plus_target_context_state"}}
 
 
 def _dataset_snapshot(rows: Sequence[Mapping[str, Any]], *, request_id: str, model_id: str, write_policy: str, evidence_source: str) -> dict[str, Any]:

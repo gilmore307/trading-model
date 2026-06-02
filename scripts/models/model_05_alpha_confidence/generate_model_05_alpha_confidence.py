@@ -348,7 +348,7 @@ def generate_from_database(
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
-            source_03_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, target_symbol=target_symbol, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            source_03_rows = _fetch_rows(cursor, schema="trading_data", table="m03_target_state_vector_data_acquisition", source_start=source_start, source_end=source_end, target_symbol=target_symbol, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             target_candidate_ids = sorted({str(row["target_candidate_id"]) for row in source_03_rows if row.get("target_candidate_id")})
             event_failure_rows = _fetch_rows(cursor, schema="trading_model", table="model_04_event_failure_risk", source_start=source_start, source_end=source_end, target_candidate_ids=target_candidate_ids if target_symbol else None, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             model_03_rows = _fetch_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end, target_candidate_ids=target_candidate_ids if target_symbol else None, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
@@ -372,7 +372,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--database-url")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
-    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via source_03_target_state.")
+    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via m03_target_state_vector_data_acquisition.")
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_05_alpha_confidence")
     args = parser.parse_args(argv)

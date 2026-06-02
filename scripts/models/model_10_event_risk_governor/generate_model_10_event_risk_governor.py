@@ -291,7 +291,7 @@ def generate_from_database(
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
             source_rows = _fetch_event_source_rows(cursor, schema="trading_data", source_start=source_start, source_end=source_end)
-            source_03_rows = _fetch_rows(cursor, schema="trading_data", table="source_03_target_state", source_start=source_start, source_end=source_end, order_by="available_time ASC, target_candidate_id ASC")
+            source_03_rows = _fetch_rows(cursor, schema="trading_data", table="m03_target_state_vector_data_acquisition", source_start=source_start, source_end=source_end, order_by="available_time ASC, target_candidate_id ASC")
             model_03_rows = _fetch_target_context_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end)
             model_09_rows = _fetch_rows(cursor, schema="trading_model", table="model_09_option_expression", source_start=source_start, source_end=source_end, order_by="available_time ASC, target_candidate_id ASC")
             decisions = _decision_rows(source_rows=source_rows, source_03_rows=source_03_rows, model_03_rows=model_03_rows, model_09_rows=model_09_rows)

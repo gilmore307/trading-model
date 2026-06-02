@@ -148,12 +148,12 @@ def build_event_model_acceptance_report(*, generated_at_utc: str | None = None) 
                 accepted_use="bounded_risk_intelligence_overlay_after_base_layers_1_9_guidance",
                 blocked_use="entry_selection_position_sizing_contract_selection_order_routing_or_account_mutation",
                 blocker_codes=("activation_requires_manager_promotion_review", "execution_mutation_out_of_scope"),
-                next_evidence_gate="rebuild_m10_event_risk_governor_data_acquisition_feature_10_event_risk_governor_model_10_event_risk_governor_over_reviewed_event_feeds_then_evaluate_without_activation",
+                next_evidence_gate="rebuild_m10_event_risk_governor_data_acquisition_m10_event_risk_governor_feature_generation_model_10_event_risk_governor_over_reviewed_event_feeds_then_evaluate_without_activation",
             ),
         ),
         downstream_regeneration_policy=(
             "Invalidate/rebuild only event-risk-governor-dependent outputs after reviewed "
-            "m10_event_risk_governor_data_acquisition/feature_10_event_risk_governor coverage and "
+            "m10_event_risk_governor_data_acquisition/m10_event_risk_governor_feature_generation coverage and "
             "model_10_event_risk_governor regeneration; do not make base_stack_layers_01_09 "
             "wait on event feeds, and do not delete historical evidence artifacts."
         ),
@@ -163,7 +163,7 @@ def build_event_model_acceptance_report(*, generated_at_utc: str | None = None) 
         required_next_actions=(
             "prepare_or_verify_required_event_feed_artifacts_for_each_fold_month",
             "materialize_m10_event_risk_governor_data_acquisition_from_reviewed_local_event_feeds",
-            "generate_feature_10_event_risk_governor_and_model_10_event_risk_governor_outputs",
+            "generate_m10_event_risk_governor_feature_generation_and_model_10_event_risk_governor_outputs",
             "evaluate_event_risk_governor_with_direction_neutral_risk_labels_before_directional_claims",
             "record_manager_promotion_review_as_deferred_unless_real_gates_pass",
             "revisit_storage_lifecycle_deletion_holds_only_after_reviewed_regeneration_acceptance",

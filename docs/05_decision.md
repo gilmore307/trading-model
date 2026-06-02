@@ -814,7 +814,7 @@ Status: Accepted
 
 A follow-up acceptance run created a real Layer 3 production-evaluation substrate instead of leaving Layer 3 only in the generic missing-substrate bucket.
 
-Layer 3 now has PostgreSQL feature rows in `trading_data.feature_03_target_state_vector`, generated model rows in `trading_model.model_03_target_state_vector`, future-target-tradeable-path labels, and reproducible evaluation evidence.
+Layer 3 now has PostgreSQL feature rows in `trading_data.m03_target_state_vector_feature_generation`, generated model rows in `trading_model.model_03_target_state_vector`, future-target-tradeable-path labels, and reproducible evaluation evidence.
 
 The measured Layer 3 thresholds passed, but promotion remains deferred because Layer 1 and Layer 2 are not production-approved/active upstream dependencies and Layer 3 calibration evidence is still missing. No model-side review artifact may activate a config; activation belongs in `trading-manager`.
 

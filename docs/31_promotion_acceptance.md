@@ -44,7 +44,7 @@ The model repo may regenerate these evidence packages, but durable review reques
 
 ## Layer 3 evidence
 
-Layer 3 has a real production-evaluation substrate for `feature_03_target_state_vector` and generated `model_03_target_state_vector` rows. Its measured thresholds can be evaluated, but promotion remains deferred because:
+Layer 3 has a real production-evaluation substrate for `m03_target_state_vector_feature_generation` and generated `model_03_target_state_vector` rows. Its measured thresholds can be evaluated, but promotion remains deferred because:
 
 - Layer 1 and Layer 2 are not production-approved active upstream dependencies;
 - Layer 3 calibration evidence is missing.

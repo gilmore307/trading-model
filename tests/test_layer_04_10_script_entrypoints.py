@@ -468,7 +468,7 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
         self.assertEqual(rows[0]["option_chain_snapshot_ref"], "m09_option_expression_feature_generation:AAPL:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["option_surface_status"], "optionable_chain_available")
         self.assertEqual(rows[0]["option_quote_available_time"], "2016-01-04T09:35:00-05:00")
-        self.assertEqual(rows[0]["underlying_quote_snapshot_ref"], "source_03_target_state:anon_aapl:2016-01-04T09:35:00-05:00")
+        self.assertEqual(rows[0]["underlying_quote_snapshot_ref"], "m03_target_state_vector_data_acquisition:anon_aapl:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["underlying_reference_price"], 102.5)
         self.assertEqual(rows[0]["option_contract_candidates"][0]["contract_ref"], "AAPL160115C00100000")
         self.assertEqual(rows[0]["option_contract_candidates"][0]["option_right"], "CALL")

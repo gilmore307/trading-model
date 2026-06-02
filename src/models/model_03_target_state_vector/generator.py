@@ -1,6 +1,6 @@
 """TargetStateVectorModel baseline generator.
 
-Consumes point-in-time ``feature_03_target_state_vector`` rows and emits the
+Consumes point-in-time ``m03_target_state_vector_feature_generation`` rows and emits the
 accepted Layer 3 target_context_state model output shape. The generator keeps signed current target
 direction separate from direction-neutral tradability, transition/noise risk,
 liquidity, and state quality. It does not output alpha confidence, position
@@ -63,7 +63,7 @@ OUTPUT_COLUMNS = [*IDENTITY_COLUMNS, *PRIMARY_SCORE_COLUMNS]
 def generate_rows(feature_rows: Iterable[Mapping[str, Any]], *, model_version: str = MODEL_VERSION) -> list[dict[str, Any]]:
     rows = [_normalize_feature_row(row) for row in feature_rows]
     if not rows:
-        raise ValueError("at least one feature_03_target_state_vector row is required")
+        raise ValueError("at least one m03_target_state_vector_feature_generation row is required")
     rows.sort(key=lambda row: (_row_time(row), str(row.get("target_candidate_id") or "")))
     output = [_model_row(row, model_version=model_version) for row in rows]
     return output

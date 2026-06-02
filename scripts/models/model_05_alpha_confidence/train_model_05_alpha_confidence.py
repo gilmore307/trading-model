@@ -49,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--database-url")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
-    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via source_03_target_state.")
+    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via m03_target_state_vector_data_acquisition.")
     parser.add_argument("--cost-bps", type=float, default=5.0)
     args = parser.parse_args(argv)
 
@@ -134,7 +134,7 @@ def read_training_rows_from_database(
             source_03_rows = _fetch_rows(
                 cursor,
                 schema="trading_data",
-                table="source_03_target_state",
+                table="m03_target_state_vector_data_acquisition",
                 source_start=source_start,
                 source_end=source_end,
                 target_symbol=target_symbol,

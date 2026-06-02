@@ -61,8 +61,8 @@ Layer 3 candidate policy
                                            # top Layer 2 sectors + hot/liquid market names + quality filters
 Layer 3 preprocessing: anonymous_target_candidate_builder
                                            # point-in-time anonymous candidate rows and anonymous_target_feature_vector
-trading_data.source_03_target_state        # target-local bars, liquidity, quote/trade evidence
-trading_data.feature_03_target_state_vector
+trading_data.m03_target_state_vector_data_acquisition        # target-local bars, liquidity, quote/trade evidence
+trading_data.m03_target_state_vector_feature_generation
                                            # deterministic target-state feature surface
 -> TargetStateVectorModel
 -> trading_model.model_03_target_state_vector

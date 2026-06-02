@@ -44,9 +44,9 @@ def _feature_row(index: int) -> dict:
 
 class TargetStateVectorModelTests(unittest.TestCase):
     def test_database_entrypoints_default_to_current_feature_surface(self) -> None:
-        self.assertEqual(generate_script.DEFAULT_FEATURE_TABLE, "feature_03_target_state_vector")
-        self.assertEqual(evaluate_script.DEFAULT_FEATURE_TABLE, "feature_03_target_state_vector")
-        self.assertEqual(evaluation.DEFAULT_FEATURE_TABLE, "feature_03_target_state_vector")
+        self.assertEqual(generate_script.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
+        self.assertEqual(evaluate_script.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
+        self.assertEqual(evaluation.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
 
     def test_database_evaluation_allows_empty_source_window(self) -> None:
         class EmptyCursor:
@@ -238,7 +238,7 @@ class TargetStateVectorModelTests(unittest.TestCase):
                 row_count = generate_script.generate_from_database(
                     database_url="postgresql://redacted@localhost/redacted",
                     feature_schema="trading_data",
-                    feature_table="feature_03_target_state_vector",
+                    feature_table="m03_target_state_vector_feature_generation",
                     target_schema="trading_model",
                     target_table="model_03_target_state_vector",
                     explainability_table="model_03_target_state_vector_explainability",
@@ -305,7 +305,7 @@ class TargetStateVectorModelTests(unittest.TestCase):
             row_count = generate_script.generate_from_database(
                 database_url="postgresql://redacted@localhost/redacted",
                 feature_schema="trading_data",
-                feature_table="feature_03_target_state_vector",
+                feature_table="m03_target_state_vector_feature_generation",
                 target_schema="trading_model",
                 target_table="model_03_target_state_vector",
                 explainability_table="model_03_target_state_vector_explainability",

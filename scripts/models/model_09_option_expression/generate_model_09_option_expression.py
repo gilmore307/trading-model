@@ -128,7 +128,7 @@ def _fetch_layer_8_rows(cursor: Any, *, source_start: str | None, source_end: st
               e."underlying_action_vector",
               e."underlying_action_plan"
             FROM {_qualified('trading_model', 'model_08_underlying_action')} AS u
-            LEFT JOIN {_qualified('trading_data', 'source_03_target_state')} AS s
+            LEFT JOIN {_qualified('trading_data', 'm03_target_state_vector_data_acquisition')} AS s
               ON s."target_candidate_id" = u."target_candidate_id"
              AND s."available_time" = u."available_time"::timestamptz
             LEFT JOIN {_qualified('trading_model', explainability_table)} AS e
@@ -146,7 +146,7 @@ def _fetch_layer_8_rows(cursor: Any, *, source_start: str | None, source_end: st
               s."symbol" AS "underlying_symbol",
               s."bar_close" AS "underlying_reference_price"
             FROM {_qualified('trading_model', 'model_08_underlying_action')} AS u
-            LEFT JOIN {_qualified('trading_data', 'source_03_target_state')} AS s
+            LEFT JOIN {_qualified('trading_data', 'm03_target_state_vector_data_acquisition')} AS s
               ON s."target_candidate_id" = u."target_candidate_id"
              AND s."available_time" = u."available_time"::timestamptz
             {where_sql}
@@ -270,7 +270,7 @@ def _layer_9_input_rows(layer_8_rows: Sequence[Mapping[str, Any]], option_candid
                 "option_surface_status": option_surface_status,
                 "option_chain_snapshot_ref": option_chain_snapshot_ref,
                 "option_quote_available_time": available_time if option_candidates else None,
-                "underlying_quote_snapshot_ref": None if not underlying else f"source_03_target_state:{row.get('target_candidate_id')}:{_time_key(available_time)}",
+                "underlying_quote_snapshot_ref": None if not underlying else f"m03_target_state_vector_data_acquisition:{row.get('target_candidate_id')}:{_time_key(available_time)}",
                 "underlying_reference_price": row.get("underlying_reference_price"),
             }
         )

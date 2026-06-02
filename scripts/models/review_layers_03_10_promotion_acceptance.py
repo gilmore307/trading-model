@@ -29,10 +29,10 @@ LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
         "layer": 3,
         "model_id": "target_state_vector_model",
         "model_name": "TargetStateVectorModel",
-        "feature_key": "feature_03_target_state_vector",
+        "feature_key": "m03_target_state_vector_feature_generation",
         "blocker": "no production SQL evidence table / eval run exists for current contract",
         "required_next_steps": [
-            "Create production SQL evidence for feature_03_target_state_vector under point-in-time target-candidate identity rules.",
+            "Create production SQL evidence for m03_target_state_vector_feature_generation under point-in-time target-candidate identity rules.",
             "Generate production labels for target-context outcomes without ticker/company identity leakage.",
             "Run baseline, stability, leakage, calibration, and promotion-metric evaluation before re-review.",
         ],
