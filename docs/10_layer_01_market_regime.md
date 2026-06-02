@@ -1,6 +1,21 @@
 # M01 - Market Regime / MarketRegimeModel
 
+Status: accepted final learned broad-market conditional state estimator contract.
+
 This file records the active direction-neutral market tradability/regime contract for Layer 1.
+
+Layer 1 must be specified directly in its final learned-model contract form. It must not introduce a temporary learned contract, compatibility bridge, or learned-looking deterministic substitute. A final-contract Layer 1 artifact may move through evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are lifecycle evidence, not alternate architecture versions. Only a promoted artifact may affect production decisions.
+
+## Learned Objective
+
+Layer 1 learns a horizon-aware broad-market conditional state estimator:
+
+```text
+P_1(market_state_t+h | broad_market_context_t, input_frame, prediction_horizon)
+  -> market_context_state
+```
+
+It estimates broad-market direction/state, trend persistence, volatility/stress, liquidity pressure/support, breadth, correlation/crowding, dispersion opportunity, transition risk, coverage, and data quality. It is not sector rotation, security selection, strategy selection, portfolio policy, position sizing, action guidance, option expression, or execution.
 
 ## Input
 
@@ -28,6 +43,39 @@ input_frame = 1D     -> prediction_horizon = 1W
 The target physical contract is one market-context row per `(available_time, input_frame, prediction_horizon, market_universe_ref)`. The same public state fields keep their compact `1_*` names inside each row; horizon and frame belong in row identity fields, not in duplicated column-name suffixes.
 
 Future outcome metrics are labels and evaluation indicators only. They may calibrate whether a state output was useful for its paired horizon, but they must not enter same-row model construction.
+
+## Allowed Learned Inputs
+
+Layer 1 learned inputs are point-in-time broad-market and cross-asset evidence available at or before `available_time`:
+
+- broad index, futures, rates, credit, volatility, breadth, liquidity, correlation, concentration, dispersion, and risk-appetite evidence;
+- input frame, prediction horizon, market universe ref, feature coverage, freshness, and data-quality evidence;
+- internal signal-group reductions from `m01_market_regime_feature_generation`;
+- point-in-time missingness and no-data evidence when absence is explainable.
+
+## Forbidden Learned Inputs
+
+Layer 1 inference must exclude:
+
+```text
+sector/industry rotation
+sector/industry ETF leadership
+ETF holdings
+selected securities
+target candidate identity
+strategy labels
+portfolio actions
+position state
+option contracts
+broker/account state
+future returns
+future volatility
+future drawdown
+future liquidity
+future labels
+```
+
+Future outcome labels may be used only in training/evaluation datasets.
 
 ## Stage flow
 
@@ -72,6 +120,9 @@ Current fields:
 
 ```text
 available_time
+input_frame
+prediction_horizon
+market_universe_ref
 1_market_direction_score
 1_market_direction_strength_score
 1_market_trend_quality_score
@@ -124,22 +175,28 @@ diagnostic_payload_json
 
 `diagnostic_payload_json` owns missingness/freshness, minimum-history, standardization and z-score clipping checks, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness versus baselines, and no-future-leak checks.
 
-## Substrate promotion diagnostic
+## Labels And Evaluation
 
-`src/models/model_01_market_regime/substrate_diagnostics.py` owns the reusable read-only substrate diagnostic for promotion-readiness triage. The stable script entrypoint is:
+Training/evaluation labels may include future broad-market outcomes compatible with each frame/horizon pair:
 
-```bash
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/diagnose_model_01_market_regime_substrate.py
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/diagnose_model_01_market_regime_substrate.py --from-database --output-json /tmp/l1_substrate_diagnostic.json
+```text
+future_market_return_<horizon>
+future_market_volatility_<horizon>
+future_market_drawdown_<horizon>
+future_liquidity_pressure_<horizon>
+future_breadth_shift_<horizon>
+future_correlation_crowding_<horizon>
+future_transition_realization_<horizon>
+downstream_calibration_lift_<horizon>
 ```
 
-The diagnostic emits `model_01_market_regime_substrate_diagnostic` and separates:
+Labels must be materialized only in training/evaluation datasets and must not be joined into `market_context_state` at inference time. `1_coverage_score` and `1_data_quality_score` stay quality/gating evidence and are excluded from predictive-output coverage counts.
 
-- source-bar sparsity by source symbol/timeframe decision-day coverage;
-- feature lookback / non-null signal coverage gaps;
-- model-output coverage and feature-to-model timestamp alignment gaps.
+## Learned Artifact And Explainability
 
-`--from-database` performs read-only SQL selects over source, feature, and model tables. It does not write source rows, feature rows, model rows, evaluation rows, promotion evidence, activation records, broker/account state, or storage lifecycle state. `1_coverage_score` and `1_data_quality_score` stay quality evidence and are excluded from predictive-output coverage counts.
+A promoted or promotion-candidate Layer 1 artifact must include model id, schema version, input-frame/prediction-horizon coverage, training and replay windows, feature schema hash, point-in-time source lineage, trained artifact payload, explainability refs, diagnostics refs, calibration evidence, missingness/coverage audits, chronological split evidence, and no-future-leak evidence.
+
+Explainability must answer why the broad market state is directionally biased, stable/unstable, liquid/stressed, crowded/dispersive, transition-prone, and sufficiently covered. It must not explain why to select a sector, target, strategy, position, or action.
 
 ## Naming rule
 
@@ -161,25 +218,4 @@ Layer 1 changes are acceptable when they:
 - provide evidence-backed verification for generation, evaluation, smoke, and promotion-review paths when implementation changes;
 - route new shared names, statuses, fields, or reason-code vocabularies through `trading-manager/scripts/` before cross-repository dependence.
 
-Current Layer 1 verification gates include:
-
-```bash
-python3 -m compileall -q src scripts tests
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/generate_model_01_market_regime.py --help
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/diagnose_model_01_market_regime_substrate.py --help
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/diagnose_model_01_market_regime_substrate.py --from-database --output-json /tmp/l1_substrate_diagnostic.json
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --help
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --print-artifacts --output-json /tmp/l1_promotion_artifacts.json
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/evaluate_model_01_market_regime.py --from-database --output-json /tmp/l1_database_promotion_summary.json
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/run_market_regime_development_smoke.py --help
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --help
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --dry-run
-PYTHONPATH=src python3 scripts/models/model_01_market_regime/review_market_regime_promotion.py --evaluation-summary-json /tmp/dev_smoke_summary.json --local-fallback-review
-git diff --check
-```
-
-Runtime SQL smoke tests require an explicitly configured PostgreSQL target and should not run as default unit tests.
-
-Current promotion-evidence scoring keeps `1_coverage_score` and `1_data_quality_score` as quality/gating evidence only; they must not be counted as predictive future-return factors when calculating Pearson, baseline-improvement, or split-stability promotion metrics. Missing model rows at label decision times are tracked as alignment/completeness evidence, not future leakage; leakage means label-time or split-order violations. The latest read-only database summary remains deferred rather than promoted: model-row count, eval-label count, model/label alignment, pair-count, coverage, correlation, baseline-improvement, and split-stability gates fail, while no-future-leak and chronological split-overlap checks pass.
+Layer 1 validation must prove point-in-time construction, frame/horizon pairing, feature/model timestamp alignment, coverage and missingness handling, chronological split stability, baseline improvement over market-context-free downstream models, and no-future-leak checks. Runtime SQL smoke tests require an explicitly configured PostgreSQL target and should not run as default unit tests.

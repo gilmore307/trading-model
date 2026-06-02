@@ -1,6 +1,8 @@
 # M04 - Event Failure Risk / EventFailureRiskModel
 
-Status: accepted Layer 4 contract and physical scaffold.
+Status: accepted final learned reviewed event-failure-risk estimator contract.
+
+Layer 4 must be specified directly in its final learned-model contract form. It must not introduce a temporary learned contract, compatibility bridge, or learned-looking deterministic substitute. A final-contract Layer 4 artifact may move through evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are lifecycle evidence, not alternate architecture versions. Only a promoted artifact may affect production decisions.
 
 ## Purpose
 
@@ -25,6 +27,17 @@ Layer 1: MarketRegimeModel
 
 Layer 4 is not broad event alpha and not raw-news ingestion. It is a narrow pre-alpha failure-risk gate for event families that have already passed agent review.
 
+## Learned Objective
+
+Layer 4 learns a reviewed event-failure-risk estimator:
+
+```text
+P_4(event_failure_risk_t+h | accepted_event_family_t, market_context_state_t, context_etf_state_t, target_context_state_t, strategy_context_t)
+  -> event_failure_risk_vector
+```
+
+It estimates applicability, strategy-failure severity, entry-block pressure, exposure-cap pressure, strategy-disable pressure, path-risk amplification, session-gap risk, and reviewed evidence quality. It is not raw event discovery, standalone event alpha, event-family promotion, co-event dominance review, alpha confidence, risk policy, position sizing, action planning, option expression, final guidance, or execution.
+
 ## Quantitative role
 
 Layer 4 is the **quantitative event-failure-risk model**. Layer 10 and review decide whether an event family/impact relationship is real enough to supervise; Layer 4 learns how large that accepted relationship is for the current point-in-time event, market state, sector state, target state, strategy family, and horizon.
@@ -43,12 +56,24 @@ Layer 4 must not decide whether a new event family is real, discover raw event c
 Required inputs are point-in-time and review-gated:
 
 - `market_context_state` / `market_context_state_ref`;
-- `sector_context_state` / `sector_context_state_ref`;
+- `context_etf_state` / current physical context ref such as `sector_context_state_ref`;
 - `target_context_state` / `target_context_state_ref`;
 - accepted `event_strategy_failure_gate` or equivalent reviewed promotion record;
 - point-in-time event observation rows for only the reviewed event family;
 - strategy-family applicability metadata;
 - evidence-packet reference and agent-review decision.
+
+## Allowed Learned Inputs
+
+Layer 4 learned inputs are point-in-time, review-gated event and state evidence available at or before `available_time`:
+
+- Layer 1 `market_context_state`;
+- Layer 2 `context_etf_state` / sector-context evidence;
+- Layer 3 `target_context_state`;
+- accepted event-family or strategy-failure promotion records;
+- standardized point-in-time event observations for the reviewed family;
+- strategy-family applicability metadata;
+- scope, coverage, freshness, evidence-quality, and review-decision refs.
 
 The event observation row is the direct event-facing input to Layer 4. It must already contain the inference-time scope facts Layer 4 is allowed to use:
 
@@ -65,6 +90,30 @@ The event observation row is the direct event-facing input to Layer 4. It must a
 Layer 4 must not infer impact scope directly from raw news, SEC text, macro pages, transcripts, or provider payloads. Raw artifacts are standardized upstream into point-in-time event observations; Layer 4 then combines those observations with Layer 1/2/3 state to decide risk conditioning for the current target.
 
 Layer 4 must not consume arbitrary raw news, unreviewed event-family screening rows, post-hoc residual-discovery candidates, future returns, broker outcomes, or unapproved event-family associations.
+
+## Forbidden Learned Inputs
+
+Layer 4 inference must exclude:
+
+```text
+raw news text
+raw SEC text
+raw macro/provider pages
+unreviewed event-family candidates
+Layer 10 same-fold residual attribution
+standalone event-alpha labels
+alpha labels
+position state
+planned actions
+option contracts
+broker/account state
+future returns
+future event revisions
+future realized impact labels
+future trade results
+```
+
+Future labels and realized impact evidence may be used only in training/evaluation datasets after point-in-time clocks and review gates are preserved.
 
 ## Event pools
 
@@ -111,7 +160,7 @@ Layer 4 must distinguish impact scope known at inference time from scope learned
 `expected_impact_scope` must be resolved by comparing the interpreted event against the current state stack:
 
 - Layer 1 `market_context_state`: broad regime, stress, liquidity, breadth, dispersion, correlation/crowding, and transition-risk context;
-- Layer 2 `sector_context_state`: affected sector/industry/theme/peer behavior, trend stability, relative strength, correlation, and sector tradability context;
+- Layer 2 `context_etf_state`: affected sector/industry/theme/peer behavior, trend stability, relative strength, correlation, and sector tradability context;
 - Layer 3 `target_context_state`: target-specific liquidity, path/tradability, residual behavior, state-transition quality, and target-vs-sector/market alignment.
 
 The scope resolver should produce auditable support for each candidate scope: market/global, sector/industry/theme, peer/supply-chain/index basket, and target-local. If event evidence is strong but state-stack support is weak or contradictory, the scope should remain narrow or review-required instead of being promoted to global/common impact.
@@ -194,6 +243,33 @@ Layer 10 supplies a reviewed supervision packet or training contract, not model 
 - allowed Layer 4 effects.
 
 Layer 4 then trains or updates the quantitative `event_failure_risk_vector` model from point-in-time event observations, Layer 1/2/3 state, strategy context, and reviewed failure labels. If later Layer 5/6/7/8/9 evaluation shows that a Layer 4 event family has no incremental value, overblocks valid alpha, or is explained by a dominant co-event, Layer 10 must revise, demote, split, or reject the supervision packet before any future Layer 4 retraining. The changed supervision can affect only later folds.
+
+## Labels And Evaluation
+
+Training/evaluation labels may include future event-conditioned failure outcomes:
+
+```text
+strategy_failure_label_<horizon>
+entry_block_utility_label_<horizon>
+exposure_cap_utility_label_<horizon>
+strategy_disable_utility_label_<horizon>
+path_risk_amplification_label_<horizon>
+session_gap_realization_label_<horizon>
+event_applicability_realized_label_<horizon>
+realized_impact_scope_label
+```
+
+Labels must be materialized only in training/evaluation datasets and must not be joined into `event_failure_risk_vector` at inference time. Same-fold Layer 10 residual attribution may supervise later folds only after review accepts the event-family packet.
+
+## Learned Artifact And Explainability
+
+A promoted or promotion-candidate Layer 4 artifact must include model id, schema version, accepted event-family scope, training and replay windows, feature schema hash, Layer 1/2/3 lineage, event-observation lineage, review-packet refs, trained artifact payload, explainability refs, diagnostics refs, matched-control evidence, split/refit stability, co-event/confounder review, and no-future-leak evidence.
+
+Explainability must answer why a reviewed event family applies or does not apply to the current context, which strategy-family risk it worsens, which horizon is affected, and why the evidence quality is sufficient or insufficient. It must not explain why to create a new event family, produce standalone event alpha, size a position, plan an action, choose an option expression, or execute a broker route.
+
+## Validation
+
+Layer 4 validation must prove incremental value over no-event, event-count-only, Layer 1/2/3-only, and unconditioned strategy baselines. It must separately check point-in-time clocks, reviewed family scope, matched controls, split stability, co-event dominance, session-gap/calendar behavior, overblocking cost, downstream Layer 5 calibration lift, and no-future-leak isolation.
 
 ## Hard boundaries
 

@@ -1,13 +1,26 @@
 # M05 - Alpha Confidence / AlphaConfidenceModel
 
-Status: accepted Layer 5 design route with trained after-cost alpha scoring.
+Status: accepted final learned calibrated after-cost alpha estimator contract.
 
-Current route: Layer 5's primary score is a directly trained normalized after-cost alpha score. `5_alpha_confidence_score_<horizon>` carries these model-artifact semantics:
+Layer 5 must be specified directly in its final learned-model contract form. It must not introduce a temporary learned contract, compatibility bridge, or learned-looking deterministic substitute. A final-contract Layer 5 artifact may move through evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are lifecycle evidence, not alternate architecture versions. Only a promoted artifact may affect production decisions.
+
+Layer 5's primary score is a directly trained normalized after-cost alpha score. `5_alpha_confidence_score_<horizon>` carries these model-artifact semantics:
 
 - `0.5` means after-cost neutral / no edge;
 - values above `0.5` mean positive expected after-cost edge;
 - values below `0.5` mean negative expected after-cost edge;
 - downstream entry policy may use `> 0.5` as the first economic boundary, with any stricter risk gates owned by Layers 6-8.
+
+## Learned Objective
+
+Layer 5 learns a calibrated after-cost alpha estimator:
+
+```text
+S_5(market_context_state_t, context_etf_state_t, target_context_state_t, event_failure_risk_vector_t, quality_state_t, horizon)
+  -> alpha_confidence_vector
+```
+
+It estimates signed alpha direction, alpha strength, expected after-cost return, normalized after-cost alpha confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha tradability. It is not risk policy, position projection, action planning, option expression, final guidance, broker execution, or account-state handling.
 
 ## Purpose
 
@@ -37,7 +50,7 @@ The base Layer 5 training row is:
 target_candidate_id
 available_time / decision_time
 market_context_state
-sector_context_state
+context_etf_state
 target_context_state
 event_failure_risk_vector when present
 quality_calibration_state
@@ -54,7 +67,7 @@ Layer 5 is the first model layer allowed to convert reviewed state/context plus 
 
 ```text
 market_context_state
-+ sector_context_state
++ context_etf_state
 + target_context_state / target_state_vector
 + event_failure_risk_vector / reviewed event-failure conditioning
 + point-in-time quality and calibration evidence
@@ -91,7 +104,7 @@ training_sample_scope
 horizons
 session_phase
 market_context_state_ref
-sector_context_state_ref
+context_etf_state_ref / current physical context ref such as sector_context_state_ref
 target_context_state_ref / target_state_vector_ref
 state_version
 model_version
@@ -106,9 +119,9 @@ Layer 5 may consume the reviewed `market_context_state`, including market direct
 
 Layer 5 uses these fields to decide whether the market background supports or overwhelms target-specific alpha.
 
-### Input B - Layer 2 sector context
+### Input B - Layer 2 ETF/sector context
 
-Layer 5 may consume the reviewed `sector_context_state`, including relative direction, trend quality/stability, transition risk, market-context support, breadth confirmation, dispersion/crowding, liquidity/tradability, state quality, coverage, data quality, and handoff state/bias/rank.
+Layer 5 may consume the reviewed Layer 2 `context_etf_state`, including relative direction, trend quality/stability, transition risk, market-context support, breadth confirmation, dispersion/crowding, liquidity/tradability, state quality, coverage, data quality, and handoff state/bias/rank.
 
 Layer 5 uses these fields to decide whether target alpha is sector-supported, sector-conflicted, or mostly sector beta.
 
@@ -158,7 +171,7 @@ layer_4_quality_score
 feature_coverage_score
 data_quality_score
 state_quality_score
-layer_10_event_artifact_quality_score
+layer_4_event_evidence_quality_score
 state_neighborhood_sample_count
 state_neighborhood_outcome_stability
 model_ensemble_agreement_score
@@ -194,9 +207,9 @@ execution_result
 
 These belong to Layer 6/7/8/9 or training-label/evaluation surfaces, not Layer 5 inference.
 
-## Internal Structure
+## Final Learned Artifact Route
 
-The current implementation is a trained artifact path:
+The accepted Layer 5 artifact route is a trained normalized after-cost alpha path:
 
 ```text
 point-in-time Layer 1/2/3/4 features
@@ -206,7 +219,7 @@ point-in-time Layer 1/2/3/4 features
   -> 5_alpha_confidence_score_<horizon> where 0.5 is after-cost neutral
 ```
 
-The artifact is local JSON containing a serialized LightGBM booster and can be passed to `generate_model_05_alpha_confidence.py` with `--after-cost-alpha-model-json`. The training entrypoint is `train_model_05_alpha_confidence.py`; it expects local JSON/JSONL rows containing the same point-in-time inference inputs plus an after-cost return label such as `after_cost_return_1W`.
+The artifact family may use LightGBM GBDT when it satisfies the contract. The local artifact is JSON containing a serialized booster and can be passed to `generate_model_05_alpha_confidence.py` with `--after-cost-alpha-model-json`. The training entrypoint is `train_model_05_alpha_confidence.py`; it expects local JSON/JSONL rows containing the same point-in-time inference inputs plus an after-cost return label such as `after_cost_return_1W`.
 
 The trained score owns target alpha separation, Layer 4 event conditioning, path-risk evidence, reliability, and calibration as model features. Deterministic code may assemble features, validate artifacts, enforce point-in-time boundaries, and derive companion output fields from the trained normalized score.
 
@@ -314,7 +327,7 @@ alpha_tradable_label_<horizon>
 
 Labels must be materialized only in training/evaluation datasets and must not be joined into `alpha_confidence_vector` at inference time.
 
-## Training Route
+## Training And Evaluation Route
 
 Layer 5 trains the normalized after-cost score directly:
 
@@ -381,11 +394,18 @@ Layer 5 must not:
 - use account balance, buying power, PnL, open orders, holdings, or live execution constraints;
 - use future returns, future event revisions, future option paths, or future fills as inference inputs.
 
-## Implementation route
+## Learned Artifact And Explainability
 
-1. **Base alpha diagnostics from Layer 1/2/3**: define labels, horizons, purge/embargo, and base/unadjusted diagnostics.
-2. **Final 9-field `alpha_confidence_vector`**: implement direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability.
-3. **Layer 4 event-failure conditioning**: consume reviewed Layer 4 `event_failure_risk_vector`; do not consume raw events or same-fold Layer 10 attribution labels.
-4. **Baseline-adjusted diagnostics**: add market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency evidence.
-5. **Trained after-cost score artifact**: train direct normalized after-cost alpha score with `0.5` as neutral.
-6. **Calibration and promotion review**: persist walk-forward evidence and approve/defer promotion through the existing model-promotion governance path.
+A promoted or promotion-candidate Layer 5 artifact must include model id, schema version, horizon coverage, training and replay windows, feature schema hash, Layer 1/2/3/4 lineage, trained artifact payload, explainability refs, diagnostics refs, calibration evidence, baseline comparison, purge/embargo evidence, split/refit stability, and no-future-leak evidence.
+
+Explainability must answer why the state stack has positive, negative, or neutral after-cost alpha; why the score is reliable or unreliable; how Layer 4 event-failure conditioning changed the score; and why path/reversal/drawdown/tradability risks are acceptable or not. It must not explain why to allocate risk, project a position, plan an underlying action, choose an option expression, emit final guidance, or execute a broker route.
+
+## Final Contract Implementation Packet
+
+The active implementation packet for this contract is:
+
+- direct normalized after-cost score training where `0.5` is neutral;
+- 10 core `alpha_confidence_vector` score families per horizon;
+- reviewed Layer 4 event-failure conditioning as the only event-facing inference route;
+- market-adjusted, sector-adjusted, target-lift, idiosyncratic-alpha, and beta-dependency diagnostics;
+- walk-forward calibration and promotion evidence with purge/embargo and no-future-leak checks.

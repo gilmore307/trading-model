@@ -14,7 +14,9 @@ Each layer must do exactly one of these jobs:
 
 A layer must not mix prediction, policy, hard enforcement, and attribution in the same score. Deterministic code may own contracts, feature assembly, timestamps, schemas, safety gates, and validation checks. It must not preserve an alternate scoring route for a layer whose current contract is trained estimation or policy optimization.
 
-Learned-layer design is direct-to-final. Do not introduce temporary learned contracts, compatibility bridges, or learned-looking deterministic substitutes for Layers 6-10. A final-contract artifact may pass through lifecycle evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are evidence gates, not architecture versions. Only promoted artifacts may affect production decisions.
+Learned-layer design is direct-to-final. Do not introduce temporary learned contracts, compatibility bridges, or learned-looking deterministic substitutes for any learned layer. A final-contract artifact may pass through lifecycle evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are evidence gates, not architecture versions. Only promoted artifacts may affect production decisions.
+
+Layers 1-5 are conditional estimators and calibrators, not policy optimizers. Their final contracts should specify point-in-time inputs, labels, artifact evidence, explainability, and validation gates without forcing the candidate-utility/policy language used by Layers 6-10.
 
 ## Cross-Layer Rules
 

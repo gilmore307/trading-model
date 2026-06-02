@@ -1,6 +1,21 @@
 # M02 - Sector Context / SectorContextModel
 
+Status: accepted final learned ETF/sector context estimator and ranker contract.
+
 This file records the active direction-neutral `trading-model` contract and implementation target for Layer 2. The accepted boundary is ETF-context state construction plus target-context routing.
+
+Layer 2 must be specified directly in its final learned-model contract form. It must not introduce a temporary learned contract, compatibility bridge, or learned-looking deterministic substitute. A final-contract Layer 2 artifact may move through evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are lifecycle evidence, not alternate architecture versions. Only a promoted artifact may affect production decisions.
+
+## Learned Objective
+
+Layer 2 learns a Layer-1-conditioned ETF/sector context estimator and ranker:
+
+```text
+P_2(context_etf_state_t+h | market_context_state_t, sector_context_features_t)
+  -> context_etf_state, handoff evidence
+```
+
+It estimates relative sector behavior, direction-neutral tradability, trend quality/stability, transition/chop risk, market-context support, cross-ETF rank, handoff state, and handoff bias. It is not stock membership truth, a static holdings mapper, final target selector, alpha model, strategy/action policy, portfolio allocation, option expression, or execution.
 
 ## Input
 
@@ -12,6 +27,37 @@ trading_data.m02_sector_context_feature_generation
 Layer 2 needs the Layer 1 output in addition to the Layer 2 data feature surface. `model_01_market_regime` / `market_context_state` is conditioning context only; it should shape interpretation of sector behavior but should not become sector, ETF, stock, or strategy selection by itself.
 
 Layer 2 consumes sector/industry/theme ETF behavior evidence from `m02_sector_context_feature_generation`. The data-owned source rows behind that feature surface are provenance/construction evidence, not a separate direct model dependency unless a later accepted contract creates one. ETF holdings and `stock_etf_exposure` are not Layer 2 core behavior inputs; they belong downstream to anonymous target candidate construction unless a later accepted dynamic influence profile supersedes the static holdings route.
+
+## Allowed Learned Inputs
+
+Layer 2 learned inputs are point-in-time Layer 1 context plus ETF/sector behavior evidence available at or before `available_time`:
+
+- `market_context_state` as conditioning context only;
+- sector/industry/theme ETF price, trend, relative-strength, volatility, breadth, dispersion, crowding, liquidity, tradability, and quality features;
+- cross-ETF relative-position and rank evidence when it is construction evidence inside `context_etf_state`;
+- reviewed ETF/basket eligibility, freshness, coverage, and data-quality evidence.
+
+## Forbidden Learned Inputs
+
+Layer 2 inference must exclude:
+
+```text
+stock membership truth as a fitted shortcut
+static ETF holdings as core behavior feature
+target candidate labels
+final stock selection
+alpha labels
+strategy labels
+position state
+portfolio weights
+option contracts
+broker/account state
+future returns
+future sector rank
+future downstream target outcomes
+```
+
+Future outcome labels may be used only in training/evaluation datasets.
 
 ## Stage flow
 
@@ -74,7 +120,7 @@ market_context_state_ref
 2_evidence_count
 ```
 
-`context_etf_symbol` names the context ETF/basket row. It is audit/routing identity for the ETF-context state and must not be copied as raw ticker identity into anonymous target fitting vectors.
+Conceptually, `context_etf_symbol` names the context ETF/basket row. Physically, the current SQL/output field is `sector_or_industry_symbol`. That field is audit/routing identity for the ETF-context state and must not be copied as raw ticker identity into anonymous target fitting vectors.
 
 `2_sector_relative_direction_score` is signed current sector-context direction evidence. Positive values indicate relative long bias and negative values indicate relative short bias; the sign is not a quality judgment and must not be interpreted as portfolio weight.
 
@@ -140,6 +186,28 @@ Diagnostics owns acceptance, monitoring, and gating evidence:
 - refit stability;
 - no-future-leak checks.
 
+## Labels And Evaluation
+
+Training/evaluation labels may include future ETF/sector context outcomes:
+
+```text
+sector_relative_return_<horizon>
+sector_trend_persistence_<horizon>
+sector_chop_reversal_<horizon>
+sector_liquidity_tradability_outcome_<horizon>
+sector_transition_realization_<horizon>
+sector_handoff_quality_<horizon>
+downstream_candidate_lift_<horizon>
+```
+
+Labels must be materialized only in training/evaluation datasets and must not be joined into `context_etf_state` at inference time.
+
+## Learned Artifact And Explainability
+
+A promoted or promotion-candidate Layer 2 artifact must include model id, schema version, training and replay windows, feature schema hash, Layer 1 conditioning lineage, ETF/context universe coverage, trained artifact payload, explainability refs, diagnostics refs, cross-ETF ranking evidence, calibration evidence, split/refit stability, and no-future-leak evidence.
+
+Explainability must answer why an ETF/sector context is relatively strong or weak, stable or transition-prone, clean or crowded, liquid or costly, and selected/watched/blocked for downstream candidate construction. It must not explain why to select a final stock, alpha, strategy, position, or action.
+
 ## Naming rule
 
 Layer 2 model fields use compact `2_*` names in docs, model-facing payloads, and SQL physical columns. SQL writers should quote numeric-leading column names when needed rather than storing semantic aliases such as `layer02_*`.
@@ -157,16 +225,6 @@ Layer 2 changes are acceptable when they:
 - keep sector direction, trend quality, transition risk, tradability, state quality, and handoff bias as separate semantics rather than collapsing them into a single readiness score;
 - route new shared names, statuses, fields, handoff states, or reason-code vocabularies through `trading-manager/scripts/` before cross-repository dependence.
 
-## Production promotion
+## Validation
 
-`m02_sector_context_model_generation` must not become a production-hard downstream dependency until it has a reviewed promotion candidate backed by real-data evaluation evidence. Promotion evidence must include explicit thresholds, metric values, baseline comparison, split/refit stability, sector handoff quality, and no-future-leak checks. Fixture/local dry-run evidence should defer.
-
-Current real-data status: `m02_sector_context_model_generation` rows and real promotion evidence exist, but the latest read-only evidence remains **deferred**, not approved. Missing model rows at label decision times are tracked as alignment/completeness evidence, not future leakage; leakage means label-time or split-order violations. No-future-leak and chronological split-overlap checks pass, while current promotion remains blocked by model/label alignment, coverage/pair-count, baseline, stability, and sector handoff gates. Fixture/local dry-run evidence must defer.
-
-Current Layer 2 verification covers the baseline generator, SQL physical-artifact writers, direction-neutral promotion evidence builders, and contract boundary checks:
-
-```bash
-git diff --check
-python3 -m compileall -q src scripts tests
-PYTHONPATH=src python3 -m unittest tests.test_sector_context_contract tests.test_sector_context_model tests.test_sector_context_evaluation
-```
+Layer 2 validation must prove point-in-time construction, Layer 1 conditioning isolation, ETF/context universe coverage, direction-neutral tradability calibration, sector handoff quality, cross-ETF rank usefulness, baseline improvement over market-only and naive relative-strength baselines, split/refit stability, model/label alignment, and no-future-leak checks. Fixture/local dry-run evidence remains contract-test evidence only; production use requires reviewed real-data promotion evidence.

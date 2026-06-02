@@ -1,8 +1,21 @@
 # M03 - Target State / TargetStateVectorModel
 
-Status: Accepted direction-neutral tradability boundary; production promotion pending real-data evidence and accepted review.
+Status: accepted final learned anonymous target-state estimator and candidate-ranker contract.
 
 Layer 3 is target state-vector construction.
+
+Layer 3 must be specified directly in its final learned-model contract form. It must not introduce a temporary learned contract, compatibility bridge, or learned-looking deterministic substitute. A final-contract Layer 3 artifact may move through evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are lifecycle evidence, not alternate architecture versions. Only a promoted artifact may affect production decisions.
+
+## Learned Objective
+
+Layer 3 learns a Layer-1/2-conditioned anonymous target-state estimator and candidate ranker:
+
+```text
+P_3(target_state_t+h | market_context_state_t, context_etf_state_t, anonymous_target_feature_vector_t)
+  -> target_context_state, candidate handoff evidence
+```
+
+It estimates target-local tradable state, context alignment, residual behavior, path quality, transition/noise/exhaustion risk, liquidity/tradability, state quality, and anonymous candidate ranking. It is not alpha confidence, strategy selection, risk policy, position sizing, action planning, option expression, final guidance, or execution.
 
 ## Purpose
 
@@ -43,7 +56,7 @@ Layer 3 does **not** own:
 
 ```text
 trading_model.m01_market_regime_model_generation       # broad market_context_state
-trading_model.m02_sector_context_model_generation      # sector_context_state / selected basket context
+trading_model.m02_sector_context_model_generation      # context_etf_state / selected basket context
 Layer 3 candidate policy
                                            # top Layer 2 sectors + hot/liquid market names + quality filters
 Layer 3 preprocessing: anonymous_target_candidate_builder
@@ -55,6 +68,39 @@ trading_data.feature_03_target_state_vector
 -> trading_model.model_03_target_state_vector
 -> candidate-set ranking / target handoff evidence
 ```
+
+Layer 3 consumes Layer 2 `context_etf_state` conceptually. Physical rows may still carry fields such as `sector_context_state_ref` or `sector_or_industry_symbol` as current storage/routing names; those names identify the context row and must not become raw target identity fitting features.
+
+## Allowed Learned Inputs
+
+Layer 3 learned inputs are point-in-time market, ETF/sector, and anonymous target-local evidence available at or before `available_time`:
+
+- Layer 1 `market_context_state` as broad conditioning context;
+- Layer 2 `context_etf_state` and candidate-policy handoff evidence as selected context;
+- anonymous target-local bars, liquidity, spread, quote/trade, residual, volatility, path, and quality features;
+- candidate-policy batch metadata that is identity-safe and point-in-time;
+- feature coverage, freshness, data-quality, and no-data evidence.
+
+## Forbidden Learned Inputs
+
+Layer 3 inference must exclude:
+
+```text
+raw ticker/company identity as a fitting feature
+alpha labels
+strategy labels
+position state
+portfolio weights
+planned actions
+option contracts
+broker/account state
+future returns
+future path outcomes
+future selected-target outcomes
+downstream trade results
+```
+
+Future outcome labels may be used only in training/evaluation datasets.
 
 ## Candidate-universe policy
 
@@ -102,7 +148,7 @@ Layer 3 may also derive cross-block relational features when they are point-in-t
 
 ## Canonical output shape
 
-Proposed model output table when promoted:
+Physical model output table:
 
 ```text
 trading_model.model_03_target_state_vector
@@ -154,7 +200,7 @@ Layer 3 score families must stay separated:
 - `3_tradability_score_<window>` is direction-neutral; stable downtrends can score highly when direction strength, quality, stability, persistence, liquidity, and context support are strong while noise, transition risk, and exhaustion risk are low.
 - `3_state_quality_score`, coverage, and data-quality diagnostics describe reliability of the state row, not opportunity.
 
-Layer 3 target handoff/ranking evidence should use these active names when promoted:
+Layer 3 target handoff/ranking evidence uses these active names:
 
 - `3_target_handoff_state`: `selected`, `watch`, `blocked`, or `insufficient_data`;
 - `3_target_handoff_bias`: `long_bias`, `short_bias`, `neutral`, or `mixed`;
@@ -193,23 +239,20 @@ Layer 3 review should ask:
 7. Does the model remain useful both on broad historical target samples and under the narrower live-route candidate policy?
 8. Under the candidate-universe policy, do selected/top-ranked anonymous targets outperform watch/blocked/control candidates on future path quality, tradability, liquidity-adjusted outcomes, and fold-stable ranking metrics?
 
-## Current implementation status
+## Learned Artifact And Explainability
 
-The current baseline generator is implemented:
+A promoted or promotion-candidate Layer 3 artifact must include model id, schema version, candidate-policy contract, training and replay windows, feature schema hash, Layer 1/2 lineage, anonymous feature and identity-exclusion audit, trained artifact payload, explainability refs, diagnostics refs, candidate-ranking evidence, calibration evidence, split/refit stability, and no-future-leak evidence.
 
-- `src/models/model_03_target_state_vector/anonymous_target_candidate_builder/` builds anonymous candidate rows and checks that `anonymous_target_feature_vector` excludes raw ticker/company identity.
-- `src/models/model_03_target_state_vector/generator.py` consumes `feature_03_target_state_vector` rows and emits `model_03_target_state_vector` rows with signed target direction, direction-neutral trend/path/tradability, transition/noise risk, liquidity, state quality, embedding, cluster, and diagnostics separated.
-- `src/models/model_03_target_state_vector/evaluation.py` builds fixture/local promotion evidence over the accepted baseline ladder: market-only, market+sector, and market+sector+target context, using direction-neutral path tradability labels rather than only forward return.
-- `scripts/models/model_03_target_state_vector/` contains generate/evaluate/review wrappers. Local/fixture review remains conservative and defers unless real-data evidence, thresholds, split stability, and leakage gates are reviewed and accepted.
+Explainability must answer why an anonymous target state is clean or noisy, persistent or transition-prone, sector-confirmed or idiosyncratic, liquid or costly, selected/watched/blocked, and suitable or unsuitable for downstream alpha scoring. It must not explain why to choose a strategy, position size, action, option expression, final guidance, or broker route.
 
-## Implementation order
+## Final Contract Implementation Packet
 
-1. Keep this Layer 3 target-state contract as the source of truth.
-2. Keep `model_03_target_state_vector` package and tests aligned with this contract.
-3. Keep the `trading-data` source/feature target-state request boundary aligned with `source_03_target_state` and `feature_03_target_state_vector`.
-4. Mature baseline target-state vectors from bars/liquidity plus Layer 1/2 refs against real database evidence.
-5. Mature forward state/outcome labels and market-only / sector-only baselines with split stability.
-6. Only after state/outcome relationships are accepted, design downstream action/expression consumers outside Layer 3.
+The active implementation packet for this contract is:
+
+- `src/models/model_03_target_state_vector/anonymous_target_candidate_builder/`: identity-safe anonymous candidate rows and `anonymous_target_feature_vector` construction.
+- `src/models/model_03_target_state_vector/generator.py`: Layer 3 model-generation rows with signed direction evidence, direction-neutral trend/path/tradability, transition/noise/exhaustion risk, liquidity, state quality, embedding, cluster, and diagnostics separated.
+- `src/models/model_03_target_state_vector/evaluation.py`: promotion evidence over market-only, market+sector, and market+sector+target baselines using direction-neutral path/tradability labels and candidate-policy-aware ranking checks.
+- `scripts/models/model_03_target_state_vector/`: executable generation, evaluation, and review wrappers over the importable package.
 
 ## Acceptance gates
 
