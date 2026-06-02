@@ -28,6 +28,64 @@ Layers 1-5 are conditional estimators and calibrators, not policy optimizers. Th
 - Layer 10 same-fold discoveries are quarantined from same-fold upstream training. Accepted discoveries may become future Layer 4 inputs only after evidence packet review.
 - Validation must beat a realistic baseline, not just show historical fit.
 
+## Closed-Loop Evidence Lifecycle
+
+The accepted model stack is closed loop as an evidence lifecycle, not as a live recursive model loop and not as automatic online learning.
+
+The loop has three separate paths:
+
+```text
+Inference path:
+  point-in-time inputs -> M01 -> M02 -> M03 -> M04 -> M05 -> M06 -> M07 -> M08 -> optional M09 -> M10
+
+Evaluation path:
+  fold/replay settles -> future labels, utilities, diagnostics, and residuals are joined after the fact
+
+Promotion feedback path:
+  evaluation evidence -> review/promotion gate -> later-fold artifact update or rejection
+```
+
+No future label, realized utility, downstream failure, broker outcome, same-fold Layer 10 discovery, or post-event interpretation may feed back into the same fold's inference features. A layer can learn from failure only through a later training/evaluation dataset, frozen artifact lineage, and accepted review gate.
+
+Layer 10 has one special feedback route:
+
+```text
+Layer 5/6/7/8/9 replay failure
+  -> Layer 10 residual event attribution
+  -> reviewed event-family or strategy-failure packet
+  -> future Layer 4 candidate training/evaluation
+  -> future-fold Layer 4 acceptance only after review
+```
+
+Layer 10 must not become a generic hindsight corrector. It owns residual event attribution, intervention utility, and future Layer 4 packet eligibility only. Non-event model misses remain the evaluation/promotion evidence of their owning layer.
+
+| Layer | Inference dependency | Primary output | Label / utility source after fold close | Feedback owner | Forbidden feedback |
+|---|---|---|---|---|---|
+| `M01` Market Regime | Broad-market and cross-asset point-in-time features. | `market_context_state` | Future broad-market state, volatility, liquidity, transition, and downstream calibration-lift labels. | Layer 1 evaluation and promotion evidence. | Sector/security choices, strategy/action labels, portfolio outcomes, and future market labels as same-fold inputs. |
+| `M02` Sector Context | `market_context_state` plus ETF/sector behavior features. | `context_etf_state` and handoff evidence. | Future sector trend/tradability, handoff quality, and downstream candidate-lift labels. | Layer 2 evaluation and promotion evidence. | Static holdings as fitted shortcut, final target labels, alpha labels, future sector rank, and downstream target outcomes as same-fold inputs. |
+| `M03` Target State | Layer 1/2 context plus anonymous target-local features and candidate policy. | `target_context_state` and candidate ranking evidence. | Future target path, persistence/reversion, liquidity/tradability, state-transition, and candidate-ranking labels. | Layer 3 evaluation and promotion evidence. | Raw ticker/company identity, alpha/action labels, future selected-target outcomes, and downstream trade results as same-fold inputs. |
+| `M04` Event Failure Risk | Layer 1/2/3 state plus reviewed event-family or strategy-failure evidence. | `event_failure_risk_vector` | Reviewed event-conditioned strategy-failure, entry-block, exposure-cap, disable, path-risk, and session-gap labels. | Layer 4 evaluation and event-strategy promotion review. | Raw news/provider text, unreviewed event candidates, same-fold Layer 10 residual attribution, standalone event-alpha labels, and future realized impact labels as same-fold inputs. |
+| `M05` Alpha Confidence | Layer 1/2/3 state plus Layer 4 conditioning and quality/calibration evidence. | `alpha_confidence_vector` | After-cost alpha, residual return, path quality, reversal/drawdown, reliability, and calibration labels. | Layer 5 evaluation and promotion evidence. | Account/position/action/execution state, future returns, future event revisions, and Layer 10 promotion packets as same-fold inputs. |
+| `M06` Dynamic Risk Policy | Global market/event pressure, Layer 5 alpha summary, and replay-safe portfolio/risk context. | `dynamic_risk_policy_state` | Portfolio/risk-budget utility, drawdown, CVaR, turnover, cost, and policy-stability labels. | Layer 6 off-policy evaluation and promotion evidence. | Broker/account mutation, target-specific identity distortion, order/fill outcomes as inference features, and hard-limit overrides. |
+| `M07` Position Projection | Layer 5 alpha, Layer 6 policy, current/pending exposure, cost, friction, and price-location context. | `position_projection_vector` | Candidate exposure utility, regret, turnover, drawdown, budget-breach, and hold/flat comparison labels. | Layer 7 evaluation and promotion evidence. | Historical action labels, final order quantities, broker fills, alpha relearning, and execution instructions as same-fold inputs. |
+| `M08` Underlying Action | Layer 7 projection, Layer 5 alpha, exposure state, quote/liquidity/borrow, and risk policy context. | `underlying_action_plan` / `underlying_action_vector` | Candidate action utility, no-trade/maintain calibration, entry/risk-plan quality, fill-realism, churn, and path labels. | Layer 8 evaluation and promotion evidence. | Broker order fields, option contract choice, historical action imitation, raw selected-action PnL, and execution leakage. |
+| `M09` Option Expression | Completed Layer 8 thesis plus option-surface status, timestamped option candidates, and option exposure context. | `trading_guidance_record`, `option_expression_plan`, and `expression_vector` when optionable. | Candidate expression utility, realistic option after-cost return, fill/slippage/theta/IV, no-option, and underlying-only labels. | Layer 9 option replay evaluation and promotion evidence. | Best-contract hindsight, future option paths, realized fills, broker order ids, final quantities, and same-fold Layer 10 discoveries. |
+| `M10` Event Risk Governor | Layer 1-9 thesis context plus point-in-time event observations, scope mapping, and residual-event evidence. | `event_risk_intervention` / `event_context_vector` plus future packet eligibility. | Residual intervention utility, attribution correctness, tail-failure reduction, overblock cost, and event-family packet labels. | Layer 10 residual evaluation, event-family review, and future Layer 4 packet routing. | Same-fold upstream feature mutation, automatic Layer 4 promotion, standalone event alpha, broker/account mutation, and generic non-event model correction. |
+
+The loop is closed only when every emitted field can be classified as one of:
+
+```text
+inference input
+primary output
+label / utility
+diagnostic
+explainability
+validation evidence
+review packet
+```
+
+Any field that is both a future label and a same-fold inference input breaks the contract.
+
 ## Layer Designs
 
 | Layer | Role | Target / utility | Canonical model family | Deterministic remains | Validation gate |

@@ -83,6 +83,8 @@ The primary output is the narrow downstream dependency contract. Explainability 
 
 `docs/23_model_learning_design.md` owns the long-term learning route for each layer. It separates conditional estimators, policy/utility optimizers, deterministic hard constraints, and post-hoc attribution so implementation work does not turn one score into prediction, sizing, action, and explanation at once.
 
+`docs/23_model_learning_design.md` also owns the closed-loop evidence lifecycle for Layers 1-10: point-in-time inference moves forward through the stack, future labels/utilities join only after fold settlement, and promotion feedback can update later-fold artifacts only through review gates. This is not live recursive learning and does not authorize same-fold downstream failures, Layer 10 discoveries, broker outcomes, or future labels as upstream inference features.
+
 ## Historical Sampling vs Live Routing
 
 Historical training may use a broader point-in-time sampling universe than live inference routing. Live routing can be narrow because upstream layers gate or prioritize candidates; historical training should not copy those gates when doing so would remove useful contrast.

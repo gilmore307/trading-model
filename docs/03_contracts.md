@@ -22,6 +22,8 @@ Date: 2026-05-07
 
 This closes the model-design phase. It does not approve production promotion.
 
+`docs/23_model_learning_design.md` owns the closed-loop evidence lifecycle for the accepted Layers 1-10 stack. The loop is closed through three separated paths: point-in-time inference, post-fold evaluation labels/utilities, and review-gated promotion feedback into later-fold artifacts. It does not create a live recursive learning loop, same-fold upstream mutation, production activation, broker/account mutation, or a new model layer.
+
 ## Boundary acceptance
 
 Layer 9 is TradingGuidance / OptionExpression / optional expression context and Layer 10 is EventRiskGovernor / EventIntelligenceOverlay / realtime risk handoff. There is no accepted Layer 11 inside `trading-model`.
