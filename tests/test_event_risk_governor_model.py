@@ -101,6 +101,36 @@ class EventRiskGovernorTests(unittest.TestCase):
         assert_no_label_leakage(output)
         self.assert_no_forbidden_terms(output)
 
+    def test_earnings_shell_outputs_underlying_and_option_impact_surfaces(self) -> None:
+        row = _base_row(m10_event_risk_governor_data_acquisition=[
+            {
+                "event_id": "evt_earnings_shell",
+                "canonical_event_id": "evt_earnings_shell",
+                "dedup_status": "canonical",
+                "event_time": "2026-05-07T16:05:00-04:00",
+                "available_time": "2026-05-07T10:20:00-04:00",
+                "event_category_type": "earnings_guidance",
+                "event_lifecycle_state": "pre_event_window",
+                "scope_type": "symbol",
+                "symbol": "AAPL",
+                "event_intensity_score": 0.7,
+                "target_relevance_score": 1.0,
+            }
+        ])
+
+        output = generate_rows([row])[0]
+        vector = output["event_context_vector"]
+        encoded = output["event_risk_governor_diagnostics"]["encoded_events"][0]
+
+        self.assertIn("10_event_underlying_impact_score_1D", vector)
+        self.assertIn("10_event_option_impact_score_1D", vector)
+        self.assertGreater(vector["10_event_underlying_impact_score_1D"], 0.0)
+        self.assertGreater(vector["10_event_option_impact_score_1D"], 0.0)
+        self.assertIn("iv_expansion", encoded["option_impact_mechanisms"])
+        self.assertIn("iv_crush_risk", encoded["option_impact_mechanisms"])
+        assert_no_label_leakage(output)
+        self.assert_no_forbidden_terms(output)
+
     def test_negative_macro_impact_preserves_unsigned_risk_magnitude(self) -> None:
         row = _base_row(m10_event_risk_governor_data_acquisition=[
             {

@@ -28,10 +28,11 @@ Layer 10 answers:
 - Which point-in-time event observations were visible before or during the failure window?
 - Did any event plausibly explain, amplify, or contradict the observed failure after controls for market, sector, peer, target, liquidity, option, and time effects?
 - What was the realized impact scope across market/global, sector/industry/theme, peer/supply-chain/index basket, and target-local reaction windows?
+- Did the event primarily affect the direct underlying thesis, the option surface, or both?
 - Is the apparent relationship repeated, stable, non-leaky, and strategy-failure relevant enough to produce a review packet?
 - Should an event family remain observation-only, enter the realtime observation pool, or be proposed for Layer 4 promotion?
 
-Layer 10 does **not** answer alpha, trade, expression, sizing, or execution questions. It must not emit buy/sell/hold, final action, position size, option contract, strike, DTE, delta, order instruction, or account-specific decision fields.
+Layer 10 does **not** answer alpha, trade, expression, sizing, or execution questions. It may separate direct-underlying impact from option-surface impact, but it must not emit buy/sell/hold, final action, position size, option contract, strike, DTE, delta, order instruction, or account-specific decision fields.
 
 Layer 10 must be specified directly in its final learned-model contract form. It must not introduce a temporary learned contract, compatibility bridge, or learned-looking deterministic substitute. A final-contract Layer 10 artifact may move through evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are lifecycle evidence, not alternate architecture versions. Only a promoted artifact may affect production decisions.
 
@@ -57,6 +58,13 @@ request_human_review
 ```
 
 Layer 10 optimizes residual intervention utility and attribution confidence. It also decides whether evidence is strong enough to produce a future Layer 4 review packet. It is not event alpha, directional return prediction, Layer 4 accepted-event scoring, underlying action choice, option expression, position sizing, broker/account mutation, or execution.
+
+Layer 10 output separates event impact surfaces:
+
+- `underlying_impact`: signed pressure on the Layer 8 direct-underlying thesis.
+- `option_impact`: option-surface sensitivity such as implied-volatility expansion/crush risk, term/skew shift, gamma exposure, pin risk, OPEX liquidity, or option-flow concentration.
+
+`option_impact` is a risk/context field only. Layer 9 owns expression selection and contract constraints.
 
 ## Training Sample Granularity
 
@@ -152,7 +160,7 @@ raw source artifact
 
 The standardized event observation row owns model-visible point-in-time facts: event identity, canonical event identity, source priority, dedup status, lifecycle clocks, expected impact scope, affected scope/entities, scope confidence, event-family key, review status, and references to source/interpreted artifacts.
 
-Layer 10 owns standardized quantification. It converts one or more visible event observations into horizon-aware score families such as presence, timing proximity, intensity, direction bias, uncertainty, gap risk, reversal risk, liquidity disruption, contagion risk, context quality, target relevance, and impact-scope scores. These scores are risk/context semantics, not alpha or trading actions.
+Layer 10 owns standardized quantification. It converts one or more visible event observations into horizon-aware score families such as presence, timing proximity, intensity, direction bias, uncertainty, gap risk, reversal risk, liquidity disruption, contagion risk, context quality, target relevance, impact-scope scores, direct-underlying impact, and option-surface impact. These scores are risk/context semantics, not alpha or trading actions.
 
 For the newly accepted event families:
 

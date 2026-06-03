@@ -153,10 +153,11 @@ Conceptual Layer 10 `event_context_vector` / `event_risk_intervention` values mu
 event presence != event intensity
 event intensity != impact scope
 impact scope != direction
+underlying impact != option-surface impact
 direction bias != alpha
 event risk != trade action
 residual explanation != causal proof
 observation-pool addition != Layer 4 promotion
 ```
 
-Physical event-risk scalar score values use `10_event_*` prefixes. Enum-like audit fields may share the horizon suffix in model-local contracts, but they are not `state_vector_value` registry rows. Layer 10 may emit warning/cap/block/review/flatten-candidate overlays and Layer 4 promotion packets, but it must not send orders or mutate accounts.
+Physical event-risk scalar score values use `10_event_*` prefixes. `10_event_underlying_impact_score_<horizon>` describes signed effect on the Layer 8 direct-underlying thesis. `10_event_option_impact_score_<horizon>` describes option-surface sensitivity such as IV expansion/crush risk, gamma/pin pressure, expiry liquidity, or option-flow concentration; it is not strike, DTE, contract selection, expression selection, or trade action. Enum-like audit fields may share the horizon suffix in model-local contracts, but they are not `state_vector_value` registry rows. Layer 10 may emit warning/cap/block/review/flatten-candidate overlays and Layer 4 promotion packets, but it must not send orders or mutate accounts.

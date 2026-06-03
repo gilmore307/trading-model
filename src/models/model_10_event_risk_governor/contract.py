@@ -39,6 +39,8 @@ IMPACT_SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "10_event_peer_group_impact_score_<horizon>",
     "10_event_symbol_impact_score_<horizon>",
     "10_event_microstructure_impact_score_<horizon>",
+    "10_event_underlying_impact_score_<horizon>",
+    "10_event_option_impact_score_<horizon>",
     "10_event_scope_confidence_score_<horizon>",
     "10_event_scope_escalation_risk_score_<horizon>",
     "10_event_target_relevance_score_<horizon>",

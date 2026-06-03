@@ -47,6 +47,8 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         payload[f"10_event_context_alignment_score_{suffix}"] = scores["context_alignment"]
         for scope in SCOPE_KEYS:
             payload[f"10_event_{scope}_impact_score_{suffix}"] = scores[f"{scope}_impact"]
+        payload[f"10_event_underlying_impact_score_{suffix}"] = scores["underlying_impact"]
+        payload[f"10_event_option_impact_score_{suffix}"] = scores["option_impact"]
         payload[f"10_event_scope_confidence_score_{suffix}"] = scores["scope_confidence"]
         payload[f"10_event_scope_escalation_risk_score_{suffix}"] = scores["scope_escalation_risk"]
         payload[f"10_event_target_relevance_score_{suffix}"] = scores["target_relevance"]
@@ -119,6 +121,8 @@ def _encode_event(event: Mapping[str, Any], decision_time: datetime, row: Mappin
     ).lower()
     relevance = _target_relevance(event, row, native_scope)
     impact = {scope: _impact_score(event, native_scope, scope, relevance, intensity, direction_bias) for scope in SCOPE_KEYS}
+    underlying_impact = _underlying_impact_score(event, impact, relevance, intensity, direction_bias)
+    option_surface = _option_surface_impact(event, native_scope, relevance, intensity, uncertainty)
     scope_confidence = _clip01(_first_float(event, "scope_confidence_score") if _first_float(event, "scope_confidence_score") is not None else (0.75 if native_scope != "unknown" else 0.35))
     broad_impact_magnitude = max(abs(impact["market"]), abs(impact["sector"]), abs(impact["theme_factor"]))
     escalation = _clip01(_first_float(event, "scope_escalation_risk_score") if _first_float(event, "scope_escalation_risk_score") is not None else broad_impact_magnitude * 0.5)
@@ -156,6 +160,9 @@ def _encode_event(event: Mapping[str, Any], decision_time: datetime, row: Mappin
         "event_scope_confidence_score": scope_confidence,
         "event_scope_escalation_risk_score": escalation,
         "impact_scores": impact,
+        "underlying_impact_score": underlying_impact,
+        "option_impact_score": option_surface["option_impact"],
+        "option_impact_mechanisms": option_surface["mechanisms"],
     }
 
 
@@ -189,6 +196,8 @@ def _horizon_scores(events: Sequence[Mapping[str, Any]], horizon: str) -> dict[s
         values = [_safe_float((event.get("impact_scores") or {}).get(scope)) for event in events]
         impact_values[f"{scope}_impact"] = _weighted_average(values, weights, default=0.0)
     scores.update(impact_values)
+    scores["underlying_impact"] = _weighted_average([_safe_float(event.get("underlying_impact_score")) for event in events], weights, default=0.0)
+    scores["option_impact"] = _weighted_average([_safe_float(event.get("option_impact_score")) for event in events], weights, default=0.0)
     dominant = max(SCOPE_KEYS, key=lambda scope: abs(float(scores[f"{scope}_impact"])))
     scores["dominant_impact_scope"] = dominant if abs(float(scores[f"{dominant}_impact"])) > 0 else "none"
     return {key: (round(value, 6) if isinstance(value, float) else value) for key, value in scores.items()}
@@ -214,6 +223,8 @@ def _no_event_scores() -> dict[str, Any]:
     }
     for scope in SCOPE_KEYS:
         scores[f"{scope}_impact"] = 0.0
+    scores["underlying_impact"] = 0.0
+    scores["option_impact"] = 0.0
     return scores
 
 
@@ -272,6 +283,72 @@ def _impact_score(event: Mapping[str, Any], native_scope: str, scope: str, relev
         base = {"symbol": 0.8, "microstructure": 0.9}[scope]
     direction_factor = -1.0 if direction_bias < 0 else 1.0
     return _clip_signed(base * max(relevance, 0.25) * max(intensity, 0.25) * direction_factor)
+
+
+def _underlying_impact_score(event: Mapping[str, Any], impact_scores: Mapping[str, float], relevance: float, intensity: float, direction_bias: float) -> float:
+    explicit = _first_float(event, "underlying_impact_score", "event_underlying_impact_score")
+    if explicit is not None:
+        return _clip_signed(explicit)
+    scoped = max(
+        (
+            float(impact_scores.get("symbol") or 0.0),
+            float(impact_scores.get("peer_group") or 0.0),
+            float(impact_scores.get("sector") or 0.0),
+            float(impact_scores.get("market") or 0.0),
+        ),
+        key=abs,
+    )
+    if abs(scoped) > 0:
+        return _clip_signed(scoped)
+    direction_factor = -1.0 if direction_bias < 0 else 1.0
+    return _clip_signed(max(relevance, 0.25) * max(intensity, 0.25) * direction_factor)
+
+
+def _option_surface_impact(event: Mapping[str, Any], native_scope: str, relevance: float, intensity: float, uncertainty: float) -> dict[str, Any]:
+    explicit = _first_float(event, "option_impact_score", "event_option_impact_score")
+    mechanisms = _option_mechanisms(event, native_scope)
+    if explicit is not None:
+        return {"option_impact": _clip_signed(explicit), "mechanisms": mechanisms}
+    category = str(event.get("event_category_type") or "").lower()
+    lifecycle = str(event.get("event_lifecycle_state") or event.get("lifecycle_class") or "").lower()
+    base = 0.0
+    if any(term in category for term in ("earnings", "guidance", "sec_filing")):
+        base = 0.75
+    if any(term in category for term in ("option", "expiry", "triple_witching", "opex", "gamma", "pin")):
+        base = max(base, 0.85)
+    if any(term in category for term in ("index_rebalance", "index_reconstitution", "market_structure")):
+        base = max(base, 0.55)
+    if native_scope in {"option_abnormal_activity", "microstructure", "price_action"}:
+        base = max(base, 0.8)
+    if "pre_event" in lifecycle or "scheduled" in lifecycle:
+        base = max(base, 0.65)
+    option_impact = _clip01(base * max(relevance, 0.25) * max(intensity, 0.25) + uncertainty * 0.15)
+    return {"option_impact": option_impact, "mechanisms": mechanisms}
+
+
+def _option_mechanisms(event: Mapping[str, Any], native_scope: str) -> list[str]:
+    explicit = event.get("option_impact_mechanisms") or event.get("event_option_impact_mechanisms")
+    if isinstance(explicit, str):
+        mechanisms = [item.strip() for item in explicit.replace("|", ",").replace(";", ",").split(",") if item.strip()]
+        if mechanisms:
+            return mechanisms
+    if isinstance(explicit, Sequence) and not isinstance(explicit, (str, bytes, bytearray)):
+        mechanisms = [str(item).strip() for item in explicit if str(item).strip()]
+        if mechanisms:
+            return mechanisms
+    category = str(event.get("event_category_type") or "").lower()
+    mechanisms: list[str] = []
+    if any(term in category for term in ("earnings", "guidance", "sec_filing")):
+        mechanisms.extend(["iv_expansion", "iv_crush_risk", "event_gap_risk"])
+    if any(term in category for term in ("expiry", "triple_witching", "opex")):
+        mechanisms.extend(["gamma_exposure", "pin_risk", "expiry_liquidity"])
+    if any(term in category for term in ("index_rebalance", "index_reconstitution")):
+        mechanisms.extend(["forced_flow", "closing_auction_liquidity"])
+    if native_scope == "option_abnormal_activity" or "option" in category:
+        mechanisms.extend(["oi_or_flow_concentration", "iv_surface_shift"])
+    if native_scope in {"microstructure", "price_action"}:
+        mechanisms.append("gamma_squeeze_risk")
+    return list(dict.fromkeys(mechanisms))
 
 
 def _scope_from_category(event: Mapping[str, Any]) -> str:

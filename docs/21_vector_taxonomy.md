@@ -446,6 +446,15 @@ market_context_state
 
 Physical event-risk score families use `10_event_*` prefixes. Layer 10 may warn, explain, block/cap/reduce/flatten-review, maintain the observation pool, and propose Layer 4 promotion packets. It is not alpha confidence, not a trading signal, not position sizing, not expression selection, and not final action.
 
+Layer 10 also separates event impact by market surface:
+
+```text
+10_event_underlying_impact_score_<horizon>
+10_event_option_impact_score_<horizon>
+```
+
+The underlying score is signed pressure on the Layer 8 direct-underlying thesis. The option score is option-surface event sensitivity such as IV/gamma/pin/flow risk. It must not include strike, DTE, contract id, expression choice, or execution instruction fields.
+
 ## Label boundary
 
 Layer 3 labels/outcomes may include:
