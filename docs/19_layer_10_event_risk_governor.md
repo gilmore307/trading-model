@@ -838,6 +838,92 @@ quality_head
 impact_scope_heads
 ```
 
+## Post-failure attribution workflow
+
+Layer 10 post-failure attribution must start with failure-scope triage before event search or event interpretation. The triage is a scoped prior, not a final single-label explanation.
+
+Minimum triage evidence:
+
+```text
+target return vs model expected return
+target residual after market controls
+target residual after sector/theme controls
+market benchmark returns and breadth
+sector / industry / theme ETF returns and dispersion
+peer / supply-chain / index basket returns
+target-local price, volume, liquidity, and gap behavior
+event availability window
+model failure / decision window
+```
+
+The triage output should carry likelihoods or scores rather than a brittle hard label:
+
+```text
+market_scope_likelihood
+sector_scope_likelihood
+industry_scope_likelihood
+theme_scope_likelihood
+peer_group_scope_likelihood
+target_local_scope_likelihood
+unknown_or_mixed_scope_likelihood
+```
+
+Search scope follows the triage order but lower layers remain visible:
+
+- if market/global evidence dominates, inspect market/global events first, then sector/theme/peer events, then target-local events for residual and concurrent-catalyst checks;
+- if sector/theme evidence dominates, inspect sector/theme/peer events first, then target-local events, with a bounded market/global confounder check;
+- if target-local evidence dominates, inspect target-local events first, with narrow market/sector checks when timing overlaps or residual evidence is ambiguous;
+- if mixed/unknown evidence dominates, retain all layers until review can rank dominant and contributing causes.
+
+Attribution labels should support mixtures:
+
+```text
+market_primary
+sector_primary
+industry_primary
+theme_primary
+peer_or_external_leader_primary
+target_primary
+market_primary_plus_target_local_contributor
+sector_primary_plus_target_local_contributor
+theme_primary_plus_external_leader_contributor
+target_primary_plus_market_confounder
+mixed_unresolved
+no_event_explanation_found
+```
+
+Layer 10 must not allow a broader scope to overwrite narrower evidence unless timing, direction, magnitude, and residual analysis show the narrower event is immaterial. Conversely, target-local news must not be promoted over a market/sector/theme event when the target residual is explained by broader controls.
+
+External leader and peer events are first-class attribution candidates. A native-symbol event may affect another target through a documented transmission channel:
+
+```text
+ai_infrastructure_demand
+cloud_capex
+data_center_spending
+semiconductor_supply
+supplier_customer_readthrough
+index_constituent_pressure
+sector_or_theme_risk_appetite
+regulatory_or_export_policy_readthrough
+```
+
+For example, an NVDA earnings, export-license, or AI-capex event may explain ORCL, META, MSFT, or a semiconductor/AI basket only when the event was available before the failure window and the target context shows matching market/sector/theme/peer movement after controls. The source event remains native to NVDA; the target attribution depends on the transmission evidence.
+
+Event-family attribution confidence requires recurrence and controls. A one-window coincidence is insufficient for high confidence. For recurring families such as earnings/guidance:
+
+```text
+current_window_alignment
+historical_event_window_recurrence
+market / sector / peer residual controls
+event result or guidance interpretation
+confounder check
+matched or no-event controls when available
+```
+
+If a target sells off after earnings, Layer 10 should compare prior earnings windows and check whether similar residual moves occurred when comparable result/guidance/capex/tax/regulatory facts were released. Only current-window alignment plus historical recurrence plus residual controls can support high-confidence attribution or a Layer 4 promotion packet.
+
+Raw news search results are never attribution by themselves. GDELT, Alpaca News, SEC/IR, official sources, and web-search results supply event candidates and evidence refs. Layer 10 attribution is accepted only after the candidate events are joined to residual behavior, scope controls, timing, source quality, co-events, and confounders.
+
 ## Event scope model
 
 Layer 10 must separate where an event originates from where it may have impact.
