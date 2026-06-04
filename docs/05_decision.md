@@ -207,7 +207,7 @@ Status: Accepted
 
 ETF holdings and `stock_etf_exposure` are not core inputs to Layer 2 ETF-context behavior modeling. Layer 2 should learn ETF/basket conditional behavior from price/relative-strength/volatility/correlation/tradability/event evidence under similar market backgrounds.
 
-After Layer 2 selects or prioritizes ETF contexts, the anonymous target candidate builder may use ETF holdings and `stock_etf_exposure` as seed/fallback evidence to transmit selected baskets into a stock candidate universe. The target-context relationship should migrate toward dynamic `target_context_profile` evidence based on point-in-time correlation, lead-lag, and influence direction. Layer 3 target-state construction must still consume anonymous target feature vectors rather than raw ticker/company identity.
+Layer 2 context does not define the stock candidate universe. The anonymous target candidate builder consumes reviewed realtime or historical point-in-time candidate-universe evidence and attaches Layer 1/2 context through accepted target-context mappings. The target-context relationship should migrate toward dynamic `target_context_profile` evidence based on point-in-time correlation, lead-lag, and influence direction. Layer 3 target-state construction must still consume anonymous target feature vectors rather than raw ticker/company identity.
 
 ## D008 - Target fitting must use anonymous target candidates
 
@@ -293,7 +293,7 @@ The model-local contract is owned by:
 src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md
 ```
 
-The builder expands Layer 2 selected/prioritized ETF contexts into target candidates using point-in-time ETF holdings or reviewed `target_context_profile` evidence, target-local behavior, liquidity/tradability, event/risk, cost, optionability, and quality evidence.
+The builder turns reviewed candidate-universe evidence into target candidates using accepted target-context mapping or reviewed `target_context_profile` evidence, target-local behavior, liquidity/tradability, event/risk, cost, optionability, and quality evidence.
 
 It produces separate surfaces:
 
@@ -849,7 +849,7 @@ Status: Accepted
 
 Historical training dataset construction is allowed to use a broader point-in-time sampling universe than live inference routing. Live routing may narrow candidate flow through upstream model gates, but historical training should not blindly copy those gates when broader sampling is needed to learn robust relationships.
 
-Layer 3 is the critical example: live routing commonly sends targets from Layer 2 selected/prioritized sector baskets, while historical training may include anonymous targets from other sectors, industries, styles, market caps, liquidity tiers, and ETF/stock exposure paths. Each row must still carry point-in-time market and sector context, preserve identity-safety, and avoid future leakage.
+Layer 3 is the critical example: live routing uses the reviewed realtime candidate universe while historical training and replay use frozen point-in-time candidate universes that may include anonymous targets across sectors, industries, styles, market caps, and liquidity tiers. Each row must still carry point-in-time market and sector context, preserve identity-safety, and avoid future leakage.
 
 Promotion evidence should report both broad historical generalization and live-route simulation performance whenever the training sample universe is wider than the live routed universe.
 
@@ -996,7 +996,7 @@ Layer 3 remains an anonymous `TargetStateVectorModel`: routing symbols contribut
 
 Task execution may remain target-major across folds: one routing symbol can complete all assigned folds before another starts. This is a scheduler/runtime convenience only. Production evaluation and promotion must aggregate by fold and by the fixed candidate-universe policy used in live routing.
 
-The Layer 3 candidate policy is rule-fixed rather than ticker-fixed. Live routing and promotion replay construct candidates from current Layer 2 selected/watch sectors, sector constituents or reviewed proxies, current market-wide hot/liquid names, liquidity/spread/data-quality filters, optional optionability diagnostics, and controls when evaluation requires contrast.
+The Layer 3 candidate policy is rule-fixed rather than ticker-fixed. Live routing constructs candidates from the reviewed realtime total-symbol pool, target metadata, current market-wide hot/liquid names, liquidity/spread/data-quality filters, optional optionability diagnostics, and controls when evaluation requires contrast. Promotion replay constructs candidates from its frozen point-in-time candidate universe and must not borrow the current realtime pool.
 
 Layer 4 and later keep a single selected-target interface. When Layer 3 returns several ranked targets, orchestration runs Layer 4+ separately for each target instead of changing downstream models into multi-target batch models.
 

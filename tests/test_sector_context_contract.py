@@ -52,7 +52,7 @@ class SectorContextContractTests(unittest.TestCase):
         }:
             self.assertIn(forbidden_boundary, contract)
         self.assertIn("ETF holdings and `stock_etf_exposure` are not used as Layer 2 core behavior-model inputs", contract)
-        self.assertIn("selected/watch Layer 2 baskets", contract)
+        self.assertIn("eligible/watch Layer 2 context", contract)
         self.assertIn("must not copy Layer 1 market-property factor names", contract)
         self.assertIn("not reused Layer 1 market-property factors", contract)
         self.assertIn("positive = upside-favorable capture; negative = downside-heavy capture", contract)

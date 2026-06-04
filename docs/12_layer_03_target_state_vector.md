@@ -27,7 +27,7 @@ Layer 3 should find the relationship between **anonymous target board/tape state
 
 Layer 3 builds a point-in-time, direction-neutral `target_context_state` that later layers may use for event context, alpha confidence, position projection, underlying-action planning, and option-expression handoff. Layer 3 also supports ranking the current anonymous candidate set for target handoff. It does not output position size, planned action, option expression, or final action.
 
-Historical training may sample a broader target universe than live routing. In live routing, Layer 3 candidates come from a fixed candidate-universe policy: current Layer 2 selected/watch sector baskets plus current market-wide hot/liquid names, filtered by point-in-time liquidity, spread, data quality, and optional optionability diagnostics. In historical training, Layer 3 may include anonymous targets from other sectors, industries, styles, market caps, liquidity tiers, and ETF/stock exposure paths so it can learn sector-confirmed, sector-divergent, strong-in-weak-sector, and weak-in-strong-sector behavior. Layer 2 context remains attached as point-in-time context; it is not an unconditional historical-training filter.
+Historical training may sample a broader target universe than live routing. In live routing, Layer 3 candidates come from the reviewed realtime candidate universe, target metadata, current market-wide hot/liquid names, and point-in-time liquidity, spread, data quality, and optional optionability diagnostics. In historical training and replay, Layer 3 must use a frozen point-in-time candidate universe rather than the current realtime pool. Layer 2 context remains attached as point-in-time context; it is not an unconditional historical-training filter and does not define the candidate universe.
 
 Task execution may remain target-major: one routing symbol can complete all assigned folds before the next routing symbol starts. That is an implementation schedule only. The trained Layer 3 model is shared across anonymous target-state samples, and evaluation/promotion must aggregate by fold and by the candidate-universe policy rather than by one ticker's full history.
 
@@ -56,7 +56,7 @@ Layer 3 does **not** own:
 
 ```text
 trading_model.m01_market_regime_model_generation       # broad market_context_state
-trading_model.m02_sector_context_model_generation      # context_etf_state / selected basket context
+trading_model.m02_sector_context_model_generation      # context_etf_state / attached sector context
 Layer 3 candidate policy
                                            # top Layer 2 sectors + hot/liquid market names + quality filters
 Layer 3 preprocessing: anonymous_target_candidate_builder
@@ -106,8 +106,9 @@ Future outcome labels may be used only in training/evaluation datasets.
 
 The Layer 3 candidate set is rule-fixed, not ticker-fixed. Live routing and promotion replay should construct candidates from:
 
-- the current top Layer 2 selected/watch sector or industry baskets;
-- sector constituents, high-exposure names, or reviewed proxy names for those baskets;
+- the reviewed realtime total-symbol pool for current monitoring/routing;
+- frozen point-in-time candidate-universe evidence for historical replay;
+- target metadata and accepted target-context mappings;
 - current market-wide hot/liquid names by recent point-in-time dollar volume and relative activity;
 - liquidity, spread, quote-quality, price, data-quality, and optional optionability filters;
 - control samples from weaker, lower-ranked, or blocked contexts when evaluation needs contrast.
@@ -263,7 +264,7 @@ A Layer 3 implementation is not accepted unless it proves:
 - market, sector, target, and cross-state blocks are separately inspectable;
 - target-state labels are future-aware only in training/evaluation, never in inference features;
 - baselines compare market-only, market+sector, and market+sector+target vectors;
-- evaluation separates broad historical target-sample generalization from live-route simulation when the training sample includes targets outside Layer 2 selected/prioritized baskets;
+- evaluation separates broad historical target-sample generalization from live-route simulation when the training sample includes targets outside the live realtime-pool and attached-context route;
 - state vectors improve at least one accepted direction-neutral forward path/tradability outcome relationship with split-stability evidence;
 - target handoff/ranking evidence improves selected/top-N candidates over watch/blocked/control candidates under the candidate-universe policy;
 - target-major task execution does not replace fold-level and candidate-policy-aware evaluation;

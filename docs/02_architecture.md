@@ -91,7 +91,7 @@ Historical training may use a broader point-in-time sampling universe than live 
 
 The canonical policy lives in `docs/40_historical_dataset_scope.md`.
 
-Especially for Layer 3, live routing may send targets from Layer 2 selected/prioritized sector baskets, but historical training may sample targets across other sectors, industries, styles, market caps, and liquidity tiers. Layer 2 context must remain attached to each row as point-in-time context, but it does not have to be a hard historical-training filter.
+Especially for Layer 3, live routing may use a narrower realtime candidate universe than historical training, while historical replay and training use frozen point-in-time candidate universes. Layer 2 context must remain attached to each row as point-in-time context, but it does not define the candidate universe.
 
 Promotion evidence should distinguish broad historical generalization from live-route simulation whenever a layer trains on a broader universe than it receives in live routing.
 
@@ -265,14 +265,14 @@ Layer 2 may also emit `cross_etf_summary` as a global/group rotation summary. It
 - Do not use future returns as production ranking inputs.
 - Do not select final stocks.
 - Do not use ETF holdings or `stock_etf_exposure` as core Layer 2 behavior-model inputs.
-- Output selected/prioritized ETF-context handoff state for downstream candidate construction.
+- Output ETF-context state for downstream target-context attachment.
 - Route targets by class: Layer 1 ETF targets use `market_context_state`, Layer 2 context ETF targets use their own `context_etf_state` with influence `1.0`, and ordinary targets use `target_context_profile` weighting across one or more ETF context states.
 
 ### Layer 3 preprocessing: Anonymous Target Candidate Builder
 
-The target candidate builder is part of Layer 3 preprocessing. It is not a separate model, not a separate layer, and not a peer to `TargetStateVectorModel`. In live routing, it creates anonymous target candidate rows from Layer 2 selected/prioritized sector baskets without exposing ticker identity to model fitting.
+The target candidate builder is part of Layer 3 preprocessing. It is not a separate model, not a separate layer, and not a peer to `TargetStateVectorModel`. In live routing, it creates anonymous target candidate rows from the reviewed realtime candidate universe and target metadata without exposing ticker identity to model fitting.
 
-For historical training, the builder may construct broader anonymous target samples across sectors beyond the Layer 2 baskets that would have been selected at that time. Those rows must still carry point-in-time `market_context_state_ref` and Layer 2 context refs (`context_etf_state` conceptually, current `sector_context_state_ref` physically), remain identity-safe for model fitting, and be evaluated separately for broad generalization versus live-route simulation.
+For historical training and replay, the builder must consume a frozen point-in-time candidate universe rather than the current realtime pool. Those rows must still carry point-in-time `market_context_state_ref` and Layer 2 context refs (`context_etf_state` conceptually, current `sector_context_state_ref` physically), remain identity-safe for model fitting, and be evaluated separately for broad generalization versus live-route simulation.
 
 The current model-local contract is:
 
@@ -299,7 +299,7 @@ source_holding_ref
 source_stock_etf_exposure_ref
 ```
 
-The builder may use ETF holdings and `stock_etf_exposure` to transmit selected sector baskets into stock candidates. Model-facing vectors may include behavior shape, liquidity, volatility, event/risk context, sector context, market context, exposure transmission, and cost/tradability features.
+The builder may use reviewed target-context mappings or future dynamic `target_context_profile` evidence to attach broad sector/crypto context to target candidates. Model-facing vectors may include behavior shape, liquidity, volatility, event/risk context, sector context, market context, context-attachment confidence, and cost/tradability features.
 
 Model-facing vectors must exclude raw ticker/company identity and memorized symbol labels. `target_candidate_id` is a row key only, not a categorical fitting feature.
 

@@ -4,16 +4,16 @@ This file owns the first model-local contract for the boundary between
 `sector_context_state` and `TargetStateVectorModel` target-state fitting.
 
 The builder is part of Layer 3, not a separate model layer. It is the point-in-time preprocessing and sample-organization
-sub-boundary that expands selected sector/industry baskets into anonymous target
-candidate rows while preserving real symbol references only for audit and
-routing. It produces `anonymous_target_feature_vector` inputs for `TargetStateVectorModel`; it does not produce the Layer 3 `target_context_state` output.
+sub-boundary that turns reviewed candidate-universe evidence into anonymous
+target candidate rows while preserving real symbol references only for audit and
+routing. It attaches Layer 1/2 context to those candidates; Layer 2 does not define the candidate universe. It produces `anonymous_target_feature_vector` inputs for `TargetStateVectorModel`; it does not produce the Layer 3 `target_context_state` output.
 
 ## Purpose
 
 The anonymous target candidate builder answers:
 
-> Given Layer 2 selected/prioritized sector or industry baskets, which target
-> candidates can be evaluated by Layer 3 without exposing ticker/company
+> Given reviewed point-in-time candidate-universe evidence and Layer 1/2 context,
+> which target candidates can be evaluated by Layer 3 without exposing ticker/company
 > identity to model fitting?
 
 It may create stock or ETF target candidates, but it does not choose a final
@@ -36,7 +36,7 @@ Required model-facing identity fields:
 | `target_candidate_id` | text | Opaque row key for model-facing target work. It is a key, not a fitting feature. |
 | `candidate_builder_version` | text | Version/config label that produced the candidate row. |
 | `market_context_state_ref` | text/null | Reference to the Layer 1 market-context row used as context. |
-| `sector_context_state_ref` | text/null | Reference to the Layer 2 sector-context row that admitted or prioritized the candidate. |
+| `sector_context_state_ref` | text/null | Reference to the Layer 2 sector-context row attached to the candidate. |
 
 `target_candidate_id` must not reveal raw ticker, company, exchange, issuer, or
 stable symbol identity. It may be deterministic inside a reviewed artifact/run,
@@ -74,10 +74,11 @@ All inputs must be available at or before `available_time`.
 
 Allowed inputs:
 
-- selected, watched, or prioritized Layer 2 `sector_context_state` rows;
+- accepted realtime or historical point-in-time candidate-universe evidence;
+- selected, watched, or prioritized Layer 2 `sector_context_state` rows as context only;
 - Layer 1 `market_context_state` references and factor values as context;
-- ETF holdings snapshots and `stock_etf_exposure` evidence for transmitting
-  selected sector/industry baskets into stock candidates;
+- reviewed target-context mappings or future dynamic `target_context_profile`
+  evidence for attaching broad sector/crypto context to target candidates;
 - target-local point-in-time price, trend, volatility, liquidity, spread, gap,
   borrow/shortability, optionability, abnormal-activity, and event-risk evidence;
 - anonymous structural buckets such as liquidity/dollar-volume bucket, spread/cost bucket, volatility/ATR bucket, price/market-cap bucket, beta-to-market/sector bucket, sector-exposure-strength bucket, and borrow-cost/shortability bucket where applicable;
@@ -97,8 +98,8 @@ Disallowed inputs:
 Flow:
 
 ```text
-sector_context_state selected/watch baskets
-  -> ETF holdings / stock_etf_exposure transmission
+reviewed point-in-time candidate universe
+  -> target-context mapping / context-profile attachment
   -> target-local evidence join at available_time
   -> eligibility and duplicate-collapse rules
   -> anonymous_target_feature_vector assembly
@@ -106,8 +107,8 @@ sector_context_state selected/watch baskets
   -> TargetStateVectorModel input rows
 ```
 
-Layer 2 may admit or prioritize baskets. The builder expands those baskets into
-target candidates. Target-state modeling starts only after Layer 3 receives anonymous target candidates; trade or strategy selection belongs downstream.
+Layer 2 may condition or contextualize candidates, but it does not manufacture
+the candidate universe. Target-state modeling starts only after Layer 3 receives anonymous target candidates; trade or strategy selection belongs downstream.
 
 ## Model-facing feature vector blocks
 
@@ -121,7 +122,7 @@ than one opaque scalar. This is the Layer 3 model-facing input vector, not a mod
 | `target_structural_bucket_vector` | Anonymous point-in-time liquidity, cost, volatility, price/market-cap, beta, sector-exposure, and borrow-cost buckets. |
 | `sector_context_projection_vector` | Layer 2 sector/industry context values projected onto the candidate without exposing ticker identity. |
 | `market_context_projection_vector` | Layer 1 broad market context values relevant to target-state fitting. |
-| `exposure_transmission_vector` | Holdings/exposure-derived strength, concentration, and confidence after selected basket transmission. |
+| `exposure_transmission_vector` | Context-attachment strength, concentration, and confidence from reviewed mappings or future context-profile evidence. |
 | `event_risk_context_vector` | Scheduled/breaking event density, abnormal activity, gap/jump risk, and source-priority context. |
 | `cost_and_constraint_vector` | Cost, tradability, data constraints, option-chain availability, and no-trade diagnostics. |
 | `candidate_quality_vector` | Coverage, freshness, evidence count, duplicate-collapse confidence, and anonymity-check results. |
@@ -165,11 +166,11 @@ The builder must not output:
 Acceptance must show:
 
 1. every candidate row is point-in-time and keyed by evidence available at or before `available_time`;
-2. Layer 2 selected/prioritized baskets are the source of sector transmission;
-3. ETF holdings and `stock_etf_exposure` are used only at this candidate-builder boundary, not as Layer 2 core behavior inputs;
+2. candidate rows originate from reviewed live realtime-pool evidence or frozen historical point-in-time candidate-universe evidence;
+3. Layer 2 context is attached as point-in-time context and does not define the candidate universe;
 4. model-facing vectors exclude raw ticker/company identity, direct symbol-derived categorical features, and stable bucket combinations that re-identify a ticker;
 5. audit/routing metadata can recover the real symbol without being joined into fitting vectors;
-6. duplicate candidates from multiple sector/industry baskets collapse or remain multi-source with explicit reason codes;
+6. duplicate candidate rows from multiple evidence sources collapse or remain multi-source with explicit reason codes;
 7. generated candidates improve downstream TargetStateVectorModel evaluation versus market-only and market+sector baselines;
 8. anonymity checks catch accidental identity leakage before promotion;
 9. long-bias and short-bias candidate generation are both evaluated so stable downtrend candidates are not discarded only because their direction is negative.

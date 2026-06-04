@@ -47,11 +47,13 @@ class AnonymousTargetCandidateBuilderContractTests(unittest.TestCase):
             "stable symbol identity",
             "Metadata must not be joined into model-facing",
             "fitting vectors except through reviewed non-identity evidence fields",
-            "ETF holdings and `stock_etf_exposure` are used only at this candidate-builder boundary",
+            "Layer 2 does not define the candidate universe",
+            "accepted realtime or historical point-in-time candidate-universe evidence",
+            "reviewed target-context mappings or future dynamic `target_context_profile`",
             "raw ticker/company identity",
             "memorized symbol-specific winner/loser labels",
             "future returns or realized PnL as production fields",
-            "Layer 2 selected/prioritized baskets are the source of sector transmission",
+            "Layer 2 may condition or contextualize candidates",
         }:
             self.assertIn(token, contract)
 

@@ -55,7 +55,7 @@ The following dependencies are table-level dependencies in the current SQL gener
 |---|---|
 | M01 | `trading_data.m01_market_regime_feature_generation` |
 | M02 | `trading_data.m02_sector_context_feature_generation`, `trading_model.m01_market_regime_model_generation` |
-| M03 | `trading_data.m03_target_state_vector_feature_generation`, `trading_data.m03_target_state_vector_data_acquisition`, `trading_model.m01_market_regime_model_generation`, `trading_model.m02_sector_context_model_generation`; optional `trading_data.m02_sector_context_data_acquisition` for ETF-holding sector context fallback |
+| M03 | `trading_data.m03_target_state_vector_feature_generation`, `trading_data.m03_target_state_vector_data_acquisition`, `trading_model.m01_market_regime_model_generation`, `trading_model.m02_sector_context_model_generation`, reviewed target-context mapping evidence |
 | M04 | `trading_model.m03_target_state_vector_model_generation`; optional `trading_model.event_strategy_failure_gate`; absent event-failure evidence produces neutral no-reviewed-event-risk rows |
 | M05 | `trading_model.m04_event_failure_risk_model_generation`, `trading_model.m03_target_state_vector_model_generation`, `trading_data.m03_target_state_vector_data_acquisition`, `trading_model.m02_sector_context_model_generation`, `trading_model.m01_market_regime_model_generation` |
 | M06 | `trading_model.m05_alpha_confidence_model_generation`, `trading_model.m01_market_regime_model_generation`, `trading_model.m04_event_failure_risk_model_generation` |

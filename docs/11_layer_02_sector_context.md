@@ -26,7 +26,7 @@ trading_data.m02_sector_context_feature_generation
 
 Layer 2 needs the Layer 1 output in addition to the Layer 2 data feature surface. `model_01_market_regime` / `market_context_state` is conditioning context only; it should shape interpretation of sector behavior but should not become sector, ETF, stock, or strategy selection by itself.
 
-Layer 2 consumes sector/industry/theme ETF behavior evidence from `m02_sector_context_feature_generation`. The data-owned source rows behind that feature surface are provenance/construction evidence, not a separate direct model dependency unless a later accepted contract creates one. ETF holdings and `stock_etf_exposure` are not Layer 2 core behavior inputs; they belong downstream to anonymous target candidate construction unless a later accepted dynamic influence profile supersedes the static holdings route.
+Layer 2 consumes sector/industry/theme ETF behavior evidence from `m02_sector_context_feature_generation`. The data-owned source rows behind that feature surface are provenance/construction evidence, not a separate direct model dependency unless a later accepted contract creates one. ETF holdings and `stock_etf_exposure` are not Layer 2 core behavior inputs and do not define ordinary target candidates; target-specific context attachment should use accepted target-context mappings now and future dynamic influence-profile evidence when reviewed.
 
 ## Allowed Learned Inputs
 
@@ -69,7 +69,7 @@ flowchart LR
     output["trading_model.m02_sector_context_model_generation<br/>primary context_etf_state surface"]
     explain["trading_model.m02_sector_context_model_generation_explainability<br/>human-review behavior and attribution"]
     diagnostics["trading_model.m02_sector_context_model_generation_diagnostics<br/>acceptance and gating evidence"]
-    builder["anonymous target candidate builder<br/>uses selected sector context plus holdings/exposure evidence"]
+    builder["anonymous target candidate builder<br/>attaches sector context to independent candidates"]
 
     l1 --> model
     feature --> model
@@ -218,7 +218,7 @@ Layer 2 changes are acceptable when they:
 
 - consume `trading_model.m01_market_regime_model_generation` / `market_context_state` as conditioning context plus `trading_data.m02_sector_context_feature_generation` as the deterministic feature surface;
 - keep Layer 1 context from becoming sector, ETF, stock, strategy, option, or portfolio selection by itself;
-- exclude ETF holdings and `stock_etf_exposure` from core Layer 2 behavior modeling unless a later accepted contract moves that boundary;
+- exclude ETF holdings and `stock_etf_exposure` from core Layer 2 behavior modeling and ordinary candidate-universe definition unless a later accepted contract moves that boundary;
 - preserve `m02_sector_context_model_generation` as the current narrow downstream ETF-context output table and keep explainability/diagnostics as support surfaces;
 - implement target routing with the three accepted cases: Layer 1 ETF target, Layer 2 context ETF target, and ordinary target with dynamic context-profile weighting;
 - avoid promoting `context_etf_cross_section_row` as a separate output when it is only construction evidence for `context_etf_state`;

@@ -91,9 +91,9 @@ The primary output is intentionally narrow: identity, direction-neutral sector t
 
 ### Downstream sector handoff
 
-Layer 2 may identify sector/industry baskets suitable for downstream anonymous target construction. It does not use ETF holdings to choose stocks. ETF holdings and `stock_etf_exposure` belong to the downstream candidate builder / Layer 3 input-preparation boundary.
+Layer 2 may identify sector-anchor context suitable for downstream attachment and audit. It does not define the stock candidate universe and does not use ETF holdings to choose stocks. ETF holdings and `stock_etf_exposure` are standalone exposure evidence unless a later reviewed contract explicitly asks for them.
 
-`2_sector_handoff_state`, `2_sector_handoff_bias`, `2_sector_handoff_rank`, eligibility fields, and reason codes are routing/audit fields. They may filter, prioritize, group, or explain candidate construction, but they are not the raw numeric sector-state evidence that a downstream model should blindly learn as ordinary features.
+`2_sector_handoff_state`, `2_sector_handoff_bias`, `2_sector_handoff_rank`, eligibility fields, and reason codes are routing/audit fields. They may prioritize, group, or explain context attachment, but they are not the raw numeric sector-state evidence that a downstream model should blindly learn as ordinary features.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -225,6 +225,6 @@ Acceptance must show:
 3. ETF holdings and `stock_etf_exposure` are not used as Layer 2 core behavior-model inputs;
 4. inferred attributes stable enough across chronological refits to be useful;
 5. trend-stability separation versus a market-context-free baseline;
-6. downstream anonymous target generation can consume selected/watch Layer 2 baskets and the separate `2_sector_handoff_bias`, use holdings/exposure evidence to build stock candidates, and then anonymize candidates without raw company/ticker identity leakage in target-state fitting;
+6. downstream anonymous target generation can consume independent candidate-universe evidence, attach eligible/watch Layer 2 context and the separate `2_sector_handoff_bias`, and then anonymize candidates without raw company/ticker identity leakage in target-state fitting;
 7. long-biased and short-biased sector contexts are evaluated separately with direction-neutral metrics, so stable downtrends are not treated as failed states by construction;
 8. selected, watch, blocked, and neutral/blocked control samples remain available for research/evaluation so Layer 3 and later consumers do not train only on preselected sector states.
