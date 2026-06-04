@@ -59,7 +59,7 @@ Layer 2 distinguishes three target classes:
 | Target class | Examples | Required routing |
 |---|---|---|
 | Layer 1 market ETF target | `SPY`, `QQQ`, `IWM`, `DIA`, broad-market Layer 1 rows | Do not map through Layer 2 sector membership. Use Layer 1 `market_context_state` directly; Layer 2 `cross_etf_summary` is supporting context only. |
-| Layer 2 context ETF target | `XLE`, `XLK`, `SMH`, `XBI`, reviewed Layer 2 ETF rows | Use the ETF's own `context_etf_state` with self-context influence `1.0`; use `cross_etf_summary` for relative position. Layer 3 owns the target-local state for trading that ETF. |
+| Layer 2 context ETF target | `XLE`, `XLK`, other Select Sector SPDR anchors, and the `BKCH` crypto context-anchor exception | Use the ETF's own `context_etf_state` with self-context influence `1.0`; use `cross_etf_summary` for relative position. Layer 3 owns the target-local state for trading that ETF. |
 | Ordinary target | Common stocks and non-context targets | Consume a `target_context_profile` that maps the target to one or more ETF context states with dynamic influence weights, correlation, lead-lag direction, and confidence. Static holdings/manual mappings are seed or fallback evidence, not the final weighting standard. |
 
 `target_context_profile` is routing/influence evidence. It should not collapse into a single static sector label, and it should preserve multiple relevant ETF contexts when multiple relationships clear the reviewed threshold.
