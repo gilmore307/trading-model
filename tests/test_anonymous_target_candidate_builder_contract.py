@@ -48,7 +48,7 @@ class AnonymousTargetCandidateBuilderContractTests(unittest.TestCase):
             "Metadata must not be joined into model-facing",
             "fitting vectors except through reviewed non-identity evidence fields",
             "Layer 2 does not define the candidate universe",
-            "accepted realtime or historical point-in-time candidate-universe evidence",
+            "accepted realtime or fixed historical candidate-universe evidence",
             "reviewed target-context mappings or future dynamic `target_context_profile`",
             "raw ticker/company identity",
             "memorized symbol-specific winner/loser labels",

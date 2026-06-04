@@ -74,7 +74,7 @@ All inputs must be available at or before `available_time`.
 
 Allowed inputs:
 
-- accepted realtime or historical point-in-time candidate-universe evidence;
+- accepted realtime or fixed historical candidate-universe evidence;
 - selected, watched, or prioritized Layer 2 `sector_context_state` rows as context only;
 - Layer 1 `market_context_state` references and factor values as context;
 - reviewed target-context mappings or future dynamic `target_context_profile`
@@ -98,7 +98,7 @@ Disallowed inputs:
 Flow:
 
 ```text
-reviewed point-in-time candidate universe
+reviewed live or fixed historical candidate universe
   -> target-context mapping / context-profile attachment
   -> target-local evidence join at available_time
   -> eligibility and duplicate-collapse rules

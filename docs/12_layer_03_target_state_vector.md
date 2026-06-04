@@ -27,7 +27,7 @@ Layer 3 should find the relationship between **anonymous target board/tape state
 
 Layer 3 builds a point-in-time, direction-neutral `target_context_state` that later layers may use for event context, alpha confidence, position projection, underlying-action planning, and option-expression handoff. Layer 3 also supports ranking the current anonymous candidate set for target handoff. It does not output position size, planned action, option expression, or final action.
 
-Historical training may sample a broader target universe than live routing. In live routing, Layer 3 candidates come from the reviewed realtime candidate universe, target metadata, current market-wide hot/liquid names, and point-in-time liquidity, spread, data quality, and optional optionability diagnostics. In historical training and replay, Layer 3 must use a frozen point-in-time candidate universe rather than the current realtime pool. Layer 2 context remains attached as point-in-time context; it is not an unconditional historical-training filter and does not define the candidate universe.
+Historical training may sample a broader target universe than live routing. In live routing, Layer 3 candidates come from the reviewed realtime candidate universe, target metadata, current market-wide hot/liquid names, and point-in-time liquidity, spread, data quality, and optional optionability diagnostics. Current historical replay uses the fixed historical candidate-universe table seeded from the current realtime pool, not the mutable realtime pool itself. Layer 2 context remains attached as point-in-time context; it is not an unconditional historical-training filter and does not define the candidate universe.
 
 Task execution may remain target-major: one routing symbol can complete all assigned folds before the next routing symbol starts. That is an implementation schedule only. The trained Layer 3 model is shared across anonymous target-state samples, and evaluation/promotion must aggregate by fold and by the candidate-universe policy rather than by one ticker's full history.
 
@@ -107,7 +107,7 @@ Future outcome labels may be used only in training/evaluation datasets.
 The Layer 3 candidate set is rule-fixed, not ticker-fixed. Live routing and promotion replay should construct candidates from:
 
 - the reviewed realtime total-symbol pool for current monitoring/routing;
-- frozen point-in-time candidate-universe evidence for historical replay;
+- fixed historical candidate-universe evidence for historical replay;
 - target metadata and accepted target-context mappings;
 - current market-wide hot/liquid names by recent point-in-time dollar volume and relative activity;
 - liquidity, spread, quote-quality, price, data-quality, and optional optionability filters;
