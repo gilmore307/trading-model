@@ -74,7 +74,9 @@ All inputs must be available at or before `available_time`.
 
 Allowed inputs:
 
-- accepted realtime or fixed historical candidate-universe evidence;
+- accepted realtime or fixed historical candidate-universe evidence, including
+  preassigned broad Layer 2 context anchors from TradingView sector
+  classification for equities and BKCH for BTC, ETH, and SOL;
 - selected, watched, or prioritized Layer 2 `sector_context_state` rows as context only;
 - Layer 1 `market_context_state` references and factor values as context;
 - reviewed target-context mappings or future dynamic `target_context_profile`

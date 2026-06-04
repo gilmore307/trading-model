@@ -91,7 +91,7 @@ Historical training may use a broader point-in-time sampling universe than live 
 
 The canonical policy lives in `docs/40_historical_dataset_scope.md`.
 
-Especially for Layer 3, live routing may use a narrower realtime candidate universe than historical training, while current historical replay uses a fixed candidate universe seeded from the current realtime pool. Layer 2 context must remain attached to each row as point-in-time context, but it does not define the candidate universe.
+Especially for Layer 3, live routing may use a narrower realtime candidate universe than historical training, while current historical replay uses a fixed candidate universe seeded from the current realtime pool plus BTC, ETH, and SOL. Layer 2 context must remain attached to each row as point-in-time context, but it does not define the candidate universe.
 
 Promotion evidence should distinguish broad historical generalization from live-route simulation whenever a layer trains on a broader universe than it receives in live routing.
 
@@ -272,7 +272,7 @@ Layer 2 may also emit `cross_etf_summary` as a global/group rotation summary. It
 
 The target candidate builder is part of Layer 3 preprocessing. It is not a separate model, not a separate layer, and not a peer to `TargetStateVectorModel`. In live routing, it creates anonymous target candidate rows from the reviewed realtime candidate universe and target metadata without exposing ticker identity to model fitting.
 
-For historical replay, the builder consumes the fixed historical candidate-universe table seeded from the current realtime pool rather than the mutable realtime pool itself. Those rows must still carry point-in-time `market_context_state_ref` and Layer 2 context refs (`context_etf_state` conceptually, current `sector_context_state_ref` physically), remain identity-safe for model fitting, and be evaluated separately for broad generalization versus live-route simulation.
+For historical replay, the builder consumes the fixed `historical_candidate_universe.csv` table seeded from the current realtime pool plus BTC, ETH, and SOL rather than the mutable realtime pool itself. Those rows preserve TradingView equity sector classification, map equities to accepted SPDR Layer 2 anchors, map crypto targets to BKCH, still carry point-in-time `market_context_state_ref` and Layer 2 context refs (`context_etf_state` conceptually, current `sector_context_state_ref` physically), remain identity-safe for model fitting, and are evaluated separately for broad generalization versus live-route simulation.
 
 The current model-local contract is:
 

@@ -849,7 +849,7 @@ Status: Accepted
 
 Historical training dataset construction is allowed to use a broader point-in-time sampling universe than live inference routing. Live routing may narrow candidate flow through upstream model gates, but historical training should not blindly copy those gates when broader sampling is needed to learn robust relationships.
 
-Layer 3 is the critical example: live routing uses the reviewed realtime candidate universe while current historical replay uses a fixed candidate-universe table seeded from the current realtime pool. Each row must still carry point-in-time market and sector context, preserve identity-safety, and avoid future leakage. This fixed table is stable replay scope, not point-in-time historical market-wide ranking evidence.
+Layer 3 is the critical example: live routing uses the reviewed realtime candidate universe while current historical replay uses a fixed candidate-universe table seeded from the current realtime pool plus BTC, ETH, and SOL. Each row carries TradingView equity sector classification, a preassigned Layer 2 context anchor, point-in-time market and sector context, identity-safety boundaries, and future-leakage controls. This fixed table is stable replay scope, not point-in-time historical market-wide ranking evidence.
 
 Promotion evidence should report both broad historical generalization and live-route simulation performance whenever the training sample universe is wider than the live routed universe.
 
@@ -996,7 +996,7 @@ Layer 3 remains an anonymous `TargetStateVectorModel`: routing symbols contribut
 
 Task execution may remain target-major across folds: one routing symbol can complete all assigned folds before another starts. This is a scheduler/runtime convenience only. Production evaluation and promotion must aggregate by fold and by the fixed candidate-universe policy used in live routing.
 
-The Layer 3 candidate policy is rule-fixed rather than ticker-fixed. Live routing constructs candidates from the reviewed realtime total-symbol pool, target metadata, current market-wide hot/liquid names, liquidity/spread/data-quality filters, optional optionability diagnostics, and controls when evaluation requires contrast. Promotion replay constructs candidates from the fixed historical candidate-universe table seeded from the current realtime pool and must not read the mutable realtime pool directly.
+The Layer 3 candidate policy is rule-fixed rather than ticker-fixed. Live routing constructs candidates from the reviewed realtime total-symbol pool, target metadata, current market-wide hot/liquid names, liquidity/spread/data-quality filters, optional optionability diagnostics, and controls when evaluation requires contrast. Promotion replay constructs candidates from the fixed historical candidate-universe table seeded from the current realtime pool plus BTC, ETH, and SOL and must not read the mutable realtime pool directly.
 
 Layer 4 and later keep a single selected-target interface. When Layer 3 returns several ranked targets, orchestration runs Layer 4+ separately for each target instead of changing downstream models into multi-target batch models.
 
