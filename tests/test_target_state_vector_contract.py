@@ -33,6 +33,13 @@ class TargetStateVectorContractTests(unittest.TestCase):
         self.assertIn("target_vs_sector_residual_direction", contract.CROSS_STATE_FEATURE_GROUPS)
         self.assertIn("sector_confirmation_state", contract.CROSS_STATE_FEATURE_GROUPS)
         self.assertIn("idiosyncratic_residual_state", contract.CROSS_STATE_FEATURE_GROUPS)
+        self.assertIn("target_option_chain_state", contract.TARGET_STATE_FEATURE_GROUPS)
+        self.assertEqual(contract.OPTION_CHAIN_STATE_SOURCE, "ThetaData")
+        self.assertIn(("front", 7, 45, "canonical_state"), contract.OPTION_CHAIN_EXPIRY_BUCKETS)
+        self.assertIn(("short", 0, 6, "diagnostic_only"), contract.OPTION_CHAIN_EXPIRY_BUCKETS)
+        self.assertIn(("atm", "abs_delta_0_45_to_0_55_or_abs_log_moneyness_lte_0_03"), contract.OPTION_CHAIN_MONEYNESS_BUCKETS)
+        self.assertIn("target_iv_pressure_state", contract.OPTION_CHAIN_STATE_GROUPS)
+        self.assertIn("option_chain_observability_score", contract.OPTION_CHAIN_DIAGNOSTIC_FIELDS)
         self.assertIn("3_target_direction_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
         self.assertIn("3_target_direction_strength_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
         self.assertIn("3_target_state_persistence_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
@@ -85,6 +92,11 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "target_exhaustion_decay_state",
             "target_volatility_range_state",
             "target_liquidity_tradability_state",
+            "target_option_chain_state",
+            "target_iv_pressure_state",
+            "target_option_skew_pressure_state",
+            "target_option_term_structure_pressure_state",
+            "target_option_flow_pressure_state",
             "target_peer_rank_state",
             "target_vs_market_residual_direction",
             "target_vs_sector_residual_direction",
@@ -108,6 +120,16 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "future_return",
             "realized_pnl",
             "strategy_variant",
+            "option_contract_id",
+            "option_chain_snapshot_ref",
+            "occ_symbol",
+            "strike",
+            "expiry",
+            "dte",
+            "delta",
+            "premium",
+            "iv",
+            "implied_volatility",
         }:
             self.assertIn(forbidden, contract.FORBIDDEN_MODEL_FACING_FIELDS)
 
@@ -116,6 +138,7 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "target_candidate_id` as a categorical feature",
             "forward returns, realized PnL, or future bar outcomes in inference features",
             "audit/routing metadata into the model-facing vector",
+            "option contract identity or executable option-chain details",
             "optimizes downstream action variants before state/outcome relationships are accepted",
             "mismatched state observation windows across market, sector, and target blocks",
             "treats positive direction as inherently better than negative direction",

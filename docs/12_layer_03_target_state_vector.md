@@ -48,7 +48,7 @@ Layer 3 does **not** own:
 - strategy selection;
 - parameter expansion/pruning;
 - exact entry/exit orders;
-- option DTE, strike, delta, premium, IV/Greeks, or contract ID;
+- option DTE, strike, delta, premium, raw single-contract IV/Greeks, option-chain snapshot refs, or contract ID;
 - direction-confidence calibration, position size, portfolio weight, hedge ratio, or execution policy;
 - live/paper broker interaction.
 
@@ -78,6 +78,7 @@ Layer 3 learned inputs are point-in-time market, ETF/sector, and anonymous targe
 - Layer 1 `market_context_state` as broad conditioning context;
 - Layer 2 `context_etf_state` and candidate-policy handoff evidence as selected context;
 - anonymous target-local bars, liquidity, spread, quote/trade, residual, volatility, path, and quality features;
+- ThetaData-derived target-level option-chain state when available, reduced to anonymous chain environment states rather than contract-identifying option terms;
 - candidate-policy batch metadata that is identity-safe and point-in-time;
 - feature coverage, freshness, data-quality, and no-data evidence.
 
@@ -93,6 +94,8 @@ position state
 portfolio weights
 planned actions
 option contracts
+option-chain snapshot refs
+option DTE/strike/delta/premium/raw single-contract IV or Greeks
 broker/account state
 future returns
 future path outcomes
@@ -133,10 +136,35 @@ Layer 3 output context/state vectors must be explicitly decomposable into four m
 |---|---|---|
 | `market_state_features` | Describe the current broad environment inherited from Layer 1. | market direction state, trend quality, volatility/risk state, transition risk, trend breadth, liquidity stress, correlation/risk-on-risk-off background. |
 | `sector_state_features` | Describe the target's sector/industry context inherited from Layer 2. | sector relative direction, trend quality/stability, transition risk, basket liquidity/tradability, handoff state, handoff bias, sector-vs-market relative state. |
-| `target_state_features` | Describe the anonymous target's own board/tape condition. | target state direction, trend quality, path stability/noise, trend/state age, direction flip frequency, exhaustion/decay, transition risk, volatility, ATR%, gap, range location, volume/dollar-volume, spread/liquidity, VWAP distance, session phase, peer tradability ranks, optional shortability and event-risk overlays, abnormal activity. |
+| `target_state_features` | Describe the anonymous target's own board/tape condition. | target state direction, trend quality, path stability/noise, trend/state age, direction flip frequency, exhaustion/decay, transition risk, volatility, ATR%, gap, range location, volume/dollar-volume, spread/liquidity, VWAP distance, session phase, peer tradability ranks, optional shortability, ThetaData target-level option-chain state, event-risk overlays, abnormal activity. |
 | `cross_state_features` | Describe the target's relationship to market and sector state. | beta-adjusted target-vs-sector/market residual direction, relative trend quality, volatility ratios, beta/correlation, sector-confirmed/divergent movement, idiosyncratic residual state, context support. |
 
 Opaque unresolved source/feature mapping identifiers are retained exactly for future review: `/implied/range`, `/stress/cost`, `/optionability/cost`. They are not interpreted as active provider contracts yet.
+
+### ThetaData option-chain state
+
+Layer 3 may use ThetaData option-chain evidence starting at the target-state stage, but only after reducing the full chain into target-level market-context states. This is a chain-state reduction contract, not an option-expression or contract-selection route.
+
+Canonical reduction:
+
+- `short` bucket: `0-6 DTE`, diagnostics only by default.
+- `front` bucket: `7-45 DTE`, canonical state.
+- `near` bucket: `46-90 DTE`, canonical state.
+- `mid` bucket: `91-180 DTE`, canonical state.
+- `long` bucket: `181-365 DTE`, canonical state.
+- `atm`: `abs(delta)` from `0.45` through `0.55`; if delta quality is unavailable, the reducer may use `abs(ln(strike / underlying_price)) <= 0.03`.
+- `otm_call_wing`: call delta from `0.20` through `0.35`.
+- `otm_put_wing`: put delta from `-0.35` through `-0.20`.
+
+Layer 3 model-facing option groups:
+
+- `target_option_liquidity_state`: normalized option-chain liquidity/cost condition from eligible quote spread, depth, volume, open interest, and valid quote evidence.
+- `target_iv_pressure_state`: front ATM IV pressure from a capped, liquidity/quote-quality-weighted robust median of eligible ATM front-bucket IV observations, normalized to the target's rolling baseline.
+- `target_option_skew_pressure_state`: 25-delta put IV minus 25-delta call IV reduced to target-level skew pressure.
+- `target_option_term_structure_pressure_state`: ATM IV slope/richness across canonical expiry buckets; missing when fewer than two reliable buckets exist.
+- `target_option_flow_pressure_state`: call/put activity pressure from volume, trade count, notional proxy, and OI change where available, normalized to target baseline and worded as activity/pressure, not alpha.
+
+The Layer 3 output must not expose the contract, strike, expiry, DTE, delta/Greeks, premium, raw bid/ask/quote, raw single-contract IV, OCC symbol, option-chain snapshot ref, or enough fields to reconstruct a contract choice. Coverage and observability values such as quote/trade/IV/Greeks availability ratios, chain observability, liquidity quality, raw bucket counts, and source provenance stay in diagnostics or receipts.
 
 Layer 3 may also derive cross-block relational features when they are point-in-time and identity-safe:
 

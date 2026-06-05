@@ -16,6 +16,8 @@ from statistics import mean, pstdev
 from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
+from .contract import FORBIDDEN_MODEL_FACING_FIELDS
+
 ET = ZoneInfo("America/New_York")
 MODEL_ID = "target_state_vector_model"
 MODEL_VERSION = "target_context_state_contract"
@@ -24,7 +26,7 @@ EXPLAINABILITY_TABLE = "model_03_target_state_vector_explainability"
 DIAGNOSTICS_TABLE = "model_03_target_state_vector_diagnostics"
 STATE_WINDOWS = ("10min", "1h", "1D", "1W")
 JSON_BLOCKS = ("market_state_features", "sector_state_features", "target_state_features", "cross_state_features")
-FORBIDDEN_OUTPUT_FIELDS = {"ticker", "symbol", "company", "strategy_variant", "alpha_confidence", "position_size", "option_contract_id", "final_action"}
+FORBIDDEN_OUTPUT_FIELDS = set(FORBIDDEN_MODEL_FACING_FIELDS)
 IDENTITY_COLUMNS = [
     "available_time",
     "tradeable_time",
@@ -249,7 +251,7 @@ def _contains_forbidden_identity(value: Any) -> bool:
     if isinstance(value, Mapping):
         for key, nested in value.items():
             key_l = str(key).lower()
-            if key_l in FORBIDDEN_OUTPUT_FIELDS or key_l in {"ticker", "symbol", "company", "audit_symbol_ref", "routing_symbol_ref"}:
+            if key_l in FORBIDDEN_OUTPUT_FIELDS:
                 return True
             if _contains_forbidden_identity(nested):
                 return True

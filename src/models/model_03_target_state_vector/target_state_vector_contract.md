@@ -88,10 +88,45 @@ Computed from anonymous target-local point-in-time evidence. The target-local bl
 | `target_session_position_state` | Time-of-day/session-progress context for intraday state interpretation: minutes since open/to close, session phase, opening/midday/closing flags, distance to open/VWAP, and range position. |
 | `target_peer_rank_state` | Cross-sectional ranks inside the point-in-time peer/candidate pool for tradability qualities, not raw strength. |
 | `target_shortability_state` | Optional shortability/borrow/locate evidence; may be null until a reviewed source exists and must not imply position sizing. |
+| `target_option_chain_state` | Optional ThetaData-derived, target-level option-chain environment state. It summarizes chain liquidity, IV pressure, skew pressure, term-structure pressure, and option activity pressure without exposing contract identity or executable option terms. |
 | `target_event_risk_state` | Optional scheduled/news/halt/macro event-risk overlay evidence; may be null until reviewed event sources exist. |
 | `target_data_quality_state` | Coverage, freshness, missingness, and source-quality diagnostics. |
 
 Opaque unresolved source/feature mapping identifiers retained for future review: `/implied/range`, `/stress/cost`, `/optionability/cost`. Do not rewrite these identifiers or infer provider semantics until the corresponding source contracts are reviewed.
+
+#### `target_option_chain_state`
+
+When option context is present, Layer 3 uses ThetaData as the canonical option market-data source and reduces the full option chain into anonymous target-level state. The reduction answers what the target's option market environment looks like; it must not identify a contract, expiry, strike, premium, quote, or option order candidate.
+
+Canonical expiry buckets:
+
+| Bucket | DTE range | Layer 3 use |
+|---|---:|---|
+| `short` | 0-6 | Diagnostics only unless a separately reviewed short-horizon state is accepted. |
+| `front` | 7-45 | Canonical state. |
+| `near` | 46-90 | Canonical state. |
+| `mid` | 91-180 | Canonical state. |
+| `long` | 181-365 | Canonical state. |
+
+Canonical moneyness/delta buckets:
+
+| Bucket | Definition |
+|---|---|
+| `atm` | `abs(delta)` from `0.45` through `0.55`; if delta quality is unavailable, use `abs(ln(strike / underlying_price)) <= 0.03` only inside the reducer. |
+| `otm_call_wing` | Call delta from `0.20` through `0.35`. |
+| `otm_put_wing` | Put delta from `-0.35` through `-0.20`. |
+
+The model-facing option state groups are:
+
+| State group | Contract definition |
+|---|---|
+| `target_option_liquidity_state` | Robust target-level option liquidity/tradability condition from valid quote spread, depth, volume, open interest, and quote quality across eligible buckets. It may emit normalized states such as `thin`, `normal`, `deep`, or `stressed`, not best contract details. |
+| `target_iv_pressure_state` | Front ATM IV pressure from a capped, quote-quality/liquidity-weighted robust median of eligible ATM front-bucket IV observations, normalized against the target's rolling baseline. It must not emit raw single-contract IV. |
+| `target_option_skew_pressure_state` | Put/call skew from eligible 25-delta put IV minus 25-delta call IV inside matching expiry buckets, reduced to target-level pressure states such as `balanced`, `put_skew`, `call_skew`, or `extreme_put_skew`. |
+| `target_option_term_structure_pressure_state` | Cross-expiry ATM IV slope/richness such as front-vs-near and near-vs-mid pressure. If fewer than two canonical buckets have reliable coverage, term-structure state is missing and diagnostics record why. |
+| `target_option_flow_pressure_state` | Target-level option activity pressure from call/put volume, trade count, notional proxy, and open-interest change where available, normalized against the target's rolling baseline. It must use neutral wording such as `call_activity_elevated` or `put_activity_elevated`, not alpha claims. |
+
+Coverage, missingness, source provenance, snapshot refs, raw bucket counts, and fields such as `option_quote_available_ratio`, `option_trade_available_ratio`, `option_iv_available_ratio`, `option_greeks_available_ratio`, `option_chain_observability_score`, and `option_liquidity_quality_score` belong in diagnostics or receipts. They are not Layer 3 model-facing output state.
 
 ### `cross_state_features`
 
@@ -180,6 +215,7 @@ Reject a state-vector build if it:
 - uses `target_candidate_id` as a categorical feature;
 - includes forward returns, realized PnL, or future bar outcomes in inference features;
 - mixes audit/routing metadata into the model-facing vector;
+- emits option contract identity or executable option-chain details such as `option_contract_id`, OCC symbol, strike, expiry, DTE, delta/Greeks, premium, quote, bid/ask, raw single-contract IV, or `option_chain_snapshot_ref`;
 - collapses market, sector, target, and cross-state blocks into an uninspectable blob;
 - emits mismatched state observation windows across market, sector, and target blocks;
 - evaluates only against an all-regime aggregate without market/sector-conditioned and long-bias/short-bias review;

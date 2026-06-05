@@ -48,6 +48,33 @@ class TargetStateVectorModelTests(unittest.TestCase):
         self.assertEqual(evaluate_script.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
         self.assertEqual(evaluation.DEFAULT_FEATURE_TABLE, "m03_target_state_vector_feature_generation")
 
+    def test_layer_three_allows_target_level_option_chain_state(self) -> None:
+        feature_row = _feature_row(1)
+        feature_row["target_state_features"]["target_option_chain_state"] = {
+            "target_option_liquidity_state": "normal",
+            "target_iv_pressure_state": "elevated",
+            "target_option_skew_pressure_state": "put_skew",
+            "target_option_term_structure_pressure_state": "front_elevated",
+            "target_option_flow_pressure_state": "call_activity_elevated",
+        }
+
+        row = generator.generate_ordered_row(feature_row)
+
+        option_state = row["target_context_state"]["target_state_features"]["target_option_chain_state"]
+        self.assertEqual(option_state["target_iv_pressure_state"], "elevated")
+        self.assertNotIn("option_chain_snapshot_ref", json.dumps(row["target_context_state"]))
+
+    def test_layer_three_rejects_option_contract_leakage_in_model_facing_state(self) -> None:
+        feature_row = _feature_row(1)
+        feature_row["target_state_features"]["target_option_chain_state"] = {
+            "target_iv_pressure_state": "elevated",
+            "option_contract_id": "AAPL260619C00200000",
+            "strike": 200.0,
+        }
+
+        with self.assertRaisesRegex(ValueError, "target_state_features contains model-facing identity or forbidden downstream fields"):
+            generator.generate_ordered_row(feature_row)
+
     def test_database_evaluation_allows_empty_source_window(self) -> None:
         class EmptyCursor:
             def __enter__(self):

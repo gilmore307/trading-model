@@ -1002,6 +1002,18 @@ Layer 4 and later keep a single selected-target interface. When Layer 3 returns 
 
 Layer 3 may emit `3_target_handoff_state`, `3_target_handoff_bias`, `3_target_handoff_rank`, and `3_target_selection_reason_codes` as target-selection evidence. It still must not emit final actions, entry/exit orders, position sizes, portfolio weights, execution policy, or option contracts.
 
+## D066 - Layer 3 option context uses ThetaData chain-state reduction
+
+Accepted: 2026-06-05
+
+Layer 3 may use ThetaData as the canonical option market-data source for target-local option context. The accepted boundary is chain-state reduction: Layer 3 summarizes the target's option-market environment into anonymous target-level states, not contract choices.
+
+The canonical option-chain state lives inside `target_option_chain_state` under `target_state_features`. It may include normalized state groups for option liquidity, IV pressure, skew pressure, term-structure pressure, and option activity pressure. It must not emit option contract identity, OCC symbols, strike, expiry, DTE, delta/Greeks, premium, raw bid/ask/quote, raw single-contract IV, option-chain snapshot refs, or enough fields to reconstruct a contract choice.
+
+Canonical reduction uses `front` 7-45 DTE, `near` 46-90 DTE, `mid` 91-180 DTE, and `long` 181-365 DTE buckets. `0-6 DTE` remains diagnostics-only unless a separately reviewed short-horizon state is accepted. ATM uses `abs(delta)` 0.45-0.55 or reducer-local `abs(ln(strike / underlying_price)) <= 0.03` fallback. Skew uses 25-delta put IV minus 25-delta call IV. IV pressure uses a capped, quote-quality/liquidity-weighted robust median of eligible ATM front-bucket IV observations normalized to the target's rolling baseline.
+
+Coverage ratios, chain observability, liquidity-quality scores, raw bucket counts, source provenance, and snapshot refs are diagnostics or receipts, not Layer 3 model-facing output state. Layer 9 remains the owner of option-expression and contract-selection decisions.
+
 ## D049 - DynamicRiskPolicyModel inserted as Layer 6
 
 Accepted: 2026-05-20

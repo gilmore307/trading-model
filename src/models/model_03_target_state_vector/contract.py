@@ -45,8 +45,43 @@ TARGET_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
     "target_session_position_state",
     "target_peer_rank_state",
     "target_shortability_state",
+    "target_option_chain_state",
     "target_event_risk_state",
     "target_data_quality_state",
+)
+
+OPTION_CHAIN_STATE_SOURCE: Final[str] = "ThetaData"
+
+OPTION_CHAIN_EXPIRY_BUCKETS: Final[tuple[tuple[str, int, int, str], ...]] = (
+    ("short", 0, 6, "diagnostic_only"),
+    ("front", 7, 45, "canonical_state"),
+    ("near", 46, 90, "canonical_state"),
+    ("mid", 91, 180, "canonical_state"),
+    ("long", 181, 365, "canonical_state"),
+)
+
+OPTION_CHAIN_MONEYNESS_BUCKETS: Final[tuple[tuple[str, str], ...]] = (
+    ("atm", "abs_delta_0_45_to_0_55_or_abs_log_moneyness_lte_0_03"),
+    ("otm_call_wing", "call_delta_0_20_to_0_35"),
+    ("otm_put_wing", "put_delta_minus_0_35_to_minus_0_20"),
+)
+
+OPTION_CHAIN_STATE_GROUPS: Final[tuple[str, ...]] = (
+    "target_option_liquidity_state",
+    "target_iv_pressure_state",
+    "target_option_skew_pressure_state",
+    "target_option_term_structure_pressure_state",
+    "target_option_flow_pressure_state",
+)
+
+OPTION_CHAIN_DIAGNOSTIC_FIELDS: Final[tuple[str, ...]] = (
+    "option_quote_available_ratio",
+    "option_trade_available_ratio",
+    "option_iv_available_ratio",
+    "option_greeks_available_ratio",
+    "option_chain_observability_score",
+    "option_liquidity_quality_score",
+    "option_chain_snapshot_ref",
 )
 
 CROSS_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
@@ -125,6 +160,33 @@ FORBIDDEN_MODEL_FACING_FIELDS: Final[tuple[str, ...]] = (
     "future_return",
     "realized_pnl",
     "strategy_variant",
+    "alpha_confidence",
+    "position_size",
+    "final_action",
+    "option_contract",
+    "option_contract_id",
+    "option_contract_candidates",
+    "option_chain",
+    "option_chain_snapshot_id",
+    "option_chain_snapshot_ref",
+    "occ_symbol",
+    "option_symbol",
+    "contract_symbol",
+    "strike",
+    "expiry",
+    "expiration",
+    "dte",
+    "delta",
+    "gamma",
+    "theta",
+    "vega",
+    "rho",
+    "premium",
+    "bid",
+    "ask",
+    "quote",
+    "iv",
+    "implied_volatility",
 )
 
 STATE_WINDOW_SYNC_POLICY: Final[str] = "market_sector_target_blocks_must_share_identical_observation_windows"
