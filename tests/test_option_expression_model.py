@@ -94,14 +94,26 @@ class OptionExpressionModelTests(unittest.TestCase):
         self.assertIn("option_expression_policy_blocked", output["option_expression_plan"]["reason_codes"])
         self.assertIn("underlying_only_expression_selected", output["option_expression_plan"]["reason_codes"])
 
-    def test_maintain_and_pending_option_exposure_do_not_create_overlay(self) -> None:
+    def test_maintain_keeps_option_surface_diagnostics_without_creating_overlay(self) -> None:
         maintain_output = generate_rows([_base_row(underlying_action_plan={"planned_underlying_action_type": "maintain", "action_side": "long", "dominant_horizon": "1W", "handoff_to_layer_9": _handoff()})])[0]
         pending_output = generate_rows([_base_row(pending_option_premium_exposure=250.0, pending_option_fill_probability_estimate=0.75)])[0]
 
         self.assertEqual(maintain_output["9_resolved_expression_type"], "no_option_expression")
         self.assertIn("underlying_action_maintain", maintain_output["9_resolved_no_option_reason_codes"])
+        self.assertEqual(maintain_output["9_resolved_option_surface_status"], "optionable_chain_available")
+        self.assertGreater(maintain_output["option_expression_plan"]["diagnostics"]["candidate_count_before_filter"], 0)
+        self.assertGreater(len(maintain_output["option_expression_plan"]["diagnostics"]["scored_candidates"]), 0)
         self.assertEqual(pending_output["9_resolved_expression_type"], "no_option_expression")
         self.assertIn("pending_option_exposure_detected", pending_output["9_resolved_no_option_reason_codes"])
+
+    def test_no_trade_keeps_option_surface_diagnostics_without_creating_overlay(self) -> None:
+        output = generate_rows([_base_row(underlying_action_plan={"planned_underlying_action_type": "no_trade", "action_side": "none", "dominant_horizon": "1W", "handoff_to_layer_9": _handoff()})])[0]
+
+        self.assertEqual(output["9_resolved_expression_type"], "no_option_expression")
+        self.assertEqual(output["9_resolved_option_surface_status"], "optionable_chain_available")
+        self.assertIn("underlying_action_no_trade", output["9_resolved_no_option_reason_codes"])
+        self.assertGreater(output["option_expression_plan"]["diagnostics"]["candidate_count_before_filter"], 0)
+        self.assertGreater(len(output["option_expression_plan"]["diagnostics"]["scored_candidates"]), 0)
 
     def test_non_optionable_underlying_bypasses_option_scoring(self) -> None:
         row = _base_row(

@@ -319,7 +319,7 @@ It implements:
 - Layer 8 `maintain` / `no_trade`, pending option exposure, missing option chain, or non-optionable underlying -> `no_option_expression`;
 - non-optionable direct-underlying routes such as BTC -> offline bypass/status row with no option-chain scoring and no live M09 invocation;
 - option policy blocks or no candidate contract passing hard filters may resolve to `underlying_only_expression` when the Layer 8 thesis still supports a direct-underlying expression;
-- reviewed no-provider/no-option database generation from completed Layer 8 rows when the manager gate review finds no active target chain;
+- reviewed no-provider/no-option database generation from completed Layer 8 rows when the manager gate review finds no Layer 9 training-eligible underlying minutes;
 - deterministic selection scoring for right, bid/ask/mid, DTE range, preferred absolute delta range, stale quote age, volume/open interest, spread, adjusted-contract handling, and target-range moneyness guardrails;
 - DTE / delta / Greeks / IV / liquidity / reward-risk scoring with per-candidate reason codes;
 - offline label join helpers and leakage assertions.
