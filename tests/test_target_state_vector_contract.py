@@ -45,6 +45,12 @@ class TargetStateVectorContractTests(unittest.TestCase):
         self.assertIn("3_target_state_persistence_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
         self.assertIn("3_target_exhaustion_risk_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
         self.assertIn("3_tradability_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
+        self.assertIn("3_option_liquidity_score", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
+        self.assertIn("3_option_observability_score", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
+        self.assertIn("3_option_iv_pressure_score", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
+        self.assertIn("3_option_signed_skew_pressure_score", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
+        self.assertIn("3_option_term_structure_pressure_score", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
+        self.assertIn("3_option_signed_flow_pressure_score", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
 
     def test_uses_sparse_state_windows_not_strategy_variants(self) -> None:
         self.assertEqual(contract.SYNCHRONIZED_STATE_WINDOWS, ("10min", "1h", "1D", "1W"))
@@ -103,6 +109,8 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "sector_confirmation_state",
             "idiosyncratic_residual_state",
             "3_target_direction_score_<window>",
+            "3_option_signed_skew_pressure_score",
+            "3_option_signed_flow_pressure_score",
             "3_context_support_quality_score_<window>",
             "MFE/MAE balance",
         }

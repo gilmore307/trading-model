@@ -39,6 +39,12 @@ IDENTITY_COLUMNS = [
 ]
 PRIMARY_SCORE_COLUMNS = [
     "3_target_liquidity_tradability_score",
+    "3_option_liquidity_score",
+    "3_option_observability_score",
+    "3_option_iv_pressure_score",
+    "3_option_signed_skew_pressure_score",
+    "3_option_term_structure_pressure_score",
+    "3_option_signed_flow_pressure_score",
     "3_state_quality_score",
     "3_evidence_count",
     *[
@@ -175,6 +181,7 @@ def _score_payload(target: Mapping[str, Any], market: Mapping[str, Any], sector:
     state_quality = _quality_score(target, market, sector, cross)
     payload: dict[str, Any] = {
         "3_target_liquidity_tradability_score": liquidity,
+        **_option_score_payload(target),
         "3_state_quality_score": state_quality,
         "3_evidence_count": _evidence_count(target, market, sector, cross),
     }
@@ -341,6 +348,100 @@ def _liquidity_score(target: Mapping[str, Any]) -> float | None:
     return _average([spread_score, volume_score])
 
 
+def _option_score_payload(target: Mapping[str, Any]) -> dict[str, float | None]:
+    option_state = target.get("target_option_chain_state")
+    if not isinstance(option_state, Mapping) or option_state.get("data_policy") == "optional_overlay_not_available":
+        return {
+            "3_option_liquidity_score": None,
+            "3_option_observability_score": None,
+            "3_option_iv_pressure_score": None,
+            "3_option_signed_skew_pressure_score": None,
+            "3_option_term_structure_pressure_score": None,
+            "3_option_signed_flow_pressure_score": None,
+        }
+
+    liquidity_state = _option_nested_state(option_state, "target_option_liquidity_state", "liquidity_state")
+    iv_state = _option_nested_state(option_state, "target_iv_pressure_state", "iv_pressure_state")
+    skew_state = _option_nested_state(option_state, "target_option_skew_pressure_state", "skew_pressure_state")
+    term_state = _option_nested_state(option_state, "target_option_term_structure_pressure_state", "term_structure_pressure_state")
+    flow_state = _option_nested_state(option_state, "target_option_flow_pressure_state", "flow_pressure_state")
+    states = (liquidity_state, iv_state, skew_state, term_state, flow_state)
+    return {
+        "3_option_liquidity_score": _mapped_score(
+            liquidity_state,
+            {
+                "deep": 1.0,
+                "normal": 0.70,
+                "thin": 0.35,
+                "stressed": 0.10,
+            },
+        ),
+        "3_option_observability_score": sum(1 for state in states if state) / len(states),
+        "3_option_iv_pressure_score": _mapped_score(
+            iv_state,
+            {
+                "extreme_high": 1.0,
+                "high": 0.75,
+                "elevated": 0.75,
+                "normal": 0.40,
+                "low": 0.10,
+                "compressed": 0.10,
+            },
+        ),
+        "3_option_signed_skew_pressure_score": _mapped_score(
+            skew_state,
+            {
+                "extreme_put_skew": 1.0,
+                "put_skew": 0.55,
+                "balanced": 0.0,
+                "call_skew": -0.55,
+                "extreme_call_skew": -1.0,
+            },
+            signed=True,
+        ),
+        "3_option_term_structure_pressure_score": _mapped_score(
+            term_state,
+            {
+                "front_rich": 0.80,
+                "front_elevated": 0.80,
+                "near_rich": 0.55,
+                "flat": 0.20,
+                "upward_sloping": 0.10,
+            },
+        ),
+        "3_option_signed_flow_pressure_score": _mapped_score(
+            flow_state,
+            {
+                "call_activity_elevated": 0.65,
+                "balanced_activity": 0.0,
+                "balanced": 0.0,
+                "put_activity_elevated": -0.65,
+            },
+            signed=True,
+        ),
+    }
+
+
+def _option_nested_state(option_state: Mapping[str, Any], group: str, state_key: str) -> str | None:
+    value = option_state.get(group)
+    if isinstance(value, Mapping):
+        value = value.get(state_key)
+    if value in (None, ""):
+        return None
+    return str(value).strip().lower()
+
+
+def _mapped_score(value: str | None, mapping: Mapping[str, float], *, signed: bool = False) -> float | None:
+    if not value:
+        return None
+    score = mapping.get(value)
+    if score is None:
+        return None
+    if signed:
+        return max(-1.0, min(1.0, score))
+    return _clip01(score)
+
+
 def _context_alignment(cross: Mapping[str, Any], direction: float | None, window: str | None = None) -> float | None:
     if direction is None:
         return None
@@ -401,6 +502,7 @@ def _diagnostics(row: Mapping[str, Any], target: Mapping[str, Any], market: Mapp
             "direction_scores": "signed_direction_only_not_quality_or_size",
             "tradability_scores": "direction_neutral_high_is_good_path_and_execution_cleanliness",
             "risk_noise_scores": "direction_neutral_high_is_bad",
+            "option_scores": "target_level_option_market_environment_only_no_contract_identity_or_executable_terms",
             "target_state_embedding": "research_only_not_primary_model_feature",
             "state_cluster_id": "research_only_not_primary_model_feature",
         },
@@ -408,7 +510,7 @@ def _diagnostics(row: Mapping[str, Any], target: Mapping[str, Any], market: Mapp
 
 
 def _embedding(scores: Mapping[str, Any]) -> list[float]:
-    keys = ["3_target_direction_score_1h", "3_target_direction_strength_score_1h", "3_target_trend_quality_score_1h", "3_target_path_stability_score_1h", "3_target_transition_risk_score_1h", "3_target_state_persistence_score_1h", "3_target_exhaustion_risk_score_1h", "3_target_liquidity_tradability_score", "3_context_support_quality_score_1h", "3_tradability_score_1h", "3_state_quality_score"]
+    keys = ["3_target_direction_score_1h", "3_target_direction_strength_score_1h", "3_target_trend_quality_score_1h", "3_target_path_stability_score_1h", "3_target_transition_risk_score_1h", "3_target_state_persistence_score_1h", "3_target_exhaustion_risk_score_1h", "3_target_liquidity_tradability_score", "3_option_liquidity_score", "3_option_observability_score", "3_option_iv_pressure_score", "3_option_signed_skew_pressure_score", "3_option_term_structure_pressure_score", "3_option_signed_flow_pressure_score", "3_context_support_quality_score_1h", "3_tradability_score_1h", "3_state_quality_score"]
     return [round(_safe_float(scores.get(key)) or 0.0, 8) for key in keys]
 
 

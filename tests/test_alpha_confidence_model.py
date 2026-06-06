@@ -6,6 +6,7 @@ from pathlib import Path
 
 from models.model_05_alpha_confidence import generate_rows, train_after_cost_alpha_model
 from models.model_05_alpha_confidence.evaluation import assert_no_label_leakage, build_alpha_confidence_labels
+from models.model_05_alpha_confidence.training import FEATURE_TEMPLATES, extract_after_cost_features
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -152,6 +153,25 @@ class AlphaConfidenceModelTests(unittest.TestCase):
 
         self.assertEqual(rows[0]["market_context_state"]["1_state_quality_score"], 0.60)
         self.assertEqual(rows[0]["sector_context_state"]["2_sector_context_support_quality_score"], 0.70)
+
+    def test_after_cost_features_include_layer_three_option_scores(self) -> None:
+        target_state = _target_state(direction=0.20)
+        option_scores = {
+            "3_option_liquidity_score": 0.70,
+            "3_option_observability_score": 1.0,
+            "3_option_iv_pressure_score": 0.75,
+            "3_option_signed_skew_pressure_score": 0.55,
+            "3_option_term_structure_pressure_score": 0.80,
+            "3_option_signed_flow_pressure_score": 0.65,
+        }
+        target_state.update(option_scores)
+
+        feature_names = list(option_scores)
+        values = extract_after_cost_features(_base_row(target_context_state=target_state), horizon="1W", feature_names=feature_names)
+
+        for name, value in option_scores.items():
+            self.assertIn(name, FEATURE_TEMPLATES)
+            self.assertAlmostEqual(values[feature_names.index(name)], value)
 
     def test_training_script_attaches_after_cost_labels_from_future_bars(self) -> None:
         script = _load_training_script()

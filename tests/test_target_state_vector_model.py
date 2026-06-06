@@ -51,17 +51,24 @@ class TargetStateVectorModelTests(unittest.TestCase):
     def test_layer_three_allows_target_level_option_chain_state(self) -> None:
         feature_row = _feature_row(1)
         feature_row["target_state_features"]["target_option_chain_state"] = {
-            "target_option_liquidity_state": "normal",
-            "target_iv_pressure_state": "elevated",
-            "target_option_skew_pressure_state": "put_skew",
-            "target_option_term_structure_pressure_state": "front_elevated",
-            "target_option_flow_pressure_state": "call_activity_elevated",
+            "target_option_liquidity_state": {"liquidity_state": "normal"},
+            "target_iv_pressure_state": {"iv_pressure_state": "high"},
+            "target_option_skew_pressure_state": {"skew_pressure_state": "put_skew"},
+            "target_option_term_structure_pressure_state": {"term_structure_pressure_state": "front_rich"},
+            "target_option_flow_pressure_state": {"flow_pressure_state": "call_activity_elevated"},
         }
 
         row = generator.generate_ordered_row(feature_row)
 
         option_state = row["target_context_state"]["target_state_features"]["target_option_chain_state"]
-        self.assertEqual(option_state["target_iv_pressure_state"], "elevated")
+        self.assertEqual(option_state["target_iv_pressure_state"]["iv_pressure_state"], "high")
+        self.assertAlmostEqual(row["3_option_liquidity_score"], 0.70)
+        self.assertAlmostEqual(row["3_option_observability_score"], 1.0)
+        self.assertAlmostEqual(row["3_option_iv_pressure_score"], 0.75)
+        self.assertAlmostEqual(row["3_option_signed_skew_pressure_score"], 0.55)
+        self.assertAlmostEqual(row["3_option_term_structure_pressure_score"], 0.80)
+        self.assertAlmostEqual(row["3_option_signed_flow_pressure_score"], 0.65)
+        self.assertIn("3_option_iv_pressure_score", row["target_context_state"]["score_payload"])
         self.assertNotIn("option_chain_snapshot_ref", json.dumps(row["target_context_state"]))
 
     def test_layer_three_rejects_option_contract_leakage_in_model_facing_state(self) -> None:

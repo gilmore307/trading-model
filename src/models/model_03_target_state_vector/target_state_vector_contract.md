@@ -171,6 +171,12 @@ Layer 3 outputs may include scalar summaries inside block payloads, but these sc
 | `3_target_state_persistence_score_<window>` | [0, 1] | Direction-neutral persistence/age support for the current state, separate from direction sign. |
 | `3_target_exhaustion_risk_score_<window>` | [0, 1] | Direction-neutral late-trend/exhaustion/decay risk. Higher means worse risk. |
 | `3_target_liquidity_tradability_score` | [0, 1] | Liquidity/spread/capacity/borrow support for practical execution. |
+| `3_option_liquidity_score` | [0, 1] | Target-level option-chain liquidity condition reduced from allowed option liquidity state. Higher means cleaner option market liquidity. |
+| `3_option_observability_score` | [0, 1] | Completeness of accepted target-level option state groups. It is not a source receipt, snapshot ref, or raw coverage field. |
+| `3_option_iv_pressure_score` | [0, 1] | Target-level front ATM IV pressure state. Higher means more elevated option IV pressure. |
+| `3_option_signed_skew_pressure_score` | [-1, 1] | Signed target-level option skew pressure: positive for put-skew pressure, negative for call-skew pressure, zero for balanced. |
+| `3_option_term_structure_pressure_score` | [0, 1] | Target-level option term-structure pressure. Higher means front/near IV richness pressure. |
+| `3_option_signed_flow_pressure_score` | [-1, 1] | Signed target-level option activity pressure: positive for call activity, negative for put activity, zero for balanced. |
 | `3_context_direction_alignment_score_<window>` | [-1, 1] | Signed target/sector/market direction alignment. |
 | `3_context_support_quality_score_<window>` | [0, 1] | Direction-neutral support quality from sector/market/peer context. |
 | `3_tradability_score_<window>` | [0, 1] | Direction-neutral state tradability. Stable short states can score highly. It combines direction strength, trend quality, path stability, context support, liquidity, persistence, data quality, and inverted noise/transition/exhaustion risk; it must never mean “suitable long.” |
