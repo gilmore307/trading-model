@@ -96,7 +96,7 @@ Opaque unresolved source/feature mapping identifiers retained for future review:
 
 #### `target_option_chain_state`
 
-When option context is present, Layer 3 uses ThetaData as the canonical option market-data source and reduces a bounded source envelope into anonymous target-level state through deterministic role selection. The reduction answers what the target's option market environment looks like; it must not identify a contract, expiry, strike, premium, quote, or option order candidate. The source-side acquisition envelope is bounded by `max_dte=180` and a narrow strike range; the model-facing contract is the role selector, not the provider request itself.
+When option context is present, Layer 3 uses ThetaData as the canonical option market-data source and reduces selected-contract source rows into anonymous target-level state through deterministic role selection. The reduction answers what the target's option market environment looks like; it must not identify a contract, expiry, strike, premium, quote, or option order candidate. Historical source acquisition plans a selected-contract universe from point-in-time discovery evidence, then measures exact quote, Greeks, and OHLC activity-summary rows for those contracts. Broad chain pulls are audit/fallback evidence, not the normal model source route.
 
 Canonical stable-core expiry buckets:
 
