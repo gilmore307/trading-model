@@ -157,7 +157,13 @@ def _fetch_layer_8_rows(cursor: Any, *, source_start: str | None, source_end: st
     return [dict(row) for row in cursor.fetchall()]
 
 
-def _fetch_option_candidate_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+def _fetch_option_candidate_rows(
+    cursor: Any,
+    *,
+    source_start: str | None,
+    source_end: str | None,
+    layer_8_rows: Sequence[Mapping[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
     feature_table = "m09_option_expression_feature_generation"
     cursor.execute("SELECT to_regclass(%s) AS table_ref", (f"trading_data.{feature_table}",))
     exists = cursor.fetchone()
@@ -167,7 +173,7 @@ def _fetch_option_candidate_rows(cursor: Any, *, source_start: str | None, sourc
         table_exists = bool(exists and exists[0] is not None)
     if not table_exists:
         return []
-    where: list[str] = []
+    where: list[str] = ['lower(coalesce(f."snapshot_type", \'\')) = \'entry\'']
     params: list[Any] = []
     if source_start:
         where.append('f."snapshot_time" >= %s::timestamptz')
@@ -175,6 +181,41 @@ def _fetch_option_candidate_rows(cursor: Any, *, source_start: str | None, sourc
     if source_end:
         where.append('f."snapshot_time" < %s::timestamptz')
         params.append(source_end)
+    scoped_join_sql = ""
+    if layer_8_rows is not None:
+        keys = sorted(
+            {
+                (str(row.get("underlying_symbol") or "").upper(), row.get("available_time"))
+                for row in layer_8_rows
+                if row.get("underlying_symbol") and row.get("available_time")
+            },
+            key=lambda item: (item[0], _time_key(item[1])),
+        )
+        if not keys:
+            return []
+        cursor.execute(
+            """
+            CREATE TEMP TABLE IF NOT EXISTS layer_9_option_candidate_keys (
+              underlying TEXT NOT NULL,
+              snapshot_time TIMESTAMPTZ NOT NULL,
+              PRIMARY KEY (underlying, snapshot_time)
+            ) ON COMMIT DROP
+            """
+        )
+        cursor.execute("TRUNCATE layer_9_option_candidate_keys")
+        cursor.executemany(
+            """
+            INSERT INTO layer_9_option_candidate_keys (underlying, snapshot_time)
+            VALUES (%s, %s::timestamptz)
+            ON CONFLICT DO NOTHING
+            """,
+            keys,
+        )
+        scoped_join_sql = """
+        JOIN layer_9_option_candidate_keys AS k
+          ON k.underlying = upper(f."underlying")
+         AND k.snapshot_time = f."snapshot_time"
+        """
     where_sql = " WHERE " + " AND ".join(where) if where else ""
     cursor.execute(
         f"""
@@ -186,6 +227,7 @@ def _fetch_option_candidate_rows(cursor: Any, *, source_start: str | None, sourc
           f."feature_payload_json",
           f."feature_quality_diagnostics"
         FROM {_qualified('trading_data', feature_table)} AS f
+        {scoped_join_sql}
         {where_sql}
         ORDER BY f."underlying" ASC, f."snapshot_time" ASC, f."option_symbol" ASC
         """,
@@ -317,7 +359,7 @@ def generate_from_database(
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
             layer_8_rows = _fetch_layer_8_rows(cursor, source_start=source_start, source_end=source_end)
-            option_candidate_rows = _fetch_option_candidate_rows(cursor, source_start=source_start, source_end=source_end)
+            option_candidate_rows = _fetch_option_candidate_rows(cursor, source_start=source_start, source_end=source_end, layer_8_rows=layer_8_rows)
             model_rows = generate_rows(_layer_9_input_rows(layer_8_rows, option_candidate_rows), model_version=model_version)
             _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
     if output_jsonl:

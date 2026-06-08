@@ -474,6 +474,59 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
         self.assertEqual(rows[0]["option_contract_candidates"][0]["option_right"], "CALL")
         self.assertEqual(rows[0]["option_contract_candidates"][0]["dte"], 11)
 
+    def test_layer_09_fetches_only_entry_option_candidates_for_layer_8_keys(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_09_option_expression/generate_model_09_option_expression.py")
+
+        class FakeCursor:
+            def __init__(self) -> None:
+                self._one = {"table_ref": "trading_data.m09_option_expression_feature_generation"}
+                self._many = [
+                    {
+                        "underlying": "AAPL",
+                        "snapshot_time": "2016-01-04T09:35:00-05:00",
+                        "snapshot_type": "entry",
+                        "option_symbol": "AAPL160115C00100000",
+                        "feature_payload_json": {"option_right_type": "CALL"},
+                        "feature_quality_diagnostics": {},
+                    }
+                ]
+                self.statements: list[str] = []
+                self.inserted_keys: list[tuple[object, ...]] = []
+
+            def execute(self, sql: str, params: tuple[object, ...] | list[object] | None = None) -> None:
+                self.statements.append(sql)
+
+            def executemany(self, sql: str, params: list[tuple[object, ...]]) -> None:
+                self.statements.append(sql)
+                self.inserted_keys.extend(params)
+
+            def fetchone(self):
+                return self._one
+
+            def fetchall(self):
+                return self._many
+
+        cursor = FakeCursor()
+        rows = generator._fetch_option_candidate_rows(
+            cursor,
+            source_start="2016-01-01T00:00:00-05:00",
+            source_end="2016-05-01T00:00:00-05:00",
+            layer_8_rows=[
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "underlying_symbol": "AAPL",
+                }
+            ],
+        )
+
+        sql = "\n".join(cursor.statements)
+        self.assertIn("layer_9_option_candidate_keys", sql)
+        self.assertIn('lower(coalesce(f."snapshot_type"', sql)
+        self.assertIn("= 'entry'", sql)
+        self.assertIn('k.underlying = upper(f."underlying")', sql)
+        self.assertEqual(cursor.inserted_keys, [("AAPL", "2016-01-04T09:35:00-05:00")])
+        self.assertEqual(rows[0]["option_symbol"], "AAPL160115C00100000")
+
     def test_layer_09_database_input_keeps_status_row_when_option_chain_missing(self) -> None:
         generator = self._load_script_module(REPO_ROOT / "scripts/models/model_09_option_expression/generate_model_09_option_expression.py")
 
