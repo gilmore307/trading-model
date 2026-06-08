@@ -96,25 +96,26 @@ Opaque unresolved source/feature mapping identifiers retained for future review:
 
 #### `target_option_chain_state`
 
-When option context is present, Layer 3 uses ThetaData as the canonical option market-data source and reduces the full option chain into anonymous target-level state. The reduction answers what the target's option market environment looks like; it must not identify a contract, expiry, strike, premium, quote, or option order candidate.
+When option context is present, Layer 3 uses ThetaData as the canonical option market-data source and reduces a bounded source envelope into anonymous target-level state through deterministic role selection. The reduction answers what the target's option market environment looks like; it must not identify a contract, expiry, strike, premium, quote, or option order candidate. The source-side acquisition envelope is bounded by `max_dte=180` and a narrow strike range; the model-facing contract is the role selector, not the provider request itself.
 
-Canonical expiry buckets:
+Canonical stable-core expiry buckets:
 
 | Bucket | DTE range | Layer 3 use |
 |---|---:|---|
-| `short` | 0-6 | Diagnostics only unless a separately reviewed short-horizon state is accepted. |
 | `front` | 7-45 | Canonical state. |
 | `near` | 46-90 | Canonical state. |
 | `mid` | 91-180 | Canonical state. |
-| `long` | 181-365 | Canonical state. |
 
-Canonical moneyness/delta buckets:
+Canonical selector roles:
 
-| Bucket | Definition |
+| Role | Definition |
 |---|---|
-| `atm` | `abs(delta)` from `0.45` through `0.55`; if delta quality is unavailable, use `abs(ln(strike / underlying_price)) <= 0.03` only inside the reducer. |
-| `otm_call_wing` | Call delta from `0.20` through `0.35`. |
-| `otm_put_wing` | Put delta from `-0.35` through `-0.20`. |
+| `atm` | Nearest strike to spot with usable quote/IV evidence, preferring `abs(delta)` from `0.45` through `0.55` when delta quality is available. |
+| `canonical_call_wing` | Preferred call wing near 25-delta, falling back to roughly 5% OTM moneyness. |
+| `canonical_put_wing` | Preferred put wing near 25-delta, falling back to roughly 5% OTM moneyness. |
+| `round_activity_attention` | Round strike near spot as point-in-time attention evidence. |
+| `oi_activity_attention` | Point-in-time open-interest attention candidate when OI is observable. |
+| `short_expiry_pressure_overlay` | Separate `0-6 DTE` ATM/activity pressure state, not part of stable structural core. |
 
 The model-facing option state groups are:
 
@@ -124,7 +125,8 @@ The model-facing option state groups are:
 | `target_iv_pressure_state` | Front ATM IV pressure from a capped, quote-quality/liquidity-weighted robust median of eligible ATM front-bucket IV observations, normalized against the target's rolling baseline. It must not emit raw single-contract IV. |
 | `target_option_skew_pressure_state` | Put/call skew from eligible 25-delta put IV minus 25-delta call IV inside matching expiry buckets, reduced to target-level pressure states such as `balanced`, `put_skew`, `call_skew`, or `extreme_put_skew`. |
 | `target_option_term_structure_pressure_state` | Cross-expiry ATM IV slope/richness such as front-vs-near and near-vs-mid pressure. If fewer than two canonical buckets have reliable coverage, term-structure state is missing and diagnostics record why. |
-| `target_option_flow_pressure_state` | Target-level option activity pressure from call/put volume, trade count, notional proxy, and open-interest change where available, normalized against the target's rolling baseline. It must use neutral wording such as `call_activity_elevated` or `put_activity_elevated`, not alpha claims. |
+| `target_option_flow_pressure_state` | Target-level option activity pressure from point-in-time activity attention roles and observable open interest where available, normalized against the target's rolling baseline. Same-snapshot volume, trade count, and notional may support state measurement or validation but must not be used as prefetch selector inputs. It must use neutral wording such as `call_activity_elevated` or `put_activity_elevated`, not alpha claims. |
+| `target_short_expiry_pressure_overlay` | Separate `0-6 DTE` ATM/activity pressure state. It may support short-horizon pressure interpretation but must not be merged into stable structural core. |
 
 Coverage, missingness, source provenance, snapshot refs, raw bucket counts, and fields such as `option_quote_available_ratio`, `option_trade_available_ratio`, `option_iv_available_ratio`, `option_greeks_available_ratio`, `option_chain_observability_score`, and `option_liquidity_quality_score` belong in diagnostics or receipts. They are not Layer 3 model-facing output state.
 

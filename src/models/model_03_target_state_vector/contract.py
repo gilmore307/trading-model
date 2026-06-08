@@ -53,17 +53,18 @@ TARGET_STATE_FEATURE_GROUPS: Final[tuple[str, ...]] = (
 OPTION_CHAIN_STATE_SOURCE: Final[str] = "ThetaData"
 
 OPTION_CHAIN_EXPIRY_BUCKETS: Final[tuple[tuple[str, int, int, str], ...]] = (
-    ("short", 0, 6, "diagnostic_only"),
+    ("short", 0, 6, "short_expiry_pressure_overlay"),
     ("front", 7, 45, "canonical_state"),
     ("near", 46, 90, "canonical_state"),
     ("mid", 91, 180, "canonical_state"),
-    ("long", 181, 365, "canonical_state"),
 )
 
 OPTION_CHAIN_MONEYNESS_BUCKETS: Final[tuple[tuple[str, str], ...]] = (
-    ("atm", "abs_delta_0_45_to_0_55_or_abs_log_moneyness_lte_0_03"),
-    ("otm_call_wing", "call_delta_0_20_to_0_35"),
-    ("otm_put_wing", "put_delta_minus_0_35_to_minus_0_20"),
+    ("atm", "nearest_strike_to_spot_prefer_abs_delta_0_45_to_0_55"),
+    ("canonical_call_wing", "prefer_call_abs_delta_0_20_to_0_35_else_5pct_otm_call"),
+    ("canonical_put_wing", "prefer_put_abs_delta_0_20_to_0_35_else_5pct_otm_put"),
+    ("round_activity_attention", "round_strike_near_spot_point_in_time_attention_candidate"),
+    ("oi_activity_attention", "point_in_time_open_interest_attention_candidate_when_observable"),
 )
 
 OPTION_CHAIN_STATE_GROUPS: Final[tuple[str, ...]] = (
@@ -72,6 +73,7 @@ OPTION_CHAIN_STATE_GROUPS: Final[tuple[str, ...]] = (
     "target_option_skew_pressure_state",
     "target_option_term_structure_pressure_state",
     "target_option_flow_pressure_state",
+    "target_short_expiry_pressure_overlay",
 )
 
 OPTION_CHAIN_DIAGNOSTIC_FIELDS: Final[tuple[str, ...]] = (

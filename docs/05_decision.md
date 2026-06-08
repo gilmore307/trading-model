@@ -1002,15 +1002,17 @@ Layer 4 and later keep a single selected-target interface. When Layer 3 returns 
 
 Layer 3 may emit `3_target_handoff_state`, `3_target_handoff_bias`, `3_target_handoff_rank`, and `3_target_selection_reason_codes` as target-selection evidence. It still must not emit final actions, entry/exit orders, position sizes, portfolio weights, execution policy, or option contracts.
 
-## D066 - Layer 3 option context uses ThetaData chain-state reduction
+## D066 - Layer 3 option context uses ThetaData role-selected chain state
 
 Accepted: 2026-06-05
 
-Layer 3 may use ThetaData as the canonical option market-data source for target-local option context. The accepted boundary is chain-state reduction: Layer 3 summarizes the target's option-market environment into anonymous target-level states, not contract choices.
+Layer 3 may use ThetaData as the canonical option market-data source for target-local option context. The accepted boundary is role-selected chain-state reduction: Layer 3 summarizes the target's option-market environment into anonymous target-level states, not contract choices. The source-side acquisition envelope is bounded by `max_dte=180` and a narrow strike range; the model-facing selector is the deterministic role reducer, not the provider request itself.
 
-The canonical option-chain state lives inside `target_option_chain_state` under `target_state_features`. It may include normalized state groups for option liquidity, IV pressure, skew pressure, term-structure pressure, and option activity pressure. It must not emit option contract identity, OCC symbols, strike, expiry, DTE, delta/Greeks, premium, raw bid/ask/quote, raw single-contract IV, option-chain snapshot refs, or enough fields to reconstruct a contract choice.
+The canonical option-chain state lives inside `target_option_chain_state` under `target_state_features`. It may include normalized state groups for option liquidity, IV pressure, skew pressure, term-structure pressure, option activity pressure, and a separate short-expiry pressure overlay. It must not emit option contract identity, OCC symbols, strike, expiry, DTE, delta/Greeks, premium, raw bid/ask/quote, raw single-contract IV, option-chain snapshot refs, or enough fields to reconstruct a contract choice.
 
-Canonical reduction uses `front` 7-45 DTE, `near` 46-90 DTE, `mid` 91-180 DTE, and `long` 181-365 DTE buckets. `0-6 DTE` remains diagnostics-only unless a separately reviewed short-horizon state is accepted. ATM uses `abs(delta)` 0.45-0.55 or reducer-local `abs(ln(strike / underlying_price)) <= 0.03` fallback. Skew uses 25-delta put IV minus 25-delta call IV. IV pressure uses a capped, quote-quality/liquidity-weighted robust median of eligible ATM front-bucket IV observations normalized to the target's rolling baseline.
+Canonical stable-core reduction uses `front` 7-45 DTE, `near` 46-90 DTE, and `mid` 91-180 DTE buckets. Each bucket selects one representative expiry, ATM call/put state rows, and canonical call/put wing rows. ATM prefers the strike nearest spot with usable quote/IV evidence. Canonical wings prefer roughly 25-delta OTM contracts and fall back to 5% OTM moneyness when delta quality is unavailable. Skew uses the canonical put wing minus canonical call wing. Term structure uses ATM IV slope/richness across the stable-core buckets.
+
+Activity attention is a separate role family from structural state. It may select round strikes near spot and point-in-time open-interest candidates when OI is observable. Same-snapshot trade count, volume, and notional are validation and activity-state evidence, not prefetch selector inputs. `0-6 DTE` is accepted as `target_short_expiry_pressure_overlay`; it is reported separately and must not be merged into stable structural core.
 
 Coverage ratios, chain observability, liquidity-quality scores, raw bucket counts, source provenance, and snapshot refs are diagnostics or receipts, not Layer 3 model-facing output state. Layer 9 remains the owner of option-expression and contract-selection decisions.
 

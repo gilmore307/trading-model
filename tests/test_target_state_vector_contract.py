@@ -36,8 +36,10 @@ class TargetStateVectorContractTests(unittest.TestCase):
         self.assertIn("target_option_chain_state", contract.TARGET_STATE_FEATURE_GROUPS)
         self.assertEqual(contract.OPTION_CHAIN_STATE_SOURCE, "ThetaData")
         self.assertIn(("front", 7, 45, "canonical_state"), contract.OPTION_CHAIN_EXPIRY_BUCKETS)
-        self.assertIn(("short", 0, 6, "diagnostic_only"), contract.OPTION_CHAIN_EXPIRY_BUCKETS)
-        self.assertIn(("atm", "abs_delta_0_45_to_0_55_or_abs_log_moneyness_lte_0_03"), contract.OPTION_CHAIN_MONEYNESS_BUCKETS)
+        self.assertIn(("short", 0, 6, "short_expiry_pressure_overlay"), contract.OPTION_CHAIN_EXPIRY_BUCKETS)
+        self.assertNotIn(("long", 181, 365, "canonical_state"), contract.OPTION_CHAIN_EXPIRY_BUCKETS)
+        self.assertIn(("atm", "nearest_strike_to_spot_prefer_abs_delta_0_45_to_0_55"), contract.OPTION_CHAIN_MONEYNESS_BUCKETS)
+        self.assertIn("target_short_expiry_pressure_overlay", contract.OPTION_CHAIN_STATE_GROUPS)
         self.assertIn("target_iv_pressure_state", contract.OPTION_CHAIN_STATE_GROUPS)
         self.assertIn("option_chain_observability_score", contract.OPTION_CHAIN_DIAGNOSTIC_FIELDS)
         self.assertIn("3_target_direction_score_<window>", contract.DIRECTION_NEUTRAL_SCORE_FAMILIES)
@@ -103,6 +105,7 @@ class TargetStateVectorContractTests(unittest.TestCase):
             "target_option_skew_pressure_state",
             "target_option_term_structure_pressure_state",
             "target_option_flow_pressure_state",
+            "target_short_expiry_pressure_overlay",
             "target_peer_rank_state",
             "target_vs_market_residual_direction",
             "target_vs_sector_residual_direction",
