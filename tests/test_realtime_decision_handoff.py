@@ -16,17 +16,13 @@ from models.realtime_decision_handoff import (
 
 
 def _decision_input_snapshot() -> dict[str, object]:
-    layers = [
-        ("layer_01_market_regime", "market_regime_model", "market_context_state"),
-        ("layer_02_sector_context", "sector_context_model", "sector_context_state"),
-        ("layer_03_target_state_vector", "target_state_vector_model", "target_context_state"),
-        ("layer_04_event_failure_risk", "event_failure_risk_model", "event_failure_risk_vector"),
-        ("layer_05_alpha_confidence", "alpha_confidence_model", "alpha_confidence_vector"),
-        ("layer_06_dynamic_risk_policy", "dynamic_risk_policy_model", "dynamic_risk_policy_state"),
-        ("layer_07_position_projection", "position_projection_model", "position_projection_vector"),
-        ("layer_08_underlying_action", "underlying_action_model", "underlying_action_plan"),
-        ("layer_09_option_expression", "option_expression_model", "trading_guidance_record"),
-        ("layer_10_event_risk_governor", "event_risk_governor", "event_context_vector"),
+    components = [
+        ("background_context_component", "background_context_model", "background_context_state"),
+        ("target_state_component", "target_state_model", "target_context_state"),
+        ("event_state_component", "event_state_model", "event_state_vector"),
+        ("unified_decision_component", "unified_decision_model", "unified_decision_vector"),
+        ("option_expression_component", "option_expression_model", "option_expression_plan"),
+        ("residual_event_governance_component", "residual_event_governance_model", "event_risk_intervention"),
     ]
     return {
         "contract_type": "execution_model_decision_input_snapshot",
@@ -37,41 +33,42 @@ def _decision_input_snapshot() -> dict[str, object]:
         "historical_dataset_snapshot_ref": "trading-model://snapshots/historical/unit",
         "frozen_model_config_ref": "trading-model://configs/frozen/unit",
         "realtime_feature_snapshot_ref": "realtime-feature-snapshot://rtfeat_unit",
-        "layer_input_refs": [
+        "component_input_refs": [
             {
-                "contract_type": "execution_model_decision_layer_input",
+                "contract_type": "execution_model_decision_component_input",
                 "decision_input_snapshot_id": "rtdecision_unit",
-                "model_layer": layer,
+                "model_component": component,
                 "model_id": model_id,
                 "expected_model_output": output,
-                "feature_ref": f"realtime-feature://rtfeat_unit/{layer}",
-                "upstream_context_refs": [f"placeholder://upstream/{layer}"],
+                "feature_ref": f"realtime-feature://rtfeat_unit/{component}",
+                "upstream_context_refs": [f"placeholder://upstream/{component}"],
                 "frozen_model_config_ref": "trading-model://configs/frozen/unit",
                 "historical_dataset_snapshot_ref": "trading-model://snapshots/historical/unit",
                 "realtime_feature_snapshot_ref": "realtime-feature-snapshot://rtfeat_unit",
                 "decision_handoff_status": "ready_for_historical_model_decision_input",
             }
-            for layer, model_id, output in layers
+            for component, model_id, output in components
         ],
     }
 
 
 class RealtimeDecisionHandoffTests(unittest.TestCase):
-    def test_validate_execution_input_requires_all_required_layers(self) -> None:
+    def test_validate_execution_input_requires_all_required_components(self) -> None:
         snapshot = _decision_input_snapshot()
         result = validate_execution_model_decision_input_snapshot(snapshot)
 
-        self.assertTrue(result["valid"])
-        self.assertEqual(result["missing_layers"], [])
+        self.assertTrue(result["valid"], result["row_errors"])
+        self.assertEqual(result["execution_unit"], "component")
+        self.assertEqual(result["missing_components"], [])
         self.assertEqual(result["provider_calls_performed"], 0)
         self.assertFalse(result["model_activation_performed"])
 
-    def test_layer_nine_option_expression_subset_is_optional_for_direct_underlying_route(self) -> None:
+    def test_option_expression_component_is_optional_for_direct_underlying_route(self) -> None:
         snapshot = _decision_input_snapshot()
         snapshot["instrument_ref"] = "BTC-USD"
         snapshot["asset_expression_route"] = "direct_underlying_only"
-        snapshot["layer_input_refs"] = [
-            row for row in snapshot["layer_input_refs"] if row["model_layer"] != "layer_09_option_expression"
+        snapshot["component_input_refs"] = [
+            row for row in snapshot["component_input_refs"] if row["model_component"] != "option_expression_component"
         ]
 
         result = validate_execution_model_decision_input_snapshot(snapshot)
@@ -79,45 +76,48 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
         validation = validate_realtime_decision_route_plan(plan)
 
         self.assertTrue(result["valid"], result["row_errors"])
-        self.assertEqual(result["missing_layers"], [])
-        self.assertEqual(result["missing_optional_layers"], ["layer_09_option_expression"])
-        self.assertEqual(len(plan["layer_routes"]), 9)
-        self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_historical_model_decision_route")
+        self.assertEqual(result["missing_components"], [])
+        self.assertEqual(result["missing_optional_components"], ["option_expression_component"])
+        self.assertEqual(len(plan["component_routes"]), 5)
+        self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_component_route")
         self.assertTrue(validation["valid"], validation["row_errors"])
-        self.assertEqual(validation["missing_optional_layers"], ["layer_09_option_expression"])
+        self.assertEqual(validation["missing_optional_components"], ["option_expression_component"])
 
-    def test_layer_nine_option_expression_plan_output_is_still_accepted(self) -> None:
+    def test_option_expression_component_accepts_trading_guidance_output(self) -> None:
         snapshot = _decision_input_snapshot()
-        for row in snapshot["layer_input_refs"]:
-            if row["model_layer"] == "layer_09_option_expression":
-                row["expected_model_output"] = "option_expression_plan"
+        for row in snapshot["component_input_refs"]:
+            if row["model_component"] == "option_expression_component":
+                row["expected_model_output"] = "trading_guidance_record"
 
         result = validate_execution_model_decision_input_snapshot(snapshot)
 
         self.assertTrue(result["valid"], result["row_errors"])
 
-    def test_build_route_plan_maps_all_layers_to_generators(self) -> None:
+    def test_build_route_plan_maps_all_components_to_current_generators(self) -> None:
         plan = build_realtime_decision_route_plan({"decision_input_snapshot": _decision_input_snapshot()})
 
         self.assertEqual(plan["contract_type"], "model_realtime_decision_route_plan")
-        self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_historical_model_decision_route")
-        self.assertEqual(len(plan["layer_routes"]), 10)
+        self.assertEqual(plan["execution_unit"], "component")
+        self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_component_route")
+        self.assertEqual(len(plan["component_routes"]), 6)
         self.assertEqual(plan["provider_calls_performed"], 0)
         self.assertFalse(plan["model_activation_performed"])
         self.assertFalse(plan["broker_order_construction_performed"])
-        layer_4 = plan["layer_routes"][3]
-        self.assertEqual(layer_4["model_layer"], "layer_04_event_failure_risk")
-        self.assertIn("generate_model_04_event_failure_risk.py", layer_4["generator_entrypoint_ref"])
-        layer_6 = plan["layer_routes"][5]
-        self.assertEqual(layer_6["model_layer"], "layer_06_dynamic_risk_policy")
-        self.assertEqual(layer_6["expected_model_output"], "dynamic_risk_policy_state")
-        self.assertIn("generate_model_06_dynamic_risk_policy.py", layer_6["generator_entrypoint_ref"])
-        layer_9 = plan["layer_routes"][-1]
-        self.assertEqual(layer_9["model_layer"], "layer_10_event_risk_governor")
-        self.assertEqual(layer_9["expected_model_output"], "event_context_vector")
-        self.assertIn("generate_model_10_event_risk_governor.py", layer_9["generator_entrypoint_ref"])
+        decision = plan["component_routes"][3]
+        self.assertEqual(decision["model_component"], "unified_decision_component")
+        self.assertEqual(decision["model_step"], "M04")
+        self.assertEqual(decision["expected_model_output"], "unified_decision_vector")
+        self.assertIn("generate_model_04_unified_decision.py", decision["generator_entrypoint_ref"])
+        option = plan["component_routes"][4]
+        self.assertEqual(option["model_component"], "option_expression_component")
+        self.assertEqual(option["invocation_policy"], "conditional_after_unified_decision_or_option_applicability")
+        self.assertIn("generate_model_05_option_expression.py", option["generator_entrypoint_ref"])
+        residual = plan["component_routes"][-1]
+        self.assertEqual(residual["model_component"], "residual_event_governance_component")
+        self.assertEqual(residual["expected_model_output"], "event_risk_intervention")
+        self.assertIn("generate_model_06_residual_event_governance.py", residual["generator_entrypoint_ref"])
         validation = validate_realtime_decision_route_plan(plan)
-        self.assertTrue(validation["valid"])
+        self.assertTrue(validation["valid"], validation["row_errors"])
 
     def test_forbidden_model_activation_blocks_input_validation(self) -> None:
         snapshot = _decision_input_snapshot()
@@ -141,14 +141,20 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
 
     def test_route_plan_validation_rechecks_model_identity_and_output(self) -> None:
         plan = build_realtime_decision_route_plan({"decision_input_snapshot": _decision_input_snapshot()})
-        plan["layer_routes"][-1]["model_id"] = "stale_model_09_event_risk_governor"
-        plan["layer_routes"][5]["expected_model_output"] = "position_projection_vector"
+        plan["component_routes"][-1]["model_id"] = "stale_event_risk_governor"
+        plan["component_routes"][3]["expected_model_output"] = "underlying_action_plan"
 
         validation = validate_realtime_decision_route_plan(plan)
 
         self.assertFalse(validation["valid"])
-        self.assertIn("layer_routes[9].model_id mismatch for layer_10_event_risk_governor", validation["row_errors"])
-        self.assertIn("layer_routes[5].expected_model_output mismatch for layer_06_dynamic_risk_policy", validation["row_errors"])
+        self.assertIn(
+            "component_routes[5].model_id mismatch for residual_event_governance_component",
+            validation["row_errors"],
+        )
+        self.assertIn(
+            "component_routes[3].expected_model_output mismatch for unified_decision_component",
+            validation["row_errors"],
+        )
 
     def test_cli_plans_and_validates_route_plan(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -166,7 +172,7 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
             )
             plan = json.loads(plan_result.stdout)
             plan_path.write_text(json.dumps(plan), encoding="utf-8")
-            self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_historical_model_decision_route")
+            self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_component_route")
 
             validate_result = subprocess.run(
                 [sys.executable, "scripts/models/validate_realtime_decision_handoff.py", str(plan_path)],

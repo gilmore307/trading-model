@@ -71,6 +71,21 @@ The canonical policy lives in `docs/40_historical_dataset_scope.md`.
 
 Promotion evidence should distinguish broad historical generalization from live-route simulation whenever a model trains on a broader universe than it receives in live routing.
 
+## Component Execution Boundary
+
+Live and replay execution route current model components, not retired model layers. The component execution order is:
+
+```text
+background_context_component
+  -> target_state_component
+  -> event_state_component
+  -> unified_decision_component
+  -> optional option_expression_component
+  -> residual_event_governance_component
+```
+
+`docs/41_realtime_decision_handoff.md` owns the executable route-plan contract. Training/evaluation may preserve full-minute state coverage, while live/replay component invocation may be conditional for latency, cost, and applicability.
+
 ## Point-in-Time Rule
 
 At prediction time `t`, every model may use only data genuinely available before or at `t`.

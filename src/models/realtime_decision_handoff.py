@@ -1,11 +1,10 @@
-"""Realtime-to-model decision handoff planning.
+"""Realtime/replay component handoff planning.
 
 This module consumes the execution-side
 ``execution_model_decision_input_snapshot`` envelope and turns it into a
-model-side route plan for fixture/shadow historical-model decision routing. It
-validates shape and layer coverage only. It does not run model generators,
-activate production configs, persist outputs, call providers, or authorize
-execution.
+model-side component route plan for fixture/shadow routing. It validates shape
+and current component coverage only. It does not run model generators, activate
+production configs, persist outputs, call providers, or authorize execution.
 """
 
 from __future__ import annotations
@@ -15,75 +14,71 @@ from datetime import datetime
 from hashlib import sha256
 from typing import Any, Mapping, Sequence
 
-MODEL_LAYER_ORDER = (
-    "layer_01_market_regime",
-    "layer_02_sector_context",
-    "layer_03_target_state_vector",
-    "layer_04_event_failure_risk",
-    "layer_05_alpha_confidence",
-    "layer_06_dynamic_risk_policy",
-    "layer_07_position_projection",
-    "layer_08_underlying_action",
-    "layer_09_option_expression",
-    "layer_10_event_risk_governor",
+MODEL_COMPONENT_ORDER = (
+    "background_context_component",
+    "target_state_component",
+    "event_state_component",
+    "unified_decision_component",
+    "option_expression_component",
+    "residual_event_governance_component",
 )
-# Current Layer 9 implementation is the option-expression subset of the broader
-# TradingGuidance/realtime-handoff boundary, so direct-underlying-only routes may
-# omit it until a full non-option TradingGuidanceModel surface is accepted.
-REQUIRED_MODEL_LAYER_ORDER = tuple(layer for layer in MODEL_LAYER_ORDER if layer != "layer_09_option_expression")
-OPTIONAL_MODEL_LAYER_ORDER = ("layer_09_option_expression",)
+REQUIRED_MODEL_COMPONENT_ORDER = tuple(
+    component for component in MODEL_COMPONENT_ORDER if component != "option_expression_component"
+)
+OPTIONAL_MODEL_COMPONENT_ORDER = ("option_expression_component",)
 
-_LAYER_METADATA = {
-    "layer_01_market_regime": {
-        "model_id": "market_regime_model",
-        "expected_model_output": "market_context_state",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_01_market_regime/generate_model_01_market_regime.py",
+_COMPONENT_METADATA = {
+    "background_context_component": {
+        "model_step": "M01",
+        "model_surface": "model_01_background_context",
+        "model_id": "background_context_model",
+        "expected_model_output": "background_context_state",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_01_background_context/generate_model_01_background_context.py",
+        "invocation_policy": "required_component",
     },
-    "layer_02_sector_context": {
-        "model_id": "sector_context_model",
-        "expected_model_output": "sector_context_state",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_02_sector_context/generate_model_02_sector_context.py",
-    },
-    "layer_03_target_state_vector": {
-        "model_id": "target_state_vector_model",
+    "target_state_component": {
+        "model_step": "M02",
+        "model_surface": "model_02_target_state",
+        "model_id": "target_state_model",
         "expected_model_output": "target_context_state",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_03_target_state_vector/generate_model_03_target_state_vector.py",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_02_target_state/generate_model_02_target_state.py",
+        "invocation_policy": "required_component",
     },
-    "layer_04_event_failure_risk": {
-        "model_id": "event_failure_risk_model",
-        "expected_model_output": "event_failure_risk_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py",
+    "event_state_component": {
+        "model_step": "M03",
+        "model_surface": "model_03_event_state",
+        "model_id": "event_state_model",
+        "expected_model_output": "event_state_vector",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_03_event_state/generate_model_03_event_state.py",
+        "invocation_policy": "required_component",
     },
-    "layer_05_alpha_confidence": {
-        "model_id": "alpha_confidence_model",
-        "expected_model_output": "alpha_confidence_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py",
+    "unified_decision_component": {
+        "model_step": "M04",
+        "model_surface": "model_04_unified_decision",
+        "model_id": "unified_decision_model",
+        "expected_model_output": "unified_decision_vector",
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_04_unified_decision/generate_model_04_unified_decision.py",
+        "invocation_policy": "required_decision_component",
     },
-    "layer_06_dynamic_risk_policy": {
-        "model_id": "dynamic_risk_policy_model",
-        "expected_model_output": "dynamic_risk_policy_state",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_06_dynamic_risk_policy/generate_model_06_dynamic_risk_policy.py",
-    },
-    "layer_07_position_projection": {
-        "model_id": "position_projection_model",
-        "expected_model_output": "position_projection_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_07_position_projection/generate_model_07_position_projection.py",
-    },
-    "layer_08_underlying_action": {
-        "model_id": "underlying_action_model",
-        "expected_model_output": "underlying_action_plan",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_08_underlying_action/generate_model_08_underlying_action.py",
-    },
-    "layer_09_option_expression": {
+    "option_expression_component": {
+        "model_step": "M05",
+        "model_surface": "model_05_option_expression",
         "model_id": "option_expression_model",
-        "expected_model_output": "trading_guidance_record",
-        "accepted_model_outputs": ("trading_guidance_record", "option_expression_plan"),
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_09_option_expression/generate_model_09_option_expression.py",
+        "expected_model_output": "option_expression_plan",
+        "accepted_model_outputs": ("trading_guidance_record", "option_expression_plan", "expression_vector"),
+        "generator_entrypoint_ref": "trading-model/scripts/models/model_05_option_expression/generate_model_05_option_expression.py",
+        "invocation_policy": "conditional_after_unified_decision_or_option_applicability",
     },
-    "layer_10_event_risk_governor": {
-        "model_id": "event_risk_governor",
-        "expected_model_output": "event_context_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py",
+    "residual_event_governance_component": {
+        "model_step": "M06",
+        "model_surface": "model_06_residual_event_governance",
+        "model_id": "residual_event_governance_model",
+        "expected_model_output": "event_risk_intervention",
+        "generator_entrypoint_ref": (
+            "trading-model/scripts/models/model_06_residual_event_governance/"
+            "generate_model_06_residual_event_governance.py"
+        ),
+        "invocation_policy": "required_residual_event_governance_component",
     },
 }
 
@@ -104,12 +99,14 @@ ACCEPTED_DATASET_ROLES = ("fixture_replay", "forward_holdout", "shadow_monitorin
 
 
 @dataclass(frozen=True)
-class RealtimeDecisionLayerRoute:
-    """One model-layer route row prepared from execution input refs."""
+class RealtimeDecisionComponentRoute:
+    """One current model component route prepared from execution input refs."""
 
     contract_type: str
     route_plan_id: str
-    model_layer: str
+    model_component: str
+    model_step: str
+    model_surface: str
     model_id: str
     expected_model_output: str
     feature_ref: str
@@ -117,6 +114,7 @@ class RealtimeDecisionLayerRoute:
     frozen_model_config_ref: str
     historical_dataset_snapshot_ref: str
     generator_entrypoint_ref: str
+    invocation_policy: str
     generation_mode: str
     route_status: str
 
@@ -144,8 +142,12 @@ def _is_sequence(value: Any) -> bool:
     return isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray))
 
 
+def _component_input_rows(candidate: Mapping[str, Any]) -> Any:
+    return candidate.get("component_input_refs")
+
+
 def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate the execution-side decision input envelope for model routing."""
+    """Validate the execution-side decision input envelope for component routing."""
 
     required = {
         "contract_type",
@@ -156,7 +158,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
         "historical_dataset_snapshot_ref",
         "frozen_model_config_ref",
         "realtime_feature_snapshot_ref",
-        "layer_input_refs",
+        "component_input_refs",
     }
     present = {key for key, value in candidate.items() if value not in (None, "", [], {})}
     missing_fields = sorted(required - present)
@@ -166,37 +168,43 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
     dataset_role_valid = dataset_role in ACCEPTED_DATASET_ROLES
     requested_actions = set(candidate.get("requested_actions") or [])
     forbidden_actions_present = sorted(requested_actions.intersection(FORBIDDEN_HANDOFF_ACTIONS))
-    rows = candidate.get("layer_input_refs") or []
+    rows = _component_input_rows(candidate) or []
     row_errors: list[str] = []
-    rows_by_layer: dict[str, Mapping[str, Any]] = {}
+    rows_by_component: dict[str, Mapping[str, Any]] = {}
 
     if not _is_sequence(rows):
-        row_errors.append("layer_input_refs must be a list")
+        row_errors.append("component_input_refs must be a list")
     else:
         for index, row in enumerate(rows):
             if not isinstance(row, Mapping):
-                row_errors.append(f"layer_input_refs[{index}] must be an object")
+                row_errors.append(f"component_input_refs[{index}] must be an object")
                 continue
-            layer = str(row.get("model_layer") or "")
-            if layer in rows_by_layer:
-                row_errors.append(f"duplicate layer input for {layer}")
-            if layer:
-                rows_by_layer[layer] = row
-            metadata = _LAYER_METADATA.get(layer)
+            component = str(row.get("model_component") or "")
+            if component in rows_by_component:
+                row_errors.append(f"duplicate component input for {component}")
+            if component:
+                rows_by_component[component] = row
+            metadata = _COMPONENT_METADATA.get(component)
             if metadata is None:
-                row_errors.append(f"layer_input_refs[{index}].model_layer unknown: {layer}")
+                row_errors.append(f"component_input_refs[{index}].model_component unknown: {component}")
                 continue
-            for field in ("model_id", "expected_model_output", "feature_ref", "frozen_model_config_ref", "historical_dataset_snapshot_ref"):
+            for field in (
+                "model_id",
+                "expected_model_output",
+                "feature_ref",
+                "frozen_model_config_ref",
+                "historical_dataset_snapshot_ref",
+            ):
                 if not row.get(field):
-                    row_errors.append(f"layer_input_refs[{index}].{field} missing")
+                    row_errors.append(f"component_input_refs[{index}].{field} missing")
             if row.get("model_id") and row.get("model_id") != metadata["model_id"]:
-                row_errors.append(f"layer_input_refs[{index}].model_id mismatch for {layer}")
+                row_errors.append(f"component_input_refs[{index}].model_id mismatch for {component}")
             accepted_outputs = metadata.get("accepted_model_outputs") or (metadata["expected_model_output"],)
             if row.get("expected_model_output") and row.get("expected_model_output") not in accepted_outputs:
-                row_errors.append(f"layer_input_refs[{index}].expected_model_output mismatch for {layer}")
+                row_errors.append(f"component_input_refs[{index}].expected_model_output mismatch for {component}")
 
-    missing_layers = sorted(set(REQUIRED_MODEL_LAYER_ORDER) - set(rows_by_layer))
-    missing_optional_layers = sorted(set(OPTIONAL_MODEL_LAYER_ORDER) - set(rows_by_layer))
+    missing_components = sorted(set(REQUIRED_MODEL_COMPONENT_ORDER) - set(rows_by_component))
+    missing_optional_components = sorted(set(OPTIONAL_MODEL_COMPONENT_ORDER) - set(rows_by_component))
     valid = (
         not missing_fields
         and contract_type_valid
@@ -204,7 +212,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
         and dataset_role_valid
         and not forbidden_actions_present
         and not row_errors
-        and not missing_layers
+        and not missing_components
     )
     return {
         "contract_type": "model_realtime_decision_input_validation",
@@ -215,9 +223,10 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
         "decision_time_valid": decision_time_valid,
         "dataset_role_valid": dataset_role_valid,
         "forbidden_actions_present": forbidden_actions_present,
-        "missing_layers": missing_layers,
-        "missing_optional_layers": missing_optional_layers,
+        "missing_components": missing_components,
+        "missing_optional_components": missing_optional_components,
         "row_errors": row_errors,
+        "execution_unit": "component",
         "provider_calls_performed": 0,
         "model_activation_performed": False,
         "broker_calls_performed": 0,
@@ -226,7 +235,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
 
 
 def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, Any]:
-    """Build a model-side route plan from an execution decision input snapshot."""
+    """Build a model-side component route plan from an execution snapshot."""
 
     snapshot = request.get("decision_input_snapshot") or request
     if not isinstance(snapshot, Mapping):
@@ -248,24 +257,26 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
             },
         )
     )
-    rows_by_layer = {
-        str(row.get("model_layer")): row
-        for row in snapshot.get("layer_input_refs", [])
-        if isinstance(row, Mapping) and row.get("model_layer")
+    rows_by_component = {
+        str(row.get("model_component")): row
+        for row in _component_input_rows(snapshot) or []
+        if isinstance(row, Mapping) and row.get("model_component")
     }
-    routes: list[RealtimeDecisionLayerRoute] = []
-    for layer in MODEL_LAYER_ORDER:
-        row = rows_by_layer.get(layer)
+    routes: list[RealtimeDecisionComponentRoute] = []
+    for component in MODEL_COMPONENT_ORDER:
+        row = rows_by_component.get(component)
         if not row:
             continue
-        metadata = _LAYER_METADATA[layer]
+        metadata = _COMPONENT_METADATA[component]
         routes.append(
-            RealtimeDecisionLayerRoute(
-                contract_type="model_realtime_decision_layer_route",
+            RealtimeDecisionComponentRoute(
+                contract_type="model_realtime_decision_component_route",
                 route_plan_id=route_plan_id,
-                model_layer=layer,
+                model_component=component,
+                model_step=metadata["model_step"],
+                model_surface=metadata["model_surface"],
                 model_id=metadata["model_id"],
-                expected_model_output=metadata["expected_model_output"],
+                expected_model_output=str(row.get("expected_model_output") or metadata["expected_model_output"]),
                 feature_ref=str(row.get("feature_ref") or ""),
                 upstream_context_refs=tuple(row.get("upstream_context_refs") or ()),
                 frozen_model_config_ref=str(row.get("frozen_model_config_ref") or snapshot.get("frozen_model_config_ref") or ""),
@@ -273,13 +284,14 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
                     row.get("historical_dataset_snapshot_ref") or snapshot.get("historical_dataset_snapshot_ref") or ""
                 ),
                 generator_entrypoint_ref=metadata["generator_entrypoint_ref"],
+                invocation_policy=metadata["invocation_policy"],
                 generation_mode=mode,
                 route_status="ready_for_fixture_shadow_generation" if validation["valid"] else "blocked_input_validation_failed",
             )
         )
 
-    routed_layers = {route.model_layer for route in routes}
-    ready = validation["valid"] and set(REQUIRED_MODEL_LAYER_ORDER).issubset(routed_layers)
+    routed_components = {route.model_component for route in routes}
+    ready = validation["valid"] and set(REQUIRED_MODEL_COMPONENT_ORDER).issubset(routed_components)
     return {
         "contract_type": "model_realtime_decision_route_plan",
         "route_plan_id": route_plan_id,
@@ -287,9 +299,10 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
         "decision_time": snapshot.get("decision_time"),
         "instrument_ref": snapshot.get("instrument_ref"),
         "handoff_mode": mode,
+        "execution_unit": "component",
         "input_validation": validation,
-        "layer_routes": [route.summary_row() for route in routes],
-        "readiness_status": "ready_for_fixture_shadow_historical_model_decision_route" if ready else "blocked_realtime_decision_input_validation",
+        "component_routes": [route.summary_row() for route in routes],
+        "readiness_status": "ready_for_fixture_shadow_component_route" if ready else "blocked_realtime_decision_input_validation",
         "provider_calls_performed": 0,
         "model_activation_performed": False,
         "production_decision_activation_performed": False,
@@ -297,14 +310,14 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
         "broker_order_construction_performed": False,
         "account_mutation_performed": False,
         "boundary_note": (
-            "This plan validates and routes refs only. It does not execute model generators, activate production "
-            "configs, persist outputs, call providers, construct broker orders, or mutate accounts."
+            "This plan validates and routes current model component refs only. It does not execute model generators, "
+            "activate production configs, persist outputs, call providers, construct broker orders, or mutate accounts."
         ),
     }
 
 
 def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate the model-side realtime decision route plan."""
+    """Validate the model-side realtime/replay component route plan."""
 
     required = {
         "contract_type",
@@ -313,50 +326,66 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
         "decision_time",
         "instrument_ref",
         "handoff_mode",
+        "execution_unit",
         "input_validation",
-        "layer_routes",
+        "component_routes",
     }
     present = {key for key, value in candidate.items() if value not in (None, "", [], {})}
     missing_fields = sorted(required - present)
     contract_type_valid = candidate.get("contract_type") == "model_realtime_decision_route_plan"
     handoff_mode_valid = candidate.get("handoff_mode") in ACCEPTED_HANDOFF_MODES
+    execution_unit_valid = candidate.get("execution_unit") == "component"
     input_validation = candidate.get("input_validation") or {}
     input_valid = bool(input_validation.get("valid")) if isinstance(input_validation, Mapping) else False
-    routes = candidate.get("layer_routes") or []
+    routes = candidate.get("component_routes") or []
     row_errors: list[str] = []
-    layer_set: set[str] = set()
+    component_set: set[str] = set()
     if not _is_sequence(routes):
-        row_errors.append("layer_routes must be a list")
+        row_errors.append("component_routes must be a list")
     else:
         for index, row in enumerate(routes):
             if not isinstance(row, Mapping):
-                row_errors.append(f"layer_routes[{index}] must be an object")
+                row_errors.append(f"component_routes[{index}] must be an object")
                 continue
-            layer = str(row.get("model_layer") or "")
-            metadata = _LAYER_METADATA.get(layer)
+            component = str(row.get("model_component") or "")
+            metadata = _COMPONENT_METADATA.get(component)
             if metadata is None:
-                row_errors.append(f"layer_routes[{index}].model_layer unknown: {layer}")
+                row_errors.append(f"component_routes[{index}].model_component unknown: {component}")
                 continue
-            layer_set.add(layer)
-            for field in ("model_id", "expected_model_output", "feature_ref", "generator_entrypoint_ref", "generation_mode"):
+            component_set.add(component)
+            for field in (
+                "model_step",
+                "model_surface",
+                "model_id",
+                "expected_model_output",
+                "feature_ref",
+                "generator_entrypoint_ref",
+                "invocation_policy",
+                "generation_mode",
+            ):
                 if not row.get(field):
-                    row_errors.append(f"layer_routes[{index}].{field} missing")
+                    row_errors.append(f"component_routes[{index}].{field} missing")
+            if row.get("model_step") and row.get("model_step") != metadata["model_step"]:
+                row_errors.append(f"component_routes[{index}].model_step mismatch for {component}")
+            if row.get("model_surface") and row.get("model_surface") != metadata["model_surface"]:
+                row_errors.append(f"component_routes[{index}].model_surface mismatch for {component}")
             if row.get("model_id") and row.get("model_id") != metadata["model_id"]:
-                row_errors.append(f"layer_routes[{index}].model_id mismatch for {layer}")
+                row_errors.append(f"component_routes[{index}].model_id mismatch for {component}")
             accepted_outputs = metadata.get("accepted_model_outputs") or (metadata["expected_model_output"],)
             if row.get("expected_model_output") and row.get("expected_model_output") not in accepted_outputs:
-                row_errors.append(f"layer_routes[{index}].expected_model_output mismatch for {layer}")
+                row_errors.append(f"component_routes[{index}].expected_model_output mismatch for {component}")
             if row.get("generator_entrypoint_ref") != metadata["generator_entrypoint_ref"]:
-                row_errors.append(f"layer_routes[{index}].generator_entrypoint_ref mismatch for {layer}")
-    missing_layers = sorted(set(REQUIRED_MODEL_LAYER_ORDER) - layer_set)
-    missing_optional_layers = sorted(set(OPTIONAL_MODEL_LAYER_ORDER) - layer_set)
+                row_errors.append(f"component_routes[{index}].generator_entrypoint_ref mismatch for {component}")
+    missing_components = sorted(set(REQUIRED_MODEL_COMPONENT_ORDER) - component_set)
+    missing_optional_components = sorted(set(OPTIONAL_MODEL_COMPONENT_ORDER) - component_set)
     valid = (
         not missing_fields
         and contract_type_valid
         and handoff_mode_valid
+        and execution_unit_valid
         and input_valid
         and not row_errors
-        and not missing_layers
+        and not missing_components
     )
     return {
         "contract_type": "model_realtime_decision_route_plan_validation",
@@ -365,9 +394,10 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
         "missing_fields": missing_fields,
         "contract_type_valid": contract_type_valid,
         "handoff_mode_valid": handoff_mode_valid,
+        "execution_unit_valid": execution_unit_valid,
         "input_valid": input_valid,
-        "missing_layers": missing_layers,
-        "missing_optional_layers": missing_optional_layers,
+        "missing_components": missing_components,
+        "missing_optional_components": missing_optional_components,
         "row_errors": row_errors,
         "provider_calls_performed": 0,
         "model_activation_performed": False,
@@ -380,10 +410,10 @@ __all__ = [
     "ACCEPTED_HANDOFF_MODES",
     "ACCEPTED_DATASET_ROLES",
     "FORBIDDEN_HANDOFF_ACTIONS",
-    "MODEL_LAYER_ORDER",
-    "OPTIONAL_MODEL_LAYER_ORDER",
-    "REQUIRED_MODEL_LAYER_ORDER",
-    "RealtimeDecisionLayerRoute",
+    "MODEL_COMPONENT_ORDER",
+    "OPTIONAL_MODEL_COMPONENT_ORDER",
+    "REQUIRED_MODEL_COMPONENT_ORDER",
+    "RealtimeDecisionComponentRoute",
     "build_realtime_decision_route_plan",
     "validate_execution_model_decision_input_snapshot",
     "validate_realtime_decision_route_plan",

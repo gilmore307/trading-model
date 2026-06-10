@@ -839,13 +839,24 @@ Promotion evidence should report both broad historical generalization and live-r
 ## D038 - Realtime decision handoff is fixture/shadow routing only
 
 Date: 2026-05-11
-Status: Accepted
+Status: Superseded by D067
 
 Realtime execution inputs may enter `trading-model` through `execution_model_decision_input_snapshot` only after `trading-execution` has packaged capture refs into realtime feature/model-input envelopes with historical dataset snapshot refs and frozen model config refs.
 
 `trading-model` accepts `model_realtime_decision_route_plan` as the model-side route plan for fixture/shadow historical-model decision routing. The plan validates Layer 1-10 input coverage and maps each layer to its reviewed generator entrypoint, but it does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
 
 Production model activation, durable decision records, promotion approval, and execution authority remain manager/execution-owned gates, not implied by this handoff scaffold.
+
+## D067 - Realtime/replay handoff routes current model components
+
+Date: 2026-06-10
+Status: Accepted
+
+Live and replay execution are component-routed, not model-layer-routed. After the six-model redesign, `model_realtime_decision_route_plan` validates and emits `component_routes` with `execution_unit = component`.
+
+Required current components are `background_context_component`, `target_state_component`, `event_state_component`, `unified_decision_component`, and `residual_event_governance_component`. `option_expression_component` is conditional: M04 or applicability checks may decide whether to invoke it during live/replay routing, while historical training/evaluation still preserves full-minute no-option and not-option-applicable state coverage.
+
+Retired Layer 1-10 route plans are migration-source evidence only and are not the current realtime/replay execution contract. The component route plan still does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
 
 ## D039 - Event-risk governor moved after the base trading stack
 

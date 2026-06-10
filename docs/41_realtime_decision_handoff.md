@@ -19,7 +19,7 @@ trading-execution realtime capture
   -> fixture/shadow historical-model generation route
 ```
 
-`model_realtime_decision_route_plan` is a route plan, not a model output. It validates required M01-M04 and M06 input refs, accepts M05 option-expression refs when available, maps each present model to its reviewed generator entrypoint, and records the handoff mode. Direct-underlying routes must not require M05 option refs.
+`model_realtime_decision_route_plan` is a route plan, not a model output. Its execution unit is the current model component, not the retired ten-layer route. It validates required M01-M04 and M06 component input refs, accepts M05 option-expression component refs when available, maps each present component to its reviewed generator entrypoint, and records the handoff mode. Direct-underlying routes must not require M05 option refs.
 
 Accepted handoff modes:
 
@@ -36,23 +36,28 @@ The model-side planner consumes an `execution_model_decision_input_snapshot` obj
 - `historical_dataset_snapshot_ref`
 - `frozen_model_config_ref`
 - `realtime_feature_snapshot_ref`
-- exactly one required model input for M01-M04 and M06
-- zero or one optional M05 option-expression input
+- `component_input_refs`
+- exactly one required component input for M01-M04 and M06
+- zero or one optional M05 option-expression component input
 
-Each conceptual model input must include the expected model id, expected model output, feature ref, frozen model config ref, and historical dataset snapshot ref.
+Each component input must include the expected model id, expected model output, feature ref, frozen model config ref, and historical dataset snapshot ref.
 
-## Model Route Mapping
+## Component Route Mapping
 
-| Model | Model id | Expected output | Route entrypoint |
-|---|---|---|---|
-| `M01` | `background_context_model` | `background_context_state` | `scripts/models/model_01_background_context/generate_model_01_background_context.py` |
-| `M02` | `target_state_model` | `target_context_state` | `scripts/models/model_02_target_state/generate_model_02_target_state.py` |
-| `M03` | `event_state_model` | `event_state_vector` | `scripts/models/model_03_event_state/generate_model_03_event_state.py` |
-| `M04` | `unified_decision_model` | `unified_decision_vector` | `scripts/models/model_04_unified_decision/generate_model_04_unified_decision.py` |
-| `M05` | `option_expression_model` | optional `trading_guidance_record` with optional `option_expression_plan` | `scripts/models/model_05_option_expression/generate_model_05_option_expression.py` |
-| `M06` | `residual_event_governance_model` | `event_risk_intervention` / future packet eligibility | `scripts/models/model_06_residual_event_governance/generate_model_06_residual_event_governance.py` |
+| Component | Model | Model id | Expected output | Invocation policy | Route entrypoint |
+|---|---|---|---|---|---|
+| `background_context_component` | `M01` | `background_context_model` | `background_context_state` | required | `scripts/models/model_01_background_context/generate_model_01_background_context.py` |
+| `target_state_component` | `M02` | `target_state_model` | `target_context_state` | required | `scripts/models/model_02_target_state/generate_model_02_target_state.py` |
+| `event_state_component` | `M03` | `event_state_model` | `event_state_vector` | required | `scripts/models/model_03_event_state/generate_model_03_event_state.py` |
+| `unified_decision_component` | `M04` | `unified_decision_model` | `unified_decision_vector` | required decision component | `scripts/models/model_04_unified_decision/generate_model_04_unified_decision.py` |
+| `option_expression_component` | `M05` | `option_expression_model` | optional `trading_guidance_record`, `option_expression_plan`, or `expression_vector` | conditional after M04 intent or option applicability | `scripts/models/model_05_option_expression/generate_model_05_option_expression.py` |
+| `residual_event_governance_component` | `M06` | `residual_event_governance_model` | `event_risk_intervention` / future packet eligibility | required residual event governance component | `scripts/models/model_06_residual_event_governance/generate_model_06_residual_event_governance.py` |
 
 Retired ten-layer route mappings are migration-source routes only.
+
+## Training Versus Execution
+
+Historical training and evaluation still preserve full-minute state coverage as defined in `docs/23_model_learning_design.md`. Live and replay execution may invoke components conditionally. For example, M04 can produce a no-trade or direct-underlying thesis without invoking the expensive M05 option-expression component, while the training ledger still records the minute's no-option or not-option-applicable state.
 
 ## Non-Authorizations
 
@@ -67,7 +72,7 @@ This boundary does not:
 - mutate broker/account state;
 - persist manager-control-plane decisions.
 
-It only plans and validates the route from realtime input refs into the historical model stack. It may support the closed-loop evidence lifecycle by producing fixture/shadow route evidence, but any labels, utilities, residuals, or promotion feedback are joined only after fold or shadow-window settlement through the review-gated path in `docs/23_model_learning_design.md`.
+It only plans and validates the component route from realtime input refs into the historical model stack. It may support the closed-loop evidence lifecycle by producing fixture/shadow route evidence, but any labels, utilities, residuals, or promotion feedback are joined only after fold or shadow-window settlement through the review-gated path in `docs/23_model_learning_design.md`.
 
 ## CLI
 
