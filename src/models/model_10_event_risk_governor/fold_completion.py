@@ -55,6 +55,9 @@ class Layer10FamilyCompletionRow:
     impact_window_status: str
     fold_stability_status: str
     leakage_overlap_status: str
+    production_route_review_status: str
+    production_route_decision: str
+    focus_pool_status: str
     fold1_completion_status: str
     production_completion_status: str
     allowed_current_use: str
@@ -105,21 +108,37 @@ class Layer10FoldCompletion:
             "impact_window_status_counts": _counts(row.impact_window_status for row in self.family_rows),
             "fold_stability_status_counts": _counts(row.fold_stability_status for row in self.family_rows),
             "leakage_overlap_status_counts": _counts(row.leakage_overlap_status for row in self.family_rows),
+            "production_route_review_status_counts": _counts(
+                row.production_route_review_status for row in self.family_rows
+            ),
+            "production_route_decision_counts": _counts(row.production_route_decision for row in self.family_rows),
+            "focus_pool_status_counts": _counts(row.focus_pool_status for row in self.family_rows),
             "calibrated_impact_window_family_keys": [
                 row.family_key for row in self.family_rows if row.impact_window_status == "calibrated_impact_window_applied"
             ],
             "fold1_visible_family_keys": [row.family_key for row in self.family_rows if row.replay_visible_match_count > 0],
-            "production_complete_family_keys": [
-                row.family_key for row in self.family_rows if row.production_completion_status == "complete"
+            "focus_pool_family_keys": [
+                row.family_key for row in self.family_rows if row.focus_pool_status == "accepted_temporal_attention_focus_pool"
+            ],
+            "production_route_approved_family_keys": [
+                row.family_key for row in self.family_rows if row.production_route_decision.startswith("approve_")
+            ],
+            "production_route_deferred_family_keys": [
+                row.family_key for row in self.family_rows if row.production_route_decision.startswith("defer_")
+            ],
+            "production_route_rejected_family_keys": [
+                row.family_key for row in self.family_rows if row.production_route_decision.startswith("reject_")
             ],
             "fold1_evidence_complete": True,
             "layer10_production_evidence_complete": all(
-                row.production_completion_status == "complete" for row in self.family_rows
+                row.production_completion_status == "production_route_review_complete" for row in self.family_rows
             ),
+            "cross_fold_stability_role": "post_focus_pool_monitoring_not_focus_pool_prerequisite",
             "completion_note": (
-                "Fold evidence completion means every active family has an explicit gate disposition for this replay fold. "
-                "It does not imply production completion unless every family passes packet, canonical parser/source, matched controls, "
-                "impact-window, stability, and leakage/upstream-overlap gates."
+                "Fold evidence completion means every active family has an explicit workflow disposition for this replay fold. "
+                "Production-route review is made per event family, not as an all-family pass/fail gate. Approved families enter "
+                "the temporal-attention focus pool for later folds; cross-fold stability is follow-up monitoring evidence for "
+                "families already admitted to that pool, not a prerequisite that blocks focus-pool admission."
             ),
             "source_refs": self.source_refs,
             "provider_calls": self.provider_calls,
@@ -276,7 +295,7 @@ def _fold_stability_status(
     if replay_count <= 0:
         return "no_fold_visible_events"
     if impact_status == "calibrated_impact_window_applied":
-        return "fold1_window_stability_review_complete_cross_fold_pending"
+        return "fold_window_stability_review_complete_monitor_in_future_folds"
     return "fold1_keyword_overlay_evaluated_not_stable"
 
 
@@ -287,19 +306,18 @@ def _leakage_overlap_status(
     replay_count: int,
 ) -> str:
     if impact_status == "calibrated_impact_window_applied":
-        return "fold1_pit_leakage_overlap_review_passed_production_overlap_pending"
+        return "fold_pit_leakage_overlap_review_passed"
     if replay_count:
         return "keyword_pit_visible_overlap_unknown"
     return "not_evaluated_no_fold_events"
 
 
-def _production_status(
+def _production_route_review_status(
     *,
     packet: str,
     canonical: str,
     control: str,
     impact: str,
-    stability: str,
     leakage: str,
 ) -> str:
     passed = {
@@ -307,23 +325,53 @@ def _production_status(
         "canonical": canonical == "complete",
         "control": control == "complete",
         "impact": impact == "calibrated_impact_window_applied",
-        "stability": stability == "cross_fold_stability_passed",
-        "leakage": leakage == "passed",
+        "leakage": leakage == "fold_pit_leakage_overlap_review_passed",
     }
     if all(passed.values()):
-        return "complete"
+        return "agent_review_complete"
     if packet.startswith("missing") or packet == "blocked_or_incomplete_packet":
-        return "blocked_missing_packet_or_precondition"
+        return "agent_review_blocked_missing_packet_or_precondition"
     if impact == "same_day_keyword_observation_unvalidated":
-        return "blocked_unvalidated_impact_window"
-    if packet == "complete" and canonical == "complete" and control == "complete" and leakage == "passed" and stability.endswith("pending"):
-        return "blocked_cross_fold_stability_pending"
-    return "blocked_incomplete_layer10_workflow"
+        return "agent_review_blocked_unvalidated_impact_window"
+    return "agent_review_deferred_incomplete_layer10_workflow"
+
+
+def _production_route_decision(
+    *,
+    review_status: str,
+    blocker_codes: Sequence[str],
+) -> str:
+    if review_status != "agent_review_complete":
+        return "defer_incomplete_layer10_workflow"
+    blockers = set(blocker_codes)
+    if {"matched_controls_failed", "revised_abnormality_definition_required"} & blockers:
+        return "reject_current_definition_needs_rework"
+    if {
+        "pit_expectation_or_comparable_baseline_required",
+        "residual_over_base_state_required",
+        "liquidity_depth_evidence_required",
+    } & blockers:
+        return "approve_focus_pool_entry_defer_stronger_model_use"
+    return "approve_focus_pool_entry_risk_control_only"
+
+
+def _focus_pool_status(production_route_decision: str) -> str:
+    if production_route_decision.startswith("approve_focus_pool_entry"):
+        return "accepted_temporal_attention_focus_pool"
+    if production_route_decision.startswith("reject_"):
+        return "rejected_from_temporal_attention_focus_pool"
+    return "deferred_from_temporal_attention_focus_pool"
+
+
+def _production_status(review_status: str) -> str:
+    if review_status == "agent_review_complete":
+        return "production_route_review_complete"
+    return review_status.replace("agent_review_", "production_route_review_")
 
 
 def _fold1_status(*, replay_count: int, production_status: str, impact_status: str) -> str:
-    if production_status == "complete":
-        return "fold1_complete_production_ready"
+    if production_status == "production_route_review_complete":
+        return "fold1_complete_production_route_reviewed"
     if replay_count <= 0:
         return "fold1_complete_no_visible_events_blocked_for_production"
     if impact_status == "calibrated_impact_window_applied":
@@ -372,25 +420,26 @@ def build_layer_10_fold_completion(
         impact = _impact_window_status(family=family, replay_count=replay_count, impact_windows=impact_windows)
         stability = _fold_stability_status(replay_count=replay_count, impact_status=impact)
         leakage = _leakage_overlap_status(family=family, impact_status=impact, replay_count=replay_count)
-        production = _production_status(
-            packet=packet,
-            canonical=canonical,
-            control=control,
-            impact=impact,
-            stability=stability,
-            leakage=leakage,
-        )
         blockers = _dedupe(
             (
                 *_as_tuple((catalog_row or {}).get("blocker_codes")),
                 *_as_tuple((acceptance_row or {}).get("blocker_codes")),
                 *_as_tuple((packet_row or {}).get("remaining_blocker_codes")),
-                "cross_fold_stability_pending" if stability.endswith("pending") else "",
                 "impact_window_unvalidated" if impact == "same_day_keyword_observation_unvalidated" else "",
                 "temporal_form_seed_not_catalog_family" if catalog_row is None and family in TEMPORAL_FORM_SEED_FAMILIES else "",
                 "missing_catalog_packet" if catalog_row is None and family not in TEMPORAL_FORM_SEED_FAMILIES else "",
             )
         )
+        review_status = _production_route_review_status(
+            packet=packet,
+            canonical=canonical,
+            control=control,
+            impact=impact,
+            leakage=leakage,
+        )
+        route_decision = _production_route_decision(review_status=review_status, blocker_codes=blockers)
+        focus_pool = _focus_pool_status(route_decision)
+        production = _production_status(review_status)
         evidence_refs = _dedupe(
             (
                 *_as_tuple((catalog_row or {}).get("evidence_refs")),
@@ -402,7 +451,7 @@ def build_layer_10_fold_completion(
         )
         next_action = str((acceptance_row or {}).get("next_action") or "")
         if family in impact_windows and not next_action:
-            next_action = "Run additional folds and complete packet/source/overlap review before production completion."
+            next_action = "Enter approved focus-pool families into later folds and monitor cross-fold stability as follow-up evidence."
         rows.append(
             Layer10FamilyCompletionRow(
                 family_key=family,
@@ -414,6 +463,9 @@ def build_layer_10_fold_completion(
                 impact_window_status=impact,
                 fold_stability_status=stability,
                 leakage_overlap_status=leakage,
+                production_route_review_status=review_status,
+                production_route_decision=route_decision,
+                focus_pool_status=focus_pool,
                 fold1_completion_status=_fold1_status(
                     replay_count=replay_count,
                     production_status=production,
@@ -465,7 +517,7 @@ def write_layer_10_fold_completion_artifacts(completion: Layer10FoldCompletion, 
     )
     fields = list(
         Layer10FamilyCompletionRow(
-            "", False, 0, "", "", "", "", "", "", "", "", "", "", (), (), ""
+            "", False, 0, "", "", "", "", "", "", "", "", "", "", "", "", "", (), (), ""
         ).csv_row().keys()
     )
     _write_csv(output_dir / "layer_10_family_gate_matrix.csv", [row.csv_row() for row in completion.family_rows], fieldnames=fields)
@@ -474,7 +526,7 @@ def write_layer_10_fold_completion_artifacts(completion: Layer10FoldCompletion, 
 
 Contract: `{completion.contract_type}`
 
-This artifact completes the fold-scoped Layer 10 evidence audit for `{completion.fold_id}` / `{completion.replay_run_id}`. It does not approve production use. Production completion stays false unless every active event family passes packet, canonical parser/source, matched controls, impact-window, fold-stability, and leakage/upstream-overlap gates.
+This artifact completes the fold-scoped Layer 10 evidence audit for `{completion.fold_id}` / `{completion.replay_run_id}`. Production-route review is per event family. Approved families enter the temporal-attention focus pool for future folds; cross-fold stability is monitored after focus-pool admission rather than used as a prerequisite that prevents later-fold evidence collection.
 
 - Provider calls: {completion.provider_calls}
 - SQL writes: {completion.sql_writes}

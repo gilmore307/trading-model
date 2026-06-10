@@ -520,7 +520,7 @@ def build_all_family_real_input_backtest_artifacts(
         symbols=tuple(symbols),
         event_counts_by_family=_counts_by_family(event_rows),
         bar_rows=len(bar_rows),
-        review_status="fold_calibration_complete_requires_cross_fold_and_promotion_review",
+        review_status="fold_calibration_complete_ready_for_event_family_production_route_review",
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "input_summary.json").write_text(json.dumps(result.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8")

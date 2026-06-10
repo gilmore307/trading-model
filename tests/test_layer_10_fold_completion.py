@@ -157,7 +157,16 @@ class Layer10FoldCompletionTests(unittest.TestCase):
         self.assertEqual(by_family["cpi_inflation_release"].impact_window_status, "calibrated_impact_window_applied")
         self.assertEqual(
             by_family["cpi_inflation_release"].fold1_completion_status,
-            "fold1_calibrated_overlay_complete_production_pending",
+            "fold1_complete_production_route_reviewed",
+        )
+        self.assertEqual(by_family["cpi_inflation_release"].production_route_review_status, "agent_review_complete")
+        self.assertEqual(
+            by_family["cpi_inflation_release"].production_route_decision,
+            "approve_focus_pool_entry_risk_control_only",
+        )
+        self.assertEqual(
+            by_family["cpi_inflation_release"].focus_pool_status,
+            "accepted_temporal_attention_focus_pool",
         )
         self.assertEqual(
             by_family["equity_offering_dilution"].impact_window_status,
@@ -165,7 +174,11 @@ class Layer10FoldCompletionTests(unittest.TestCase):
         )
         self.assertEqual(
             by_family["equity_offering_dilution"].production_completion_status,
-            "blocked_unvalidated_impact_window",
+            "production_route_review_blocked_unvalidated_impact_window",
+        )
+        self.assertEqual(
+            by_family["equity_offering_dilution"].focus_pool_status,
+            "deferred_from_temporal_attention_focus_pool",
         )
         self.assertEqual(by_family["triple_witching_calendar"].packet_status, "complete")
         self.assertTrue(completion.summary["fold1_evidence_complete"])
