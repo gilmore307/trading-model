@@ -126,3 +126,5 @@ Before expanding a model implementation, define its objective contract:
 9. downstream consumer.
 
 Then trace one historical fold row through M01-M06. Every emitted field must be classifiable as estimate, policy output, hard gate, diagnostic, explainability, or attribution. Any field that mixes score, policy, reason, and constraint should be split before implementation proceeds.
+
+Framework selection is a later gate. `docs/24_model_framework_readiness.md` owns the current assessment: deep learning is not a default dependency, and neural models may enter only after non-deep baselines, point-in-time data, leakage checks, calibration, and after-cost walk-forward evidence justify them for a specific model surface.
