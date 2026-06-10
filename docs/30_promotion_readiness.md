@@ -45,7 +45,7 @@ Promotion reviews should distinguish:
 | `M03 EventStateModel` | `event_state_vector` | deferred: migration/evaluation required | six-model event-state implementation, accepted event-family inputs, and calibrated labels missing |
 | `M04 UnifiedDecisionModel` | `unified_decision_vector` | deferred: deterministic pilot only | unified decision training/evaluation run, direct utility labels, and replay evidence missing |
 | `M05 OptionExpressionModel` | `option_expression_plan` / `expression_vector` | deferred: deterministic pilot only | option-chain replay labels, cost/fill/theta/IV validation, and baseline evidence missing |
-| `M06 ResidualEventGovernanceModel` | `event_risk_intervention` / packet eligibility | deferred: migration/evaluation required | residual event-governance evaluation run and calibrated residual-risk labels missing |
+| `M06 ResidualEventGovernanceModel` | `event_risk_intervention` / packet eligibility | deferred: deterministic pilot only | residual event-governance evaluation run, overblock/accounting metrics, and calibrated residual-risk labels missing |
 
 No model in this matrix is currently production-approved by this document.
 

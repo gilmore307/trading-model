@@ -27,7 +27,7 @@ Durable promotion requests, review decisions, activation, rollback, and producti
 | `model_03_event_state` | current six-model implementation/evaluation missing | deferred | none |
 | `model_04_unified_decision` | deterministic unified decision pilot present; real replay/evaluation evidence missing | deferred | local fixture only |
 | `model_05_option_expression` | deterministic M04-intent option-expression implementation present; real replay/evaluation evidence missing | deferred | local fixture only |
-| `model_06_residual_event_governance` | current six-model implementation/evaluation missing | deferred | none |
+| `model_06_residual_event_governance` | deterministic M04/M05-thesis residual-governance implementation present; real evaluation evidence missing | deferred | local fixture only |
 
 ## Migration Evidence
 
@@ -42,7 +42,7 @@ The model repo may reuse retired implementation packages and evidence while migr
 - M03 requires event-state generation/evaluation evidence from accepted event-family inputs.
 - M04 has a deterministic structured-head generator. It still requires unified decision training/evaluation with direct utility labels, walk-forward replay, no-trade calibration, cost/fill sensitivity, leakage checks, and real promotion evidence.
 - M05 has a deterministic implementation that consumes M04 `direct_underlying_intent`. It still requires option-chain replay and option-expression / base trading-guidance outcome evidence.
-- M06 requires real residual-event-governance labels and production evaluation metrics.
+- M06 has a deterministic implementation that consumes M04 `unified_decision_vector_ref` and optional M05 `option_expression_plan_ref`. It still requires real residual-event-governance labels, overblock/accounting metrics, and production evaluation evidence.
 
 ## Activation Invariant
 

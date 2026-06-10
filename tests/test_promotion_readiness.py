@@ -10,22 +10,24 @@ from model_governance.promotion import (
 
 
 class PromotionReadinessTests(unittest.TestCase):
-    def test_readiness_matrix_covers_current_layers_one_through_ten(self) -> None:
+    def test_readiness_matrix_covers_current_six_model_stack(self) -> None:
         layers = [row["layer"] for row in LAYER_PROMOTION_READINESS_MATRIX]
         by_layer = {row["layer"]: row for row in LAYER_PROMOTION_READINESS_MATRIX}
 
-        self.assertEqual(layers, list(range(1, 11)))
-        self.assertEqual(by_layer[4]["model_id"], "event_failure_risk_model")
-        self.assertEqual(by_layer[4]["output"], "event_failure_risk_vector")
-        self.assertEqual(by_layer[6]["model_id"], "dynamic_risk_policy_model")
-        self.assertEqual(by_layer[6]["output"], "dynamic_risk_policy_state")
-        self.assertEqual(by_layer[10]["model_id"], "event_risk_governor")
-        self.assertEqual(by_layer[10]["output"], "event_context_vector")
+        self.assertEqual(layers, list(range(1, 7)))
+        self.assertEqual(by_layer[1]["model_id"], "background_context_model")
+        self.assertEqual(by_layer[1]["output"], "background_context_state")
+        self.assertEqual(by_layer[4]["model_id"], "unified_decision_model")
+        self.assertEqual(by_layer[4]["output"], "unified_decision_vector")
+        self.assertEqual(by_layer[5]["model_id"], "option_expression_model")
+        self.assertEqual(by_layer[5]["output"], "option_expression_plan")
+        self.assertEqual(by_layer[6]["model_id"], "residual_event_governance_model")
+        self.assertEqual(by_layer[6]["output"], "event_risk_intervention")
         self.assertTrue(all(row["design_status"] == "design_closed" for row in LAYER_PROMOTION_READINESS_MATRIX))
         statuses = {row["production_promotion_status"] for row in LAYER_PROMOTION_READINESS_MATRIX}
         self.assertNotIn("production_approved", statuses)
-        self.assertIn("deferred_after_real_evaluation", statuses)
-        self.assertIn("deferred_no_production_eval_substrate", statuses)
+        self.assertIn("deferred_no_current_production_eval_substrate", statuses)
+        self.assertIn("deferred_deterministic_pilot_only", statuses)
         self.assertTrue(all("mpdec_" not in row["blocking_gap"] for row in LAYER_PROMOTION_READINESS_MATRIX))
         self.assertTrue(all("persisted decision" not in row["blocking_gap"] for row in LAYER_PROMOTION_READINESS_MATRIX))
 

@@ -6,7 +6,10 @@ from model_governance.model_output_audit import MODEL_OUTPUT_TABLES, audit_rows,
 
 
 class ModelOutputAuditTests(unittest.TestCase):
-    def test_default_table_set_covers_current_ten_layer_stack(self) -> None:
+    def test_default_table_set_covers_current_and_retained_model_surfaces(self) -> None:
+        self.assertIn("model_04_unified_decision", MODEL_OUTPUT_TABLES)
+        self.assertIn("model_05_option_expression", MODEL_OUTPUT_TABLES)
+        self.assertIn("model_06_residual_event_governance", MODEL_OUTPUT_TABLES)
         self.assertIn("model_06_dynamic_risk_policy", MODEL_OUTPUT_TABLES)
         self.assertIn("model_06_dynamic_risk_policy_explainability", MODEL_OUTPUT_TABLES)
         self.assertIn("model_06_dynamic_risk_policy_diagnostics", MODEL_OUTPUT_TABLES)
@@ -15,7 +18,7 @@ class ModelOutputAuditTests(unittest.TestCase):
             for table in MODEL_OUTPUT_TABLES
             if not table.endswith(("_explainability", "_diagnostics"))
         ]
-        self.assertEqual(len(primary_tables), 10)
+        self.assertEqual(len(primary_tables), 13)
 
     def test_audit_database_uses_fast_table_sample_before_limit_fallback(self) -> None:
         class FakeCursor:
