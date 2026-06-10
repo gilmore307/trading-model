@@ -25,7 +25,7 @@ Layer 1: MarketRegimeModel
   -> Layer 10: EventRiskGovernor / EventIntelligenceOverlay
 ```
 
-Layer 4 is not broad event alpha and not raw-news ingestion. It is a narrow pre-alpha failure-risk gate for event families that have already passed agent review.
+Layer 4 is not broad standalone event alpha and not raw-news ingestion. It is the pre-alpha event-conditioned response and failure-risk estimator for event families that have already passed Layer 10 / agent review.
 
 ## Learned Objective
 
@@ -38,18 +38,32 @@ P_4(event_failure_risk_t+h | accepted_event_family_t, market_context_state_t, co
 
 It estimates applicability, strategy-failure severity, entry-block pressure, exposure-cap pressure, strategy-disable pressure, path-risk amplification, session-gap risk, and reviewed evidence quality. It is not raw event discovery, standalone event alpha, event-family promotion, co-event dominance review, alpha confidence, risk policy, position sizing, action planning, option expression, final guidance, or execution.
 
+## Layer 10 / Layer 4 Split
+
+Layer 10 owns the frozen event contract:
+
+- event-family identity and membership;
+- point-in-time clocks and visibility;
+- impact scope and allowed use;
+- influence mode;
+- impact windows and time parameters;
+- qualitative demotion, split, reweighting, or rejection when replay evidence shows the attribution or parameterization is wrong.
+
+Layer 4 must consume that contract without mutation. It may learn weights, conditional severity, response shape, uncertainty, and applicability only inside the Layer 10-approved event observation/window. It must not expand, shrink, shift, redefine, discover, merge, split, relabel, or re-time event observations. If Layer 4 evidence suggests a different event window or attribution, it emits diagnostics routed back to Layer 10 review; it does not silently change the event parameters.
+
 ## Quantitative role
 
-Layer 4 is the **quantitative event-failure-risk model**. Layer 10 and review decide whether an event family/impact relationship is real enough to supervise; Layer 4 learns how large that accepted relationship is for the current point-in-time event, market state, sector state, target state, strategy family, and horizon.
+Layer 4 is the **quantitative event-conditioned response and failure-risk model**. Layer 10 and review decide whether an event family/impact relationship is real enough to supervise and what time/scope parameters define that event. Layer 4 learns how large that accepted relationship is for the current point-in-time event, market state, sector state, target state, strategy family, and horizon.
 
 Layer 4 answers:
 
+- What response tendency, response magnitude, and response uncertainty does this frozen event contract imply?
 - How applicable is this reviewed event-failure relationship to the current target/context?
 - How severe is the strategy-failure risk for each horizon?
 - How much should entry-block, exposure-cap, strategy-disable, path-risk, session-gap, confidence, and tradability pressure increase?
 - How strong is the evidence quality for the current event observation?
 
-Layer 4 must not decide whether a new event family is real, discover raw event causes, classify co-event dominance, or decide that a source/document type is globally important. Those are Layer 10/review responsibilities.
+Layer 4 connects events to alpha decisions through response/failure-risk features that Layer 5 consumes. It must not output final after-cost alpha, standalone event alpha, trade attractiveness, position sizing, or execution guidance. Layer 4 must also not decide whether a new event family is real, discover raw event causes, classify co-event dominance, or decide that a source/document type is globally important. Those are Layer 10/review responsibilities.
 
 ## Inputs
 
@@ -59,6 +73,7 @@ Required inputs are point-in-time and review-gated:
 - `context_etf_state` / current physical context ref such as `sector_context_state_ref`;
 - `target_context_state` / `target_context_state_ref`;
 - accepted `event_strategy_failure_gate` or equivalent reviewed promotion record;
+- frozen Layer 10 event contract for accepted focus-pool families, including family, PIT clock, scope, selected window/time parameters, allowed use, and production-route review decision;
 - point-in-time event observation rows for only the reviewed event family;
 - strategy-family applicability metadata;
 - evidence-packet reference and agent-review decision.
@@ -181,6 +196,9 @@ Recommended score families:
 
 | Score family | Direction | Meaning |
 | --- | --- | --- |
+| `4_event_response_strength_score_<horizon>` | high means stronger response | Conditional event-response magnitude inside the Layer 10-approved window; this is not standalone event alpha. |
+| `4_event_response_direction_score_<horizon>` | signed response tendency | Directional response tendency from the frozen event contract and current context; Layer 5 owns final adjusted after-cost alpha. |
+| `4_event_response_uncertainty_score_<horizon>` | high is worse | Uncertainty around the event-conditioned response. |
 | `4_event_strategy_failure_risk_score_<horizon>` | high is bad | Probability/severity that the reviewed event family invalidates the relevant strategy setup. |
 | `4_event_entry_block_pressure_score_<horizon>` | high is blockier | Pressure to block new entries for affected strategy families. |
 | `4_event_exposure_cap_pressure_score_<horizon>` | high is more restrictive | Pressure to cap exposure before position projection. |
@@ -202,7 +220,7 @@ Allowed resolved statuses:
 
 ## Downstream use
 
-Layer 5 `AlphaConfidenceModel` consumes `event_failure_risk_vector` as a **conditioning input**. It may lower confidence, increase path/drawdown risk, reduce alpha tradability, or mark alpha as review-required. It must keep the base no-event alpha and event-conditioned alpha auditable.
+Layer 5 `AlphaConfidenceModel` consumes `event_failure_risk_vector` as a **conditioning input**. It may lower or raise confidence, increase path/drawdown risk, reduce alpha tradability, alter horizon preference, or mark alpha as review-required. It must keep the base no-event alpha and event-conditioned alpha auditable. Layer 5 is the first layer allowed to produce adjusted after-cost alpha.
 
 Layer 6-8 may consume the resolved Layer 4 conditioning indirectly through Layer 5/6 handoffs. They must not independently re-promote raw event evidence. Trading-calendar and market-structure dates are scheduled event families for Layer 4 when they create risk through market participant behavior or forced calendar mechanics.
 
@@ -242,7 +260,7 @@ Layer 10 supplies a reviewed supervision packet or training contract, not model 
 - minimum evidence and stability thresholds;
 - allowed Layer 4 effects.
 
-Layer 4 then trains or updates the quantitative `event_failure_risk_vector` model from point-in-time event observations, Layer 1/2/3 state, strategy context, and reviewed failure labels. If later Layer 5/6/7/8/9 evaluation shows that a Layer 4 event family has no incremental value, overblocks valid alpha, or is explained by a dominant co-event, Layer 10 must revise, demote, split, or reject the supervision packet before any future Layer 4 retraining. The changed supervision can affect only later folds.
+Layer 4 then trains or updates the quantitative `event_failure_risk_vector` model from point-in-time event observations, frozen Layer 10 event contracts, Layer 1/2/3 state, strategy context, and reviewed response/failure labels. If later Layer 5/6/7/8/9 evaluation shows that a Layer 4 event family has no incremental value, overblocks valid alpha, is explained by a dominant co-event, or appears to need a different event window, Layer 10 must revise, demote, split, or reject the supervision packet before any future Layer 4 retraining. The changed supervision can affect only later folds.
 
 ## Labels And Evaluation
 

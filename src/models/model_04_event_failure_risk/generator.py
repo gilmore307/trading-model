@@ -1,9 +1,10 @@
 """EventFailureRiskModel baseline generator.
 
-Layer 4 converts agent-reviewed event/strategy-failure gates into a
-point-in-time ``event_failure_risk_vector``. It is intentionally conservative:
-without a reviewed gate it emits an auditable no-risk/observe-only row, not raw
-news alpha or automatic event-family promotion.
+Layer 4 converts agent-reviewed event/strategy-failure gates or frozen Layer 10
+focus-pool event contracts into a point-in-time ``event_failure_risk_vector``.
+It is intentionally conservative: without a reviewed gate or accepted Layer 10
+contract it emits an auditable no-risk/observe-only row, not raw news alpha,
+event-parameter mutation, or automatic event-family promotion.
 """
 from __future__ import annotations
 
@@ -33,7 +34,12 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     if not target_candidate_id:
         raise ValueError("target_candidate_id is required")
 
-    gate = _payload(row, "event_strategy_failure_gate") or _payload(row, "event_strategy_failure_gate")
+    gate = _payload(row, "event_strategy_failure_gate")
+    layer10 = (
+        _payload(row, "layer_10_event_contract")
+        or _payload(row, "event_interpretation_contract")
+        or _payload(row, "event_context_vector")
+    )
     evidence = _payload(row, "event_failure_evidence_packet") or _payload(row, "event_failure_evidence")
     market = _payload(row, "market_context_state")
     sector = _payload(row, "sector_context_state")
@@ -41,11 +47,14 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
 
     vector: dict[str, Any] = {}
     diagnostics: dict[str, Any] = {"horizon_reason_codes": {}}
-    reviewed = _review_accepted(gate)
+    reviewed = _review_accepted(gate) or _layer10_contract_accepted(layer10)
     for horizon in HORIZONS:
         suffix = _suffix(horizon)
-        scores = _scores(horizon, gate, evidence, market, sector, target, reviewed=reviewed)
+        scores = _scores(horizon, gate, layer10, evidence, market, sector, target, reviewed=reviewed)
         vector.update({
+            f"4_event_response_strength_score_{suffix}": scores["response_strength"],
+            f"4_event_response_direction_score_{suffix}": scores["response_direction"],
+            f"4_event_response_uncertainty_score_{suffix}": scores["response_uncertainty"],
             f"4_event_strategy_failure_risk_score_{suffix}": scores["failure_risk"],
             f"4_event_entry_block_pressure_score_{suffix}": scores["entry_block"],
             f"4_event_exposure_cap_pressure_score_{suffix}": scores["exposure_cap"],
@@ -70,6 +79,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "sector_context_state_ref": row.get("sector_context_state_ref"),
         "target_context_state_ref": row.get("target_context_state_ref") or row.get("target_state_vector_ref"),
         "event_strategy_failure_gate_ref": row.get("event_strategy_failure_gate_ref"),
+        "layer_10_event_contract_ref": row.get("layer_10_event_contract_ref"),
         "event_failure_evidence_packet_ref": row.get("event_failure_evidence_packet_ref"),
         "event_failure_risk_vector_ref": ref,
         "4_resolved_event_failure_risk_status": resolved_status,
@@ -81,10 +91,23 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     return output
 
 
-def _scores(horizon: str, gate: Mapping[str, Any], evidence: Mapping[str, Any], market: Mapping[str, Any], sector: Mapping[str, Any], target: Mapping[str, Any], *, reviewed: bool) -> dict[str, Any]:
+def _scores(
+    horizon: str,
+    gate: Mapping[str, Any],
+    layer10: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    market: Mapping[str, Any],
+    sector: Mapping[str, Any],
+    target: Mapping[str, Any],
+    *,
+    reviewed: bool,
+) -> dict[str, Any]:
     suffix = _suffix(horizon)
     if not reviewed:
         return {
+            "response_strength": 0.0,
+            "response_direction": 0.0,
+            "response_uncertainty": 0.0,
             "failure_risk": 0.0,
             "entry_block": 0.0,
             "exposure_cap": 0.0,
@@ -95,10 +118,46 @@ def _scores(horizon: str, gate: Mapping[str, Any], evidence: Mapping[str, Any], 
             "applicability": 0.0,
             "reason_codes": ["no_reviewed_event_failure_risk"],
         }
-    evidence_quality = _score(gate, f"evidence_quality_score_{suffix}", "evidence_quality_score", default=_score(evidence, "evidence_quality_score", default=0.6))
-    applicability = _score(gate, f"applicability_confidence_score_{suffix}", "applicability_confidence_score", default=_score(evidence, "applicability_confidence_score", default=0.55))
-    effect = _score(gate, f"strategy_failure_effect_score_{suffix}", "strategy_failure_effect_score", "failure_effect_score", default=0.5)
-    path = _score(gate, f"path_risk_amplifier_score_{suffix}", "path_risk_amplifier_score", default=effect)
+    l10_presence = _score(layer10, f"10_event_presence_score_{suffix}", "10_event_presence_score", "event_presence_score", default=0.0)
+    l10_timing = _score(layer10, f"10_event_timing_proximity_score_{suffix}", "10_event_timing_proximity_score", "event_timing_proximity_score", default=l10_presence)
+    l10_intensity = _score(layer10, f"10_event_intensity_score_{suffix}", "10_event_intensity_score", "event_intensity_score", default=l10_presence)
+    l10_gap = _score(layer10, f"10_event_gap_risk_score_{suffix}", "10_event_gap_risk_score", "event_gap_risk_score", default=0.0)
+    l10_reversal = _score(layer10, f"10_event_reversal_risk_score_{suffix}", "10_event_reversal_risk_score", "event_reversal_risk_score", default=0.0)
+    l10_uncertainty = _score(layer10, f"10_event_uncertainty_score_{suffix}", "10_event_uncertainty_score", "event_uncertainty_score", default=max(l10_gap, l10_reversal) * 0.5)
+    l10_direction = _signed_score(layer10, f"10_event_direction_bias_score_{suffix}", "10_event_direction_bias_score", "event_direction_bias_score", default=0.0)
+
+    evidence_quality = _score(
+        gate,
+        f"evidence_quality_score_{suffix}",
+        "evidence_quality_score",
+        default=_score(layer10, "event_evidence_quality_score", default=_score(evidence, "evidence_quality_score", default=0.6)),
+    )
+    applicability = _score(
+        gate,
+        f"applicability_confidence_score_{suffix}",
+        "applicability_confidence_score",
+        default=_score(layer10, "event_applicability_confidence_score", default=max(l10_presence, l10_timing, _score(evidence, "applicability_confidence_score", default=0.55))),
+    )
+    effect = _score(
+        gate,
+        f"strategy_failure_effect_score_{suffix}",
+        "strategy_failure_effect_score",
+        "failure_effect_score",
+        default=max(l10_intensity, l10_presence, 0.5),
+    )
+    response_strength = _score(
+        gate,
+        f"event_response_strength_score_{suffix}",
+        "event_response_strength_score",
+        default=max(effect, l10_intensity, l10_presence),
+    )
+    response_uncertainty = _score(
+        gate,
+        f"event_response_uncertainty_score_{suffix}",
+        "event_response_uncertainty_score",
+        default=max(l10_uncertainty, l10_reversal),
+    )
+    path = _score(gate, f"path_risk_amplifier_score_{suffix}", "path_risk_amplifier_score", default=max(effect, l10_gap, l10_reversal))
     entry = _score(gate, f"entry_block_pressure_score_{suffix}", "entry_block_pressure_score", default=max(effect - 0.1, 0.0))
     exposure = _score(gate, f"exposure_cap_pressure_score_{suffix}", "exposure_cap_pressure_score", default=max(effect - 0.2, 0.0))
     disable = _score(gate, f"strategy_disable_pressure_score_{suffix}", "strategy_disable_pressure_score", default=max(effect - 0.35, 0.0))
@@ -123,6 +182,8 @@ def _scores(horizon: str, gate: Mapping[str, Any], evidence: Mapping[str, Any], 
     multiplier = 0.55 + 0.45 * confidence
     failure_risk = _clip01(effect * multiplier)
     reason_codes = ["reviewed_event_failure_gate_applied"]
+    if _layer10_contract_accepted(layer10):
+        reason_codes.extend(["layer10_focus_pool_contract_consumed", "layer10_event_parameters_frozen"])
     if evidence_quality < 0.5:
         reason_codes.append("low_evidence_quality")
     if applicability < 0.5:
@@ -132,6 +193,9 @@ def _scores(horizon: str, gate: Mapping[str, Any], evidence: Mapping[str, Any], 
     if session_gap >= 0.6:
         reason_codes.append("event_session_gap_risk")
     return {
+        "response_strength": round(_clip01(response_strength * multiplier), 6),
+        "response_direction": round(l10_direction, 6),
+        "response_uncertainty": round(_clip01(response_uncertainty * multiplier), 6),
         "failure_risk": round(failure_risk, 6),
         "entry_block": round(_clip01(entry * multiplier), 6),
         "exposure_cap": round(_clip01(exposure * multiplier), 6),
@@ -172,6 +236,18 @@ def _review_accepted(gate: Mapping[str, Any]) -> bool:
     return decision in {"accept_layer_04_event_failure_risk_scope", "accepted", "approve", "approved"} or status in {"accepted", "reviewed_accepted"}
 
 
+def _layer10_contract_accepted(contract: Mapping[str, Any]) -> bool:
+    decision = str(contract.get("production_route_decision") or contract.get("review_decision") or "").strip().lower()
+    focus_status = str(contract.get("focus_pool_status") or contract.get("event_pool_status") or "").strip().lower()
+    source = str(contract.get("contract_owner") or contract.get("source_layer") or "").strip().lower()
+    has_frozen_window = bool(contract.get("selected_window_label") or contract.get("visible_event_window_policies"))
+    return (
+        decision.startswith("approve_focus_pool_entry")
+        or focus_status == "accepted_temporal_attention_focus_pool"
+        or (source in {"layer_10_event_risk_governor", "layer_10"} and has_frozen_window and focus_status.startswith("accepted"))
+    )
+
+
 def _payload(row: Mapping[str, Any], key: str) -> Mapping[str, Any]:
     value = row.get(key)
     if isinstance(value, Mapping):
@@ -193,6 +269,16 @@ def _score(payload: Mapping[str, Any], *keys: str, default: float = 0.0) -> floa
             except (TypeError, ValueError):
                 continue
     return _clip01(default)
+
+
+def _signed_score(payload: Mapping[str, Any], *keys: str, default: float = 0.0) -> float:
+    for key in keys:
+        if key in payload and payload[key] is not None:
+            try:
+                return _clip_signed(float(payload[key]))
+            except (TypeError, ValueError):
+                continue
+    return _clip_signed(default)
 
 
 def _parse_time(value: Any) -> datetime:
@@ -221,6 +307,10 @@ def _stable_id(prefix: str, *parts: Any) -> str:
 
 def _clip01(value: float) -> float:
     return max(0.0, min(1.0, float(value)))
+
+
+def _clip_signed(value: float) -> float:
+    return max(-1.0, min(1.0, float(value)))
 
 
 def _validate_no_forbidden_output(row: Mapping[str, Any]) -> None:

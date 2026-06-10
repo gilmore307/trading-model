@@ -394,7 +394,7 @@ Contract owner:
 docs/13_layer_04_event_failure_risk.md
 ```
 
-Layer 4 consumes reviewed Layer 1/2/3 context plus only agent-accepted event/strategy-failure evidence. It outputs `event_failure_risk_vector`: strategy-failure risk, entry-block pressure, exposure-cap pressure, strategy-disable pressure, path-risk amplification, evidence quality, and applicability confidence. It is a pre-alpha conditioning gate, not raw event alpha and not a discovery layer. New event families can enter Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, and explicit agent/manager acceptance.
+Layer 4 consumes reviewed Layer 1/2/3 context plus only agent-accepted event/strategy-failure evidence and frozen Layer 10 focus-pool event contracts. It outputs `event_failure_risk_vector`: event-conditioned response strength/direction/uncertainty, strategy-failure risk, entry-block pressure, exposure-cap pressure, strategy-disable pressure, path-risk amplification, evidence quality, and applicability confidence. It is a pre-alpha conditioning gate, not raw event alpha and not a discovery layer. Layer 10 owns event family identity, PIT clocks, scope, visibility, and impact-window parameters; Layer 4 learns only quantitative response/failure-risk mapping inside those parameters. New event families can enter Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, and explicit agent/manager acceptance.
 
 ## Layer 5: AlphaConfidenceModel
 

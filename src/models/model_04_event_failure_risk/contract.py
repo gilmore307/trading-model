@@ -10,6 +10,9 @@ MODEL_VERSION: Final[str] = "event_failure_risk_vector_contract"
 VECTOR_OUTPUT: Final[str] = "event_failure_risk_vector"
 HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
+    "4_event_response_strength_score_<horizon>",
+    "4_event_response_direction_score_<horizon>",
+    "4_event_response_uncertainty_score_<horizon>",
     "4_event_strategy_failure_risk_score_<horizon>",
     "4_event_entry_block_pressure_score_<horizon>",
     "4_event_exposure_cap_pressure_score_<horizon>",
@@ -33,4 +36,5 @@ FORBIDDEN_OUTPUT_FIELDS: Final[frozenset[str]] = frozenset({
     "option_contract", "option_symbol", "strike", "dte", "delta", "order_type",
     "broker_order_id", "execution_result", "final_action", "current_position_size",
     "current_pnl", "future_return", "future_fill", "realized_pnl",
+    "event_alpha", "event_trade_alpha", "standalone_event_edge",
 })

@@ -27,6 +27,7 @@ Scripts are the runtime boundary. Reusable model logic belongs in `src/`; script
   - `review_target_state_vector_production_substrate.py` reviews the real Layer 3 production-evaluation substrate when present.
 - `models/model_04_event_failure_risk/`
   - `generate_model_04_event_failure_risk.py`, `evaluate_model_04_event_failure_risk.py`, and `review_event_failure_risk_promotion.py` are local JSON/JSONL-safe EventFailureRiskModel generation, evaluation-label, and conservative review entrypoints; generation/evaluation also support SQL-backed `--from-database` workflow rows.
+  - `build_layer4_focus_pool_inputs.py` builds Layer 4 input rows from accepted Layer 10 focus-pool replay evidence while filtering out rejected event families and preserving Layer 10 event parameters as frozen inputs.
 - `models/model_05_alpha_confidence/`
   - `train_model_05_alpha_confidence.py`, `generate_model_05_alpha_confidence.py`, `evaluate_model_05_alpha_confidence.py`, and `review_alpha_confidence_promotion.py` are local JSON/JSONL-safe AlphaConfidenceModel training, generation, evaluation-label, and conservative review entrypoints; generation/evaluation also support SQL-backed `--from-database` workflow rows. The trained Layer 5 path uses a LightGBM GBDT artifact and emits a normalized after-cost alpha score where `0.5` is neutral.
 - `models/model_06_dynamic_risk_policy/`
