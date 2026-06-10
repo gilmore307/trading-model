@@ -48,8 +48,8 @@ class Layer10FoldCompletionTests(unittest.TestCase):
                     "family_rows": [
                         {
                             "family_key": "cpi_inflation_release",
-                            "acceptance_status": "risk_only_candidate_temporary_evidence",
-                            "accepted_current_use": "temporary_macro_risk_surprise_evidence_pending_canonical_te_history",
+                            "acceptance_status": "risk_only_candidate_pending_canonical_evidence",
+                            "accepted_current_use": "macro_risk_surprise_control_pending_canonical_te_history",
                             "blocked_use": "standalone_alpha",
                             "blocker_codes": ["canonical_te_expectation_history_needed"],
                             "evidence_refs": ["cpi_acceptance"],

@@ -190,7 +190,7 @@ def _disposition(spec: Mapping[str, Any]) -> tuple[str, str, str, str, tuple[str
         )
     if family == "cpi_inflation_release":
         return (
-            "risk_only_candidate_temporary_evidence",
+            "risk_only_candidate_pending_canonical_evidence",
             "alpha_blocked_directional_signal_weak",
             "risk_candidate_macro_surprise_control",
             "use_as_control_feature_after_canonical_te_route",
@@ -282,7 +282,7 @@ def build_event_family_remaining_acceptance(
         evidence_refs = _dedupe((*_as_tuple(spec.get("evidence_refs")), *EVIDENCE_BY_FAMILY.get(family, ())))
         accepted_current_use = str(spec.get("accepted_current_use") or "")
         if family in TEMPORARY_EVIDENCE_FAMILIES:
-            accepted_current_use = "temporary_macro_risk_surprise_evidence_pending_canonical_te_history"
+            accepted_current_use = "macro_risk_surprise_control_pending_canonical_te_history"
         rows.append(
             FamilyAcceptanceRow(
                 family_key=family,

@@ -227,7 +227,7 @@ def _packet_status(
     if catalog_row is None:
         return "missing_catalog_packet"
     status = str((acceptance or {}).get("acceptance_status") or "")
-    if status in {"risk_only_candidate_temporary_evidence", "risk_only_scouting_underpowered"}:
+    if status in {"risk_only_candidate_pending_canonical_evidence", "risk_only_scouting_underpowered"}:
         return "partial_packet_reviewed_risk_only"
     if status.startswith("packet_required"):
         return "missing_family_packet"

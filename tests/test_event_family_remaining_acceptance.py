@@ -43,7 +43,7 @@ class EventFamilyRemainingAcceptanceTests(unittest.TestCase):
         by_family = {row.family_key: row for row in batch.family_rows}
 
         cpi = by_family["cpi_inflation_release"]
-        self.assertEqual(cpi.acceptance_status, "risk_only_candidate_temporary_evidence")
+        self.assertEqual(cpi.acceptance_status, "risk_only_candidate_pending_canonical_evidence")
         self.assertEqual(cpi.risk_feature_status, "risk_candidate_macro_surprise_control")
         self.assertIn("canonical_te_expectation_history_needed", cpi.blocker_codes)
 
