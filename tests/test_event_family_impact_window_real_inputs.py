@@ -8,6 +8,7 @@ from pathlib import Path
 
 from models.model_10_event_risk_governor.event_family_impact_window_real_inputs import (
     cpi_events_from_trading_economics,
+    _temporal_form_for_family,
     triple_witching_events,
 )
 
@@ -64,6 +65,11 @@ class EventFamilyImpactWindowRealInputsTests(unittest.TestCase):
         self.assertEqual(rows[0]["event_temporal_form"], "scheduled_data_release_event")
         self.assertEqual(rows[0]["event_date"], "2021-03-10")
         self.assertIn(str(path), rows[0]["source_ref"])
+
+    def test_temporal_forms_cover_scheduled_and_unscheduled_families(self) -> None:
+        self.assertEqual(_temporal_form_for_family("fomc_rates_policy"), "scheduled_data_release_event")
+        self.assertEqual(_temporal_form_for_family("earnings_guidance_scheduled_shell"), "scheduled_calendar_event")
+        self.assertEqual(_temporal_form_for_family("equity_offering_dilution"), "instantaneous_unscheduled_event")
 
 
 if __name__ == "__main__":

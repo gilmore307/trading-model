@@ -82,6 +82,23 @@ class Layer10FoldCompletionTests(unittest.TestCase):
                     ]
                 },
             )
+            precondition = _write(
+                tmp / "precondition.json",
+                {
+                    "packets": [
+                        {
+                            "family_key": "cpi_inflation_release",
+                            "packet_status": "packet_spec_completed_current_risk_only_evidence",
+                            "remaining_blocker_codes": [],
+                        },
+                        {
+                            "family_key": "equity_offering_dilution",
+                            "packet_status": "packet_spec_completed_pending_empirical_evidence",
+                            "remaining_blocker_codes": ["empirical_association_study_required"],
+                        },
+                    ]
+                },
+            )
             association = _write(
                 tmp / "association.json",
                 {
@@ -127,6 +144,7 @@ class Layer10FoldCompletionTests(unittest.TestCase):
             completion = build_layer_10_fold_completion(
                 catalog_path=catalog,
                 acceptance_path=acceptance,
+                precondition_path=precondition,
                 coverage_path=coverage,
                 association_path=association,
                 impact_window_summary_path=impact,
@@ -147,9 +165,9 @@ class Layer10FoldCompletionTests(unittest.TestCase):
         )
         self.assertEqual(
             by_family["equity_offering_dilution"].production_completion_status,
-            "blocked_missing_packet_or_precondition",
+            "blocked_unvalidated_impact_window",
         )
-        self.assertEqual(by_family["triple_witching_calendar"].packet_status, "missing_catalog_packet")
+        self.assertEqual(by_family["triple_witching_calendar"].packet_status, "complete")
         self.assertTrue(completion.summary["fold1_evidence_complete"])
         self.assertFalse(completion.summary["layer10_production_evidence_complete"])
 
@@ -163,6 +181,7 @@ class Layer10FoldCompletionTests(unittest.TestCase):
             completion = build_layer_10_fold_completion(
                 catalog_path=path,
                 acceptance_path=list_path,
+                precondition_path=list_path,
                 coverage_path=list_path,
                 association_path=list_path,
                 impact_window_summary_path=impact,

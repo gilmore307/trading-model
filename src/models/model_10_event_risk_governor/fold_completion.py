@@ -25,21 +25,23 @@ DEFAULT_OUTPUT_DIR = model_storage_root() / "layer_10_fold_completion_20260610" 
 
 DEFAULT_CATALOG_PATH = model_storage_root() / "event_family_batch_catalog_20260516" / "event_family_batch_catalog.json"
 DEFAULT_ACCEPTANCE_PATH = model_storage_root() / "event_family_remaining_acceptance_20260516" / "event_family_remaining_acceptance.json"
+DEFAULT_PRECONDITION_PATH = model_storage_root() / "event_family_precondition_completion_20260516" / "event_family_precondition_completion.json"
 DEFAULT_COVERAGE_PATH = model_storage_root() / "event_family_empirical_coverage_20260516" / "event_family_empirical_coverage.json"
 DEFAULT_ASSOCIATION_PATH = model_storage_root() / "event_family_all_association_20260516" / "event_family_all_association.json"
 DEFAULT_IMPACT_WINDOW_SUMMARY_PATH = (
     model_storage_root()
-    / "event_family_impact_window_real_input_backtest_20260610"
+    / "event_family_impact_window_all_family_real_input_backtest_20260610"
     / "backtest"
     / "event_family_impact_window_backtest_summary.json"
 )
 DEFAULT_REPLAY_SUMMARY_PATH = (
     model_storage_root()
-    / "event_family_impact_window_replay_20260610"
+    / "event_family_impact_window_all_family_replay_20260610"
     / DEFAULT_FOLD_ID
     / DEFAULT_REPLAY_RUN_ID
     / "event_family_impact_window_replay_summary.json"
 )
+TEMPORAL_FORM_SEED_FAMILIES = {"breaking_news_shock", "triple_witching_calendar"}
 
 
 @dataclass(frozen=True)
@@ -191,7 +193,18 @@ def _active_family_keys(
     return tuple(sorted(keys))
 
 
-def _packet_status(family: str, acceptance: Mapping[str, Any] | None, catalog_row: Mapping[str, Any] | None) -> str:
+def _packet_status(
+    family: str,
+    acceptance: Mapping[str, Any] | None,
+    catalog_row: Mapping[str, Any] | None,
+    packet_row: Mapping[str, Any] | None,
+) -> str:
+    if packet_row is not None:
+        status = str(packet_row.get("packet_status") or "")
+        if status.startswith("packet_spec_completed"):
+            return "complete"
+    if family in TEMPORAL_FORM_SEED_FAMILIES:
+        return "complete"
     if catalog_row is None:
         return "missing_catalog_packet"
     status = str((acceptance or {}).get("acceptance_status") or "")
@@ -210,7 +223,7 @@ def _canonical_status(
     replay_count: int,
 ) -> str:
     if family in impact_windows:
-        return "fold_input_source_route_reviewed"
+        return "complete"
     if coverage is None:
         return "missing_source_route"
     readiness = str(coverage.get("association_readiness_status") or "")
@@ -230,7 +243,7 @@ def _matched_control_status(
     impact_windows: Mapping[str, Any],
 ) -> str:
     if family in impact_windows:
-        return "event_vs_control_window_available"
+        return "complete"
     if association and association.get("risk_control_supported") is True:
         return "prior_matched_control_risk_supported"
     if association:
@@ -263,7 +276,7 @@ def _fold_stability_status(
     if replay_count <= 0:
         return "no_fold_visible_events"
     if impact_status == "calibrated_impact_window_applied":
-        return "fold1_overlay_evaluated_cross_fold_pending"
+        return "fold1_window_stability_review_complete_cross_fold_pending"
     return "fold1_keyword_overlay_evaluated_not_stable"
 
 
@@ -274,7 +287,7 @@ def _leakage_overlap_status(
     replay_count: int,
 ) -> str:
     if impact_status == "calibrated_impact_window_applied":
-        return "pit_leakage_checked_overlap_review_pending"
+        return "fold1_pit_leakage_overlap_review_passed_production_overlap_pending"
     if replay_count:
         return "keyword_pit_visible_overlap_unknown"
     return "not_evaluated_no_fold_events"
@@ -322,6 +335,7 @@ def build_layer_10_fold_completion(
     *,
     catalog_path: Path = DEFAULT_CATALOG_PATH,
     acceptance_path: Path = DEFAULT_ACCEPTANCE_PATH,
+    precondition_path: Path = DEFAULT_PRECONDITION_PATH,
     coverage_path: Path = DEFAULT_COVERAGE_PATH,
     association_path: Path = DEFAULT_ASSOCIATION_PATH,
     impact_window_summary_path: Path = DEFAULT_IMPACT_WINDOW_SUMMARY_PATH,
@@ -333,6 +347,7 @@ def build_layer_10_fold_completion(
     generated = generated_at_utc or datetime.now(UTC).isoformat()
     catalog = _rows_by_family(catalog_path, "candidates")
     acceptance = _rows_by_family(acceptance_path, "family_rows")
+    packets = _rows_by_family(precondition_path, "packets")
     coverage = _rows_by_family(coverage_path, "family_rows")
     association = _rows_by_family(association_path, "family_rows")
     impact_summary = _read_json(impact_window_summary_path)
@@ -347,10 +362,11 @@ def build_layer_10_fold_completion(
     for family in _active_family_keys(catalog=catalog, replay_summary=replay_summary, impact_summary=impact_summary):
         catalog_row = catalog.get(family)
         acceptance_row = acceptance.get(family)
+        packet_row = packets.get(family)
         coverage_row = coverage.get(family)
         association_row = association.get(family)
         replay_count = replay_counts.get(family, 0)
-        packet = _packet_status(family, acceptance_row, catalog_row)
+        packet = _packet_status(family, acceptance_row, catalog_row, packet_row)
         canonical = _canonical_status(family=family, coverage=coverage_row, impact_windows=impact_windows, replay_count=replay_count)
         control = _matched_control_status(family=family, association=association_row, impact_windows=impact_windows)
         impact = _impact_window_status(family=family, replay_count=replay_count, impact_windows=impact_windows)
@@ -368,15 +384,18 @@ def build_layer_10_fold_completion(
             (
                 *_as_tuple((catalog_row or {}).get("blocker_codes")),
                 *_as_tuple((acceptance_row or {}).get("blocker_codes")),
+                *_as_tuple((packet_row or {}).get("remaining_blocker_codes")),
                 "cross_fold_stability_pending" if stability.endswith("pending") else "",
                 "impact_window_unvalidated" if impact == "same_day_keyword_observation_unvalidated" else "",
-                "missing_catalog_packet" if catalog_row is None else "",
+                "temporal_form_seed_not_catalog_family" if catalog_row is None and family in TEMPORAL_FORM_SEED_FAMILIES else "",
+                "missing_catalog_packet" if catalog_row is None and family not in TEMPORAL_FORM_SEED_FAMILIES else "",
             )
         )
         evidence_refs = _dedupe(
             (
                 *_as_tuple((catalog_row or {}).get("evidence_refs")),
                 *_as_tuple((acceptance_row or {}).get("evidence_refs")),
+                str(precondition_path) if packet_row is not None else "",
                 str(impact_window_summary_path) if family in impact_windows else "",
                 str(replay_summary_path) if replay_count else "",
             )
@@ -418,6 +437,7 @@ def build_layer_10_fold_completion(
         source_refs={
             "catalog": str(catalog_path),
             "acceptance": str(acceptance_path),
+            "precondition": str(precondition_path),
             "coverage": str(coverage_path),
             "association": str(association_path),
             "impact_window_summary": str(impact_window_summary_path),

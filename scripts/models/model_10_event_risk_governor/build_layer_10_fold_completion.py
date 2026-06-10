@@ -15,6 +15,7 @@ from models.model_10_event_risk_governor.fold_completion import (
     DEFAULT_FOLD_ID,
     DEFAULT_IMPACT_WINDOW_SUMMARY_PATH,
     DEFAULT_OUTPUT_DIR,
+    DEFAULT_PRECONDITION_PATH,
     DEFAULT_REPLAY_RUN_ID,
     DEFAULT_REPLAY_SUMMARY_PATH,
     build_layer_10_fold_completion,
@@ -26,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG_PATH)
     parser.add_argument("--acceptance", type=Path, default=DEFAULT_ACCEPTANCE_PATH)
+    parser.add_argument("--precondition", type=Path, default=DEFAULT_PRECONDITION_PATH)
     parser.add_argument("--coverage", type=Path, default=DEFAULT_COVERAGE_PATH)
     parser.add_argument("--association", type=Path, default=DEFAULT_ASSOCIATION_PATH)
     parser.add_argument("--impact-window-summary", type=Path, default=DEFAULT_IMPACT_WINDOW_SUMMARY_PATH)
@@ -42,6 +44,7 @@ def main() -> int:
     completion = build_layer_10_fold_completion(
         catalog_path=args.catalog,
         acceptance_path=args.acceptance,
+        precondition_path=args.precondition,
         coverage_path=args.coverage,
         association_path=args.association,
         impact_window_summary_path=args.impact_window_summary,
