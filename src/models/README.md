@@ -2,20 +2,18 @@
 
 Model-specific implementation packages.
 
-Each accepted model output/research boundary gets its own package under this directory. Keep model-local generators, evaluation harnesses, configs, evidence maps, and README files inside the model package unless a helper is genuinely shared across model layers.
+Each accepted model output/research boundary gets its own package under this directory. Keep model-local generators, evaluation harnesses, configs, evidence maps, and README files inside the model package unless a helper is genuinely shared across model contracts.
 
 Current packages:
 
-- `model_sequence.py` — serializable `M01` through `M10` display/order metadata for the current model stack.
-- `model_01_market_regime/` — `M01 Market Regime`, broad market-context state implementation.
-- `model_02_sector_context/` — `M02 Sector Context`, contract-first package for sector/industry context state.
-- `model_03_target_state_vector/` — `M03 Target State`, anonymous target candidate preprocessing contracts plus `TargetStateVectorModel` target-context/state-vector output contracts.
-- `model_04_event_failure_risk/` — `M04 Event Failure Risk`, producing reviewed event-failure conditioning rows without raw-event promotion, alpha, action, option, or execution leakage.
-- `model_05_alpha_confidence/` — `M05 Alpha Confidence`, producing adjusted `alpha_confidence_vector` rows plus base-alpha diagnostics and offline alpha labels without position/action leakage.
-- `model_06_dynamic_risk_policy/` — `M06 Dynamic Risk Policy`, producing model-internal `dynamic_risk_policy_state` rows without broker permission or hard execution limits.
-- `model_07_position_projection/` — `M07 Position Projection`, producing `position_projection_vector` rows and offline utility labels without action/execution leakage.
-- `model_08_underlying_action/` — `M08 Underlying Action`, producing offline `underlying_action_plan` / `underlying_action_vector` rows and plan-quality labels without broker orders or option-contract selection.
-- `model_09_option_expression/` — `M09 Option Expression`, trading-guidance option-expression work producing offline `option_expression_plan` / `expression_vector` rows and option-expression labels without broker orders or account mutation.
-- `model_10_event_risk_governor/` — `M10 Event Risk Governor`, producing point-in-time event-risk context/intervention rows and offline event-overlay labels without alpha/action leakage.
+- `model_sequence.py` — serializable `M01` through `M06` display/order metadata for the current model stack.
+- `model_01_background_context/` — `M01 Background Context`, broad market plus sector/industry background state.
+- `model_02_target_state/` — `M02 Target State`, target eligibility, ranking, and anonymous target-state evidence.
+- `model_03_event_state/` — `M03 Event State`, accepted event-state conditioning without event-parameter mutation.
+- `model_04_unified_decision/` — `M04 Unified Decision`, structured edge/risk/exposure/action heads in one direct-underlying decision contract.
+- `model_05_option_expression/` — `M05 Option Expression`, optional option/underlying expression after direct-underlying intent exists.
+- `model_06_residual_event_governance/` — `M06 Residual Event Governance`, missed-event checks, residual intervention, attribution, and future event-family evidence.
+
+Retired ten-layer packages such as `model_01_market_regime/`, `model_05_alpha_confidence/`, and `model_10_event_risk_governor/` remain only as migration-source implementation surfaces. They are not the current model contract standard.
 
 Shared governance/promotion helpers stay outside this directory in `src/model_governance/`.

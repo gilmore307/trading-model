@@ -1,50 +1,46 @@
 # Model Decomposition Framework
 
-Status: accepted runtime-contract decomposition spine; production promotion remains evidence-gated
-Owner intent: every component-facing model contract must keep the same reviewable nine-part decomposition before production promotion expands, even when internal training blocks merge several contracts.
+Status: accepted six-model decomposition spine; production promotion remains evidence-gated
+Owner intent: every current model contract must keep the same reviewable decomposition before implementation or promotion expands.
 
 ## Nine-Part Structure
 
-For each runtime contract or merged training block, define:
+For each current model contract, define:
 
 1. **Data** — eligible point-in-time input tables/artifacts, owner, and availability timestamp.
 2. **Features** — model-facing `X`, diagnostic fields, evaluation-only fields, and intentionally unused fields.
-3. **Prediction target** — supervised target, rank objective, inferred latent state, or parameter surface.
+3. **Prediction target / utility** — supervised target, rank objective, inferred latent state, or utility surface.
 4. **Model mapping** — how `X` becomes the output state/vector/ranker/gate.
 5. **Loss / error measure** — how wrongness is measured during fitting, scoring, calibration, or evaluation.
 6. **Training / parameter update** — how scalers, thresholds, rules, or learned parameters update without leakage.
-7. **Validation / usefulness** — how the layer proves decision usefulness, not just historical fit.
-8. **Overfitting control** — how the layer avoids hindsight, data snooping, unstable refits, and false confidence.
+7. **Validation / usefulness** — how the model proves decision usefulness, not just historical fit.
+8. **Overfitting control** — how the model avoids hindsight, data snooping, unstable refits, and false confidence.
 9. **Decision deployment** — how the output enters the offline decision record and downstream gates.
 
-## Cross-Layer Rules
-
-### Model artifact split
-
-Each implemented runtime contract should separate three artifact classes:
+## Current Model Contracts
 
 ```text
-mNN_<domain_slug>_model_generation                  # output
-mNN_<domain_slug>_model_generation_explainability   # human review/debug/explain
-mNN_<domain_slug>_model_generation_diagnostics      # acceptance/monitoring/gating
+M01 Background Context          -> background_context_state
+M02 Target State / Selection    -> target_context_state
+M03 Event State / Conditioning  -> event_state_vector
+M04 Unified Decision            -> unified_decision_vector
+M05 Option Expression           -> trading_guidance_record / option_expression_plan / expression_vector
+M06 Residual Event Governance   -> event_risk_intervention / future event-family packet eligibility
 ```
 
-Primary `model` outputs stay narrow and stable. Explainability and diagnostics may be wider, but downstream production logic should not hard-depend on them without a reviewed promotion decision.
+## Cross-Model Rules
 
-The accepted training topology has six model blocks while preserving ten runtime contracts:
+### Model Artifact Split
+
+Each implemented current model contract should separate three artifact classes:
 
 ```text
-B01 Background Context       -> M01 + M02 outputs
-B02 Target State / Selection -> M03 output
-B03 Event State              -> M04 output
-B04 Unified Decision         -> M05 + M06 + M07 + M08 outputs
-B05 Option Expression        -> M09 output
-B06 Residual Event Governance-> M10 output
+model_NN_<model_slug>                  # primary output
+model_NN_<model_slug>_explainability   # human review/debug/explain
+model_NN_<model_slug>_diagnostics      # acceptance/monitoring/gating
 ```
 
-Training-block consolidation is an implementation topology, not permission to collapse component-facing artifacts. If one trained artifact produces multiple runtime contracts, each runtime output still needs its own primary row shape, explainability payload, diagnostics payload, validation evidence, and downstream ownership boundary.
-
-Layer-owned fields use compact `1_*`, `2_*`, ... prefixes consistently across docs, model-facing payloads, and SQL physical columns. SQL writers quote numeric-leading names where required rather than inventing `layer01_*` / `layer02_*` aliases.
+Primary outputs stay narrow and stable. Explainability and diagnostics may be wider, but downstream production logic should not hard-depend on them without a reviewed promotion decision.
 
 - Every row must be point-in-time and keyed by a timestamp genuinely knowable to the system.
 - Data acquisition/source evidence stays in `trading-data`.
@@ -52,431 +48,19 @@ Layer-owned fields use compact `1_*`, `2_*`, ... prefixes consistently across do
 - Do not collapse rich context into a scalar unless supporting fields remain available for audit and downstream interpretation.
 - Use `docs/21_vector_taxonomy.md` as the vocabulary authority: feature surfaces feed models, feature vectors are model-facing inputs, states/state vectors are model outputs, scores are scalar dimensions, labels/outcomes are training/evaluation-only.
 - Live/paper order mutation remains outside `trading-model`.
+- Retired ten-layer packages, scripts, and table names are migration-source surfaces only. They should not define new current contracts.
+
+## Model Roles
+
+| Model | Role | Core validation question |
+|---|---|---|
+| `M01` Background Context | Conditional background estimator | Does market/sector/industry context improve downstream target/decision calibration without selecting targets directly? |
+| `M02` Target State | Target-state estimator/ranker | Does the target-state output improve target selection and downstream decision quality without identity leakage? |
+| `M03` Event State | Event-conditioned response/risk estimator | Does accepted event-state evidence improve failure-risk and path-risk handling without becoming standalone event alpha? |
+| `M04` Unified Decision | Direct-underlying policy/utility optimizer | Does one decision model improve after-cost utility, drawdown/CVaR, turnover, no-trade calibration, action stability, and explainability versus the retired serial route? |
+| `M05` Option Expression | Option/expression utility optimizer | Does option-expression selection improve realistic after-cost expression utility without best-contract hindsight or broker leakage? |
+| `M06` Residual Event Governance | Residual governance and attribution model | Does residual event intervention reduce tail failures and attribution misses without excessive overblocking or same-fold upstream mutation? |
 
 ## Learning Role
 
-The long-term learning role for each runtime contract or merged training block is defined in `docs/23_model_learning_design.md`. This file owns the nine-part decomposition contract; it should not preserve historical scaffold phases as the model objective.
-
-## Layer 1: MarketRegimeModel
-
-Status: accepted market-state estimator contract; production promotion remains evidence-gated.
-
-### 1. Data
-
-Primary input:
-
-```text
-trading_data.m01_market_regime_feature_generation
-```
-
-Eligible evidence: broad-market, cross-asset, credit/rate/dollar/commodity, volatility, breadth, correlation, concentration, trend, liquidity/funding, sentiment/risk-appetite, and market-structure signals available at or before `available_time`.
-
-Excluded construction inputs: sector/industry rotation conclusions, ETF/sector behavior labels, selected securities, strategy performance, option-contract outcomes, portfolio PnL, and future-return labels.
-
-### 2. Features
-
-`X` is the point-in-time feature vector from `m01_market_regime_feature_generation`.
-
-Evidence roles:
-
-| Role | Meaning |
-|---|---|
-| primary evidence | Directly supports a public market-context state score and participates in construction. |
-| diagnostic evidence | Explains, stress-tests, or sanity-checks a state score without directly driving it. |
-| quality evidence | Supports coverage, freshness, reliability, or `1_data_quality_score`. |
-| evaluation-only evidence | Used only after output construction to test usefulness. |
-| intentionally unused evidence | Excluded with a documented reason. |
-
-Layer 1 feature groups map to separate market-tradability semantic families:
-
-```text
-1_market_direction_score
-1_market_direction_strength_score
-1_market_trend_quality_score
-1_market_stability_score
-1_market_risk_stress_score
-1_market_transition_risk_score
-1_breadth_participation_score
-1_correlation_crowding_score
-1_dispersion_opportunity_score
-1_market_liquidity_pressure_score
-1_market_liquidity_support_score
-1_coverage_score
-1_data_quality_score
-```
-
-SQL writers should quote numeric-leading identifiers where required instead of creating `layer01_*` aliases.
-
-Layer 1 evidence maturation means maintaining the feature-to-state evidence map in `src/models/model_01_market_regime/evidence_map.md`. It does not mean adding sector/ETF/stock conclusions to Layer 1.
-
-### 3. Prediction target
-
-Layer 1 has no supervised construction target and no required regime label. The conceptual target is current broad-market tradability/regime state: direction evidence, trend quality, stability, risk/stress, transition risk, breadth, correlation/crowding, dispersion opportunity, liquidity pressure/support, coverage, and data quality.
-
-Physical artifacts:
-
-```text
-trading_model.m01_market_regime_model_generation
-trading_model.m01_market_regime_model_generation_explainability
-trading_model.m01_market_regime_model_generation_diagnostics
-```
-
-The primary output carries the narrow downstream market-context state. Reviewed per-state attribution context, evidence-role refs, and config refs belong to `m01_market_regime_model_generation_explainability`; detailed source-contribution and bucket-score rows may be added there only when a reviewed implementation needs them. Missingness/freshness, minimum-history, standardization, z-score clipping, feature coverage, data-quality decomposition, chronological split/refit stability, downstream usefulness, baseline comparison, and no-future-leak checks belong to `m01_market_regime_model_generation_diagnostics`.
-
-Conceptual output:
-
-```text
-market_context_state
-```
-
-Future returns may be used only as evaluation labels.
-
-### 4. Model mapping
-
-Current mapping:
-
-```text
-rolling/expanding point-in-time scaler
-  -> per-signal z-score with clipping/floors
-  -> reviewed sign direction
-  -> internal signal-group reducers
-  -> public market-context state scores
-  -> explainability + diagnostics support artifacts
-```
-
-No current or future row may fit the scaler for the row being scored.
-
-### 5. Loss / error measure
-
-Layer 1 construction is unsupervised. Wrongness is reviewed through:
-
-- leakage/timestamp violations;
-- missing or low signal coverage;
-- state-score instability under rolling/expanding refits;
-- unintuitive sign behavior against reviewed evidence;
-- weak explanatory value for Layer 2 sector trend stability;
-- weak usefulness for option-expression constraints or portfolio-risk policy.
-
-### 6. Training / parameter update
-
-Current parameters are reviewed configuration and rolling state:
-
-- factor membership and signs in config;
-- lookback, minimum history, floors, z-score clipping, reducers, and coverage thresholds explicit;
-- rolling/expanding statistics update only from prior available rows;
-- config changes require tests and acceptance evidence.
-
-### 7. Validation / usefulness
-
-Minimum validation:
-
-- chronological splits;
-- factor distribution checks;
-- rolling/refit stability checks;
-- feature-to-factor evidence-map review against `src/models/model_01_market_regime/evidence_map.md`;
-- downstream explanatory tests against a market-context-free Layer 2 baseline;
-- option-expression usefulness checks for DTE/delta/IV/theta/no-trade policy;
-- portfolio-risk usefulness checks for drawdown, exposure, sizing, execution-style, exit, and kill-switch policy.
-
-### 8. Overfitting control
-
-Controls:
-
-- no future labels in construction;
-- limited factor count;
-- reviewed feature membership;
-- bounded/clipped values;
-- minimum signal coverage;
-- config-driven formulas;
-- promotion gate based on evaluation evidence.
-
-### 9. Decision deployment
-
-Layer 1 is broad market background:
-
-```text
-model_01_market_regime
-  -> market_context_state
-  -> Layer 2 sector tradability conditioning
-  -> Layer 3 target-state context
-  -> alpha/confidence and position-projection constraints
-  -> option-expression constraints
-  -> portfolio-risk policy
-  -> decision-record audit context
-```
-
-It must not directly rank sectors, ETFs, or stocks and must not pre-assign ETF/sector attributes.
-
-## Layer 2: SectorContextModel
-
-Status: accepted ETF-context estimator contract; production promotion remains evidence-gated.
-
-Layer 2 is an ETF/sector attribute discovery and direction-neutral sector/industry tradability-context model. It is not a stock selector and not a hand-written sector-style classifier.
-
-### 1. Data
-
-Primary inputs:
-
-```text
-market_context_state                 # Layer 1, conditioning only
-trading_data.m02_sector_context_feature_generation
-ETF liquidity / optionability / event evidence
-```
-
-Layer 1 input must not provide pre-labeled ETF attributes. Labels such as `growth`, `defensive`, `cyclical`, or `safe_haven` are optional post-fit interpretations, not input truth.
-
-Layer 1 market-property factors are conditioning context only. Layer 2 should build a distinct `2_sector_conditional_behavior_vector` that describes how each ETF/basket behaves under similar market backgrounds; it should not reuse Layer 1 factor names as ETF style fields.
-
-The conditional behavior vector should prefer signed axes: for example, positive/negative values on one axis can represent with-market versus inverse direction, volatility amplification versus dampening, upside-favorable versus downside-heavy capture, or context tailwind versus headwind.
-
-### 2. Features
-
-`X` is keyed by:
-
-```text
-available_time + sector_or_industry_symbol
-```
-
-Core blocks:
-
-```text
-market_context_state
-2_sector_observed_behavior_vector
-2_sector_attribute_vector
-2_sector_conditional_behavior_vector
-2_sector_trend_stability_vector
-2_sector_tradability_vector
-2_sector_risk_context_vector
-2_sector_quality_diagnostics
-```
-
-### 3. Prediction target
-
-Conceptual output:
-
-```text
-sector_context_state[available_time, sector_or_industry_symbol]
-```
-
-Planned physical artifacts:
-
-```text
-trading_model.m02_sector_context_model_generation
-trading_model.m02_sector_context_model_generation_explainability
-trading_model.m02_sector_context_model_generation_diagnostics
-```
-
-The field contract is owned by `src/models/model_02_sector_context/sector_context_state_contract.md`.
-
-Primary output keeps only the narrow downstream dependency surface: identity, signed sector direction evidence, direction-neutral trend/tradability state, separate handoff state and handoff bias, and eligibility/quality summary. Observed behavior, inferred attributes, conditional behavior internals, contributing evidence, and reason-code detail belong to `m02_sector_context_model_generation_explainability`. Liquidity/spread/optionability, event/gap/volatility/correlation stress, freshness/missingness, baseline comparison, refit stability, and no-future-leak evidence belong to `m02_sector_context_model_generation_diagnostics`.
-
-When persisted to SQL, `2_*` model-facing keys remain the physical column names. SQL writers should quote numeric-leading identifiers where required instead of creating `layer02_*` aliases.
-
-The target is clean, persistent, understandable, direction-neutral ETF-context tradability behavior under market context, not highest future return, long-only strength, and not final stock selection. Layer 2 may prioritize context ETF anchors for downstream attachment and audit, including stable short-bias contexts, but it does not define or expand the stock candidate universe.
-
-### 4. Model mapping
-
-The current mapping combines:
-
-```text
-sector behavior evidence
-  + market-context conditioning for similar-background comparison
-  + distinct conditional behavior vector learning
-  + inferred attribute discovery
-  + trend stability / cycle regularity scoring
-  + tradability / risk diagnostics
-  -> context_etf_state
-```
-
-### 5. Loss / error measure
-
-Evaluate wrongness through:
-
-- trend persistence/cycle stability errors;
-- false-break and chop misclassification;
-- poor calibration under similar market contexts;
-- low downstream strategy usefulness;
-- unstable inferred attributes;
-- liquidity/optionability/event gate misses.
-
-Future returns can evaluate usefulness but must not become direct production ranking inputs.
-
-### 6. Training / parameter update
-
-Use chronological/walk-forward updates. Refit sector profiles only with information available by each evaluation time. Attribute labels, if shown to humans, are post-fit interpretations and should be versioned with the model/config.
-
-### 7. Validation / usefulness
-
-Layer 2 must prove:
-
-- sector trend-stability separation;
-- calibration by market context;
-- improved downstream strategy-candidate quality versus context-free sector ranking;
-- stable inferred attributes across refits;
-- no final-stock leakage;
-- no hard-coded style-label dependence;
-- conformance to `src/models/model_02_sector_context/sector_context_state_contract.md`.
-
-### 8. Overfitting control
-
-Controls:
-
-- limit eligible baskets to reviewed sector/industry equity ETFs;
-- avoid hand-written style labels as training truth;
-- separate production features from evaluation labels;
-- require liquidity/optionability/event gates;
-- keep ETF holdings and `stock_etf_exposure` outside Layer 2 core behavior modeling.
-
-### 9. Decision deployment
-
-Layer 2 output feeds downstream target-state work:
-
-```text
-sector_context_state
-  -> TargetStateVectorModel
-     (Layer 3 preprocessing: anonymous target candidate builder)
-  -> EventFailureRiskModel
-  -> AlphaConfidenceModel
-  -> PositionProjectionModel
-  -> UnderlyingActionModel
-  -> TradingGuidanceModel / OptionExpressionModel
-  -> EventRiskGovernor / EventIntelligenceOverlay
-```
-
-It may provide sector-anchor context state and a separate `long_bias` / `short_bias` / `neutral` / `mixed` handoff bias for attachment and audit, but stock-universe construction comes from the independent live or historical candidate-universe policy.
-
-### Layer 3 preprocessing: Anonymous Target Candidate Builder
-
-Status: Layer 3 preprocessing sub-boundary. It is not a separate model layer and must not be represented as a peer to `TargetStateVectorModel`.
-
-Contract owner:
-
-```text
-src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md
-```
-
-Purpose: create anonymous model-facing candidate rows and `anonymous_target_feature_vector` inputs for Layer 3 from reviewed realtime or historical point-in-time candidate-universe evidence while preserving real symbol references for audit/routing only.
-
-Conceptual row shape:
-
-```text
-anonymous_target_candidate[available_time, target_candidate_id]
-```
-
-Required separation:
-
-```text
-model-facing:
-  target_candidate_id
-  anonymous_target_feature_vector
-  market_context_state_ref
-  sector_context_state_ref
-
-metadata:
-  audit_symbol_ref
-  routing_symbol_ref
-  source_sector_or_industry_symbol
-  source_holding_ref
-  source_stock_etf_exposure_ref
-```
-
-The candidate builder may use reviewed target-context mappings or future dynamic `target_context_profile` evidence to attach broad sector/crypto context to target candidates. The model-facing `anonymous_target_feature_vector` may include target behavior, liquidity/tradability, anonymous structural buckets, market context, sector context, event/risk context, context-attachment confidence, cost, optionability, and quality evidence. It is a Layer 3 input feature vector, not the Layer 3 output state vector. It must exclude raw ticker/company identity, stable identity-surrogate bucket combinations, and must not let `target_candidate_id` become a categorical fitting feature. Live and promotion candidate sets are generated by fixed candidate-universe policies rather than by fixed final ticker lists: the realtime total pool for current monitoring/routing, the fixed `historical_candidate_universe.csv` table for replay seeded from the current pool plus BTC, ETH, and SOL, quality filters, and controls when evaluation needs contrast.
-
-Acceptance must prove point-in-time construction, no current-pool or ETF-holdings leakage into historical replay, recoverable audit/routing metadata, duplicate-candidate handling, and anonymity checks before TargetStateVectorModel consumes candidates. The current `builder.py` implementation provides baseline row construction and recursive identity/downstream-field leakage checks; production maturity still depends on real-data evaluation.
-
-## Layer 3: TargetStateVectorModel
-
-Status: accepted target-state estimator contract; production promotion pending real-data evidence and accepted review.
-
-Contract owners:
-
-```text
-docs/12_layer_03_target_state_vector.md
-src/models/model_03_target_state_vector/target_state_vector_contract.md
-```
-
-Must construct a direction-neutral anonymous target state vector by fusing Layer 1 market state, Layer 2 sector state, target-local tape/liquidity/behavior evidence, and optional target-level option-chain state prepared by Layer 3 preprocessing. The primary `target_context_state` output consists of four inspectable blocks: `market_state_features`, `sector_state_features`, `target_state_features`, and `cross_state_features`. Embedding/cluster outputs may be derived representations, but they must not replace the inspectable blocks. Signed direction evidence, tradability, transition risk, noise, liquidity/cost, row reliability, target handoff state, target handoff bias, and target handoff rank must remain separate. Task execution may stay target-major across folds because routing symbols only contribute anonymous samples; evaluation and promotion must aggregate by fold and candidate-policy batch. It may summarize option liquidity, IV pressure, skew, term structure, and flow/activity at the target level, but it must not select strategy families, expand parameter variants, output alpha confidence, output final entry/exit prices, expose option contract identity or executable option terms, choose option contracts, size positions, define execution policy, or perform portfolio allocation.
-
-## Layer 4: EventFailureRiskModel
-
-Status: accepted event-failure-risk estimator contract under the physical `model_04_event_failure_risk` surface; production promotion remains evidence-gated.
-
-Contract owner:
-
-```text
-docs/13_layer_04_event_failure_risk.md
-```
-
-Layer 4 consumes reviewed Layer 1/2/3 context plus only agent-accepted event/strategy-failure evidence and frozen Layer 10 focus-pool event contracts. It outputs `event_failure_risk_vector`: event-conditioned response strength/direction/uncertainty, strategy-failure risk, entry-block pressure, exposure-cap pressure, strategy-disable pressure, path-risk amplification, evidence quality, and applicability confidence. It is a pre-alpha conditioning gate, not raw event alpha and not a discovery layer. Layer 10 owns event family identity, PIT clocks, scope, visibility, and impact-window parameters; Layer 4 learns only quantitative response/failure-risk mapping inside those parameters. New event families can enter Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, and explicit agent/manager acceptance.
-
-## Layer 5: AlphaConfidenceModel
-
-Status: accepted after-cost alpha estimator contract under the physical `model_05_alpha_confidence` surface; production promotion remains evidence-gated.
-
-Contract owner:
-
-```text
-docs/14_layer_05_alpha_confidence.md
-```
-
-Layer 5 converts reviewed Layer 1/2/3 state evidence plus Layer 4 `event_failure_risk_vector` when applicable into the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/no-event alpha remains auditable diagnostics. Layer 5 must not project target exposure, select option contracts, size positions, emit final actions, or mutate broker/account state.
-
-## Layer 6: DynamicRiskPolicyModel
-
-Status: accepted dynamic risk-policy optimizer contract under the physical `model_06_dynamic_risk_policy` surface; production promotion remains evidence-gated.
-
-Contract owner:
-
-```text
-docs/15_layer_06_dynamic_risk_policy.md
-```
-
-Layer 6 consumes Layer 1 global market regime, systemic or broad event-risk context, Layer 5 alpha quality, and replayed portfolio/account capacity to produce `dynamic_risk_policy_state`: premium/risk-budget posture, sizing pressure, risk-budget efficiency, and policy reason codes. Target-specific evidence may cap or skip only the current target and must not distort the whole-market budget.
-
-## Layer 7: PositionProjectionModel
-
-Status: accepted position-projection utility optimizer contract under the physical `model_07_position_projection` surface; production promotion remains evidence-gated.
-
-Contract owner:
-
-```text
-docs/16_layer_07_position_projection.md
-```
-
-Layer 7 maps final adjusted alpha, Layer 6 dynamic risk policy, and point-in-time current/pending position, cost, exposure, risk-budget, and policy context into `position_projection_vector`: target holding state, abstract target exposure, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, stability, and projection confidence. It must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate accounts.
-
-## Layer 8: UnderlyingActionModel
-
-Status: accepted underlying-action policy contract under the physical `model_08_underlying_action` surface; production promotion remains evidence-gated.
-
-Contract owner:
-
-```text
-docs/17_layer_08_underlying_action.md
-```
-
-Layer 8 maps Layer 7 target holding-state projection into a direct underlying/spot offline action thesis for stock, ETF, or crypto-style candidates. It outputs `underlying_action_plan` and `underlying_action_vector`: eligibility, planned action type, planned exposure change, entry/target/stop/time assumptions, and optional Layer 9 handoff fields. It does not output broker/exchange orders, order routing, live execution instructions, or option contracts.
-
-## Layer 9: TradingGuidanceModel / OptionExpressionModel
-
-Status: accepted option-expression utility optimizer contract under the physical `model_09_option_expression` subset; production promotion remains evidence-gated.
-
-Contract owner:
-
-```text
-docs/18_layer_09_trading_guidance.md
-```
-
-Layer 9 consumes Layer 8 underlying path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, position/risk context, and policy constraints. It outputs optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`. Layer 10 may attach this context when available but must not require it for direct-underlying/crypto routes. It remains offline: no broker order type, route, time-in-force, send/cancel/replace flag, broker order id, final order quantity, or broker/account mutation.
-
-## Layer 10: EventRiskGovernor / EventIntelligenceOverlay
-
-Status: accepted event-risk-governor attribution and intervention boundary under the physical `model_10_event_risk_governor` surface; production promotion remains evidence-gated.
-
-Contract owner:
-
-```text
-docs/19_layer_10_event_risk_governor.md
-```
-
-Layer 10 consumes point-in-time residual event evidence, upstream context refs, and the Layer 8 direct-underlying action thesis as its canonical risk target. It outputs `event_risk_intervention` plus event-context/risk evidence that may block new entries, cap exposure, request human review, nominate reduction/flattening candidates, maintain an observation pool, and propose future Layer 4 promotions through evidence packets and agent review. It is not a hard upstream alpha input, not trading guidance, and not a broker/account mutation surface.
+The long-term learning role for each current model contract is defined in `docs/23_model_learning_design.md`. This file owns the nine-part decomposition contract; it should not preserve retired scaffold phases as model objectives.

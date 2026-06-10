@@ -1,15 +1,15 @@
 # Realtime Decision Handoff
 
 Status: accepted route-plan boundary; no production activation
-Date: 2026-05-11
+Date: 2026-06-10
 
 ## Purpose
 
-Realtime execution capture can now produce `execution_model_decision_input_snapshot` envelopes. `trading-model` needs a model-side entry boundary that accepts those envelopes for fixture/shadow routing into the historical model stack without accidentally activating production inference or execution.
+Realtime execution capture can produce `execution_model_decision_input_snapshot` envelopes. `trading-model` needs a model-side entry boundary that accepts those envelopes for fixture/shadow routing into the historical model stack without accidentally activating production inference or execution.
 
-This document defines that boundary.
+This document defines that boundary for the current six-model stack.
 
-## Accepted chain
+## Accepted Chain
 
 ```text
 trading-execution realtime capture
@@ -19,14 +19,14 @@ trading-execution realtime capture
   -> fixture/shadow historical-model generation route
 ```
 
-`model_realtime_decision_route_plan` is a route plan, not a model output. It validates required Layer 1-8 and Layer 10 input refs, accepts Layer 9 trading-guidance / option-expression refs when available, maps each present layer to its reviewed model generator entrypoint, and records the handoff mode. Direct-underlying routes must not require Layer 9 option refs.
+`model_realtime_decision_route_plan` is a route plan, not a model output. It validates required M01-M04 and M06 input refs, accepts M05 option-expression refs when available, maps each present model to its reviewed generator entrypoint, and records the handoff mode. Direct-underlying routes must not require M05 option refs.
 
 Accepted handoff modes:
 
 - `fixture_replay`
 - `shadow_monitoring`
 
-## Required input
+## Required Input
 
 The model-side planner consumes an `execution_model_decision_input_snapshot` object with:
 
@@ -36,27 +36,25 @@ The model-side planner consumes an `execution_model_decision_input_snapshot` obj
 - `historical_dataset_snapshot_ref`
 - `frozen_model_config_ref`
 - `realtime_feature_snapshot_ref`
-- exactly one required layer input for Layers 1-8 and Layer 10
-- zero or one optional Layer 9 trading-guidance / option-expression input
+- exactly one required model input for M01-M04 and M06
+- zero or one optional M05 option-expression input
 
-Each conceptual layer input must include the expected model id, expected model output, feature ref, frozen model config ref, and historical dataset snapshot ref. Implementation model ids now follow the current conceptual layer numbering; this table is conceptual-order first.
+Each conceptual model input must include the expected model id, expected model output, feature ref, frozen model config ref, and historical dataset snapshot ref.
 
-## Layer route mapping
+## Model Route Mapping
 
-| Layer | Model id | Expected output | Route entrypoint |
-|---:|---|---|---|
-| 1 | `market_regime_model` | `market_context_state` | `scripts/models/model_01_market_regime/generate_model_01_market_regime.py` |
-| 2 | `sector_context_model` | `context_etf_state` | `scripts/models/model_02_sector_context/generate_model_02_sector_context.py` |
-| 3 | `target_state_vector_model` | `target_context_state` | `scripts/models/model_03_target_state_vector/generate_model_03_target_state_vector.py` |
-| 4 | `event_failure_risk_model` | `event_failure_risk_vector` | `scripts/models/model_04_event_failure_risk/generate_model_04_event_failure_risk.py` |
-| 5 | `alpha_confidence_model` | `alpha_confidence_vector` | `scripts/models/model_05_alpha_confidence/generate_model_05_alpha_confidence.py` |
-| 6 | `dynamic_risk_policy_model` | `dynamic_risk_policy_state` | `scripts/models/model_06_dynamic_risk_policy/generate_model_06_dynamic_risk_policy.py` |
-| 7 | `position_projection_model` | `position_projection_vector` | `scripts/models/model_07_position_projection/generate_model_07_position_projection.py` |
-| 8 | `underlying_action_model` | `underlying_action_plan` | `scripts/models/model_08_underlying_action/generate_model_08_underlying_action.py` |
-| 9 | `option_expression_model` | optional `trading_guidance_record` with optional `option_expression_plan` | `scripts/models/model_09_option_expression/generate_model_09_option_expression.py` |
-| 10 | `event_risk_governor` | `event_risk_intervention` / `event_context_vector` | `scripts/models/model_10_event_risk_governor/generate_model_10_event_risk_governor.py` |
+| Model | Model id | Expected output | Route entrypoint |
+|---|---|---|---|
+| `M01` | `background_context_model` | `background_context_state` | `scripts/models/model_01_background_context/generate_model_01_background_context.py` |
+| `M02` | `target_state_model` | `target_context_state` | `scripts/models/model_02_target_state/generate_model_02_target_state.py` |
+| `M03` | `event_state_model` | `event_state_vector` | `scripts/models/model_03_event_state/generate_model_03_event_state.py` |
+| `M04` | `unified_decision_model` | `unified_decision_vector` | `scripts/models/model_04_unified_decision/generate_model_04_unified_decision.py` |
+| `M05` | `option_expression_model` | optional `trading_guidance_record` with optional `option_expression_plan` | `scripts/models/model_05_option_expression/generate_model_05_option_expression.py` |
+| `M06` | `residual_event_governance_model` | `event_risk_intervention` / future packet eligibility | `scripts/models/model_06_residual_event_governance/generate_model_06_residual_event_governance.py` |
 
-## Non-authorizations
+Retired ten-layer route mappings are migration-source routes only.
+
+## Non-Authorizations
 
 This boundary does not:
 
@@ -82,10 +80,8 @@ PYTHONPATH=src python3 scripts/models/validate_realtime_decision_handoff.py rout
 
 Both commands are local and side-effect free.
 
-## Implementation hook
+## Implementation Hook
 
 - `src/models/realtime_decision_handoff.py` owns reusable validators and route-plan builders.
 - `scripts/models/plan_realtime_decision_handoff.py` emits route plans.
 - `scripts/models/validate_realtime_decision_handoff.py` validates input snapshots or route plans.
-
-Future work may add an explicit fixture/shadow generation executor that consumes this route plan. That executor must remain separate from production model activation and must register any shared names through `trading-manager` before cross-repository use.

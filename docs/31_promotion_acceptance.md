@@ -1,11 +1,11 @@
 # Promotion Acceptance
 
 Status: accepted current production-promotion evidence receipt; no production activation
-Date: 2026-05-09
+Date: 2026-06-10
 
 ## Summary
 
-No model layer is production-promoted by this acceptance evidence.
+No current six-model contract is production-promoted by this acceptance evidence.
 
 `trading-model` owns evidence generation and reviewer artifacts only:
 
@@ -18,53 +18,32 @@ No model layer is production-promoted by this acceptance evidence.
 
 Durable promotion requests, review decisions, activation, rollback, and production pointers belong in `trading-manager` through the unified `model_promotion_review` path.
 
-## Current readiness receipt
+## Current Readiness Receipt
 
-| Layer | Model | Evidence state | Current status | Activation |
-|---:|---|---|---|---|
-| 1 | `model_01_market_regime` | real PostgreSQL evaluation evidence exists | deferred: baseline, label-count, pair-count, and coverage gates still fail | none |
-| 2 | `model_02_sector_context` | real PostgreSQL evaluation evidence exists | deferred: baseline/lift/stability gates still fail | none |
-| 3 | `model_03_target_state_vector` | real PostgreSQL production-eval substrate exists | deferred: upstream Layer 1/2 approvals and Layer 3 calibration evidence missing | none |
-| 4 | `model_04_event_failure_risk` | missing EventFailureRiskModel evaluation substrate / calibrated strategy-failure labels | deferred: no production eval substrate | none |
-| 5 | `model_05_alpha_confidence` | missing production adjusted-alpha eval run / calibrated labels | deferred: no production eval substrate | none |
-| 6 | `model_06_dynamic_risk_policy` | missing production risk-policy replay labels and reviewed risk-policy outcome evidence | deferred: no production eval substrate | none |
-| 7 | `model_07_position_projection` | missing production position-utility eval run / labels | deferred: no production eval substrate | none |
-| 8 | `model_08_underlying_action` | missing production realized-action outcome eval run | deferred: no production eval substrate | none |
-| 9 | `model_09_option_expression` | missing production option-chain replay eval run and base trading-guidance outcome evidence | deferred: no production eval substrate | none |
-| 10 | `model_10_event_risk_governor` | missing residual-event-governor eval run / calibrated residual-risk labels | deferred: no production eval substrate | none |
+| Model | Evidence state | Current status | Activation |
+|---|---|---|---|
+| `model_01_background_context` | current six-model implementation/evaluation missing | deferred | none |
+| `model_02_target_state` | current six-model implementation/evaluation missing | deferred | none |
+| `model_03_event_state` | current six-model implementation/evaluation missing | deferred | none |
+| `model_04_unified_decision` | first unified decision pilot missing | deferred | none |
+| `model_05_option_expression` | current six-model implementation/evaluation missing | deferred | none |
+| `model_06_residual_event_governance` | current six-model implementation/evaluation missing | deferred | none |
 
-## Layer 1 and 2 evidence
+## Migration Evidence
 
-Layer 1 and Layer 2 have real database evidence paths. The current evidence is useful negative evidence, not promotion approval:
+Retired ten-layer evaluation artifacts remain useful negative and migration evidence. They are not production approval for the current six-model route.
 
-- Layer 1 data completeness/leakage classification is now explicit: missing model rows at label decision times are alignment/completeness evidence, not future leakage. No-future-leak and chronological split-overlap checks pass, but promotion is still blocked by model-row count, eval-label count, model/label alignment, pair-count, coverage, correlation, baseline-improvement, and split-stability gates.
-- Layer 2 uses the same leakage/alignment separation. No-future-leak and chronological split-overlap checks pass, but promotion is still blocked by model/label alignment, coverage/pair-count, baseline, stability, and sector handoff gates.
+The model repo may reuse retired implementation packages and evidence while migrating, but durable review requests and decisions must be submitted through `trading-manager` against the current six model contracts.
 
-The model repo may regenerate these evidence packages, but durable review requests and decisions must be submitted through `trading-manager`.
+## Blockers
 
-## Layer 3 evidence
+- M01 requires merged background-context generation/evaluation evidence.
+- M02 requires target-state generation/evaluation evidence under the current M01 context.
+- M03 requires event-state generation/evaluation evidence from accepted event-family inputs.
+- M04 requires unified decision training/evaluation with structured edge/risk/exposure/action heads.
+- M05 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
+- M06 requires real residual-event-governance labels and production evaluation metrics.
 
-Layer 3 has a real production-evaluation substrate for `m03_target_state_vector_feature_generation` and generated `model_03_target_state_vector` rows. Its measured thresholds can be evaluated, but promotion remains deferred because:
-
-- Layer 1 and Layer 2 are not production-approved active upstream dependencies;
-- Layer 3 calibration evidence is missing.
-
-## Layers 4-10 blockers
-
-Layers 4-10 remain explicit blockers, not informal work items:
-
-- Layer 4 requires a reviewed EventFailureRiskModel implementation/evaluation substrate for accepted event/strategy-failure conditioning.
-- Layer 5 requires calibrated adjusted-alpha outcomes.
-- Layer 6 requires dynamic risk policy replay labels and reviewed risk-policy outcome evidence.
-- Layer 7 requires position-utility/outcome labels.
-- Layer 8 requires realized underlying-action outcome evaluation.
-- Layer 9 requires option-chain replay and option-expression / base trading-guidance outcome evidence.
-- Layer 10 requires real residual-event-risk labels and production evaluation metrics.
-
-Promotion replay uses the frozen live-flow component graph rather than selecting isolated model files manually. Layer 10 remains an independent model and is invoked inside that replay graph when its point-in-time event evidence is available; it is not downgraded into a post-evaluation task.
-
-The acceptance helper `scripts/models/review_layers_03_10_promotion_acceptance.py` builds blocked model-side evidence and reviewer artifacts for Layers 3-10. It must not persist manager decisions or activate configs.
-
-## Activation invariant
+## Activation Invariant
 
 No production config is active from this acceptance pass. Deferred reviews must not create runtime activation records or move active config pointers. Runtime activation records and active-pointer writes belong in `trading-execution`.

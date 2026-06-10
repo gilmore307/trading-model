@@ -25,84 +25,56 @@ class ModelSequenceEntry:
 
 
 def model_sequence() -> tuple[ModelSequenceEntry, ...]:
-    """Return the accepted M01-M10 model stack sequence."""
+    """Return the accepted six-model stack sequence."""
 
     return (
         ModelSequenceEntry(
             model_step="M01",
-            model_name="Market Regime",
-            model_id="market_regime_model",
-            model_surface="m01_market_regime_model_generation",
-            conceptual_output="market_context_state",
+            model_name="Background Context",
+            model_id="background_context_model",
+            model_surface="model_01_background_context",
+            conceptual_output="background_context_state",
         ),
         ModelSequenceEntry(
             model_step="M02",
-            model_name="Sector Context",
-            model_id="sector_context_model",
-            model_surface="m02_sector_context_model_generation",
-            conceptual_output="sector_context_state",
-        ),
-        ModelSequenceEntry(
-            model_step="M03",
             model_name="Target State",
-            model_id="target_state_vector_model",
-            model_surface="model_03_target_state_vector",
+            model_id="target_state_model",
+            model_surface="model_02_target_state",
             conceptual_output="target_context_state",
         ),
         ModelSequenceEntry(
+            model_step="M03",
+            model_name="Event State",
+            model_id="event_state_model",
+            model_surface="model_03_event_state",
+            conceptual_output="event_state_vector",
+        ),
+        ModelSequenceEntry(
             model_step="M04",
-            model_name="Event Failure Risk",
-            model_id="event_failure_risk_model",
-            model_surface="model_04_event_failure_risk",
-            conceptual_output="event_failure_risk_vector",
+            model_name="Unified Decision",
+            model_id="unified_decision_model",
+            model_surface="model_04_unified_decision",
+            conceptual_output="unified_decision_vector",
         ),
         ModelSequenceEntry(
             model_step="M05",
-            model_name="Alpha Confidence",
-            model_id="alpha_confidence_model",
-            model_surface="model_05_alpha_confidence",
-            conceptual_output="alpha_confidence_vector",
-        ),
-        ModelSequenceEntry(
-            model_step="M06",
-            model_name="Dynamic Risk Policy",
-            model_id="dynamic_risk_policy_model",
-            model_surface="model_06_dynamic_risk_policy",
-            conceptual_output="dynamic_risk_policy_state",
-        ),
-        ModelSequenceEntry(
-            model_step="M07",
-            model_name="Position Projection",
-            model_id="position_projection_model",
-            model_surface="model_07_position_projection",
-            conceptual_output="position_projection_vector",
-        ),
-        ModelSequenceEntry(
-            model_step="M08",
-            model_name="Underlying Action",
-            model_id="underlying_action_model",
-            model_surface="model_08_underlying_action",
-            conceptual_output="underlying_action_plan",
-        ),
-        ModelSequenceEntry(
-            model_step="M09",
             model_name="Option Expression",
             model_id="option_expression_model",
-            model_surface="model_09_option_expression",
+            model_surface="model_05_option_expression",
             conceptual_output="option_expression_plan",
         ),
         ModelSequenceEntry(
-            model_step="M10",
-            model_name="Event Risk Governor",
-            model_id="event_risk_governor",
-            model_surface="model_10_event_risk_governor",
-            conceptual_output="event_context_vector",
+            model_step="M06",
+            model_name="Residual Event Governance",
+            model_id="residual_event_governance_model",
+            model_surface="model_06_residual_event_governance",
+            conceptual_output="event_risk_intervention",
         ),
     )
 
 
 def model_sequence_rows() -> list[dict[str, Any]]:
-    """Return serializable M01-M10 model sequence rows."""
+    """Return serializable six-model sequence rows."""
 
     return [entry.to_dict() for entry in model_sequence()]
 

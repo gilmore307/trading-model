@@ -2,19 +2,13 @@
 
 ## Purpose
 
-This document defines the current quality gate for SQL model-output tables under `trading_model.model_01_*` through `trading_model.model_10_*`, including `_explainability` and `_diagnostics` support tables.
+This document defines the current quality gate for SQL model-output tables under the six current model contracts, including `_explainability` and `_diagnostics` support tables.
 
-Primary model-output tables should stay focused on row identity, upstream refs, stable scalar score/status fields, and the few resolved values downstream layers actually need. Large nested payloads, explanation blocks, reason-code detail, and row-quality evidence belong in `_explainability` or `_diagnostics` tables.
+Primary model-output tables should stay focused on row identity, upstream refs, stable scalar score/status fields, and the few resolved values downstream models actually need. Large nested payloads, explanation blocks, reason-code detail, and row-quality evidence belong in `_explainability` or `_diagnostics` tables.
+
+Retired ten-layer output tables may still be audited as migration-source surfaces. They must not define new current contracts.
 
 ## Empty Column Policy
-
-Empty columns are not all the same issue:
-
-- missing optional evidence, such as no option contract or no reviewed event gate, is valid when the model explicitly records it as missing evidence;
-- sparse score columns usually mean upstream data coverage is incomplete and should be tracked as a data-quality gap;
-- known all-null long-history or selection columns are data accumulation gaps when the input window lacks enough point-in-time evidence;
-- empty support payload columns indicate a generator/support-table bug and should be repaired;
-- stale all-null primary columns should stop being emitted and may be dropped only through reviewed SQL cleanup.
 
 Do not fabricate values to make a table look complete. A missing point-in-time source row, option-chain row, event baseline, or reviewed gate should remain visible as missing coverage or a low/zero readiness score.
 
@@ -26,7 +20,7 @@ The stable read-only audit entrypoint is:
 PYTHONPATH=src python3 scripts/models/audit_model_output_tables.py --sample-limit 5000
 ```
 
-The script emits `model_output_table_quality_audit`. It samples a bounded number of rows from all ten primary model tables and support tables, classifies all-null and sparse columns, and emits review-only cleanup SQL candidates. It never drops columns, rewrites model rows, performs provider calls, activates models, or mutates broker/account state.
+The script emits `model_output_table_quality_audit`. It samples a bounded number of rows from configured current and retained migration-source model tables, classifies all-null and sparse columns, and emits review-only cleanup SQL candidates. It never drops columns, rewrites model rows, performs provider calls, activates models, or mutates broker/account state.
 
 The stable post-generation gate entrypoint is:
 

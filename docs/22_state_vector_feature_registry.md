@@ -1,163 +1,86 @@
 # State Vector Feature Semantics Registry
 
-Status: Accepted semantics guardrail for Layer 1/2/3 state-vector fields, Layer 4 event-failure-risk score families, Layer 5 alpha-confidence score families, Layer 6 dynamic-risk-policy score families, Layer 7 position-projection score families, Layer 8 underlying-action score families, Layer 9 trading-guidance/option-expression score families, and Layer 10 event-risk score families.
+Status: accepted semantics guardrail for the current six-model stack
 
-This registry prevents the state/context/action-vector system from mixing direction, quality, risk, scope, routing, diagnostics, plan fields, execution fields, and research-only payloads.
+This file owns semantic guardrails for score families and vector fields used by current model contracts. Exact registry-backed field names must still route through `trading-manager` before cross-repository dependency.
 
-Canonical implementation:
+## M01 Background Context
 
-```text
-src/models/state_vector_feature_registry.py
-```
+M01 score families should keep these axes separate:
 
-## Required semantic classes
+- market direction and direction strength;
+- market trend quality and stability;
+- volatility/stress/transition risk;
+- breadth, dispersion, correlation/crowding;
+- sector/industry relative behavior;
+- liquidity pressure/support;
+- coverage and data quality.
 
-- Direction fields are signed `[-1, 1]`: positive/negative indicate state direction only.
-- Direction-strength fields are `[0, 1]`: high can describe either long or short evidence.
-- Quality/tradability fields are `[0, 1]` high-is-good and direction-neutral unless explicitly named signed alignment.
-- Risk/noise/exhaustion fields are `[0, 1]` high-is-bad.
-- Liquidity fields must say whether high means pressure/bad or support/good.
-- Routing fields (`eligibility`, `handoff`, `rank`, reason codes) are not ordinary model evidence.
-- Diagnostics (`coverage`, `data_quality`, `state_quality`, evidence counts) govern trust/gating, not alpha.
-- Research-only fields (`target_state_embedding`, `state_cluster_id`) must not replace inspectable blocks or be promoted without walk-forward fit/assign controls.
+M01 fields must not directly encode target selection, action, option expression, or event-governance intervention.
 
-## Layer 2 correction
+## M02 Target State
 
-Layer 2 primary output keeps dispersion and crowding separate because they are not the same state:
+M02 score families should keep these axes separate:
 
-- `2_sector_internal_dispersion_score` — internal fragmentation/dispersion, high-is-bad for clean handoff context.
-- `2_sector_crowding_risk_score` — one-factor/crowding/co-movement pressure, high-is-bad.
+- target tradability and liquidity/cost;
+- target path quality, persistence/reversion, and transition risk;
+- target/background interaction;
+- target eligibility and ranking evidence;
+- optionability diagnostics where they summarize target-level state rather than choosing contracts;
+- target-state data quality.
 
-## Layer 3 tradability validation
+Raw ticker/company identity remains audit/routing metadata and must not be a fitted feature.
 
-`3_tradability_score_<window>` must be validated against path and execution outcomes, not only forward return:
+## M03 Event State
 
-- MFE/MAE balance;
-- path efficiency;
-- first target-before-stop style path behavior when stop/target policies are reviewed;
-- direction flip count;
-- state-transition rate;
-- spread/liquidity degradation.
+M03 score families should keep these axes separate:
 
-Stable short states can score highly when direction strength, trend quality, path stability, context support, liquidity, persistence, and quality are strong while noise, transition risk, and exhaustion risk are low.
+- event presence/proximity and applicability;
+- response strength and response direction tendency;
+- response uncertainty;
+- path risk, gap risk, reversal risk, liquidity disruption, contagion risk;
+- entry-block, exposure-cap, disable, and review pressure;
+- source/context quality.
 
-## Layer 4 event-failure-risk score semantics
+M03 consumes accepted event parameters from M06. It must not mutate event-family identity, scope, visibility, selected impact windows, or allowed use.
 
-Conceptual Layer 4 `event_failure_risk_vector` values must keep these axes separate:
+## M04 Unified Decision
 
-```text
-event/strategy-failure evidence != raw news
-event failure risk != standalone directional alpha
-entry-block pressure != broker order instruction
-exposure-cap pressure != final position size
-strategy-disable pressure != account mutation
-evidence quality != event presence
-applicability confidence != causal proof
-```
+M04 score families should keep these heads separate:
 
-Core Layer 4 score families use `4_event_*` names and require a reviewed evidence packet plus explicit agent/manager acceptance before production use. No local screen may auto-promote a family into Layer 4.
+- edge / after-cost alpha;
+- risk policy and budget pressure;
+- exposure, size, position gap, and regret;
+- direct-underlying action type, entry/exit/risk-plan quality, no-trade, maintain, and invalidation profile;
+- cost, turnover, fill realism, churn, and path quality diagnostics.
 
-## Layer 5 alpha-confidence score semantics
+M04 must not choose option contracts or send broker orders.
 
-Conceptual Layer 5 `alpha_confidence_vector` values must keep these axes separate:
+## M05 Option Expression
 
-```text
-target direction evidence != alpha confidence
-event_failure_risk_vector != standalone event alpha
-confidence != expected residual return
-expected residual return != target exposure
-risk != no-trade instruction
-alpha confidence != option expression
-alpha confidence != final action
-```
+M05 score families should keep these axes separate:
 
-Physical alpha-confidence score values use `5_*` prefixes. Action/routing fields, position sizing, account-risk allocations, option-contract choices, and final verdicts are not `state_vector_value` rows for Layer 5.
+- underlying-only versus option expression eligibility;
+- long-call and long-put candidate utility;
+- spread/liquidity/fill realism;
+- DTE, delta/moneyness, IV, vega/theta, gamma/pin risk, and event-surface sensitivity;
+- no-option, unavailable, and not-applicable status.
 
-## Layer 6 dynamic-risk-policy score semantics
+M05 is offline expression guidance, not live execution.
 
-Conceptual Layer 6 `dynamic_risk_policy_vector` values must keep these axes separate:
+## M06 Residual Event Governance
 
-```text
-alpha confidence != dynamic risk policy
-event failure risk != final trade block
-position projection != risk budget decision
-risk cap pressure != broker order instruction
-drawdown pressure != account mutation
-policy confidence != alpha confidence
-policy adjustment != execution route
-dynamic risk policy != final action
-```
+M06 score families should keep these axes separate:
 
-Physical dynamic-risk-policy score values use `6_*` prefixes. Exposure caps, stop tightening, cooldown recommendations, review pressure, and policy overlays are model-state or plan-context fields, not broker-order fields.
+- residual event presence and attribution confidence;
+- event severity, timing proximity, scope, and target relevance;
+- residual intervention utility;
+- overblock/opportunity cost;
+- stale regime/decay state;
+- future event-family packet eligibility.
 
-## Layer 7 position-projection score semantics
+M06 may emit warning/cap/block/review/reduce/flatten-review guidance and future M03 promotion packets, but it must not send orders or mutate accounts.
 
-Conceptual Layer 7 `position_projection_vector` values must keep these axes separate:
+## Retired Field Prefixes
 
-```text
-alpha confidence != target exposure
-target position bias != buy/sell
-target exposure != order quantity
-position gap != execution instruction
-position gap magnitude != urgency
-cost to adjust position != no-trade action
-risk budget fit != final approval
-projection confidence != alpha confidence
-position projection vector != final action
-```
-
-Physical position-projection score values use `7_*` prefixes. Buy/sell/hold/open/close/reverse, instrument selection, option-chain fields, strike/DTE/Greeks, order routing, and execution outputs are not `state_vector_value` rows for Layer 7.
-
-## Layer 8 underlying-action score semantics
-
-Conceptual Layer 8 `underlying_action_plan` and `underlying_action_vector` values must keep these axes separate:
-
-```text
-alpha confidence != planned underlying action
-position gap != trade instruction
-target exposure != planned quantity
-planned quantity != broker order quantity
-trade eligibility != final approval
-entry plan != order type
-stop_loss_price != broker stop order
-take_profit_price != broker limit order
-underlying price-path thesis != guaranteed outcome
-underlying action plan != option expression
-underlying action plan != live execution
-```
-
-Physical underlying-action score families use `8_*` prefixes. Planned action types, resolved handoff fields, reason codes, entry/target/stop prices, quantities, and Layer 9 trading-guidance handoff fields are plan payload fields, not broker-order fields.
-
-## Layer 9 trading-guidance / option-expression score semantics
-
-Conceptual Layer 9 `trading_guidance_record`, `option_expression_plan`, and `expression_vector` values must keep these axes separate:
-
-```text
-underlying action plan != trading approval
-option expression != broker order
-contract_ref != broker order id
-selected_contract != send order
-contract constraints != route / time-in-force
-premium risk plan != account mutation
-expression confidence != final approval
-Layer 9 offline plan != live execution
-```
-
-Physical option-expression score families use `9_*` prefixes. Selected contract refs, contract constraints, premium-risk plan fields, and reason codes are plan payload fields, not broker-order fields.
-
-## Layer 10 event-risk-context score semantics
-
-Conceptual Layer 10 `event_context_vector` / `event_risk_intervention` values must keep these axes separate:
-
-```text
-event presence != event intensity
-event intensity != impact scope
-impact scope != direction
-underlying impact != option-surface impact
-direction bias != alpha
-event risk != trade action
-residual explanation != causal proof
-observation-pool addition != Layer 4 promotion
-```
-
-Physical event-risk scalar score values use `10_event_*` prefixes. `10_event_underlying_impact_score_<horizon>` describes signed effect on the Layer 8 direct-underlying thesis. `10_event_option_impact_score_<horizon>` describes option-surface sensitivity such as IV expansion/crush risk, gamma/pin pressure, expiry liquidity, or option-flow concentration; it is not strike, DTE, contract selection, expression selection, or trade action. Enum-like audit fields may share the horizon suffix in model-local contracts, but they are not `state_vector_value` registry rows. Layer 10 may emit warning/cap/block/review/flatten-candidate overlays and Layer 4 promotion packets, but it must not send orders or mutate accounts.
+Old `1_*` through `10_*` physical score prefixes may appear in retained ten-layer implementation packages and historical artifacts. They are migration-source fields and should not define new current contracts.

@@ -2,37 +2,28 @@
 
 ## Purpose
 
-`trading-model` is the offline modeling home for the current six-training-block / ten-runtime-contract trading decision stack.
+`trading-model` is the offline modeling home for the current six-model trading decision stack.
 
 It owns point-in-time model research, model-local generators/evaluators, validation workflows, promotion evidence, model outputs, and decision-record prototypes for:
 
-1. `MarketRegimeModel` -> `market_context_state`;
-2. `SectorContextModel` -> `sector_context_state`;
-3. `TargetStateVectorModel` -> `target_context_state`, with anonymous target candidate construction as Layer 3 preprocessing;
-4. `EventFailureRiskModel` -> `event_failure_risk_vector`;
-5. `AlphaConfidenceModel` -> `alpha_confidence_vector`;
-6. `DynamicRiskPolicyModel` -> `dynamic_risk_policy_state`;
-7. `PositionProjectionModel` -> `position_projection_vector`;
-8. `UnderlyingActionModel` -> `underlying_action_plan` / `underlying_action_vector`;
-9. `TradingGuidanceModel / OptionExpressionModel` -> `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`;
-10. `EventRiskGovernor / EventIntelligenceOverlay` -> `event_risk_intervention` / event-adjusted risk guidance.
+1. `BackgroundContextModel` -> `background_context_state`;
+2. `TargetStateModel` -> `target_context_state`;
+3. `EventStateModel` -> `event_state_vector`;
+4. `UnifiedDecisionModel` -> `unified_decision_vector`;
+5. `OptionExpressionModel` -> `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`;
+6. `ResidualEventGovernanceModel` -> `event_risk_intervention` / event-adjusted risk guidance.
 
 The repository does **not** place orders, mutate accounts, own provider acquisition, or become the global registry. It produces offline model artifacts and review evidence for downstream systems.
-
-The accepted runtime contracts remain the ten outputs listed above. The accepted training topology groups them into six model blocks: Layer 1-2 background context, Layer 3 target state/selection, Layer 4 event state/conditioning, Layer 5-8 unified decision, Layer 9 option expression, and Layer 10 residual event governance. Training-block consolidation must not erase runtime-facing outputs that downstream components consume, route, audit, or govern.
 
 ## In Scope
 
 - Point-in-time model research, validation, promotion evidence, and reproducible local tests.
-- Broad market and sector/industry background state from point-in-time market, sector, liquidity, volatility, and macro-sensitive inputs.
-- Anonymous target candidate construction and target state-vector modeling without ticker/company identity in fitting vectors.
-- Event-failure-risk modeling from agent-reviewed, empirically accepted event/strategy-failure relationships before alpha confidence.
-- Alpha-confidence modeling from the reviewed Layer 1/2/3 state stack plus reviewed Layer 4 failure-risk conditioning when available.
-- Dynamic-risk-policy modeling from whole-market regime, systemic event pressure, alpha quality, and replayed portfolio/account capacity; this is model-internal policy state, not broker permission.
-- Position-projection modeling from alpha, dynamic risk policy, current/pending position, cost, exposure, and risk-budget context; this projects target position state, not orders.
-- Underlying-action modeling for offline direct underlying/spot action thesis across stock, ETF, or crypto-style candidates, planned exposure change, price-path assumptions, and optional Layer 9 handoff; this is not broker/exchange execution.
-- Trading-guidance / option-expression modeling from the Layer 8 thesis plus optional option-chain context; this may choose offline expression/contract constraints, not routes or orders.
-- Event-intelligence / event-risk-governor modeling after the direct-underlying thesis is known, including residual discovery and high-severity risk interventions such as blocking new entries, capping exposure, or nominating flatten/halt candidates without directly mutating broker/account state. Optional option-expression context may be used when present, but crypto/direct-underlying-only routes do not require options.
+- Broad market and sector/industry background state from point-in-time market, sector, liquidity, volatility, breadth, correlation, dispersion, and macro-sensitive inputs.
+- Anonymous target candidate construction, target ranking, and target-state modeling without ticker/company identity in fitting vectors.
+- Event-state modeling from accepted event-family and strategy-failure relationships without mutating event-family parameters.
+- Unified direct-underlying decision modeling with structured edge, risk, exposure, and action heads.
+- Trading-guidance / option-expression modeling from unified direct-underlying intent plus optional option-chain context; this may choose offline expression/contract constraints, not routes or broker orders.
+- Residual event-governance modeling after the direct-underlying thesis is known, including missed-event checks, residual attribution, event-risk intervention, and future event-family packet eligibility without directly mutating broker/account state.
 - Model-local labels, diagnostics, explainability, fixtures, and acceptance gates.
 - Proposing shared names/contracts to `trading-manager` when model outputs need cross-repository consumption.
 
@@ -50,7 +41,7 @@ The accepted runtime contracts remain the ten outputs listed above. The accepted
 
 `trading-model` should be direct and disciplined: one folder per accepted model boundary, clear point-in-time inputs, narrow primary outputs, separate explainability/diagnostics, explicit labels, and evidence-backed acceptance.
 
-The active route is current-route authoritative. Historical route changes belong in Git history, not in active docs or package names.
+The active route is current-route authoritative. Historical route changes belong in Git history, not in active docs or package names. Retired ten-layer implementation packages may exist only as migration-source surfaces until their behavior is moved into the six current model contracts.
 
 ## Boundary Rules
 

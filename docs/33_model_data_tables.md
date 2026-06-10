@@ -81,6 +81,6 @@ These tables support promotion evidence. They do not approve promotion by themse
 
 ## Review Findings
 
-- Corrected in this pass: `docs/32_model_output_quality.md` now refers to the full M01-M10 model-generation table families.
-- Corrected in this pass: `docs/02_architecture.md` now treats the M10 model-generation tables as part of the layer-specific model implementation surface; the `50_*` docs remain event-family research detail inside the Layer 10 package.
-- The M06-M08 SQL generation paths now consume the upstream model/source tables required by their current contracts. Missing upstream evidence should reduce produced rows or block the stage instead of silently manufacturing a complete model path from placeholder state.
+- Corrected in this pass: `docs/32_model_output_quality.md` now refers to the current six-model table families and retained migration-source table families.
+- Corrected in this pass: `docs/02_architecture.md` now treats retired ten-layer tables as migration-source implementation surfaces only.
+- Retired SQL generation paths may consume their older upstream model/source tables while migration is underway. Missing upstream evidence should reduce produced rows or block the stage instead of silently manufacturing a complete model path from placeholder state.

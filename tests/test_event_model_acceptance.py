@@ -17,7 +17,7 @@ class EventModelAcceptanceTests(unittest.TestCase):
         self.assertEqual(row["architecture_status"], "accepted_bounded_event_risk_governor")
         self.assertIn("risk_governor_intervention_review_block_cap_reduce_flatten_hints", row["accepted_build_boundary"])
         self.assertIn("base_layers_1_9_guidance_preserved_side_by_side_with_event_adjusted_guidance", row["accepted_build_boundary"])
-        self.assertIn("trading-model/docs/19_layer_10_event_risk_governor.md", row["source_documents"])
+        self.assertIn("trading-model/docs/15_model_06_residual_event_governance.md", row["source_documents"])
         self.assertIn("signed_earnings_guidance_alpha_without_pit_expectation_baselines", row["rejected_routes"])
         self.assertFalse(row["model_activation_performed"])
         self.assertFalse(row["broker_execution_performed"])

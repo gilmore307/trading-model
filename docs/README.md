@@ -11,16 +11,12 @@ This directory contains the current documentation spine for `trading-model`.
 - `04_task.md` — Tasks.
 - `05_decision.md` — Decisions.
 - `06_memory.md` — Memory.
-- `10_layer_01_market_regime.md` — `M01` Market Regime.
-- `11_layer_02_sector_context.md` — `M02` Sector Context.
-- `12_layer_03_target_state_vector.md` — `M03` Target State.
-- `13_layer_04_event_failure_risk.md` — `M04` Event Failure Risk.
-- `14_layer_05_alpha_confidence.md` — `M05` Alpha Confidence.
-- `15_layer_06_dynamic_risk_policy.md` — `M06` Dynamic Risk Policy.
-- `16_layer_07_position_projection.md` — `M07` Position Projection.
-- `17_layer_08_underlying_action.md` — `M08` Underlying Action.
-- `18_layer_09_trading_guidance.md` — `M09` Option Expression.
-- `19_layer_10_event_risk_governor.md` — `M10` Event Risk Governor.
+- `10_model_01_background_context.md` — `M01` Background Context.
+- `11_model_02_target_state.md` — `M02` Target State.
+- `12_model_03_event_state.md` — `M03` Event State.
+- `13_model_04_unified_decision.md` — `M04` Unified Decision.
+- `14_model_05_option_expression.md` — `M05` Option Expression.
+- `15_model_06_residual_event_governance.md` — `M06` Residual Event Governance.
 - `20_model_decomposition.md` — Model Decomposition Framework.
 - `21_vector_taxonomy.md` — Vector and State Taxonomy.
 - `22_state_vector_feature_registry.md` — State Vector Feature Semantics Registry.

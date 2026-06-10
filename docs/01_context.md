@@ -2,45 +2,26 @@
 
 ## Why This Repository Exists
 
-The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the direction-neutral trading decision system. Runtime components consume ten explicit model contracts:
+The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the direction-neutral trading decision system. The current model stack has six contracts:
 
-1. MarketRegimeModel (`market_regime_model`);
-2. SectorContextModel (`sector_context_model`);
-3. TargetStateVectorModel (`target_state_vector_model`), including anonymous target candidate construction as Layer 3 preprocessing;
-4. EventFailureRiskModel (`event_failure_risk_model`);
-5. AlphaConfidenceModel (`alpha_confidence_model`);
-6. DynamicRiskPolicyModel (`dynamic_risk_policy_model`);
-7. PositionProjectionModel (`position_projection_model`);
-8. UnderlyingActionModel (`underlying_action_model`);
-9. TradingGuidanceModel / OptionExpressionModel (`trading_guidance_model` / `option_expression_model`);
-10. EventRiskGovernor / EventIntelligenceOverlay (`event_risk_governor`).
+1. BackgroundContextModel (`background_context_model`);
+2. TargetStateModel (`target_state_model`);
+3. EventStateModel (`event_state_model`);
+4. UnifiedDecisionModel (`unified_decision_model`);
+5. OptionExpressionModel (`option_expression_model`);
+6. ResidualEventGovernanceModel (`residual_event_governance_model`).
 
-Layer 8, Layer 9, and Layer 10 plans remain offline and broker mutation stays outside this repository.
+M04, M05, and M06 plans remain offline and broker mutation stays outside this repository.
 
-The current training topology groups those runtime contracts into six model blocks:
+Current structural boundary:
 
 ```text
-M01-M02 background context
-M03 target state / selection
-M04 event state / event conditioning
-M05-M08 unified decision
-M09 option expression
-M10 residual event governance
+background context -> target state -> event state -> unified decision -> optional option expression -> residual event governance
 ```
 
-The split between training topology and runtime contracts is intentional. Models may share internal trunks to reduce serial error propagation, but target selection, event reasoning, decision/action, option expression, and residual event governance remain explicit component-facing interfaces.
+`BackgroundContextModel` describes broad market and sector/industry background in one model. `TargetStateModel` builds anonymous target candidates and evaluates target state. `EventStateModel` applies accepted event-family and strategy-failure conditioning without changing event parameters. `UnifiedDecisionModel` produces the direct-underlying decision with structured edge, risk, exposure, and action heads. `OptionExpressionModel` composes optional offline trading guidance and option-expression context from that intent. `ResidualEventGovernanceModel` may intervene on the direct-underlying/spot thesis with point-in-time residual event risk while treating option-expression context as optional. Later decision/expression/governance layers may map back to real symbols only for audit, routing, and decision records.
 
-Reviewed event/strategy-failure evidence is a Layer 4 conditioning boundary before alpha confidence. Unreviewed, residual, or discovery-stage event evidence remains a Layer 10 risk-governor/intervention boundary on the direct-underlying/spot thesis, with Layer 9 expression context only when available.
-
-The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
-
-Current runtime structural boundary:
-
-```text
-broad market tradability context -> sector/industry tradability context -> anonymized target context -> reviewed event-failure risk -> confidence -> dynamic risk policy -> position projection -> underlying action plan -> trading guidance / option expression -> event-risk intervention
-```
-
-`MarketRegimeModel` describes the broad environment. `SectorContextModel` studies direction-neutral sector/industry tradability under each broad market state. Layer 3 preprocessing builds anonymous target candidates, then `TargetStateVectorModel` evaluates anonymized target candidates with market and sector context. Layer 4 `EventFailureRiskModel` applies agent-reviewed event/strategy-failure conditioning, Layer 5 `AlphaConfidenceModel` estimates event-conditioned adjusted alpha, Layers 6-9 produce dynamic risk policy, position projection, underlying action, and guidance/expression plans, and Layer 10 `EventRiskGovernor` may intervene on the Layer 8 direct-underlying/spot thesis with point-in-time residual event risk while treating Layer 9 expression context as optional. Later confidence/risk-policy/projection/action/expression/event-risk layers may map back to real symbols only for audit, routing, and decision records.
+Retired ten-layer implementation packages remain migration-source surfaces only; they are not a parallel current standard.
 
 ## Related Systems
 
@@ -50,7 +31,7 @@ broad market tradability context -> sector/industry tradability context -> anony
 | `trading-manager` control plane | Owns orchestration, lifecycle, scheduling, retries, requests, and promotion routing. |
 | `trading-data` | Produces point-in-time data/source-evidence artifacts consumed by model research. |
 | `trading-storage` | Owns durable storage layout, retention, archive, backup, restore, and artifact placement rules. |
-| `trading-strategy` | May provide downstream action/expression research artifacts if revived; active strategy translation now lives in Layer 7/8 inside `trading-model` until a separate owner is explicitly restored. |
+| `trading-strategy` | May provide downstream action/expression research artifacts if revived; active decision and expression translation live in `trading-model` until a separate owner is explicitly restored. |
 | `trading-model` | Produces offline direction-neutral model research outputs, validation evidence, and decision-record prototypes. |
 | `trading-execution` | Consumes promoted decisions/risk-approved orders for paper/live execution; broker mutation is not owned here. |
 | `trading-dashboard` | Presents already-produced outputs and evidence. |
@@ -60,7 +41,7 @@ broad market tradability context -> sector/industry tradability context -> anony
 Potential external interfaces include:
 
 - `trading-data` artifacts and manifests for market data, option-chain snapshots, macro/event evidence, ETF holdings, and source availability.
-- Strategy/action research outputs, model-local during current Layer 8/9 development or from `trading-strategy` only if that repository is explicitly revived as owner.
+- Strategy/action research outputs, model-local during current decision/expression development or from `trading-strategy` only if that repository is explicitly revived as owner.
 - Event evidence and event-cluster artifacts once accepted.
 - Storage artifact references from `trading-storage`.
 - Shared registry fields/contracts from `trading-manager`.
@@ -99,21 +80,7 @@ The shared Python environment is anchored by `trading-manager` at:
 
 Current system-level dependencies:
 
-- `trading-manager/docs/30_helpers.md` for shared helper policy;
-- `trading-manager/docs/10_registry.md` for registry operating rules;
-- `trading-manager/docs/11_templates.md` and `trading-manager/templates/` for reusable drafting surfaces;
-- `trading-manager/requirements.txt` for reviewed shared Python dependencies;
-- related component repositories through accepted contracts, not internal implementation details.
-
-## Global Registration Discipline
-
-If this repository introduces a name that other repositories may consume, route it back to `trading-manager` before treating it as stable.
-
-This includes shared fields, artifact types, manifest types, ready-signal types, request types, status values, global helper methods, reusable templates, config keys, and provider-independent terminology.
-
-## Important Constraints
-
-- Do not store generated artifacts, logs, notebooks, credentials, or secrets in Git.
-- Keep component-local implementation inside this repository's offline modeling boundary.
-- Use manifests, ready signals, artifact references, and requests for cross-repository handoffs once contracts are accepted.
-- Do not depend on another component's internal implementation details.
+- Python and standard library for local generators/tests;
+- optional PostgreSQL access for read-only SQL evidence and reviewed model-output writes;
+- `trading-manager` registry/shared environment conventions;
+- `trading-storage` artifact roots for durable evidence.

@@ -1,117 +1,75 @@
 # Architecture
 
-Status: accepted six-training-block topology preserving ten runtime contracts
-Owner intent: reduce serial model-error propagation while keeping component-facing contracts direct, point-in-time, and current-route authoritative.
+Status: accepted six-model topology
+Owner intent: reduce serial model-error propagation while keeping target selection, event reasoning, decision, option expression, and residual event governance explicit.
 
 ## Module Map
 
 | Docs band | Implementation surface | Purpose |
 |---|---|---|
-| `10_*` | `src/models/model_01_*` through `src/models/model_10_*`; matching `scripts/models/model_*/` | Layer-specific model contracts and local builders. |
+| `10_*` through `15_*` | `src/models/model_01_background_context/` through `src/models/model_06_residual_event_governance/`; matching `scripts/models/model_*/` as migration completes | Current six model contracts and local builders. |
 | `20_*` | shared model-contract/taxonomy helpers | Model decomposition, vector taxonomy, and state-vector feature registry. |
 | `30_*` | `src/model_governance/promotion/`, `scripts/model_governance/` | Promotion readiness and acceptance evidence. |
 | `40_*` | historical/realtime handoff docs and governance code | Dataset scope and realtime decision handoff boundaries. |
-| `50_*` | Event-family research helpers inside `src/models/model_10_event_risk_governor/` | Event-family scouting, packets, and final event-layer judgment. |
+| `50_*` | event-family research helpers | Event-family scouting, packets, and final event-layer judgment. |
+
+Retired ten-layer packages under `src/models/model_01_market_regime/` through `src/models/model_10_event_risk_governor/` may remain as migration-source implementation surfaces only. They are not current model contracts.
 
 ## Architecture Summary
 
-The accepted architecture separates internal training topology from runtime-facing contracts:
-
-| Training block | Runtime contracts preserved | Runtime-facing purpose |
-|---|---|---|
-| `B01` Background Context | `M01` Market Regime + `M02` Sector Context | Market, sector, industry, liquidity, volatility, and macro-sensitive background state. |
-| `B02` Target State / Selection | `M03` Target State | Target eligibility, target ranking, target-specific state, and target selection evidence. |
-| `B03` Event State / Conditioning | `M04` Event Failure Risk | Event-family/window exposure, uncertainty, relevance, and event-conditioned response/risk. |
-| `B04` Unified Decision | `M05` Alpha Confidence + `M06` Dynamic Risk Policy + `M07` Position Projection + `M08` Underlying Action | No-trade/trade, direction, edge, risk constraints, exposure/size, action thesis, and invalidation profile. |
-| `B05` Option Expression | `M09` Option Expression | Option/underlying expression from clean decision intent, horizon, volatility, risk, and liquidity inputs. |
-| `B06` Residual Event Governance | `M10` Event Risk Governor | Missed-event checks, residual event intervention, attribution, and future event-family promotion evidence. |
-
-Training blocks may share trunks or train jointly when this reduces brittle serial bottlenecks. They must not delete the explicit runtime contracts consumed by live/paper components.
-
 ```text
 point-in-time data foundation
-  -> B01 Background Context
-     -> M01 Market Regime
-     -> M02 Sector Context
-  -> B02 Target State / Selection
-  -> M03 Target State
-     (Layer 3 preprocessing includes anonymous target candidate construction)
-  -> B03 Event State / Conditioning
-  -> M04 Event Failure Risk
-  -> B04 Unified Decision
-  -> M05 Alpha Confidence
-  -> M06 Dynamic Risk Policy
-  -> M07 Position Projection
-  -> M08 Underlying Action
-  -> B05 Option Expression
-  -> M09 Option Expression
-  -> B06 Residual Event Governance
-  -> M10 Event Risk Governor
+  -> M01 Background Context
+  -> M02 Target State / Selection
+  -> M03 Event State / Event Conditioning
+  -> M04 Unified Decision
+  -> optional M05 Option Expression
+  -> M06 Residual Event Governance
   -> unified decision record / downstream execution handoff
 ```
 
-The stack separates three different questions:
+| Model | Stable id | Stable surface | Conceptual output | Role |
+|---|---|---|---|---|
+| `M01` Background Context | `background_context_model` | `model_01_background_context` | `background_context_state` | Broad market plus sector/industry background state. |
+| `M02` Target State | `target_state_model` | `model_02_target_state` | `target_context_state` | Target eligibility, ranking, and anonymous target-state evidence. |
+| `M03` Event State | `event_state_model` | `model_03_event_state` | `event_state_vector` | Accepted event-family/window exposure, uncertainty, relevance, and event-conditioned response/risk. |
+| `M04` Unified Decision | `unified_decision_model` | `model_04_unified_decision` | `unified_decision_vector` | Direct-underlying decision with structured edge, risk, exposure, and action heads. |
+| `M05` Option Expression | `option_expression_model` | `model_05_option_expression` | `trading_guidance_record`, `option_expression_plan`, `expression_vector` | Optional option/underlying expression from clean direct-underlying intent and option-chain context. |
+| `M06` Residual Event Governance | `residual_event_governance_model` | `model_06_residual_event_governance` | `event_risk_intervention` / future event-family packet eligibility | Missed-event checks, residual intervention, attribution, and event-family promotion evidence. |
 
-```text
-broad market tradability background
-  -> market-context-conditioned sector/industry tradability background
-  -> anonymous target tradability state
-```
+## Separation Rules
 
-This separation is mandatory:
-
-- Layer 1 does not choose sectors, ETFs, stocks, or strategies.
-- Layer 2 does not choose final stocks or strategy parameters.
-- Layer 3 is the first target-state layer.
-- Layer 4 and later operate on one selected target per run; multiple targets are handled by repeated target-scoped runs, not by widening downstream model interfaces.
-- Real ticker/company identity is audit/routing metadata, not a fitting feature.
-
-## Canonical Runtime Contracts
-
-| Step | Short name | Stable id | Stable surface | Conceptual output | Role |
-|---|---|---|---|---|---|
-| `M01` | Market Regime | `market_regime_model` | `model_01_market_regime` | `market_context_state` | Direction-neutral broad market tradability/regime state keyed by `available_time`. |
-| `M02` | Sector Context | `sector_context_model` | `model_02_sector_context` | `context_etf_state` | Direction-neutral ETF-context tradability and rotation state under market context. |
-| `M03` | Target State | `target_state_vector_model` | `model_03_target_state_vector` | `target_context_state` | Direction-neutral market + sector + target context for anonymous target candidates; includes candidate construction as preprocessing. |
-| `M04` | Event Failure Risk | `event_failure_risk_model` | `model_04_event_failure_risk` | `event_failure_risk_vector` | Agent-reviewed event/strategy-failure relationships converted into pre-alpha failure-risk conditioning. |
-| `M05` | Alpha Confidence | `alpha_confidence_model` | `model_05_alpha_confidence` | `alpha_confidence_vector` | Reviewed state stack plus Layer 4 failure-risk conditioning to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
-| `M06` | Dynamic Risk Policy | `dynamic_risk_policy_model` | `model_06_dynamic_risk_policy` | `dynamic_risk_policy_state` | Dynamic premium/risk-budget policy from global market regime, systemic event risk, alpha quality, and portfolio context; target-specific evidence may cap only the current target. |
-| `M07` | Position Projection | `position_projection_model` | `model_07_position_projection` | `position_projection_vector` | Final adjusted alpha plus Layer 6 risk policy, current/pending position, cost, and risk context to projected target holding state. |
-| `M08` | Underlying Action | `underlying_action_model` | `model_08_underlying_action` | `underlying_action_plan` / `underlying_action_vector` | Direct underlying/spot planned action thesis for stock, ETF, or crypto-style candidates: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and optional trading-guidance handoff. |
-| `M09` | Option Expression | `option_expression_model` | `model_09_option_expression` | `option_expression_plan` / `expression_vector` | Optional offline trading guidance and option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
-| `M10` | Event Risk Governor | `event_risk_governor` | `model_10_event_risk_governor` | `event_risk_intervention` / `event_context_vector` | Point-in-time residual event-risk intervention on the direct-underlying/spot thesis; Layer 9 context is optional; may discover, block/cap/review guidance, or propose Layer 4 promotions but must not mutate broker/account state. |
-
-The `M01` through `M10` names are component-facing runtime contracts and display/order fields. Stable package, script, table, and registry surfaces continue to use `model_01_*` through `model_10_*` until a reviewed migration changes the physical implementation. Training-block names `B01` through `B06` describe internal learning topology, not replacement output contracts.
-
-Do not treat Layer 9 or Layer 10 as live execution. Broker mutation and live/paper order placement are outside `trading-model`. There is no accepted Layer 11 inside this repository; post-Layer-10 work crosses into downstream review / execution-owned boundaries.
+- M01 does not choose targets, actions, options, or event-family parameters.
+- M02 is the first target-aware model and must keep raw ticker/company identity out of fitted vectors.
+- M03 consumes accepted event contracts as frozen event parameters; it estimates event response/risk but does not mutate event-family identity, scope, visibility, or impact windows.
+- M04 owns the direct-underlying decision and must keep structured heads for edge, risk, exposure, and action rather than collapsing the decision into one opaque score.
+- M05 remains separate because option-chain, liquidity, volatility, theta, spread, DTE, and structure constraints are a distinct expression domain.
+- M06 remains separate and auditable; it is residual event governance, not a hidden alpha/action model.
+- Broker mutation and live/paper order placement are outside `trading-model`.
 
 ## Model Artifact Rule
 
-Implemented runtime contracts separate the primary output from review and gating surfaces:
+Implemented model contracts separate the primary output from review and gating surfaces:
 
 ```text
-model_NN_<layer_slug>
-model_NN_<layer_slug>_explainability
-model_NN_<layer_slug>_diagnostics
+model_NN_<model_slug>
+model_NN_<model_slug>_explainability
+model_NN_<model_slug>_diagnostics
 ```
 
-The primary output is the narrow downstream dependency contract. Explainability owns human-review internals. Diagnostics owns acceptance, monitoring, and gating evidence. Layer-owned fields use compact `1_*`, `2_*`, ... names in docs, model-facing payloads, and SQL physical columns; SQL writers quote numeric-leading names when needed rather than storing `layer01_*` / `layer02_*` aliases.
+The primary output is the narrow downstream dependency contract. Explainability owns human-review internals. Diagnostics owns acceptance, monitoring, and gating evidence. Model-owned fields use compact model prefixes consistently across docs, model-facing payloads, and SQL physical columns.
 
-`docs/21_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual model output.
+`docs/21_vector_taxonomy.md` owns the cross-model vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and outcomes.
 
-`docs/23_model_learning_design.md` owns the long-term learning route for each runtime contract and merged training block. It separates conditional estimators, policy/utility optimizers, deterministic hard constraints, and post-hoc attribution so implementation work does not turn one score into prediction, sizing, action, and explanation at once.
-
-`docs/23_model_learning_design.md` also owns the closed-loop evidence lifecycle for the six-block / ten-contract stack: point-in-time inference moves forward through the stack, future labels/utilities join only after fold settlement, and promotion feedback can update later-fold artifacts only through review gates. This is not live recursive learning and does not authorize same-fold downstream failures, Layer 10 discoveries, broker outcomes, or future labels as upstream inference features.
+`docs/23_model_learning_design.md` owns the long-term learning route for each model contract. It separates conditional estimators, policy/utility optimizers, deterministic hard constraints, and post-hoc attribution so implementation work does not turn one score into prediction, sizing, action, and explanation at once.
 
 ## Historical Sampling vs Live Routing
 
-Historical training may use a broader point-in-time sampling universe than live inference routing. Live routing can be narrow because upstream layers gate or prioritize candidates; historical training should not copy those gates when doing so would remove useful contrast.
+Historical training may use a broader point-in-time sampling universe than live inference routing. Live routing can be narrow because upstream models gate or prioritize candidates; historical training should not copy those gates when doing so would remove useful contrast.
 
 The canonical policy lives in `docs/40_historical_dataset_scope.md`.
 
-Especially for Layer 3, live routing may use a narrower realtime candidate universe than historical training, while current historical replay uses a fixed candidate universe seeded from the current realtime pool plus BTC, ETH, and SOL. Layer 2 context must remain attached to each row as point-in-time context, but it does not define the candidate universe.
-
-Promotion evidence should distinguish broad historical generalization from live-route simulation whenever a layer trains on a broader universe than it receives in live routing.
+Promotion evidence should distinguish broad historical generalization from live-route simulation whenever a model trains on a broader universe than it receives in live routing.
 
 ## Point-in-Time Rule
 
@@ -139,292 +97,3 @@ Backtests must use `available_time` and `tradeable_time`, not hindsight event in
 | Presentation | `trading-dashboard` |
 
 `trading-model` may propose shared contracts, but `trading-manager` owns the registry authority.
-
-## Layer 1: MarketRegimeModel
-
-### Goal
-
-Describe the broad market/cross-asset environment as a point-in-time direction-neutral tradability/regime state. Layer 1 asks whether the market background is clear, stable, low-transition-risk, and able to support downstream trading; it does not decide long/short actions.
-
-Physical output:
-
-```text
-trading_model.m01_market_regime_model_generation
-```
-
-Conceptual downstream output:
-
-```text
-market_context_state
-```
-
-Active semantic fields:
-
-```text
-available_time
-1_market_direction_score
-1_market_direction_strength_score
-1_market_trend_quality_score
-1_market_stability_score
-1_market_risk_stress_score
-1_market_transition_risk_score
-1_breadth_participation_score
-1_correlation_crowding_score
-1_dispersion_opportunity_score
-1_market_liquidity_pressure_score
-1_market_liquidity_support_score
-1_coverage_score
-1_data_quality_score
-```
-
-Downstream layers should depend on these public state fields rather than implementation-local signal-group names.
-
-### Inputs
-
-Primary feature surface:
-
-```text
-trading_data.m01_market_regime_feature_generation
-```
-
-Eligible evidence includes broad market returns, trend/momentum persistence, volatility, correlation, breadth, concentration, credit/rate/dollar/commodity pressure, funding/liquidity proxies, and market-wide risk-appetite evidence.
-
-### Exclusions
-
-Layer 1 must not use or output:
-
-- sector/industry rankings;
-- ETF rankings;
-- stock candidates;
-- strategy labels;
-- option-contract outcomes;
-- portfolio PnL;
-- future-return labels as construction inputs;
-- pre-assigned ETF/sector behavior classes such as `growth`, `defensive`, `cyclical`, `inflation_sensitive`, or `safe_haven`.
-
-ETF/sector behavior attributes belong to Layer 2 as posterior evidence-backed interpretations.
-
-### Method
-
-The Layer 1 generator is simple and auditable:
-
-```text
-rolling/expanding scaler
-  -> per-signal z-score with reviewed sign direction
-  -> internal signal-group reducers
-  -> public market-context state scores
-  -> explainability + diagnostics support artifacts
-```
-
-No clustering, HMM state, hard state id, or human-readable regime label is required.
-
-### Evidence maturation
-
-Each factor needs a reviewed evidence map:
-
-| Evidence role | Meaning |
-|---|---|
-| primary evidence | Directly contributes to factor construction. |
-| diagnostic evidence | Explains or stress-tests the factor without directly driving it. |
-| quality evidence | Supports coverage, freshness, reliability, or `1_data_quality_score`. |
-| evaluation-only evidence | Used only after construction to test usefulness. |
-| intentionally unused evidence | Excluded with a documented reason. |
-
-### Evaluation
-
-Layer 1 must prove:
-
-- no leakage;
-- stable rolling/expanding behavior;
-- responsiveness to real market transitions;
-- interpretability from supporting evidence;
-- explanatory value for Layer 2 sector trend-stability calibration;
-- usefulness for option-expression constraints;
-- usefulness for position projection, underlying-action thesis, option-expression constraints, and risk-policy handoff;
-- no hidden sector/ETF/stock/strategy selection.
-
-## Layer 2: SectorContextModel
-
-### Goal
-
-Infer direction-neutral ETF-context tradability and rotation state under broad market context.
-
-Conceptual output:
-
-```text
-context_etf_state[available_time, context_etf_symbol]
-```
-
-Layer 2 answers:
-
-- Which context ETF baskets have clean, stable, low-noise, low-transition-risk tradability behavior?
-- Under which broad market contexts does each basket trend cleanly, chop, reverse, or cycle?
-- Which basket attributes are inferred from evidence rather than pre-labeled?
-- Which baskets are eligible, watch-only, or gated out for downstream strategy work?
-
-Layer 2 does **not** choose final stocks.
-
-### Inputs
-
-- `market_context_state` from Layer 1 as conditioning context only.
-- `trading_data.m02_sector_context_feature_generation` for sector/industry relative strength, trend, volatility, correlation, breadth, and dispersion evidence.
-- ETF liquidity, optionability, gap/chop behavior, event density, and abnormal activity evidence.
-
-### Output semantics
-
-Layer 2 primary conceptual output is `context_etf_state`, currently stored through the physical `sector_context_state` surface. It is not a pile of peer vectors. Internal/explainability vectors may include observed behavior, attributes, conditional behavior, trend stability, tradability, risk context, quality diagnostics, and per-ETF cross-section construction evidence. The narrow downstream fields separate signed direction, trend quality, stability, transition risk, liquidity tradability, handoff state, handoff bias, cross-ETF position, and row quality.
-
-Layer 2 may also emit `cross_etf_summary` as a global/group rotation summary. It must not emit duplicated per-ETF `context_etf_cross_section_row` outputs when those fields are already embedded in `context_etf_state`.
-
-### Boundaries
-
-- Do not consume Layer 1 as a sector-ranking scalar.
-- Do not consume hard-coded labels such as `technology = growth` or `utilities = defensive`.
-- Do not use future returns as production ranking inputs.
-- Do not select final stocks.
-- Do not use ETF holdings or `stock_etf_exposure` as core Layer 2 behavior-model inputs.
-- Output ETF-context state for downstream target-context attachment.
-- Route targets by class: Layer 1 ETF targets use `market_context_state`, Layer 2 context ETF targets use their own `context_etf_state` with influence `1.0`, and ordinary targets use `target_context_profile` weighting across one or more ETF context states.
-
-### Layer 3 preprocessing: Anonymous Target Candidate Builder
-
-The target candidate builder is part of Layer 3 preprocessing. It is not a separate model, not a separate layer, and not a peer to `TargetStateVectorModel`. In live routing, it creates anonymous target candidate rows from the reviewed realtime candidate universe and target metadata without exposing ticker identity to model fitting.
-
-For historical replay, the builder consumes the fixed `historical_candidate_universe.csv` table seeded from the current realtime pool plus BTC, ETH, and SOL rather than the mutable realtime pool itself. Those rows preserve TradingView equity sector classification, map equities to accepted SPDR Layer 2 anchors, map crypto targets to BKCH, still carry point-in-time `market_context_state_ref` and Layer 2 context refs (`context_etf_state` conceptually, current `sector_context_state_ref` physically), remain identity-safe for model fitting, and are evaluated separately for broad generalization versus live-route simulation.
-
-The current model-local contract is:
-
-```text
-src/models/model_03_target_state_vector/anonymous_target_candidate_builder/target_candidate_builder_contract.md
-```
-
-Conceptual model-facing preprocessing fields:
-
-```text
-target_candidate_id
-anonymous_target_feature_vector
-market_context_state_ref
-sector_context_state_ref
-```
-
-Audit/routing-only metadata:
-
-```text
-audit_symbol_ref
-routing_symbol_ref
-source_sector_or_industry_symbol
-source_holding_ref
-source_stock_etf_exposure_ref
-```
-
-The builder may use reviewed target-context mappings or future dynamic `target_context_profile` evidence to attach broad sector/crypto context to target candidates. Model-facing vectors may include behavior shape, liquidity, volatility, event/risk context, sector context, market context, context-attachment confidence, and cost/tradability features.
-
-Model-facing vectors must exclude raw ticker/company identity and memorized symbol labels. `target_candidate_id` is a row key only, not a categorical fitting feature.
-
-## Layer 3: TargetStateVectorModel
-
-`TargetStateVectorModel` constructs the target's current direction-neutral tradable state from three inspectable blocks: Layer 1 market state, Layer 2 sector state, and anonymous target-local tape/liquidity/behavior state. It should learn which target board/tape states have stable forward path/tradability relationships after controlling for market and sector context.
-
-It outputs `target_context_state`: signed current-state direction evidence, direction-neutral tradability scores, cross-state relationship features, optional derived representation diagnostics, feature-quality diagnostics, and baseline evidence comparing market-only, market+sector, and market+sector+target context. It does not select downstream action variants, output alpha confidence, size positions, or treat positive direction as inherently better than negative direction.
-
-## Layer 4: EventFailureRiskModel
-
-`EventFailureRiskModel` consumes reviewed Layer 1/2/3 context plus agent-accepted event/strategy-failure evidence to estimate `event_failure_risk_vector`: strategy-failure risk, entry-block pressure, exposure-cap pressure, strategy-disable pressure, path-risk amplification, evidence quality, and applicability confidence. It is a pre-alpha conditioning layer for accepted event failure factors only. It does not consume arbitrary raw news, discover new families, emit standalone directional alpha, choose action/expression, or mutate broker/account state.
-
-Contract owner:
-
-```text
-docs/13_layer_04_event_failure_risk.md
-```
-
-## Layer 5: AlphaConfidenceModel
-
-`AlphaConfidenceModel` consumes the reviewed Layer 1/2/3 state stack plus Layer 4 `event_failure_risk_vector` when applicable to estimate the final adjusted `alpha_confidence_vector`: alpha direction, alpha strength, expected residual return, confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability. Base/no-event alpha is retained as diagnostics; the adjusted vector is the default Layer 6-facing output. It does not project target exposure, choose expression/option contracts, size positions, or place orders.
-
-Contract owner:
-
-```text
-docs/14_layer_05_alpha_confidence.md
-```
-
-## Layer 6: DynamicRiskPolicyModel
-
-`DynamicRiskPolicyModel` consumes Layer 1 global market regime, systemic or broad event-risk context, Layer 5 alpha quality, and replayed portfolio/account capacity to produce `dynamic_risk_policy_state`: premium/risk-budget posture, sizing pressure, risk-budget efficiency, and policy reason codes. Target-specific evidence may cap or skip only the current target and must not distort the whole-market budget.
-
-It owns model-internal risk-budget policy state. It is not broker permission, an execution hard-limit override, order routing, or account mutation. Contract owner:
-
-```text
-docs/15_layer_06_dynamic_risk_policy.md
-```
-
-## Layer 7: PositionProjectionModel
-
-`PositionProjectionModel` consumes the final adjusted `alpha_confidence_vector`, Layer 6 `dynamic_risk_policy_state`, current/pending position state, position-level friction, portfolio exposure context, risk-budget context, and point-in-time policy gates to project `position_projection_vector`: target position bias, target exposure, current-position alignment, position gap, expected position utility, cost-to-adjust pressure, risk-budget fit, position-state stability, and projection confidence.
-
-It owns the mapping from alpha confidence and dynamic risk policy to target holding state. It does not output buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, or mutate broker/account state. Contract owner:
-
-```text
-docs/16_layer_07_position_projection.md
-```
-
-## Layer 8: UnderlyingActionModel
-
-`UnderlyingActionModel` consumes `position_projection_vector`, alpha-confidence refs, current/pending direct-underlying exposure, quote/liquidity state, risk-budget context, and policy gates to produce `underlying_action_plan` and `underlying_action_vector`.
-
-It owns the direct underlying/spot planned action thesis for stock, ETF, or crypto-style candidates: planned action type, planned exposure change, entry plan, target price/range, stop, thesis invalidation, time-stop, reward/risk, and side-neutral price-path assumptions for Layer 9 trading guidance / option expression. Its planned action types are offline plan values such as `open_long`, `increase_long`, `reduce_long`, `close_long`, `open_short`, `increase_short`, `reduce_short`, `cover_short`, `maintain`, and `no_trade`.
-
-It does not emit broker order fields, order type, route, time-in-force, send/cancel/replace instructions, broker order ids, option strike/DTE/delta/Greeks, or account mutations. Contract owner:
-
-```text
-docs/17_layer_08_underlying_action.md
-```
-
-## Layer 9: TradingGuidanceModel / OptionExpressionModel
-
-`TradingGuidanceModel` / `OptionExpressionModel` consumes Layer 8 underlying price-path assumptions, timestamped option-chain snapshots when available, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market/position context to produce optional offline trading guidance and optional `option_expression_plan` / `expression_vector` rows. Layer 10 event-risk governance may attach this output as optional expression context but must not require it for direct-underlying/crypto routes.
-
-It owns option-expression utility for the completed Layer 8 thesis: long-call / long-put selection, `underlying_only_expression` after an available option universe has been evaluated, `no_option_expression` bypass/status evidence when no option route is available, selected point-in-time contract references, contract constraints, premium-risk diagnostics, and expression-confidence scores. Current option expression is single-leg long calls/puts only. Multi-leg structures remain deferred.
-
-It does not emit broker order type, route, time-in-force, final order quantity, send/cancel/replace flags, broker order ids, or account mutation. Contract owner:
-
-```text
-docs/18_layer_09_trading_guidance.md
-```
-
-## Layer 10: EventRiskGovernor / EventIntelligenceOverlay
-
-`EventRiskGovernor` consumes point-in-time residual event evidence, upstream context refs, and the Layer 8 direct-underlying action thesis as its canonical risk target. It outputs `event_risk_intervention` plus `event_context_vector` evidence that can block new entries, cap exposure, request human review, or nominate reduction/flattening candidates under reviewed policy.
-
-It is a post-thesis event-risk governor boundary: it consumes the Layer 8 underlying thesis directly and may attach Layer 9 trading-guidance/option-expression context when available. It is not a hard upstream alpha input and not a broker/account mutation surface. Contract owner:
-
-```text
-docs/19_layer_10_event_risk_governor.md
-```
-
-## Unified Decision Record
-
-The long-run decision record should reference all layer outputs point-in-time:
-
-```text
-available_time
-tradeable_time
-market_context_state_ref
-sector_context_state_ref
-target_candidate_id
-target_context_state_ref
-event_failure_risk_vector_ref
-alpha_confidence_vector_ref
-position_projection_vector_ref
-underlying_action_plan_ref
-underlying_action_vector_ref
-trading_guidance_record_ref (optional)
-option_expression_plan_ref (optional; absent for direct-underlying-only/crypto routes)
-asset_expression_route
-expression_vector_ref
-event_risk_intervention_ref
-event_context_vector_ref
-audit/routing metadata
-offline execution handoff
-```
-
-The exact shared record contract must be promoted through `trading-manager` before cross-repository dependence.

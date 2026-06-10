@@ -1,63 +1,51 @@
 # trading-model
 
-`trading-model` is the offline modeling repository for the current six-training-block / ten-runtime-contract trading decision stack.
+`trading-model` is the offline modeling repository for the current six-model trading decision stack.
 
 It owns point-in-time model research, model-local generators/evaluators, promotion evidence, and model outputs. It does **not** own raw source acquisition, global registry authority, durable storage policy, dashboards, live/paper order placement, broker/account mutation, generated runtime artifacts committed to Git, or secrets.
 
 ## Current Route
 
-The accepted training topology is six model blocks, while runtime-facing contracts remain explicit and stable:
+The accepted topology is six model contracts:
 
 ```text
-Block 1: M01-M02 Background Context
-Block 2: M03 Target State / Selection
-Block 3: M04 Event State / Event Conditioning
-Block 4: M05-M08 Unified Decision
-Block 5: M09 Option Expression
-Block 6: M10 Residual Event Governance
+M01 Background Context
+M02 Target State / Selection
+M03 Event State / Event Conditioning
+M04 Unified Decision
+M05 Option Expression
+M06 Residual Event Governance
 ```
 
-Internal model training may merge blocks where this reduces serial error propagation, but live/paper components still consume typed artifacts for target selection, event reasoning, decision/action, option expression, and residual event governance.
-
 ```text
-M01 Market Regime
-  -> market_context_state
+M01 Background Context
+  -> background_context_state
+     (broad market + sector/industry background)
 
-M02 Sector Context
-  -> sector_context_state
-
-anonymous target candidate builder + M03 Target State
-  -> anonymous_target_feature_vector
+M02 Target State / Selection
   -> target_context_state
+     (anonymous target candidate construction remains inside this boundary)
 
-M04 Event Failure Risk
-  -> event_failure_risk_vector
+M03 Event State / Event Conditioning
+  -> event_state_vector
 
-M05 Alpha Confidence
-  -> alpha_confidence_vector
+M04 Unified Decision
+  -> unified_decision_vector
+     (structured edge, risk, exposure, and direct-underlying action heads)
 
-M06 Dynamic Risk Policy
-  -> dynamic_risk_policy_state
-
-M07 Position Projection
-  -> position_projection_vector
-
-M08 Underlying Action
-  -> underlying_action_plan / underlying_action_vector
-
-M09 Option Expression
+M05 Option Expression
   -> trading_guidance_record plus optional option_expression_plan / expression_vector
 
-M10 Event Risk Governor
+M06 Residual Event Governance
   -> event_risk_intervention / event-adjusted risk guidance
 ```
 
-Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 1/2 may train as one background block, but their background context outputs remain explicit. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning and remains a separate event-reasoning contract. Layers 5-8 may train as a unified decision block, but they must still emit structured alpha, risk, position, and action-thesis fields needed by runtime components. Layer 9 composes optional offline trading guidance and option-expression context from that thesis. Layer 10 applies event-risk governance to the direct-underlying/spot thesis, with Layer 9 context attached only when available. Broker orders and account mutation stay outside this repository.
+M01 owns broad market and sector/industry background as one model. M02 owns target selection/state and keeps ticker/company identity out of model-facing fitting vectors. M03 owns accepted event-state conditioning without changing event-family parameters. M04 owns the full direct-underlying decision and exposes structured edge, risk, exposure, and action heads. M05 owns optional option expression after direct-underlying intent exists. M06 owns residual event governance and future event-family evidence. Broker orders and account mutation stay outside this repository.
 
 ## Top-Level Structure
 
 ```text
-docs/        Scope, current layer contracts, architecture, decisions, tasks, and promotion readiness.
+docs/        Scope, current six-model contracts, architecture, decisions, tasks, and promotion readiness.
 src/         Importable model packages and shared governance/promotion helpers.
 scripts/     Stable executable entrypoints for model generation, evaluation, review, and governance.
 tests/       First-party unit tests and CLI smoke checks using local rows/fake cursors.
@@ -74,44 +62,37 @@ Runtime path defaults preserve the OpenClaw `/root/projects` layout but can be o
 ## Implementation Packages
 
 ```text
-src/models/model_sequence.py              M01-M10 display/order metadata.
-src/models/model_01_market_regime/        M01 Market Regime.
-src/models/model_02_sector_context/       M02 Sector Context.
-src/models/model_03_target_state_vector/  M03 Target State and anonymous target candidate preprocessing.
-src/models/model_04_event_failure_risk/   M04 Event Failure Risk.
-src/models/model_05_alpha_confidence/     M05 Alpha Confidence.
-src/models/model_06_dynamic_risk_policy/  M06 Dynamic Risk Policy.
-src/models/model_07_position_projection/  M07 Position Projection.
-src/models/model_08_underlying_action/    M08 Underlying Action.
-src/models/model_09_option_expression/    M09 Option Expression package for Layer 9 trading guidance.
-src/models/model_10_event_risk_governor/  M10 Event Risk Governor.
+src/models/model_sequence.py                       M01-M06 display/order metadata.
+src/models/model_01_background_context/            M01 Background Context.
+src/models/model_02_target_state/                  M02 Target State.
+src/models/model_03_event_state/                   M03 Event State.
+src/models/model_04_unified_decision/              M04 Unified Decision.
+src/models/model_05_option_expression/             M05 Option Expression.
+src/models/model_06_residual_event_governance/     M06 Residual Event Governance.
 src/model_governance/                     Shared evaluation, promotion, SQL, and local-layer helpers.
 ```
 
+The older `src/models/model_01_market_regime/` through `src/models/model_10_event_risk_governor/` packages are retained only as migration-source implementation surfaces until their functionality is moved under the six current model contracts.
+
 ## Script Entry Points
 
-Model-specific scripts live under `scripts/models/model_NN_<slug>/` and follow the same layer order. Each layer exposes generation/evaluation/review entrypoints where implemented. Shared governance scripts live under `scripts/model_governance/`.
+Model-specific scripts should live under `scripts/models/model_NN_<six_model_slug>/` and follow the six-model order. Shared governance scripts live under `scripts/model_governance/`.
 
 Important paths:
 
 ```text
-scripts/models/model_01_market_regime/
-scripts/models/model_02_sector_context/
-scripts/models/model_03_target_state_vector/
-scripts/models/model_04_event_failure_risk/
-scripts/models/model_05_alpha_confidence/
-scripts/models/model_06_dynamic_risk_policy/
-scripts/models/model_07_position_projection/
-scripts/models/model_08_underlying_action/
-scripts/models/model_09_option_expression/
-scripts/models/model_10_event_risk_governor/
+scripts/models/model_01_background_context/
+scripts/models/model_02_target_state/
+scripts/models/model_03_event_state/
+scripts/models/model_04_unified_decision/
+scripts/models/model_05_option_expression/
+scripts/models/model_06_residual_event_governance/
 scripts/models/audit_model_output_tables.py
 scripts/models/run_model_output_quality_gate.py
-scripts/models/review_layers_03_10_promotion_acceptance.py
 scripts/model_governance/
 ```
 
-Layer 1-3 scripts include SQL-backed evaluation/review paths where current substrate exists. Layer 1 also exposes `diagnose_model_01_market_regime_substrate.py`, a read-only source/feature/model substrate diagnostic for promotion-readiness triage before regeneration planning. `scripts/models/audit_model_output_tables.py` audits all ten model output/support table families for empty or sparse columns without mutating SQL, and `scripts/models/run_model_output_quality_gate.py` turns that audit into a pass/block decision for post-generation acceptance. Layer 4 event-failure-risk scripts and Layer 10 event-risk scripts use the physical `model_04_event_failure_risk` and `model_10_event_risk_governor` surfaces. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
+Existing scripts under retired ten-layer paths remain migration-source entrypoints only. New work should target the six-model paths above. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
 
 ## Docs Spine
 
@@ -123,16 +104,12 @@ docs/03_contracts.md
 docs/04_task.md
 docs/05_decision.md
 docs/06_memory.md
-docs/10_layer_01_market_regime.md
-docs/11_layer_02_sector_context.md
-docs/12_layer_03_target_state_vector.md
-docs/13_layer_04_event_failure_risk.md
-docs/14_layer_05_alpha_confidence.md
-docs/15_layer_06_dynamic_risk_policy.md
-docs/16_layer_07_position_projection.md
-docs/17_layer_08_underlying_action.md
-docs/18_layer_09_trading_guidance.md
-docs/19_layer_10_event_risk_governor.md
+docs/10_model_01_background_context.md
+docs/11_model_02_target_state.md
+docs/12_model_03_event_state.md
+docs/13_model_04_unified_decision.md
+docs/14_model_05_option_expression.md
+docs/15_model_06_residual_event_governance.md
 docs/20_model_decomposition.md
 docs/21_vector_taxonomy.md
 docs/22_state_vector_feature_registry.md
@@ -149,7 +126,7 @@ docs/52_earnings_guidance_event_family_packet.md
 docs/53_event_layer_final_judgment.md
 ```
 
-Layer workflow and acceptance live in the numbered layer files. Architecture and decomposition docs describe the current route, not historical detours.
+Model workflow and acceptance live in the numbered model files. Architecture and decomposition docs describe the current six-model route, not historical detours.
 
 ## Platform Boundaries
 

@@ -782,14 +782,14 @@ This acceptance is superseded by the later architecture revisions that insert La
 
 Remaining work is production hardening and control-plane integration, not new model-layer design: real point-in-time feeds, label calibration, baseline/stability proof, accepted promotion decisions, and exact unified decision-record / artifact contracts through `trading-manager`.
 
-## D026 - Layers 1-10 production promotion requires complete evidence packages
+## D026 - Production promotion requires complete evidence packages
 
 Date: 2026-05-07
-Status: Accepted; expanded by D047
+Status: Superseded by D062 for the current six-model contract set
 
 Closing the model-design phase does not approve production promotion for any layer.
 
-Every production promotion review for active conceptual Layers 1-10 must use the complete evidence package defined in `docs/30_promotion_readiness.md`: dataset snapshot, chronological split, label refs, eval run, promotion metrics, promotion candidate, thresholds, baseline comparison, split stability, leakage/no-future checks, calibration report, and decision receipt.
+Every production promotion review for active current model contracts must use the complete evidence package defined in `docs/30_promotion_readiness.md`: dataset snapshot, chronological split, label refs, eval run, promotion metrics, promotion candidate, thresholds, baseline comparison, split stability, leakage/no-future checks, calibration report, and decision receipt.
 
 Missing evidence or failed gates require a deferred promotion review. Deferred or rejected reviews must not activate configs or move production pointers. Approval can only be considered after the evidence package is complete and gates pass; promotion readiness belongs in `trading-evaluation`, while runtime activation belongs in `trading-execution`.
 
@@ -885,7 +885,7 @@ Rationale: the base trading path should remain runnable without mature event int
 
 Allowed event-risk-governor intervention outputs include `block_new_entries`, `max_exposure_factor`, `reduce_exposure_to`, `flatten_position_candidate`, `halt_trading_candidate`, `human_review_required`, event refs, and evidence spans. Under D049 this is Layer 10. It may modify the decision/risk record consumed by execution risk-control, but it must not directly send broker orders or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence and an accepted execution risk policy or human review path.
 
-Physical implementation surfaces now use the current ten-runtime-contract names (`model_04_event_failure_risk`, `model_05_alpha_confidence`, `model_06_dynamic_risk_policy`, `model_07_position_projection`, `model_08_underlying_action`, `model_09_option_expression`, and `model_10_event_risk_governor`). Historical/applied migration records may retain earlier names.
+Those physical implementation surfaces are now retired ten-layer names. Historical/applied migration records may retain them, but new current contracts use the six-model names accepted in D062.
 
 ## D040 - Event lifecycle clocks separate scheduled catalysts from surprise events
 
@@ -1228,11 +1228,11 @@ Trading-calendar and market-structure events require specific standardized field
 
 Persistent event regimes require interval fields such as regime family, status, start/end, last material update, affected scopes/entities, decay/staleness rule, source quality, and active/shadow/decay/stale/resolved state. High-frequency news topics are only discovery candidates until `regime-promotion-review` accepts a regime interpretation.
 
-## D061 - Each runtime contract or training block owns one learning role
+## D061 - Each current model contract owns one learning role
 
 Accepted: 2026-05-28
 
-The long-term model route is not "replace every baseline route with a trained model." Each runtime contract or merged training block must be classified as one clear role before implementation expands:
+The long-term model route is not "replace every baseline route with a trained model." Each current model contract must be classified as one clear role before implementation expands:
 
 ```text
 conditional estimator
@@ -1241,45 +1241,45 @@ deterministic hard constraint
 post-hoc attribution
 ```
 
-Layer 1 through Layer 4 runtime contracts are primarily calibrated conditional estimators. The unified Layer 5-8 decision training block is a policy/utility optimizer with structured alpha, risk, exposure, and action heads plus deterministic hard constraints around account/broker boundaries, exposure definitions, quotes, fills, and allowed actions. Layer 9 remains a separate expression utility optimizer. Layer 10 is residual event-risk intervention plus attribution and future evidence-packet production.
+M01 through M03 are primarily calibrated conditional estimators. M04 is a policy/utility optimizer with structured edge, risk, exposure, and direct-underlying action heads plus deterministic hard constraints around account/broker boundaries, exposure definitions, quotes, fills, and allowed actions. M05 is a separate expression utility optimizer. M06 is residual event-risk intervention plus attribution and future evidence-packet production.
 
-The B04 alpha head owns direct normalized after-cost alpha scoring: `0.5` is after-cost neutral, values above `0.5` imply positive expected after-cost edge, and values below `0.5` imply negative expected after-cost edge. Replay must not hide score weakness by fitting a separate alpha threshold.
+The M04 edge head owns direct normalized after-cost edge scoring: `0.5` is after-cost neutral, values above `0.5` imply positive expected after-cost edge, and values below `0.5` imply negative expected after-cost edge. Replay must not hide score weakness by fitting a separate alpha threshold.
 
-B04 and B05 must not collapse every head into the same "profitable trade" target. Their runtime-head boundaries are:
+M04 and M05 must not collapse every head into the same "profitable trade" target. Their head boundaries are:
 
 ```text
-B04 alpha head estimates edge.
-B04 risk head sets portfolio/risk policy.
-B04 exposure head projects desired exposure.
-B04 action head chooses the underlying action thesis.
-B05 option-expression block chooses the expression.
+M04 edge head estimates edge.
+M04 risk head sets portfolio/risk policy.
+M04 exposure head projects desired exposure.
+M04 action head chooses the direct-underlying action thesis.
+M05 option-expression model chooses the expression.
 ```
 
-The detailed learning route is owned by `docs/23_model_learning_design.md`. A runtime-contract or training-block implementation may expand only after its objective contract defines target or utility, horizon, labels and costs, allowed inputs, forbidden inputs, baseline, walk-forward metric, leakage test, and downstream consumer.
+The detailed learning route is owned by `docs/23_model_learning_design.md`. A model implementation may expand only after its objective contract defines target or utility, horizon, labels and costs, allowed inputs, forbidden inputs, baseline, walk-forward metric, leakage test, and downstream consumer.
 
-## D062 - Six training blocks preserve ten runtime contracts
+## D062 - Six model contracts replace the ten-layer runtime standard
 
 Accepted: 2026-06-10
 
-The accepted model topology distinguishes internal training blocks from component-facing runtime contracts. The runtime contracts remain explicit because live/paper components need stable artifacts for target selection, event reasoning, decision/action routing, option expression, and residual event governance.
+The accepted model topology is now six model contracts. The earlier "six training blocks preserving ten runtime contracts" route is retired because it creates two competing standards.
 
-Accepted training blocks:
+Accepted current model contracts:
 
-| Training block | Runtime contracts preserved | Reason |
+| Model | Contract | Reason |
 |---|---|---|
-| `B01` Background Context | `M01` Market Regime + `M02` Sector Context | Market and sector/industry background are tightly coupled and can share a background representation. |
-| `B02` Target State / Selection | `M03` Target State | Target selection, ranking, and target-state evidence are runtime routing surfaces and must remain explicit. |
-| `B03` Event State / Conditioning | `M04` Event Failure Risk | Event family/window/exposure/uncertainty evidence is a runtime reasoning surface and must remain explicit. |
-| `B04` Unified Decision | `M05` Alpha Confidence + `M06` Dynamic Risk Policy + `M07` Position Projection + `M08` Underlying Action | Alpha, risk, exposure, and action handoffs are the most likely source of serial error propagation and may train as one decision block. |
-| `B05` Option Expression | `M09` Trading Guidance / Option Expression | Option expression has separate chain, liquidity, volatility, and structure constraints and consumes clean upstream intent. |
-| `B06` Residual Event Governance | `M10` Event Risk Governor / Event Intelligence Overlay | Residual event governance and missed-event attribution must remain separate and auditable. |
+| `M01` Background Context | `background_context_model` | Market and sector/industry background are tightly coupled and should be one model contract. |
+| `M02` Target State | `target_state_model` | Target selection, ranking, and target-state evidence are runtime routing surfaces and must remain explicit. |
+| `M03` Event State | `event_state_model` | Event family/window/exposure/uncertainty evidence is a runtime reasoning surface and must remain explicit. |
+| `M04` Unified Decision | `unified_decision_model` | Edge, risk, exposure, and action handoffs are the most likely source of serial error propagation and should be one model contract with structured heads. |
+| `M05` Option Expression | `option_expression_model` | Option expression has separate chain, liquidity, volatility, and structure constraints and consumes clean upstream intent. |
+| `M06` Residual Event Governance | `residual_event_governance_model` | Residual event governance and missed-event attribution must remain separate and auditable. |
 
-Training-block consolidation is allowed only as internal topology. It must not delete or make implicit any runtime contract consumed by downstream components. In particular:
+Retired ten-layer implementation packages and scripts may remain as migration-source surfaces only. They must not be used to define new current contracts. In particular:
 
-- target selection cannot be hidden inside background context;
-- event state cannot be hidden inside target scoring;
-- no-trade, direction, exposure/size, risk constraints, and action thesis cannot collapse into one opaque action score;
-- option expression cannot be merged into the main decision model before option-specific validation is mature;
-- Layer 10 residual event governance cannot be trained as an alpha/action head.
+- M02 target selection cannot be hidden inside M01 background context;
+- M03 event state cannot be hidden inside target scoring;
+- M04 no-trade, direction, exposure/size, risk constraints, and action thesis cannot collapse into one opaque action score;
+- M05 option expression cannot be merged into M04 before option-specific validation is mature;
+- M06 residual event governance cannot be trained as an alpha/action head.
 
-The first implementation pilot should replace the serial `M05 -> M06 -> M07 -> M08` learned handoff with a unified decision model that still emits the existing structured runtime outputs. The pilot must compare walk-forward replay utility, drawdown/CVaR, turnover, no-trade calibration, event-window behavior, action/size stability, and retained output explainability against the current serial route. Roll back or narrow the merge if target selection quality, event exposure detection, option intent consistency, residual event governance, or downstream runtime debuggability degrades.
+The first implementation pilot should replace the retired serial alpha/risk/position/action learned handoff with `M04 Unified Decision`. The pilot must compare walk-forward replay utility, drawdown/CVaR, turnover, no-trade calibration, event-window behavior, action/size stability, and retained output explainability against the retired serial route. Roll back or narrow the merge if target selection quality, event exposure detection, option intent consistency, residual event governance, or downstream runtime debuggability degrades.

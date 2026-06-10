@@ -1,41 +1,38 @@
 # Contracts
 
-Status: accepted six-training-block topology preserving Layers 1-10 runtime contracts
+Status: accepted six-model architecture
 Date: 2026-06-10
 
-## Acceptance scope
+## Acceptance Scope
 
-`trading-model` has accepted contracts for the current offline model stack. The repository now distinguishes training topology from runtime contracts:
+`trading-model` has accepted contracts for the current six-model offline stack.
 
-- training topology: six model blocks (`M01-M02`, `M03`, `M04`, `M05-M08`, `M09`, `M10`);
-- runtime contracts: the ten explicit `M01` through `M10` outputs that live/paper components consume, route, audit, or govern.
-
-`docs/23_model_learning_design.md` owns the learning role for each block/contract: conditional estimator, policy/utility optimizer, deterministic hard constraint, or post-hoc attribution.
-
-| Training block | Runtime contract(s) | Output(s) | Acceptance state |
+| Model | Stable id | Output(s) | Acceptance state |
 |---|---|---|---|
-| `B01` Background Context | `M01` Market Regime + `M02` Sector Context | `market_context_state`, `context_etf_state` | shared background training block accepted; production promotion remains evidence-gated |
-| `B02` Target State / Selection | `M03` Target State | `target_context_state` | target selection/state contract remains explicit; production promotion remains evidence-gated |
-| `B03` Event State / Conditioning | `M04` Event Failure Risk | `event_failure_risk_vector` | event reasoning contract remains explicit; production promotion remains evidence-gated |
-| `B04` Unified Decision | `M05` Alpha Confidence + `M06` Dynamic Risk Policy + `M07` Position Projection + `M08` Underlying Action | `alpha_confidence_vector`, `dynamic_risk_policy_state`, `position_projection_vector`, `underlying_action_plan` / `underlying_action_vector` | unified internal decision training block accepted as target topology; runtime fields remain structured; production promotion remains evidence-gated |
-| `B05` Option Expression | `M09` Trading Guidance / Option Expression | optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | separate option-expression domain remains explicit; production promotion remains evidence-gated |
-| `B06` Residual Event Governance | `M10` Event Risk Governor / Event Intelligence Overlay | `event_risk_intervention` / event-adjusted risk guidance | residual event governance remains separate and auditable; production promotion remains evidence-gated |
+| `M01` Background Context | `background_context_model` | `background_context_state` | current contract accepted; implementation migration remains evidence-gated |
+| `M02` Target State | `target_state_model` | `target_context_state` | current contract accepted; implementation migration remains evidence-gated |
+| `M03` Event State | `event_state_model` | `event_state_vector` | current contract accepted; implementation migration remains evidence-gated |
+| `M04` Unified Decision | `unified_decision_model` | `unified_decision_vector` with structured edge/risk/exposure/action heads | current contract accepted; first implementation pilot |
+| `M05` Option Expression | `option_expression_model` | optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | current contract accepted; implementation migration remains evidence-gated |
+| `M06` Residual Event Governance | `residual_event_governance_model` | `event_risk_intervention` / event-adjusted risk guidance / future event-family packet eligibility | current contract accepted; implementation migration remains evidence-gated |
 
-This closes the model-design re-scope for training topology. It does not approve production promotion and does not delete current `model_01_*` through `model_10_*` implementation surfaces.
+This closes the model-design re-scope to six model contracts. It does not approve production promotion and does not claim that every retired ten-layer implementation surface has already been migrated.
 
-For Layer 10 specifically, model-design acceptance is not evidence completion. Layer 10 evidence is complete only after the active event-family universe has passed the normal event-family workflow: event-family packets, canonical parser/source routing, matched controls, impact-window backtests, fold stability, and leakage/upstream-overlap review. Closed-loop replay overlays and a few calibrated seed families are evidence progress, not completion.
+Retired packages and scripts named `model_01_market_regime` through `model_10_event_risk_governor` are no longer current model contracts. They may be used only as migration-source implementation surfaces until their behavior is moved into the six accepted contracts.
 
-`docs/23_model_learning_design.md` owns the closed-loop evidence lifecycle for the accepted six-block / ten-contract stack. The loop is closed through three separated paths: point-in-time inference, post-fold evaluation labels/utilities, and review-gated promotion feedback into later-fold artifacts. It does not create a live recursive learning loop, same-fold upstream mutation, production activation, broker/account mutation, or a new model layer.
+## Event-Governance Acceptance
 
-## Boundary acceptance
+For residual event governance specifically, architecture acceptance is not production evidence completion. An event family may enter current event-state/governance workflows only after the normal event-family workflow is satisfied for its accepted use: event-family packet, canonical parser/source routing, matched controls, impact-window backtest, fold evidence, and leakage/upstream-overlap review.
 
-Layer 9 is TradingGuidance / OptionExpression / optional expression context and Layer 10 is EventRiskGovernor / EventIntelligenceOverlay / realtime risk handoff. There is no accepted Layer 11 inside `trading-model`.
+`docs/23_model_learning_design.md` owns the closed-loop evidence lifecycle for the accepted six-model stack. The loop is closed through three separated paths: point-in-time inference, post-fold evaluation labels/utilities, and review-gated promotion feedback into later-fold artifacts. It does not create a live recursive learning loop, same-fold upstream mutation, production activation, broker/account mutation, or a new model layer.
 
-After Layer 10, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
+## Boundary Acceptance
 
-Layer 8 produces the base direct-underlying action thesis. Layer 10's canonical intervention target is that Layer 8 underlying/spot thesis; it may intervene for high-severity residual event risk by blocking new entries, capping exposure, reducing exposure, or nominating flatten/halt/human-review actions. Layer 9 may compose optional offline trading guidance and option-expression context from the Layer 8 thesis. Layer 10 event-risk governance uses the Layer 8 thesis as the canonical intervention target and may attach Layer 9 context when available. For crypto/direct-underlying-only routes, option-expression evidence is not required. Layer 10 still must not directly send broker orders or mutate accounts; execution risk-control owns any resulting broker action.
+After M06, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
-## Historical-training readiness classification
+M04 produces the base direct-underlying action thesis. M05 may compose optional offline trading guidance and option-expression context from that thesis. M06 may intervene for high-severity residual event risk by blocking new entries, capping exposure, reducing exposure, or nominating flatten/halt/human-review actions. M06 must not directly send broker orders or mutate accounts; execution risk-control owns any resulting broker action.
+
+## Historical-Training Readiness Classification
 
 There are no active model-stack boundary work items for the no-broker historical-training preparation boundary. The next work is objective-contract completion and run/evidence production during formal historical-training passes:
 
@@ -48,4 +45,4 @@ There are no active model-stack boundary work items for the no-broker historical
 
 Execution-facing unified decision-record artifacts remain outside the current no-broker historical-training scope unless explicitly accepted later.
 
-`trading-model` should be treated as structurally closed for the accepted six-training-block / ten-runtime-contract architecture boundary. Future changes should be scoped as objective-contract implementation, production hardening, evidence/promotion work, bug fixes, or explicitly accepted contract changes.
+`trading-model` should be treated as structurally closed for the accepted six-model architecture boundary. Future changes should be scoped as objective-contract implementation, production hardening, evidence/promotion work, bug fixes, or explicitly accepted contract changes.

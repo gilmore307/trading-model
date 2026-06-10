@@ -1,7 +1,7 @@
 # Historical Dataset Scope
 
 Status: accepted dataset-construction policy for offline historical training; live-routing constraints unchanged
-Date: 2026-05-10
+Date: 2026-06-10
 
 ## Purpose
 
@@ -13,20 +13,18 @@ The accepted rule is:
 historical training sampling universe != live inference routing universe
 ```
 
-A layer may train on a broader point-in-time sample universe than the candidate set it will receive in live operation. The broader training universe must still preserve chronology, availability timestamps, identity-safety rules, no future leakage, and downstream-boundary separation.
+A model may train on a broader point-in-time sample universe than the candidate set it will receive in live operation. The broader training universe must still preserve chronology, availability timestamps, identity-safety rules, no future leakage, and downstream-boundary separation.
 
-## Core distinction
+## Core Distinction
 
 | Surface | Meaning | Constraint |
 |---|---|---|
-| Historical training sampling universe | Rows collected to fit, calibrate, validate, and test a model layer. | May be intentionally broad to improve coverage across regimes, sectors, events, liquidity states, and edge cases. |
-| Live inference routing universe | Rows that reach a layer during actual decision routing. | May be narrower because upstream layers gate or prioritize the current candidate set. |
+| Historical training sampling universe | Rows collected to fit, calibrate, validate, and test a model. | May be intentionally broad to improve coverage across regimes, sectors, events, liquidity states, and edge cases. |
+| Live inference routing universe | Rows that reach a model during actual decision routing. | May be narrower because upstream models gate or prioritize the current candidate set. |
 
-Training should not blindly copy live-routing filters when doing so would starve the model of useful contrast. For example, Layer 3 live routing may receive targets from the realtime total-symbol pool with attached Layer 2 context, while current historical replay uses a fixed `historical_candidate_universe.csv` table seeded from the current pool plus BTC, ETH, and SOL so the model learns sector-confirmed, sector-divergent, strong-in-weak-sector, weak-in-strong-sector, and crypto-context behavior over a stable scope.
+Training should not blindly copy live-routing filters when doing so would starve the model of useful contrast.
 
-For Layers 5 and later, the default training rule is dense minute-level state coverage whenever point-in-time inputs can be constructed. A model may run on demand in live routing, but historical training should still include action and no-action minutes so thresholds, capacity use, maintain decisions, and rejection reasons are calibrated against the distribution the live system will actually score.
-
-## Global training rules
+## Global Training Rules
 
 1. Broader sampling is allowed only for offline training/evaluation evidence, not for live routing bypass.
 2. Every row must remain point-in-time with `available_time` and `tradeable_time` discipline.
@@ -34,37 +32,33 @@ For Layers 5 and later, the default training rule is dense minute-level state co
 4. Training labels may look forward only from the row's tradeable time and only inside label/evaluation surfaces, never inference features.
 5. Raw symbol/company identity remains audit/routing metadata where identity-safety is required; it must not become a memorized fitting feature.
 6. Candidate thresholds, action triggers, and downstream execution routes are calibration/routing policies after scoring; they must not become default training-row admission filters.
-7. Promotion evidence should report both broad historical generalization and live-route simulation performance when a layer's live candidate set is narrower than its training sample universe.
+7. Promotion evidence should report both broad historical generalization and live-route simulation performance when a model's live candidate set is narrower than its training sample universe.
 
-## Layer dataset-scope matrix
+## Dataset-Scope Matrix
 
-| Layer | Model | Historical training sampling universe | Live inference routing universe |
-|---:|---|---|---|
-| 1 | `MarketRegimeModel` | Broad market and cross-asset environment: market indexes, broad ETFs, rates, credit, dollar, commodities, volatility, liquidity, breadth, correlation, crypto/risk-appetite proxies where accepted. | Current broad market context only; does not route sectors or targets. |
-| 2 | `SectorContextModel` | All reviewed sector/industry/theme baskets and relative-strength combinations across market regimes, including weak, strong, choppy, defensive, cyclical, and transition states. | Current sector/industry baskets scored under current Layer 1 context; may produce selected/prioritized handoff state. |
-| 3 | `TargetStateVectorModel` | Frozen point-in-time anonymous target pool across sectors, industries, styles, market caps, and liquidity tiers. It is explicitly allowed to include targets outside narrow live-routing interest when that improves contrast. | Targets routed from the reviewed realtime candidate universe and target metadata, with Layer 2 context attached as conditioning evidence rather than candidate-universe membership. |
-| 4 | `EventFailureRiskModel` | Reviewed event/strategy-failure evidence paired with market/sector/target state and candidate strategy-family context. Includes no-event, observe-only, entry-block, exposure-cap, disable, and adverse-path examples when point-in-time labels exist. | Current reviewed Layer 1-3 stack plus accepted event/strategy-failure evidence for routed candidates. |
-| 5 | `AlphaConfidenceModel` | Dense minute-level anonymous target-state rows from the accepted Layer 3 target universe, including strong setups, weak setups, no-edge rows, near-misses, negative/control rows, and event-risk-conditioned rows. | Current reviewed Layer 1-4 stack for eligible target-state rows; downstream candidate routing thresholds are calibration parameters, not training pre-filters. |
-| 6 | `DynamicRiskPolicyModel` | Minute-level global risk-policy rows paired with market stress, systemic event-risk pressure, portfolio/account replay state, premium-budget pressure, and risk-budget labels; plus candidate/active-position conditioned rows when those contexts exist. | Current Layer 1 context plus portfolio/account replay context for global rows; optional Layer 5 alpha context for candidate/position rows; not a hard order limit. |
-| 7 | `PositionProjectionModel` | Dense minute-level alpha/risk-policy rows from Layer 5/6, paired with simulated or historical current/pending position states, costs, risk budgets, and exposure constraints. Includes aligned, no-gap, reduce, add, flatten, and near-threshold rows. Scenarios may be constructed offline if point-in-time and label-safe. | Current alpha plus Layer 6 dynamic risk policy and actual/approved current and pending position context. |
-| 8 | `UnderlyingActionModel` | Dense minute-level direct underlying/spot state rows whenever Layer 7 projection and underlying quote/liquidity context exist. Includes open/increase/reduce/close/cover/maintain/no-trade and adverse examples across stock, ETF, and crypto-style exposure states. | Current position projection for direct-underlying/spot expression candidates. |
-| 9 | `TradingGuidanceModel` / `OptionExpressionModel` | Dense optionable-underlying minutes where point-in-time option-chain snapshots exist, plus underlying-minute `no_option_expression` bypass/status rows for missing-chain and non-optionable cases. Per-contract candidate rows and `underlying_only_expression` alternatives exist only when `optionable_chain_available`. Historical option-chain candidates should span IV regimes, expiries, deltas, liquidity, trends, chops, event-risk interventions, and underlying-only cases. | Current Layer 8 underlying thesis plus current option-chain context only when `optionable_chain_available`; missing-chain, direct-underlying, and crypto/non-optionable routes bypass M09. |
-| 10 | `EventRiskGovernor` / `EventIntelligenceOverlay` | Cross-target/cross-sector residual-event rows, including event/no-event, effective/ineffective, sector-confirmed/sector-divergent, abnormal activity, news, earnings, macro, and price-action/false-breakout cases, joined point-in-time to the Layer 8 direct-underlying action thesis. | Residual events attached to the current routed target/context stack and underlying/spot thesis for warning/intervention only; option-expression context is not required. |
+| Model | Historical training sampling universe | Live inference routing universe |
+|---|---|---|
+| `M01 BackgroundContextModel` | Broad market, sector/industry, ETF/theme, cross-asset, volatility, liquidity, breadth, dispersion, correlation, and macro-sensitive context. | Current background context only; does not route targets or actions. |
+| `M02 TargetStateModel` | Frozen point-in-time anonymous target pool across sectors, industries, styles, market caps, liquidity tiers, and crypto/context exceptions where accepted. | Targets routed from the reviewed realtime candidate universe and target metadata, with M01 context attached as conditioning evidence rather than candidate-universe membership. |
+| `M03 EventStateModel` | Reviewed event/strategy-failure evidence paired with background/target state and candidate strategy-family context. Includes no-event, observe-only, entry-block, exposure-cap, disable, and adverse-path examples when point-in-time labels exist. | Current M01/M02 state plus accepted event/strategy-failure evidence for routed candidates. |
+| `M04 UnifiedDecisionModel` | Dense minute-level rows whenever M01-M03 context, quote/liquidity/borrow, costs, replay-safe portfolio/risk context, and exposure state can be constructed. Include trade and no-trade minutes, action alternatives, risk limits, churn, and adverse examples. | Current routed target/event/background stack plus replay-safe portfolio/risk and quote/liquidity context. |
+| `M05 OptionExpressionModel` | Dense optionable-underlying minutes where point-in-time option-chain snapshots exist, plus underlying-minute `no_option_expression` bypass/status rows for missing-chain and non-optionable cases. | Current M04 decision intent plus current option-chain context only when `optionable_chain_available`; missing-chain, direct-underlying, and crypto/non-optionable routes bypass M05. |
+| `M06 ResidualEventGovernanceModel` | Cross-target/cross-sector residual-event rows, including event/no-event, effective/ineffective, sector-confirmed/sector-divergent, abnormal activity, news, earnings, macro, and price-action/false-breakout cases, joined point-in-time to the M04 direct-underlying decision. | Residual events attached to the current routed target/context stack and direct-underlying thesis for warning/intervention only; option-expression context is not required. |
 
-## Layer 3 special rule
+## Target-State Special Rule
 
-Layer 3 must not be trained only on whatever Layer 2 would have selected in live routing. That would remove the contrast needed to learn:
+M02 must not be trained only on whatever live routing would have selected. That would remove the contrast needed to learn:
 
 - strong targets in weak or unselected sectors;
 - weak targets in strong sectors;
 - sector-confirmed versus idiosyncratic target movement;
 - sector-divergent target behavior;
 - liquidity/tradability failures that upstream selection might hide;
-- market+sector+target lift over market-only and market+sector baselines.
+- background+target lift over background-only baselines.
 
-Layer 2 context should remain attached to each Layer 3 training row. It should be a point-in-time context block, not an unconditional historical-training filter.
+M01 context should remain attached to each M02 training row. It should be a point-in-time context block, not an unconditional historical-training filter.
 
-## Evaluation reporting
+## Evaluation Reporting
 
 When training is broader than live routing, promotion evidence should separate:
 

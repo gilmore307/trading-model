@@ -16,7 +16,7 @@ from .contract import MODEL_ID, MODEL_LAYER, MODEL_SURFACE, VECTOR_OUTPUT
 
 FINAL_JUDGMENT_DOC = "trading-model/docs/53_event_layer_final_judgment.md"
 EVENT_FAMILY_PACKET_DOC = "trading-model/docs/52_earnings_guidance_event_family_packet.md"
-LAYER_CONTRACT_DOC = "trading-model/docs/19_layer_10_event_risk_governor.md"
+LAYER_CONTRACT_DOC = "trading-model/docs/15_model_06_residual_event_governance.md"
 
 
 @dataclass(frozen=True)
