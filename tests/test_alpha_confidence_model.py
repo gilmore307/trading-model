@@ -189,10 +189,6 @@ class AlphaConfidenceModelTests(unittest.TestCase):
             artifact["feature_consumption_contract"]["layer4_event_failure_risk_vector"],
             "formal_training_input",
         )
-        self.assertEqual(
-            artifact["feature_consumption_contract"]["baseline_without_layer4_event_features"],
-            "evaluation_only_not_training_route",
-        )
         self.assertFalse(artifact["feature_consumption_contract"]["layer10_event_parameter_mutation"])
         self.assertIn("4_event_response_strength_score_1W", artifact["layer4_event_feature_names"])
         self.assertEqual(artifact["layer4_event_feature_names"], layer4_event_feature_names("1W"))

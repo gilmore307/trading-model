@@ -132,7 +132,6 @@ def train_after_cost_alpha_model(
             "layer4_event_feature_names": layer4_event_feature_names(horizon),
             "feature_consumption_contract": {
                 "layer4_event_failure_risk_vector": "formal_training_input",
-                "baseline_without_layer4_event_features": "evaluation_only_not_training_route",
                 "layer10_event_parameter_mutation": False,
             },
         },

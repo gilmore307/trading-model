@@ -30,7 +30,6 @@ Scripts are the runtime boundary. Reusable model logic belongs in `src/`; script
   - `build_layer4_focus_pool_inputs.py` builds Layer 4 input rows from accepted Layer 10 focus-pool replay evidence while filtering out rejected event families and preserving Layer 10 event parameters as frozen inputs.
 - `models/model_05_alpha_confidence/`
   - `train_model_05_alpha_confidence.py`, `generate_model_05_alpha_confidence.py`, `evaluate_model_05_alpha_confidence.py`, and `review_alpha_confidence_promotion.py` are local JSON/JSONL-safe AlphaConfidenceModel training, generation, evaluation-label, and conservative review entrypoints; generation/evaluation also support SQL-backed `--from-database` workflow rows. The trained Layer 5 path uses a LightGBM GBDT artifact and emits a normalized after-cost alpha score where `0.5` is neutral.
-  - `build_event_conditioned_alpha_contrast.py` builds a diagnostic-only Layer 5 contrast over Layer 4 focus-pool rows from accepted Layer 10 event families: baseline removes Layer 4 event features, the comparison consumes frozen Layer 4 `event_failure_risk_vector`, and the output is marked `diagnostic_not_promotion`.
 - `models/model_06_dynamic_risk_policy/`
   - `generate_model_06_dynamic_risk_policy.py`, `evaluate_model_06_dynamic_risk_policy.py`, and `review_dynamic_risk_policy_promotion.py` are local JSON/JSONL-safe DynamicRiskPolicyModel generation, evaluation-label, and conservative review entrypoints; generation/evaluation also support SQL-backed `--from-database` workflow rows.
 - `models/model_07_position_projection/`

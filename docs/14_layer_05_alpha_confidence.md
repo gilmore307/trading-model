@@ -366,9 +366,7 @@ Validation must separately check:
 - tradability: high alpha-tradability rows improve path/risk/utility quality before downstream risk policy, costs, and portfolio constraints;
 - leakage: all feature rows obey `available_time <= decision_time`, and labels are isolated from inference features.
 
-The Layer 5 event-conditioned alpha contrast is a diagnostic validation route for accepted Layer 10-to-Layer 4 focus-pool families. It trains one baseline artifact with Layer 4 event features removed and one comparison artifact consuming the frozen Layer 4 `event_failure_risk_vector`; it joins replay after-cost labels only as training/evaluation labels. This contrast must be marked `diagnostic_not_promotion` unless it is rerun through the full Layer 5 promotion route with complete Layer 1/2/3/4 point-in-time features, purge/embargo, cross-fold evidence, and promotion review.
-
-The baseline in that contrast is not a production training route. Formal Layer 5 training must keep consuming reviewed Layer 4 `event_failure_risk_vector` fields when they are present, even when a current diagnostic shows weak or negative incremental lift. Low utility should be learned as lower weight, uncertainty, risk penalty, or a future Layer 10/4 parameter-review signal; it must not remove the event-conditioning route from Layer 5 training data.
+Formal Layer 5 training must keep consuming reviewed Layer 4 `event_failure_risk_vector` fields when they are present. Low utility should be learned as lower weight, uncertainty, risk penalty, or a future Layer 10/4 parameter-review signal; it must not remove the event-conditioning route from Layer 5 training data. A Layer-5-only no-Layer-4 baseline is not a meaningful trading-performance contrast because trading performance depends on downstream Layers 6-9; running that full downstream counterfactual is a separate high-resource evaluation route, not a default Layer 5 diagnostic.
 
 ## Boundary rules
 
