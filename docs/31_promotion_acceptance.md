@@ -22,9 +22,9 @@ Durable promotion requests, review decisions, activation, rollback, and producti
 
 | Model | Evidence state | Current status | Activation |
 |---|---|---|---|
-| `model_01_background_context` | current six-model implementation/evaluation missing | deferred | none |
-| `model_02_target_state` | current six-model implementation/evaluation missing | deferred | none |
-| `model_03_event_state` | current six-model implementation/evaluation missing | deferred | none |
+| `model_01_background_context` | deterministic background-context implementation present; real evaluation evidence missing | deferred | local fixture only |
+| `model_02_target_state` | deterministic target-state implementation present; real evaluation evidence missing | deferred | local fixture only |
+| `model_03_event_state` | deterministic event-state implementation present; real evaluation evidence missing | deferred | local fixture only |
 | `model_04_unified_decision` | deterministic unified decision pilot present; real replay/evaluation evidence missing | deferred | local fixture only |
 | `model_05_option_expression` | deterministic M04-intent option-expression implementation present; real replay/evaluation evidence missing | deferred | local fixture only |
 | `model_06_residual_event_governance` | deterministic M04/M05-thesis residual-governance implementation present; real evaluation evidence missing | deferred | local fixture only |
@@ -37,9 +37,9 @@ The model repo may reuse retired implementation packages and evidence while migr
 
 ## Blockers
 
-- M01 requires merged background-context generation/evaluation evidence.
-- M02 requires target-state generation/evaluation evidence under the current M01 context.
-- M03 requires event-state generation/evaluation evidence from accepted event-family inputs.
+- M01 has a deterministic background-context generator. It still requires real broad-market/sector datasets, background labels, walk-forward baselines, leakage checks, and calibration evidence.
+- M02 has a deterministic target-state generator that consumes M01 context and sanitizes model-facing identity fields. It still requires real target-state datasets, anonymous target labels, baselines, leakage checks, and calibration evidence.
+- M03 has a deterministic event-state generator that consumes accepted event contracts as frozen inputs. It still requires real accepted-event datasets, event response/risk labels, baselines, leakage checks, and calibration evidence.
 - M04 has a deterministic structured-head generator. It still requires unified decision training/evaluation with direct utility labels, walk-forward replay, no-trade calibration, cost/fill sensitivity, leakage checks, and real promotion evidence.
 - M05 has a deterministic implementation that consumes M04 `direct_underlying_intent`. It still requires option-chain replay and option-expression / base trading-guidance outcome evidence.
 - M06 has a deterministic implementation that consumes M04 `unified_decision_vector_ref` and optional M05 `option_expression_plan_ref`. It still requires real residual-event-governance labels, overblock/accounting metrics, and production evaluation evidence.

@@ -8,3 +8,33 @@ MODEL_STEP: Final[str] = "M03"
 MODEL_ID: Final[str] = "event_state_model"
 MODEL_SURFACE: Final[str] = "model_03_event_state"
 CONCEPTUAL_OUTPUT: Final[str] = "event_state_vector"
+MODEL_VERSION: Final[str] = "event_state_vector_contract"
+PRIMARY_OUTPUT: Final[str] = CONCEPTUAL_OUTPUT
+HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
+
+SCORE_FAMILIES: Final[tuple[str, ...]] = (
+    "3_event_response_direction_score_<horizon>",
+    "3_event_response_strength_score_<horizon>",
+    "3_event_uncertainty_score_<horizon>",
+    "3_event_path_risk_score_<horizon>",
+    "3_event_entry_block_pressure_score_<horizon>",
+    "3_event_exposure_cap_pressure_score_<horizon>",
+    "3_event_strategy_disable_pressure_score_<horizon>",
+    "3_event_applicability_confidence_score_<horizon>",
+)
+
+FORBIDDEN_OUTPUT_FIELDS: Final[frozenset[str]] = frozenset(
+    {
+        "standalone_event_alpha",
+        "event_alpha_score",
+        "event_family_parameter_update",
+        "selected_impact_window_update",
+        "unified_decision_vector",
+        "underlying_action_plan",
+        "option_expression_plan",
+        "order_type",
+        "broker_order_id",
+        "future_return",
+        "realized_pnl",
+    }
+)

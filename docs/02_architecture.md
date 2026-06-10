@@ -7,7 +7,7 @@ Owner intent: reduce serial model-error propagation while keeping target selecti
 
 | Docs band | Implementation surface | Purpose |
 |---|---|---|
-| `10_*` through `15_*` | `src/models/model_01_background_context/` through `src/models/model_06_residual_event_governance/`; matching `scripts/models/model_*/` as migration completes | Current six model contracts and local builders. |
+| `10_*` through `15_*` | `src/models/model_01_background_context/` through `src/models/model_06_residual_event_governance/`; matching `scripts/models/model_*/` | Current six model contracts and local builders. |
 | `20_*` | shared model-contract/taxonomy helpers | Model decomposition, vector taxonomy, and state-vector feature registry. |
 | `30_*` | `src/model_governance/promotion/`, `scripts/model_governance/` | Promotion readiness and acceptance evidence. |
 | `40_*` | historical/realtime handoff docs and governance code | Dataset scope and realtime decision handoff boundaries. |

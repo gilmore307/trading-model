@@ -26,8 +26,7 @@ class PromotionReadinessTests(unittest.TestCase):
         self.assertTrue(all(row["design_status"] == "design_closed" for row in LAYER_PROMOTION_READINESS_MATRIX))
         statuses = {row["production_promotion_status"] for row in LAYER_PROMOTION_READINESS_MATRIX}
         self.assertNotIn("production_approved", statuses)
-        self.assertIn("deferred_no_current_production_eval_substrate", statuses)
-        self.assertIn("deferred_deterministic_pilot_only", statuses)
+        self.assertEqual(statuses, {"deferred_deterministic_pilot_only"})
         self.assertTrue(all("mpdec_" not in row["blocking_gap"] for row in LAYER_PROMOTION_READINESS_MATRIX))
         self.assertTrue(all("persisted decision" not in row["blocking_gap"] for row in LAYER_PROMOTION_READINESS_MATRIX))
 

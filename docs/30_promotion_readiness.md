@@ -40,9 +40,9 @@ Promotion reviews should distinguish:
 
 | Model | Output | Current production status | Blocking gap |
 |---|---|---|---|
-| `M01 BackgroundContextModel` | `background_context_state` | deferred: migration/evaluation required | current six-model implementation and real evaluation evidence missing |
-| `M02 TargetStateModel` | `target_context_state` | deferred: migration/evaluation required | six-model target-state implementation, upstream M01 evidence, and calibration evidence missing |
-| `M03 EventStateModel` | `event_state_vector` | deferred: migration/evaluation required | six-model event-state implementation, accepted event-family inputs, and calibrated labels missing |
+| `M01 BackgroundContextModel` | `background_context_state` | deferred: deterministic pilot only | real background-context dataset assembly, labels, baseline, stability, leakage, and calibration evidence missing |
+| `M02 TargetStateModel` | `target_context_state` | deferred: deterministic pilot only | real target-state dataset assembly, upstream M01 evidence, labels, baseline, stability, leakage, and calibration evidence missing |
+| `M03 EventStateModel` | `event_state_vector` | deferred: deterministic pilot only | real event-state dataset assembly, accepted event-family inputs, labels, baseline, stability, leakage, and calibration evidence missing |
 | `M04 UnifiedDecisionModel` | `unified_decision_vector` | deferred: deterministic pilot only | unified decision training/evaluation run, direct utility labels, and replay evidence missing |
 | `M05 OptionExpressionModel` | `option_expression_plan` / `expression_vector` | deferred: deterministic pilot only | option-chain replay labels, cost/fill/theta/IV validation, and baseline evidence missing |
 | `M06 ResidualEventGovernanceModel` | `event_risk_intervention` / packet eligibility | deferred: deterministic pilot only | residual event-governance evaluation run, overblock/accounting metrics, and calibrated residual-risk labels missing |

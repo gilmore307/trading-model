@@ -1,4 +1,4 @@
-"""Shared local CLI helpers for deterministic Layers 4-10 scripts.
+"""Shared local CLI helpers for deterministic model-layer scripts.
 
 These helpers keep script wrappers thin while preserving the repo boundary:
 ``scripts/`` owns callable entrypoints; importable implementation remains under
@@ -204,6 +204,75 @@ def _threshold_results(
 # Fixture rows are intentionally tiny. They exercise each layer's deterministic
 # scaffold without pretending to be production promotion evidence.
 FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
+    "model_01_background_context": [
+        {
+            "available_time": "2026-05-07T10:30:00-04:00",
+            "market_return_10min": 0.01,
+            "market_return_1h": 0.02,
+            "market_return_1D": 0.03,
+            "market_return_1W": 0.04,
+            "market_trend_quality_score": 0.78,
+            "market_volatility_pressure_score": 0.22,
+            "market_liquidity_support_score": 0.86,
+            "sector_relative_direction_score": 0.34,
+            "sector_breadth_score": 0.72,
+            "sector_dispersion_score": 0.18,
+            "data_quality_score": 0.92,
+            "coverage_score": 0.88,
+            "market_context_features": {"source": "fixture", "breadth_sample_count": 128},
+            "sector_context_features": {"source": "fixture", "sector_sample_count": 22},
+        }
+    ],
+    "model_02_target_state": [
+        {
+            "available_time": "2026-05-07T10:30:00-04:00",
+            "tradeable_time": "2026-05-07T10:31:00-04:00",
+            "target_candidate_id": "anon_target_001",
+            "symbol": "AAPL",
+            "background_context_state_ref": "bcs_fixture",
+            "background_context_state": {
+                "1_market_risk_stress_score_1W": 0.18,
+                "1_market_liquidity_support_score_1W": 0.86,
+                "1_background_context_quality_score_1W": 0.82,
+            },
+            "anonymous_target_feature_vector": {
+                "target_return_1W": 0.62,
+                "target_trend_quality_score": 0.78,
+                "target_volatility_pressure_score": 0.20,
+                "target_transition_risk_score": 0.16,
+                "target_liquidity_tradability_score": 0.88,
+                "symbol": "AAPL",
+            },
+        }
+    ],
+    "model_03_event_state": [
+        {
+            "available_time": "2026-05-07T10:30:00-04:00",
+            "tradeable_time": "2026-05-07T10:31:00-04:00",
+            "target_candidate_id": "anon_target_001",
+            "background_context_state_ref": "bcs_fixture",
+            "target_context_state_ref": "tcs_fixture",
+            "target_context_state": {
+                "2_target_direction_score_1W": 0.62,
+                "2_target_trend_quality_score_1W": 0.78,
+                "2_tradability_score_1W": 0.84,
+            },
+            "accepted_event_contracts": [
+                {
+                    "event_id": "evt_fixture_canonical",
+                    "canonical_event_id": "evt_fixture_canonical",
+                    "event_time": "2026-05-07T10:10:00-04:00",
+                    "available_time": "2026-05-07T10:12:00-04:00",
+                    "event_category_type": "sec_filing",
+                    "event_intensity_score": 0.45,
+                    "direction_bias_score": -0.25,
+                    "target_relevance_score": 0.80,
+                    "uncertainty_score": 0.35,
+                    "path_risk_score": 0.28,
+                }
+            ],
+        }
+    ],
     "model_04_unified_decision": [
         {
             "available_time": "2026-05-07T10:30:00-04:00",
@@ -490,6 +559,9 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
 }
 
 FIXTURE_OUTCOME_ROWS: dict[str, list[dict[str, Any]]] = {
+    "model_01_background_context": [{"background_context_state_ref": "bcs_fixture", "future_market_volatility_1W": 0.20, "future_market_liquidity_degradation_1W": 0.05, "future_sector_dispersion_1W": 0.18, "background_context_realized_utility_1W": 0.11}],
+    "model_02_target_state": [{"target_context_state_ref": "tcs_fixture", "future_target_return_1W": 0.04, "future_target_path_stability_1W": 0.82, "future_target_liquidity_1W": 0.90, "target_state_realized_utility_1W": 0.13}],
+    "model_03_event_state": [{"event_state_vector_ref": "esv_fixture", "realized_event_response_1W": -0.02, "realized_event_path_risk_1W": 0.25, "realized_event_entry_block_utility_1W": 0.03, "event_state_realized_utility_1W": 0.04}],
     "model_04_unified_decision": [{"unified_decision_vector_ref": "udv_a6cc0189ed496c7e", "realized_decision_utility": 0.12, "realized_max_drawdown": -0.03}],
     "model_04_event_failure_risk": [{"event_failure_risk_vector_ref": "efrv_fixture", "realized_strategy_failure_1W": True, "realized_path_risk_amplification_1W": 0.25}],
     "model_10_event_risk_governor": [{"event_context_vector_ref": "ecv_3a5b6bb6c3a72d97", "realized_symbol_move_after_event_1W": -0.04}],
@@ -508,7 +580,13 @@ def fixture_outcome_rows(model_surface: str, model_rows: list[dict[str, Any]]) -
 
     rows: list[dict[str, Any]] = []
     for row in model_rows:
-        if model_surface == "model_04_unified_decision":
+        if model_surface == "model_01_background_context":
+            rows.append({"background_context_state_ref": row.get("background_context_state_ref"), "future_market_volatility_1W": 0.20, "future_market_liquidity_degradation_1W": 0.05, "future_sector_dispersion_1W": 0.18, "background_context_realized_utility_1W": 0.11})
+        elif model_surface == "model_02_target_state":
+            rows.append({"target_context_state_ref": row.get("target_context_state_ref"), "future_target_return_1W": 0.04, "future_target_path_stability_1W": 0.82, "future_target_liquidity_1W": 0.90, "target_state_realized_utility_1W": 0.13})
+        elif model_surface == "model_03_event_state":
+            rows.append({"event_state_vector_ref": row.get("event_state_vector_ref"), "realized_event_response_1W": -0.02, "realized_event_path_risk_1W": 0.25, "realized_event_entry_block_utility_1W": 0.03, "event_state_realized_utility_1W": 0.04})
+        elif model_surface == "model_04_unified_decision":
             rows.append({"unified_decision_vector_ref": row.get("unified_decision_vector_ref"), "realized_decision_utility": 0.12, "realized_max_drawdown": -0.03})
         elif model_surface == "model_04_event_failure_risk":
             rows.append({"event_failure_risk_vector_ref": row.get("event_failure_risk_vector_ref"), "realized_strategy_failure_1W": True, "realized_path_risk_amplification_1W": 0.25})

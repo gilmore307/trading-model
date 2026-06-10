@@ -1,8 +1,9 @@
 """Audit model output/support tables for empty and sparse columns.
 
-The audit is intentionally read-only. It samples recent rows from the ten
-`trading_model.mXX_*_model_generation` output surfaces and classifies empty columns as
-data gaps, stale/generated-schema residue, or expected optional evidence.
+The audit is intentionally read-only. It samples recent rows from current six
+model output/support surfaces plus retained migration-source surfaces and
+classifies empty columns as data gaps, stale/generated-schema residue, or
+expected optional evidence.
 """
 from __future__ import annotations
 
@@ -12,12 +13,21 @@ from dataclasses import dataclass
 from typing import Any
 
 MODEL_OUTPUT_TABLES: tuple[str, ...] = (
+    "model_01_background_context",
+    "model_01_background_context_explainability",
+    "model_01_background_context_diagnostics",
     "m01_market_regime_model_generation",
     "m01_market_regime_model_generation_explainability",
     "m01_market_regime_model_generation_diagnostics",
+    "model_02_target_state",
+    "model_02_target_state_explainability",
+    "model_02_target_state_diagnostics",
     "m02_sector_context_model_generation",
     "m02_sector_context_model_generation_explainability",
     "m02_sector_context_model_generation_diagnostics",
+    "model_03_event_state",
+    "model_03_event_state_explainability",
+    "model_03_event_state_diagnostics",
     "model_03_target_state_vector",
     "model_03_target_state_vector_explainability",
     "model_03_target_state_vector_diagnostics",

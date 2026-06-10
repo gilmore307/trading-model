@@ -1,6 +1,6 @@
 # Model 02 Target State
 
-Status: accepted current model contract; implementation migration required.
+Status: deterministic pilot present; production promotion deferred.
 
 ## Role
 
@@ -15,6 +15,19 @@ model_02_target_state
 
 The output should preserve audit/routing metadata separately from model-facing fitting vectors. Raw ticker/company identity must not become a fitted feature.
 
+Current local implementation emits:
+
+- `target_context_state_ref`
+- `background_context_state_ref`
+- `target_context_state`
+- `2_target_direction_score_<horizon>`
+- `2_target_trend_quality_score_<horizon>`
+- `2_target_path_stability_score_<horizon>`
+- `2_target_noise_score_<horizon>`
+- `2_target_transition_risk_score_<horizon>`
+- `2_context_support_quality_score_<horizon>`
+- `2_tradability_score_<horizon>`
+
 ## Inputs
 
 - `background_context_state`.
@@ -25,3 +38,13 @@ The output should preserve audit/routing metadata separately from model-facing f
 ## Migration Source
 
 Retired implementation package `model_03_target_state_vector` may be used as source material during migration. It is not a separate current model contract.
+
+## Current Local Scripts
+
+```text
+scripts/models/model_02_target_state/generate_model_02_target_state.py
+scripts/models/model_02_target_state/evaluate_model_02_target_state.py
+scripts/models/model_02_target_state/review_target_state_promotion.py
+```
+
+These scripts produce fixture/local evidence only and must defer production activation.

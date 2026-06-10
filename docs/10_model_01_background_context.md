@@ -1,6 +1,6 @@
 # Model 01 Background Context
 
-Status: accepted current model contract; implementation migration required.
+Status: deterministic pilot present; production promotion deferred.
 
 ## Role
 
@@ -15,6 +15,19 @@ model_01_background_context
 
 The output should include structured market, sector, industry, liquidity, volatility, breadth, dispersion, stress, and data-quality heads. It must not choose final targets, actions, options, broker routes, or event-family parameters.
 
+Current local implementation emits:
+
+- `background_context_state_ref`
+- `background_context_state`
+- `1_market_direction_score_<horizon>`
+- `1_market_trend_quality_score_<horizon>`
+- `1_market_risk_stress_score_<horizon>`
+- `1_market_liquidity_support_score_<horizon>`
+- `1_market_volatility_pressure_score_<horizon>`
+- `1_sector_breadth_score_<horizon>`
+- `1_sector_dispersion_score_<horizon>`
+- `1_background_context_quality_score_<horizon>`
+
 ## Inputs
 
 - Broad-market and cross-asset point-in-time features.
@@ -25,3 +38,13 @@ The output should include structured market, sector, industry, liquidity, volati
 ## Migration Source
 
 Retired implementation packages `model_01_market_regime` and `model_02_sector_context` may be used as source material during migration. They are not separate current model contracts.
+
+## Current Local Scripts
+
+```text
+scripts/models/model_01_background_context/generate_model_01_background_context.py
+scripts/models/model_01_background_context/evaluate_model_01_background_context.py
+scripts/models/model_01_background_context/review_background_context_promotion.py
+```
+
+These scripts produce fixture/local evidence only and must defer production activation.
