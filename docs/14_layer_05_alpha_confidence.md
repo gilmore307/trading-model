@@ -366,6 +366,8 @@ Validation must separately check:
 - tradability: high alpha-tradability rows improve path/risk/utility quality before downstream risk policy, costs, and portfolio constraints;
 - leakage: all feature rows obey `available_time <= decision_time`, and labels are isolated from inference features.
 
+The Layer 5 event-conditioned alpha contrast is a diagnostic validation route for accepted Layer 10-to-Layer 4 focus-pool families. It trains one baseline artifact with Layer 4 event features removed and one comparison artifact consuming the frozen Layer 4 `event_failure_risk_vector`; it joins replay after-cost labels only as training/evaluation labels. This contrast must be marked `diagnostic_not_promotion` unless it is rerun through the full Layer 5 promotion route with complete Layer 1/2/3/4 point-in-time features, purge/embargo, cross-fold evidence, and promotion review.
+
 ## Boundary rules
 
 Keep these semantics separate:

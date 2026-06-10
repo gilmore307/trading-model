@@ -12,5 +12,6 @@ Layer 5 trains on dense minute-level target-state rows from the accepted Layer 3
 - direct normalized after-cost alpha score inference with `lightgbm_gbdt_after_cost_alpha`;
 - companion direction, strength, reliability, path-risk, and tradability fields derived from the trained score;
 - offline alpha outcome labels and leakage assertions in `evaluation.py`.
+- diagnostic event-conditioned alpha contrast in `event_conditioned_contrast.py`, which compares a no-Layer-4 baseline against frozen Layer 4 event-conditioning features and is explicitly not promotion evidence.
 
 Boundary: this package must not output position size, target exposure, buy/sell/hold, option selection, broker execution, or future outcome fields in inference rows.
