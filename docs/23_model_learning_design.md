@@ -30,12 +30,30 @@ Learned-model design is direct-to-final. Do not introduce temporary learned cont
 ## Cross-Model Rules
 
 - Model-facing inputs must be point-in-time at `available_time`.
+- Training coverage and live invocation are separate. Historical training/evaluation should preserve full-minute state coverage wherever inputs can be constructed, including neutral, no-event, no-action, not-option-applicable, and no-intervention states. Live routing may still gate expensive or optional components, such as invoking M05 only after M04 produces option-expression intent.
 - Labels and outcomes are training/evaluation-only and must never enter inference vectors.
 - Real ticker/company identity remains audit/routing metadata, not a fitting feature.
 - Stable identity surrogates must be tested, not only banned by column name.
 - Score thresholds should not hide model weakness. Where a score has a natural neutral point, training should produce that score directly.
 - M06 same-fold discoveries are quarantined from same-fold upstream training. Accepted discoveries may become future M03 inputs only after evidence packet review.
 - Validation must beat a realistic baseline, not just show historical fit.
+
+## Full-Minute Training Coverage
+
+The accepted training stance is full-minute coverage with model-specific applicability semantics.
+
+Every eligible historical minute should enter the point-in-time training/evaluation ledger for the current chain when required inputs can be constructed. Blank time is not absence of data; it is a learnable state. No-event, no-trade, maintain, no-option, and no-intervention rows are part of the supervised problem because most live market time is inactive.
+
+This does not require every model component to be invoked in the same way during live execution. Live routing may skip or defer optional components for latency, cost, or applicability reasons. The training ledger should still preserve the corresponding state:
+
+```text
+M03: no event -> explicit neutral/no-event event_state_vector
+M04: no action -> explicit no_trade or maintain decision state
+M05: no optionability or missing chain -> explicit not_option_applicable / no_option_expression status, not fabricated option selection
+M06: uncertain attribution -> explicit low_confidence / no_intervention / attribution_unknown state
+```
+
+Training loss, metrics, and promotion evidence may still use masks, weights, and sub-buckets so rare event/action/option/intervention cases are not drowned by neutral minutes. Those masks are optimization and reporting controls; they are not permission to remove blank minutes from the point-in-time ledger.
 
 ## Closed-Loop Evidence Lifecycle
 

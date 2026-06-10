@@ -22,6 +22,12 @@ The model may choose underlying-only, long call, long put, no-option, or unavail
 - `direct_underlying_intent` from M04.
 - Point-in-time option-chain snapshots, bid/ask, liquidity, IV, Greeks, DTE, spread, and conservative fill assumptions.
 
+## Training vs Live Invocation
+
+Historical training/evaluation should preserve full-minute M04 thesis coverage. Minutes with unavailable option chains, non-optionable instruments, direct-underlying-only routes, or crypto routes should emit explicit `no_option_expression` / `not_option_applicable` status evidence instead of fabricated option selections.
+
+Live execution may invoke the heavier option-expression component only when M04 produces an option-expression-relevant thesis and option-chain context is available.
+
 ## Migration Source
 
 Retired implementation package `model_09_option_expression` may be used as source material during migration. It is not a separate current model contract.

@@ -24,6 +24,27 @@ A model may train on a broader point-in-time sample universe than the candidate 
 
 Training should not blindly copy live-routing filters when doing so would starve the model of useful contrast.
 
+## Full-Minute Coverage Rule
+
+Historical training should use every eligible minute as the point-in-time state ledger whenever required inputs can be built and label windows can mature. Full-minute coverage is the default because blank/no-action time is the dominant live state and must be represented during training.
+
+Live invocation is separate. Execution may invoke optional components only when the current route needs them; for example, M05 can be called only after M04 produces an option-expression-relevant thesis. Historical training should still record M05 applicability state for the minute:
+
+```text
+optionable chain available -> M05 expression candidate row
+not optionable / no chain / crypto route -> M05 no_option_expression or not_option_applicable row
+```
+
+The same pattern applies to events and governance:
+
+```text
+no accepted event -> M03 neutral/no-event state
+no residual event concern -> M06 no_intervention state
+uncertain attribution -> M06 low-confidence attribution state
+```
+
+Models may use loss masks, class weights, and evaluation buckets so rare positive cases remain visible. The mask changes how the row contributes to a specific objective; it must not erase the minute from the ledger.
+
 ## Global Training Rules
 
 1. Broader sampling is allowed only for offline training/evaluation evidence, not for live routing bypass.
@@ -40,10 +61,10 @@ Training should not blindly copy live-routing filters when doing so would starve
 |---|---|---|
 | `M01 BackgroundContextModel` | Broad market, sector/industry, ETF/theme, cross-asset, volatility, liquidity, breadth, dispersion, correlation, and macro-sensitive context. | Current background context only; does not route targets or actions. |
 | `M02 TargetStateModel` | Frozen point-in-time anonymous target pool across sectors, industries, styles, market caps, liquidity tiers, and crypto/context exceptions where accepted. | Targets routed from the reviewed realtime candidate universe and target metadata, with M01 context attached as conditioning evidence rather than candidate-universe membership. |
-| `M03 EventStateModel` | Reviewed event/strategy-failure evidence paired with background/target state and candidate strategy-family context. Includes no-event, observe-only, entry-block, exposure-cap, disable, and adverse-path examples when point-in-time labels exist. | Current M01/M02 state plus accepted event/strategy-failure evidence for routed candidates. |
+| `M03 EventStateModel` | Full-minute background/target state paired with accepted event/strategy-failure evidence when present and explicit neutral/no-event rows when absent. Includes observe-only, entry-block, exposure-cap, disable, and adverse-path examples when point-in-time labels exist. | Current M01/M02 state plus accepted event/strategy-failure evidence or explicit neutral/no-event state for routed candidates. |
 | `M04 UnifiedDecisionModel` | Dense minute-level rows whenever M01-M03 context, quote/liquidity/borrow, costs, replay-safe portfolio/risk context, and exposure state can be constructed. Include trade and no-trade minutes, action alternatives, risk limits, churn, and adverse examples. | Current routed target/event/background stack plus replay-safe portfolio/risk and quote/liquidity context. |
-| `M05 OptionExpressionModel` | Dense optionable-underlying minutes where point-in-time option-chain snapshots exist, plus underlying-minute `no_option_expression` bypass/status rows for missing-chain and non-optionable cases. | Current M04 decision intent plus current option-chain context only when `optionable_chain_available`; missing-chain, direct-underlying, and crypto/non-optionable routes bypass M05. |
-| `M06 ResidualEventGovernanceModel` | Cross-target/cross-sector residual-event rows, including event/no-event, effective/ineffective, sector-confirmed/sector-divergent, abnormal activity, news, earnings, macro, and price-action/false-breakout cases, joined point-in-time to the M04 direct-underlying decision. | Residual events attached to the current routed target/context stack and direct-underlying thesis for warning/intervention only; option-expression context is not required. |
+| `M05 OptionExpressionModel` | Full-minute M04 thesis ledger with option-expression candidate rows when point-in-time option-chain snapshots exist, plus explicit `no_option_expression` / `not_option_applicable` status rows for missing-chain, non-optionable, direct-underlying-only, and crypto routes. | Current M04 decision intent plus current option-chain context only when `optionable_chain_available`; missing-chain, direct-underlying, and crypto/non-optionable routes may bypass heavy M05 invocation while preserving a status. |
+| `M06 ResidualEventGovernanceModel` | Full-minute residual-governance rows, including event/no-event, intervention/no-intervention, effective/ineffective, sector-confirmed/sector-divergent, abnormal activity, news, earnings, macro, and price-action/false-breakout cases, joined point-in-time to the M04 direct-underlying decision. Attribution confidence is a state, not an admission prerequisite. | Residual events or neutral residual state attached to the current routed target/context stack and direct-underlying thesis for warning/intervention only; option-expression context is not required. |
 
 ## Target-State Special Rule
 
