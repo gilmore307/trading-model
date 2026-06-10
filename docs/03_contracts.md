@@ -12,7 +12,7 @@ Date: 2026-06-10
 | `M01` Background Context | `background_context_model` | `background_context_state` | current contract accepted; implementation migration remains evidence-gated |
 | `M02` Target State | `target_state_model` | `target_context_state` | current contract accepted; implementation migration remains evidence-gated |
 | `M03` Event State | `event_state_model` | `event_state_vector` | current contract accepted; implementation migration remains evidence-gated |
-| `M04` Unified Decision | `unified_decision_model` | `unified_decision_vector` with structured edge/risk/exposure/action heads | current contract accepted; first implementation pilot |
+| `M04` Unified Decision | `unified_decision_model` | `unified_decision_vector` with structured edge/risk/exposure/action heads | deterministic pilot present; promotion evidence deferred |
 | `M05` Option Expression | `option_expression_model` | optional `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector` | current contract accepted; implementation migration remains evidence-gated |
 | `M06` Residual Event Governance | `residual_event_governance_model` | `event_risk_intervention` / event-adjusted risk guidance / future event-family packet eligibility | current contract accepted; implementation migration remains evidence-gated |
 

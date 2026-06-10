@@ -204,6 +204,44 @@ def _threshold_results(
 # Fixture rows are intentionally tiny. They exercise each layer's deterministic
 # scaffold without pretending to be production promotion evidence.
 FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
+    "model_04_unified_decision": [
+        {
+            "available_time": "2026-05-07T10:30:00-04:00",
+            "tradeable_time": "2026-05-07T10:31:00-04:00",
+            "target_candidate_id": "anon_target_001",
+            "background_context_state_ref": "bcs_fixture",
+            "target_context_state_ref": "tcs_fixture",
+            "event_state_vector_ref": "esv_fixture",
+            "background_context_state": {"1_market_risk_stress_score": 0.20, "1_market_liquidity_support_score": 0.85},
+            "target_context_state": {
+                "2_target_direction_score_1W": 0.80,
+                "2_target_trend_quality_score_1W": 0.76,
+                "2_target_path_stability_score_1W": 0.82,
+                "2_target_noise_score_1W": 0.18,
+                "2_target_transition_risk_score_1W": 0.14,
+                "2_context_support_quality_score_1W": 0.80,
+                "2_tradability_score_1W": 0.86,
+            },
+            "event_state_vector": {
+                "3_event_entry_block_pressure_score_1W": 0.10,
+                "3_event_exposure_cap_pressure_score_1W": 0.05,
+                "3_event_path_risk_score_1W": 0.12,
+                "3_event_uncertainty_score_1W": 0.15,
+                "3_event_applicability_confidence_score_1W": 0.50,
+            },
+            "quality_calibration_state": {"data_quality_score": 0.90, "walk_forward_reliability_score": 0.82, "out_of_distribution_score": 0.08},
+            "portfolio_exposure_state": {"gross_exposure_capacity_score": 0.85, "correlation_concentration_score": 0.20},
+            "account_capacity_state": {"cash_capacity_score": 0.78, "drawdown_pressure_score": 0.12},
+            "current_underlying_position_state": {"current_underlying_exposure_score": 0.0},
+            "pending_underlying_order_state": {"pending_underlying_exposure_score": 0.0, "pending_fill_probability_estimate": 0.0},
+            "cost_friction_state": {"spread_cost_estimate": 0.001, "slippage_cost_estimate": 0.001, "fee_cost_estimate": 0.0005, "turnover_cost_estimate": 0.001},
+            "underlying_quote_state": {"reference_price": 100.0, "bid_price": 99.95, "ask_price": 100.05, "halt_status": "active"},
+            "underlying_liquidity_state": {"spread_bps": 10.0, "dollar_volume": 50000000, "liquidity_score": 0.95},
+            "underlying_borrow_state": {"short_borrow_status": "available"},
+            "risk_budget_state": {"risk_budget_available_score": 0.95},
+            "policy_gate_state": {"direct_underlying_action_allowed": True, "preferred_decision_horizon": "1W"},
+        }
+    ],
     "model_04_event_failure_risk": [
         {
             "available_time": "2026-05-07T10:30:00-04:00",
@@ -370,6 +408,7 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
 }
 
 FIXTURE_OUTCOME_ROWS: dict[str, list[dict[str, Any]]] = {
+    "model_04_unified_decision": [{"unified_decision_vector_ref": "udv_a6cc0189ed496c7e", "realized_decision_utility": 0.12, "realized_max_drawdown": -0.03}],
     "model_04_event_failure_risk": [{"event_failure_risk_vector_ref": "efrv_fixture", "realized_strategy_failure_1W": True, "realized_path_risk_amplification_1W": 0.25}],
     "model_10_event_risk_governor": [{"event_context_vector_ref": "ecv_3a5b6bb6c3a72d97", "realized_symbol_move_after_event_1W": -0.04}],
     "model_05_alpha_confidence": [{"alpha_confidence_vector_ref": "acv_7d1d9b0867ac4d13", "forward_return_1W": -0.05, "idiosyncratic_residual_return_1W": -0.04, "alpha_tradable_label_1W": True}],
@@ -385,7 +424,9 @@ def fixture_outcome_rows(model_surface: str, model_rows: list[dict[str, Any]]) -
 
     rows: list[dict[str, Any]] = []
     for row in model_rows:
-        if model_surface == "model_04_event_failure_risk":
+        if model_surface == "model_04_unified_decision":
+            rows.append({"unified_decision_vector_ref": row.get("unified_decision_vector_ref"), "realized_decision_utility": 0.12, "realized_max_drawdown": -0.03})
+        elif model_surface == "model_04_event_failure_risk":
             rows.append({"event_failure_risk_vector_ref": row.get("event_failure_risk_vector_ref"), "realized_strategy_failure_1W": True, "realized_path_risk_amplification_1W": 0.25})
         elif model_surface == "model_10_event_risk_governor":
             rows.append({"event_context_vector_ref": row.get("event_context_vector_ref"), "realized_symbol_move_after_event_1W": -0.04})
