@@ -1,10 +1,23 @@
 # trading-model
 
-`trading-model` is the offline modeling repository for the current ten-layer trading decision stack.
+`trading-model` is the offline modeling repository for the current six-training-block / ten-runtime-contract trading decision stack.
 
 It owns point-in-time model research, model-local generators/evaluators, promotion evidence, and model outputs. It does **not** own raw source acquisition, global registry authority, durable storage policy, dashboards, live/paper order placement, broker/account mutation, generated runtime artifacts committed to Git, or secrets.
 
 ## Current Route
+
+The accepted training topology is six model blocks, while runtime-facing contracts remain explicit and stable:
+
+```text
+Block 1: M01-M02 Background Context
+Block 2: M03 Target State / Selection
+Block 3: M04 Event State / Event Conditioning
+Block 4: M05-M08 Unified Decision
+Block 5: M09 Option Expression
+Block 6: M10 Residual Event Governance
+```
+
+Internal model training may merge blocks where this reduces serial error propagation, but live/paper components still consume typed artifacts for target selection, event reasoning, decision/action, option expression, and residual event governance.
 
 ```text
 M01 Market Regime
@@ -39,7 +52,7 @@ M10 Event Risk Governor
   -> event_risk_intervention / event-adjusted risk guidance
 ```
 
-Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning. Layers 5-8 convert target state and reviewed failure-risk conditioning into alpha confidence, dynamic risk policy, projected position state, and a direct-underlying action thesis. Layer 9 composes optional offline trading guidance and option-expression context from that thesis. Layer 10 applies event-risk governance to the direct-underlying/spot thesis, with Layer 9 context attached only when available. Broker orders and account mutation stay outside this repository.
+Layer 1 describes broad market state only. Layer 2 describes sector/industry tradability under that market state. Layer 1/2 may train as one background block, but their background context outputs remain explicit. Layer 3 is the first target-state layer and keeps ticker/company identity out of model-facing fitting vectors. Layer 4 adds reviewed event-failure-risk conditioning and remains a separate event-reasoning contract. Layers 5-8 may train as a unified decision block, but they must still emit structured alpha, risk, position, and action-thesis fields needed by runtime components. Layer 9 composes optional offline trading guidance and option-expression context from that thesis. Layer 10 applies event-risk governance to the direct-underlying/spot thesis, with Layer 9 context attached only when available. Broker orders and account mutation stay outside this repository.
 
 ## Top-Level Structure
 

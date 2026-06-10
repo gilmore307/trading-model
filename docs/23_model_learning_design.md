@@ -1,22 +1,35 @@
 # Model Learning Design
 
-Status: accepted learning route; implementation is evidence-gated
-Owner intent: each layer must have one clear role before its implementation is expanded.
+Status: accepted six-training-block learning route; implementation is evidence-gated
+Owner intent: reduce serial model-error propagation while preserving runtime contracts needed by live/paper components.
 
 ## Core Principle
 
-Each layer must do exactly one of these jobs:
+Each runtime contract or merged training block must do exactly one of these jobs:
 
 - estimate a point-in-time conditional distribution or calibrated score;
 - optimize a declared utility or policy under constraints;
 - enforce deterministic hard constraints, accounting, timestamps, schemas, and safety gates;
 - produce post-hoc attribution or future evidence packets.
 
-A layer must not mix prediction, policy, hard enforcement, and attribution in the same score. Deterministic code may own contracts, feature assembly, timestamps, schemas, safety gates, and validation checks. It must not preserve an alternate scoring route for a layer whose current contract is trained estimation or policy optimization.
+A runtime contract or merged training block must not mix prediction, policy, hard enforcement, and attribution in the same score. Deterministic code may own contracts, feature assembly, timestamps, schemas, safety gates, and validation checks. It must not preserve an alternate scoring route for a contract whose current role is trained estimation or policy optimization.
 
 Learned-layer design is direct-to-final. Do not introduce temporary learned contracts, compatibility bridges, or learned-looking deterministic substitutes for any learned layer. A final-contract artifact may pass through lifecycle evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are evidence gates, not architecture versions. Only promoted artifacts may affect production decisions.
 
-Layers 1-5 are conditional estimators and calibrators, not policy optimizers. Their final contracts should specify point-in-time inputs, labels, artifact evidence, explainability, and validation gates without forcing the candidate-utility/policy language used by Layers 6-10.
+Runtime contracts `M01` through `M05` include conditional estimator and calibrator outputs, while `M06` through `M09` include policy or utility outputs and `M10` owns residual governance. Their final contracts should specify point-in-time inputs, labels, artifact evidence, explainability, and validation gates without forcing one runtime head to impersonate another. The `B04` unified decision block may train `M05` through `M08` together, but it must preserve the alpha, risk, exposure, and action heads as separate runtime contracts.
+
+The accepted training topology has six model blocks:
+
+| Training block | Runtime contracts | Learning role |
+|---|---|---|
+| `B01` Background Context | `M01` + `M02` | Shared background context estimator with market and sector/industry heads. |
+| `B02` Target State / Selection | `M03` | Target eligibility, ranking, and target-state estimator. |
+| `B03` Event State / Conditioning | `M04` | Event-conditioned response/risk estimator under frozen Layer 10 event contracts. |
+| `B04` Unified Decision | `M05` + `M06` + `M07` + `M08` | Direct downstream decision/utility model with structured alpha, risk, exposure, and action heads. |
+| `B05` Option Expression | `M09` | Separate option/expression utility model consuming clean decision intent. |
+| `B06` Residual Event Governance | `M10` | Separate event governance, residual attribution, and future-packet routing model. |
+
+Training topology may merge internal trunks and optimize against downstream labels when safe. It must not delete runtime contracts used for target selection, event reasoning, decision/action routing, option expression, or residual event governance.
 
 ## Cross-Layer Rules
 
@@ -36,7 +49,7 @@ The loop has three separate paths:
 
 ```text
 Inference path:
-  point-in-time inputs -> M01 -> M02 -> M03 -> M04 -> M05 -> M06 -> M07 -> M08 -> optional M09 -> M10
+  point-in-time inputs -> B01(M01/M02) -> B02(M03) -> B03(M04) -> B04(M05-M08) -> optional B05(M09) -> B06(M10)
 
 Evaluation path:
   fold/replay settles -> future labels, utilities, diagnostics, and residuals are joined after the fact
@@ -45,7 +58,7 @@ Promotion feedback path:
   evaluation evidence -> review/promotion gate -> later-fold artifact update or rejection
 ```
 
-No future label, realized utility, downstream failure, broker outcome, same-fold Layer 10 discovery, or post-event interpretation may feed back into the same fold's inference features. A layer can learn from failure only through a later training/evaluation dataset, frozen artifact lineage, and accepted review gate.
+No future label, realized utility, downstream failure, broker outcome, same-fold Layer 10 discovery, or post-event interpretation may feed back into the same fold's inference features. A runtime contract or training block can learn from failure only through a later training/evaluation dataset, frozen artifact lineage, and accepted review gate.
 
 Layer 10 has one special feedback route:
 
@@ -59,9 +72,9 @@ Layer 5/6/7/8/9 replay failure
 
 Layer 10 must not become a generic hindsight corrector. It owns residual event attribution, intervention utility, and future Layer 4 packet eligibility only. Non-event model misses remain the evaluation/promotion evidence of their owning layer.
 
-Layer 4 consumes accepted Layer 10 focus-pool event contracts as frozen qualitative/time-parameter inputs. Layer 10 owns event-family identity, point-in-time clocks, scope, visibility, selected impact windows, allowed use, and later demotion/split/reweight/parameter revision. Layer 4 owns only the quantitative conditional response and failure-risk mapping inside that frozen contract. It may output event-conditioned response strength, direction tendency, uncertainty, failure risk, path risk, entry/cap/disable pressure, and evidence/applicability confidence; it must not output standalone event alpha or change Layer 10 event parameters. Layer 5 remains the first layer that converts Layer 4 event-conditioned response/risk features into adjusted after-cost alpha.
+Layer 4 consumes accepted Layer 10 focus-pool event contracts as frozen qualitative/time-parameter inputs. Layer 10 owns event-family identity, point-in-time clocks, scope, visibility, selected impact windows, allowed use, and later demotion/split/reweight/parameter revision. Layer 4 owns only the quantitative conditional response and failure-risk mapping inside that frozen contract. It may output event-conditioned response strength, direction tendency, uncertainty, failure risk, path risk, entry/cap/disable pressure, and evidence/applicability confidence; it must not output standalone event alpha or change Layer 10 event parameters. The unified decision block remains the first training block allowed to convert Layer 4 event-conditioned response/risk features into adjusted after-cost decision utility.
 
-Layer 5 must continue consuming reviewed Layer 4 event-conditioning fields as formal inputs and let training learn their weight, sign, uncertainty, risk penalty, or near-zero contribution. Event-family removal, demotion, split, or time-window revision remains a Layer 10/4 review outcome, not a Layer 5 baseline substitution. A no-Layer-4 Layer 5 baseline is not a default evaluation route because it does not measure downstream trading performance unless the later layers are also rerun as a full counterfactual chain.
+The unified decision block must continue consuming reviewed Layer 4 event-conditioning fields as formal inputs and let training learn their weight, sign, uncertainty, risk penalty, or near-zero contribution. Event-family removal, demotion, split, or time-window revision remains a Layer 10/4 review outcome, not a no-event baseline substitution. A no-Layer-4 decision baseline is not a default evaluation route unless the later runtime contracts are also rerun as a full counterfactual chain.
 
 | Layer | Inference dependency | Primary output | Label / utility source after fold close | Feedback owner | Forbidden feedback |
 |---|---|---|---|---|---|
@@ -69,10 +82,7 @@ Layer 5 must continue consuming reviewed Layer 4 event-conditioning fields as fo
 | `M02` Sector Context | `market_context_state` plus ETF/sector behavior features. | `context_etf_state` and handoff evidence. | Future sector trend/tradability, handoff quality, and downstream candidate-lift labels. | Layer 2 evaluation and promotion evidence. | Static holdings as fitted shortcut, final target labels, alpha labels, future sector rank, and downstream target outcomes as same-fold inputs. |
 | `M03` Target State | Layer 1/2 context plus anonymous target-local features and candidate policy. | `target_context_state` and candidate ranking evidence. | Future target path, persistence/reversion, liquidity/tradability, state-transition, and candidate-ranking labels. | Layer 3 evaluation and promotion evidence. | Raw ticker/company identity, alpha/action labels, future selected-target outcomes, and downstream trade results as same-fold inputs. |
 | `M04` Event Failure Risk | Layer 1/2/3 state plus reviewed event-family or strategy-failure evidence and frozen Layer 10 focus-pool event contracts. | `event_failure_risk_vector` | Reviewed event-conditioned response, uncertainty, strategy-failure, entry-block, exposure-cap, disable, path-risk, and session-gap labels. | Layer 4 evaluation and event-strategy promotion review; contract-stress diagnostics route back to Layer 10. | Raw news/provider text, unreviewed event candidates, same-fold Layer 10 residual attribution, standalone event-alpha labels, Layer 10 event-parameter mutation, and future realized impact labels as same-fold inputs. |
-| `M05` Alpha Confidence | Layer 1/2/3 state plus Layer 4 conditioning and quality/calibration evidence. | `alpha_confidence_vector` | After-cost alpha, residual return, path quality, reversal/drawdown, reliability, and calibration labels. | Layer 5 evaluation and promotion evidence. | Account/position/action/execution state, future returns, future event revisions, and Layer 10 promotion packets as same-fold inputs. |
-| `M06` Dynamic Risk Policy | Global market/event pressure, Layer 5 alpha summary, and replay-safe portfolio/risk context. | `dynamic_risk_policy_state` | Portfolio/risk-budget utility, drawdown, CVaR, turnover, cost, and policy-stability labels. | Layer 6 off-policy evaluation and promotion evidence. | Broker/account mutation, target-specific identity distortion, order/fill outcomes as inference features, and hard-limit overrides. |
-| `M07` Position Projection | Layer 5 alpha, Layer 6 policy, current/pending exposure, cost, friction, and price-location context. | `position_projection_vector` | Candidate exposure utility, regret, turnover, drawdown, budget-breach, and hold/flat comparison labels. | Layer 7 evaluation and promotion evidence. | Historical action labels, final order quantities, broker fills, alpha relearning, and execution instructions as same-fold inputs. |
-| `M08` Underlying Action | Layer 7 projection, Layer 5 alpha, exposure state, quote/liquidity/borrow, and risk policy context. | `underlying_action_plan` / `underlying_action_vector` | Candidate action utility, no-trade/maintain calibration, entry/risk-plan quality, fill-realism, churn, and path labels. | Layer 8 evaluation and promotion evidence. | Broker order fields, option contract choice, historical action imitation, raw selected-action PnL, and execution leakage. |
+| `M05-M08` Unified Decision | Background, target, event state, quality/calibration evidence, replay-safe portfolio/risk context, cost/friction, quote/liquidity/borrow, and exposure state. | `alpha_confidence_vector`, `dynamic_risk_policy_state`, `position_projection_vector`, `underlying_action_plan` / `underlying_action_vector` | After-cost alpha, residual return, downside/path risk, portfolio/risk-budget utility, exposure regret, no-trade/maintain calibration, action utility, fill-realism, churn, and path labels. | Unified decision evaluation and promotion evidence while preserving runtime subcontracts. | Account/broker mutation, future returns as inference fields, future event revisions, order/fill outcomes as inference features, historical action imitation, final order quantities, option contract choice, alpha relearning inside action heads, and hard-limit overrides. |
 | `M09` Option Expression | Completed Layer 8 thesis plus option-surface status, timestamped option candidates, and option exposure context. | `trading_guidance_record`, `option_expression_plan`, and `expression_vector` when optionable. | Candidate expression utility, realistic option after-cost return, fill/slippage/theta/IV, underlying-only labels for evaluated option surfaces, and no-option status labels for unavailable routes. | Layer 9 option replay evaluation and promotion evidence. | Best-contract hindsight, future option paths, realized fills, broker order ids, final quantities, and same-fold Layer 10 discoveries. |
 | `M10` Event Risk Governor | Layer 1-9 thesis context plus point-in-time event observations, scope mapping, and residual-event evidence. | `event_risk_intervention` / `event_context_vector` plus future packet eligibility. | Residual intervention utility, attribution correctness, tail-failure reduction, overblock cost, and event-family packet labels. | Layer 10 residual evaluation, event-family review, and future Layer 4 packet routing. | Same-fold upstream feature mutation, automatic Layer 4 promotion, standalone event alpha, broker/account mutation, and generic non-event model correction. |
 
@@ -107,23 +117,23 @@ Any field that is both a future label and a same-fold inference input breaks the
 
 ## Redesign Risks
 
-The main risk is target entanglement. Layers 5, 7, 8, and 9 can all accidentally learn "the trade that would have made money." Their boundaries must stay separate:
+The main risk is target entanglement. The unified decision block and option-expression block can accidentally learn "the trade that would have made money." Their runtime heads must stay separate:
 
 ```text
-Layer 5 estimates edge.
-Layer 6 sets portfolio/risk policy.
-Layer 7 projects desired exposure.
-Layer 8 chooses the underlying action thesis.
-Layer 9 chooses the expression.
+B04 alpha head estimates edge.
+B04 risk head sets portfolio/risk policy.
+B04 exposure head projects desired exposure.
+B04 action head chooses the underlying action thesis.
+B05 option-expression block chooses the expression.
 ```
 
-Policy layers also require stronger validation than ordinary supervised models. Layers 6-9 must use walk-forward replay, off-policy evaluation where applicable, and sensitivity checks for costs, fills, turnover, and liquidity.
+Policy and expression blocks require stronger validation than ordinary supervised models. B04 and B05 must use walk-forward replay, off-policy evaluation where applicable, and sensitivity checks for costs, fills, turnover, and liquidity.
 
 Layer 10 must not become a hindsight oracle. Residual discoveries from replay are attribution and future evidence, not same-fold upstream features.
 
 ## Minimal Implementation Gate
 
-Before expanding a layer implementation, define its objective contract:
+Before expanding a runtime-contract or training-block implementation, define its objective contract:
 
 1. primary target or utility;
 2. prediction horizon;
@@ -135,4 +145,4 @@ Before expanding a layer implementation, define its objective contract:
 8. leakage test;
 9. downstream consumer.
 
-Then trace one historical fold row through Layers 1-10. Every emitted field must be classifiable as estimate, policy output, hard gate, diagnostic, explainability, or attribution. Any field that mixes score, policy, reason, and constraint should be split before implementation proceeds.
+Then trace one historical fold row through the six-block / ten-contract route. Every emitted field must be classifiable as estimate, policy output, hard gate, diagnostic, explainability, or attribution. Any field that mixes score, policy, reason, and constraint should be split before implementation proceeds.

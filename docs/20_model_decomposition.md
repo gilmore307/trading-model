@@ -1,11 +1,11 @@
 # Model Decomposition Framework
 
-Status: accepted Layers 1-10 decomposition spine; production promotion remains evidence-gated
-Owner intent: every model layer must keep the same reviewable nine-part decomposition before production promotion expands.
+Status: accepted runtime-contract decomposition spine; production promotion remains evidence-gated
+Owner intent: every component-facing model contract must keep the same reviewable nine-part decomposition before production promotion expands, even when internal training blocks merge several contracts.
 
 ## Nine-Part Structure
 
-For each layer, define:
+For each runtime contract or merged training block, define:
 
 1. **Data** — eligible point-in-time input tables/artifacts, owner, and availability timestamp.
 2. **Features** — model-facing `X`, diagnostic fields, evaluation-only fields, and intentionally unused fields.
@@ -21,7 +21,7 @@ For each layer, define:
 
 ### Model artifact split
 
-Each implemented model layer should separate three artifact classes:
+Each implemented runtime contract should separate three artifact classes:
 
 ```text
 mNN_<domain_slug>_model_generation                  # output
@@ -30,6 +30,19 @@ mNN_<domain_slug>_model_generation_diagnostics      # acceptance/monitoring/gati
 ```
 
 Primary `model` outputs stay narrow and stable. Explainability and diagnostics may be wider, but downstream production logic should not hard-depend on them without a reviewed promotion decision.
+
+The accepted training topology has six model blocks while preserving ten runtime contracts:
+
+```text
+B01 Background Context       -> M01 + M02 outputs
+B02 Target State / Selection -> M03 output
+B03 Event State              -> M04 output
+B04 Unified Decision         -> M05 + M06 + M07 + M08 outputs
+B05 Option Expression        -> M09 output
+B06 Residual Event Governance-> M10 output
+```
+
+Training-block consolidation is an implementation topology, not permission to collapse component-facing artifacts. If one trained artifact produces multiple runtime contracts, each runtime output still needs its own primary row shape, explainability payload, diagnostics payload, validation evidence, and downstream ownership boundary.
 
 Layer-owned fields use compact `1_*`, `2_*`, ... prefixes consistently across docs, model-facing payloads, and SQL physical columns. SQL writers quote numeric-leading names where required rather than inventing `layer01_*` / `layer02_*` aliases.
 
@@ -42,7 +55,7 @@ Layer-owned fields use compact `1_*`, `2_*`, ... prefixes consistently across do
 
 ## Learning Role
 
-The long-term learning role for each layer is defined in `docs/23_model_learning_design.md`. This file owns the nine-part decomposition contract; it should not preserve historical scaffold phases as the model objective.
+The long-term learning role for each runtime contract or merged training block is defined in `docs/23_model_learning_design.md`. This file owns the nine-part decomposition contract; it should not preserve historical scaffold phases as the model objective.
 
 ## Layer 1: MarketRegimeModel
 

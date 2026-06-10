@@ -2,7 +2,7 @@
 
 ## Why This Repository Exists
 
-The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the direction-neutral trading decision system:
+The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the direction-neutral trading decision system. Runtime components consume ten explicit model contracts:
 
 1. MarketRegimeModel (`market_regime_model`);
 2. SectorContextModel (`sector_context_model`);
@@ -17,11 +17,24 @@ The trading platform is split across multiple repositories so each major respons
 
 Layer 8, Layer 9, and Layer 10 plans remain offline and broker mutation stays outside this repository.
 
+The current training topology groups those runtime contracts into six model blocks:
+
+```text
+M01-M02 background context
+M03 target state / selection
+M04 event state / event conditioning
+M05-M08 unified decision
+M09 option expression
+M10 residual event governance
+```
+
+The split between training topology and runtime contracts is intentional. Models may share internal trunks to reduce serial error propagation, but target selection, event reasoning, decision/action, option expression, and residual event governance remain explicit component-facing interfaces.
+
 Reviewed event/strategy-failure evidence is a Layer 4 conditioning boundary before alpha confidence. Unreviewed, residual, or discovery-stage event evidence remains a Layer 10 risk-governor/intervention boundary on the direct-underlying/spot thesis, with Layer 9 expression context only when available.
 
 The repository turns point-in-time data artifacts and strategy/event evidence into model research, validation results, decision-record prototypes, and model outputs. It does not own raw source acquisition or live execution.
 
-Current structural boundary:
+Current runtime structural boundary:
 
 ```text
 broad market tradability context -> sector/industry tradability context -> anonymized target context -> reviewed event-failure risk -> confidence -> dynamic risk policy -> position projection -> underlying action plan -> trading guidance / option expression -> event-risk intervention

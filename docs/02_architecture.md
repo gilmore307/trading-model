@@ -1,7 +1,7 @@
 # Architecture
 
-Status: accepted current Layers 1-10 route
-Owner intent: keep the model stack direct, point-in-time, and current-route authoritative.
+Status: accepted six-training-block topology preserving ten runtime contracts
+Owner intent: reduce serial model-error propagation while keeping component-facing contracts direct, point-in-time, and current-route authoritative.
 
 ## Module Map
 
@@ -15,18 +15,37 @@ Owner intent: keep the model stack direct, point-in-time, and current-route auth
 
 ## Architecture Summary
 
+The accepted architecture separates internal training topology from runtime-facing contracts:
+
+| Training block | Runtime contracts preserved | Runtime-facing purpose |
+|---|---|---|
+| `B01` Background Context | `M01` Market Regime + `M02` Sector Context | Market, sector, industry, liquidity, volatility, and macro-sensitive background state. |
+| `B02` Target State / Selection | `M03` Target State | Target eligibility, target ranking, target-specific state, and target selection evidence. |
+| `B03` Event State / Conditioning | `M04` Event Failure Risk | Event-family/window exposure, uncertainty, relevance, and event-conditioned response/risk. |
+| `B04` Unified Decision | `M05` Alpha Confidence + `M06` Dynamic Risk Policy + `M07` Position Projection + `M08` Underlying Action | No-trade/trade, direction, edge, risk constraints, exposure/size, action thesis, and invalidation profile. |
+| `B05` Option Expression | `M09` Option Expression | Option/underlying expression from clean decision intent, horizon, volatility, risk, and liquidity inputs. |
+| `B06` Residual Event Governance | `M10` Event Risk Governor | Missed-event checks, residual event intervention, attribution, and future event-family promotion evidence. |
+
+Training blocks may share trunks or train jointly when this reduces brittle serial bottlenecks. They must not delete the explicit runtime contracts consumed by live/paper components.
+
 ```text
 point-in-time data foundation
-  -> M01 Market Regime
-  -> M02 Sector Context
+  -> B01 Background Context
+     -> M01 Market Regime
+     -> M02 Sector Context
+  -> B02 Target State / Selection
   -> M03 Target State
      (Layer 3 preprocessing includes anonymous target candidate construction)
+  -> B03 Event State / Conditioning
   -> M04 Event Failure Risk
+  -> B04 Unified Decision
   -> M05 Alpha Confidence
   -> M06 Dynamic Risk Policy
   -> M07 Position Projection
   -> M08 Underlying Action
+  -> B05 Option Expression
   -> M09 Option Expression
+  -> B06 Residual Event Governance
   -> M10 Event Risk Governor
   -> unified decision record / downstream execution handoff
 ```
@@ -47,7 +66,7 @@ This separation is mandatory:
 - Layer 4 and later operate on one selected target per run; multiple targets are handled by repeated target-scoped runs, not by widening downstream model interfaces.
 - Real ticker/company identity is audit/routing metadata, not a fitting feature.
 
-## Canonical Layers
+## Canonical Runtime Contracts
 
 | Step | Short name | Stable id | Stable surface | Conceptual output | Role |
 |---|---|---|---|---|---|
@@ -62,14 +81,13 @@ This separation is mandatory:
 | `M09` | Option Expression | `option_expression_model` | `model_09_option_expression` | `option_expression_plan` / `expression_vector` | Optional offline trading guidance and option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
 | `M10` | Event Risk Governor | `event_risk_governor` | `model_10_event_risk_governor` | `event_risk_intervention` / `event_context_vector` | Point-in-time residual event-risk intervention on the direct-underlying/spot thesis; Layer 9 context is optional; may discover, block/cap/review guidance, or propose Layer 4 promotions but must not mutate broker/account state. |
 
-The `M01` through `M10` names are display/order fields. Stable package, script,
-table, and registry surfaces continue to use `model_01_*` through `model_10_*`.
+The `M01` through `M10` names are component-facing runtime contracts and display/order fields. Stable package, script, table, and registry surfaces continue to use `model_01_*` through `model_10_*` until a reviewed migration changes the physical implementation. Training-block names `B01` through `B06` describe internal learning topology, not replacement output contracts.
 
 Do not treat Layer 9 or Layer 10 as live execution. Broker mutation and live/paper order placement are outside `trading-model`. There is no accepted Layer 11 inside this repository; post-Layer-10 work crosses into downstream review / execution-owned boundaries.
 
 ## Model Artifact Rule
 
-Implemented model layers separate the primary output from review and gating surfaces:
+Implemented runtime contracts separate the primary output from review and gating surfaces:
 
 ```text
 model_NN_<layer_slug>
@@ -81,9 +99,9 @@ The primary output is the narrow downstream dependency contract. Explainability 
 
 `docs/21_vector_taxonomy.md` owns the cross-layer vocabulary for feature surfaces, feature vectors, states, state vectors, scores, diagnostics, explainability, labels, and Layer 3 preprocessing. In particular, `anonymous_target_feature_vector` is a Layer 3 preprocessing/input vector; `target_context_state` is the Layer 3 conceptual model output.
 
-`docs/23_model_learning_design.md` owns the long-term learning route for each layer. It separates conditional estimators, policy/utility optimizers, deterministic hard constraints, and post-hoc attribution so implementation work does not turn one score into prediction, sizing, action, and explanation at once.
+`docs/23_model_learning_design.md` owns the long-term learning route for each runtime contract and merged training block. It separates conditional estimators, policy/utility optimizers, deterministic hard constraints, and post-hoc attribution so implementation work does not turn one score into prediction, sizing, action, and explanation at once.
 
-`docs/23_model_learning_design.md` also owns the closed-loop evidence lifecycle for Layers 1-10: point-in-time inference moves forward through the stack, future labels/utilities join only after fold settlement, and promotion feedback can update later-fold artifacts only through review gates. This is not live recursive learning and does not authorize same-fold downstream failures, Layer 10 discoveries, broker outcomes, or future labels as upstream inference features.
+`docs/23_model_learning_design.md` also owns the closed-loop evidence lifecycle for the six-block / ten-contract stack: point-in-time inference moves forward through the stack, future labels/utilities join only after fold settlement, and promotion feedback can update later-fold artifacts only through review gates. This is not live recursive learning and does not authorize same-fold downstream failures, Layer 10 discoveries, broker outcomes, or future labels as upstream inference features.
 
 ## Historical Sampling vs Live Routing
 

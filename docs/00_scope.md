@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`trading-model` is the offline modeling home for the current ten-layer trading decision stack.
+`trading-model` is the offline modeling home for the current six-training-block / ten-runtime-contract trading decision stack.
 
 It owns point-in-time model research, model-local generators/evaluators, validation workflows, promotion evidence, model outputs, and decision-record prototypes for:
 
@@ -19,11 +19,12 @@ It owns point-in-time model research, model-local generators/evaluators, validat
 
 The repository does **not** place orders, mutate accounts, own provider acquisition, or become the global registry. It produces offline model artifacts and review evidence for downstream systems.
 
+The accepted runtime contracts remain the ten outputs listed above. The accepted training topology groups them into six model blocks: Layer 1-2 background context, Layer 3 target state/selection, Layer 4 event state/conditioning, Layer 5-8 unified decision, Layer 9 option expression, and Layer 10 residual event governance. Training-block consolidation must not erase runtime-facing outputs that downstream components consume, route, audit, or govern.
+
 ## In Scope
 
 - Point-in-time model research, validation, promotion evidence, and reproducible local tests.
-- Broad market tradability/regime state from market-only inputs.
-- Market-context-conditioned sector/industry tradability state.
+- Broad market and sector/industry background state from point-in-time market, sector, liquidity, volatility, and macro-sensitive inputs.
 - Anonymous target candidate construction and target state-vector modeling without ticker/company identity in fitting vectors.
 - Event-failure-risk modeling from agent-reviewed, empirically accepted event/strategy-failure relationships before alpha confidence.
 - Alpha-confidence modeling from the reviewed Layer 1/2/3 state stack plus reviewed Layer 4 failure-risk conditioning when available.
