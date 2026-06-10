@@ -18,20 +18,16 @@ Cross-repository names, shared fields, artifact types, statuses, templates, and 
 Date: 2026-04-27
 Status: Accepted
 
-`trading-model` is the offline modeling home for the direction-neutral tradability decision stack:
+`trading-model` is the offline modeling home for the current six-model decision stack:
 
-| Layer | Model | Stable id | Role |
-|---|---|---|---|
-| 1 | `MarketRegimeModel` | `market_regime_model` | Broad market tradability/regime context state. |
-| 2 | `SectorContextModel` | `sector_context_model` | Market-context-conditioned ETF-context tradability and rotation state. |
-| 3 | `TargetStateVectorModel` | `target_state_vector_model` | Direction-neutral target context for anonymized target candidates; anonymous candidate construction is Layer 3 preprocessing. |
-| 4 | `EventFailureRiskModel` | `event_failure_risk_model` | Reviewed event/strategy-failure risk conditioning before alpha confidence; not a raw-news alpha layer. |
-| 5 | `AlphaConfidenceModel` | `alpha_confidence_model` | Reviewed state stack to adjusted alpha direction, strength, expected residual return, confidence, reliability, path quality, reversal/drawdown risk, and alpha tradability. |
-| 6 | `DynamicRiskPolicyModel` | `dynamic_risk_policy_model` | Dynamic premium/risk-budget policy from market regime, systemic event pressure, alpha quality, and portfolio context; not broker permission. |
-| 7 | `PositionProjectionModel` | `position_projection_model` | Final adjusted alpha plus dynamic risk policy, current/pending position, cost, exposure, and risk-budget context to projected target holding state. |
-| 8 | `UnderlyingActionModel` | `underlying_action_model` | Direct underlying/spot planned action thesis across stock, ETF, or crypto-style candidates: eligibility, planned action type, planned exposure change, entry/target/stop/time-stop, and optional trading-guidance handoff. |
-| 9 | `TradingGuidanceModel` / `OptionExpressionModel` | `trading_guidance_model` / `option_expression_model` | Optional offline trading guidance and optional option-expression selection from the underlying thesis and option-chain context; broker mutation remains outside `trading-model`. |
-| 10 | `EventRiskGovernor` / `EventIntelligenceOverlay` | `event_risk_governor` | Point-in-time event-risk intervention on the direct-underlying/spot thesis; may block/cap/review guidance but must not mutate broker/account state. |
+| Model | Stable id | Role |
+|---|---|---|
+| `M01 Background Context` | `background_context_model` | Broad market plus sector/industry context state. |
+| `M02 Target State` | `target_state_model` | Target selection, ranking, and anonymous target-state evidence. |
+| `M03 Event State` | `event_state_model` | Accepted event-family/window/exposure/uncertainty conditioning. |
+| `M04 Unified Decision` | `unified_decision_model` | Direct-underlying edge, risk, exposure, no-trade, and action thesis with structured heads. |
+| `M05 Option Expression` | `option_expression_model` | Optional option/underlying expression from M04 `direct_underlying_intent` and point-in-time option-chain context. |
+| `M06 Residual Event Governance` | `residual_event_governance_model` | Residual event-risk intervention, missed-event attribution, and future event-family evidence. |
 
 Live/paper order placement remains outside this repository and no layer should be renamed live `ExecutionModel`.
 
@@ -43,45 +39,32 @@ Status: Accepted
 The current route is:
 
 ```text
-MarketRegimeModel
-  -> market_context_state
+M01 BackgroundContextModel
+  -> background_context_state
 
-SectorContextModel
-  -> context_etf_state
-
-TargetStateVectorModel
-  -> Layer 3 preprocessing: anonymous target candidate builder
-  -> target_candidate_id
-  -> anonymous_target_feature_vector
+M02 TargetStateModel
   -> target_context_state
 
-EventFailureRiskModel
-  -> event_failure_risk_vector
+M03 EventStateModel
+  -> event_state_vector
 
-AlphaConfidenceModel
-  -> alpha_confidence_vector
+M04 UnifiedDecisionModel
+  -> unified_decision_vector
+  -> direct_underlying_intent
 
-DynamicRiskPolicyModel
-  -> dynamic_risk_policy_state
+M05 OptionExpressionModel
+  -> trading_guidance_record
+  -> option_expression_plan / expression_vector
 
-PositionProjectionModel
-  -> position_projection_vector
-
-UnderlyingActionModel
-  -> underlying_action_plan / underlying_action_vector
-
-TradingGuidanceModel / OptionExpressionModel
-  -> trading_guidance / option_expression_plan / expression_vector
-
-EventRiskGovernor / EventIntelligenceOverlay
-  -> event_risk_intervention / event_context_vector
+M06 ResidualEventGovernanceModel
+  -> event_risk_intervention
 ```
 
 Hard separation rules:
 
-- Layer 1 describes broad market state only.
-- Layer 2 describes ETF-context basket behavior under broad market state.
-- Layer 3 is the first target-state layer.
+- M01 describes broad market plus sector/industry background.
+- M02 is the target-state and target-selection boundary.
+- M03 is the event-state boundary.
 - Final target/security choice must be made downstream from accepted target-state evidence, not from raw identity.
 - Model-facing fitting rows for target work must anonymize ticker/company identity.
 - Real symbols may remain in audit/routing metadata and decision records, but not in model-facing identity features.
@@ -690,9 +673,9 @@ UnderlyingActionModel must not emit broker order fields, order type, route, time
 Date: 2026-05-07
 Status: Accepted
 
-Layer-numbering update after D047: `OptionExpressionModel` is the accepted Layer 9 option-expression implementation surface (`model_09_option_expression`) under the trading-guidance boundary.
+Six-model update after D062: `OptionExpressionModel` is the accepted M05 option-expression implementation surface (`model_05_option_expression`) under the trading-guidance boundary.
 
-It consumes Layer 8 `underlying_action_plan` / `underlying_action_vector` handoff plus point-in-time option-chain context and outputs:
+It consumes M04 `direct_underlying_intent` plus point-in-time option-chain context and outputs:
 
 ```text
 option_expression_plan

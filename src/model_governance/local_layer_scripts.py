@@ -386,6 +386,46 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
             "policy_gate_state": {},
         }
     ],
+    "model_05_option_expression": [
+        {
+            "available_time": "2026-05-07T10:30:00-04:00",
+            "tradeable_time": "2026-05-07T10:31:00-04:00",
+            "target_candidate_id": "anon_target_001",
+            "unified_decision_vector_ref": "udv_fixture",
+            "option_chain_snapshot_ref": "chain_snapshot_fixture",
+            "option_quote_available_time": "2026-05-07T10:30:05-04:00",
+            "underlying_quote_snapshot_ref": "underlying_quote_fixture",
+            "underlying_reference_price": 100.25,
+            "direct_underlying_intent": {
+                "underlying_action_type": "increase_long",
+                "action_side": "long",
+                "dominant_horizon": "1W",
+                "handoff_to_model_05": {
+                    "underlying_path_direction": "bullish",
+                    "expected_entry_price": 100.0,
+                    "expected_target_price": 105.0,
+                    "target_price_low": 103.0,
+                    "target_price_high": 106.0,
+                    "stop_loss_price": 98.0,
+                    "thesis_invalidation_price": 97.5,
+                    "expected_holding_time_minutes": 10080,
+                    "path_quality_score": 0.82,
+                    "reversal_risk_score": 0.18,
+                    "drawdown_risk_score": 0.22,
+                    "expected_favorable_move_pct": 0.05,
+                    "expected_adverse_move_pct": -0.02,
+                    "entry_price_assumption": "limit_or_pullback",
+                    "underlying_action_confidence_score": 0.78,
+                },
+            },
+            "background_context_state": {"1_market_risk_stress_score": 0.20, "1_market_liquidity_support_score": 0.85},
+            "event_state_vector": {"3_event_path_risk_score_1W": 0.20, "3_event_uncertainty_score_1W": 0.15},
+            "option_expression_policy": {"max_option_spread_pct": 0.18, "iv_rank_ceiling": 0.75},
+            "option_contract_candidates": [
+                {"contract_ref": "AAPL_CALL_GOOD", "quote_snapshot_ref": "qs_call_good", "quote_available_time": "2026-05-07T10:30:05-04:00", "quote_age_seconds": 12, "strike": 102, "moneyness": 1.02, "contract_multiplier": 100, "exercise_style": "american", "settlement_type": "physical", "is_weekly": True, "is_monthly": False, "is_adjusted_contract": False, "last_trade_time": "2026-05-07T10:29:58-04:00", "right": "call", "expiration": "2026-06-06", "dte": 30, "delta": 0.52, "gamma": 0.04, "theta": -0.08, "vega": 0.12, "iv": 0.32, "iv_rank": 0.45, "bid": 2.40, "ask": 2.55, "bid_size": 30, "ask_size": 25, "volume": 1200, "open_interest": 6500, "intrinsic_value": 2.0, "extrinsic_value": 0.475, "breakeven_price": 104.475, "theoretical_value": 2.49}
+            ],
+        }
+    ],
     "model_09_option_expression": [
         {
             "available_time": "2026-05-07T10:30:00-04:00",
@@ -415,6 +455,7 @@ FIXTURE_OUTCOME_ROWS: dict[str, list[dict[str, Any]]] = {
     "model_06_dynamic_risk_policy": [{"dynamic_risk_policy_state_ref": "drp_9820f47a50d7bf25", "realized_premium_efficiency_1W": 0.34, "realized_risk_budget_efficiency_1W": 0.62, "realized_policy_breach_1W": False}],
     "model_07_position_projection": [{"position_projection_vector_ref": "ppv_f154b03e7648d661", "realized_position_utility_1W": 0.12, "realized_risk_budget_breach_1W": False}],
     "model_08_underlying_action": [{"underlying_action_plan_ref": "uap_7c6b5381d428ea0a", "entry_price_hit": True, "realized_underlying_return": 0.04, "slippage_pct": 0.001, "spread_cost_pct": 0.001}],
+    "model_05_option_expression": [{"option_expression_plan_ref": "oep_0efeeb3e99931e42", "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True}],
     "model_09_option_expression": [{"option_expression_plan_ref": "oep_8b65e90b82a73385", "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True}],
 }
 
@@ -438,6 +479,8 @@ def fixture_outcome_rows(model_surface: str, model_rows: list[dict[str, Any]]) -
             rows.append({"position_projection_vector_ref": row.get("position_projection_vector_ref"), "realized_position_utility_1W": 0.12, "realized_risk_budget_breach_1W": False})
         elif model_surface == "model_08_underlying_action":
             rows.append({"underlying_action_plan_ref": row.get("underlying_action_plan_ref"), "entry_price_hit": True, "realized_underlying_return": 0.04, "slippage_pct": 0.001, "spread_cost_pct": 0.001})
+        elif model_surface == "model_05_option_expression":
+            rows.append({"option_expression_plan_ref": row.get("option_expression_plan_ref"), "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True})
         elif model_surface == "model_09_option_expression":
             rows.append({"option_expression_plan_ref": row.get("option_expression_plan_ref"), "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True})
     return rows

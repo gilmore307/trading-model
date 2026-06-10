@@ -1,6 +1,6 @@
 # Model 05 Option Expression
 
-Status: accepted current model contract; implementation migration required.
+Status: accepted current model contract; deterministic implementation present; promotion evidence deferred.
 
 ## Role
 
@@ -19,8 +19,13 @@ The model may choose underlying-only, long call, long put, no-option, or unavail
 ## Inputs
 
 - `unified_decision_vector`.
+- `direct_underlying_intent` from M04.
 - Point-in-time option-chain snapshots, bid/ask, liquidity, IV, Greeks, DTE, spread, and conservative fill assumptions.
 
 ## Migration Source
 
 Retired implementation package `model_09_option_expression` may be used as source material during migration. It is not a separate current model contract.
+
+## Current Gate
+
+The current implementation lives in `src/models/model_05_option_expression/` and local generate/evaluate/review entrypoints live under `scripts/models/model_05_option_expression/`. It consumes M04 `direct_underlying_intent` / `unified_decision_vector_ref`, emits `5_*` option-expression fields, and does not expose retired `underlying_action_plan` outputs. Production promotion still requires option-chain replay labels, cost/fill/theta/IV validation, baseline comparison, leakage checks, and manager-side promotion review.
