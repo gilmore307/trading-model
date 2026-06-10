@@ -403,9 +403,11 @@ Output artifacts live under `/root/projects/trading-storage/storage/03_model_art
 - `model_10_event_risk_governor_rows.jsonl`
 - `decision_event_overlay_rows.jsonl`
 
-This run applies the selected real-input windows to the frozen `promotion_replay_candidate_policy` replay decision rows for `fold_2016-01_2016-06`. It generated 1,254 Layer 10 rows from replay decisions, with 276 decisions carrying at least one point-in-time visible event-window overlay. Matched visible event counts were 172 `cpi_inflation_release`, 78 `triple_witching_calendar`, and 55 `breaking_news_shock` matches. Scheduled events may be visible before the event date; unscheduled breaking-news shocks are visible only at or after event time, even when their measured association window includes pre-event days.
+This run applies the selected real-input windows plus SQL-retained candidate-family observations to the frozen `promotion_replay_candidate_policy` replay decision rows for `fold_2016-01_2016-06`. It generated 1,254 Layer 10 rows from replay decisions, with 641 decisions carrying at least one point-in-time visible event overlay across 31 event families. The 29-family candidate catalog is represented by SQL-retained keyword-screened observations where local retained news/event rows exist; `breaking_news_shock` and `triple_witching_calendar` are additional calibrated temporal-form families from the impact-window contract.
 
-Replay overlay result: event-window decisions had mean excess return about -0.000663 versus about -0.000586 for non-event-window decisions. This is a replay overlay diagnostic only. It is not a standalone directional-alpha claim, not a promotion decision, and not a Layer 4 acceptance packet.
+Window policy counts were 305 `calibrated_impact_window` event matches and 943 `keyword_sql_observation_day_unvalidated` event matches. Calibrated families were `cpi_inflation_release`, `triple_witching_calendar`, and `breaking_news_shock`. Uncalibrated SQL candidate-family observations include earnings/guidance, SEC/filing, symbol-news, sector, macro, price-action, liquidity, and option-abnormality candidate families. These uncalibrated rows use same-day observation windows and must not be treated as validated impact windows.
+
+Replay overlay result: event-overlay decisions had mean excess return about -0.000637 versus about -0.000568 for non-event-overlay decisions. This is a replay overlay diagnostic only. It is not a standalone directional-alpha claim, not a promotion decision, and not a Layer 4 acceptance packet.
 
 ## Threshold/grading queue
 

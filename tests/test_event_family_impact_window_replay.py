@@ -108,12 +108,14 @@ class EventFamilyImpactWindowReplayTests(unittest.TestCase):
                 output_dir=output_dir,
                 fold_id="fold_test",
                 replay_run_id="replay_test",
+                include_sql_candidate_events=False,
             )
 
             overlay_rows = [json.loads(line) for line in Path(result.overlay_rows_path).read_text(encoding="utf-8").splitlines()]
             by_decision = {row["decision_id"]: row for row in overlay_rows}
 
         self.assertEqual(by_decision["before_cpi"]["visible_event_families"], ["cpi_inflation_release"])
+        self.assertEqual(by_decision["before_cpi"]["visible_event_window_policies"], ["calibrated_impact_window"])
         self.assertEqual(by_decision["before_breaking_news"]["visible_event_families"], [])
         self.assertEqual(by_decision["after_breaking_news"]["visible_event_families"], ["breaking_news_shock"])
 
