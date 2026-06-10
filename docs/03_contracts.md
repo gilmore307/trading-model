@@ -20,7 +20,7 @@ This closes the model-design re-scope to six model contracts and provides determ
 
 `current_model_chain_receipt` is the local smoke-evidence contract for the deterministic M01-M06 route. It verifies current handoff refs, label-leakage checks, and retired-field absence, while explicitly disallowing production activation and promotion.
 
-`model_realtime_decision_route_plan` is the current fixture/shadow route-plan contract for execution-side replay/live capture refs. Its execution unit is `component`; it emits `component_routes` for the current M01-M06 components, with M05 optional when the route is direct-underlying-only or option expression is not applicable. It does not activate production inference or authorize broker/account mutation.
+`model_realtime_decision_route_plan` is the current fixture/shadow route-plan contract for execution-side replay/live capture refs. Its execution unit is `runtime_component`; it emits `component_routes` for the accepted execution C-components and lists the current M01-M06 model surfaces each component may need. M05 remains optional when the route is direct-underlying-only or option expression is not applicable. It does not activate production inference or authorize broker/account mutation.
 
 Retired packages and scripts named `model_01_market_regime` through `model_10_event_risk_governor` are no longer current model contracts. They may be used only as migration-source implementation surfaces until their behavior is moved into the six accepted contracts.
 

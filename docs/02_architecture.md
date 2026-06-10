@@ -73,18 +73,18 @@ Promotion evidence should distinguish broad historical generalization from live-
 
 ## Component Execution Boundary
 
-Live and replay execution route current model components, not retired model layers. The component execution order is:
+Live and replay execution route execution runtime components, not retired model layers and not model contracts pretending to be components. The component execution order is owned by `trading-execution`:
 
 ```text
-background_context_component
-  -> target_state_component
-  -> event_state_component
-  -> unified_decision_component
-  -> optional option_expression_component
-  -> residual_event_governance_component
+component_01_intake
+  -> component_02_entry or component_03_lifecycle
+  -> optional component_04_option_review
+  -> component_05_order_intent
+  -> component_06_execution_gate
+  -> optional component_07_failure_review
 ```
 
-`docs/41_realtime_decision_handoff.md` owns the executable route-plan contract. Training/evaluation may preserve full-minute state coverage, while live/replay component invocation may be conditional for latency, cost, and applicability.
+`docs/41_realtime_decision_handoff.md` owns the model-side route-plan contract for those execution components. Training/evaluation may preserve full-minute state coverage, while live/replay C-component invocation may be conditional for latency, cost, account sleeve, open-position state, and option applicability.
 
 ## Point-in-Time Rule
 

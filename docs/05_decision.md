@@ -847,16 +847,16 @@ Realtime execution inputs may enter `trading-model` through `execution_model_dec
 
 Production model activation, durable decision records, promotion approval, and execution authority remain manager/execution-owned gates, not implied by this handoff scaffold.
 
-## D067 - Realtime/replay handoff routes current model components
+## D067 - Realtime/replay handoff routes execution runtime components
 
 Date: 2026-06-10
 Status: Accepted
 
-Live and replay execution are component-routed, not model-layer-routed. After the six-model redesign, `model_realtime_decision_route_plan` validates and emits `component_routes` with `execution_unit = component`.
+Live and replay execution are routed through the existing execution runtime components, not model-layer-routed and not through model contracts renamed as components. After the six-model redesign, `model_realtime_decision_route_plan` validates and emits `component_routes` with `execution_unit = runtime_component`.
 
-Required current components are `background_context_component`, `target_state_component`, `event_state_component`, `unified_decision_component`, and `residual_event_governance_component`. `option_expression_component` is conditional: M04 or applicability checks may decide whether to invoke it during live/replay routing, while historical training/evaluation still preserves full-minute no-option and not-option-applicable state coverage.
+Required runtime components are `component_01_intake`, `component_02_entry`, `component_03_lifecycle`, `component_05_order_intent`, and `component_06_execution_gate`. `component_04_option_review` and `component_07_failure_review` are conditional. The route plan lists the current M01-M06 model surfaces each component may need; M05 remains conditional for optionable routes or held options, while historical training/evaluation still preserves full-minute no-option and not-option-applicable state coverage.
 
-Retired Layer 1-10 route plans are migration-source evidence only and are not the current realtime/replay execution contract. The component route plan still does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
+Retired Layer 1-10 route plans are migration-source evidence only and are not the current realtime/replay execution contract. The runtime-component route plan still does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
 
 ## D039 - Event-risk governor moved after the base trading stack
 

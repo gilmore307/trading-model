@@ -1,10 +1,11 @@
-"""Realtime/replay component handoff planning.
+"""Realtime/replay execution-component handoff planning.
 
 This module consumes the execution-side
 ``execution_model_decision_input_snapshot`` envelope and turns it into a
-model-side component route plan for fixture/shadow routing. It validates shape
-and current component coverage only. It does not run model generators, activate
-production configs, persist outputs, call providers, or authorize execution.
+model-side route plan for fixture/shadow routing through the accepted
+execution runtime components. It validates shape and C01-C07 component
+coverage only. It does not run model generators, activate production configs,
+persist outputs, call providers, or authorize execution.
 """
 
 from __future__ import annotations
@@ -14,71 +15,112 @@ from datetime import datetime
 from hashlib import sha256
 from typing import Any, Mapping, Sequence
 
-MODEL_COMPONENT_ORDER = (
-    "background_context_component",
-    "target_state_component",
-    "event_state_component",
-    "unified_decision_component",
-    "option_expression_component",
-    "residual_event_governance_component",
+RUNTIME_COMPONENT_ORDER = (
+    "component_01_intake",
+    "component_02_entry",
+    "component_03_lifecycle",
+    "component_04_option_review",
+    "component_05_order_intent",
+    "component_06_execution_gate",
+    "component_07_failure_review",
 )
-REQUIRED_MODEL_COMPONENT_ORDER = tuple(
-    component for component in MODEL_COMPONENT_ORDER if component != "option_expression_component"
+REQUIRED_RUNTIME_COMPONENT_ORDER = (
+    "component_01_intake",
+    "component_02_entry",
+    "component_03_lifecycle",
+    "component_05_order_intent",
+    "component_06_execution_gate",
 )
-OPTIONAL_MODEL_COMPONENT_ORDER = ("option_expression_component",)
+OPTIONAL_RUNTIME_COMPONENT_ORDER = (
+    "component_04_option_review",
+    "component_07_failure_review",
+)
+
+_MODEL_ENTRYPOINTS = {
+    "model_01_background_context": "trading-model/scripts/models/model_01_background_context/generate_model_01_background_context.py",
+    "model_02_target_state": "trading-model/scripts/models/model_02_target_state/generate_model_02_target_state.py",
+    "model_03_event_state": "trading-model/scripts/models/model_03_event_state/generate_model_03_event_state.py",
+    "model_04_unified_decision": "trading-model/scripts/models/model_04_unified_decision/generate_model_04_unified_decision.py",
+    "model_05_option_expression": "trading-model/scripts/models/model_05_option_expression/generate_model_05_option_expression.py",
+    "model_06_residual_event_governance": (
+        "trading-model/scripts/models/model_06_residual_event_governance/"
+        "generate_model_06_residual_event_governance.py"
+    ),
+}
 
 _COMPONENT_METADATA = {
-    "background_context_component": {
-        "model_step": "M01",
-        "model_surface": "model_01_background_context",
-        "model_id": "background_context_model",
-        "expected_model_output": "background_context_state",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_01_background_context/generate_model_01_background_context.py",
-        "invocation_policy": "required_component",
-    },
-    "target_state_component": {
-        "model_step": "M02",
-        "model_surface": "model_02_target_state",
-        "model_id": "target_state_model",
-        "expected_model_output": "target_context_state",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_02_target_state/generate_model_02_target_state.py",
-        "invocation_policy": "required_component",
-    },
-    "event_state_component": {
-        "model_step": "M03",
-        "model_surface": "model_03_event_state",
-        "model_id": "event_state_model",
-        "expected_model_output": "event_state_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_03_event_state/generate_model_03_event_state.py",
-        "invocation_policy": "required_component",
-    },
-    "unified_decision_component": {
-        "model_step": "M04",
-        "model_surface": "model_04_unified_decision",
-        "model_id": "unified_decision_model",
-        "expected_model_output": "unified_decision_vector",
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_04_unified_decision/generate_model_04_unified_decision.py",
-        "invocation_policy": "required_decision_component",
-    },
-    "option_expression_component": {
-        "model_step": "M05",
-        "model_surface": "model_05_option_expression",
-        "model_id": "option_expression_model",
-        "expected_model_output": "option_expression_plan",
-        "accepted_model_outputs": ("trading_guidance_record", "option_expression_plan", "expression_vector"),
-        "generator_entrypoint_ref": "trading-model/scripts/models/model_05_option_expression/generate_model_05_option_expression.py",
-        "invocation_policy": "conditional_after_unified_decision_or_option_applicability",
-    },
-    "residual_event_governance_component": {
-        "model_step": "M06",
-        "model_surface": "model_06_residual_event_governance",
-        "model_id": "residual_event_governance_model",
-        "expected_model_output": "event_risk_intervention",
-        "generator_entrypoint_ref": (
-            "trading-model/scripts/models/model_06_residual_event_governance/"
-            "generate_model_06_residual_event_governance.py"
+    "component_01_intake": {
+        "component_step": "C01",
+        "component_name": "Intake",
+        "required_model_surfaces": ("model_01_background_context", "model_02_target_state"),
+        "optional_model_surfaces": (),
+        "input_contracts": (
+            "background_context_state",
+            "target_context_state",
+            "account_sleeve_state_snapshot",
+            "position_state_snapshot",
         ),
-        "invocation_policy": "required_residual_event_governance_component",
+        "output_contracts": ("execution_intake_snapshot",),
+        "invocation_policy": "required_runtime_component",
+    },
+    "component_02_entry": {
+        "component_step": "C02",
+        "component_name": "Entry",
+        "required_model_surfaces": ("model_03_event_state", "model_04_unified_decision"),
+        "optional_model_surfaces": ("model_06_residual_event_governance",),
+        "input_contracts": ("execution_intake_snapshot", "event_state_vector", "unified_decision_vector"),
+        "output_contracts": ("entry_decision",),
+        "invocation_policy": "required_runtime_component_for_candidate_entries",
+    },
+    "component_03_lifecycle": {
+        "component_step": "C03",
+        "component_name": "Lifecycle",
+        "required_model_surfaces": ("model_03_event_state", "model_04_unified_decision"),
+        "optional_model_surfaces": ("model_06_residual_event_governance",),
+        "input_contracts": ("position_state_snapshot", "event_state_vector", "unified_decision_vector"),
+        "output_contracts": ("position_lifecycle_decision",),
+        "invocation_policy": "required_runtime_component_for_open_positions",
+    },
+    "component_04_option_review": {
+        "component_step": "C04",
+        "component_name": "Option Review",
+        "required_model_surfaces": (),
+        "optional_model_surfaces": ("model_05_option_expression", "model_06_residual_event_governance"),
+        "input_contracts": ("unified_decision_vector", "option_expression_plan"),
+        "output_contracts": ("option_reexpression_decision",),
+        "invocation_policy": "conditional_for_optionable_routes_or_held_options",
+    },
+    "component_05_order_intent": {
+        "component_step": "C05",
+        "component_name": "Order Intent",
+        "required_model_surfaces": (),
+        "optional_model_surfaces": (),
+        "input_contracts": (
+            "entry_decision",
+            "position_lifecycle_decision",
+            "option_reexpression_decision",
+            "trade_risk_cap",
+        ),
+        "output_contracts": ("execution_order_intent",),
+        "invocation_policy": "required_after_accepted_entry_lifecycle_or_option_decision",
+    },
+    "component_06_execution_gate": {
+        "component_step": "C06",
+        "component_name": "Execution Gate",
+        "required_model_surfaces": (),
+        "optional_model_surfaces": (),
+        "input_contracts": ("execution_order_intent", "agent_final_review"),
+        "output_contracts": ("execution_gate_result",),
+        "invocation_policy": "required_before_live_or_replay_execution_adapter",
+    },
+    "component_07_failure_review": {
+        "component_step": "C07",
+        "component_name": "Failure Review",
+        "required_model_surfaces": (),
+        "optional_model_surfaces": ("model_06_residual_event_governance",),
+        "input_contracts": ("observed_model_or_trade_failure", "event_risk_intervention"),
+        "output_contracts": ("failure_explanation_packet",),
+        "invocation_policy": "conditional_after_observed_failure_deviation_or_residual_event_risk",
     },
 }
 
@@ -100,27 +142,37 @@ ACCEPTED_DATASET_ROLES = ("fixture_replay", "forward_holdout", "shadow_monitorin
 
 @dataclass(frozen=True)
 class RealtimeDecisionComponentRoute:
-    """One current model component route prepared from execution input refs."""
+    """One C-runtime component route prepared from execution input refs."""
 
     contract_type: str
     route_plan_id: str
-    model_component: str
-    model_step: str
-    model_surface: str
-    model_id: str
-    expected_model_output: str
+    component_id: str
+    component_step: str
+    component_name: str
+    required_model_surfaces: tuple[str, ...]
+    optional_model_surfaces: tuple[str, ...]
+    input_contracts: tuple[str, ...]
+    output_contracts: tuple[str, ...]
     feature_ref: str
     upstream_context_refs: tuple[str, ...]
     frozen_model_config_ref: str
     historical_dataset_snapshot_ref: str
-    generator_entrypoint_ref: str
+    model_entrypoint_refs: tuple[str, ...]
     invocation_policy: str
     generation_mode: str
     route_status: str
 
     def summary_row(self) -> dict[str, Any]:
         row = asdict(self)
-        row["upstream_context_refs"] = list(self.upstream_context_refs)
+        for field in (
+            "required_model_surfaces",
+            "optional_model_surfaces",
+            "input_contracts",
+            "output_contracts",
+            "upstream_context_refs",
+            "model_entrypoint_refs",
+        ):
+            row[field] = list(row[field])
         return row
 
 
@@ -146,8 +198,14 @@ def _component_input_rows(candidate: Mapping[str, Any]) -> Any:
     return candidate.get("component_input_refs")
 
 
+def _tuple_of_strings(value: Any) -> tuple[str, ...]:
+    if not _is_sequence(value):
+        return ()
+    return tuple(str(item) for item in value if str(item))
+
+
 def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate the execution-side decision input envelope for component routing."""
+    """Validate the execution-side decision input envelope for C-component routing."""
 
     required = {
         "contract_type",
@@ -179,32 +237,33 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
             if not isinstance(row, Mapping):
                 row_errors.append(f"component_input_refs[{index}] must be an object")
                 continue
-            component = str(row.get("model_component") or "")
+            component = str(row.get("component_id") or row.get("model_component") or "")
             if component in rows_by_component:
                 row_errors.append(f"duplicate component input for {component}")
             if component:
                 rows_by_component[component] = row
             metadata = _COMPONENT_METADATA.get(component)
             if metadata is None:
-                row_errors.append(f"component_input_refs[{index}].model_component unknown: {component}")
+                row_errors.append(f"component_input_refs[{index}].component_id unknown: {component}")
                 continue
-            for field in (
-                "model_id",
-                "expected_model_output",
-                "feature_ref",
-                "frozen_model_config_ref",
-                "historical_dataset_snapshot_ref",
-            ):
+            for field in ("feature_ref", "frozen_model_config_ref", "historical_dataset_snapshot_ref"):
                 if not row.get(field):
                     row_errors.append(f"component_input_refs[{index}].{field} missing")
-            if row.get("model_id") and row.get("model_id") != metadata["model_id"]:
-                row_errors.append(f"component_input_refs[{index}].model_id mismatch for {component}")
-            accepted_outputs = metadata.get("accepted_model_outputs") or (metadata["expected_model_output"],)
-            if row.get("expected_model_output") and row.get("expected_model_output") not in accepted_outputs:
-                row_errors.append(f"component_input_refs[{index}].expected_model_output mismatch for {component}")
+            if row.get("component_step") and row.get("component_step") != metadata["component_step"]:
+                row_errors.append(f"component_input_refs[{index}].component_step mismatch for {component}")
+            if row.get("component_name") and row.get("component_name") != metadata["component_name"]:
+                row_errors.append(f"component_input_refs[{index}].component_name mismatch for {component}")
+            expected_required = tuple(metadata["required_model_surfaces"])
+            provided_required = _tuple_of_strings(row.get("required_model_surfaces"))
+            if provided_required and provided_required != expected_required:
+                row_errors.append(f"component_input_refs[{index}].required_model_surfaces mismatch for {component}")
+            expected_optional = tuple(metadata["optional_model_surfaces"])
+            provided_optional = _tuple_of_strings(row.get("optional_model_surfaces"))
+            if provided_optional and provided_optional != expected_optional:
+                row_errors.append(f"component_input_refs[{index}].optional_model_surfaces mismatch for {component}")
 
-    missing_components = sorted(set(REQUIRED_MODEL_COMPONENT_ORDER) - set(rows_by_component))
-    missing_optional_components = sorted(set(OPTIONAL_MODEL_COMPONENT_ORDER) - set(rows_by_component))
+    missing_components = sorted(set(REQUIRED_RUNTIME_COMPONENT_ORDER) - set(rows_by_component))
+    missing_optional_components = sorted(set(OPTIONAL_RUNTIME_COMPONENT_ORDER) - set(rows_by_component))
     valid = (
         not missing_fields
         and contract_type_valid
@@ -226,7 +285,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
         "missing_components": missing_components,
         "missing_optional_components": missing_optional_components,
         "row_errors": row_errors,
-        "execution_unit": "component",
+        "execution_unit": "runtime_component",
         "provider_calls_performed": 0,
         "model_activation_performed": False,
         "broker_calls_performed": 0,
@@ -235,7 +294,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
 
 
 def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, Any]:
-    """Build a model-side component route plan from an execution snapshot."""
+    """Build a model-side C-component route plan from an execution snapshot."""
 
     snapshot = request.get("decision_input_snapshot") or request
     if not isinstance(snapshot, Mapping):
@@ -258,40 +317,43 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
         )
     )
     rows_by_component = {
-        str(row.get("model_component")): row
+        str(row.get("component_id") or row.get("model_component")): row
         for row in _component_input_rows(snapshot) or []
-        if isinstance(row, Mapping) and row.get("model_component")
+        if isinstance(row, Mapping) and (row.get("component_id") or row.get("model_component"))
     }
     routes: list[RealtimeDecisionComponentRoute] = []
-    for component in MODEL_COMPONENT_ORDER:
+    for component in RUNTIME_COMPONENT_ORDER:
         row = rows_by_component.get(component)
         if not row:
             continue
         metadata = _COMPONENT_METADATA[component]
+        model_surfaces = tuple(metadata["required_model_surfaces"]) + tuple(metadata["optional_model_surfaces"])
         routes.append(
             RealtimeDecisionComponentRoute(
                 contract_type="model_realtime_decision_component_route",
                 route_plan_id=route_plan_id,
-                model_component=component,
-                model_step=metadata["model_step"],
-                model_surface=metadata["model_surface"],
-                model_id=metadata["model_id"],
-                expected_model_output=str(row.get("expected_model_output") or metadata["expected_model_output"]),
+                component_id=component,
+                component_step=metadata["component_step"],
+                component_name=metadata["component_name"],
+                required_model_surfaces=tuple(metadata["required_model_surfaces"]),
+                optional_model_surfaces=tuple(metadata["optional_model_surfaces"]),
+                input_contracts=tuple(metadata["input_contracts"]),
+                output_contracts=tuple(metadata["output_contracts"]),
                 feature_ref=str(row.get("feature_ref") or ""),
                 upstream_context_refs=tuple(row.get("upstream_context_refs") or ()),
                 frozen_model_config_ref=str(row.get("frozen_model_config_ref") or snapshot.get("frozen_model_config_ref") or ""),
                 historical_dataset_snapshot_ref=str(
                     row.get("historical_dataset_snapshot_ref") or snapshot.get("historical_dataset_snapshot_ref") or ""
                 ),
-                generator_entrypoint_ref=metadata["generator_entrypoint_ref"],
+                model_entrypoint_refs=tuple(_MODEL_ENTRYPOINTS[surface] for surface in model_surfaces),
                 invocation_policy=metadata["invocation_policy"],
                 generation_mode=mode,
                 route_status="ready_for_fixture_shadow_generation" if validation["valid"] else "blocked_input_validation_failed",
             )
         )
 
-    routed_components = {route.model_component for route in routes}
-    ready = validation["valid"] and set(REQUIRED_MODEL_COMPONENT_ORDER).issubset(routed_components)
+    routed_components = {route.component_id for route in routes}
+    ready = validation["valid"] and set(REQUIRED_RUNTIME_COMPONENT_ORDER).issubset(routed_components)
     return {
         "contract_type": "model_realtime_decision_route_plan",
         "route_plan_id": route_plan_id,
@@ -299,10 +361,10 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
         "decision_time": snapshot.get("decision_time"),
         "instrument_ref": snapshot.get("instrument_ref"),
         "handoff_mode": mode,
-        "execution_unit": "component",
+        "execution_unit": "runtime_component",
         "input_validation": validation,
         "component_routes": [route.summary_row() for route in routes],
-        "readiness_status": "ready_for_fixture_shadow_component_route" if ready else "blocked_realtime_decision_input_validation",
+        "readiness_status": "ready_for_fixture_shadow_runtime_component_route" if ready else "blocked_realtime_decision_input_validation",
         "provider_calls_performed": 0,
         "model_activation_performed": False,
         "production_decision_activation_performed": False,
@@ -310,14 +372,15 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
         "broker_order_construction_performed": False,
         "account_mutation_performed": False,
         "boundary_note": (
-            "This plan validates and routes current model component refs only. It does not execute model generators, "
-            "activate production configs, persist outputs, call providers, construct broker orders, or mutate accounts."
+            "This plan validates and routes accepted execution runtime component refs only. It does not execute model "
+            "generators, activate production configs, persist outputs, call providers, construct broker orders, or "
+            "mutate accounts."
         ),
     }
 
 
 def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[str, Any]:
-    """Validate the model-side realtime/replay component route plan."""
+    """Validate the model-side realtime/replay C-component route plan."""
 
     required = {
         "contract_type",
@@ -334,7 +397,7 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
     missing_fields = sorted(required - present)
     contract_type_valid = candidate.get("contract_type") == "model_realtime_decision_route_plan"
     handoff_mode_valid = candidate.get("handoff_mode") in ACCEPTED_HANDOFF_MODES
-    execution_unit_valid = candidate.get("execution_unit") == "component"
+    execution_unit_valid = candidate.get("execution_unit") == "runtime_component"
     input_validation = candidate.get("input_validation") or {}
     input_valid = bool(input_validation.get("valid")) if isinstance(input_validation, Mapping) else False
     routes = candidate.get("component_routes") or []
@@ -347,37 +410,44 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
             if not isinstance(row, Mapping):
                 row_errors.append(f"component_routes[{index}] must be an object")
                 continue
-            component = str(row.get("model_component") or "")
+            component = str(row.get("component_id") or "")
             metadata = _COMPONENT_METADATA.get(component)
             if metadata is None:
-                row_errors.append(f"component_routes[{index}].model_component unknown: {component}")
+                row_errors.append(f"component_routes[{index}].component_id unknown: {component}")
                 continue
             component_set.add(component)
             for field in (
-                "model_step",
-                "model_surface",
-                "model_id",
-                "expected_model_output",
+                "component_step",
+                "component_name",
+                "required_model_surfaces",
+                "optional_model_surfaces",
+                "input_contracts",
+                "output_contracts",
                 "feature_ref",
-                "generator_entrypoint_ref",
+                "model_entrypoint_refs",
                 "invocation_policy",
                 "generation_mode",
             ):
-                if not row.get(field):
+                if field not in row or row.get(field) in (None, "", []):
+                    if field in {"required_model_surfaces", "optional_model_surfaces", "model_entrypoint_refs"}:
+                        continue
                     row_errors.append(f"component_routes[{index}].{field} missing")
-            if row.get("model_step") and row.get("model_step") != metadata["model_step"]:
-                row_errors.append(f"component_routes[{index}].model_step mismatch for {component}")
-            if row.get("model_surface") and row.get("model_surface") != metadata["model_surface"]:
-                row_errors.append(f"component_routes[{index}].model_surface mismatch for {component}")
-            if row.get("model_id") and row.get("model_id") != metadata["model_id"]:
-                row_errors.append(f"component_routes[{index}].model_id mismatch for {component}")
-            accepted_outputs = metadata.get("accepted_model_outputs") or (metadata["expected_model_output"],)
-            if row.get("expected_model_output") and row.get("expected_model_output") not in accepted_outputs:
-                row_errors.append(f"component_routes[{index}].expected_model_output mismatch for {component}")
-            if row.get("generator_entrypoint_ref") != metadata["generator_entrypoint_ref"]:
-                row_errors.append(f"component_routes[{index}].generator_entrypoint_ref mismatch for {component}")
-    missing_components = sorted(set(REQUIRED_MODEL_COMPONENT_ORDER) - component_set)
-    missing_optional_components = sorted(set(OPTIONAL_MODEL_COMPONENT_ORDER) - component_set)
+            if row.get("component_step") and row.get("component_step") != metadata["component_step"]:
+                row_errors.append(f"component_routes[{index}].component_step mismatch for {component}")
+            if row.get("component_name") and row.get("component_name") != metadata["component_name"]:
+                row_errors.append(f"component_routes[{index}].component_name mismatch for {component}")
+            if _tuple_of_strings(row.get("required_model_surfaces")) != tuple(metadata["required_model_surfaces"]):
+                row_errors.append(f"component_routes[{index}].required_model_surfaces mismatch for {component}")
+            if _tuple_of_strings(row.get("optional_model_surfaces")) != tuple(metadata["optional_model_surfaces"]):
+                row_errors.append(f"component_routes[{index}].optional_model_surfaces mismatch for {component}")
+            expected_entrypoints = tuple(
+                _MODEL_ENTRYPOINTS[surface]
+                for surface in tuple(metadata["required_model_surfaces"]) + tuple(metadata["optional_model_surfaces"])
+            )
+            if _tuple_of_strings(row.get("model_entrypoint_refs")) != expected_entrypoints:
+                row_errors.append(f"component_routes[{index}].model_entrypoint_refs mismatch for {component}")
+    missing_components = sorted(set(REQUIRED_RUNTIME_COMPONENT_ORDER) - component_set)
+    missing_optional_components = sorted(set(OPTIONAL_RUNTIME_COMPONENT_ORDER) - component_set)
     valid = (
         not missing_fields
         and contract_type_valid
@@ -410,9 +480,9 @@ __all__ = [
     "ACCEPTED_HANDOFF_MODES",
     "ACCEPTED_DATASET_ROLES",
     "FORBIDDEN_HANDOFF_ACTIONS",
-    "MODEL_COMPONENT_ORDER",
-    "OPTIONAL_MODEL_COMPONENT_ORDER",
-    "REQUIRED_MODEL_COMPONENT_ORDER",
+    "OPTIONAL_RUNTIME_COMPONENT_ORDER",
+    "REQUIRED_RUNTIME_COMPONENT_ORDER",
+    "RUNTIME_COMPONENT_ORDER",
     "RealtimeDecisionComponentRoute",
     "build_realtime_decision_route_plan",
     "validate_execution_model_decision_input_snapshot",
