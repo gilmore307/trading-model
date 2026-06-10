@@ -5,6 +5,7 @@ This is the active model task ledger. Keep it operational and tied to current ga
 ## Active Tasks
 
 - Six-model implementation lane: deterministic current pilots are present for `M01 Background Context`, `M02 Target State`, `M03 Event State`, `M04 Unified Decision`, `M05 Option Expression`, and `M06 Residual Event Governance`. Retired ten-layer packages/scripts may be used as source material only; new current work should target the six model contracts.
+- Current chain runner: `scripts/models/run_current_model_chain.py` executes the M01-M06 deterministic fixture route, emits `current_model_chain_receipt`, verifies handoff refs, label-leakage checks, and retired-field absence, and always keeps activation/promotion disallowed.
 - M01-M03 implementation pilots: deterministic background-context, target-state, and event-state generation/evaluation/review scripts are present under `scripts/models/model_01_background_context/`, `scripts/models/model_02_target_state/`, and `scripts/models/model_03_event_state/`. Remaining work is real point-in-time dataset assembly, labels, baselines, stability/leakage/calibration evidence, and promotion packages.
 - M04 implementation pilot: deterministic `UnifiedDecisionModel` generation is present under `src/models/model_04_unified_decision/` with a current script at `scripts/models/model_04_unified_decision/generate_model_04_unified_decision.py`. Remaining M04 work is real point-in-time dataset assembly, direct utility labels, walk-forward replay, no-trade calibration, cost/fill sensitivity, leakage checks, and promotion evidence.
 - M05 implementation pilot: deterministic `OptionExpressionModel` generation is present under `src/models/model_05_option_expression/` with current generate/evaluate/review scripts under `scripts/models/model_05_option_expression/`. It consumes current M04 `direct_underlying_intent`; remaining M05 work is option-chain replay labels, cost/fill/theta/IV validation, baseline evidence, leakage checks, calibration, and promotion evidence.
@@ -23,7 +24,7 @@ The six model contracts have accepted boundaries, learning roles, and determinis
 
 These are run/evidence requirements for promotion readiness, not open model-design work items:
 
-- M01-M06 require point-in-time datasets, labels, real evaluation metrics, baseline/stability/leakage/calibration evidence, and manager-side `model_promotion_review` requests before any promotion approval can be considered.
+- The current chain runner is a local contract smoke gate only. M01-M06 still require point-in-time datasets, labels, real evaluation metrics, baseline/stability/leakage/calibration evidence, and manager-side `model_promotion_review` requests before any promotion approval can be considered.
 - Missing evidence or failed gates must remain deferred/rejected and must not create runtime activation records or move production pointers.
 
 ## Not Current Historical-Training Scope

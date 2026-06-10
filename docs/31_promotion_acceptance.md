@@ -18,6 +18,8 @@ No current six-model contract is production-promoted by this acceptance evidence
 
 Durable promotion requests, review decisions, activation, rollback, and production pointers belong in `trading-manager` through the unified `model_promotion_review` path.
 
+The local current-chain runner emits `current_model_chain_receipt` for fixture smoke evidence only. A passed receipt proves current-contract handoffs, label-leakage checks, and retired-field absence for the deterministic pilot path; it does not approve production promotion.
+
 ## Current Readiness Receipt
 
 | Model | Evidence state | Current status | Activation |
@@ -28,6 +30,12 @@ Durable promotion requests, review decisions, activation, rollback, and producti
 | `model_04_unified_decision` | deterministic unified decision pilot present; real replay/evaluation evidence missing | deferred | local fixture only |
 | `model_05_option_expression` | deterministic M04-intent option-expression implementation present; real replay/evaluation evidence missing | deferred | local fixture only |
 | `model_06_residual_event_governance` | deterministic M04/M05-thesis residual-governance implementation present; real evaluation evidence missing | deferred | local fixture only |
+
+The current-chain receipt gate is available through:
+
+```text
+scripts/models/run_current_model_chain.py --receipt-only
+```
 
 ## Migration Evidence
 

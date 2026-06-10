@@ -18,6 +18,8 @@ Date: 2026-06-10
 
 This closes the model-design re-scope to six model contracts and provides deterministic pilots for every current model surface. It does not approve production promotion and does not claim that every retired ten-layer implementation surface has already been migrated into production-grade evidence.
 
+`current_model_chain_receipt` is the local smoke-evidence contract for the deterministic M01-M06 route. It verifies current handoff refs, label-leakage checks, and retired-field absence, while explicitly disallowing production activation and promotion.
+
 Retired packages and scripts named `model_01_market_regime` through `model_10_event_risk_governor` are no longer current model contracts. They may be used only as migration-source implementation surfaces until their behavior is moved into the six accepted contracts.
 
 ## Event-Governance Acceptance
