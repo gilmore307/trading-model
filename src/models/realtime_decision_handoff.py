@@ -10,6 +10,7 @@ persist outputs, call providers, or authorize execution.
 
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from hashlib import sha256
@@ -19,7 +20,7 @@ RUNTIME_COMPONENT_ORDER = (
     "component_01_intake",
     "component_02_entry",
     "component_03_lifecycle",
-    "component_04_option_review",
+    "component_04_expression_review",
     "component_05_order_intent",
     "component_06_execution_gate",
     "component_07_failure_review",
@@ -32,7 +33,7 @@ REQUIRED_RUNTIME_COMPONENT_ORDER = (
     "component_06_execution_gate",
 )
 OPTIONAL_RUNTIME_COMPONENT_ORDER = (
-    "component_04_option_review",
+    "component_04_expression_review",
     "component_07_failure_review",
 )
 
@@ -46,82 +47,6 @@ _MODEL_ENTRYPOINTS = {
         "trading-model/scripts/models/model_06_residual_event_governance/"
         "generate_model_06_residual_event_governance.py"
     ),
-}
-
-_COMPONENT_METADATA = {
-    "component_01_intake": {
-        "component_step": "C01",
-        "component_name": "Intake",
-        "required_model_surfaces": ("model_01_background_context", "model_02_target_state"),
-        "optional_model_surfaces": (),
-        "input_contracts": (
-            "background_context_state",
-            "target_context_state",
-            "account_sleeve_state_snapshot",
-            "position_state_snapshot",
-        ),
-        "output_contracts": ("execution_intake_snapshot",),
-        "invocation_policy": "required_runtime_component",
-    },
-    "component_02_entry": {
-        "component_step": "C02",
-        "component_name": "Entry",
-        "required_model_surfaces": ("model_03_event_state", "model_04_unified_decision"),
-        "optional_model_surfaces": ("model_06_residual_event_governance",),
-        "input_contracts": ("execution_intake_snapshot", "event_state_vector", "unified_decision_vector"),
-        "output_contracts": ("entry_decision",),
-        "invocation_policy": "required_runtime_component_for_candidate_entries",
-    },
-    "component_03_lifecycle": {
-        "component_step": "C03",
-        "component_name": "Lifecycle",
-        "required_model_surfaces": ("model_03_event_state", "model_04_unified_decision"),
-        "optional_model_surfaces": ("model_06_residual_event_governance",),
-        "input_contracts": ("position_state_snapshot", "event_state_vector", "unified_decision_vector"),
-        "output_contracts": ("position_lifecycle_decision",),
-        "invocation_policy": "required_runtime_component_for_open_positions",
-    },
-    "component_04_option_review": {
-        "component_step": "C04",
-        "component_name": "Option Review",
-        "required_model_surfaces": (),
-        "optional_model_surfaces": ("model_05_option_expression", "model_06_residual_event_governance"),
-        "input_contracts": ("unified_decision_vector", "option_expression_plan"),
-        "output_contracts": ("option_reexpression_decision",),
-        "invocation_policy": "conditional_for_optionable_routes_or_held_options",
-    },
-    "component_05_order_intent": {
-        "component_step": "C05",
-        "component_name": "Order Intent",
-        "required_model_surfaces": (),
-        "optional_model_surfaces": (),
-        "input_contracts": (
-            "entry_decision",
-            "position_lifecycle_decision",
-            "option_reexpression_decision",
-            "trade_risk_cap",
-        ),
-        "output_contracts": ("execution_order_intent",),
-        "invocation_policy": "required_after_accepted_entry_lifecycle_or_option_decision",
-    },
-    "component_06_execution_gate": {
-        "component_step": "C06",
-        "component_name": "Execution Gate",
-        "required_model_surfaces": (),
-        "optional_model_surfaces": (),
-        "input_contracts": ("execution_order_intent", "agent_final_review"),
-        "output_contracts": ("execution_gate_result",),
-        "invocation_policy": "required_before_live_or_replay_execution_adapter",
-    },
-    "component_07_failure_review": {
-        "component_step": "C07",
-        "component_name": "Failure Review",
-        "required_model_surfaces": (),
-        "optional_model_surfaces": ("model_06_residual_event_governance",),
-        "input_contracts": ("observed_model_or_trade_failure", "event_risk_intervention"),
-        "output_contracts": ("failure_explanation_packet",),
-        "invocation_policy": "conditional_after_observed_failure_deviation_or_residual_event_risk",
-    },
 }
 
 FORBIDDEN_HANDOFF_ACTIONS = (
@@ -138,6 +63,8 @@ FORBIDDEN_HANDOFF_ACTIONS = (
 
 ACCEPTED_HANDOFF_MODES = ("fixture_replay", "shadow_monitoring")
 ACCEPTED_DATASET_ROLES = ("fixture_replay", "forward_holdout", "shadow_monitoring")
+ACCEPTED_RUNTIME_COMPONENT_MANIFEST_VERSION = "2026-06-10"
+ACCEPTED_RUNTIME_COMPONENT_MANIFEST_CHECKSUM = "26b12b0a98793df3"
 
 
 @dataclass(frozen=True)
@@ -204,6 +131,100 @@ def _tuple_of_strings(value: Any) -> tuple[str, ...]:
     return tuple(str(item) for item in value if str(item))
 
 
+def _manifest_checksum_valid(manifest: Mapping[str, Any]) -> bool:
+    expected = str(manifest.get("manifest_checksum") or "")
+    payload = dict(manifest)
+    payload.pop("manifest_checksum", None)
+    digest = sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()[:16]
+    return bool(expected) and digest == expected
+
+
+def _validate_runtime_component_manifest(manifest: Any) -> dict[str, Any]:
+    """Validate the execution-owned runtime component manifest carried by the snapshot."""
+
+    errors: list[str] = []
+    if not isinstance(manifest, Mapping):
+        return {
+            "valid": False,
+            "errors": ["runtime_component_manifest must be an object"],
+            "component_order": (),
+            "required_component_order": (),
+            "optional_component_order": (),
+            "components_by_id": {},
+        }
+    if manifest.get("contract_type") != "execution_runtime_component_manifest":
+        errors.append("runtime_component_manifest contract_type invalid")
+    if not manifest.get("manifest_version"):
+        errors.append("runtime_component_manifest manifest_version missing")
+    elif manifest.get("manifest_version") != ACCEPTED_RUNTIME_COMPONENT_MANIFEST_VERSION:
+        errors.append("runtime_component_manifest manifest_version is not the accepted current version")
+    if manifest.get("manifest_checksum") != ACCEPTED_RUNTIME_COMPONENT_MANIFEST_CHECKSUM:
+        errors.append("runtime_component_manifest manifest_checksum is not the accepted current checksum")
+    if not _manifest_checksum_valid(manifest):
+        errors.append("runtime_component_manifest manifest_checksum invalid")
+    component_order = _tuple_of_strings(manifest.get("component_order"))
+    required_component_order = _tuple_of_strings(manifest.get("required_component_order"))
+    optional_component_order = _tuple_of_strings(manifest.get("optional_component_order"))
+    if not component_order:
+        errors.append("runtime_component_manifest component_order missing")
+    elif component_order != RUNTIME_COMPONENT_ORDER:
+        errors.append("runtime_component_manifest component_order is not the accepted current order")
+    if not required_component_order:
+        errors.append("runtime_component_manifest required_component_order missing")
+    elif required_component_order != REQUIRED_RUNTIME_COMPONENT_ORDER:
+        errors.append("runtime_component_manifest required_component_order is not the accepted current required order")
+    if optional_component_order != OPTIONAL_RUNTIME_COMPONENT_ORDER:
+        errors.append("runtime_component_manifest optional_component_order is not the accepted current optional order")
+    components = manifest.get("components") or []
+    components_by_id: dict[str, Mapping[str, Any]] = {}
+    if not _is_sequence(components):
+        errors.append("runtime_component_manifest components must be a list")
+    else:
+        for index, row in enumerate(components):
+            if not isinstance(row, Mapping):
+                errors.append(f"runtime_component_manifest.components[{index}] must be an object")
+                continue
+            component_id = str(row.get("component_id") or "")
+            if not component_id:
+                errors.append(f"runtime_component_manifest.components[{index}].component_id missing")
+                continue
+            if component_id in components_by_id:
+                errors.append(f"duplicate runtime component manifest row for {component_id}")
+            components_by_id[component_id] = row
+            for forbidden in ("called_model_layers", "layer_10_policy"):
+                if forbidden in row:
+                    errors.append(f"runtime_component_manifest.components[{index}].{forbidden} forbidden")
+            for field in (
+                "component_step",
+                "component_name",
+                "required_model_surfaces",
+                "optional_model_surfaces",
+                "input_contracts",
+                "output_contracts",
+                "live_invocation_policy",
+                "replay_invocation_policy",
+                "skip_degrade_policy",
+            ):
+                if field not in row:
+                    errors.append(f"runtime_component_manifest.components[{index}].{field} missing")
+            for surface in _tuple_of_strings(row.get("required_model_surfaces")) + _tuple_of_strings(
+                row.get("optional_model_surfaces")
+            ):
+                if surface not in _MODEL_ENTRYPOINTS:
+                    errors.append(f"runtime_component_manifest.components[{index}] unknown model surface {surface}")
+    missing_component_manifest_rows = sorted(set(component_order) - set(components_by_id))
+    if missing_component_manifest_rows:
+        errors.append(f"runtime_component_manifest missing component rows: {', '.join(missing_component_manifest_rows)}")
+    return {
+        "valid": not errors,
+        "errors": errors,
+        "component_order": component_order,
+        "required_component_order": required_component_order,
+        "optional_component_order": optional_component_order,
+        "components_by_id": components_by_id,
+    }
+
+
 def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any]) -> dict[str, Any]:
     """Validate the execution-side decision input envelope for C-component routing."""
 
@@ -216,6 +237,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
         "historical_dataset_snapshot_ref",
         "frozen_model_config_ref",
         "realtime_feature_snapshot_ref",
+        "runtime_component_manifest",
         "component_input_refs",
     }
     present = {key for key, value in candidate.items() if value not in (None, "", [], {})}
@@ -229,6 +251,10 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
     rows = _component_input_rows(candidate) or []
     row_errors: list[str] = []
     rows_by_component: dict[str, Mapping[str, Any]] = {}
+    manifest_validation = _validate_runtime_component_manifest(candidate.get("runtime_component_manifest"))
+    components_by_id: dict[str, Mapping[str, Any]] = dict(manifest_validation["components_by_id"])
+    required_component_order = tuple(manifest_validation["required_component_order"])
+    optional_component_order = tuple(manifest_validation["optional_component_order"])
 
     if not _is_sequence(rows):
         row_errors.append("component_input_refs must be a list")
@@ -242,7 +268,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
                 row_errors.append(f"duplicate component input for {component}")
             if component:
                 rows_by_component[component] = row
-            metadata = _COMPONENT_METADATA.get(component)
+            metadata = components_by_id.get(component)
             if metadata is None:
                 row_errors.append(f"component_input_refs[{index}].component_id unknown: {component}")
                 continue
@@ -261,15 +287,19 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
             provided_optional = _tuple_of_strings(row.get("optional_model_surfaces"))
             if provided_optional and provided_optional != expected_optional:
                 row_errors.append(f"component_input_refs[{index}].optional_model_surfaces mismatch for {component}")
+            for forbidden in ("called_model_layers", "layer_10_policy"):
+                if forbidden in row:
+                    row_errors.append(f"component_input_refs[{index}].{forbidden} forbidden")
 
-    missing_components = sorted(set(REQUIRED_RUNTIME_COMPONENT_ORDER) - set(rows_by_component))
-    missing_optional_components = sorted(set(OPTIONAL_RUNTIME_COMPONENT_ORDER) - set(rows_by_component))
+    missing_components = sorted(set(required_component_order) - set(rows_by_component))
+    missing_optional_components = sorted(set(optional_component_order) - set(rows_by_component))
     valid = (
         not missing_fields
         and contract_type_valid
         and decision_time_valid
         and dataset_role_valid
         and not forbidden_actions_present
+        and manifest_validation["valid"]
         and not row_errors
         and not missing_components
     )
@@ -282,6 +312,8 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
         "decision_time_valid": decision_time_valid,
         "dataset_role_valid": dataset_role_valid,
         "forbidden_actions_present": forbidden_actions_present,
+        "runtime_component_manifest_valid": manifest_validation["valid"],
+        "runtime_component_manifest_errors": manifest_validation["errors"],
         "missing_components": missing_components,
         "missing_optional_components": missing_optional_components,
         "row_errors": row_errors,
@@ -321,13 +353,21 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
         for row in _component_input_rows(snapshot) or []
         if isinstance(row, Mapping) and (row.get("component_id") or row.get("model_component"))
     }
+    manifest = snapshot.get("runtime_component_manifest") or {}
+    manifest_validation = _validate_runtime_component_manifest(manifest)
+    components_by_id: dict[str, Mapping[str, Any]] = dict(manifest_validation["components_by_id"])
+    component_order = tuple(manifest_validation["component_order"]) or RUNTIME_COMPONENT_ORDER
+    required_component_order = tuple(manifest_validation["required_component_order"]) or REQUIRED_RUNTIME_COMPONENT_ORDER
     routes: list[RealtimeDecisionComponentRoute] = []
-    for component in RUNTIME_COMPONENT_ORDER:
+    for component in component_order:
         row = rows_by_component.get(component)
         if not row:
             continue
-        metadata = _COMPONENT_METADATA[component]
+        if component not in components_by_id:
+            continue
+        metadata = components_by_id[component]
         model_surfaces = tuple(metadata["required_model_surfaces"]) + tuple(metadata["optional_model_surfaces"])
+        invocation_policy_field = "replay_invocation_policy" if mode == "fixture_replay" else "live_invocation_policy"
         routes.append(
             RealtimeDecisionComponentRoute(
                 contract_type="model_realtime_decision_component_route",
@@ -346,14 +386,14 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
                     row.get("historical_dataset_snapshot_ref") or snapshot.get("historical_dataset_snapshot_ref") or ""
                 ),
                 model_entrypoint_refs=tuple(_MODEL_ENTRYPOINTS[surface] for surface in model_surfaces),
-                invocation_policy=metadata["invocation_policy"],
+                invocation_policy=str(metadata.get(invocation_policy_field) or metadata.get("live_invocation_policy") or ""),
                 generation_mode=mode,
                 route_status="ready_for_fixture_shadow_generation" if validation["valid"] else "blocked_input_validation_failed",
             )
         )
 
     routed_components = {route.component_id for route in routes}
-    ready = validation["valid"] and set(REQUIRED_RUNTIME_COMPONENT_ORDER).issubset(routed_components)
+    ready = validation["valid"] and set(required_component_order).issubset(routed_components)
     return {
         "contract_type": "model_realtime_decision_route_plan",
         "route_plan_id": route_plan_id,
@@ -362,6 +402,7 @@ def build_realtime_decision_route_plan(request: Mapping[str, Any]) -> dict[str, 
         "instrument_ref": snapshot.get("instrument_ref"),
         "handoff_mode": mode,
         "execution_unit": "runtime_component",
+        "runtime_component_manifest": manifest,
         "input_validation": validation,
         "component_routes": [route.summary_row() for route in routes],
         "readiness_status": "ready_for_fixture_shadow_runtime_component_route" if ready else "blocked_realtime_decision_input_validation",
@@ -390,6 +431,7 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
         "instrument_ref",
         "handoff_mode",
         "execution_unit",
+        "runtime_component_manifest",
         "input_validation",
         "component_routes",
     }
@@ -400,6 +442,10 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
     execution_unit_valid = candidate.get("execution_unit") == "runtime_component"
     input_validation = candidate.get("input_validation") or {}
     input_valid = bool(input_validation.get("valid")) if isinstance(input_validation, Mapping) else False
+    manifest_validation = _validate_runtime_component_manifest(candidate.get("runtime_component_manifest"))
+    components_by_id: dict[str, Mapping[str, Any]] = dict(manifest_validation["components_by_id"])
+    required_component_order = tuple(manifest_validation["required_component_order"])
+    optional_component_order = tuple(manifest_validation["optional_component_order"])
     routes = candidate.get("component_routes") or []
     row_errors: list[str] = []
     component_set: set[str] = set()
@@ -411,7 +457,7 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
                 row_errors.append(f"component_routes[{index}] must be an object")
                 continue
             component = str(row.get("component_id") or "")
-            metadata = _COMPONENT_METADATA.get(component)
+            metadata = components_by_id.get(component)
             if metadata is None:
                 row_errors.append(f"component_routes[{index}].component_id unknown: {component}")
                 continue
@@ -446,14 +492,15 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
             )
             if _tuple_of_strings(row.get("model_entrypoint_refs")) != expected_entrypoints:
                 row_errors.append(f"component_routes[{index}].model_entrypoint_refs mismatch for {component}")
-    missing_components = sorted(set(REQUIRED_RUNTIME_COMPONENT_ORDER) - component_set)
-    missing_optional_components = sorted(set(OPTIONAL_RUNTIME_COMPONENT_ORDER) - component_set)
+    missing_components = sorted(set(required_component_order) - component_set)
+    missing_optional_components = sorted(set(optional_component_order) - component_set)
     valid = (
         not missing_fields
         and contract_type_valid
         and handoff_mode_valid
         and execution_unit_valid
         and input_valid
+        and manifest_validation["valid"]
         and not row_errors
         and not missing_components
     )
@@ -466,6 +513,8 @@ def validate_realtime_decision_route_plan(candidate: Mapping[str, Any]) -> dict[
         "handoff_mode_valid": handoff_mode_valid,
         "execution_unit_valid": execution_unit_valid,
         "input_valid": input_valid,
+        "runtime_component_manifest_valid": manifest_validation["valid"],
+        "runtime_component_manifest_errors": manifest_validation["errors"],
         "missing_components": missing_components,
         "missing_optional_components": missing_optional_components,
         "row_errors": row_errors,

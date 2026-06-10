@@ -19,7 +19,12 @@ trading-execution realtime capture
   -> fixture/shadow historical-model generation route
 ```
 
-`model_realtime_decision_route_plan` is a route plan, not a model output. Its execution unit is the accepted execution runtime component (`C01`, `C02`, and so on), not a retired ten-layer route and not a model contract renamed as a component. It validates required runtime-component input refs, records the current M01-M06 model surfaces each component may need, and records the handoff mode. Direct-underlying routes must not require C04 option review or M05 option-expression refs.
+`model_realtime_decision_route_plan` is a route plan, not a model output. Its execution unit is the accepted execution runtime component (`C01`, `C02`, and so on), not a retired ten-layer route and not a model contract renamed as a component. It validates required runtime-component input refs, records the current M01-M06 model surfaces each component may need, and records the handoff mode. Direct-underlying routes must not require M05 option-expression refs; C04 Expression Review may emit a direct-underlying pass-through or not-option-applicable state.
+
+The execution-side `runtime_component_manifest` is the authoritative component
+catalog for this handoff. `trading-model` validates the manifest carried by the
+snapshot and derives component route metadata from it; it does not own a
+separate component graph.
 
 Accepted handoff modes:
 
@@ -36,6 +41,7 @@ The model-side planner consumes an `execution_model_decision_input_snapshot` obj
 - `historical_dataset_snapshot_ref`
 - `frozen_model_config_ref`
 - `realtime_feature_snapshot_ref`
+- `runtime_component_manifest`
 - `component_input_refs`
 - exactly one required component input for `C01`, `C02`, `C03`, `C05`, and `C06`
 - zero or one optional component input for `C04` and `C07`
@@ -49,7 +55,7 @@ Each component input must include the execution `component_id`, feature ref, fro
 | `component_01_intake` / `C01 Intake` | `model_01_background_context`, `model_02_target_state` | none | required runtime component |
 | `component_02_entry` / `C02 Entry` | `model_03_event_state`, `model_04_unified_decision` | `model_06_residual_event_governance` | required for candidate entries |
 | `component_03_lifecycle` / `C03 Lifecycle` | `model_03_event_state`, `model_04_unified_decision` | `model_06_residual_event_governance` | required for open positions |
-| `component_04_option_review` / `C04 Option Review` | none | `model_05_option_expression`, `model_06_residual_event_governance` | conditional for optionable routes or held options |
+| `component_04_expression_review` / `C04 Expression Review` | none | `model_05_option_expression`, `model_06_residual_event_governance` | conditional for optionable routes, held options, or direct-underlying pass-through |
 | `component_05_order_intent` / `C05 Order Intent` | none | none | required after an accepted entry, lifecycle, or option decision |
 | `component_06_execution_gate` / `C06 Execution Gate` | none | none | required before live or replay execution adapter |
 | `component_07_failure_review` / `C07 Failure Review` | none | `model_06_residual_event_governance` | conditional after observed failure, deviation, or residual event risk |

@@ -852,9 +852,20 @@ Production model activation, durable decision records, promotion approval, and e
 Date: 2026-06-10
 Status: Accepted
 
-Live and replay execution are routed through the existing execution runtime components, not model-layer-routed and not through model contracts renamed as components. After the six-model redesign, `model_realtime_decision_route_plan` validates and emits `component_routes` with `execution_unit = runtime_component`.
+Live and replay execution are routed through the execution runtime component
+manifest, not model-layer-routed and not through model contracts renamed as
+components. After the six-model redesign, `model_realtime_decision_route_plan`
+validates the execution-supplied `runtime_component_manifest` and emits
+`component_routes` with `execution_unit = runtime_component`.
 
-Required runtime components are `component_01_intake`, `component_02_entry`, `component_03_lifecycle`, `component_05_order_intent`, and `component_06_execution_gate`. `component_04_option_review` and `component_07_failure_review` are conditional. The route plan lists the current M01-M06 model surfaces each component may need; M05 remains conditional for optionable routes or held options, while historical training/evaluation still preserves full-minute no-option and not-option-applicable state coverage.
+Required runtime components are `component_01_intake`, `component_02_entry`,
+`component_03_lifecycle`, `component_05_order_intent`, and
+`component_06_execution_gate`. `component_04_expression_review` and
+`component_07_failure_review` are conditional. The route plan lists the current
+M01-M06 model surfaces each component may need; M05 remains conditional for
+optionable routes, held options, or direct-underlying pass-through, while
+historical training/evaluation still preserves full-minute no-option and
+not-option-applicable state coverage.
 
 Retired Layer 1-10 route plans are migration-source evidence only and are not the current realtime/replay execution contract. The runtime-component route plan still does not run generators, activate production configs, persist durable manager decisions, construct orders, call providers, or mutate accounts.
 

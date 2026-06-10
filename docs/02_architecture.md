@@ -78,7 +78,7 @@ Live and replay execution route execution runtime components, not retired model 
 ```text
 component_01_intake
   -> component_02_entry or component_03_lifecycle
-  -> optional component_04_option_review
+  -> optional component_04_expression_review
   -> component_05_order_intent
   -> component_06_execution_gate
   -> optional component_07_failure_review

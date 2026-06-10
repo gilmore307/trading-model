@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from hashlib import sha256
 from pathlib import Path
 
 from models.realtime_decision_handoff import (
@@ -13,6 +14,20 @@ from models.realtime_decision_handoff import (
     validate_execution_model_decision_input_snapshot,
     validate_realtime_decision_route_plan,
 )
+
+
+def _manifest_checksum(payload: dict[str, object]) -> str:
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return sha256(encoded).hexdigest()[:16]
+
+
+def _runtime_component_manifest() -> dict[str, object]:
+    execution_src = Path(__file__).resolve().parents[2] / "trading-execution" / "src"
+    if str(execution_src) not in sys.path:
+        sys.path.insert(0, str(execution_src))
+    from trading_execution.runtime.components import runtime_component_manifest
+
+    return runtime_component_manifest()
 
 
 def _decision_input_snapshot() -> dict[str, object]:
@@ -32,7 +47,13 @@ def _decision_input_snapshot() -> dict[str, object]:
             ("model_03_event_state", "model_04_unified_decision"),
             ("model_06_residual_event_governance",),
         ),
-        ("component_04_option_review", "C04", "Option Review", (), ("model_05_option_expression", "model_06_residual_event_governance")),
+        (
+            "component_04_expression_review",
+            "C04",
+            "Expression Review",
+            (),
+            ("model_05_option_expression", "model_06_residual_event_governance"),
+        ),
         ("component_05_order_intent", "C05", "Order Intent", (), ()),
         ("component_06_execution_gate", "C06", "Execution Gate", (), ()),
         ("component_07_failure_review", "C07", "Failure Review", (), ("model_06_residual_event_governance",)),
@@ -46,6 +67,7 @@ def _decision_input_snapshot() -> dict[str, object]:
         "historical_dataset_snapshot_ref": "trading-model://snapshots/historical/unit",
         "frozen_model_config_ref": "trading-model://configs/frozen/unit",
         "realtime_feature_snapshot_ref": "realtime-feature-snapshot://rtfeat_unit",
+        "runtime_component_manifest": _runtime_component_manifest(),
         "component_input_refs": [
             {
                 "contract_type": "execution_model_decision_component_input",
@@ -78,14 +100,14 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
         self.assertEqual(result["provider_calls_performed"], 0)
         self.assertFalse(result["model_activation_performed"])
 
-    def test_option_review_and_failure_review_are_optional_component_routes(self) -> None:
+    def test_expression_review_and_failure_review_are_optional_component_routes(self) -> None:
         snapshot = _decision_input_snapshot()
         snapshot["instrument_ref"] = "BTC-USD"
         snapshot["asset_expression_route"] = "direct_underlying_only"
         snapshot["component_input_refs"] = [
             row
             for row in snapshot["component_input_refs"]
-            if row["component_id"] not in {"component_04_option_review", "component_07_failure_review"}
+            if row["component_id"] not in {"component_04_expression_review", "component_07_failure_review"}
         ]
 
         result = validate_execution_model_decision_input_snapshot(snapshot)
@@ -94,11 +116,11 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
 
         self.assertTrue(result["valid"], result["row_errors"])
         self.assertEqual(result["missing_components"], [])
-        self.assertEqual(result["missing_optional_components"], ["component_04_option_review", "component_07_failure_review"])
+        self.assertEqual(result["missing_optional_components"], ["component_04_expression_review", "component_07_failure_review"])
         self.assertEqual(len(plan["component_routes"]), 5)
         self.assertEqual(plan["readiness_status"], "ready_for_fixture_shadow_runtime_component_route")
         self.assertTrue(validation["valid"], validation["row_errors"])
-        self.assertEqual(validation["missing_optional_components"], ["component_04_option_review", "component_07_failure_review"])
+        self.assertEqual(validation["missing_optional_components"], ["component_04_expression_review", "component_07_failure_review"])
 
     def test_build_route_plan_maps_all_components_to_current_model_surfaces(self) -> None:
         plan = build_realtime_decision_route_plan({"decision_input_snapshot": _decision_input_snapshot()})
@@ -119,7 +141,7 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
         self.assertEqual(entry["required_model_surfaces"], ["model_03_event_state", "model_04_unified_decision"])
         self.assertEqual(entry["optional_model_surfaces"], ["model_06_residual_event_governance"])
         option = plan["component_routes"][3]
-        self.assertEqual(option["component_id"], "component_04_option_review")
+        self.assertEqual(option["component_id"], "component_04_expression_review")
         self.assertEqual(option["optional_model_surfaces"], ["model_05_option_expression", "model_06_residual_event_governance"])
         order_intent = plan["component_routes"][4]
         self.assertEqual(order_intent["component_id"], "component_05_order_intent")
@@ -130,6 +152,12 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
         self.assertEqual(residual["optional_model_surfaces"], ["model_06_residual_event_governance"])
         validation = validate_realtime_decision_route_plan(plan)
         self.assertTrue(validation["valid"], validation["row_errors"])
+
+    def test_fixture_replay_uses_replay_invocation_policy(self) -> None:
+        plan = build_realtime_decision_route_plan({"decision_input_snapshot": _decision_input_snapshot(), "handoff_mode": "fixture_replay"})
+
+        intake = plan["component_routes"][0]
+        self.assertEqual(intake["invocation_policy"], "required_for_each_replay_minute_with_constructed_intake_inputs")
 
     def test_component_surface_mismatch_blocks_input_validation(self) -> None:
         snapshot = _decision_input_snapshot()
@@ -176,6 +204,64 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
             "component_routes[1].required_model_surfaces mismatch for component_02_entry",
             validation["row_errors"],
         )
+
+    def test_stale_option_review_component_is_rejected_by_manifest(self) -> None:
+        snapshot = _decision_input_snapshot()
+        snapshot["component_input_refs"][3]["component_id"] = "component_04_option_review"
+        snapshot["component_input_refs"][3]["component_name"] = "Option Review"
+
+        result = validate_execution_model_decision_input_snapshot(snapshot)
+
+        self.assertFalse(result["valid"])
+        self.assertIn("component_input_refs[3].component_id unknown: component_04_option_review", result["row_errors"])
+
+    def test_stale_layer_metadata_is_rejected(self) -> None:
+        snapshot = _decision_input_snapshot()
+        snapshot["component_input_refs"][1]["called_model_layers"] = ["layer_04_event_failure_risk"]
+
+        result = validate_execution_model_decision_input_snapshot(snapshot)
+
+        self.assertFalse(result["valid"])
+        self.assertIn("component_input_refs[1].called_model_layers forbidden", result["row_errors"])
+
+    def test_manifest_cannot_shrink_required_component_order(self) -> None:
+        snapshot = _decision_input_snapshot()
+        manifest = snapshot["runtime_component_manifest"]
+        manifest["component_order"] = ["component_01_intake"]
+        manifest["required_component_order"] = ["component_01_intake"]
+        manifest["optional_component_order"] = []
+        manifest["components"] = [row for row in manifest["components"] if row["component_id"] == "component_01_intake"]
+        manifest.pop("manifest_checksum", None)
+        manifest["manifest_checksum"] = _manifest_checksum(manifest)
+        snapshot["component_input_refs"] = [row for row in snapshot["component_input_refs"] if row["component_id"] == "component_01_intake"]
+
+        result = validate_execution_model_decision_input_snapshot(snapshot)
+
+        self.assertFalse(result["valid"])
+        self.assertIn(
+            "runtime_component_manifest component_order is not the accepted current order",
+            result["runtime_component_manifest_errors"],
+        )
+
+    def test_self_signed_manifest_body_mutation_is_rejected(self) -> None:
+        snapshot = _decision_input_snapshot()
+        manifest = snapshot["runtime_component_manifest"]
+        for row in manifest["components"]:
+            if row["component_id"] == "component_06_execution_gate":
+                row["output_contracts"] = ["not_execution_gate_result"]
+                row["replay_invocation_policy"] = "bogus_replay_gate_policy"
+        manifest.pop("manifest_checksum", None)
+        manifest["manifest_checksum"] = _manifest_checksum(manifest)
+
+        result = validate_execution_model_decision_input_snapshot(snapshot)
+        plan = build_realtime_decision_route_plan({"decision_input_snapshot": snapshot, "handoff_mode": "fixture_replay"})
+
+        self.assertFalse(result["valid"])
+        self.assertIn(
+            "runtime_component_manifest manifest_checksum is not the accepted current checksum",
+            result["runtime_component_manifest_errors"],
+        )
+        self.assertEqual(plan["readiness_status"], "blocked_realtime_decision_input_validation")
 
     def test_cli_plans_and_validates_route_plan(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
