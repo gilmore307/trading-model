@@ -1,9 +1,10 @@
-"""Sample event-family impact-window backtest for EventRiskGovernor.
+"""Event-family impact-window backtest for EventRiskGovernor.
 
-This is a small contract verifier for Layer 10 event-family parameterization.
-It learns candidate impact windows from event-aligned price paths and controls;
-it does not claim real-market promotion evidence, call providers, train models,
-activate models, mutate broker/account state, or delete artifacts.
+This contract learns candidate impact windows from event-aligned price paths
+and controls. It can run a small built-in verifier sample or reviewed local
+event/price input files; it does not call providers, train models, activate
+models, mutate broker/account state, or delete artifacts. Real input runs still
+require review before they can become promotion evidence.
 """
 from __future__ import annotations
 
@@ -121,6 +122,9 @@ class EventFamilyImpactWindowBacktest:
     generated_at_utc: str
     family_rows: tuple[ImpactWindowBacktestRow, ...]
     candidate_scores_by_family: dict[str, tuple[WindowScore, ...]]
+    input_scope: str = "sample_contract_verifier"
+    source_event_paths: tuple[str, ...] = ()
+    source_bar_paths: tuple[str, ...] = ()
     provider_calls: int = 0
     model_training_performed: bool = False
     model_activation_performed: bool = False
@@ -143,7 +147,10 @@ class EventFamilyImpactWindowBacktest:
                 for row in self.family_rows
             },
             "selection_method": "enumerate_candidate_windows_and_select_highest_event_vs_control_risk_delta_penalized_by_window_length",
-            "sample_scope_note": "Synthetic small-sample contract verifier; not accepted real-market promotion evidence.",
+            "input_scope": self.input_scope,
+            "source_event_paths": list(self.source_event_paths),
+            "source_bar_paths": list(self.source_bar_paths),
+            "sample_scope_note": _scope_note(self.input_scope),
             "provider_calls": self.provider_calls,
             "model_training_performed": self.model_training_performed,
             "model_activation_performed": self.model_activation_performed,
@@ -162,6 +169,9 @@ class EventFamilyImpactWindowBacktest:
                 for family, scores in sorted(self.candidate_scores_by_family.items())
             },
             "summary": self.summary,
+            "input_scope": self.input_scope,
+            "source_event_paths": list(self.source_event_paths),
+            "source_bar_paths": list(self.source_bar_paths),
             "provider_calls": self.provider_calls,
             "model_training_performed": self.model_training_performed,
             "model_activation_performed": self.model_activation_performed,
@@ -169,6 +179,12 @@ class EventFamilyImpactWindowBacktest:
             "account_mutation_performed": self.account_mutation_performed,
             "artifact_deletion_performed": self.artifact_deletion_performed,
         }
+
+
+def _scope_note(input_scope: str) -> str:
+    if input_scope == "real_input_backtest":
+        return "Reviewed local event and price input contract run; not accepted promotion evidence until review."
+    return "Synthetic small-sample contract verifier; not accepted real-market promotion evidence."
 
 
 DEFAULT_CANDIDATE_WINDOWS = (
@@ -301,7 +317,13 @@ def _score_window(
     )
 
 
-def _impact_parameterization(row: WindowScore, temporal_form: str) -> dict[str, Any]:
+def _impact_parameterization(
+    row: WindowScore,
+    temporal_form: str,
+    *,
+    parameterization_status: str,
+    impact_scope_parameter: str,
+) -> dict[str, Any]:
     if temporal_form == "scheduled_data_release_event":
         curve = {
             "pre_event_component": "learned_anticipation_window",
@@ -331,7 +353,7 @@ def _impact_parameterization(row: WindowScore, temporal_form: str) -> dict[str, 
         }
         schedule_type = "unscheduled"
     return {
-        "parameterization_status": "sample_backtest_selected",
+        "parameterization_status": parameterization_status,
         "temporal_form": temporal_form,
         "schedule_type": schedule_type,
         "selected_effect_window": {
@@ -340,7 +362,7 @@ def _impact_parameterization(row: WindowScore, temporal_form: str) -> dict[str, 
             "window_label": row.window_label,
         },
         "impact_curve_components": curve,
-        "impact_scope_parameter": "sample_symbol_path",
+        "impact_scope_parameter": impact_scope_parameter,
         "severity_model": "event_vs_control_abs_return_plus_path_range_delta",
         "layer_4_projection_type": "event_family_impact_state_projection",
     }
@@ -352,8 +374,18 @@ def build_event_family_impact_window_backtest(
     bars: Sequence[DailyBar],
     candidate_windows: Sequence[CandidateWindow] = DEFAULT_CANDIDATE_WINDOWS,
     generated_at_utc: str | None = None,
+    input_scope: str = "sample_contract_verifier",
+    source_event_paths: Sequence[str] = (),
+    source_bar_paths: Sequence[str] = (),
+    parameterization_status: str = "sample_backtest_selected",
+    evidence_note: str = "Selected from candidate windows using sample event-vs-control price-path deltas; not real-market promotion evidence.",
+    impact_scope_parameter: str = "sample_symbol_path",
 ) -> EventFamilyImpactWindowBacktest:
     generated = generated_at_utc or datetime.now(UTC).isoformat()
+    if not event_instances:
+        raise ValueError("event_instances must contain at least one event")
+    if not bars:
+        raise ValueError("bars must contain at least one price bar")
     bars_by_symbol = _bars_by_symbol(bars)
     family_instances: dict[str, list[EventInstance]] = defaultdict(list)
     for instance in event_instances:
@@ -374,6 +406,11 @@ def build_event_family_impact_window_backtest(
         selected = scores[0]
         runner_up = scores[1] if len(scores) > 1 else selected
         temporal_form = instances[0].event_temporal_form
+        row_status = parameterization_status
+        row_evidence_note = evidence_note
+        if selected.event_sample_count == 0 or selected.control_sample_count == 0:
+            row_status = "insufficient_event_or_control_samples"
+            row_evidence_note = "No complete event/control windows for the selected candidate; no impact-window parameterization claim."
         rows.append(
             ImpactWindowBacktestRow(
                 family_key=family_key,
@@ -389,12 +426,17 @@ def build_event_family_impact_window_backtest(
                 path_range_delta=selected.path_range_delta,
                 abs_return_delta=selected.abs_return_delta,
                 control_sample_count=selected.control_sample_count,
-                parameterization_status="sample_backtest_selected",
+                parameterization_status=row_status,
                 layer_4_projection_type="event_family_impact_state_projection",
-                event_family_impact_parameterization=_impact_parameterization(selected, temporal_form),
+                event_family_impact_parameterization=_impact_parameterization(
+                    selected,
+                    temporal_form,
+                    parameterization_status=row_status,
+                    impact_scope_parameter=impact_scope_parameter,
+                ),
                 runner_up_window_label=runner_up.window_label,
                 runner_up_selection_score=runner_up.selection_score,
-                evidence_note="Selected from candidate windows using sample event-vs-control price-path deltas; not real-market promotion evidence.",
+                evidence_note=row_evidence_note,
             )
         )
         scores_by_family[family_key] = scores
@@ -403,6 +445,9 @@ def build_event_family_impact_window_backtest(
         generated_at_utc=generated,
         family_rows=tuple(rows),
         candidate_scores_by_family=scores_by_family,
+        input_scope=input_scope,
+        source_event_paths=tuple(source_event_paths),
+        source_bar_paths=tuple(source_bar_paths),
     )
 
 
@@ -411,6 +456,122 @@ def build_sample_event_family_impact_window_backtest(*, generated_at_utc: str | 
         event_instances=_sample_event_instances(),
         bars=_sample_bars(),
         generated_at_utc=generated_at_utc,
+    )
+
+
+def _parse_date(value: str) -> date:
+    raw = value.strip()
+    if not raw:
+        raise ValueError("empty date value")
+    try:
+        return date.fromisoformat(raw[:10])
+    except ValueError as exc:
+        raise ValueError(f"invalid ISO date value {value!r}") from exc
+
+
+def _parse_optional_datetime(value: str) -> datetime | None:
+    raw = value.strip()
+    if not raw:
+        return None
+    raw = raw.replace("Z", "+00:00")
+    try:
+        return datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
+def _required_field(row: Mapping[str, str], aliases: Sequence[str]) -> str:
+    for alias in aliases:
+        value = row.get(alias)
+        if value not in (None, ""):
+            return str(value)
+    raise ValueError(f"missing required field; expected one of {', '.join(aliases)}")
+
+
+def _float_field(row: Mapping[str, str], aliases: Sequence[str]) -> float:
+    raw = _required_field(row, aliases)
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise ValueError(f"invalid numeric field {raw!r}") from exc
+    if not math.isfinite(value):
+        raise ValueError(f"non-finite numeric field {raw!r}")
+    return value
+
+
+def load_event_instances_from_csv(paths: Sequence[Path]) -> tuple[EventInstance, ...]:
+    events: list[EventInstance] = []
+    for path in paths:
+        with path.open(encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle):
+                event_ref = row.get("event_ref") or row.get("event_id") or f"{path}:{len(events) + 1}"
+                source_ref = row.get("source_ref") or row.get("source_path") or str(path)
+                events.append(
+                    EventInstance(
+                        family_key=_required_field(row, ("family_key", "event_family_key", "family")),
+                        event_temporal_form=_required_field(row, ("event_temporal_form", "temporal_form")),
+                        event_date=_parse_date(_required_field(row, ("event_date", "scheduled_date", "published_date", "date", "event_time", "published_time"))),
+                        event_ref=event_ref,
+                        source_ref=source_ref,
+                    )
+                )
+    if not events:
+        raise ValueError("event CSV inputs produced zero event instances")
+    return tuple(events)
+
+
+def load_daily_bars_from_csv(paths: Sequence[Path]) -> tuple[DailyBar, ...]:
+    day_rows: dict[tuple[str, date], list[tuple[datetime | None, float, float, float, float]]] = defaultdict(list)
+    for path in paths:
+        with path.open(encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle):
+                symbol = _required_field(row, ("symbol", "ticker", "asset"))
+                raw_time = _required_field(row, ("timestamp", "time", "bar_time", "day", "date"))
+                dt = _parse_optional_datetime(raw_time)
+                day = dt.date() if dt is not None else _parse_date(raw_time)
+                day_rows[(symbol, day)].append(
+                    (
+                        dt,
+                        _float_field(row, ("open", "bar_open")),
+                        _float_field(row, ("high", "bar_high")),
+                        _float_field(row, ("low", "bar_low")),
+                        _float_field(row, ("close", "bar_close")),
+                    )
+                )
+    bars: list[DailyBar] = []
+    for (symbol, day), rows in sorted(day_rows.items()):
+        ordered = sorted(rows, key=lambda item: item[0].isoformat() if item[0] is not None else "")
+        bars.append(
+            DailyBar(
+                symbol=symbol,
+                day=day,
+                open=ordered[0][1],
+                high=max(row[2] for row in ordered),
+                low=min(row[3] for row in ordered),
+                close=ordered[-1][4],
+            )
+        )
+    if not bars:
+        raise ValueError("bar CSV inputs produced zero daily bars")
+    return tuple(bars)
+
+
+def build_real_input_event_family_impact_window_backtest(
+    *,
+    event_paths: Sequence[Path],
+    bar_paths: Sequence[Path],
+    generated_at_utc: str | None = None,
+) -> EventFamilyImpactWindowBacktest:
+    return build_event_family_impact_window_backtest(
+        event_instances=load_event_instances_from_csv(event_paths),
+        bars=load_daily_bars_from_csv(bar_paths),
+        generated_at_utc=generated_at_utc,
+        input_scope="real_input_backtest",
+        source_event_paths=tuple(str(path) for path in event_paths),
+        source_bar_paths=tuple(str(path) for path in bar_paths),
+        parameterization_status="real_input_backtest_selected",
+        evidence_note="Selected from candidate windows using reviewed local event inputs and point-in-time price paths; requires review before promotion-evidence use.",
+        impact_scope_parameter="point_in_time_price_path",
     )
 
 
@@ -492,9 +653,11 @@ def write_event_family_impact_window_backtest_artifacts(backtest: EventFamilyImp
 
 Contract: `{backtest.contract_type}`
 
-This artifact validates the Layer 10 event-family impact-parameter contract on a small sample. It enumerates candidate windows and selects the highest event-vs-control risk-delta window for CPI-style scheduled data releases, triple-witching-style calendar events, and breaking-news-style unscheduled shocks.
+Input scope: `{backtest.input_scope}`
 
-It is a contract/backtest verifier only. It performs no provider calls, model training, activation, broker/account mutation, destructive SQL, or artifact deletion, and it is not real-market promotion evidence.
+This artifact validates the Layer 10 event-family impact-parameter contract. It enumerates candidate windows and selects the highest event-vs-control risk-delta window for CPI-style scheduled data releases, triple-witching-style scheduled calendar events, and breaking-news-style unscheduled shocks.
+
+It performs no provider calls, model training, activation, broker/account mutation, destructive SQL, or artifact deletion. It is not accepted promotion evidence until reviewed.
 """,
         encoding="utf-8",
     )
@@ -513,7 +676,10 @@ __all__ = [
     "ImpactWindowBacktestRow",
     "WindowScore",
     "build_event_family_impact_window_backtest",
+    "build_real_input_event_family_impact_window_backtest",
     "build_sample_event_family_impact_window_backtest",
+    "load_daily_bars_from_csv",
+    "load_event_instances_from_csv",
     "write_backtest",
     "write_event_family_impact_window_backtest_artifacts",
 ]
