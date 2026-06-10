@@ -78,7 +78,7 @@ def _decision_input_snapshot() -> dict[str, object]:
                 "required_model_surfaces": list(required_surfaces),
                 "optional_model_surfaces": list(optional_surfaces),
                 "feature_ref": f"realtime-feature://rtfeat_unit/{component_id}",
-                "upstream_context_refs": [f"placeholder://upstream/{component_id}"],
+                "upstream_context_refs": [f"placeholder://upstream-context/rtdecision_unit/{component_id}"],
                 "frozen_model_config_ref": "trading-model://configs/frozen/unit",
                 "historical_dataset_snapshot_ref": "trading-model://snapshots/historical/unit",
                 "realtime_feature_snapshot_ref": "realtime-feature-snapshot://rtfeat_unit",
