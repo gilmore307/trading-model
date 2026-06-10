@@ -22,6 +22,8 @@ Date: 2026-05-07
 
 This closes the model-design phase. It does not approve production promotion.
 
+For Layer 10 specifically, model-design acceptance is not evidence completion. Layer 10 evidence is complete only after the active event-family universe has passed the normal event-family workflow: event-family packets, canonical parser/source routing, matched controls, impact-window backtests, fold stability, and leakage/upstream-overlap review. Closed-loop replay overlays and a few calibrated seed families are evidence progress, not completion.
+
 `docs/23_model_learning_design.md` owns the closed-loop evidence lifecycle for the accepted Layers 1-10 stack. The loop is closed through three separated paths: point-in-time inference, post-fold evaluation labels/utilities, and review-gated promotion feedback into later-fold artifacts. It does not create a live recursive learning loop, same-fold upstream mutation, production activation, broker/account mutation, or a new model layer.
 
 ## Boundary acceptance
