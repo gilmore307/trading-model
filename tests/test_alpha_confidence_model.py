@@ -6,7 +6,7 @@ from pathlib import Path
 
 from models.model_05_alpha_confidence import generate_rows, train_after_cost_alpha_model
 from models.model_05_alpha_confidence.evaluation import assert_no_label_leakage, build_alpha_confidence_labels
-from models.model_05_alpha_confidence.training import FEATURE_TEMPLATES, extract_after_cost_features
+from models.model_05_alpha_confidence.training import FEATURE_TEMPLATES, extract_after_cost_features, layer4_event_feature_names
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -172,6 +172,30 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         for name, value in option_scores.items():
             self.assertIn(name, FEATURE_TEMPLATES)
             self.assertAlmostEqual(values[feature_names.index(name)], value)
+
+    def test_training_artifact_records_layer4_event_consumption_contract(self) -> None:
+        try:
+            artifact = train_after_cost_alpha_model(
+                [_positive_row(), _neutral_row(), _negative_row()],
+                horizon="1W",
+                label_field="after_cost_return_1W",
+                iterations=20,
+            )
+        except RuntimeError as error:
+            raise unittest.SkipTest(str(error)) from error
+
+        self.assertEqual(artifact["layer4_event_feature_policy"], "consume_reviewed_layer4_event_failure_risk_vector_when_present")
+        self.assertEqual(
+            artifact["feature_consumption_contract"]["layer4_event_failure_risk_vector"],
+            "formal_training_input",
+        )
+        self.assertEqual(
+            artifact["feature_consumption_contract"]["baseline_without_layer4_event_features"],
+            "evaluation_only_not_training_route",
+        )
+        self.assertFalse(artifact["feature_consumption_contract"]["layer10_event_parameter_mutation"])
+        self.assertIn("4_event_response_strength_score_1W", artifact["layer4_event_feature_names"])
+        self.assertEqual(artifact["layer4_event_feature_names"], layer4_event_feature_names("1W"))
 
     def test_training_script_attaches_after_cost_labels_from_future_bars(self) -> None:
         script = _load_training_script()

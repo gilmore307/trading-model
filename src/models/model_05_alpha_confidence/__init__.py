@@ -2,7 +2,7 @@
 from .contract import MODEL_ID, MODEL_LAYER, MODEL_SURFACE, MODEL_VERSION, VECTOR_OUTPUT
 from .event_conditioned_contrast import build_labeled_focus_pool_rows, run_event_conditioned_alpha_contrast
 from .generator import generate_rows
-from .training import score_after_cost_alpha, train_after_cost_alpha_model
+from .training import layer4_event_feature_names, score_after_cost_alpha, train_after_cost_alpha_model
 
 __all__ = [
     "MODEL_ID",
@@ -12,6 +12,7 @@ __all__ = [
     "VECTOR_OUTPUT",
     "build_labeled_focus_pool_rows",
     "generate_rows",
+    "layer4_event_feature_names",
     "run_event_conditioned_alpha_contrast",
     "score_after_cost_alpha",
     "train_after_cost_alpha_model",

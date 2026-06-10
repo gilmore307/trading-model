@@ -62,6 +62,11 @@ class EventConditionedAlphaContrastTests(unittest.TestCase):
             raise unittest.SkipTest(str(error)) from error
 
         self.assertEqual(artifact["diagnostic_scope"], DIAGNOSTIC_SCOPE)
+        self.assertEqual(artifact["feature_boundary"]["baseline_role"], "evaluation_only_not_training_route")
+        self.assertEqual(
+            artifact["feature_boundary"]["formal_training_route"],
+            "consume_layer4_event_failure_risk_vector_when_present",
+        )
         self.assertFalse(artifact["feature_boundary"]["layer10_parameter_mutation"])
         self.assertFalse(artifact["feature_boundary"]["promotion_or_activation"])
         self.assertEqual(artifact["row_counts"]["labeled"], 20)

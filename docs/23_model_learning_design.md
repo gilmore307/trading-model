@@ -63,6 +63,8 @@ Layer 4 consumes accepted Layer 10 focus-pool event contracts as frozen qualitat
 
 Layer 5 event-conditioned alpha contrasts may use accepted Layer 10-to-Layer 4 focus-pool rows to test whether frozen Layer 4 event-conditioning features add after-cost signal versus a no-Layer-4 baseline. Same-fold focus-pool contrasts are diagnostic only; promotion still requires the full Layer 5 route with complete point-in-time Layer 1/2/3/4 features, leakage controls, split stability, and promotion review.
 
+Weak same-fold contrast results do not disable the Layer 4-to-Layer 5 feature route. Layer 5 must continue consuming reviewed Layer 4 event-conditioning fields as formal inputs and let training learn their weight, sign, uncertainty, risk penalty, or near-zero contribution. Event-family removal, demotion, split, or time-window revision remains a Layer 10/4 review outcome, not a Layer 5 baseline substitution.
+
 | Layer | Inference dependency | Primary output | Label / utility source after fold close | Feedback owner | Forbidden feedback |
 |---|---|---|---|---|---|
 | `M01` Market Regime | Broad-market and cross-asset point-in-time features. | `market_context_state` | Future broad-market state, volatility, liquidity, transition, and downstream calibration-lift labels. | Layer 1 evaluation and promotion evidence. | Sector/security choices, strategy/action labels, portfolio outcomes, and future market labels as same-fold inputs. |

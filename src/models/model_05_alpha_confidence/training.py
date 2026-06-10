@@ -15,6 +15,7 @@ DEFAULT_LEARNING_RATE = 0.08
 DEFAULT_ITERATIONS = 700
 DEFAULT_L2 = 0.001
 SCORE_SEMANTICS = "0.5_after_cost_neutral__above_positive_edge__below_negative_edge"
+LAYER4_EVENT_FEATURE_POLICY = "consume_reviewed_layer4_event_failure_risk_vector_when_present"
 
 
 FEATURE_TEMPLATES: tuple[str, ...] = (
@@ -127,6 +128,13 @@ def train_after_cost_alpha_model(
             "horizon": horizon,
             "label_field": selected_label_field,
             "return_scale": return_scale,
+            "layer4_event_feature_policy": LAYER4_EVENT_FEATURE_POLICY,
+            "layer4_event_feature_names": layer4_event_feature_names(horizon),
+            "feature_consumption_contract": {
+                "layer4_event_failure_risk_vector": "formal_training_input",
+                "baseline_without_layer4_event_features": "evaluation_only_not_training_route",
+                "layer10_event_parameter_mutation": False,
+            },
         },
     )
 
@@ -185,6 +193,12 @@ def extract_after_cost_features(row: Mapping[str, Any], *, horizon: str, feature
 def _feature_names(horizon: str) -> list[str]:
     _validate_horizon(horizon)
     return [template.replace("<horizon>", horizon) for template in FEATURE_TEMPLATES]
+
+
+def layer4_event_feature_names(horizon: str) -> list[str]:
+    """Return Layer 4 event-conditioning feature names used by Layer 5."""
+
+    return [name for name in _feature_names(horizon) if name.startswith("4_")]
 
 
 def _label_field(row: Mapping[str, Any], horizon: str) -> str | None:

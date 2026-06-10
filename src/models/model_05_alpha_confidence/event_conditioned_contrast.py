@@ -129,7 +129,9 @@ def run_event_conditioned_alpha_contrast(
         "label_source": "layer10_replay_excess_return",
         "feature_boundary": {
             "baseline": "Layer 5 after-cost artifact with Layer 4 event features removed",
+            "baseline_role": "evaluation_only_not_training_route",
             "event_conditioned": "Layer 5 after-cost artifact consuming frozen Layer 4 event_failure_risk_vector",
+            "formal_training_route": "consume_layer4_event_failure_risk_vector_when_present",
             "layer10_parameter_mutation": False,
             "promotion_or_activation": False,
         },
