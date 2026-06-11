@@ -18,6 +18,7 @@ from model_runtime.config import database_url_file
 from model_governance.model_output_support import write_model_output_with_support
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, read_rows, write_rows
 from models.model_05_alpha_confidence import MODEL_ID, MODEL_SURFACE, MODEL_VERSION, generate_rows
+from models.model_05_alpha_confidence.contract import HORIZONS
 
 DEFAULT_DB_URL_FILE = database_url_file()
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -28,6 +29,16 @@ PRIMARY_KEY = ("alpha_confidence_vector_ref",)
 EXPLAINABILITY_COLUMNS = {"alpha_confidence_vector"}
 DIAGNOSTICS_COLUMNS = {"alpha_confidence_diagnostics"}
 RETIRED_COLUMNS = ("event_context_vector_ref", "base_alpha_vector")
+
+TARGET_LAYER_2_TO_LAYER_3_FEATURES = {
+    "target_direction_score": "target_direction_score",
+    "target_trend_quality_score": "target_trend_quality_score",
+    "target_path_stability_score": "target_path_stability_score",
+    "target_noise_score": "target_noise_score",
+    "target_transition_risk_score": "target_transition_risk_score",
+    "context_support_quality_score": "context_support_quality_score",
+    "tradability_score": "tradability_score",
+}
 
 
 def _database_url(explicit: str | None) -> str:
@@ -178,9 +189,36 @@ def _target_payload(row: Mapping[str, Any]) -> dict[str, Any]:
     if isinstance(score_payload, Mapping):
         payload.update({str(key): value for key, value in score_payload.items() if value is not None})
     payload.update(_payload_from_prefixed_columns(row, "3_"))
-    if not payload:
-        payload.update(_payload_from_prefixed_columns(row, "2_"))
+    layer_2_payload = _payload_from_prefixed_columns(row, "2_")
+    _merge_current_target_features(payload, layer_2_payload)
     return payload
+
+
+def _merge_current_target_features(payload: dict[str, Any], layer_2_payload: Mapping[str, Any]) -> None:
+    """Normalize current target-state SQL columns into the Layer 5 feature contract."""
+
+    for horizon in HORIZONS:
+        for source_name, target_name in TARGET_LAYER_2_TO_LAYER_3_FEATURES.items():
+            source_key = f"2_{source_name}_{horizon}"
+            value = layer_2_payload.get(source_key)
+            if value is None:
+                continue
+            payload.setdefault(source_key, value)
+            payload.setdefault(f"3_{target_name}_{horizon}", value)
+    if "3_state_quality_score" not in payload:
+        quality_values: list[Any] = []
+        for horizon in HORIZONS:
+            quality_values.extend(
+                (
+                    layer_2_payload.get(f"2_target_trend_quality_score_{horizon}"),
+                    layer_2_payload.get(f"2_target_path_stability_score_{horizon}"),
+                    layer_2_payload.get(f"2_tradability_score_{horizon}"),
+                )
+            )
+            noise = _safe_float(layer_2_payload.get(f"2_target_noise_score_{horizon}"))
+            if noise is not None:
+                quality_values.append(1.0 - noise)
+        payload["3_state_quality_score"] = _average_present(*quality_values, default=0.75)
 
 
 def _event_payload(row: Mapping[str, Any]) -> dict[str, Any]:
@@ -234,6 +272,15 @@ def _safe_score(value: Any, default: float) -> float:
     except (TypeError, ValueError):
         return default
     return max(0.0, min(1.0, score))
+
+
+def _safe_float(value: Any) -> float | None:
+    try:
+        if value is None or value == "":
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _first_present(*values: Any, default: float) -> float:

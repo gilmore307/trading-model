@@ -8,7 +8,7 @@ import json
 import sys
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from model_governance.local_layer_scripts import read_rows, write_payload
 from model_runtime.config import database_url_file
@@ -101,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
             "target_symbol": (args.target_symbol or "").upper(),
             "cost_bps": args.cost_bps,
         }
+    _validate_non_degenerate_after_cost_artifact(artifact)
     write_payload(_json_safe(artifact), args.output_json)
     return 0
 
@@ -169,6 +170,9 @@ def read_training_rows_from_database(
                 order_by="available_time::timestamptz ASC, sector_or_industry_symbol ASC",
             )
             model_01_rows = _fetch_market_feature_rows(cursor, source_start=source_start, source_end=source_end)
+    source_target_rows = _target_state_rows_from_source_bars(source_03_rows)
+    if source_target_rows:
+        model_03_rows = source_target_rows
     rows = _decision_rows(
         event_failure_rows=event_failure_rows,
         model_03_rows=model_03_rows,
@@ -180,6 +184,100 @@ def read_training_rows_from_database(
     if not labeled:
         raise SystemExit("Layer 5 database training produced zero rows with after-cost labels")
     return labeled
+
+
+def _target_state_rows_from_source_bars(source_03_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    rows_by_candidate: dict[str, list[Mapping[str, Any]]] = {}
+    for row in source_03_rows:
+        candidate = str(row.get("target_candidate_id") or "")
+        if candidate and _safe_float(row.get("bar_close")) is not None and row.get("available_time"):
+            rows_by_candidate.setdefault(candidate, []).append(row)
+    output: list[dict[str, Any]] = []
+    for candidate, rows in rows_by_candidate.items():
+        sorted_rows = sorted(rows, key=lambda item: _parse_time(item["available_time"]))
+        symbol = str(sorted_rows[0].get("symbol") or "").upper()
+        for index, row in enumerate(sorted_rows):
+            close = _safe_float(row.get("bar_close"))
+            if close is None or close <= 0:
+                continue
+            available_time = _iso(row["available_time"])
+            state = _source_bar_target_state(
+                target=symbol,
+                rows=sorted_rows,
+                index=index,
+                candidate=candidate,
+                reference_price=close,
+            )
+            output.append(
+                {
+                    "available_time": available_time,
+                    "tradeable_time": available_time,
+                    "target_candidate_id": candidate,
+                    "target_context_state_ref": state["model_ref"],
+                    **state,
+                }
+            )
+    output.sort(key=lambda row: (_parse_time(row["available_time"]), str(row.get("target_candidate_id") or "")))
+    return output
+
+
+def _source_bar_target_state(
+    *,
+    target: str,
+    rows: Sequence[Mapping[str, Any]],
+    index: int,
+    candidate: str,
+    reference_price: float,
+) -> dict[str, Any]:
+    momentum_7d = _window_return(rows, index, 7)
+    momentum_30d = _window_return(rows, index, 30)
+    daily = _daily_return(rows, index)
+    direction_1d = _clip_signed(daily * 8.0 + momentum_7d * 3.0)
+    direction_1w = _clip_signed(momentum_7d * 4.0 + momentum_30d)
+    trend_quality = _clip01(0.5 + abs(momentum_7d) * 8.0 + abs(momentum_30d) * 2.0)
+    liquidity = _volume_rank(rows, index, 30)
+    return {
+        "model_ref": f"training_source_bar_target_state/{target}/{candidate}/{_iso(rows[index]['available_time'])}",
+        "target_ref": target,
+        "target_candidate_id": candidate,
+        "3_target_direction_score_10min": direction_1d,
+        "3_target_direction_score_1h": direction_1d,
+        "3_target_direction_score_1D": direction_1d,
+        "3_target_direction_score_1W": direction_1w,
+        "3_target_trend_quality_score_10min": trend_quality,
+        "3_target_trend_quality_score_1h": trend_quality,
+        "3_target_trend_quality_score_1D": trend_quality,
+        "3_target_trend_quality_score_1W": trend_quality,
+        "3_target_path_stability_score_10min": _clip01(0.65 - abs(daily) * 4.0),
+        "3_target_path_stability_score_1h": _clip01(0.65 - abs(daily) * 4.0),
+        "3_target_path_stability_score_1D": _clip01(0.65 - abs(daily) * 4.0),
+        "3_target_path_stability_score_1W": _clip01(0.65 - abs(momentum_7d) * 2.0),
+        "3_target_noise_score_10min": _clip01(abs(daily) * 4.0),
+        "3_target_noise_score_1h": _clip01(abs(daily) * 4.0),
+        "3_target_noise_score_1D": _clip01(abs(daily) * 4.0),
+        "3_target_noise_score_1W": _clip01(abs(momentum_7d) * 2.0),
+        "3_target_transition_risk_score_10min": _clip01(abs(daily - momentum_7d) * 2.0),
+        "3_target_transition_risk_score_1h": _clip01(abs(daily - momentum_7d) * 2.0),
+        "3_target_transition_risk_score_1D": _clip01(abs(daily - momentum_7d) * 2.0),
+        "3_target_transition_risk_score_1W": _clip01(abs(momentum_7d - momentum_30d) * 2.0),
+        "3_context_direction_alignment_score_10min": direction_1d,
+        "3_context_direction_alignment_score_1h": direction_1d,
+        "3_context_direction_alignment_score_1D": direction_1d,
+        "3_context_direction_alignment_score_1W": direction_1w,
+        "3_context_support_quality_score_10min": 0.60,
+        "3_context_support_quality_score_1h": 0.60,
+        "3_context_support_quality_score_1D": 0.60,
+        "3_context_support_quality_score_1W": 0.60,
+        "3_tradability_score_10min": liquidity,
+        "3_tradability_score_1h": liquidity,
+        "3_tradability_score_1D": liquidity,
+        "3_tradability_score_1W": liquidity,
+        "3_target_liquidity_tradability_score": liquidity,
+        "3_state_quality_score": 0.70,
+        "current_price": reference_price,
+        "last_price": reference_price,
+        "mark_price": reference_price,
+    }
 
 
 def attach_after_cost_return_labels(
@@ -247,6 +345,78 @@ def _direction_orientation(row: Mapping[str, Any], horizon: str) -> float:
     if score is None and isinstance(target, Mapping):
         score = _safe_float(target.get(f"2_target_direction_score_{horizon}"))
     return -1.0 if score is not None and score < 0 else 1.0
+
+
+def _validate_non_degenerate_after_cost_artifact(artifact: Mapping[str, Any]) -> None:
+    artifacts = artifact.get("artifacts_by_horizon")
+    if isinstance(artifacts, Mapping):
+        artifact_items = [(str(horizon), horizon_artifact) for horizon, horizon_artifact in artifacts.items()]
+    else:
+        artifact_items = [(str(artifact.get("horizon") or "unknown"), artifact)]
+    degenerate = [
+        horizon
+        for horizon, horizon_artifact in artifact_items
+        if not isinstance(horizon_artifact, Mapping) or _lightgbm_artifact_is_degenerate(horizon_artifact)
+    ]
+    if degenerate:
+        raise SystemExit(
+            "Layer 5 after-cost alpha training produced degenerate LightGBM artifacts with no usable split structure: "
+            + ", ".join(sorted(degenerate))
+        )
+
+
+def _lightgbm_artifact_is_degenerate(artifact: Mapping[str, Any]) -> bool:
+    model_text = str(artifact.get("booster_model") or "")
+    if not model_text.strip():
+        return True
+    saw_tree = False
+    saw_split = False
+    for line in model_text.splitlines():
+        if line.startswith("Tree="):
+            saw_tree = True
+        elif line.startswith("num_leaves="):
+            try:
+                if int(line.split("=", 1)[1].strip()) > 1:
+                    saw_split = True
+            except ValueError:
+                continue
+        elif line.startswith("split_feature=") and line.split("=", 1)[1].strip():
+            saw_split = True
+    return not (saw_tree and saw_split)
+
+
+def _daily_return(rows: Sequence[Mapping[str, Any]], index: int) -> float:
+    if index <= 0:
+        return 0.0
+    previous = _safe_float(rows[index - 1].get("bar_close"))
+    current = _safe_float(rows[index].get("bar_close"))
+    return (current - previous) / previous if previous and current is not None and previous > 0 else 0.0
+
+
+def _window_return(rows: Sequence[Mapping[str, Any]], index: int, window: int) -> float:
+    if index < window:
+        return 0.0
+    previous = _safe_float(rows[index - window].get("bar_close"))
+    current = _safe_float(rows[index].get("bar_close"))
+    return (current - previous) / previous if previous and current is not None and previous > 0 else 0.0
+
+
+def _volume_rank(rows: Sequence[Mapping[str, Any]], index: int, window: int) -> float:
+    start = max(0, index - window + 1)
+    volumes = [_safe_float(row.get("bar_volume")) for row in rows[start : index + 1]]
+    clean_volumes = [volume for volume in volumes if volume is not None]
+    current = _safe_float(rows[index].get("bar_volume"))
+    if not clean_volumes or current is None:
+        return 0.0
+    return sum(1 for volume in clean_volumes if volume <= current) / len(clean_volumes)
+
+
+def _clip01(value: float) -> float:
+    return max(0.0, min(1.0, value))
+
+
+def _clip_signed(value: float) -> float:
+    return max(-1.0, min(1.0, value))
 
 
 def _safe_float(value: Any) -> float | None:

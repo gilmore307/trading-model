@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import unittest
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from models.model_05_alpha_confidence import generate_rows, train_after_cost_alpha_model
@@ -103,6 +104,38 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         self.assertEqual(rows[0]["training_sample_scope"], "dense_minute_target_state")
         self.assertEqual(rows[0]["target_candidate_id"], "anon_target_001")
         self.assertEqual(rows[0]["event_failure_risk_vector"], {})
+
+    def test_database_decision_rows_normalize_current_layer_two_target_features(self) -> None:
+        script = _load_generator_script()
+        rows = script._decision_rows(
+            event_failure_rows=[],
+            model_03_rows=[
+                {
+                    "available_time": "2026-05-07T10:30:00-04:00",
+                    "target_candidate_id": "anon_target_001",
+                    "2_target_direction_score_1D": 0.45,
+                    "2_target_trend_quality_score_1D": 0.70,
+                    "2_target_path_stability_score_1D": 0.75,
+                    "2_target_noise_score_1D": 0.20,
+                    "2_target_transition_risk_score_1D": 0.15,
+                    "2_context_support_quality_score_1D": 0.65,
+                    "2_tradability_score_1D": 0.80,
+                }
+            ],
+            source_03_rows=[],
+            model_02_rows=[],
+            model_01_rows=[],
+        )
+
+        target_state = rows[0]["target_context_state"]
+        self.assertEqual(target_state["3_target_direction_score_1D"], 0.45)
+        self.assertEqual(target_state["3_target_trend_quality_score_1D"], 0.70)
+        self.assertEqual(target_state["3_target_path_stability_score_1D"], 0.75)
+        self.assertEqual(target_state["3_target_noise_score_1D"], 0.20)
+        self.assertEqual(target_state["3_target_transition_risk_score_1D"], 0.15)
+        self.assertEqual(target_state["3_context_support_quality_score_1D"], 0.65)
+        self.assertEqual(target_state["3_tradability_score_1D"], 0.80)
+        self.assertGreater(target_state["3_state_quality_score"], 0.0)
 
     def test_database_decision_rows_use_latest_prior_context(self) -> None:
         script = _load_generator_script()
@@ -222,6 +255,42 @@ class AlphaConfidenceModelTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertAlmostEqual(rows[0]["after_cost_return_10min"], 0.0095)
         self.assertEqual(rows[0]["after_cost_label_time_10min"], "2026-05-07T10:40:00-04:00")
+
+    def test_training_script_builds_variable_target_state_from_source_bars(self) -> None:
+        script = _load_training_script()
+        start = datetime.fromisoformat("2026-05-01T16:00:00-04:00")
+        source_rows = [
+            {
+                "target_candidate_id": "anon_target_001",
+                "symbol": "AAPL",
+                "available_time": (start + timedelta(days=day - 1)).isoformat(),
+                "bar_close": 100.0 + day,
+                "bar_volume": 1000 + day * 10,
+            }
+            for day in range(1, 35)
+        ]
+
+        rows = script._target_state_rows_from_source_bars(source_rows)
+        directions = {row["3_target_direction_score_1D"] for row in rows}
+        trend_scores = {row["3_target_trend_quality_score_1W"] for row in rows}
+
+        self.assertEqual(len(rows), len(source_rows))
+        self.assertGreater(len(directions), 1)
+        self.assertGreater(len(trend_scores), 1)
+        self.assertEqual(rows[-1]["3_tradability_score_1D"], 1.0)
+
+    def test_training_script_rejects_degenerate_after_cost_artifact(self) -> None:
+        script = _load_training_script()
+        artifact = {
+            "artifacts_by_horizon": {
+                "1D": {
+                    "booster_model": "tree\nTree=0\nnum_leaves=1\nleaf_value=0.5\n",
+                }
+            }
+        }
+
+        with self.assertRaisesRegex(SystemExit, "degenerate LightGBM artifacts"):
+            script._validate_non_degenerate_after_cost_artifact(artifact)
 
     def test_labels_are_offline_and_join_by_vector_ref(self) -> None:
         output = generate_rows([_base_row()], after_cost_alpha_model=_artifact_bundle())[0]
