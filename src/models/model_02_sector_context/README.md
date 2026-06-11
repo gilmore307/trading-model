@@ -6,9 +6,9 @@ Current status: direction-neutral baseline generator, SQL writer, evaluation pat
 
 Boundary:
 
-- Input: `market_context_state`, `trading_data.m02_sector_context_feature_generation`, and ETF/basket tradability/event diagnostics available at or before `available_time`.
+- Input: `market_context_state`, `trading_data.model_02_sector_context_feature_generation`, and ETF/basket tradability/event diagnostics available at or before `available_time`.
 - Conceptual output: `context_etf_state` keyed by `available_time + context_etf_symbol`.
-- Physical artifacts: `trading_model.m02_sector_context_model_generation`, `trading_model.m02_sector_context_model_generation_explainability`, and `trading_model.m02_sector_context_model_generation_diagnostics`.
+- Physical artifacts: `trading_model.model_02_sector_context_model_generation`, `trading_model.model_02_sector_context_model_generation_explainability`, and `trading_model.model_02_sector_context_model_generation_diagnostics`.
 - May emit sector-context eligibility, bias, and rank fields for downstream context attachment and audit.
 - Target routing distinguishes Layer 1 ETF targets, Layer 2 context ETF targets, and ordinary targets with dynamic `target_context_profile` weighting.
 - Per-ETF cross-section rows are construction evidence inside `context_etf_state`; only global/group `cross_etf_summary` should be separate.

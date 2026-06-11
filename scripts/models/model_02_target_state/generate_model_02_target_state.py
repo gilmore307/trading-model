@@ -171,7 +171,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--from-database", action="store_true")
     parser.add_argument("--database-url")
     parser.add_argument("--source-schema", default="trading_data")
-    parser.add_argument("--source-table", default="m03_target_state_vector_feature_generation")
+    parser.add_argument("--source-table", default="model_03_target_state_vector_feature_generation")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
     parser.add_argument("--target-schema", default="trading_model")

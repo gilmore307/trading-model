@@ -149,7 +149,7 @@ def _decision_rows(
                     "close_price": reference_price,
                     "symbol": source.get("symbol") if source else None,
                     "halt_status": "active",
-                    "quote_snapshot_ref": f"m03_target_state_vector_data_acquisition:{projection.get('target_candidate_id')}:{_iso(projection.get('available_time'))}",
+                    "quote_snapshot_ref": f"model_03_target_state_vector_data_acquisition:{projection.get('target_candidate_id')}:{_iso(projection.get('available_time'))}",
                 },
                 "underlying_liquidity_state": {"spread_bps": 10.0, "dollar_volume": 50000000.0, "liquidity_score": 0.90},
                 "underlying_borrow_state": {"short_borrow_status": "available"},
@@ -201,7 +201,7 @@ def generate_from_database(
         with conn.cursor() as cursor:
             projection_rows = _fetch_rows(cursor, schema="trading_model", table="model_07_position_projection", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             alpha_rows = _fetch_rows(cursor, schema="trading_model", table="model_05_alpha_confidence", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
-            source_rows = _fetch_rows(cursor, schema="trading_data", table="m03_target_state_vector_data_acquisition", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            source_rows = _fetch_rows(cursor, schema="trading_data", table="model_03_target_state_vector_data_acquisition", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             decisions = _decision_rows(projection_rows=projection_rows, alpha_rows=alpha_rows, source_rows=source_rows)
             if not decisions:
                 raise SystemExit("Layer 8 database generation found no projection rows with matching Layer 5 alpha and source target-state price rows")

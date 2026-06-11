@@ -1,8 +1,8 @@
 """Continuous MarketRegimeModel market-context state generator.
 
 The generator converts point-in-time rows from
-``trading_data.m01_market_regime_feature_generation`` into the model output table
-``trading_model.m01_market_regime_model_generation``. The generator intentionally avoids
+``trading_data.model_01_market_regime_feature_generation`` into the model output table
+``trading_model.model_01_market_regime_model_generation``. The generator intentionally avoids
 clustering, hard state ids, supervised labels, and human-readable regime labels.
 The primary output is a bounded direction-neutral tradability/context vector
 keyed by ``available_time``.
@@ -394,8 +394,8 @@ STATE_OUTPUT_COLUMNS = [
 ]
 TRANSITION_BASIS_COLUMNS = [column for column in STATE_OUTPUT_COLUMNS if column not in {"1_market_transition_risk_score", "1_coverage_score", "1_data_quality_score"}]
 OUTPUT_COLUMNS = [*ROW_IDENTITY_COLUMNS, *STATE_OUTPUT_COLUMNS]
-EXPLAINABILITY_TABLE = "m01_market_regime_model_generation_explainability"
-DIAGNOSTICS_TABLE = "m01_market_regime_model_generation_diagnostics"
+EXPLAINABILITY_TABLE = "model_01_market_regime_model_generation_explainability"
+DIAGNOSTICS_TABLE = "model_01_market_regime_model_generation_diagnostics"
 SPEC_BY_NAME = {spec.name: spec for spec in FACTOR_SPECS}
 SIGNAL_COLUMNS = sorted({signal.column for spec in FACTOR_SPECS for signal in spec.signals})
 SEMANTIC_SOURCE_FACTORS = {

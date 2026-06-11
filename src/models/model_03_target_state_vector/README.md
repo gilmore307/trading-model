@@ -15,7 +15,7 @@ Key files:
 Current importable implementation:
 
 - `anonymous_target_candidate_builder/builder.py` — builds anonymous target candidate rows and validates that the model-facing `anonymous_target_feature_vector` excludes raw identity and downstream action/label leakage.
-- `generator.py` — turns `m03_target_state_vector_feature_generation` rows into `model_03_target_state_vector` rows with separated signed direction, direction-neutral tradability, transition/noise risk, liquidity, state quality, embedding, cluster, and diagnostics.
+- `generator.py` — turns `model_03_target_state_vector_feature_generation` rows into `model_03_target_state_vector` rows with separated signed direction, direction-neutral tradability, transition/noise risk, liquidity, state quality, embedding, cluster, and diagnostics.
 - `evaluation.py` — builds local/fixture promotion evidence over the accepted baseline ladder: market-only, market+sector, and market+sector+target vector. Labels follow the real Layer 3 route: future path quality, forward path risk, liquidity/tradability outcome, and state-transition quality.
 - `config/promotion_thresholds.toml` — production promotion threshold defaults for real-data review.
 

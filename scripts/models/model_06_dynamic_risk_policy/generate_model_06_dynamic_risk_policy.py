@@ -201,7 +201,7 @@ def generate_from_database(
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
             alpha_rows = _fetch_rows(cursor, schema=source_schema, table=source_table, source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
-            market_rows = _fetch_rows(cursor, schema="trading_model", table="m01_market_regime_model_generation", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC")
+            market_rows = _fetch_rows(cursor, schema="trading_model", table="model_01_market_regime_model_generation", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC")
             event_failure_rows = _fetch_rows(cursor, schema="trading_model", table="model_04_event_failure_risk", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             model_rows = generate_rows(_decision_rows(alpha_rows, market_rows=market_rows, event_failure_rows=event_failure_rows), model_version=model_version)
             write_model_output_with_support(

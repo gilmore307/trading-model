@@ -41,13 +41,13 @@ DEVELOPMENT_SCHEMA = "trading_model_development_smoke"
 CONFIRM_DATABASE_MUTATION_TOKEN = "I_UNDERSTAND_THIS_MUTATES_DEVELOPMENT_DB"
 
 SOURCE_SCHEMA = DEVELOPMENT_SCHEMA
-SOURCE_TABLE = "m01_market_regime_data_acquisition"
+SOURCE_TABLE = "model_01_market_regime_data_acquisition"
 FEATURE_SCHEMA = DEVELOPMENT_SCHEMA
-FEATURE_TABLE = "m01_market_regime_feature_generation"
+FEATURE_TABLE = "model_01_market_regime_feature_generation"
 MODEL_SCHEMA = DEVELOPMENT_SCHEMA
-MODEL_TABLE = "m01_market_regime_model_generation"
-EXPLAINABILITY_TABLE = "m01_market_regime_model_generation_explainability"
-DIAGNOSTICS_TABLE = "m01_market_regime_model_generation_diagnostics"
+MODEL_TABLE = "model_01_market_regime_model_generation"
+EXPLAINABILITY_TABLE = "model_01_market_regime_model_generation_explainability"
+DIAGNOSTICS_TABLE = "model_01_market_regime_model_generation_diagnostics"
 
 
 def _require_database_mutation_confirmation(args: argparse.Namespace) -> None:
@@ -75,7 +75,7 @@ def _database_url(explicit: str | None) -> str:
 def _load_modules(trading_data_src: Path):
     sys.path.insert(0, str(trading_data_src))
     sys.path.insert(0, str(REPO_ROOT / "src"))
-    from data_feature.m01_market_regime_feature_generation import generator as feature_generator  # type: ignore
+    from data_feature.model_01_market_regime_feature_generation import generator as feature_generator  # type: ignore
     from models.model_01_market_regime.evaluation import build_evaluation_artifacts, summarize_artifacts
     from models.model_01_market_regime import generator as model_generator
 

@@ -121,12 +121,12 @@ class SectorContextModelTests(unittest.TestCase):
         explainability = generator.build_explainability_rows(self._feature_rows(), self._market_rows())
         diagnostics = generator.build_diagnostics_rows(self._feature_rows(), self._market_rows())
 
-        sql_runner.write_model_rows_sql(cursor, primary, target_schema="trading_model", target_table="m02_sector_context_model_generation")
-        sql_runner.write_explainability_rows_sql(cursor, explainability, target_schema="trading_model", target_table="m02_sector_context_model_generation_explainability")
-        sql_runner.write_diagnostics_rows_sql(cursor, diagnostics, target_schema="trading_model", target_table="m02_sector_context_model_generation_diagnostics")
+        sql_runner.write_model_rows_sql(cursor, primary, target_schema="trading_model", target_table="model_02_sector_context_model_generation")
+        sql_runner.write_explainability_rows_sql(cursor, explainability, target_schema="trading_model", target_table="model_02_sector_context_model_generation_explainability")
+        sql_runner.write_diagnostics_rows_sql(cursor, diagnostics, target_schema="trading_model", target_table="model_02_sector_context_model_generation_diagnostics")
 
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
-        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."m02_sector_context_model_generation"', joined_sql)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_02_sector_context_model_generation"', joined_sql)
         self.assertIn('PRIMARY KEY ("available_time", "sector_or_industry_symbol")', joined_sql)
         self.assertIn('"2_sector_handoff_state" TEXT', joined_sql)
         self.assertIn('"2_sector_handoff_bias" TEXT', joined_sql)
@@ -136,8 +136,8 @@ class SectorContextModelTests(unittest.TestCase):
         self.assertIn('DROP COLUMN IF EXISTS "2_selection_readiness_score"', joined_sql)
         self.assertIn('DROP COLUMN IF EXISTS "2_sector_dispersion_crowding_score"', joined_sql)
         self.assertTrue(set(sql_runner.RETIRED_PRIMARY_COLUMNS).isdisjoint(generator.OUTPUT_COLUMNS))
-        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."m02_sector_context_model_generation_explainability"', joined_sql)
-        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."m02_sector_context_model_generation_diagnostics"', joined_sql)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_02_sector_context_model_generation_explainability"', joined_sql)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_02_sector_context_model_generation_diagnostics"', joined_sql)
         self.assertIn('"diagnostic_payload_json" JSONB NOT NULL', joined_sql)
 
     def test_sql_reader_uses_current_feature_generation_surface(self) -> None:
@@ -164,7 +164,7 @@ class SectorContextModelTests(unittest.TestCase):
 
         self.assertEqual(rows[0]["candidate_symbol"], "XLK")
         self.assertEqual(rows[0]["relative_strength_return"], 0.02)
-        self.assertIn('"trading_data"."m02_sector_context_feature_generation"', cursor.calls[0][0])
+        self.assertIn('"trading_data"."model_02_sector_context_feature_generation"', cursor.calls[0][0])
 
 
 if __name__ == "__main__":

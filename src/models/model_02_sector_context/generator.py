@@ -1,12 +1,12 @@
 """SectorContextModel baseline state generator.
 
 This module turns point-in-time rows from
-``trading_data.m02_sector_context_feature_generation`` plus optional Layer 1
+``trading_data.model_02_sector_context_feature_generation`` plus optional Layer 1
 ``market_context_state`` rows into the three accepted Layer 2 physical artifacts:
 
-* ``trading_model.m02_sector_context_model_generation`` (narrow downstream contract),
-* ``trading_model.m02_sector_context_model_generation_explainability`` (human-review detail),
-* ``trading_model.m02_sector_context_model_generation_diagnostics`` (acceptance/gating detail).
+* ``trading_model.model_02_sector_context_model_generation`` (narrow downstream contract),
+* ``trading_model.model_02_sector_context_model_generation_explainability`` (human-review detail),
+* ``trading_model.model_02_sector_context_model_generation_diagnostics`` (acceptance/gating detail).
 
 The baseline route is deliberately conservative: it scores reviewed sector/industry ETF behavior
 without ETF holdings, stock exposure, final target selection, strategy selection,
@@ -45,9 +45,9 @@ def _pstdev(values: Iterable[float]) -> float:
 
 MODEL_ID = "sector_context_model"
 MODEL_VERSION = "sector_context_model_contract"
-PRIMARY_TABLE = "m02_sector_context_model_generation"
-EXPLAINABILITY_TABLE = "m02_sector_context_model_generation_explainability"
-DIAGNOSTICS_TABLE = "m02_sector_context_model_generation_diagnostics"
+PRIMARY_TABLE = "model_02_sector_context_model_generation"
+EXPLAINABILITY_TABLE = "model_02_sector_context_model_generation_explainability"
+DIAGNOSTICS_TABLE = "model_02_sector_context_model_generation_diagnostics"
 SUMMARY_CANDIDATE = "SECTOR_OBSERVATION_UNIVERSE"
 
 HANDOFF_STATES = {"selected", "watch", "blocked", "insufficient_data"}
@@ -286,7 +286,7 @@ def generate_rows(
     *,
     model_version: str = MODEL_VERSION,
 ) -> list[dict[str, Any]]:
-    """Generate primary ``m02_sector_context_model_generation`` rows."""
+    """Generate primary ``model_02_sector_context_model_generation`` rows."""
 
     provisional = [_generate_primary_row(group, model_version=model_version) for group in _sector_groups(feature_rows, market_context_rows)]
     ranked = [row for row in provisional if _safe_float(row.get("2_sector_tradability_score")) is not None and row.get("2_sector_handoff_state") in {"selected", "watch"}]

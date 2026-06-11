@@ -14,7 +14,7 @@ from typing import Any, Mapping, Sequence
 from model_runtime.config import database_url_file
 
 DEFAULT_DB_URL_FILE = database_url_file()
-DEFAULT_SOURCE_TABLE = "m01_market_regime_feature_generation"
+DEFAULT_SOURCE_TABLE = "model_01_market_regime_feature_generation"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 RETIRED_PRIMARY_COLUMNS = (
@@ -379,7 +379,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-schema", default="trading_data")
     parser.add_argument("--source-table", default=DEFAULT_SOURCE_TABLE)
     parser.add_argument("--target-schema", default="trading_model")
-    parser.add_argument("--target-table", default="m01_market_regime_model_generation")
+    parser.add_argument("--target-table", default="model_01_market_regime_model_generation")
     parser.add_argument("--explainability-table", help="Optional explainability artifact table. Defaults to <target-table>_explainability.")
     parser.add_argument("--diagnostics-table", help="Optional diagnostics artifact table. Defaults to <target-table>_diagnostics.")
     parser.add_argument("--source-start", help="Optional lower timestamp bound for derived rows. Include enough lookback for rolling factors.")

@@ -4,7 +4,7 @@ This file owns the reviewed evidence map for `model_01_market_regime`. It is mod
 
 ## Boundary
 
-Layer 1 maps point-in-time rows from `trading_data.m01_market_regime_feature_generation` into broad market tradability/regime state keyed by `available_time`.
+Layer 1 maps point-in-time rows from `trading_data.model_01_market_regime_feature_generation` into broad market tradability/regime state keyed by `available_time`.
 
 It must not produce sector/industry ETF rankings, selected securities, strategy choices, option contracts, position sizes, final actions, or portfolio actions. Sector/industry interpretation starts in Layer 2.
 

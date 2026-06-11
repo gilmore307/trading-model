@@ -13,7 +13,7 @@ class SectorContextContractTests(unittest.TestCase):
         contract = CONTRACT_PATH.read_text(encoding="utf-8")
 
         for token in {
-            "trading_model.m02_sector_context_model_generation",
+            "trading_model.model_02_sector_context_model_generation",
             "sector_context_state[available_time, sector_or_industry_symbol]",
             "`available_time`",
             "`sector_or_industry_symbol`",

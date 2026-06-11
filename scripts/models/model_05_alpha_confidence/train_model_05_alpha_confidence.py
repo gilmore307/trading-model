@@ -49,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--database-url")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
-    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via m03_target_state_vector_data_acquisition.")
+    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via model_03_target_state_vector_data_acquisition.")
     parser.add_argument("--cost-bps", type=float, default=5.0)
     args = parser.parse_args(argv)
 
@@ -134,7 +134,7 @@ def read_training_rows_from_database(
             source_03_rows = _fetch_rows(
                 cursor,
                 schema="trading_data",
-                table="m03_target_state_vector_data_acquisition",
+                table="model_03_target_state_vector_data_acquisition",
                 source_start=source_start,
                 source_end=source_end,
                 target_symbol=target_symbol,
@@ -162,7 +162,7 @@ def read_training_rows_from_database(
             model_02_rows = _fetch_rows(
                 cursor,
                 schema="trading_model",
-                table="m02_sector_context_model_generation",
+                table="model_02_sector_context_model_generation",
                 source_start=source_start,
                 source_end=source_end,
                 order_by="available_time::timestamptz ASC, sector_or_industry_symbol ASC",
@@ -170,7 +170,7 @@ def read_training_rows_from_database(
             model_01_rows = _fetch_rows(
                 cursor,
                 schema="trading_model",
-                table="m01_market_regime_model_generation",
+                table="model_01_market_regime_model_generation",
                 source_start=source_start,
                 source_end=source_end,
                 order_by="available_time::timestamptz ASC",

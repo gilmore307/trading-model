@@ -14,7 +14,7 @@ from model_runtime.config import database_url_file
 from models.model_03_target_state_vector import generator
 
 DEFAULT_DB_URL_FILE = database_url_file()
-DEFAULT_FEATURE_TABLE = "m03_target_state_vector_feature_generation"
+DEFAULT_FEATURE_TABLE = "model_03_target_state_vector_feature_generation"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 PRIMARY_JSON_COLUMNS: set[str] = set()
@@ -149,12 +149,12 @@ def _feature_rows_query(
             'model_02_sector_context:' || replace(l2."available_time"::text, ' ', 'T') || ':' || l2."sector_or_industry_symbol"
           ) AS "sector_context_state_ref"
         FROM {_qualified(source_schema, source_table)} AS f
-        LEFT JOIN {_qualified("trading_data", "m03_target_state_vector_data_acquisition")} AS s
+        LEFT JOIN {_qualified("trading_data", "model_03_target_state_vector_data_acquisition")} AS s
           ON s."target_candidate_id" = f."target_candidate_id"
          AND s."available_time" = f."available_time"
         LEFT JOIN LATERAL (
           SELECT *
-          FROM {_qualified("trading_model", "m02_sector_context_model_generation")} AS candidate_l2
+          FROM {_qualified("trading_model", "model_02_sector_context_model_generation")} AS candidate_l2
           WHERE candidate_l2."sector_or_industry_symbol" = s."symbol"
             AND candidate_l2."available_time" <= f."available_time"
           ORDER BY candidate_l2."available_time" DESC
@@ -162,7 +162,7 @@ def _feature_rows_query(
         ) AS l2 ON TRUE
         LEFT JOIN LATERAL (
           SELECT *
-          FROM {_qualified("trading_model", "m01_market_regime_model_generation")} AS candidate_l1
+          FROM {_qualified("trading_model", "model_01_market_regime_model_generation")} AS candidate_l1
           WHERE candidate_l1."available_time" <= f."available_time"
           ORDER BY candidate_l1."available_time" DESC
           LIMIT 1
@@ -431,7 +431,7 @@ def generate_from_database(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--feature-rows", type=Path, help="JSON/JSONL m03_target_state_vector_feature_generation rows")
+    parser.add_argument("--feature-rows", type=Path, help="JSON/JSONL model_03_target_state_vector_feature_generation rows")
     parser.add_argument("--output", type=Path, help="Optional JSONL output path. Defaults to stdout for file mode.")
     parser.add_argument("--model-version", default=generator.MODEL_VERSION)
     parser.add_argument("--from-database", action="store_true", help="Read feature rows from PostgreSQL and write model rows to PostgreSQL.")
@@ -444,7 +444,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--diagnostics-table", help="Optional diagnostics artifact table. Defaults to <target-table>_diagnostics.")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
-    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via m03_target_state_vector_data_acquisition.")
+    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via model_03_target_state_vector_data_acquisition.")
     args = parser.parse_args(argv)
     if args.from_database:
         row_count = generate_from_database(

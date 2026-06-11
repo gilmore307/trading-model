@@ -80,7 +80,7 @@ Status: Accepted
 The physical output table is:
 
 ```text
-trading_model.m01_market_regime_model_generation
+trading_model.model_01_market_regime_model_generation
 ```
 
 Current model-facing state score keys:
@@ -153,7 +153,7 @@ context_etf_state[available_time, context_etf_symbol]
 Planned physical output:
 
 ```text
-trading_model.m02_sector_context_model_generation
+trading_model.model_02_sector_context_model_generation
 ```
 
 The field contract is owned by `src/models/model_02_sector_context/sector_context_state_contract.md` until implementation/evaluation proves which names should be shared through the registry.
@@ -301,7 +301,7 @@ Accepted canonical names:
 
 - Class/display: `SectorContextModel`
 - Stable id: `sector_context_model`
-- Physical output table: `trading_model.m02_sector_context_model_generation`
+- Physical output table: `trading_model.model_02_sector_context_model_generation`
 - Conceptual output: `context_etf_state`
 
 Retire active-use references to `SecuritySelectionModel`, `security_selection_model`, and `model_02_security_selection`. Historical decision text may mention them only as superseded terms.
@@ -798,7 +798,7 @@ Status: Accepted
 
 A follow-up acceptance run created a real Layer 3 production-evaluation substrate instead of leaving Layer 3 only in the generic missing-substrate bucket.
 
-Layer 3 now has PostgreSQL feature rows in `trading_data.m03_target_state_vector_feature_generation`, generated model rows in `trading_model.model_03_target_state_vector`, future-target-tradeable-path labels, and reproducible evaluation evidence.
+Layer 3 now has PostgreSQL feature rows in `trading_data.model_03_target_state_vector_feature_generation`, generated model rows in `trading_model.model_03_target_state_vector`, future-target-tradeable-path labels, and reproducible evaluation evidence.
 
 The measured Layer 3 thresholds passed, but promotion remains deferred because Layer 1 and Layer 2 are not production-approved/active upstream dependencies and Layer 3 calibration evidence is still missing. No model-side review artifact may activate a config; activation belongs in `trading-manager`.
 
@@ -809,7 +809,7 @@ The measured Layer 3 thresholds passed, but promotion remains deferred because L
 Date: 2026-05-08
 Status: Accepted
 
-A follow-up Layer 1/2 gate repair found and fixed a stale feature-generation problem before re-reviewing promotion. The repair regenerated `m01_market_regime_feature_generation`, `m02_sector_context_feature_generation`, `m01_market_regime_model_generation`, and `m02_sector_context_model_generation` from real PostgreSQL source data instead of lowering thresholds.
+A follow-up Layer 1/2 gate repair found and fixed a stale feature-generation problem before re-reviewing promotion. The repair regenerated `model_01_market_regime_feature_generation`, `model_02_sector_context_feature_generation`, `model_01_market_regime_model_generation`, and `model_02_sector_context_model_generation` from real PostgreSQL source data instead of lowering thresholds.
 
 Latest Layer 1 evidence fixed the stale row-count and leakage failures. A later scoring repair also excluded `1_coverage_score` and `1_data_quality_score` from predictive-return factor scoring, leaving split-stability passing; promotion still fails baseline improvement, eval-label count, pair-count, and coverage gates.
 
@@ -1092,7 +1092,7 @@ windows; crypto labels observe continuous path.
 
 Future return, volatility, drawdown, transition, liquidity, and tradability outcomes are labels/evaluation indicators only. They must not enter same-row feature construction or model generation.
 
-The target physical `m01_market_regime_model_generation` identity is `(available_time, input_frame, prediction_horizon, market_universe_ref)`. Public `1_*` output names remain compact and unsuffixed inside each row.
+The target physical `model_01_market_regime_model_generation` identity is `(available_time, input_frame, prediction_horizon, market_universe_ref)`. Public `1_*` output names remain compact and unsuffixed inside each row.
 
 ## D051 - Layer 4 event impact scope is resolved from the state stack
 

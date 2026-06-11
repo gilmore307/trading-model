@@ -446,10 +446,10 @@ class CurrentModelScriptEntrypointTests(unittest.TestCase):
 
         rows = generator._model_05_input_rows(model_04_rows, candidate_rows)
 
-        self.assertEqual(rows[0]["option_chain_snapshot_ref"], "m05_option_expression_feature_generation:AAPL:2016-01-04T09:35:00-05:00")
+        self.assertEqual(rows[0]["option_chain_snapshot_ref"], "model_05_option_expression_feature_generation:AAPL:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["option_surface_status"], "optionable_chain_available")
         self.assertEqual(rows[0]["option_quote_available_time"], "2016-01-04T09:35:00-05:00")
-        self.assertEqual(rows[0]["underlying_quote_snapshot_ref"], "m03_target_state_vector_data_acquisition:anon_aapl:2016-01-04T09:35:00-05:00")
+        self.assertEqual(rows[0]["underlying_quote_snapshot_ref"], "model_03_target_state_vector_data_acquisition:anon_aapl:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["underlying_reference_price"], 102.5)
         self.assertEqual(rows[0]["option_contract_candidates"][0]["contract_ref"], "AAPL160115C00100000")
         self.assertEqual(rows[0]["option_contract_candidates"][0]["option_right"], "CALL")
@@ -460,7 +460,7 @@ class CurrentModelScriptEntrypointTests(unittest.TestCase):
 
         class FakeCursor:
             def __init__(self) -> None:
-                self._one = {"table_ref": "trading_data.m05_option_expression_feature_generation"}
+                self._one = {"table_ref": "trading_data.model_05_option_expression_feature_generation"}
                 self._many = [
                     {
                         "underlying": "AAPL",

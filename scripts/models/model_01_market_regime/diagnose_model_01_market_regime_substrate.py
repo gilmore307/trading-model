@@ -29,7 +29,7 @@ from models.model_01_market_regime.substrate_diagnostics import diagnose_substra
 ET = ZoneInfo("America/New_York")
 DEFAULT_DB_URL_FILE = database_url_file()
 DEFAULT_SOURCE_SCHEMA = "trading_data"
-DEFAULT_SOURCE_TABLE = "m01_market_regime_data_acquisition"
+DEFAULT_SOURCE_TABLE = "model_01_market_regime_data_acquisition"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 

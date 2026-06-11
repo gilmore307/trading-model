@@ -13,7 +13,7 @@ class ModelOutputQualityGateTests(unittest.TestCase):
             "sample_limit": 5000,
             "tables": [
                 {
-                    "table": "m01_market_regime_model_generation",
+                    "table": "model_01_market_regime_model_generation",
                     "status": "sampled",
                     "all_null_columns": [
                         {
@@ -41,7 +41,7 @@ class ModelOutputQualityGateTests(unittest.TestCase):
             "sample_limit": 5000,
             "tables": [
                 {
-                    "table": "m02_sector_context_model_generation_explainability",
+                    "table": "model_02_sector_context_model_generation_explainability",
                     "status": "sampled",
                     "all_null_columns": [
                         {
@@ -65,7 +65,7 @@ class ModelOutputQualityGateTests(unittest.TestCase):
             "sample_limit": 5000,
             "tables": [
                 {
-                    "table": "m02_sector_context_model_generation",
+                    "table": "model_02_sector_context_model_generation",
                     "status": "sampled",
                     "all_null_columns": [
                         {

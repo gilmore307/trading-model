@@ -13,12 +13,12 @@ It may mark which context ETFs are suitable for downstream target-context routin
 Layer 2 uses three physical artifacts so the downstream contract stays narrow without discarding review and gating evidence:
 
 ```text
-trading_model.m02_sector_context_model_generation                  # output
-trading_model.m02_sector_context_model_generation_explainability   # explainability
-trading_model.m02_sector_context_model_generation_diagnostics      # diagnostics
+trading_model.model_02_sector_context_model_generation                  # output
+trading_model.model_02_sector_context_model_generation_explainability   # explainability
+trading_model.model_02_sector_context_model_generation_diagnostics      # diagnostics
 ```
 
-`m02_sector_context_model_generation` is the stable downstream dependency table. `m02_sector_context_model_generation_explainability` is for human review/debug/explain. `m02_sector_context_model_generation_diagnostics` is for acceptance, monitoring, and gating.
+`model_02_sector_context_model_generation` is the stable downstream dependency table. `model_02_sector_context_model_generation_explainability` is for human review/debug/explain. `model_02_sector_context_model_generation_diagnostics` is for acceptance, monitoring, and gating.
 
 Downstream production logic should not hard-depend on explainability or diagnostics fields without a later reviewed promotion decision.
 
@@ -70,7 +70,7 @@ Cross-section calculations may contribute rank, percentile, breadth, dispersion,
 
 Layer 2 may separately emit a `cross_etf_summary` for global/group rotation and attention. That summary is not a per-target context vector and should not replace per-ETF `context_etf_state`.
 
-## `m02_sector_context_model_generation` output fields
+## `model_02_sector_context_model_generation` output fields
 
 The primary output is intentionally narrow: identity, direction-neutral sector tradability state, downstream sector handoff, and eligibility/quality summary.
 
@@ -117,7 +117,7 @@ Layer 2 may identify sector-anchor context suitable for downstream attachment an
 
 The active output uses `2_coverage_score` / `2_state_quality_score` for reliability and `2_sector_tradability_score` for direction-neutral handoff quality.
 
-## `m02_sector_context_model_generation_explainability` fields
+## `model_02_sector_context_model_generation_explainability` fields
 
 Explainability owns behavior and attribution detail for human review. These fields are allowed to be wider and more detailed than the primary output, but they should not become hard downstream dependencies.
 
@@ -166,7 +166,7 @@ The contract prefers signed axes over duplicated opposite fields. Positive and n
 
 Explainability may also include contributing evidence refs, reason-code expansions, bucket/subscore detail, config refs, and feature-family contribution detail once implementation proves the concrete shape.
 
-## `m02_sector_context_model_generation_diagnostics` fields
+## `model_02_sector_context_model_generation_diagnostics` fields
 
 Diagnostics owns acceptance, monitoring, and gating evidence. These fields may gate use of the row, but they do not directly express the context ETF state itself.
 

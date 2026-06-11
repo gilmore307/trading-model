@@ -81,8 +81,8 @@ def load_historical_rows_from_database(
               PARTITION BY date_trunc('month', fg.available_time)
               ORDER BY fg.available_time, fg.target_candidate_id
             ) AS month_row_number
-          FROM "{schema_data}"."m03_target_state_vector_feature_generation" fg
-          JOIN "{schema_data}"."m03_target_state_vector_data_acquisition" da
+          FROM "{schema_data}"."model_03_target_state_vector_feature_generation" fg
+          JOIN "{schema_data}"."model_03_target_state_vector_data_acquisition" da
             ON da.target_candidate_id = fg.target_candidate_id
            AND da.available_time = fg.available_time
           WHERE fg.available_time >= %s::timestamptz
@@ -109,7 +109,7 @@ def load_historical_rows_from_database(
         FROM monthly_sample
         LEFT JOIN LATERAL (
           SELECT available_time, bar_close
-          FROM "{schema_data}"."m03_target_state_vector_data_acquisition" future_da
+          FROM "{schema_data}"."model_03_target_state_vector_data_acquisition" future_da
           WHERE future_da.target_candidate_id = monthly_sample.target_candidate_id
             AND future_da.available_time >= monthly_sample.tradeable_time + (%s::text || ' days')::interval
             AND future_da.bar_close IS NOT NULL
@@ -509,7 +509,7 @@ def _artifact_tables(
                 "purpose": "historical_current_chain_evaluation",
                 "required_data_start_time": start,
                 "required_data_end_time": end,
-                "required_source_key": "trading_data.m03_target_state_vector_feature_generation",
+                "required_source_key": "trading_data.model_03_target_state_vector_feature_generation",
                 "required_feature_key": "migration_source_current_chain_payload",
                 "request_status": "completed" if receipt.get("evaluation_status") == "passed" else "blocked",
                 "request_payload_json": {"receipt": dict(receipt)},
@@ -523,7 +523,7 @@ def _artifact_tables(
                 "model_id": "current_six_model_chain",
                 "request_id": f"request_{run_id}",
                 "feature_schema": CURRENT_MODEL_HISTORICAL_SCHEMA,
-                "feature_table": "trading_data.m03_target_state_vector_feature_generation",
+                "feature_table": "trading_data.model_03_target_state_vector_feature_generation",
                 "data_start_time": start,
                 "data_end_time": end,
                 "feature_row_count": len(examples),

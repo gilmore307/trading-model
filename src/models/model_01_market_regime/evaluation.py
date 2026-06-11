@@ -19,9 +19,9 @@ from zoneinfo import ZoneInfo
 ET = ZoneInfo("America/New_York")
 DEFAULT_MODEL_ID = "market_regime_model"
 DEFAULT_FEATURE_SCHEMA = "trading_data"
-DEFAULT_FEATURE_TABLE = "m01_market_regime_feature_generation"
+DEFAULT_FEATURE_TABLE = "model_01_market_regime_feature_generation"
 DEFAULT_MODEL_SCHEMA = "trading_model"
-DEFAULT_MODEL_TABLE = "m01_market_regime_model_generation"
+DEFAULT_MODEL_TABLE = "model_01_market_regime_model_generation"
 DEFAULT_SOURCE_KEY = "M01_MARKET_REGIME_DATA_ACQUISITION"
 DEFAULT_FEATURE_KEY = "M01_MARKET_REGIME_FEATURE_GENERATION"
 DEFAULT_DRY_RUN_WRITE_POLICY = "no_database_write"

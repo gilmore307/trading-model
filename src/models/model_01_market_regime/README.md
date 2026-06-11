@@ -4,9 +4,9 @@ MarketRegimeModel broad market-context state builder.
 
 Boundary:
 
-- Input: rows from `trading_data.m01_market_regime_feature_generation`.
-- Primary output: rows for `trading_model.m01_market_regime_model_generation`.
-- Support outputs: rows for `trading_model.m01_market_regime_model_generation_explainability` and `trading_model.m01_market_regime_model_generation_diagnostics`.
+- Input: rows from `trading_data.model_01_market_regime_feature_generation`.
+- Primary output: rows for `trading_model.model_01_market_regime_model_generation`.
+- Support outputs: rows for `trading_model.model_01_market_regime_model_generation_explainability` and `trading_model.model_01_market_regime_model_generation_diagnostics`.
 - Current row key: `available_time`.
 - Target row key after the accepted frame/horizon migration: `(available_time, input_frame, prediction_horizon, market_universe_ref)`.
 - Explainability is keyed by the model row identity plus `factor_name`.
@@ -77,7 +77,7 @@ Standardization defaults are currently `lookback = 120`, `min_history = 20`, `st
 
 ## Evidence map
 
-The current Layer 1 feature payload has 857 logical feature keys after moving sector/industry rotation pairs and sector-observation aggregates to `m02_sector_context_feature_generation` and pruning raw ratio moving-average levels and standalone SHY return/trend keys, while the internal signal specification owns all 857 signal columns. This is an ownership baseline, not a claim that every reducer is promotion-ready.
+The current Layer 1 feature payload has 857 logical feature keys after moving sector/industry rotation pairs and sector-observation aggregates to `model_02_sector_context_feature_generation` and pruning raw ratio moving-average levels and standalone SHY return/trend keys, while the internal signal specification owns all 857 signal columns. This is an ownership baseline, not a claim that every reducer is promotion-ready.
 
 See `evidence_map.md` for the current feature-to-output evidence map, evidence-role vocabulary, intentionally unused evidence, quality evidence, and market-context usefulness checks. Future feature additions must either map to a reviewed primary/diagnostic/quality/evaluation role or be removed rather than silently expanding the payload.
 

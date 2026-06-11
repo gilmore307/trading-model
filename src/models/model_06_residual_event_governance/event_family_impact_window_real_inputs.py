@@ -381,7 +381,7 @@ def daily_bars_from_sql(
                   max(bar_high) AS high,
                   min(bar_low) AS low,
                   (array_agg(bar_close ORDER BY timestamp DESC))[1] AS close
-                FROM trading_data.m01_market_regime_data_acquisition
+                FROM trading_data.model_01_market_regime_data_acquisition
                 WHERE symbol = ANY(%s)
                   AND timeframe = '1Min'
                   AND timestamp >= %s

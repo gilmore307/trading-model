@@ -165,7 +165,7 @@ class MarketRegimeModelTests(unittest.TestCase):
         self.assertEqual(rows[0]["snapshot_time"], "2026-01-02T16:00:00-05:00")
         self.assertEqual(rows[0]["spy_return_1d"], 0.01)
         self.assertNotIn("feature_payload_json", rows[0])
-        self.assertIn('"trading_data"."m01_market_regime_feature_generation"', cursor.executed[0][0])
+        self.assertIn('"trading_data"."model_01_market_regime_feature_generation"', cursor.executed[0][0])
 
     def test_support_artifact_builders_emit_explainability_and_diagnostics(self) -> None:
         model_rows = generator.generate_rows([_row(index) for index in range(1, 66)], lookback=120)
@@ -199,11 +199,11 @@ class MarketRegimeModelTests(unittest.TestCase):
             cursor,
             [{"available_time": "2026-01-02T10:00:00-05:00", "1_market_trend_quality_score": 0.5}],
             target_schema="trading_model",
-            target_table="m01_market_regime_model_generation",
+            target_table="model_01_market_regime_model_generation",
         )
 
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
-        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."m01_market_regime_model_generation"', joined_sql)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime_model_generation"', joined_sql)
         self.assertIn('PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref")', joined_sql)
         self.assertIn('ADD COLUMN IF NOT EXISTS "1_market_trend_quality_score" DOUBLE PRECISION', joined_sql)
         self.assertIn('DROP COLUMN IF EXISTS "1_price_behavior_factor"', joined_sql)
@@ -233,7 +233,7 @@ class MarketRegimeModelTests(unittest.TestCase):
                 }
             ],
             target_schema="trading_model",
-            target_table="m01_market_regime_model_generation_explainability",
+            target_table="model_01_market_regime_model_generation_explainability",
         )
         sql_runner.write_diagnostics_rows_sql(
             cursor,
@@ -247,13 +247,13 @@ class MarketRegimeModelTests(unittest.TestCase):
                 }
             ],
             target_schema="trading_model",
-            target_table="m01_market_regime_model_generation_diagnostics",
+            target_table="model_01_market_regime_model_generation_diagnostics",
         )
 
         joined_sql = "\n".join(sql for sql, _params in cursor.calls)
-        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."m01_market_regime_model_generation_explainability"', joined_sql)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime_model_generation_explainability"', joined_sql)
         self.assertIn('PRIMARY KEY ("available_time", "input_frame", "prediction_horizon", "market_universe_ref", "factor_name")', joined_sql)
-        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."m01_market_regime_model_generation_diagnostics"', joined_sql)
+        self.assertIn('CREATE TABLE IF NOT EXISTS "trading_model"."model_01_market_regime_model_generation_diagnostics"', joined_sql)
         self.assertIn('"diagnostic_payload_json" JSONB NOT NULL', joined_sql)
         self.assertIn('ON CONFLICT ("available_time", "input_frame", "prediction_horizon", "market_universe_ref") DO UPDATE SET', joined_sql)
 

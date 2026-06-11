@@ -172,7 +172,7 @@ def _fetch_target_context_identity_rows(
             """
             EXISTS (
               SELECT 1
-              FROM "trading_data"."m03_target_state_vector_data_acquisition" AS s
+              FROM "trading_data"."model_03_target_state_vector_data_acquisition" AS s
               WHERE s."target_candidate_id" = t."target_candidate_id"
                 AND s."available_time"::timestamptz = t."available_time"::timestamptz
                 AND UPPER(s."symbol") = %s
@@ -224,7 +224,7 @@ def _fetch_target_context_rows(
                 """
                 EXISTS (
                   SELECT 1
-                  FROM "trading_data"."m03_target_state_vector_data_acquisition" AS s
+                  FROM "trading_data"."model_03_target_state_vector_data_acquisition" AS s
                   WHERE s."target_candidate_id" = t."target_candidate_id"
                     AND s."available_time"::timestamptz = t."available_time"::timestamptz
                     AND UPPER(s."symbol") = %s
@@ -256,7 +256,7 @@ def _fetch_target_context_rows(
             """
             EXISTS (
               SELECT 1
-              FROM "trading_data"."m03_target_state_vector_data_acquisition" AS s
+              FROM "trading_data"."model_03_target_state_vector_data_acquisition" AS s
               WHERE s."target_candidate_id" = t."target_candidate_id"
                 AND s."available_time"::timestamptz = t."available_time"::timestamptz
                 AND UPPER(s."symbol") = %s
@@ -404,7 +404,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--target-table", default="model_04_event_failure_risk")
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
-    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via m03_target_state_vector_data_acquisition.")
+    parser.add_argument("--target-symbol", help="Optional selected target symbol filter via model_03_target_state_vector_data_acquisition.")
     args = parser.parse_args(argv)
     if args.from_database or args.write_database:
         psycopg, dict_row = _load_psycopg()

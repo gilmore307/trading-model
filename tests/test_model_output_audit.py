@@ -64,7 +64,7 @@ class ModelOutputAuditTests(unittest.TestCase):
             def execute(self, sql: str, params=()) -> None:
                 self.executed.append(sql)
                 if "to_regclass" in sql:
-                    self._result = [{"table_ref": "trading_model.m01_market_regime_model_generation"}]
+                    self._result = [{"table_ref": "trading_model.model_01_market_regime_model_generation"}]
                 elif "information_schema.columns" in sql:
                     self._result = [{"column_name": "available_time"}, {"column_name": "1_score"}]
                 elif "estimated_rows" in sql:
@@ -80,7 +80,7 @@ class ModelOutputAuditTests(unittest.TestCase):
 
         cursor = FakeCursor()
 
-        audit = audit_database(cursor, tables=("m01_market_regime_model_generation",), sample_limit=1)
+        audit = audit_database(cursor, tables=("model_01_market_regime_model_generation",), sample_limit=1)
 
         self.assertEqual(audit["contract_type"], "model_output_table_quality_audit")
         select_sql = "\n".join(cursor.executed)
@@ -128,7 +128,7 @@ class ModelOutputAuditTests(unittest.TestCase):
 
     def test_known_accumulation_and_selection_columns_are_not_generator_defects(self) -> None:
         report = audit_rows(
-            "m02_sector_context_model_generation",
+            "model_02_sector_context_model_generation",
             [
                 {
                     "available_time": "2016-01-04T09:35:00-05:00",

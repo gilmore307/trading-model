@@ -33,12 +33,12 @@ CURRENT_MODEL_OUTPUT_TABLES: tuple[str, ...] = (
 )
 
 RETAINED_MIGRATION_MODEL_OUTPUT_TABLES: tuple[str, ...] = (
-    "m01_market_regime_model_generation",
-    "m01_market_regime_model_generation_explainability",
-    "m01_market_regime_model_generation_diagnostics",
-    "m02_sector_context_model_generation",
-    "m02_sector_context_model_generation_explainability",
-    "m02_sector_context_model_generation_diagnostics",
+    "model_01_market_regime_model_generation",
+    "model_01_market_regime_model_generation_explainability",
+    "model_01_market_regime_model_generation_diagnostics",
+    "model_02_sector_context_model_generation",
+    "model_02_sector_context_model_generation_explainability",
+    "model_02_sector_context_model_generation_diagnostics",
     "model_03_target_state_vector",
     "model_03_target_state_vector_explainability",
     "model_03_target_state_vector_diagnostics",
