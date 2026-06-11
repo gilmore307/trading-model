@@ -365,6 +365,48 @@ class CurrentModelScriptEntrypointTests(unittest.TestCase):
         self.assertIn('s."bar_close" AS "underlying_reference_price"', sql)
         self.assertEqual(rows[0]["unified_decision_vector_ref"], "udv_1")
 
+    def test_model_04_unified_decision_reads_current_model_02_target_state(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_04_unified_decision/generate_model_04_unified_decision.py")
+
+        class FakeCursor:
+            def __init__(self) -> None:
+                self._one = None
+                self._many = []
+                self.statements: list[str] = []
+
+            def execute(self, sql: str, params: tuple[object, ...] | list[object] | None = None) -> None:
+                self.statements.append(sql)
+                if "to_regclass" in sql:
+                    self._one = {"table_ref": None}
+                    return
+                self._many = [
+                    {
+                        "available_time": "2016-01-04T09:35:00-05:00",
+                        "tradeable_time": "2016-01-04T09:35:00-05:00",
+                        "target_candidate_id": "anon_aapl",
+                        "target_context_state_ref": "tcs_1",
+                        "target_context_state": {"2_target_direction_score_1W": 0.4},
+                    }
+                ]
+
+            def fetchone(self):
+                return self._one
+
+            def fetchall(self):
+                return self._many
+
+        cursor = FakeCursor()
+        rows = generator._fetch_database_input_rows(
+            cursor,
+            source_start="2016-01-01T00:00:00-05:00",
+            source_end="2016-07-01T00:00:00-04:00",
+        )
+
+        sql = "\n".join(cursor.statements)
+        self.assertIn('"trading_model"."model_02_target_state"', sql)
+        self.assertNotIn('"trading_model"."model_03_target_state_vector"', sql)
+        self.assertEqual(rows[0]["target_candidate_id"], "anon_aapl")
+
     def test_model_05_database_input_binds_option_candidates_when_feature_rows_exist(self) -> None:
         generator = self._load_script_module(REPO_ROOT / "scripts/models/model_05_option_expression/generate_model_05_option_expression.py")
 

@@ -136,6 +136,33 @@ class TargetStateModelTests(unittest.TestCase):
         self.assertEqual(script._column_type("target_context_state"), "JSONB")
         self.assertEqual(script._column_type("3_event_path_risk_score_1W"), "TEXT")
 
+    def test_database_feature_rows_map_to_current_model_02_inputs(self) -> None:
+        script = _load_script("scripts/models/model_02_target_state/generate_model_02_target_state.py")
+
+        rows = script._model_02_input_rows(
+            [
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "tradeable_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "background_context_state_ref": "mcs_1",
+                    "background_context_state": {"1_market_risk_stress_score_1W": 0.2},
+                    "anonymous_target_feature_vector": {"target_return_1W": 0.03},
+                    "sector_state_features": {"sector_beta": 0.8},
+                    "cross_state_features": {"relative_strength": 0.7},
+                    "feature_quality_diagnostics": {"coverage": 1.0},
+                }
+            ]
+        )
+
+        self.assertEqual(rows[0]["background_context_state_ref"], "mcs_1")
+        self.assertEqual(rows[0]["background_context_state"]["1_market_risk_stress_score_1W"], 0.2)
+        features = rows[0]["anonymous_target_feature_vector"]
+        self.assertEqual(features["target_return_1W"], 0.03)
+        self.assertEqual(features["sector_state_features"]["sector_beta"], 0.8)
+        self.assertEqual(features["cross_state_features"]["relative_strength"], 0.7)
+        self.assertEqual(features["feature_quality_diagnostics"]["coverage"], 1.0)
+
     def assert_no_key(self, value: object, forbidden: str) -> None:
         if isinstance(value, dict):
             for key, nested in value.items():

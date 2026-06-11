@@ -134,7 +134,7 @@ def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_
           q."dollar_volume",
           to_jsonb(t) AS "target_context_state"
           {event_select_sql}
-        FROM {_qualified('trading_model', 'model_03_target_state_vector')} AS t
+        FROM {_qualified('trading_model', 'model_02_target_state')} AS t
         LEFT JOIN {_qualified('trading_data', 'm03_target_state_vector_data_acquisition')} AS q
           ON q."target_candidate_id" = t."target_candidate_id"
          AND q."available_time" = t."available_time"::timestamptz

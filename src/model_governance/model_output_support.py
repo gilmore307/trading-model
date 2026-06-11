@@ -10,6 +10,7 @@ from typing import Any
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
 RETIRED_HORIZON_SUFFIXES = ("5min", "15min", "60min", "390min", "5m", "15m", "60m", "390m")
+DEFAULT_WRITE_BATCH_SIZE = 1000
 
 
 def quote_identifier(identifier: str) -> str:
@@ -194,12 +195,17 @@ def _write_rows(
         VALUES ({", ".join(placeholders)})
         ON CONFLICT ({pk_sql}) DO UPDATE SET {updates}
     """
+    batch: list[list[Any]] = []
     for row in rows:
-        values = [
+        batch.append([
             json.dumps(row.get(column), sort_keys=True, default=str) if column_types[column] == "JSONB" else _jsonable(row.get(column))
             for column in columns
-        ]
-        cursor.execute(insert_sql, values)
+        ])
+        if len(batch) >= DEFAULT_WRITE_BATCH_SIZE:
+            cursor.executemany(insert_sql, batch)
+            batch = []
+    if batch:
+        cursor.executemany(insert_sql, batch)
 
 
 def _ensure_primary_key(cursor: Any, *, schema: str, table: str, primary_key: Sequence[str]) -> None:

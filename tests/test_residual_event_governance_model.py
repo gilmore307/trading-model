@@ -122,6 +122,40 @@ class ResidualEventGovernanceModelTests(unittest.TestCase):
         self.assertEqual(script._column_type("6_resolved_intervention_action"), "TEXT")
         self.assertEqual(script._column_type("5_event_gap_risk_score_1W"), "TEXT")
 
+    def test_database_input_uses_current_m04_m05_route(self) -> None:
+        script = _load_generator_script()
+        cursor = _FakeCursor(
+            [
+                {
+                    "available_time": "2016-01-04T09:35:00-05:00",
+                    "tradeable_time": "2016-01-04T09:35:00-05:00",
+                    "target_candidate_id": "anon_aapl",
+                    "background_context_state_ref": "bcs_1",
+                    "target_context_state_ref": "tcs_1",
+                    "event_state_vector_ref": "esv_1",
+                    "unified_decision_vector_ref": "udv_1",
+                    "unified_decision_vector": {"4_resolved_underlying_action_type": "watch"},
+                    "direct_underlying_intent": {"action": "watch"},
+                    "option_expression_plan_ref": "oep_1",
+                    "option_expression_plan": {"5_resolved_expression_type": "underlying_only_expression"},
+                }
+            ]
+        )
+
+        rows = script._fetch_database_input_rows(
+            cursor,
+            source_start="2016-01-01T00:00:00-05:00",
+            source_end="2016-07-01T00:00:00-04:00",
+        )
+
+        sql = "\n".join(statement for statement, _params in cursor.statements)
+        self.assertIn('"trading_model"."model_04_unified_decision"', sql)
+        self.assertIn('"trading_model"."model_05_option_expression"', sql)
+        self.assertIn("model_06_residual_event_governance", script.MODEL_SURFACE)
+        self.assertNotIn("model_08_underlying_action", sql)
+        self.assertEqual(rows[0]["event_observations"], [])
+        self.assertEqual(rows[0]["unified_decision_vector_ref"], "udv_1")
+
     def test_current_generate_evaluate_review_scripts_support_help(self) -> None:
         scripts = [
             "scripts/models/model_06_residual_event_governance/generate_model_06_residual_event_governance.py",
@@ -240,6 +274,18 @@ def _base_row(**overrides: object) -> dict[str, object]:
     }
     row.update(overrides)
     return row
+
+
+class _FakeCursor:
+    def __init__(self, rows: list[dict[str, object]]) -> None:
+        self._rows = rows
+        self.statements: list[tuple[str, object]] = []
+
+    def execute(self, statement: str, params: object = None) -> None:
+        self.statements.append((statement, params))
+
+    def fetchall(self) -> list[dict[str, object]]:
+        return self._rows
 
 
 def _load_generator_script():
