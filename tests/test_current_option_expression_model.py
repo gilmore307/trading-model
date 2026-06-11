@@ -83,6 +83,22 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["5_resolved_selected_contract_ref"], "AAPL_PUT_GOOD")
         self.assertLess(output["5_option_expression_direction_score_1W"], 0.0)
 
+    def test_option_expression_policy_block_can_fall_back_to_underlying_only(self) -> None:
+        output = generate_rows(
+            [
+                _base_row(
+                    option_expression_policy={
+                        "option_expression_allowed": False,
+                        "allow_underlying_only_expression": True,
+                    }
+                )
+            ]
+        )[0]
+
+        self.assertEqual(output["5_resolved_expression_type"], "underlying_only_expression")
+        self.assertEqual(output["5_resolved_option_right"], "none")
+        self.assertIn("option_expression_policy_blocked", output["5_resolved_reason_codes"])
+
     def test_labels_are_offline_and_join_by_plan_ref(self) -> None:
         output = generate_rows([_base_row()])[0]
         labels = build_option_expression_labels(

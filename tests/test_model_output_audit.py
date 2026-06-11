@@ -1,27 +1,59 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 import unittest
+from pathlib import Path
 
-from model_governance.model_output_audit import MODEL_OUTPUT_TABLES, audit_rows, cleanup_sql_for_reports, audit_database
+from model_governance.model_output_audit import (
+    ALL_MODEL_OUTPUT_TABLES,
+    CURRENT_MODEL_OUTPUT_TABLES,
+    MODEL_OUTPUT_TABLES,
+    RETAINED_MIGRATION_MODEL_OUTPUT_TABLES,
+    audit_database,
+    audit_rows,
+    cleanup_sql_for_reports,
+)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class ModelOutputAuditTests(unittest.TestCase):
-    def test_default_table_set_covers_current_and_retained_model_surfaces(self) -> None:
+    def test_default_table_set_covers_current_model_surfaces_only(self) -> None:
         self.assertIn("model_04_unified_decision", MODEL_OUTPUT_TABLES)
         self.assertIn("model_01_background_context", MODEL_OUTPUT_TABLES)
         self.assertIn("model_02_target_state", MODEL_OUTPUT_TABLES)
         self.assertIn("model_03_event_state", MODEL_OUTPUT_TABLES)
         self.assertIn("model_05_option_expression", MODEL_OUTPUT_TABLES)
         self.assertIn("model_06_residual_event_governance", MODEL_OUTPUT_TABLES)
-        self.assertIn("model_06_dynamic_risk_policy", MODEL_OUTPUT_TABLES)
-        self.assertIn("model_06_dynamic_risk_policy_explainability", MODEL_OUTPUT_TABLES)
-        self.assertIn("model_06_dynamic_risk_policy_diagnostics", MODEL_OUTPUT_TABLES)
+        self.assertNotIn("model_06_dynamic_risk_policy", MODEL_OUTPUT_TABLES)
+        self.assertEqual(MODEL_OUTPUT_TABLES, CURRENT_MODEL_OUTPUT_TABLES)
         primary_tables = [
             table
             for table in MODEL_OUTPUT_TABLES
             if not table.endswith(("_explainability", "_diagnostics"))
         ]
-        self.assertEqual(len(primary_tables), 16)
+        self.assertEqual(len(primary_tables), 6)
+
+    def test_retained_migration_tables_are_explicit_optional_scope(self) -> None:
+        self.assertIn("model_06_dynamic_risk_policy", RETAINED_MIGRATION_MODEL_OUTPUT_TABLES)
+        self.assertIn("model_10_event_risk_governor", RETAINED_MIGRATION_MODEL_OUTPUT_TABLES)
+        self.assertNotIn("model_06_dynamic_risk_policy", CURRENT_MODEL_OUTPUT_TABLES)
+        self.assertIn("model_06_dynamic_risk_policy", ALL_MODEL_OUTPUT_TABLES)
+
+    def test_audit_cli_exposes_explicit_table_scope(self) -> None:
+        result = subprocess.run(
+            [sys.executable, "scripts/models/audit_model_output_tables.py", "--help"],
+            cwd=REPO_ROOT,
+            env={"PYTHONPATH": "src"},
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("--table-scope", result.stdout)
+        self.assertIn("retained-migration", result.stdout)
 
     def test_audit_database_uses_fast_table_sample_before_limit_fallback(self) -> None:
         class FakeCursor:

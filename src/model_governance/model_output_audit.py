@@ -1,9 +1,8 @@
 """Audit model output/support tables for empty and sparse columns.
 
-The audit is intentionally read-only. It samples recent rows from current six
-model output/support surfaces plus retained migration-source surfaces and
-classifies empty columns as data gaps, stale/generated-schema residue, or
-expected optional evidence.
+The audit is intentionally read-only. The default table set covers only the
+current six model output/support surfaces. Retained ten-layer tables remain
+available as an explicit migration-source audit scope, not as current outputs.
 """
 from __future__ import annotations
 
@@ -12,43 +11,46 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-MODEL_OUTPUT_TABLES: tuple[str, ...] = (
+CURRENT_MODEL_OUTPUT_TABLES: tuple[str, ...] = (
     "model_01_background_context",
     "model_01_background_context_explainability",
     "model_01_background_context_diagnostics",
-    "m01_market_regime_model_generation",
-    "m01_market_regime_model_generation_explainability",
-    "m01_market_regime_model_generation_diagnostics",
     "model_02_target_state",
     "model_02_target_state_explainability",
     "model_02_target_state_diagnostics",
-    "m02_sector_context_model_generation",
-    "m02_sector_context_model_generation_explainability",
-    "m02_sector_context_model_generation_diagnostics",
     "model_03_event_state",
     "model_03_event_state_explainability",
     "model_03_event_state_diagnostics",
+    "model_04_unified_decision",
+    "model_04_unified_decision_explainability",
+    "model_04_unified_decision_diagnostics",
+    "model_05_option_expression",
+    "model_05_option_expression_explainability",
+    "model_05_option_expression_diagnostics",
+    "model_06_residual_event_governance",
+    "model_06_residual_event_governance_explainability",
+    "model_06_residual_event_governance_diagnostics",
+)
+
+RETAINED_MIGRATION_MODEL_OUTPUT_TABLES: tuple[str, ...] = (
+    "m01_market_regime_model_generation",
+    "m01_market_regime_model_generation_explainability",
+    "m01_market_regime_model_generation_diagnostics",
+    "m02_sector_context_model_generation",
+    "m02_sector_context_model_generation_explainability",
+    "m02_sector_context_model_generation_diagnostics",
     "model_03_target_state_vector",
     "model_03_target_state_vector_explainability",
     "model_03_target_state_vector_diagnostics",
     "model_04_event_failure_risk",
     "model_04_event_failure_risk_explainability",
     "model_04_event_failure_risk_diagnostics",
-    "model_04_unified_decision",
-    "model_04_unified_decision_explainability",
-    "model_04_unified_decision_diagnostics",
     "model_05_alpha_confidence",
     "model_05_alpha_confidence_explainability",
     "model_05_alpha_confidence_diagnostics",
-    "model_05_option_expression",
-    "model_05_option_expression_explainability",
-    "model_05_option_expression_diagnostics",
     "model_06_dynamic_risk_policy",
     "model_06_dynamic_risk_policy_explainability",
     "model_06_dynamic_risk_policy_diagnostics",
-    "model_06_residual_event_governance",
-    "model_06_residual_event_governance_explainability",
-    "model_06_residual_event_governance_diagnostics",
     "model_07_position_projection",
     "model_07_position_projection_explainability",
     "model_07_position_projection_diagnostics",
@@ -62,6 +64,9 @@ MODEL_OUTPUT_TABLES: tuple[str, ...] = (
     "model_10_event_risk_governor_explainability",
     "model_10_event_risk_governor_diagnostics",
 )
+
+MODEL_OUTPUT_TABLES: tuple[str, ...] = CURRENT_MODEL_OUTPUT_TABLES
+ALL_MODEL_OUTPUT_TABLES: tuple[str, ...] = CURRENT_MODEL_OUTPUT_TABLES + RETAINED_MIGRATION_MODEL_OUTPUT_TABLES
 
 IDENTITY_COLUMN_HINTS = {
     "available_time",
@@ -337,7 +342,10 @@ def dump_audit_json(audit: Mapping[str, Any]) -> str:
 
 
 __all__ = [
+    "ALL_MODEL_OUTPUT_TABLES",
+    "CURRENT_MODEL_OUTPUT_TABLES",
     "MODEL_OUTPUT_TABLES",
+    "RETAINED_MIGRATION_MODEL_OUTPUT_TABLES",
     "DATA_ACCUMULATION_SCORE_COLUMNS",
     "audit_database",
     "audit_rows",

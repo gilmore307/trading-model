@@ -12,7 +12,6 @@ M05 does not own event-family identity or event-impact taxonomy. Option-sensitiv
 
 ```text
 model_05_option_expression
-  -> trading_guidance_record
   -> option_expression_plan / expression_vector
 ```
 

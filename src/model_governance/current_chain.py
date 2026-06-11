@@ -65,7 +65,7 @@ def run_current_chain(*, input_payload: Mapping[str, Any] | None = None, evidenc
     event = generate_event_state([_event_input(payload, background, target)])[0]
     decision = generate_unified_decision([_decision_input(payload, background, target, event)])[0]
     option = generate_option_expression([_option_input(payload, background, event, decision)])[0]
-    residual = generate_residual_event_governance([_residual_input(payload, target, decision, option)])[0]
+    residual = generate_residual_event_governance([_residual_input(payload, background, target, event, decision, option)])[0]
     rows = {
         M01_SURFACE: [background],
         M02_SURFACE: [target],
@@ -310,17 +310,28 @@ def _option_input(payload: Mapping[str, Any], background: Mapping[str, Any], eve
     }
 
 
-def _residual_input(payload: Mapping[str, Any], target: Mapping[str, Any], decision: Mapping[str, Any], option: Mapping[str, Any]) -> dict[str, Any]:
+def _residual_input(
+    payload: Mapping[str, Any],
+    background: Mapping[str, Any],
+    target: Mapping[str, Any],
+    event: Mapping[str, Any],
+    decision: Mapping[str, Any],
+    option: Mapping[str, Any],
+) -> dict[str, Any]:
     return {
         "available_time": decision["available_time"],
         "tradeable_time": decision["tradeable_time"],
         "target_candidate_id": decision["target_candidate_id"],
         "symbol_for_join_only": payload["routing_symbol"],
         "sector_type": payload["sector_type"],
+        "background_context_state_ref": background["background_context_state_ref"],
         "target_context_state_ref": target["target_context_state_ref"],
+        "event_state_vector_ref": event["event_state_vector_ref"],
         "unified_decision_vector_ref": decision["unified_decision_vector_ref"],
         "option_expression_plan_ref": option["option_expression_plan_ref"],
+        "background_context_state": background["background_context_state"]["score_payload"],
         "target_context_state": target["target_context_state"]["score_payload"],
+        "event_state_vector": event["event_state_vector"]["score_payload"],
         "direct_underlying_intent": decision["direct_underlying_intent"],
         "option_expression_plan": option["option_expression_plan"],
         "event_observations": payload["event_observations"],
@@ -342,6 +353,8 @@ def _handoff_checks(
         _check("m02_to_m04_target_ref", decision.get("target_context_state_ref") == target.get("target_context_state_ref")),
         _check("m03_to_m04_event_ref", decision.get("event_state_vector_ref") == event.get("event_state_vector_ref")),
         _check("m04_to_m05_unified_decision_ref", option.get("unified_decision_vector_ref") == decision.get("unified_decision_vector_ref")),
+        _check("m01_to_m06_background_ref", residual.get("background_context_state_ref") == background.get("background_context_state_ref")),
+        _check("m03_to_m06_event_ref", residual.get("event_state_vector_ref") == event.get("event_state_vector_ref")),
         _check("m04_to_m06_unified_decision_ref", residual.get("unified_decision_vector_ref") == decision.get("unified_decision_vector_ref")),
         _check("m05_to_m06_option_expression_ref", residual.get("option_expression_plan_ref") == option.get("option_expression_plan_ref")),
     ]

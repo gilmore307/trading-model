@@ -207,8 +207,11 @@ def _expression_type(
         return "no_option_expression", "none"
     if option_surface_status in {"non_optionable_underlying", "optionable_chain_missing"}:
         return "no_option_expression", "none"
-    if str(policy.get("option_expression_allowed") or policy.get("allow_option_expression") or "true").lower() in {"false", "0", "no", "blocked"}:
-        return _underlying_only_or_no_option(direction, underlying_plan, policy, pending), "none"
+    option_allowed = policy.get("option_expression_allowed")
+    if option_allowed is None:
+        option_allowed = policy.get("allow_option_expression", "true")
+    if str(option_allowed).lower() in {"false", "0", "no", "blocked"}:
+        return _underlying_only_or_no_option(direction, underlying_intent, policy, pending), "none"
     if direction == "bullish":
         return "long_call", "call"
     if direction == "bearish":
@@ -219,7 +222,10 @@ def _expression_type(
 def _underlying_only_or_no_option(direction: str, underlying_intent: Mapping[str, Any], policy: Mapping[str, Any], pending: Mapping[str, Any]) -> str:
     if pending.get("has_pending_option_exposure"):
         return "no_option_expression"
-    if str(policy.get("allow_underlying_only_expression") or "true").lower() in {"false", "0", "no", "blocked"}:
+    allow_underlying_only = policy.get("allow_underlying_only_expression")
+    if allow_underlying_only is None:
+        allow_underlying_only = "true"
+    if str(allow_underlying_only).lower() in {"false", "0", "no", "blocked"}:
         return "no_option_expression"
     action_type = str(underlying_intent.get("underlying_action_type") or underlying_intent.get("planned_underlying_action_type") or "").lower()
     if action_type in {"maintain", "no_trade"}:
@@ -566,7 +572,10 @@ def _reason_codes(
         reasons.append("theta_risk_pressure")
     if dominant.get("iv_fit_score", 0.0) <= 0.35 and expression_type != "no_option_expression":
         reasons.append("iv_fit_downgrade")
-    if str(policy.get("option_expression_allowed") or policy.get("allow_option_expression") or "true").lower() in {"false", "0", "no", "blocked"}:
+    option_allowed = policy.get("option_expression_allowed")
+    if option_allowed is None:
+        option_allowed = policy.get("allow_option_expression", "true")
+    if str(option_allowed).lower() in {"false", "0", "no", "blocked"}:
         reasons.append("option_expression_policy_blocked")
     if scored_candidates and selected is None and expression_type in {"no_option_expression", "underlying_only_expression"}:
         reasons.append("no_contract_passed_hard_filter")

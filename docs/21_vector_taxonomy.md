@@ -23,7 +23,7 @@ Status: accepted vocabulary for the current six-model stack
 | `M02 Target State` | `target_context_state` |
 | `M03 Event State` | `event_state_vector` |
 | `M04 Unified Decision` | `unified_decision_vector` |
-| `M05 Option Expression` | `trading_guidance_record`, `option_expression_plan`, `expression_vector` |
+| `M05 Option Expression` | `option_expression_plan`, `expression_vector` |
 | `M06 Residual Event Governance` | `event_risk_intervention`, future event-family packet eligibility |
 
 ## Model-Specific Notes

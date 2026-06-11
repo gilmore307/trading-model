@@ -34,7 +34,7 @@ M04 Unified Decision
      (structured edge, risk, exposure, and direct-underlying action heads)
 
 M05 Option Expression
-  -> trading_guidance_record plus optional option_expression_plan / expression_vector
+  -> optional option_expression_plan / expression_vector
 
 M06 Residual Event Governance
   -> event_risk_intervention / event-adjusted risk guidance

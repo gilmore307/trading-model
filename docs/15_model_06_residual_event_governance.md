@@ -40,6 +40,8 @@ M06 owns the taxonomy, promotion criteria, and failure/residual evidence for the
 
 Option-sensitive does not mean option-only. A scheduled expiry-flow event may have both underlying-price and option-surface channels through hedging, liquidity, dealer positioning, and spread behavior. M06 must preserve multi-channel intensity and confidence instead of forcing a single binary label.
 
+The first attribution split for a failed or stressed thesis is whether the miss is primarily in the underlying-price path, the option-price/expression path, or both. That distinction is a model responsibility owned here, not a runtime component responsibility. M06 records event-family attributes and channel scores; M03 applies accepted attributes point-in-time; M04 and M05 consume the resulting state.
+
 ## Inputs
 
 - `background_context_state`.
@@ -52,9 +54,10 @@ Option-sensitive does not mean option-only. A scheduled expiry-flow event may ha
 ## Current Implementation
 
 `src/models/model_06_residual_event_governance/` contains a deterministic pilot.
-It consumes current M04/M05 thesis references, transforms retained event-risk
-scoring into current `6_*` fields, emits `event_risk_intervention`, and keeps
-future labels in the offline evaluation helper only.
+It consumes current M01-M05 thesis/context refs plus point-in-time event observations,
+scores residual event risk with the native M06 channel taxonomy, emits
+`event_risk_intervention`, and keeps future labels in the offline evaluation
+helper only.
 
 Current local entrypoints:
 

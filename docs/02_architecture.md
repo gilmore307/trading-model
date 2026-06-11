@@ -34,7 +34,7 @@ point-in-time data foundation
 | `M02` Target State | `target_state_model` | `model_02_target_state` | `target_context_state` | Target eligibility, ranking, and anonymous target-state evidence. |
 | `M03` Event State | `event_state_model` | `model_03_event_state` | `event_state_vector` | Accepted event-family/window exposure, uncertainty, relevance, and event-conditioned response/risk. |
 | `M04` Unified Decision | `unified_decision_model` | `model_04_unified_decision` | `unified_decision_vector` | Direct-underlying decision with structured edge, risk, exposure, and action heads. |
-| `M05` Option Expression | `option_expression_model` | `model_05_option_expression` | `trading_guidance_record`, `option_expression_plan`, `expression_vector` | Optional option/underlying expression from clean direct-underlying intent and option-chain context. |
+| `M05` Option Expression | `option_expression_model` | `model_05_option_expression` | `option_expression_plan`, `expression_vector` | Optional option/underlying expression from clean direct-underlying intent and option-chain context. |
 | `M06` Residual Event Governance | `residual_event_governance_model` | `model_06_residual_event_governance` | `event_risk_intervention` / future event-family packet eligibility | Missed-event checks, residual intervention, attribution, and event-family promotion evidence. |
 
 ## Separation Rules

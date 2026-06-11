@@ -20,7 +20,9 @@ The stable read-only audit entrypoint is:
 PYTHONPATH=src python3 scripts/models/audit_model_output_tables.py --sample-limit 5000
 ```
 
-The script emits `model_output_table_quality_audit`. It samples a bounded number of rows from configured current and retained migration-source model tables, classifies all-null and sparse columns, and emits review-only cleanup SQL candidates. It never drops columns, rewrites model rows, performs provider calls, activates models, or mutates broker/account state.
+The script emits `model_output_table_quality_audit`. It samples a bounded number of rows from the selected model table scope, classifies all-null and sparse columns, and emits review-only cleanup SQL candidates. It never drops columns, rewrites model rows, performs provider calls, activates models, or mutates broker/account state.
+
+By default, the audit uses `model_governance.model_output_audit.MODEL_OUTPUT_TABLES`, which aliases the current six-model table families only. Retained ten-layer tables are exposed separately as `RETAINED_MIGRATION_MODEL_OUTPUT_TABLES` and require `--table-scope retained-migration` or `--table-scope all`.
 
 The stable post-generation gate entrypoint is:
 
@@ -33,3 +35,5 @@ The gate emits `model_output_quality_gate` and exits non-zero when primary model
 ## Generation Rule
 
 `model_governance.model_output_support.write_model_output_with_support` is the canonical writer helper for model-output rows with support payloads. It drops moved nested payload columns from the primary table during generation and writes support rows only when the support payload is non-empty.
+
+Model-specific local fixture scripts may still print compact JSON/JSONL rows with nested payloads for tests and smoke receipts. Those fixture rows are not the persisted SQL artifact contract. Persisted model-output closure is the primary/support split enforced by the SQL writer and quality gates.

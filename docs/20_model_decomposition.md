@@ -24,7 +24,7 @@ M01 Background Context          -> background_context_state
 M02 Target State / Selection    -> target_context_state
 M03 Event State / Conditioning  -> event_state_vector
 M04 Unified Decision            -> unified_decision_vector
-M05 Option Expression           -> trading_guidance_record / option_expression_plan / expression_vector
+M05 Option Expression           -> option_expression_plan / expression_vector
 M06 Residual Event Governance   -> event_risk_intervention / future event-family packet eligibility
 ```
 
@@ -41,6 +41,8 @@ model_NN_<model_slug>_diagnostics      # acceptance/monitoring/gating
 ```
 
 Primary outputs stay narrow and stable. Explainability and diagnostics may be wider, but downstream production logic should not hard-depend on them without a reviewed promotion decision.
+
+Local generator scripts may emit nested JSON/JSONL fixture rows for smoke evidence. Persisted SQL artifact closure should use the primary/support split above: primary rows own stable refs and resolved scalar fields; `_explainability` and `_diagnostics` own nested payloads, review detail, and monitoring evidence.
 
 - Every row must be point-in-time and keyed by a timestamp genuinely knowable to the system.
 - Data acquisition/source evidence stays in `trading-data`.

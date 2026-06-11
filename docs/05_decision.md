@@ -53,7 +53,6 @@ M04 UnifiedDecisionModel
   -> direct_underlying_intent
 
 M05 OptionExpressionModel
-  -> trading_guidance_record
   -> option_expression_plan / expression_vector
 
 M06 ResidualEventGovernanceModel
@@ -68,6 +67,8 @@ Hard separation rules:
 - Final target/security choice must be made downstream from accepted target-state evidence, not from raw identity.
 - Model-facing fitting rows for target work must anonymize ticker/company identity.
 - Real symbols may remain in audit/routing metadata and decision records, but not in model-facing identity features.
+
+Decisions D004-D061 below are retained for historical decision continuity and may reference retired ten-layer names. They are superseded for current model-contract authority unless explicitly restated by D062 or a later accepted decision. Current model contract authority is the six-model stack in D002-D003 and docs `10`-`15`.
 
 ## D004 - Layer 1 output is market context, not selection
 

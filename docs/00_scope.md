@@ -10,7 +10,7 @@ It owns point-in-time model research, model-local generators/evaluators, validat
 2. `TargetStateModel` -> `target_context_state`;
 3. `EventStateModel` -> `event_state_vector`;
 4. `UnifiedDecisionModel` -> `unified_decision_vector`;
-5. `OptionExpressionModel` -> `trading_guidance_record` plus optional `option_expression_plan` / `expression_vector`;
+5. `OptionExpressionModel` -> optional `option_expression_plan` / `expression_vector`;
 6. `ResidualEventGovernanceModel` -> `event_risk_intervention` / event-adjusted risk guidance.
 
 The repository does **not** place orders, mutate accounts, own provider acquisition, or become the global registry. It produces offline model artifacts and review evidence for downstream systems.
@@ -22,7 +22,7 @@ The repository does **not** place orders, mutate accounts, own provider acquisit
 - Anonymous target candidate construction, target ranking, and target-state modeling without ticker/company identity in fitting vectors.
 - Event-state modeling from accepted event-family and strategy-failure relationships without mutating event-family parameters.
 - Unified direct-underlying decision modeling with structured edge, risk, exposure, and action heads.
-- Trading-guidance / option-expression modeling from unified direct-underlying intent plus optional option-chain context; this may choose offline expression/contract constraints, not routes or broker orders.
+- Option-expression modeling from unified direct-underlying intent plus optional option-chain context; this may choose offline expression/contract constraints, not routes or broker orders.
 - Residual event-governance modeling after the direct-underlying thesis is known, including missed-event checks, residual attribution, event-risk intervention, and future event-family packet eligibility without directly mutating broker/account state.
 - Model-local labels, diagnostics, explainability, fixtures, and acceptance gates.
 - Proposing shared names/contracts to `trading-manager` when model outputs need cross-repository consumption.

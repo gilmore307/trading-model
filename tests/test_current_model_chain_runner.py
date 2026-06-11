@@ -23,6 +23,9 @@ class CurrentModelChainRunnerTests(unittest.TestCase):
         self.assertFalse(receipt["production_promotion_allowed"])
         self.assertEqual(receipt["model_order"], [model["model_surface"] for model in CURRENT_CHAIN_MODELS])
         self.assertTrue(all(check["passed"] for check in receipt["handoff_checks"]))
+        handoff_names = {check["name"] for check in receipt["handoff_checks"]}
+        self.assertIn("m01_to_m06_background_ref", handoff_names)
+        self.assertIn("m03_to_m06_event_ref", handoff_names)
         self.assertTrue(receipt["retired_field_check_passed"])
         self.assertTrue(receipt["label_leakage_check_passed"])
         self.assertEqual(set(receipt["promotion_gate_states"].values()), {"deferred"})

@@ -41,6 +41,8 @@ class ResidualEventGovernanceModelTests(unittest.TestCase):
 
         self.assertEqual(output["model_id"], "residual_event_governance_model")
         self.assertEqual(output["model_step"], "M06")
+        self.assertEqual(output["background_context_state_ref"], "bcs_fixture")
+        self.assertEqual(output["event_state_vector_ref"], "esv_fixture")
         self.assertEqual(output["unified_decision_vector_ref"], "udv_fixture")
         self.assertEqual(output["option_expression_plan_ref"], "oep_fixture")
         self.assertIn("event_risk_intervention_ref", output)
@@ -49,9 +51,15 @@ class ResidualEventGovernanceModelTests(unittest.TestCase):
         self.assertIn(output["6_resolved_intervention_action"], {"warn", "cap_new_exposure", "block_new_entry", "reduce_or_flatten_review"})
         self.assertEqual(intervention["governed_thesis_refs"]["unified_decision_vector_ref"], "udv_fixture")
         self.assertTrue(diagnostics["no_broker_or_account_mutation"])
-        self.assertEqual(diagnostics["migration_source"], "model_10_event_risk_governor_scoring")
+        self.assertEqual(diagnostics["scoring_source"], "model_06_native_residual_event_governance")
         assert_no_label_leakage(output)
         self.assert_no_retired_outputs(output)
+
+    def test_generator_no_longer_imports_retired_m10_scorer(self) -> None:
+        source = (REPO_ROOT / "src/models/model_06_residual_event_governance/generator.py").read_text(encoding="utf-8")
+
+        self.assertNotIn("model_10_event_risk_governor", source)
+        self.assertNotIn("_generate_legacy_event_rows", source)
 
     def test_optional_option_expression_ref_can_be_absent(self) -> None:
         row = _base_row()
