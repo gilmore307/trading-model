@@ -18,6 +18,7 @@ from models.model_05_alpha_confidence.contract import HORIZONS
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from generate_model_05_alpha_confidence import (  # type: ignore[import-not-found]
     _decision_rows,
+    _fetch_market_feature_rows,
     _fetch_rows,
     _iso,
     _load_psycopg,
@@ -144,7 +145,7 @@ def read_training_rows_from_database(
             event_failure_rows = _fetch_rows(
                 cursor,
                 schema="trading_model",
-                table="model_04_event_failure_risk",
+                table="model_04_unified_decision",
                 source_start=source_start,
                 source_end=source_end,
                 target_candidate_ids=target_candidate_ids if target_symbol else None,
@@ -153,7 +154,7 @@ def read_training_rows_from_database(
             model_03_rows = _fetch_rows(
                 cursor,
                 schema="trading_model",
-                table="model_03_target_state_vector",
+                table="model_02_target_state",
                 source_start=source_start,
                 source_end=source_end,
                 target_candidate_ids=target_candidate_ids if target_symbol else None,
@@ -167,14 +168,7 @@ def read_training_rows_from_database(
                 source_end=source_end,
                 order_by="available_time::timestamptz ASC, sector_or_industry_symbol ASC",
             )
-            model_01_rows = _fetch_rows(
-                cursor,
-                schema="trading_model",
-                table="model_01_market_regime_model_generation",
-                source_start=source_start,
-                source_end=source_end,
-                order_by="available_time::timestamptz ASC",
-            )
+            model_01_rows = _fetch_market_feature_rows(cursor, source_start=source_start, source_end=source_end)
     rows = _decision_rows(
         event_failure_rows=event_failure_rows,
         model_03_rows=model_03_rows,
@@ -250,6 +244,8 @@ def _first_bar_at_or_after(times: list[Any], rows: list[Mapping[str, Any]], time
 def _direction_orientation(row: Mapping[str, Any], horizon: str) -> float:
     target = row.get("target_context_state")
     score = _safe_float(target.get(f"3_target_direction_score_{horizon}") if isinstance(target, Mapping) else None)
+    if score is None and isinstance(target, Mapping):
+        score = _safe_float(target.get(f"2_target_direction_score_{horizon}"))
     return -1.0 if score is not None and score < 0 else 1.0
 
 

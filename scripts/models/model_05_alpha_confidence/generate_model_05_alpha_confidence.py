@@ -124,6 +124,37 @@ def _fetch_rows(
     return [dict(row) for row in cursor.fetchall()]
 
 
+def _fetch_optional_rows(cursor: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    try:
+        return _fetch_rows(cursor, **kwargs)
+    except Exception as error:
+        if error.__class__.__name__ == "UndefinedTable":
+            return []
+        raise
+
+
+def _fetch_market_feature_rows(
+    cursor: Any,
+    *,
+    source_start: str | None,
+    source_end: str | None,
+) -> list[dict[str, Any]]:
+    where: list[str] = []
+    params: list[Any] = []
+    if source_start:
+        where.append("snapshot_time::timestamptz >= %s::timestamptz")
+        params.append(source_start)
+    if source_end:
+        where.append("snapshot_time::timestamptz < %s::timestamptz")
+        params.append(source_end)
+    where_sql = " WHERE " + " AND ".join(where) if where else ""
+    cursor.execute(
+        f"SELECT snapshot_time AS available_time, feature_payload_json FROM {_qualified('trading_data', 'model_01_market_regime_feature_generation')}{where_sql} ORDER BY snapshot_time::timestamptz ASC",
+        params,
+    )
+    return [dict(row) for row in cursor.fetchall()]
+
+
 def _payload_from_prefixed_columns(row: Mapping[str, Any], prefix: str) -> dict[str, Any]:
     return {str(key): value for key, value in row.items() if str(key).startswith(prefix) and value is not None}
 
@@ -147,6 +178,8 @@ def _target_payload(row: Mapping[str, Any]) -> dict[str, Any]:
     if isinstance(score_payload, Mapping):
         payload.update({str(key): value for key, value in score_payload.items() if value is not None})
     payload.update(_payload_from_prefixed_columns(row, "3_"))
+    if not payload:
+        payload.update(_payload_from_prefixed_columns(row, "2_"))
     return payload
 
 
@@ -157,7 +190,8 @@ def _event_payload(row: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _market_payload(row: Mapping[str, Any] | None) -> dict[str, Any]:
-    payload = _payload_from_prefixed_columns(row or {}, "1_")
+    payload = _coerce_json_mapping((row or {}).get("feature_payload_json"))
+    payload.update(_payload_from_prefixed_columns(row or {}, "1_"))
     if "1_state_quality_score" not in payload:
         payload["1_state_quality_score"] = _average_present(payload.get("1_data_quality_score"), payload.get("1_coverage_score"), default=0.75)
     return payload
@@ -350,10 +384,10 @@ def generate_from_database(
         with conn.cursor() as cursor:
             source_03_rows = _fetch_rows(cursor, schema="trading_data", table="model_03_target_state_vector_data_acquisition", source_start=source_start, source_end=source_end, target_symbol=target_symbol, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             target_candidate_ids = sorted({str(row["target_candidate_id"]) for row in source_03_rows if row.get("target_candidate_id")})
-            event_failure_rows = _fetch_rows(cursor, schema="trading_model", table="model_04_event_failure_risk", source_start=source_start, source_end=source_end, target_candidate_ids=target_candidate_ids if target_symbol else None, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
-            model_03_rows = _fetch_rows(cursor, schema="trading_model", table="model_03_target_state_vector", source_start=source_start, source_end=source_end, target_candidate_ids=target_candidate_ids if target_symbol else None, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            event_failure_rows = _fetch_rows(cursor, schema="trading_model", table="model_04_unified_decision", source_start=source_start, source_end=source_end, target_candidate_ids=target_candidate_ids if target_symbol else None, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
+            model_03_rows = _fetch_rows(cursor, schema="trading_model", table="model_02_target_state", source_start=source_start, source_end=source_end, target_candidate_ids=target_candidate_ids if target_symbol else None, order_by="available_time::timestamptz ASC, target_candidate_id ASC")
             model_02_rows = _fetch_rows(cursor, schema="trading_model", table="model_02_sector_context_model_generation", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC, sector_or_industry_symbol ASC")
-            model_01_rows = _fetch_rows(cursor, schema="trading_model", table="model_01_market_regime_model_generation", source_start=source_start, source_end=source_end, order_by="available_time::timestamptz ASC")
+            model_01_rows = _fetch_market_feature_rows(cursor, source_start=source_start, source_end=source_end)
             decisions = _decision_rows(event_failure_rows=event_failure_rows, model_03_rows=model_03_rows, source_03_rows=source_03_rows, model_02_rows=model_02_rows, model_01_rows=model_01_rows)
             model_rows = generate_rows(decisions, model_version=model_version, after_cost_alpha_model=after_cost_alpha_model)
             _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
