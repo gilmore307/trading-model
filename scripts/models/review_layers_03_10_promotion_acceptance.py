@@ -116,7 +116,7 @@ LAYER_ACCEPTANCES: tuple[dict[str, Any], ...] = (
         "feature_key": "event_context_vector",
         "blocker": "no production EventRiskGovernor evaluation run or reviewed residual event-risk labels exist",
         "required_next_steps": [
-            "Create production EventRiskGovernor inference rows from reviewed source_10 and feature_10 event-risk evidence.",
+            "Create production EventRiskGovernor inference rows from reviewed m06_residual_event_governance_data_acquisition and m06_residual_event_governance_feature_generation evidence.",
             "Generate direction-neutral event-risk, intervention-quality, residual-warning, and event-adjusted outcome labels.",
             "Run baseline, stability, leakage, calibration, and promotion-metric evaluation before re-review.",
         ],

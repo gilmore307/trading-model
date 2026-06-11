@@ -176,7 +176,7 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
         cursor = Cursor()
         generator._fetch_event_source_rows(cursor, schema="trading_data", source_start=None, source_end=None)
 
-        self.assertIn('"trading_data"."m10_event_risk_governor_data_acquisition"', cursor.queries[-1][0])
+        self.assertIn('"trading_data"."m06_residual_event_governance_data_acquisition"', cursor.queries[-1][0])
 
     def test_active_generator_column_type_prefixes_match_layer_numbers(self) -> None:
         for surface, layer_number in LAYER_NUMBERS.items():
@@ -465,7 +465,7 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
 
         rows = generator._layer_9_input_rows(layer_8_rows, candidate_rows)
 
-        self.assertEqual(rows[0]["option_chain_snapshot_ref"], "m09_option_expression_feature_generation:AAPL:2016-01-04T09:35:00-05:00")
+        self.assertEqual(rows[0]["option_chain_snapshot_ref"], "m05_option_expression_feature_generation:AAPL:2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["option_surface_status"], "optionable_chain_available")
         self.assertEqual(rows[0]["option_quote_available_time"], "2016-01-04T09:35:00-05:00")
         self.assertEqual(rows[0]["underlying_quote_snapshot_ref"], "m03_target_state_vector_data_acquisition:anon_aapl:2016-01-04T09:35:00-05:00")
@@ -479,7 +479,7 @@ class LayerFourTenScriptEntrypointTests(unittest.TestCase):
 
         class FakeCursor:
             def __init__(self) -> None:
-                self._one = {"table_ref": "trading_data.m09_option_expression_feature_generation"}
+                self._one = {"table_ref": "trading_data.m05_option_expression_feature_generation"}
                 self._many = [
                     {
                         "underlying": "AAPL",

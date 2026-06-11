@@ -164,7 +164,7 @@ def _fetch_option_candidate_rows(
     source_end: str | None,
     layer_8_rows: Sequence[Mapping[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    feature_table = "m09_option_expression_feature_generation"
+    feature_table = "m05_option_expression_feature_generation"
     cursor.execute("SELECT to_regclass(%s) AS table_ref", (f"trading_data.{feature_table}",))
     exists = cursor.fetchone()
     if isinstance(exists, Mapping):
@@ -295,7 +295,7 @@ def _layer_9_input_rows(layer_8_rows: Sequence[Mapping[str, Any]], option_candid
         available_time = row.get("available_time")
         underlying = str(row.get("underlying_symbol") or "").upper()
         option_candidates = candidates_by_underlying_time.get((underlying, _time_key(available_time)), [])
-        option_chain_snapshot_ref = None if not option_candidates else f"m09_option_expression_feature_generation:{underlying}:{_time_key(available_time)}"
+        option_chain_snapshot_ref = None if not option_candidates else f"m05_option_expression_feature_generation:{underlying}:{_time_key(available_time)}"
         option_surface_status = "optionable_chain_available" if option_candidates else "optionable_chain_missing"
         rows.append(
             {

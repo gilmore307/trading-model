@@ -26,7 +26,7 @@ JSON_COLUMNS = {"event_context_vector", "event_risk_governor_diagnostics"}
 PRIMARY_KEY = ("event_context_vector_ref",)
 EXPLAINABILITY_COLUMNS = {"event_context_vector"}
 DIAGNOSTICS_COLUMNS = {"event_risk_governor_diagnostics"}
-SOURCE_TABLE = "m10_event_risk_governor_data_acquisition"
+SOURCE_TABLE = "m06_residual_event_governance_data_acquisition"
 
 
 def _database_url(explicit: str | None) -> str:
