@@ -12,6 +12,22 @@ MODEL_VERSION: Final[str] = "event_risk_intervention_contract"
 PRIMARY_OUTPUT: Final[str] = CONCEPTUAL_OUTPUT
 HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 
+EVENT_IMPACT_CHANNELS: Final[tuple[str, ...]] = (
+    "underlying_price",
+    "option_price",
+    "volatility_surface",
+    "option_liquidity_spread",
+    "expiry_gamma_flow",
+)
+
+OPTION_SENSITIVE_EVENT_FAMILIES: Final[tuple[str, ...]] = (
+    "triple_witching_calendar",
+    "monthly_option_expiration",
+    "earnings_iv_crush",
+    "index_rebalance_expiry_flow",
+    "volatility_surface_dislocation",
+)
+
 CORE_SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "6_event_presence_score_<horizon>",
     "6_event_timing_proximity_score_<horizon>",

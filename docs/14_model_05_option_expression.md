@@ -6,6 +6,8 @@ Status: accepted current model contract; deterministic implementation present; p
 
 `M05 Option Expression` owns optional option/underlying expression after `M04 Unified Decision` has produced clean direct-underlying intent. It remains separate because option chains, liquidity, volatility, theta, spread, DTE, and structure constraints are a distinct domain.
 
+M05 does not own event-family identity or event-impact taxonomy. Option-sensitive event attributes, such as triple witching, expiry/gamma flow, volatility-surface dislocation, IV crush, and option liquidity/spread disruption, are governed by M06 and applied point-in-time by M03. M05 consumes those M03 event-state channels to decide expression consequences.
+
 ## Output
 
 ```text
@@ -20,6 +22,7 @@ The model may choose underlying-only, long call, long put, no-option, or unavail
 
 - `unified_decision_vector`.
 - `direct_underlying_intent` from M04.
+- `event_state_vector` from M03, including option-price, volatility-surface, option-liquidity/spread, and expiry/gamma-flow impact channels.
 - Point-in-time option-chain snapshots, bid/ask, liquidity, IV, Greeks, DTE, spread, and conservative fill assumptions.
 
 ## Training vs Live Invocation

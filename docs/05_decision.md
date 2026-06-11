@@ -1288,3 +1288,22 @@ Retired ten-layer implementation packages and scripts may remain as migration-so
 - M06 residual event governance cannot be trained as an alpha/action head.
 
 The first implementation pilot replaces the retired serial alpha/risk/position/action learned handoff with `M04 Unified Decision` as one structured-head contract. Its remaining acceptance gate must compare walk-forward replay utility, drawdown/CVaR, turnover, no-trade calibration, event-window behavior, action/size stability, and retained output explainability against the retired serial route. Roll back or narrow the merge if target selection quality, event exposure detection, option intent consistency, residual event governance, or downstream runtime debuggability degrades.
+
+## D063 - Option-sensitive event attributes are event state, not option-expression taxonomy
+
+Accepted: 2026-06-10
+
+Events may affect option prices more strongly than the underlying price. Triple witching, monthly option expiration, expiry/gamma flow, volatility-surface dislocation, earnings IV crush, and option liquidity/spread disruption are event attributes when they describe the event's market impact channel.
+
+The accepted boundary is:
+
+```text
+M06 owns durable event impact taxonomy, promotion criteria, and residual/failure evidence.
+M03 applies accepted event attributes point-in-time into event_state_vector impact channels.
+M04 consumes event_state_vector for decision consequence.
+M05 consumes option-related event_state_vector channels for expression consequence.
+```
+
+M05 must not create a competing raw event ontology. It may decide how an accepted `option_price`, `volatility_surface`, `option_liquidity_spread`, or `expiry_gamma_flow` state affects expression type, tenor, strike, spread tolerance, IV fit, and no-option/underlying-only decisions.
+
+Option-sensitive does not mean option-only. M03 and M06 must preserve multi-channel intensity and confidence because expiry-flow or volatility-surface events may also affect underlying price through hedging, liquidity, and dealer positioning.

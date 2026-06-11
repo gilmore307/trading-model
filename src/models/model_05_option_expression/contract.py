@@ -53,6 +53,13 @@ OPTION_SURFACE_STATUSES: Final[tuple[str, ...]] = (
     "non_optionable_underlying",
 )
 
+EVENT_STATE_CONSUMED_FIELDS: Final[tuple[str, ...]] = (
+    "3_event_option_price_impact_score_<horizon>",
+    "3_event_volatility_surface_impact_score_<horizon>",
+    "3_event_option_liquidity_spread_impact_score_<horizon>",
+    "3_event_expiry_gamma_flow_impact_score_<horizon>",
+)
+
 FORBIDDEN_OUTPUT_FIELDS: Final[frozenset[str]] = frozenset(
     {
         "underlying_action_plan",

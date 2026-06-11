@@ -18,6 +18,7 @@ from models.model_02_target_state.evaluation import (
     assert_no_label_leakage as assert_no_m02_label_leakage,
     build_target_state_labels,
 )
+from models.model_03_event_state.contract import EVENT_IMPACT_CHANNELS as M03_EVENT_IMPACT_CHANNELS
 from models.model_03_event_state import generate_rows as generate_event_state
 from models.model_03_event_state.evaluation import (
     assert_no_label_leakage as assert_no_m03_label_leakage,
@@ -158,8 +159,44 @@ class EventStateModelTests(unittest.TestCase):
         self.assertIn("event_state_vector_ref", output)
         self.assertGreater(output["3_event_path_risk_score_1W"], 0.0)
         self.assertFalse(output["event_state_vector"]["event_parameter_mutation_allowed"])
+        self.assertIn("impact_channel_scores", output["event_state_vector"])
         self.assertNotIn("standalone_event_alpha", output)
         assert_no_m03_label_leakage(output)
+
+    def test_option_sensitive_event_attributes_are_runtime_state_channels(self) -> None:
+        background = generate_background_context([_background_input()])[0]
+        target = generate_target_state([_target_input(background)])[0]
+        output = generate_event_state(
+            [
+                _event_input(
+                    background,
+                    target,
+                    accepted_event_contracts=[
+                        {
+                            "event_id": "evt_triple_witching_fixture",
+                            "canonical_event_id": "evt_triple_witching_fixture",
+                            "event_family_key": "triple_witching_calendar",
+                            "event_time": "2026-06-19T09:30:00-04:00",
+                            "available_time": "2026-06-19T09:30:00-04:00",
+                            "event_intensity_score": 0.70,
+                            "direction_bias_score": 0.0,
+                            "target_relevance_score": 0.80,
+                            "impact_channels": {
+                                "underlying_price": 0.20,
+                                "option_price": 0.85,
+                                "volatility_surface": 0.90,
+                                "option_liquidity_spread": 0.75,
+                                "expiry_gamma_flow": 0.95,
+                            },
+                        }
+                    ],
+                )
+            ]
+        )[0]
+
+        self.assertEqual(tuple(output["event_state_vector"]["impact_channel_scores"]["1D"]), M03_EVENT_IMPACT_CHANNELS)
+        self.assertGreater(output["3_event_option_price_impact_score_1D"], output["3_event_underlying_price_impact_score_1D"])
+        self.assertAlmostEqual(output["3_event_expiry_gamma_flow_impact_score_1D"], 0.95)
 
     def test_no_events_remain_neutral(self) -> None:
         background = generate_background_context([_background_input()])[0]
@@ -167,6 +204,7 @@ class EventStateModelTests(unittest.TestCase):
         output = generate_event_state([_event_input(background, target, accepted_event_contracts=[])])[0]
 
         self.assertEqual(output["3_event_path_risk_score_1W"], 0.0)
+        self.assertEqual(output["3_event_option_price_impact_score_1W"], 0.0)
         self.assertEqual(output["event_state_vector"]["accepted_event_count"], 0)
 
     def test_labels_are_offline_and_join_by_event_ref(self) -> None:

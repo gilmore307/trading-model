@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from models.model_05_option_expression import generate_rows
+from models.model_05_option_expression.contract import EVENT_STATE_CONSUMED_FIELDS
 from models.model_05_option_expression.evaluation import assert_no_label_leakage, build_option_expression_labels
 
 
@@ -21,6 +22,11 @@ RETIRED_INPUT_OUTPUT_FIELDS = {
 
 
 class CurrentOptionExpressionModelTests(unittest.TestCase):
+    def test_contract_consumes_event_state_option_impact_without_owning_event_taxonomy(self) -> None:
+        self.assertIn("3_event_option_price_impact_score_<horizon>", EVENT_STATE_CONSUMED_FIELDS)
+        self.assertIn("3_event_volatility_surface_impact_score_<horizon>", EVENT_STATE_CONSUMED_FIELDS)
+        self.assertIn("3_event_expiry_gamma_flow_impact_score_<horizon>", EVENT_STATE_CONSUMED_FIELDS)
+
     def test_direct_underlying_intent_selects_long_call(self) -> None:
         output = generate_rows([_base_row()])[0]
         plan = output["option_expression_plan"]

@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from models.model_06_residual_event_governance import generate_rows
+from models.model_06_residual_event_governance.contract import EVENT_IMPACT_CHANNELS, OPTION_SENSITIVE_EVENT_FAMILIES
 from models.model_06_residual_event_governance.evaluation import (
     assert_no_label_leakage,
     build_residual_event_governance_labels,
@@ -27,6 +28,12 @@ RETIRED_OUTPUT_FIELDS = {
 
 
 class ResidualEventGovernanceModelTests(unittest.TestCase):
+    def test_contract_solidifies_option_sensitive_event_channels(self) -> None:
+        self.assertIn("option_price", EVENT_IMPACT_CHANNELS)
+        self.assertIn("volatility_surface", EVENT_IMPACT_CHANNELS)
+        self.assertIn("expiry_gamma_flow", EVENT_IMPACT_CHANNELS)
+        self.assertIn("triple_witching_calendar", OPTION_SENSITIVE_EVENT_FAMILIES)
+
     def test_generates_current_intervention_from_m04_and_optional_m05_context(self) -> None:
         output = generate_rows([_base_row()])[0]
         intervention = output["event_risk_intervention"]

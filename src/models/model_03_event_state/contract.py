@@ -12,6 +12,14 @@ MODEL_VERSION: Final[str] = "event_state_vector_contract"
 PRIMARY_OUTPUT: Final[str] = CONCEPTUAL_OUTPUT
 HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 
+EVENT_IMPACT_CHANNELS: Final[tuple[str, ...]] = (
+    "underlying_price",
+    "option_price",
+    "volatility_surface",
+    "option_liquidity_spread",
+    "expiry_gamma_flow",
+)
+
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "3_event_response_direction_score_<horizon>",
     "3_event_response_strength_score_<horizon>",
@@ -21,6 +29,11 @@ SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "3_event_exposure_cap_pressure_score_<horizon>",
     "3_event_strategy_disable_pressure_score_<horizon>",
     "3_event_applicability_confidence_score_<horizon>",
+    "3_event_underlying_price_impact_score_<horizon>",
+    "3_event_option_price_impact_score_<horizon>",
+    "3_event_volatility_surface_impact_score_<horizon>",
+    "3_event_option_liquidity_spread_impact_score_<horizon>",
+    "3_event_expiry_gamma_flow_impact_score_<horizon>",
 )
 
 FORBIDDEN_OUTPUT_FIELDS: Final[frozenset[str]] = frozenset(

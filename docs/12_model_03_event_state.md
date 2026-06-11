@@ -4,7 +4,7 @@ Status: deterministic pilot present; production promotion deferred.
 
 ## Role
 
-`M03 Event State` owns event-conditioned response, uncertainty, and failure-risk mapping from accepted residual-event governance contracts. It consumes frozen event-family identity, point-in-time clocks, scope, visibility, selected impact windows, and allowed use. It must not mutate those event parameters.
+`M03 Event State` owns event-conditioned response, uncertainty, failure-risk mapping, and point-in-time event impact-channel state from accepted residual-event governance contracts. It consumes frozen event-family identity, point-in-time clocks, scope, visibility, selected impact windows, allowed use, and M06-governed event impact attributes. It must not mutate those event parameters or create a competing event taxonomy.
 
 ## Output
 
@@ -13,7 +13,7 @@ model_03_event_state
   -> event_state_vector
 ```
 
-The output may include event response strength, direction tendency, uncertainty, path risk, entry/cap/disable pressure, and applicability confidence. It must not emit standalone event alpha or choose exposures/actions/options.
+The output may include event response strength, direction tendency, uncertainty, path risk, entry/cap/disable pressure, applicability confidence, and impact-channel scores. It must not emit standalone event alpha or choose exposures/actions/options.
 
 Current local implementation emits:
 
@@ -29,6 +29,25 @@ Current local implementation emits:
 - `3_event_exposure_cap_pressure_score_<horizon>`
 - `3_event_strategy_disable_pressure_score_<horizon>`
 - `3_event_applicability_confidence_score_<horizon>`
+- `3_event_underlying_price_impact_score_<horizon>`
+- `3_event_option_price_impact_score_<horizon>`
+- `3_event_volatility_surface_impact_score_<horizon>`
+- `3_event_option_liquidity_spread_impact_score_<horizon>`
+- `3_event_expiry_gamma_flow_impact_score_<horizon>`
+
+## Impact Channels
+
+Some event families affect option prices more than the underlying price. Scheduled option-expiration events, triple witching, expiry/gamma flow, volatility-surface dislocation, and option liquidity/spread disruption are event attributes, not component logic and not local M05 taxonomy.
+
+M03 is the runtime surface that applies these M06-governed attributes point-in-time. It must represent them as simultaneous channels rather than a binary underlying-vs-option label:
+
+- `underlying_price`
+- `option_price`
+- `volatility_surface`
+- `option_liquidity_spread`
+- `expiry_gamma_flow`
+
+`M04 Unified Decision` consumes the full event state for decision consequence. `M05 Option Expression` consumes the option-related channels for expression consequence, but does not redefine event identity or event-family semantics.
 
 ## Inputs
 

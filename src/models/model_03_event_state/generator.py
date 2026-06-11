@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
-from .contract import FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_STEP, MODEL_VERSION
+from .contract import EVENT_IMPACT_CHANNELS, FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_STEP, MODEL_VERSION
 
 ET = ZoneInfo("America/New_York")
 
@@ -43,6 +43,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         **scores,
         "event_state_vector": {
             "score_payload": scores,
+            "impact_channel_scores": _impact_channel_vector(scores),
             "frozen_event_contract_refs": _event_refs(events),
             "accepted_event_count": len(events),
             "event_parameter_mutation_allowed": False,
@@ -70,6 +71,7 @@ def _horizon_payload(row: Mapping[str, Any], events: Sequence[Mapping[str, Any]]
             "event_exposure_cap_pressure_score": 0.0,
             "event_strategy_disable_pressure_score": 0.0,
             "event_applicability_confidence_score": 0.0,
+            **_empty_impact_channel_scores(),
         }
     intensities = [_score(event, "event_intensity_score", "intensity_score", default=0.35) for event in events]
     uncertainties = [_score(event, "uncertainty_score", "revision_risk_score", default=0.25) for event in events]
@@ -94,6 +96,7 @@ def _horizon_payload(row: Mapping[str, Any], events: Sequence[Mapping[str, Any]]
         "event_exposure_cap_pressure_score": exposure_cap,
         "event_strategy_disable_pressure_score": disable,
         "event_applicability_confidence_score": applicability,
+        **_impact_channel_scores(events),
     }
 
 
@@ -102,6 +105,72 @@ def _score_payload(horizon_payloads: Mapping[str, Mapping[str, float]]) -> dict[
     for horizon, payload in horizon_payloads.items():
         for name, value in payload.items():
             output[f"3_{name}_{horizon}"] = round(value, 6)
+    return output
+
+
+def _impact_channel_scores(events: Sequence[Mapping[str, Any]]) -> dict[str, float]:
+    return {
+        "event_underlying_price_impact_score": _average_channel(
+            events,
+            "underlying_price",
+            "underlying_price_impact_score",
+            "underlying_impact_score",
+        ),
+        "event_option_price_impact_score": _average_channel(
+            events,
+            "option_price",
+            "option_price_impact_score",
+            "option_impact_score",
+        ),
+        "event_volatility_surface_impact_score": _average_channel(
+            events,
+            "volatility_surface",
+            "volatility_surface_impact_score",
+            "vol_surface_impact_score",
+        ),
+        "event_option_liquidity_spread_impact_score": _average_channel(
+            events,
+            "option_liquidity_spread",
+            "option_liquidity_spread_impact_score",
+            "liquidity_spread_impact_score",
+        ),
+        "event_expiry_gamma_flow_impact_score": _average_channel(
+            events,
+            "expiry_gamma_flow",
+            "expiry_gamma_flow_impact_score",
+            "gamma_flow_impact_score",
+        ),
+    }
+
+
+def _empty_impact_channel_scores() -> dict[str, float]:
+    return {f"event_{channel}_impact_score": 0.0 for channel in EVENT_IMPACT_CHANNELS}
+
+
+def _average_channel(events: Sequence[Mapping[str, Any]], channel: str, *keys: str) -> float:
+    values: list[float] = []
+    for event in events:
+        impact_channels = event.get("impact_channels")
+        if isinstance(impact_channels, Mapping):
+            value = _safe_float(impact_channels.get(channel))
+            if value is not None:
+                values.append(_clip01(value))
+                continue
+        for key in keys:
+            value = _safe_float(event.get(key))
+            if value is not None:
+                values.append(_clip01(value))
+                break
+    return _clip01(_average(values))
+
+
+def _impact_channel_vector(scores: Mapping[str, float]) -> dict[str, dict[str, float]]:
+    output: dict[str, dict[str, float]] = {}
+    for horizon in HORIZONS:
+        output[horizon] = {
+            channel: float(scores.get(f"3_event_{channel}_impact_score_{horizon}", 0.0))
+            for channel in EVENT_IMPACT_CHANNELS
+        }
     return output
 
 
