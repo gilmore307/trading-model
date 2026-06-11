@@ -130,6 +130,38 @@ class UnifiedDecisionModelTests(unittest.TestCase):
         self.assertEqual(script._column_type("4_resolved_underlying_action_type"), "TEXT")
         self.assertEqual(script._column_type("5_after_cost_edge_score_1W"), "TEXT")
 
+    def test_database_input_rows_map_m03_and_event_context(self) -> None:
+        script = _load_generator_script()
+        source_rows = [
+            {
+                "available_time": "2016-01-04T09:35:00-05:00",
+                "tradeable_time": "2016-01-04T09:36:00-05:00",
+                "target_candidate_id": "anon_aapl",
+                "target_context_state_ref": "tcsv_1",
+                "event_failure_risk_vector_ref": "efrv_1",
+                "underlying_symbol": "AAPL",
+                "underlying_reference_price": 102.5,
+                "last_bid": 102.45,
+                "last_ask": 102.55,
+                "spread_bps": 9.8,
+                "dollar_volume": 1_000_000.0,
+                "3_state_quality_score": 0.91,
+                "target_context_state": {
+                    "3_target_direction_score_1W": 0.6,
+                    "3_target_trend_quality_score_1W": 0.7,
+                },
+                "event_state_vector": {"4_event_entry_block_pressure_score_1W": 0.2},
+            }
+        ]
+
+        rows = script._model_04_input_rows(source_rows)
+
+        self.assertEqual(rows[0]["target_candidate_id"], "anon_aapl")
+        self.assertEqual(rows[0]["target_context_state"]["3_target_direction_score_1W"], 0.6)
+        self.assertEqual(rows[0]["event_state_vector"]["4_event_entry_block_pressure_score_1W"], 0.2)
+        self.assertEqual(rows[0]["underlying_quote_state"]["reference_price"], 102.5)
+        self.assertEqual(rows[0]["underlying_liquidity_state"]["spread_bps"], 9.8)
+
     def test_current_generate_evaluate_review_scripts_support_help(self) -> None:
         scripts = [
             "scripts/models/model_04_unified_decision/generate_model_04_unified_decision.py",
