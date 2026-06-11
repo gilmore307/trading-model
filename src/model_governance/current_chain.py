@@ -59,21 +59,13 @@ RETIRED_CHAIN_FIELDS: frozenset[str] = frozenset(
 def run_current_chain(*, input_payload: Mapping[str, Any] | None = None, evidence_source: str = "fixture_current_chain") -> dict[str, Any]:
     """Run the current M01-M06 deterministic chain and return a receipt."""
 
-    payload = _fixture_payload(input_payload or {})
-    background = generate_background_context([payload["background_input"]])[0]
-    target = generate_target_state([_target_input(payload, background)])[0]
-    event = generate_event_state([_event_input(payload, background, target)])[0]
-    decision = generate_unified_decision([_decision_input(payload, background, target, event)])[0]
-    option = generate_option_expression([_option_input(payload, background, event, decision)])[0]
-    residual = generate_residual_event_governance([_residual_input(payload, background, target, event, decision, option)])[0]
-    rows = {
-        M01_SURFACE: [background],
-        M02_SURFACE: [target],
-        M03_SURFACE: [event],
-        M04_SURFACE: [decision],
-        M05_SURFACE: [option],
-        M06_SURFACE: [residual],
-    }
+    rows = build_current_chain_rows(input_payload)
+    background = rows[M01_SURFACE][0]
+    target = rows[M02_SURFACE][0]
+    event = rows[M03_SURFACE][0]
+    decision = rows[M04_SURFACE][0]
+    option = rows[M05_SURFACE][0]
+    residual = rows[M06_SURFACE][0]
     evaluations = {
         model["model_surface"]: evaluate_layer(
             module_name=model["module_name"],
@@ -138,6 +130,30 @@ def run_current_chain(*, input_payload: Mapping[str, Any] | None = None, evidenc
         "receipt": receipt,
         "evaluations": evaluations,
         "rows": rows,
+    }
+
+
+def build_current_chain_rows(
+    input_payload: Mapping[str, Any] | None = None,
+    *,
+    use_fixture_defaults: bool = True,
+) -> dict[str, list[dict[str, Any]]]:
+    """Generate current M01-M06 rows from one point-in-time input payload."""
+
+    payload = _fixture_payload(input_payload or {}) if use_fixture_defaults else dict(input_payload or {})
+    background = generate_background_context([payload["background_input"]])[0]
+    target = generate_target_state([_target_input(payload, background)])[0]
+    event = generate_event_state([_event_input(payload, background, target)])[0]
+    decision = generate_unified_decision([_decision_input(payload, background, target, event)])[0]
+    option = generate_option_expression([_option_input(payload, background, event, decision)])[0]
+    residual = generate_residual_event_governance([_residual_input(payload, background, target, event, decision, option)])[0]
+    return {
+        M01_SURFACE: [background],
+        M02_SURFACE: [target],
+        M03_SURFACE: [event],
+        M04_SURFACE: [decision],
+        M05_SURFACE: [option],
+        M06_SURFACE: [residual],
     }
 
 

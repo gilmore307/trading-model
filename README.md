@@ -88,6 +88,7 @@ scripts/models/model_04_unified_decision/
 scripts/models/model_05_option_expression/
 scripts/models/model_06_residual_event_governance/
 scripts/models/run_current_model_chain.py
+scripts/models/run_current_model_historical_evaluation.py
 scripts/models/audit_model_output_tables.py
 scripts/models/run_model_output_quality_gate.py
 scripts/model_governance/
