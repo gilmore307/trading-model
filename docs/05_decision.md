@@ -434,7 +434,7 @@ market_context_state
   -> option_expression_plan / expression_vector
 ```
 
-M06 consumes point-in-time event evidence such as `m06_residual_event_governance_data_acquisition`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
+M06 consumes point-in-time event evidence such as `model_06_residual_event_governance_data_acquisition`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
 
 The former hard-upstream event route must not be used as active layer ordering. Event-risk governance is now M06, except for reviewed event-failure factors promoted into Layer 4.
 

@@ -348,7 +348,7 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
             "sector_context_state_ref": "scs_fixture",
             "target_context_state_ref": "tcs_fixture",
             "target_context_state": {"3_target_direction_score_1W": 0.5, "3_target_direction_score_1h": 0.4},
-            "m06_residual_event_governance_data_acquisition": [
+            "model_06_residual_event_governance_data_acquisition": [
                 {
                     "event_id": "evt_fixture_canonical",
                     "canonical_event_id": "evt_fixture_canonical",

@@ -167,7 +167,7 @@ def _visible_events(row: Mapping[str, Any], decision_time: datetime) -> list[Map
     event_rows = (
         row.get("residual_event_observations")
         or row.get("event_observations")
-        or row.get("m06_residual_event_governance_data_acquisition")
+        or row.get("model_06_residual_event_governance_data_acquisition")
         or row.get("events")
         or []
     )
