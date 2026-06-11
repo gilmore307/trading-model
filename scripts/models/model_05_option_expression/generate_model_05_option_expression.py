@@ -360,7 +360,11 @@ def generate_from_database(
         with conn.cursor() as cursor:
             model_04_rows = _fetch_model_04_rows(cursor, source_start=source_start, source_end=source_end)
             option_candidate_rows = _fetch_option_candidate_rows(cursor, source_start=source_start, source_end=source_end, model_04_rows=model_04_rows)
-            model_rows = generate_rows(_model_05_input_rows(model_04_rows, option_candidate_rows), model_version=model_version)
+            input_rows = _model_05_input_rows(model_04_rows, option_candidate_rows)
+            if not input_rows:
+                model_rows = []
+            else:
+                model_rows = generate_rows(input_rows, model_version=model_version)
             _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
     if output_jsonl:
         _write_jsonl(output_jsonl, model_rows)

@@ -490,6 +490,60 @@ class CurrentModelScriptEntrypointTests(unittest.TestCase):
         self.assertEqual(rows[0]["option_surface_status"], "optionable_chain_missing")
         self.assertEqual(rows[0]["option_contract_candidates"], [])
 
+    def test_model_05_database_generation_accepts_empty_source_window(self) -> None:
+        generator = self._load_script_module(REPO_ROOT / "scripts/models/model_05_option_expression/generate_model_05_option_expression.py")
+
+        class FakeCursor:
+            def execute(self, sql: str, params: tuple[object, ...] | list[object] | None = None) -> None:
+                pass
+
+            def fetchone(self):
+                return {"table_ref": "trading_model.model_04_unified_decision_explainability"}
+
+            def fetchall(self):
+                return []
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb) -> None:
+                return None
+
+        class FakeConnection:
+            def cursor(self):
+                return FakeCursor()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb) -> None:
+                return None
+
+        class FakePsycopg:
+            def connect(self, database_url: str, row_factory=None):
+                return FakeConnection()
+
+        original_load_psycopg = generator._load_psycopg
+        original_write_sql = generator._write_sql
+        try:
+            generator._load_psycopg = lambda: (FakePsycopg(), object())
+            generator._write_sql = lambda cursor, rows, *, target_schema, target_table: self.assertEqual(rows, [])
+
+            row_count = generator.generate_from_database(
+                database_url="postgresql://redacted",
+                source_start="2016-05-01T00:00:00-05:00",
+                source_end="2016-06-01T00:00:00-05:00",
+                target_schema="trading_model",
+                target_table="model_05_option_expression",
+                model_version="test",
+                output_jsonl=None,
+            )
+        finally:
+            generator._load_psycopg = original_load_psycopg
+            generator._write_sql = original_write_sql
+
+        self.assertEqual(row_count, 0)
+
     def test_local_layer_payload_writer_serializes_database_datetimes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output_path = Path(tmp) / "summary.json"
