@@ -73,4 +73,4 @@ metrics, leakage checks, stability, calibration, and manager-side review.
 
 ## Migration Source
 
-Retired implementation package `model_10_event_risk_governor` may be used as source material during migration. It is not a separate current model contract.
+Retired implementation package `model_06_residual_event_governance` may be used as source material during migration. It is not a separate current model contract.

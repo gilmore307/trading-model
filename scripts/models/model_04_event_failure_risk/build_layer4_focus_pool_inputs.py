@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Layer 4 input rows from accepted Layer 10 focus-pool replay evidence."""
+"""Build Layer 4 input rows from accepted M06 focus-pool replay evidence."""
 from __future__ import annotations
 
 import argparse
@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from models.model_04_event_failure_risk.layer10_focus_pool_inputs import (
+from models.model_04_event_failure_risk.m06_residual_event_governance_focus_pool_inputs import (
     build_layer4_focus_pool_input_rows,
     read_csv,
     read_jsonl,
@@ -22,9 +22,9 @@ DEFAULT_REPLAY_ROWS = Path(
 )
 DEFAULT_GATE_MATRIX = Path(
     "/root/projects/trading-storage/storage/03_model_artifacts/"
-    "layer_10_fold_completion_20260610/"
+    "m06_residual_event_governance_fold_completion_20260610/"
     "fold_2016-01_2016-06/model_group_replay_20260609T060059Z/"
-    "layer_10_family_gate_matrix.csv"
+    "m06_residual_event_governance_family_gate_matrix.csv"
 )
 DEFAULT_OUTPUT = Path(
     "/root/projects/trading-storage/storage/03_model_artifacts/"

@@ -132,7 +132,7 @@ def train_after_cost_alpha_model(
             "layer4_event_feature_names": layer4_event_feature_names(horizon),
             "feature_consumption_contract": {
                 "layer4_event_failure_risk_vector": "formal_training_input",
-                "layer10_event_parameter_mutation": False,
+                "m06_residual_event_governance_event_parameter_mutation": False,
             },
         },
     )

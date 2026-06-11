@@ -58,7 +58,7 @@ M03 is the runtime surface that applies these M06-governed attributes point-in-t
 
 ## Migration Source
 
-Retired implementation package `model_04_event_failure_risk` and event-family helpers under retired `model_10_event_risk_governor` may be used as source material during migration. They are not separate current model contracts.
+Retired implementation package `model_04_event_failure_risk` and event-family helpers under retired `model_06_residual_event_governance` may be used as source material during migration. They are not separate current model contracts.
 
 ## Current Local Scripts
 

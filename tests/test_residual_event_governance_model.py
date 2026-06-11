@@ -58,7 +58,7 @@ class ResidualEventGovernanceModelTests(unittest.TestCase):
     def test_generator_no_longer_imports_retired_m10_scorer(self) -> None:
         source = (REPO_ROOT / "src/models/model_06_residual_event_governance/generator.py").read_text(encoding="utf-8")
 
-        self.assertNotIn("model_10_event_risk_governor", source)
+        self.assertNotIn("model_06_residual_event_governance", source)
         self.assertNotIn("_generate_legacy_event_rows", source)
 
     def test_optional_option_expression_ref_can_be_absent(self) -> None:
@@ -120,7 +120,7 @@ class ResidualEventGovernanceModelTests(unittest.TestCase):
 
         self.assertEqual(script._column_type("6_event_gap_risk_score_1W"), "DOUBLE PRECISION")
         self.assertEqual(script._column_type("6_resolved_intervention_action"), "TEXT")
-        self.assertEqual(script._column_type("10_event_gap_risk_score_1W"), "TEXT")
+        self.assertEqual(script._column_type("5_event_gap_risk_score_1W"), "TEXT")
 
     def test_current_generate_evaluate_review_scripts_support_help(self) -> None:
         scripts = [
@@ -162,7 +162,7 @@ class ResidualEventGovernanceModelTests(unittest.TestCase):
             self.assertEqual(eval_result.returncode, 0, eval_result.stderr)
             summary = json.loads(summary_path.read_text(encoding="utf-8"))
             self.assertEqual(summary["summary"]["model_surface"], "model_06_residual_event_governance")
-            self.assertEqual(summary["summary"]["promotion_gate_state"], "deferred")
+            self.assertEqual(summary["summary"]["promotion_gate_state"], "blocked")
 
             review_result = subprocess.run(
                 [

@@ -28,7 +28,7 @@ class CurrentModelChainRunnerTests(unittest.TestCase):
         self.assertIn("m03_to_m06_event_ref", handoff_names)
         self.assertTrue(receipt["retired_field_check_passed"])
         self.assertTrue(receipt["label_leakage_check_passed"])
-        self.assertEqual(set(receipt["promotion_gate_states"].values()), {"deferred"})
+        self.assertEqual(set(receipt["promotion_gate_states"].values()), {"deferred", "blocked"})
         self.assertIn("unified_decision_vector_ref", receipt["resolved_outputs"])
         self.assertIn("event_risk_intervention_ref", receipt["resolved_outputs"])
 

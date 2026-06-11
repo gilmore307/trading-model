@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 import scripts.models.model_01_market_regime.review_market_regime_promotion as review_script
-import scripts.models.review_layers_03_10_promotion_acceptance as layers_03_10_review_script
+import scripts.models.review_current_model_promotion_acceptance as current_model_review_script
 from model_governance.agent_review import (
     build_review_artifact_from_review,
     build_market_regime_promotion_prompt,
@@ -116,7 +116,7 @@ class AgentPromotionReviewTests(unittest.TestCase):
 
         self.assertEqual(review["decision_type"], "defer")
 
-    def test_layers_03_10_agent_text_reads_top_level_openclaw_payloads(self) -> None:
+    def test_current_model_agent_text_reads_top_level_openclaw_payloads(self) -> None:
         stdout = json.dumps(
             {
                 "payloads": [
@@ -138,28 +138,28 @@ class AgentPromotionReviewTests(unittest.TestCase):
             }
         )
 
-        review = validate_promotion_review(extract_json_object(layers_03_10_review_script._extract_agent_text(stdout)))
+        review = validate_promotion_review(extract_json_object(current_model_review_script._extract_agent_text(stdout)))
 
         self.assertEqual(review["decision_status"], "deferred")
         self.assertFalse(review["evidence_checks"]["production_evaluation_substrate_present"])
 
-    def test_layers_03_10_acceptance_uses_current_layer_map(self) -> None:
-        by_layer = {item["layer"]: item for item in layers_03_10_review_script.LAYER_ACCEPTANCES}
+    def test_current_model_acceptance_uses_current_model_map(self) -> None:
+        by_model = {item["model_number"]: item for item in current_model_review_script.MODEL_ACCEPTANCES}
 
-        self.assertEqual(sorted(by_layer), list(range(3, 11)))
-        self.assertEqual(by_layer[4]["model_id"], "event_failure_risk_model")
-        self.assertEqual(by_layer[4]["model_name"], "EventFailureRiskModel")
-        self.assertEqual(by_layer[6]["model_id"], "dynamic_risk_policy_model")
-        self.assertEqual(by_layer[10]["model_id"], "event_risk_governor")
-        self.assertEqual(by_layer[10]["feature_key"], "event_context_vector")
+        self.assertEqual(sorted(by_model), list(range(3, 7)))
+        self.assertEqual(by_model[3]["model_id"], "event_state_model")
+        self.assertEqual(by_model[4]["model_name"], "UnifiedDecisionModel")
+        self.assertEqual(by_model[5]["model_id"], "option_expression_model")
+        self.assertEqual(by_model[6]["model_id"], "residual_event_governance_model")
+        self.assertEqual(by_model[6]["feature_key"], "event_risk_intervention")
 
-    def test_layers_03_10_dry_run_builds_blocked_artifacts_without_agent(self) -> None:
+    def test_current_model_dry_run_builds_blocked_artifacts_without_agent(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         result = subprocess.run(
             [
                 sys.executable,
-                "scripts/models/review_layers_03_10_promotion_acceptance.py",
-                "--layer",
+                "scripts/models/review_current_model_promotion_acceptance.py",
+                "--model-number",
                 "3",
                 "--dry-run",
             ],

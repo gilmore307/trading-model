@@ -37,7 +37,7 @@ class ModelOutputAuditTests(unittest.TestCase):
 
     def test_retained_migration_tables_are_explicit_optional_scope(self) -> None:
         self.assertIn("model_06_dynamic_risk_policy", RETAINED_MIGRATION_MODEL_OUTPUT_TABLES)
-        self.assertIn("model_10_event_risk_governor", RETAINED_MIGRATION_MODEL_OUTPUT_TABLES)
+        self.assertIn("model_06_residual_event_governance", RETAINED_MIGRATION_MODEL_OUTPUT_TABLES)
         self.assertNotIn("model_06_dynamic_risk_policy", CURRENT_MODEL_OUTPUT_TABLES)
         self.assertIn("model_06_dynamic_risk_policy", ALL_MODEL_OUTPUT_TABLES)
 

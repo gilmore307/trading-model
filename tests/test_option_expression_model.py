@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from models.model_09_option_expression import generate_rows
-from models.model_09_option_expression.evaluation import assert_no_label_leakage, build_option_expression_labels
+from models.model_05_option_expression import generate_rows
+from models.model_05_option_expression.evaluation import assert_no_label_leakage, build_option_expression_labels
 
 
 FORBIDDEN_TERMS = {
@@ -29,12 +29,12 @@ class OptionExpressionModelTests(unittest.TestCase):
         output = generate_rows([_base_row()])[0]
         plan = output["option_expression_plan"]
 
-        self.assertEqual(output["9_resolved_expression_type"], "long_call")
-        self.assertEqual(output["9_resolved_option_right"], "call")
-        self.assertEqual(output["9_resolved_option_surface_status"], "optionable_chain_available")
-        self.assertEqual(output["9_resolved_selected_contract_ref"], "AAPL_CALL_GOOD")
-        self.assertGreater(output["9_option_expression_confidence_score_1W"], 0.0)
-        self.assertGreater(output["9_option_contract_fit_score_1W"], 0.0)
+        self.assertEqual(output["5_resolved_expression_type"], "long_call")
+        self.assertEqual(output["5_resolved_option_right"], "call")
+        self.assertEqual(output["5_resolved_option_surface_status"], "optionable_chain_available")
+        self.assertEqual(output["5_resolved_selected_contract_ref"], "AAPL_CALL_GOOD")
+        self.assertGreater(output["5_option_expression_confidence_score_1W"], 0.0)
+        self.assertGreater(output["5_option_contract_fit_score_1W"], 0.0)
         self.assertEqual(plan["selected_contract"]["contract_ref"], "AAPL_CALL_GOOD")
         self.assertEqual(plan["selected_contract"]["contract_multiplier"], 100)
         self.assertEqual(plan["selected_contract"]["exercise_style"], "american")
@@ -53,7 +53,7 @@ class OptionExpressionModelTests(unittest.TestCase):
                 "planned_underlying_action_type": "bearish_underlying_path_but_no_short_allowed",
                 "action_side": "bearish_no_direct_short",
                 "dominant_horizon": "1W",
-                "handoff_to_layer_9": {
+                "handoff_to_model_05": {
                     **_handoff(),
                     "underlying_path_direction": "bearish",
                     "expected_favorable_move_pct": 0.045,
@@ -63,10 +63,10 @@ class OptionExpressionModelTests(unittest.TestCase):
         )
         output = generate_rows([row])[0]
 
-        self.assertEqual(output["9_resolved_expression_type"], "long_put")
-        self.assertEqual(output["9_resolved_option_right"], "put")
-        self.assertEqual(output["9_resolved_selected_contract_ref"], "AAPL_PUT_GOOD")
-        self.assertLess(output["9_option_expression_direction_score_1W"], 0.0)
+        self.assertEqual(output["5_resolved_expression_type"], "long_put")
+        self.assertEqual(output["5_resolved_option_right"], "put")
+        self.assertEqual(output["5_resolved_selected_contract_ref"], "AAPL_PUT_GOOD")
+        self.assertLess(output["5_option_expression_direction_score_1W"], 0.0)
         self.assert_no_forbidden_terms(output)
 
     def test_layer_8_resolved_fields_can_drive_direction_and_horizon_fallback(self) -> None:
@@ -81,37 +81,37 @@ class OptionExpressionModelTests(unittest.TestCase):
 
         output = generate_rows([row])[0]
 
-        self.assertEqual(output["9_resolved_expression_type"], "long_put")
-        self.assertEqual(output["9_resolved_option_right"], "put")
-        self.assertEqual(output["9_resolved_dominant_horizon"], "1D")
+        self.assertEqual(output["5_resolved_expression_type"], "long_put")
+        self.assertEqual(output["5_resolved_option_right"], "put")
+        self.assertEqual(output["5_resolved_dominant_horizon"], "1D")
 
     def test_policy_block_resolves_to_underlying_only_after_surface_gate(self) -> None:
         output = generate_rows([_base_row(option_expression_policy={"allow_option_expression": "false"})])[0]
 
-        self.assertEqual(output["9_resolved_expression_type"], "underlying_only_expression")
-        self.assertIsNone(output["9_resolved_selected_contract_ref"])
-        self.assertEqual(output["9_option_expression_eligibility_score_1W"], 0.0)
+        self.assertEqual(output["5_resolved_expression_type"], "underlying_only_expression")
+        self.assertIsNone(output["5_resolved_selected_contract_ref"])
+        self.assertEqual(output["5_option_expression_eligibility_score_1W"], 0.0)
         self.assertIn("option_expression_policy_blocked", output["option_expression_plan"]["reason_codes"])
         self.assertIn("underlying_only_expression_selected", output["option_expression_plan"]["reason_codes"])
 
     def test_maintain_keeps_option_surface_diagnostics_without_creating_overlay(self) -> None:
-        maintain_output = generate_rows([_base_row(underlying_action_plan={"planned_underlying_action_type": "maintain", "action_side": "long", "dominant_horizon": "1W", "handoff_to_layer_9": _handoff()})])[0]
+        maintain_output = generate_rows([_base_row(underlying_action_plan={"planned_underlying_action_type": "maintain", "action_side": "long", "dominant_horizon": "1W", "handoff_to_model_05": _handoff()})])[0]
         pending_output = generate_rows([_base_row(pending_option_premium_exposure=250.0, pending_option_fill_probability_estimate=0.75)])[0]
 
-        self.assertEqual(maintain_output["9_resolved_expression_type"], "no_option_expression")
-        self.assertIn("underlying_action_maintain", maintain_output["9_resolved_no_option_reason_codes"])
-        self.assertEqual(maintain_output["9_resolved_option_surface_status"], "optionable_chain_available")
+        self.assertEqual(maintain_output["5_resolved_expression_type"], "no_option_expression")
+        self.assertIn("underlying_action_maintain", maintain_output["5_resolved_no_option_reason_codes"])
+        self.assertEqual(maintain_output["5_resolved_option_surface_status"], "optionable_chain_available")
         self.assertGreater(maintain_output["option_expression_plan"]["diagnostics"]["candidate_count_before_filter"], 0)
         self.assertGreater(len(maintain_output["option_expression_plan"]["diagnostics"]["scored_candidates"]), 0)
-        self.assertEqual(pending_output["9_resolved_expression_type"], "no_option_expression")
-        self.assertIn("pending_option_exposure_detected", pending_output["9_resolved_no_option_reason_codes"])
+        self.assertEqual(pending_output["5_resolved_expression_type"], "no_option_expression")
+        self.assertIn("pending_option_exposure_detected", pending_output["5_resolved_no_option_reason_codes"])
 
     def test_no_trade_keeps_option_surface_diagnostics_without_creating_overlay(self) -> None:
-        output = generate_rows([_base_row(underlying_action_plan={"planned_underlying_action_type": "no_trade", "action_side": "none", "dominant_horizon": "1W", "handoff_to_layer_9": _handoff()})])[0]
+        output = generate_rows([_base_row(underlying_action_plan={"planned_underlying_action_type": "no_trade", "action_side": "none", "dominant_horizon": "1W", "handoff_to_model_05": _handoff()})])[0]
 
-        self.assertEqual(output["9_resolved_expression_type"], "no_option_expression")
-        self.assertEqual(output["9_resolved_option_surface_status"], "optionable_chain_available")
-        self.assertIn("underlying_action_no_trade", output["9_resolved_no_option_reason_codes"])
+        self.assertEqual(output["5_resolved_expression_type"], "no_option_expression")
+        self.assertEqual(output["5_resolved_option_surface_status"], "optionable_chain_available")
+        self.assertIn("underlying_action_no_trade", output["5_resolved_no_option_reason_codes"])
         self.assertGreater(output["option_expression_plan"]["diagnostics"]["candidate_count_before_filter"], 0)
         self.assertGreater(len(output["option_expression_plan"]["diagnostics"]["scored_candidates"]), 0)
 
@@ -130,17 +130,17 @@ class OptionExpressionModelTests(unittest.TestCase):
         output = generate_rows([row])[0]
         plan = output["option_expression_plan"]
 
-        self.assertEqual(output["9_resolved_expression_type"], "no_option_expression")
-        self.assertEqual(output["9_resolved_option_right"], "none")
-        self.assertEqual(output["9_resolved_option_surface_status"], "non_optionable_underlying")
-        self.assertIsNone(output["9_resolved_selected_contract_ref"])
-        self.assertEqual(output["9_option_contract_fit_score_1W"], 0.0)
-        self.assertEqual(output["9_option_expression_confidence_score_1W"], 0.0)
+        self.assertEqual(output["5_resolved_expression_type"], "no_option_expression")
+        self.assertEqual(output["5_resolved_option_right"], "none")
+        self.assertEqual(output["5_resolved_option_surface_status"], "non_optionable_underlying")
+        self.assertIsNone(output["5_resolved_selected_contract_ref"])
+        self.assertEqual(output["5_option_contract_fit_score_1W"], 0.0)
+        self.assertEqual(output["5_option_expression_confidence_score_1W"], 0.0)
         self.assertEqual(plan["diagnostics"]["candidate_count_before_filter"], 0)
         self.assertEqual(plan["diagnostics"]["scored_candidates"], [])
         self.assertIn("non_optionable_underlying", plan["reason_codes"])
         self.assertIn("no_option_expression_selected", plan["reason_codes"])
-        self.assertIn("layer_9_bypassed_option_expression_scoring", plan["reason_codes"])
+        self.assertIn("layer_5_bypassed_option_expression_scoring", plan["reason_codes"])
         self.assertNotIn("missing_option_chain_candidates", plan["reason_codes"])
         self.assert_no_forbidden_terms(output)
 
@@ -148,10 +148,10 @@ class OptionExpressionModelTests(unittest.TestCase):
         output = generate_rows([_base_row(option_contract_candidates=[])])[0]
         plan = output["option_expression_plan"]
 
-        self.assertEqual(output["9_resolved_expression_type"], "no_option_expression")
-        self.assertEqual(output["9_resolved_option_right"], "none")
-        self.assertEqual(output["9_resolved_option_surface_status"], "optionable_chain_missing")
-        self.assertEqual(output["9_option_expression_direction_score_1W"], 0.0)
+        self.assertEqual(output["5_resolved_expression_type"], "no_option_expression")
+        self.assertEqual(output["5_resolved_option_right"], "none")
+        self.assertEqual(output["5_resolved_option_surface_status"], "optionable_chain_missing")
+        self.assertEqual(output["5_option_expression_direction_score_1W"], 0.0)
         self.assertIn("option_surface_unavailable", plan["reason_codes"])
         self.assertIn("no_option_expression_selected", plan["reason_codes"])
         self.assertIn("missing_option_chain_candidates", plan["reason_codes"])
@@ -161,11 +161,11 @@ class OptionExpressionModelTests(unittest.TestCase):
         row = _base_row(option_contract_candidates=[{**_call_candidate(), "contract_ref": "AAPL_CALL_DEEP_OTM", "delta": 0.12}])
         output = generate_rows([row])[0]
 
-        self.assertEqual(output["9_resolved_expression_type"], "underlying_only_expression")
-        self.assertEqual(output["9_resolved_option_right"], "none")
-        self.assertIsNone(output["9_resolved_selected_contract_ref"])
-        self.assertGreater(output["9_option_expression_direction_score_1W"], 0.0)
-        self.assertEqual(output["9_option_contract_fit_score_1W"], 0.0)
+        self.assertEqual(output["5_resolved_expression_type"], "underlying_only_expression")
+        self.assertEqual(output["5_resolved_option_right"], "none")
+        self.assertIsNone(output["5_resolved_selected_contract_ref"])
+        self.assertGreater(output["5_option_expression_direction_score_1W"], 0.0)
+        self.assertEqual(output["5_option_contract_fit_score_1W"], 0.0)
         self.assertIn("underlying_only_expression_selected", output["option_expression_plan"]["reason_codes"])
         self.assertIn("no_contract_passed_hard_filter", output["option_expression_plan"]["reason_codes"])
         self.assertIn("delta_outside_policy_range", output["option_expression_plan"]["reason_codes"])
@@ -212,10 +212,10 @@ def _base_row(**overrides: object) -> dict[str, object]:
             "planned_underlying_action_type": "increase_long",
             "action_side": "long",
             "dominant_horizon": "1W",
-            "handoff_to_layer_9": _handoff(),
+            "handoff_to_model_05": _handoff(),
         },
         "market_context_state": {"1_market_risk_stress_score": 0.20, "1_market_liquidity_support_score": 0.85},
-        "event_context_vector": {"10_event_gap_risk_score_1W": 0.20, "10_event_uncertainty_score_1W": 0.15},
+        "event_context_vector": {"6_event_gap_risk_score_1W": 0.20, "6_event_uncertainty_score_1W": 0.15},
         "option_expression_policy": {"max_option_spread_pct": 0.18, "iv_rank_ceiling": 0.75},
         "option_contract_candidates": [
             _call_candidate(),

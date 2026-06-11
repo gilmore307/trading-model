@@ -154,7 +154,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "entry_plan": entry_plan,
             "price_path_expectation": price_path,
             "risk_plan": risk_plan,
-            "handoff_to_layer_9": handoff,
+            "handoff_to_model_05": handoff,
             "reason_codes": reason_codes,
             "diagnostics": {
                 "hard_gate_reason_codes": gate_state["hard_gate_reason_codes"],

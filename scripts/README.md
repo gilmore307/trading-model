@@ -17,12 +17,11 @@ Scripts are the runtime boundary. Reusable model logic belongs in `src/`; script
 - `models/model_04_unified_decision/` — current home for M04 Unified Decision entrypoints.
 - `models/model_05_option_expression/` — current home for M05 Option Expression entrypoints.
 - `models/model_06_residual_event_governance/` — current home for M06 Residual Event Governance entrypoints.
-- Retired ten-layer directories under `models/model_01_market_regime/` through `models/model_10_event_risk_governor/` remain migration-source entrypoints until their generation/evaluation/review behavior is moved into the current six-model homes.
-- `models/audit_model_output_tables.py` emits a read-only `model_output_table_quality_audit` over current and retained migration-source model output/support table families.
+- - `models/audit_model_output_tables.py` emits a read-only `model_output_table_quality_audit` over current and model output/support table families.
 - `models/run_current_model_chain.py` is a local fixture smoke gate for the current M01-M06 contracts. It does not produce production promotion evidence.
 - `models/run_current_model_historical_evaluation.py` runs the current M01-M06 chain over bounded historical migration-source rows, builds chronological folds and mature future-return labels, and may train a local current-chain utility baseline artifact. It is read-only evidence generation and never promotes or activates a model.
 - `models/run_model_output_quality_gate.py` emits `model_output_quality_gate` and exits non-zero when post-generation primary output defects should block acceptance.
-- `models/review_layers_03_10_promotion_acceptance.py` is a retained migration-source review helper for the retired ten-layer route. New promotion acceptance work should target the six current model contracts. It must not activate configs or persist manager-control-plane decisions.
+- `models/review_current_model_promotion_acceptance.py` reviews blocked promotion acceptance for current M03-M06 contracts when production evaluation substrate is missing. It must not activate configs or persist manager-control-plane decisions.
 - `models/plan_realtime_decision_handoff.py` builds a C-runtime-component-routed `model_realtime_decision_route_plan` from an execution-side realtime model decision input snapshot without running models or activating production configs.
 - `models/validate_realtime_decision_handoff.py` validates realtime decision input snapshots or route plans without side effects.
 

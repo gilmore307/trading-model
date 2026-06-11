@@ -57,12 +57,12 @@ RETAINED_MIGRATION_MODEL_OUTPUT_TABLES: tuple[str, ...] = (
     "model_08_underlying_action",
     "model_08_underlying_action_explainability",
     "model_08_underlying_action_diagnostics",
-    "model_09_option_expression",
-    "model_09_option_expression_explainability",
-    "model_09_option_expression_diagnostics",
-    "model_10_event_risk_governor",
-    "model_10_event_risk_governor_explainability",
-    "model_10_event_risk_governor_diagnostics",
+    "model_05_option_expression",
+    "model_05_option_expression_explainability",
+    "model_05_option_expression_diagnostics",
+    "model_06_residual_event_governance",
+    "model_06_residual_event_governance_explainability",
+    "model_06_residual_event_governance_diagnostics",
 )
 
 MODEL_OUTPUT_TABLES: tuple[str, ...] = CURRENT_MODEL_OUTPUT_TABLES

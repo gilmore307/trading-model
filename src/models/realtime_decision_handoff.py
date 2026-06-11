@@ -191,7 +191,7 @@ def _validate_runtime_component_manifest(manifest: Any) -> dict[str, Any]:
             if component_id in components_by_id:
                 errors.append(f"duplicate runtime component manifest row for {component_id}")
             components_by_id[component_id] = row
-            for forbidden in ("called_model_layers", "layer_10_policy"):
+            for forbidden in ("called_model_layers", "m06_residual_event_governance_policy"):
                 if forbidden in row:
                     errors.append(f"runtime_component_manifest.components[{index}].{forbidden} forbidden")
             for field in (
@@ -287,7 +287,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
             provided_optional = _tuple_of_strings(row.get("optional_model_surfaces"))
             if provided_optional and provided_optional != expected_optional:
                 row_errors.append(f"component_input_refs[{index}].optional_model_surfaces mismatch for {component}")
-            for forbidden in ("called_model_layers", "layer_10_policy"):
+            for forbidden in ("called_model_layers", "m06_residual_event_governance_policy"):
                 if forbidden in row:
                     row_errors.append(f"component_input_refs[{index}].{forbidden} forbidden")
 

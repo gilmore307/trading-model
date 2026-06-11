@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_10_event_risk_governor.earnings_option_abnormality_split_scout import EarningsOptionSplitInputs, run_earnings_option_split_scout
+from models.model_06_residual_event_governance.earnings_option_abnormality_split_scout import EarningsOptionSplitInputs, run_earnings_option_split_scout
 
 
 class EarningsOptionAbnormalitySplitScoutTests(unittest.TestCase):

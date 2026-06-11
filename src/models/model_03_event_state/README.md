@@ -6,4 +6,4 @@ This model consumes accepted residual-event governance focus-pool contracts as f
 
 The current deterministic pilot consumes `background_context_state`, `target_context_state`, and accepted event contracts, then emits `event_state_vector`, `event_state_vector_ref`, and `3_event_*` scores. It records frozen event refs and blocks event-family parameter mutation.
 
-Retired `model_04_event_failure_risk` and event-family helpers under `model_10_event_risk_governor` remain migration-source surfaces only.
+Retired `model_04_event_failure_risk` and event-family helpers under `model_06_residual_event_governance` remain migration-source surfaces only.

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from event_family_fixtures import build_event_family_fixture
 
-from models.model_10_event_risk_governor.event_price_association_readiness import (
+from models.model_06_residual_event_governance.event_price_association_readiness import (
     build_event_price_association_readiness_batch,
     write_batch_artifacts,
 )

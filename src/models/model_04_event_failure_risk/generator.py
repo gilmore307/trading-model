@@ -1,8 +1,8 @@
 """EventFailureRiskModel baseline generator.
 
-Layer 4 converts agent-reviewed event/strategy-failure gates or frozen Layer 10
+Layer 4 converts agent-reviewed event/strategy-failure gates or frozen M06
 focus-pool event contracts into a point-in-time ``event_failure_risk_vector``.
-It is intentionally conservative: without a reviewed gate or accepted Layer 10
+It is intentionally conservative: without a reviewed gate or accepted M06
 contract it emits an auditable no-risk/observe-only row, not raw news alpha,
 event-parameter mutation, or automatic event-family promotion.
 """
@@ -35,8 +35,8 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         raise ValueError("target_candidate_id is required")
 
     gate = _payload(row, "event_strategy_failure_gate")
-    layer10 = (
-        _payload(row, "layer_10_event_contract")
+    m06_residual_event_governance = (
+        _payload(row, "m06_residual_event_governance_contract")
         or _payload(row, "event_interpretation_contract")
         or _payload(row, "event_context_vector")
     )
@@ -47,10 +47,10 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
 
     vector: dict[str, Any] = {}
     diagnostics: dict[str, Any] = {"horizon_reason_codes": {}}
-    reviewed = _review_accepted(gate) or _layer10_contract_accepted(layer10)
+    reviewed = _review_accepted(gate) or _m06_residual_event_governance_contract_accepted(m06_residual_event_governance)
     for horizon in HORIZONS:
         suffix = _suffix(horizon)
-        scores = _scores(horizon, gate, layer10, evidence, market, sector, target, reviewed=reviewed)
+        scores = _scores(horizon, gate, m06_residual_event_governance, evidence, market, sector, target, reviewed=reviewed)
         vector.update({
             f"4_event_response_strength_score_{suffix}": scores["response_strength"],
             f"4_event_response_direction_score_{suffix}": scores["response_direction"],
@@ -79,7 +79,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "sector_context_state_ref": row.get("sector_context_state_ref"),
         "target_context_state_ref": row.get("target_context_state_ref") or row.get("target_state_vector_ref"),
         "event_strategy_failure_gate_ref": row.get("event_strategy_failure_gate_ref"),
-        "layer_10_event_contract_ref": row.get("layer_10_event_contract_ref"),
+        "m06_residual_event_governance_contract_ref": row.get("m06_residual_event_governance_contract_ref"),
         "event_failure_evidence_packet_ref": row.get("event_failure_evidence_packet_ref"),
         "event_failure_risk_vector_ref": ref,
         "4_resolved_event_failure_risk_status": resolved_status,
@@ -94,7 +94,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
 def _scores(
     horizon: str,
     gate: Mapping[str, Any],
-    layer10: Mapping[str, Any],
+    m06_residual_event_governance: Mapping[str, Any],
     evidence: Mapping[str, Any],
     market: Mapping[str, Any],
     sector: Mapping[str, Any],
@@ -118,25 +118,25 @@ def _scores(
             "applicability": 0.0,
             "reason_codes": ["no_reviewed_event_failure_risk"],
         }
-    l10_presence = _score(layer10, f"10_event_presence_score_{suffix}", "10_event_presence_score", "event_presence_score", default=0.0)
-    l10_timing = _score(layer10, f"10_event_timing_proximity_score_{suffix}", "10_event_timing_proximity_score", "event_timing_proximity_score", default=l10_presence)
-    l10_intensity = _score(layer10, f"10_event_intensity_score_{suffix}", "10_event_intensity_score", "event_intensity_score", default=l10_presence)
-    l10_gap = _score(layer10, f"10_event_gap_risk_score_{suffix}", "10_event_gap_risk_score", "event_gap_risk_score", default=0.0)
-    l10_reversal = _score(layer10, f"10_event_reversal_risk_score_{suffix}", "10_event_reversal_risk_score", "event_reversal_risk_score", default=0.0)
-    l10_uncertainty = _score(layer10, f"10_event_uncertainty_score_{suffix}", "10_event_uncertainty_score", "event_uncertainty_score", default=max(l10_gap, l10_reversal) * 0.5)
-    l10_direction = _signed_score(layer10, f"10_event_direction_bias_score_{suffix}", "10_event_direction_bias_score", "event_direction_bias_score", default=0.0)
+    l10_presence = _score(m06_residual_event_governance, f"6_event_presence_score_{suffix}", "6_event_presence_score", "event_presence_score", default=0.0)
+    l10_timing = _score(m06_residual_event_governance, f"6_event_timing_proximity_score_{suffix}", "6_event_timing_proximity_score", "event_timing_proximity_score", default=l10_presence)
+    l10_intensity = _score(m06_residual_event_governance, f"6_event_intensity_score_{suffix}", "6_event_intensity_score", "event_intensity_score", default=l10_presence)
+    l10_gap = _score(m06_residual_event_governance, f"6_event_gap_risk_score_{suffix}", "6_event_gap_risk_score", "event_gap_risk_score", default=0.0)
+    l10_reversal = _score(m06_residual_event_governance, f"6_event_reversal_risk_score_{suffix}", "6_event_reversal_risk_score", "event_reversal_risk_score", default=0.0)
+    l10_uncertainty = _score(m06_residual_event_governance, f"6_event_uncertainty_score_{suffix}", "6_event_uncertainty_score", "event_uncertainty_score", default=max(l10_gap, l10_reversal) * 0.5)
+    l10_direction = _signed_score(m06_residual_event_governance, f"6_event_direction_bias_score_{suffix}", "6_event_direction_bias_score", "event_direction_bias_score", default=0.0)
 
     evidence_quality = _score(
         gate,
         f"evidence_quality_score_{suffix}",
         "evidence_quality_score",
-        default=_score(layer10, "event_evidence_quality_score", default=_score(evidence, "evidence_quality_score", default=0.6)),
+        default=_score(m06_residual_event_governance, "event_evidence_quality_score", default=_score(evidence, "evidence_quality_score", default=0.6)),
     )
     applicability = _score(
         gate,
         f"applicability_confidence_score_{suffix}",
         "applicability_confidence_score",
-        default=_score(layer10, "event_applicability_confidence_score", default=max(l10_presence, l10_timing, _score(evidence, "applicability_confidence_score", default=0.55))),
+        default=_score(m06_residual_event_governance, "event_applicability_confidence_score", default=max(l10_presence, l10_timing, _score(evidence, "applicability_confidence_score", default=0.55))),
     )
     effect = _score(
         gate,
@@ -182,8 +182,8 @@ def _scores(
     multiplier = 0.55 + 0.45 * confidence
     failure_risk = _clip01(effect * multiplier)
     reason_codes = ["reviewed_event_failure_gate_applied"]
-    if _layer10_contract_accepted(layer10):
-        reason_codes.extend(["layer10_focus_pool_contract_consumed", "layer10_event_parameters_frozen"])
+    if _m06_residual_event_governance_contract_accepted(m06_residual_event_governance):
+        reason_codes.extend(["m06_residual_event_governance_focus_pool_contract_consumed", "m06_residual_event_governance_event_parameters_frozen"])
     if evidence_quality < 0.5:
         reason_codes.append("low_evidence_quality")
     if applicability < 0.5:
@@ -236,7 +236,7 @@ def _review_accepted(gate: Mapping[str, Any]) -> bool:
     return decision in {"accept_layer_04_event_failure_risk_scope", "accepted", "approve", "approved"} or status in {"accepted", "reviewed_accepted"}
 
 
-def _layer10_contract_accepted(contract: Mapping[str, Any]) -> bool:
+def _m06_residual_event_governance_contract_accepted(contract: Mapping[str, Any]) -> bool:
     decision = str(contract.get("production_route_decision") or contract.get("review_decision") or "").strip().lower()
     focus_status = str(contract.get("focus_pool_status") or contract.get("event_pool_status") or "").strip().lower()
     source = str(contract.get("contract_owner") or contract.get("source_layer") or "").strip().lower()
@@ -244,7 +244,7 @@ def _layer10_contract_accepted(contract: Mapping[str, Any]) -> bool:
     return (
         decision.startswith("approve_focus_pool_entry")
         or focus_status == "accepted_temporal_attention_focus_pool"
-        or (source in {"layer_10_event_risk_governor", "layer_10"} and has_frozen_window and focus_status.startswith("accepted"))
+        or (source == "model_06_residual_event_governance" and has_frozen_window and focus_status.startswith("accepted"))
     )
 
 

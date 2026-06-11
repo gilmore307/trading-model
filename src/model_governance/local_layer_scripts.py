@@ -337,7 +337,7 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
             "event_failure_evidence_packet": {"evidence_quality_score": 0.86, "applicability_confidence_score": 0.80},
         }
     ],
-    "model_10_event_risk_governor": [
+    "model_06_residual_event_governance": [
         {
             "available_time": "2026-05-07T10:30:00-04:00",
             "tradeable_time": "2026-05-07T10:31:00-04:00",
@@ -537,7 +537,7 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
             ],
         }
     ],
-    "model_09_option_expression": [
+    "model_05_option_expression": [
         {
             "available_time": "2026-05-07T10:30:00-04:00",
             "tradeable_time": "2026-05-07T10:31:00-04:00",
@@ -547,9 +547,9 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
             "option_quote_available_time": "2026-05-07T10:30:05-04:00",
             "underlying_quote_snapshot_ref": "underlying_quote_fixture",
             "underlying_reference_price": 100.25,
-            "underlying_action_plan": {"planned_underlying_action_type": "increase_long", "action_side": "long", "dominant_horizon": "1W", "handoff_to_layer_9": {"underlying_path_direction": "bullish", "expected_entry_price": 100.0, "expected_target_price": 105.0, "target_price_low": 103.0, "target_price_high": 106.0, "stop_loss_price": 98.0, "thesis_invalidation_price": 97.5, "expected_holding_time_minutes": 10080, "path_quality_score": 0.82, "reversal_risk_score": 0.18, "drawdown_risk_score": 0.22, "expected_favorable_move_pct": 0.05, "expected_adverse_move_pct": -0.02, "entry_price_assumption": "limit_or_pullback", "underlying_action_confidence_score": 0.78}},
+            "underlying_action_plan": {"planned_underlying_action_type": "increase_long", "action_side": "long", "dominant_horizon": "1W", "handoff_to_model_05": {"underlying_path_direction": "bullish", "expected_entry_price": 100.0, "expected_target_price": 105.0, "target_price_low": 103.0, "target_price_high": 106.0, "stop_loss_price": 98.0, "thesis_invalidation_price": 97.5, "expected_holding_time_minutes": 10080, "path_quality_score": 0.82, "reversal_risk_score": 0.18, "drawdown_risk_score": 0.22, "expected_favorable_move_pct": 0.05, "expected_adverse_move_pct": -0.02, "entry_price_assumption": "limit_or_pullback", "underlying_action_confidence_score": 0.78}},
             "market_context_state": {"1_market_risk_stress_score": 0.20, "1_market_liquidity_support_score": 0.85},
-            "event_context_vector": {"10_event_gap_risk_score_1W": 0.20, "10_event_uncertainty_score_1W": 0.15},
+            "event_context_vector": {"6_event_gap_risk_score_1W": 0.20, "6_event_uncertainty_score_1W": 0.15},
             "option_expression_policy": {"max_option_spread_pct": 0.18, "iv_rank_ceiling": 0.75},
             "option_contract_candidates": [
                 {"contract_ref": "AAPL_CALL_GOOD", "quote_snapshot_ref": "qs_call_good", "quote_available_time": "2026-05-07T10:30:05-04:00", "quote_age_seconds": 12, "strike": 102, "moneyness": 1.02, "contract_multiplier": 100, "exercise_style": "american", "settlement_type": "physical", "is_weekly": True, "is_monthly": False, "is_adjusted_contract": False, "last_trade_time": "2026-05-07T10:29:58-04:00", "right": "call", "expiration": "2026-05-15", "dte": 8, "delta": 0.52, "gamma": 0.04, "theta": -0.08, "vega": 0.12, "iv": 0.32, "iv_rank": 0.45, "bid": 2.40, "ask": 2.55, "bid_size": 30, "ask_size": 25, "volume": 1200, "open_interest": 6500, "intrinsic_value": 2.0, "extrinsic_value": 0.475, "breakeven_price": 104.475, "theoretical_value": 2.49}
@@ -564,14 +564,14 @@ FIXTURE_OUTCOME_ROWS: dict[str, list[dict[str, Any]]] = {
     "model_03_event_state": [{"event_state_vector_ref": "esv_fixture", "realized_event_response_1W": -0.02, "realized_event_path_risk_1W": 0.25, "realized_event_entry_block_utility_1W": 0.03, "event_state_realized_utility_1W": 0.04}],
     "model_04_unified_decision": [{"unified_decision_vector_ref": "udv_a6cc0189ed496c7e", "realized_decision_utility": 0.12, "realized_max_drawdown": -0.03}],
     "model_04_event_failure_risk": [{"event_failure_risk_vector_ref": "efrv_fixture", "realized_strategy_failure_1W": True, "realized_path_risk_amplification_1W": 0.25}],
-    "model_10_event_risk_governor": [{"event_context_vector_ref": "ecv_3a5b6bb6c3a72d97", "realized_symbol_move_after_event_1W": -0.04}],
+    "model_06_residual_event_governance": [{"event_context_vector_ref": "ecv_3a5b6bb6c3a72d97", "realized_symbol_move_after_event_1W": -0.04}],
     "model_06_residual_event_governance": [{"event_risk_intervention_ref": "eri_fixture", "realized_residual_event_loss_1W": -0.04, "realized_intervention_utility_1W": 0.05}],
     "model_05_alpha_confidence": [{"alpha_confidence_vector_ref": "acv_7d1d9b0867ac4d13", "forward_return_1W": -0.05, "idiosyncratic_residual_return_1W": -0.04, "alpha_tradable_label_1W": True}],
     "model_06_dynamic_risk_policy": [{"dynamic_risk_policy_state_ref": "drp_9820f47a50d7bf25", "realized_premium_efficiency_1W": 0.34, "realized_risk_budget_efficiency_1W": 0.62, "realized_policy_breach_1W": False}],
     "model_07_position_projection": [{"position_projection_vector_ref": "ppv_f154b03e7648d661", "realized_position_utility_1W": 0.12, "realized_risk_budget_breach_1W": False}],
     "model_08_underlying_action": [{"underlying_action_plan_ref": "uap_7c6b5381d428ea0a", "entry_price_hit": True, "realized_underlying_return": 0.04, "slippage_pct": 0.001, "spread_cost_pct": 0.001}],
     "model_05_option_expression": [{"option_expression_plan_ref": "oep_0efeeb3e99931e42", "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True}],
-    "model_09_option_expression": [{"option_expression_plan_ref": "oep_8b65e90b82a73385", "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True}],
+    "model_05_option_expression": [{"option_expression_plan_ref": "oep_8b65e90b82a73385", "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True}],
 }
 
 
@@ -590,7 +590,7 @@ def fixture_outcome_rows(model_surface: str, model_rows: list[dict[str, Any]]) -
             rows.append({"unified_decision_vector_ref": row.get("unified_decision_vector_ref"), "realized_decision_utility": 0.12, "realized_max_drawdown": -0.03})
         elif model_surface == "model_04_event_failure_risk":
             rows.append({"event_failure_risk_vector_ref": row.get("event_failure_risk_vector_ref"), "realized_strategy_failure_1W": True, "realized_path_risk_amplification_1W": 0.25})
-        elif model_surface == "model_10_event_risk_governor":
+        elif model_surface == "model_06_residual_event_governance":
             rows.append({"event_context_vector_ref": row.get("event_context_vector_ref"), "realized_symbol_move_after_event_1W": -0.04})
         elif model_surface == "model_06_residual_event_governance":
             rows.append({"event_risk_intervention_ref": row.get("event_risk_intervention_ref"), "realized_residual_event_loss_1W": -0.04, "realized_intervention_utility_1W": 0.05})
@@ -604,6 +604,6 @@ def fixture_outcome_rows(model_surface: str, model_rows: list[dict[str, Any]]) -
             rows.append({"underlying_action_plan_ref": row.get("underlying_action_plan_ref"), "entry_price_hit": True, "realized_underlying_return": 0.04, "slippage_pct": 0.001, "spread_cost_pct": 0.001})
         elif model_surface == "model_05_option_expression":
             rows.append({"option_expression_plan_ref": row.get("option_expression_plan_ref"), "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True})
-        elif model_surface == "model_09_option_expression":
+        elif model_surface == "model_05_option_expression":
             rows.append({"option_expression_plan_ref": row.get("option_expression_plan_ref"), "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True})
     return rows

@@ -32,7 +32,7 @@ Live execution may invoke the heavier option-expression component only when M04 
 
 ## Migration Source
 
-Retired implementation package `model_09_option_expression` may be used as source material during migration. It is not a separate current model contract.
+Retired implementation package `model_05_option_expression` may be used as source material during migration. It is not a separate current model contract.
 
 ## Current Gate
 

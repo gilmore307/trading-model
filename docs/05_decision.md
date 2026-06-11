@@ -232,7 +232,7 @@ It must not choose debit spreads, calendars, diagonals, straddles, strangles, co
 
 The model must use timestamped option-chain snapshots, bid/ask, liquidity, IV, Greeks, conservative fill assumptions, and market-context constraints such as DTE, delta/moneyness, IV/vega/theta tolerance, and no-trade filters.
 
-Layer-numbering update: after D047, the later Layer 8/9 swap, and D049, this decision is preserved as Layer 9 `OptionExpressionModel` / trading-guidance context after Layer 8 `UnderlyingActionModel` and before Layer 10 event-risk governance. Physical implementation names use `model_09_option_expression`.
+Layer-numbering update: after D047, the later Layer 8/9 swap, and D049, this decision is preserved as M05 `OptionExpressionModel` / trading-guidance context after Layer 8 `UnderlyingActionModel` and before M06 event-risk governance. Physical implementation names use `model_05_option_expression`.
 
 ## D010 - Model governance and promotion evidence stay model-local until manager control-plane acceptance
 
@@ -382,7 +382,7 @@ Layer 3 `TargetStateVectorModel` must make the same separation for anonymous tar
 
 Signed labels may be used for direction-neutral evaluation, but the orientation sign must come from deterministic point-in-time state evidence or from an out-of-sample upstream prediction. It must not be derived from the same fitted target being evaluated.
 
-Current update: Layer 4 owns EventFailureRiskModel failure-risk conditioning; Layer 5 owns alpha-confidence calibration; Layer 6 owns DynamicRiskPolicyModel; Layers 7-8 own position projection and direct-underlying action; Layer 9 owns trading guidance / option expression; Layer 10 owns residual event-risk intervention. Layer 3 remains a state/context model.
+Current update: Layer 4 owns EventFailureRiskModel failure-risk conditioning; Layer 5 owns alpha-confidence calibration; Layer 6 owns DynamicRiskPolicyModel; Layers 7-8 own position projection and direct-underlying action; M05 owns trading guidance / option expression; M06 owns residual event-risk intervention. Layer 3 remains a state/context model.
 
 ## D018 - Vector taxonomy and Layer 3 preprocessing boundary
 
@@ -419,7 +419,7 @@ This keeps `base_stack_layers_01_09` model design from being constrained by prem
 Date: 2026-05-06
 Status: Superseded by D039 on 2026-05-15
 
-This decision preserved the earlier EventRiskGovernor-as-Layer-4 route. D039 later moved event governance after the base trading stack, D047 inserted EventFailureRiskModel before alpha confidence, and D049 is now authoritative for exact numbering: EventFailureRiskModel is Layer 4, AlphaConfidenceModel is Layer 5, DynamicRiskPolicyModel is Layer 6, and EventRiskGovernor / EventIntelligenceOverlay is Layer 10, intervening on the Layer 8 direct-underlying/spot thesis with optional Layer 9 expression context.
+This decision preserved the earlier EventRiskGovernor-as-Layer-4 route. D039 later moved event governance after the base trading stack, D047 inserted EventFailureRiskModel before alpha confidence, and D049 is now authoritative for exact numbering: EventFailureRiskModel is Layer 4, AlphaConfidenceModel is Layer 5, DynamicRiskPolicyModel is Layer 6, and EventRiskGovernor / EventIntelligenceOverlay is M06, intervening on the Layer 8 direct-underlying/spot thesis with optional M05 expression context.
 
 Previous layer order:
 
@@ -434,9 +434,9 @@ market_context_state
   -> option_expression_plan / expression_vector
 ```
 
-Layer 10 consumes point-in-time event evidence such as `m06_residual_event_governance_data_acquisition`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
+M06 consumes point-in-time event evidence such as `m06_residual_event_governance_data_acquisition`, equity abnormal activity events, option abnormal activity events, macro/calendar events, news, and filings. It must preserve `event_time`, `available_time`, canonical-event identity, deduplication status, source priority, scope, references, and point-in-time availability.
 
-The former hard-upstream event route must not be used as active layer ordering. Event-risk governance is now Layer 10, except for reviewed event-failure factors promoted into Layer 4.
+The former hard-upstream event route must not be used as active layer ordering. Event-risk governance is now M06, except for reviewed event-failure factors promoted into Layer 4.
 
 ## D021 - AlphaConfidenceModel adjusted alpha-confidence boundary
 
@@ -445,7 +445,7 @@ Status: Accepted
 
 Layer-numbering update after D047: `AlphaConfidenceModel` is Layer 5 with canonical model id `alpha_confidence_model`, output `alpha_confidence_vector`, physical surface `model_05_alpha_confidence`, and `5_*` score prefixes.
 
-AlphaConfidenceModel consumes the reviewed Layer 1/2/3 state stack plus Layer 4 event-failure-risk conditioning when applicable. It is the first layer allowed to convert accepted point-in-time state/context evidence into horizon-aware alpha judgment. Raw event intelligence is not a hard upstream correction input; Layer 10 may later intervene on the Layer 8 direct-underlying/spot thesis, with optional Layer 9 expression context when present. AlphaConfidenceModel owns alpha direction, alpha strength, expected residual return, alpha confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability.
+AlphaConfidenceModel consumes the reviewed Layer 1/2/3 state stack plus Layer 4 event-failure-risk conditioning when applicable. It is the first layer allowed to convert accepted point-in-time state/context evidence into horizon-aware alpha judgment. Raw event intelligence is not a hard upstream correction input; M06 may later intervene on the Layer 8 direct-underlying/spot thesis, with optional M05 expression context when present. AlphaConfidenceModel owns alpha direction, alpha strength, expected residual return, alpha confidence, signal reliability, path quality, reversal risk, drawdown risk, and alpha-level tradability.
 
 AlphaConfidenceModel keeps two output tiers separate:
 
@@ -466,7 +466,7 @@ alpha confidence != option expression
 alpha confidence != final action
 ```
 
-AlphaConfidenceModel must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns dynamic risk policy. Layer 7 owns position projection and target exposure state. Layer 8 owns planned direct-underlying action. Layer 9 owns trading guidance / option expression. Layer 10 owns residual event-risk governance.
+AlphaConfidenceModel must not emit buy/sell/hold, final action, target exposure, position size, account-risk allocation, option contract, strike, DTE, delta, order type, or broker/account mutation. Layer 6 owns dynamic risk policy. Layer 7 owns position projection and target exposure state. Layer 8 owns planned direct-underlying action. M05 owns trading guidance / option expression. M06 owns residual event-risk governance.
 
 AlphaConfidenceModel uses the synchronized `10min`, `1h`, `1D`, and `1W` horizons for the accepted final 9 score families: direction, strength, expected return, confidence, reliability, path quality, reversal risk, drawdown risk, and alpha tradability. Future changes to horizon grids or score families require evaluation evidence and registry review.
 
@@ -504,7 +504,7 @@ Layer 5: dense target-state alpha-confidence rows
 Layer 6: dense global policy rows, plus candidate/position rows when those contexts exist
 Layer 7: dense position-projection rows for active or simulated current/pending position contexts
 Layer 8: dense underlying-action rows where Layer 7 projection plus underlying quote/liquidity context exist
-Layer 9: dense option-expression rows where option-chain snapshots exist, plus no-option/direct-underlying rows
+M05: dense option-expression rows where option-chain snapshots exist, plus no-option/direct-underlying rows
 ```
 
 The principle is not `minute x every listed symbol` for every layer. Each layer has its own eligible state universe. The rule is that once a row is eligible and point-in-time complete for that layer, it should not be excluded merely because live routing would not have triggered an action at that minute.
@@ -600,7 +600,7 @@ projection confidence != alpha confidence
 position projection vector != final action
 ```
 
-PositionProjectionModel must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate broker/account state. Layer 8 owns planned direct-underlying action thesis; Layer 9 owns trading guidance / option expression; live/paper broker mutation remains outside `trading-model`.
+PositionProjectionModel must not emit buy/sell/hold/open/close/reverse, choose instruments, read option chains, choose strike/DTE/Greeks, route orders, or mutate broker/account state. Layer 8 owns planned direct-underlying action thesis; M05 owns trading guidance / option expression; live/paper broker mutation remains outside `trading-model`.
 
 ## D023 - UnderlyingActionModel planned direct-underlying action boundary
 
@@ -667,7 +667,7 @@ underlying action plan != option expression
 underlying action plan != live execution
 ```
 
-UnderlyingActionModel must not emit broker order fields, order type, route, time-in-force, send/cancel/replace flags, broker order ids, option strike/DTE/delta/Greeks, specific option contract refs, or broker/account mutations. Layer 9 owns trading guidance / option expression. `trading-execution` owns broker-order lifecycle.
+UnderlyingActionModel must not emit broker order fields, order type, route, time-in-force, send/cancel/replace flags, broker order ids, option strike/DTE/delta/Greeks, specific option contract refs, or broker/account mutations. M05 owns trading guidance / option expression. `trading-execution` owns broker-order lifecycle.
 
 ## D024 - OptionExpressionModel owns offline option expression only
 
@@ -692,7 +692,7 @@ underlying_only_expression
 no_option_expression
 ```
 
-Layer 9 may select a point-in-time option contract reference and contract constraints for the expression. This is model output, not a broker order.
+M05 may select a point-in-time option contract reference and contract constraints for the expression. This is model output, not a broker order.
 
 Accepted invariants:
 
@@ -703,21 +703,21 @@ selected_contract != send order
 contract constraints != route / time-in-force
 premium risk plan != account mutation
 expression confidence != final approval
-Layer 9 offline plan != live execution
+M05 offline plan != live execution
 ```
 
-Layer 9 must not emit broker order type, route, time-in-force, send/cancel/replace flags, final order quantity, broker order ids, or account mutation fields. Multi-leg structures remain deferred until a reviewed expression-policy contract accepts them. `trading-execution` remains the owner of live/paper broker mutation.
+M05 must not emit broker order type, route, time-in-force, send/cancel/replace flags, final order quantity, broker order ids, or account mutation fields. Multi-leg structures remain deferred until a reviewed expression-policy contract accepts them. `trading-execution` remains the owner of live/paper broker mutation.
 
-## D024A - Layer 9 historical option bucket defaults
+## D024A - M05 historical option bucket defaults
 
 Date: 2026-05-10
 Status: Accepted
 
-Layer 9 option-expression bucket construction uses near-to-far listed expirations: current listed week first, then next listed week, then the following listed week, continuing outward only when coverage policy requires it.
+M05 option-expression bucket construction uses near-to-far listed expirations: current listed week first, then next listed week, then the following listed week, continuing outward only when coverage policy requires it.
 
 For each selected target, the strike bucket is the listed-strike corridor from current underlying reference price to the Layer 8 underlying-action target price plus three actual listed strike levels below the corridor and three actual listed strike levels above it. Example: current `95`, target `100`, one-dollar listed strikes -> scan strikes `92` through `103`.
 
-Current runtime acquisition closes this loop through shared `option_chain_state_source` requests prepared before Layer 3. Layer 9 feature generation reads that point-in-time source/cache directly; it does not own a separate option-chain acquisition request surface.
+Current runtime acquisition closes this loop through shared `option_chain_state_source` requests prepared before Layer 3. M05 feature generation reads that point-in-time source/cache directly; it does not own a separate option-chain acquisition request surface.
 
 Historical model construction intentionally keeps illiquid, wide-spread, low-OI, high-IV, deep ITM/OTM, stale, and otherwise extreme contracts in the candidate bucket so the model learns robustness and failure modes. These observations may score poorly, produce reason codes, or resolve to `underlying_only_expression`; they must not be removed at acquisition-time solely because they are extreme.
 
@@ -762,7 +762,7 @@ MarketRegimeModel
 
 `base_stack_layers_01_09` has accepted contracts, docs, local baseline generators/evaluation helpers where in scope, registry score naming, and fixture-level verification for the current architecture boundary.
 
-This acceptance is superseded by the later architecture revisions that insert Layer 4 EventFailureRiskModel and Layer 6 DynamicRiskPolicyModel and make EventRiskGovernor Layer 10. After Layer 10, downstream work belongs to review / execution-owned boundaries: broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
+This acceptance is superseded by the later architecture revisions that insert Layer 4 EventFailureRiskModel and Layer 6 DynamicRiskPolicyModel and make EventRiskGovernor M06. After M06, downstream work belongs to review / execution-owned boundaries: broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
 Remaining work is production hardening and control-plane integration, not new model-layer design: real point-in-time feeds, label calibration, baseline/stability proof, accepted promotion decisions, and exact unified decision-record / artifact contracts through `trading-manager`.
 
@@ -784,12 +784,12 @@ Status: Superseded by D036
 
 The useful part of this decision remains: production-promotion acceptance must evaluate real evidence and must not activate on missing or failed gates. The implementation detail that `trading-model` persists durable promotion decisions is superseded. `trading-model` now emits model-side evidence/review artifacts; promotion readiness belongs in `trading-evaluation`, while runtime activation belongs in `trading-execution`.
 
-## D032 - Layers 3-10 blocked acceptance must be agent-reviewed
+## D032 - M03-M06 blocked acceptance must be agent-reviewed
 
 Date: 2026-05-08
 Status: Superseded by D036
 
-Chentong clarified that Layers 3-10 should follow the same promotion principle as Layers 1-2: even when production evaluation substrate is missing, the acceptance script must call the reviewer agent. The model-side acceptance entrypoint now builds blocked evaluation artifacts and review artifacts only; durable deferred decisions belong in `trading-manager`.
+Chentong clarified that M03-M06 should follow the same promotion principle as Layers 1-2: even when production evaluation substrate is missing, the acceptance script must call the reviewer agent. The model-side acceptance entrypoint now builds blocked evaluation artifacts and review artifacts only; durable deferred decisions belong in `trading-manager`.
 
 ## D033 - Layer 3 production-evaluation substrate is present but not promotable
 
@@ -822,9 +822,9 @@ These results are current negative evidence, not a reason to weaken gates. L1/L2
 Date: 2026-05-09
 Status: Accepted
 
-False breakouts, failed breakdowns, liquidity sweeps, bull traps, and bear traps are represented as point-in-time `price_action` events consumed by Layer 10 `EventRiskGovernor`.
+False breakouts, failed breakdowns, liquidity sweeps, bull traps, and bear traps are represented as point-in-time `price_action` events consumed by M06 `EventRiskGovernor`.
 
-They are not a new standalone model layer. At inference time they may affect event intensity, direction bias, reversal risk, liquidity-disruption risk, uncertainty, target relevance, and microstructure/symbol impact inside Layer 10 `event_context_vector`. Realized post-event follow-through/failure remains offline label evidence only and must not leak into inference features.
+They are not a new standalone model layer. At inference time they may affect event intensity, direction bias, reversal risk, liquidity-disruption risk, uncertainty, target relevance, and microstructure/symbol impact inside M06 `event_context_vector`. Realized post-event follow-through/failure remains offline label evidence only and must not leak into inference features.
 
 ## D037 - Historical training sampling may be broader than live routing
 
@@ -875,7 +875,7 @@ Retired Layer 1-10 route plans are migration-source evidence only and are not th
 Accepted: 2026-05-15
 Status: Superseded by D047 for the exact layer number
 
-This historical decision moved event intelligence out of the hard upstream alpha path. D047 later inserted EventFailureRiskModel before AlphaConfidenceModel and shifted EventRiskGovernor to Layer 9; D049 later made the current event-risk-governor layer Layer 10. The D039 stack at the time was:
+This historical decision moved event intelligence out of the hard upstream alpha path. D047 later inserted EventFailureRiskModel before AlphaConfidenceModel and shifted EventRiskGovernor to M05; D049 later made the current event-risk-governor layer M06. The D039 stack at the time was:
 
 1. MarketRegimeModel;
 2. SectorContextModel;
@@ -887,9 +887,9 @@ This historical decision moved event intelligence out of the hard upstream alpha
 8. TradingGuidanceModel / OptionExpressionModel;
 9. EventRiskGovernor / EventIntelligenceOverlay.
 
-Rationale: the base trading path should remain runnable without mature event interpretation, while event intelligence can continue expanding as a high-value side branch. Layer 8 produces the direct-underlying/spot thesis that Layer 10 governs. Layer 9 may produce a broader offline trading-guidance candidate and option-expression context when available, but Layer 10 does not require Layer 9 for direct-underlying-only routes.
+Rationale: the base trading path should remain runnable without mature event interpretation, while event intelligence can continue expanding as a high-value side branch. Layer 8 produces the direct-underlying/spot thesis that M06 governs. M05 may produce a broader offline trading-guidance candidate and option-expression context when available, but M06 does not require M05 for direct-underlying-only routes.
 
-Allowed event-risk-governor intervention outputs include `block_new_entries`, `max_exposure_factor`, `reduce_exposure_to`, `flatten_position_candidate`, `halt_trading_candidate`, `human_review_required`, event refs, and evidence spans. Under D049 this is Layer 10. It may modify the decision/risk record consumed by execution risk-control, but it must not directly send broker orders or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence and an accepted execution risk policy or human review path.
+Allowed event-risk-governor intervention outputs include `block_new_entries`, `max_exposure_factor`, `reduce_exposure_to`, `flatten_position_candidate`, `halt_trading_candidate`, `human_review_required`, event refs, and evidence spans. Under D049 this is M06. It may modify the decision/risk record consumed by execution risk-control, but it must not directly send broker orders or mutate accounts. Flattening/clearing requires high-confidence high-severity evidence and an accepted execution risk policy or human review path.
 
 Those physical implementation surfaces are now retired ten-layer names. Historical/applied migration records may retain them, but new current contracts use the six-model names accepted in D062.
 
@@ -897,7 +897,7 @@ Those physical implementation surfaces are now retired ten-layer names. Historic
 
 Accepted: 2026-05-15
 
-Layer 10 event intelligence must preserve event lifecycle timing instead of flattening all evidence into one `event_time`.
+M06 event intelligence must preserve event lifecycle timing instead of flattening all evidence into one `event_time`.
 
 Accepted lifecycle classes are `scheduled_known_outcome_later`, `unscheduled_surprise`, `scheduled_recurring_data_release`, `multi_stage_developing_event`, and `unknown`. Required clocks, when known, include awareness, scheduled, published, available, interpretation, resolution, decision/tradeable, and reaction/evaluation windows.
 
@@ -909,7 +909,7 @@ Training and evaluation must not mix scheduled-known and surprise events under t
 
 Accepted: 2026-05-15
 
-Layer 10 abnormal-activity evidence is not a second copy of bar-derived state. Bars, volume, spread, liquidity, volatility, gap, trend, VWAP distance, and target-state behavior already belong to Layer 1-3 and direct-underlying/action inputs when those fields are part of the accepted model stack.
+M06 abnormal-activity evidence is not a second copy of bar-derived state. Bars, volume, spread, liquidity, volatility, gap, trend, VWAP distance, and target-state behavior already belong to Layer 1-3 and direct-underlying/action inputs when those fields are part of the accepted model stack.
 
 EventRiskGovernor may consume abnormal activity only as trigger/provenance evidence, residual unexplained board/tape disturbance after upstream context conditioning, discrete price-action pattern evidence, or cross-source abnormal evidence not otherwise consumed by the base path. It must not treat every high return/volume/spread z-score as an independent event factor when the same information is already available in upstream context states.
 
@@ -919,7 +919,7 @@ Promotion evidence must prove incremental value over upstream context-state base
 
 Accepted: 2026-05-15
 
-Layer 10 may use `event_activity_bridge` to connect raw event evidence to price, liquidity, option, and prediction-market activity. This is the preferred path when a news artifact is difficult to standardize semantically but observable activity provides a stable point-in-time relationship.
+M06 may use `event_activity_bridge` to connect raw event evidence to price, liquidity, option, and prediction-market activity. This is the preferred path when a news artifact is difficult to standardize semantically but observable activity provides a stable point-in-time relationship.
 
 Accepted relation types are `pre_event_precursor`, `co_event_reaction`, `post_event_absorption`, `event_activity_divergence`, and `unresolved_latent_hazard`. Accepted explanation statuses are `explained_by_known_event`, `partially_explained`, `unexplained`, `later_explained`, and `review_required`.
 
@@ -985,12 +985,12 @@ Layer 5: AlphaConfidenceModel
 Layer 6: PositionProjectionModel
 Layer 7: UnderlyingActionModel
 Layer 8: TradingGuidanceModel / OptionExpressionModel
-Layer 9: EventRiskGovernor / EventIntelligenceOverlay
+M05: EventRiskGovernor / EventIntelligenceOverlay
 ```
 
 Layer 4 contains only agent-accepted, empirically reviewed event/strategy-failure factors. Its output is `event_failure_risk_vector`; it may condition alpha confidence, entry permission, exposure caps, strategy disable pressure, and path-risk amplification, but it must not emit buy/sell/hold, choose expression/contract, size positions, route orders, mutate accounts, or perform destructive SQL/storage actions.
 
-Layer 10 remains the residual event-risk governor and research surface. It may explain residual anomalies, maintain the observation pool, warn/cap/block/review the direct-underlying/spot thesis, and generate event-family promotion packets. A family can move from Layer 10 discovery/observation into Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, incremental value review, and explicit agent/manager acceptance.
+M06 remains the residual event-risk governor and research surface. It may explain residual anomalies, maintain the observation pool, warn/cap/block/review the direct-underlying/spot thesis, and generate event-family promotion packets. A family can move from M06 discovery/observation into Layer 4 only after a script-emitted evidence packet, matched controls/split/leakage/PIT review, incremental value review, and explicit agent/manager acceptance.
 
 This decision is architecture/governance only. D049 now owns the current 10-layer physical numbering. Historical/applied migrations may retain earlier names.
 
@@ -1020,7 +1020,7 @@ Canonical stable-core reduction uses `front` 7-45 DTE, `near` 46-90 DTE, and `mi
 
 Activity attention is a separate role family from structural state. It may select round strikes near spot and point-in-time open-interest candidates when OI is observable. Same-snapshot trade count, volume, and notional are validation and activity-state evidence, not prefetch selector inputs. `0-6 DTE` is accepted as `target_short_expiry_pressure_overlay`; it is reported separately and must not be merged into stable structural core.
 
-Coverage ratios, chain observability, liquidity-quality scores, raw bucket counts, source provenance, and snapshot refs are diagnostics or receipts, not Layer 3 model-facing output state. Layer 9 remains the owner of option-expression and contract-selection decisions.
+Coverage ratios, chain observability, liquidity-quality scores, raw bucket counts, source provenance, and snapshot refs are diagnostics or receipts, not Layer 3 model-facing output state. M05 remains the owner of option-expression and contract-selection decisions.
 
 ## D049 - DynamicRiskPolicyModel inserted as Layer 6
 
@@ -1037,8 +1037,8 @@ Layer 5: AlphaConfidenceModel
 Layer 6: DynamicRiskPolicyModel
 Layer 7: PositionProjectionModel
 Layer 8: UnderlyingActionModel
-Layer 9: TradingGuidanceModel / OptionExpressionModel
-Layer 10: EventRiskGovernor / EventIntelligenceOverlay
+M05: TradingGuidanceModel / OptionExpressionModel
+M06: EventRiskGovernor / EventIntelligenceOverlay
 ```
 
 Layer 6 learns a dynamic premium/risk-budget policy from Layer 1 global market regime, systemic or broad event-risk context, Layer 5 alpha quality, and portfolio/account replay state. It must be driven primarily by whole-market state; sector or target-specific evidence can cap, skip, or haircut only the current target and must not distort the global risk budget.
@@ -1108,17 +1108,17 @@ Layer 4 consumes standardized point-in-time event observation rows, not raw even
 
 The scope resolver must preserve auditable support for candidate scopes: market/global, sector/industry/theme, peer/supply-chain/index basket, and target-local. If event evidence is strong but the state stack is weak or contradictory, the scope remains narrow or review-required rather than being promoted to global/common impact.
 
-## D052 - Layer 10 owns post-failure event attribution and Layer 4 promotion evidence
+## D052 - M06 owns post-failure event attribution and Layer 4 promotion evidence
 
 Accepted: 2026-05-23
 
-Layer 10 `EventRiskGovernor / EventIntelligenceOverlay` is paired with Layer 4. Its primary role is post-decision and post-fold event attribution: when the model stack, a strategy family, an action thesis, path expectation, or risk assumption fails after Layers 1-9 have produced a decision/evaluation path, Layer 10 searches point-in-time event observations and related evidence for plausible event causes, realized impact scope, failure mechanism, and repeatability.
+M06 `EventRiskGovernor / EventIntelligenceOverlay` is paired with Layer 4. Its primary role is post-decision and post-fold event attribution: when the model stack, a strategy family, an action thesis, path expectation, or risk assumption fails after Layers 1-9 have produced a decision/evaluation path, M06 searches point-in-time event observations and related evidence for plausible event causes, realized impact scope, failure mechanism, and repeatability.
 
-Layer 10 may compute `realized_impact_scope_label` and event-failure attribution labels during evaluation. These labels must not become same-fold Layer 4 inference facts. They can support calibration, review, future-fold event-observation rules, or promotion packets only after controls, leakage checks, split stability, and `event-strategy-promotion-review` acceptance.
+M06 may compute `realized_impact_scope_label` and event-failure attribution labels during evaluation. These labels must not become same-fold Layer 4 inference facts. They can support calibration, review, future-fold event-observation rules, or promotion packets only after controls, leakage checks, split stability, and `event-strategy-promotion-review` acceptance.
 
-The Layer 10 output that matters for Layer 4 is an event-failure attribution or promotion packet, not direct alpha. An accepted packet may become an `event_strategy_failure_gate` and event-observation scope rule for future Layer 4 inputs. Rejected or underpowered relationships remain observation-only or research queue.
+The M06 output that matters for Layer 4 is an event-failure attribution or promotion packet, not direct alpha. An accepted packet may become an `event_strategy_failure_gate` and event-observation scope rule for future Layer 4 inputs. Rejected or underpowered relationships remain observation-only or research queue.
 
-Realtime Layer 10 governance is allowed only for reviewed event families already admitted to the event observation pool. It must not become broad raw-news discovery, standalone event alpha, trade direction, position sizing, option selection, broker routing, account mutation, or artifact deletion.
+Realtime M06 governance is allowed only for reviewed event families already admitted to the event observation pool. It must not become broad raw-news discovery, standalone event alpha, trade direction, position sizing, option selection, broker routing, account mutation, or artifact deletion.
 
 ## D053 - Layer 5 alpha confidence consumes Layer 4 event-failure conditioning only
 
@@ -1126,23 +1126,23 @@ Accepted: 2026-05-23
 
 Layer 5 `AlphaConfidenceModel` converts reviewed Layer 1 market state, Layer 2 sector state, Layer 3 target state, accepted Layer 4 `event_failure_risk_vector`, and point-in-time calibration/quality evidence into the final `alpha_confidence_vector`.
 
-Layer 5 does not consume raw events, event observations directly, same-fold Layer 10 attribution labels, `realized_impact_scope_label`, event promotion packets, account state, position state, order state, or option-expression state. Event evidence reaches Layer 5 only after it has been standardized and accepted by Layer 4.
+Layer 5 does not consume raw events, event observations directly, same-fold M06 attribution labels, `realized_impact_scope_label`, event promotion packets, account state, position state, order state, or option-expression state. Event evidence reaches Layer 5 only after it has been standardized and accepted by Layer 4.
 
 Layer 5 may let Layer 4 event-failure conditioning reduce confidence, reliability, path quality, and alpha tradability, or raise reversal/drawdown risk and review pressure. It must not create standalone event alpha direction or strength, and it must not emit buy/sell/hold, target exposure, position size, option contract, execution instruction, or broker/account mutation.
 
-Layer 10 can improve future Layer 5 behavior only indirectly: post-failure attribution may become future Layer 4 `event_strategy_failure_gate` evidence after review; Layer 5 then consumes the resulting Layer 4 vector in later folds.
+M06 can improve future Layer 5 behavior only indirectly: post-failure attribution may become future Layer 4 `event_strategy_failure_gate` evidence after review; Layer 5 then consumes the resulting Layer 4 vector in later folds.
 
-## D054 - Layer 10 qualifies event impact; Layer 4 quantifies accepted impact
+## D054 - M06 qualifies event impact; Layer 4 quantifies accepted impact
 
 Accepted: 2026-05-23
 
-Layer 10 is the qualitative event-impact and post-failure attribution layer. It decides whether an event relationship exists, which event family/mechanism is involved, what scope it affects, whether the relationship has incremental explanatory value after co-event/confounder controls, and whether the evidence should supervise future Layer 4 training.
+M06 is the qualitative event-impact and post-failure attribution layer. It decides whether an event relationship exists, which event family/mechanism is involved, what scope it affects, whether the relationship has incremental explanatory value after co-event/confounder controls, and whether the evidence should supervise future Layer 4 training.
 
-Layer 4 is the quantitative event-failure-risk layer. It consumes only reviewed event observations and accepted Layer 10/review supervision packets, then scores how large the accepted event-failure relationship is for the current event, market state, sector state, target state, strategy family, and horizon.
+Layer 4 is the quantitative event-failure-risk layer. It consumes only reviewed event observations and accepted M06/review supervision packets, then scores how large the accepted event-failure relationship is for the current event, market state, sector state, target state, strategy family, and horizon.
 
-Layer 5 and later evaluation may report that Layer 4 conditioning had no incremental value, overblocked, underblocked, or was explained by a dominant co-event. That feedback routes to Layer 10 after fold close. Layer 10 may revise, split, demote, reject, or strengthen the supervision packet; Layer 4 may retrain from the revised packet only for later folds.
+Layer 5 and later evaluation may report that Layer 4 conditioning had no incremental value, overblocked, underblocked, or was explained by a dominant co-event. That feedback routes to M06 after fold close. M06 may revise, split, demote, reject, or strengthen the supervision packet; Layer 4 may retrain from the revised packet only for later folds.
 
-Co-event discipline is mandatory. When multiple events occur in the same window, Layer 10 must identify dominant event candidates, confounder refs, incremental attribution score, and attribution confidence. A nearby small issuer event must not be promoted to Layer 4 if a dominant market/theme/sector event explains the failure and the small event adds no independent explanatory value.
+Co-event discipline is mandatory. When multiple events occur in the same window, M06 must identify dominant event candidates, confounder refs, incremental attribution score, and attribution confidence. A nearby small issuer event must not be promoted to Layer 4 if a dominant market/theme/sector event explains the failure and the small event adds no independent explanatory value.
 
 ## D055 - Trading calendar and market-structure dates are Layer 4 event risk
 
@@ -1160,7 +1160,7 @@ This ordering is a prior for Layer 4 supervision, not an automatic Layer 6 raw i
 
 Layer 6 consumes the accepted Layer 4 calendar-event pressure through Layer 5/6 handoffs when setting risk budget, premium budget, exposure permission, haircuts, capacity, stability, and confidence. Layer 6 does not independently promote raw calendar dates into risk events.
 
-Layer 10 studies overnight/weekend/holiday/expiry/rebalance failures after fold close. It decides whether a calendar/structure event has incremental explanatory value, whether it is a co-event/confounder, and whether the evidence should supervise future Layer 4 training.
+M06 studies overnight/weekend/holiday/expiry/rebalance failures after fold close. It decides whether a calendar/structure event has incremental explanatory value, whether it is a co-event/confounder, and whether the evidence should supervise future Layer 4 training.
 
 ## D056 - Calendar dates enter the global event pool before Layer 4 training
 
@@ -1168,9 +1168,9 @@ Accepted: 2026-05-23
 
 Calendar and market-structure dates must first be built as point-in-time observations in the global event pool. The system should know key dates before evaluation: ordinary overnight/weekend windows, market holidays, long weekends, early closes, pre-holiday sessions, Thanksgiving/Christmas/major long closures, triple-witching, major option-expiry windows, index reconstitution, Nasdaq-100 rebalance windows, and other scheduled/announced non-continuous-market windows.
 
-These observations are not active production Layer 4 training samples by default. They remain observation-only until a model/strategy/path/tradability failure occurs and Layer 10 tests whether the date has incremental explanatory value after market, sector, target, portfolio, account, and co-event controls.
+These observations are not active production Layer 4 training samples by default. They remain observation-only until a model/strategy/path/tradability failure occurs and M06 tests whether the date has incremental explanatory value after market, sector, target, portfolio, account, and co-event controls.
 
-If Layer 10 finds a plausible relationship, the event family can move into the focused/watched event pool as a candidate family for systematic data extraction, Layer 4 candidate training, and Layer 5 validation. If Layer 5 validation and Layer 10/review later accept the relationship, it becomes an `accepted_layer4_event_family` or accepted `event_strategy_failure_gate` for future production conditioning. If not accepted, the date remains in the global event pool for future attribution and audit only.
+If M06 finds a plausible relationship, the event family can move into the focused/watched event pool as a candidate family for systematic data extraction, Layer 4 candidate training, and Layer 5 validation. If Layer 5 validation and M06/review later accept the relationship, it becomes an `accepted_layer4_event_family` or accepted `event_strategy_failure_gate` for future production conditioning. If not accepted, the date remains in the global event pool for future attribution and audit only.
 
 ## D057 - Persistent event regimes remain active without same-day news
 
@@ -1178,9 +1178,9 @@ Accepted: 2026-05-23
 
 Special-period event risk is represented as a persistent event regime, not as a requirement for daily fresh headlines. Pandemic periods, tariff-war periods, geopolitical war/escalation periods such as US-Iran risk, sanctions regimes, banking-system stress periods, and policy crisis windows can create a continuing market shadow even when no new article appears on a specific decision date.
 
-Persistent regimes start in the global event observation pool with point-in-time interval facts: regime start, optional end, active/shadow/decay status, last material update, affected scopes, decay/staleness rule, and evidence refs. They are observation-only until Layer 10 attributes failures or residual anomalies during the interval to the regime after market, sector, target, portfolio, account, and co-event controls.
+Persistent regimes start in the global event observation pool with point-in-time interval facts: regime start, optional end, active/shadow/decay status, last material update, affected scopes, decay/staleness rule, and evidence refs. They are observation-only until M06 attributes failures or residual anomalies during the interval to the regime after market, sector, target, portfolio, account, and co-event controls.
 
-If Layer 10 finds a plausible relationship, the regime family/mechanism enters the focused/watched event pool for candidate Layer 4 training and Layer 5 validation. If validation and review accept it, the family can become an `accepted_layer4_event_family`; if not, it must be narrowed, split, demoted, decay, become stale, or remain observation-only rather than becoming permanent background risk.
+If M06 finds a plausible relationship, the regime family/mechanism enters the focused/watched event pool for candidate Layer 4 training and Layer 5 validation. If validation and review accept it, the family can become an `accepted_layer4_event_family`; if not, it must be narrowed, split, demoted, decay, become stale, or remain observation-only rather than becoming permanent background risk.
 
 ## D058 - Event source acquisition is split into historical replay and realtime maintenance
 
@@ -1190,37 +1190,37 @@ Event-source acquisition is data-owned and must distinguish historical replay fr
 
 Source priority and fallback posture are documented in `trading-data/docs/23_event_source_registry.md`. Macro event observations use the canonical Trading Economics storage snapshot because TE provides scheduled time plus expected/consensus, previous, and actual-style fields in a unified row shape. The TE website route is retired because the subscription is expired. Official macro agency sources are manual incident/audit fallback, not a parallel routine source path.
 
-Future events must carry certainty flags such as `confirmed`, `scheduled`, `tentative`, `estimated`, or `inferred_rule`. Rule-generated dates are allowed for deterministic structures such as option expiry, but they remain `inferred_rule` until official confirmation. All event rows remain global-pool observations until Layer 10 promotes a plausible relationship into the focused/watched event pool for candidate training and validation.
+Future events must carry certainty flags such as `confirmed`, `scheduled`, `tentative`, `estimated`, or `inferred_rule`. Rule-generated dates are allowed for deterministic structures such as option expiry, but they remain `inferred_rule` until official confirmation. All event rows remain global-pool observations until M06 promotes a plausible relationship into the focused/watched event pool for candidate training and validation.
 
-Persistent regimes may be promoted from repeated high-frequency news topics. The repeatable route is `high_frequency_news_topic -> candidate_regime -> regime-promotion-review -> persistent_event_regime -> focused_event_pool -> Layer 4 candidate training -> Layer 5 validation -> Layer 10 disposition`. Agent review must decide whether the topic is a true regime, a short-lived cluster, duplicate coverage, or noise, and must define start/status/scope/decay rules before the regime enters the global event observation pool as an interval object or focused-pool candidate.
+Persistent regimes may be promoted from repeated high-frequency news topics. The repeatable route is `high_frequency_news_topic -> candidate_regime -> regime-promotion-review -> persistent_event_regime -> focused_event_pool -> Layer 4 candidate training -> Layer 5 validation -> M06 disposition`. Agent review must decide whether the topic is a true regime, a short-lived cluster, duplicate coverage, or noise, and must define start/status/scope/decay rules before the regime enters the global event observation pool as an interval object or focused-pool candidate.
 
 ## D059 - Focused event pool is candidate training, not production acceptance
 
 Accepted: 2026-05-23
 
-Layer 10 model-failure attribution can promote an event family or topic into the focused/watched event pool when it plausibly explains a model, confidence, path, tradability, residual, or calibration failure after basic controls. Example: if a failure coincides with Nvidia earnings and ALAB earnings, Layer 10 may decide Nvidia is the dominant broad-market candidate while ALAB is only a possible co-event or target-local candidate.
+M06 model-failure attribution can promote an event family or topic into the focused/watched event pool when it plausibly explains a model, confidence, path, tradability, residual, or calibration failure after basic controls. Example: if a failure coincides with Nvidia earnings and ALAB earnings, M06 may decide Nvidia is the dominant broad-market candidate while ALAB is only a possible co-event or target-local candidate.
 
 `watched_event_pool` is an alias for this focused candidate stage, not a synonym for production acceptance.
 
 Focused-pool promotion means `trading-data` should systematically acquire and standardize point-in-time observations for that family, and Layer 4 may train offline candidate event-failure models against those observations. It does not mean the family is production-approved.
 
-Layer 5 then validates whether the Layer 4 candidate conditioning improves alpha confidence, path quality, tradability, drawdown/reversal handling, or calibration. Layer 5 feedback returns to Layer 10 as accept, narrow, split, demote, reject, overblock, underblock, no-incremental-value, or confounded evidence.
+Layer 5 then validates whether the Layer 4 candidate conditioning improves alpha confidence, path quality, tradability, drawdown/reversal handling, or calibration. Layer 5 feedback returns to M06 as accept, narrow, split, demote, reject, overblock, underblock, no-incremental-value, or confounded evidence.
 
-Only after Layer 4 candidate training, Layer 5 validation, and Layer 10/review disposition may the family become an `accepted_layer4_event_family` or accepted `event_strategy_failure_gate` for future production Layer 4 conditioning.
+Only after Layer 4 candidate training, Layer 5 validation, and M06/review disposition may the family become an `accepted_layer4_event_family` or accepted `event_strategy_failure_gate` for future production Layer 4 conditioning.
 
 ## D060 - New event families use event interpretation before quantification
 
 Accepted: 2026-05-23
 
-New calendar, market-structure, persistent-regime, and high-frequency-topic event families must follow the existing event standardization route before any Layer 10 or Layer 4 model use:
+New calendar, market-structure, persistent-regime, and high-frequency-topic event families must follow the existing event standardization route before any M06 or Layer 4 model use:
 
 ```text
 raw source artifact
 -> point-in-time source evidence row / artifact ref
 -> event_interpretation artifact
 -> standardized event observation row
--> Layer 10 event_context_vector
--> Layer 10 attribution / focused event pool
+-> M06 event_context_vector
+-> M06 attribution / focused event pool
 -> Layer 4 candidate training when focused
 -> Layer 5 validation
 -> accepted_layer4_event_family when accepted
@@ -1228,7 +1228,7 @@ raw source artifact
 
 `event_interpretation` is the semantic layer. It standardizes lifecycle class, normalized type, domain tags, affected scope/entities, direction bias, intensity, uncertainty, novelty, source quality, evidence confidence, canonical/dedup relation, rationale, evidence spans, and review status.
 
-Layer 10 is the standardized quantification layer. It converts interpreted observations into horizon-aware event-context scores: presence, timing proximity, intensity, direction bias, uncertainty, gap risk, reversal risk, liquidity disruption, contagion risk, context quality, target relevance, and impact-scope scores. These are event-risk/context scores, not alpha labels or trade actions.
+M06 is the standardized quantification layer. It converts interpreted observations into horizon-aware event-context scores: presence, timing proximity, intensity, direction bias, uncertainty, gap risk, reversal risk, liquidity disruption, contagion risk, context quality, target relevance, and impact-scope scores. These are event-risk/context scores, not alpha labels or trade actions.
 
 Trading-calendar and market-structure events require specific standardized fields such as next market open, non-trading interval minutes, closure type, closure-length bucket, holiday name, early-close flag, pre-holiday-session flag, expiry/rebalance/triple-witching flags, calendar gap-risk prior, liquidity-thinning/forced-flow prior, and source certainty.
 

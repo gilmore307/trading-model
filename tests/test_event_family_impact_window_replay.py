@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_10_event_risk_governor.event_family_impact_window_replay import build_impact_window_replay_artifacts
+from models.model_06_residual_event_governance.event_family_impact_window_replay import build_impact_window_replay_artifacts
 
 
 class EventFamilyImpactWindowReplayTests(unittest.TestCase):

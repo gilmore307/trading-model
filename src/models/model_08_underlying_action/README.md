@@ -10,7 +10,7 @@ This package owns local/offline implementation for the accepted Layer 8 direct u
 - applies hard/soft gates;
 - resolves planned underlying action type;
 - emits `underlying_action_plan` and `underlying_action_vector`;
-- packages side-neutral entry, price-path, risk-plan, and Layer 9 option-expression handoff fields;
+- packages side-neutral entry, price-path, risk-plan, and M05 option-expression handoff fields;
 - never emits broker-order fields or option-contract selection fields.
 
 Key files:

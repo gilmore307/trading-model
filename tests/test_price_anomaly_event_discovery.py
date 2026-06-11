@@ -7,7 +7,7 @@ import csv
 from datetime import date, timedelta
 from pathlib import Path
 
-from models.model_10_event_risk_governor.price_anomaly_event_discovery import (
+from models.model_06_residual_event_governance.price_anomaly_event_discovery import (
     build_price_anomaly_event_discovery,
     write_price_anomaly_event_discovery_artifacts,
 )

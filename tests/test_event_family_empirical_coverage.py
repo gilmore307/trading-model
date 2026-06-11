@@ -7,7 +7,7 @@ from pathlib import Path
 
 from event_family_fixtures import build_event_family_fixture
 
-from models.model_10_event_risk_governor.event_family_empirical_coverage import (
+from models.model_06_residual_event_governance.event_family_empirical_coverage import (
     build_event_family_empirical_coverage,
     write_empirical_coverage_artifacts,
 )

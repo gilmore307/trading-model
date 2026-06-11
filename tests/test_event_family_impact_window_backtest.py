@@ -9,7 +9,7 @@ import unittest
 from datetime import date, timedelta
 from pathlib import Path
 
-from models.model_10_event_risk_governor.event_family_impact_window_backtest import (
+from models.model_06_residual_event_governance.event_family_impact_window_backtest import (
     build_real_input_event_family_impact_window_backtest,
     build_sample_event_family_impact_window_backtest,
     write_event_family_impact_window_backtest_artifacts,
@@ -109,7 +109,7 @@ class EventFamilyImpactWindowBacktestTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/models/model_10_event_risk_governor/build_event_family_impact_window_backtest.py",
+                    "scripts/models/model_06_residual_event_governance/build_event_family_impact_window_backtest.py",
                     "--event-csv",
                     str(event_csv),
                     "--output-dir",

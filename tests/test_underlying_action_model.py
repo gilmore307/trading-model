@@ -49,7 +49,7 @@ class UnderlyingActionModelTests(unittest.TestCase):
         self.assertAlmostEqual(exposure["effective_current_underlying_exposure_score"], 0.15)
         self.assertAlmostEqual(exposure["underlying_exposure_gap_score"], 0.25)
         self.assertGreater(exposure["planned_incremental_exposure_score"], 0.0)
-        self.assertEqual(plan["handoff_to_layer_9"]["underlying_path_direction"], "bullish")
+        self.assertEqual(plan["handoff_to_model_05"]["underlying_path_direction"], "bullish")
         self.assert_no_forbidden_terms(output)
 
     def test_pending_exposure_prevents_duplicate_underlying_plan(self) -> None:

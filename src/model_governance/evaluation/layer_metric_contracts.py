@@ -122,7 +122,7 @@ LAYER_METRIC_CONTRACTS: tuple[LayerMetricContract, ...] = (
             _test("event_failure_auroc_pr_auc", "Failure AUROC / PR-AUC", "calibrated_prediction", "primary", "Requires explicit binary probabilistic failure label.", "Valid only when the layer emits a probability of known event failure."),
             _test("lead_time_usefulness", "Lead-time usefulness", "event_attribution", "primary", "Requires event visibility time and decision time.", "Measures whether risk was available early enough to matter."),
             _test("post_event_article_leakage", "Post-event article leakage", "integrity", "guardrail", "Requires article/source timestamps.", "Blocks using later coverage to score pre-alpha risk."),
-            _test("post_replay_residual_as_pre_alpha_input", "Post-replay residual attribution", "event_attribution", "avoid", "Owned by Layer 10, not Layer 4.", "Residual attribution must not leak into pre-alpha event risk."),
+            _test("post_replay_residual_as_pre_alpha_input", "Post-replay residual attribution", "event_attribution", "avoid", "Owned by M06, not Layer 4.", "Residual attribution must not leak into pre-alpha event risk."),
         ),
     ),
     LayerMetricContract(
@@ -181,7 +181,7 @@ LAYER_METRIC_CONTRACTS: tuple[LayerMetricContract, ...] = (
     ),
     LayerMetricContract(
         9,
-        "model_09_option_expression",
+        "model_05_option_expression",
         "Option Expression",
         ("option_expression", "calibrated_prediction", "integrity"),
         (
@@ -195,7 +195,7 @@ LAYER_METRIC_CONTRACTS: tuple[LayerMetricContract, ...] = (
     ),
     LayerMetricContract(
         10,
-        "model_10_event_risk_governor",
+        "model_06_residual_event_governance",
         "Event Risk Governor",
         ("event_attribution", "policy_utility", "integrity"),
         (
@@ -213,7 +213,7 @@ LAYER_METRIC_CONTRACTS: tuple[LayerMetricContract, ...] = (
 MODEL_GROUP_SUPPLEMENTAL_TESTS: tuple[LayerMetricTest, ...] = (
     _test("layer_ablation", "Layer ablation", "group_contribution", "primary", "Requires replay with one layer removed/frozen.", "Measures end-to-end impact of a layer without relabeling group PnL as layer-local."),
     _test("layer_replacement_baseline", "Layer replacement baseline", "group_contribution", "primary", "Requires null, heuristic, or previous-version substitute.", "Compares each layer against a controlled baseline."),
-    _test("sequential_contribution", "Sequential contribution", "group_contribution", "primary", "Requires L1->L10 incremental replay.", "Measures marginal contribution as layers are added."),
+    _test("sequential_contribution", "Sequential contribution", "group_contribution", "primary", "Requires M01->M06 incremental replay.", "Measures marginal contribution as layers are added."),
     _test("cross_layer_consistency", "Cross-layer consistency", "group_contribution", "guardrail", "Requires full decision audit trail.", "Detects contradictions such as high alpha and hard event block."),
     _test("interaction_stress", "Interaction stress", "group_contribution", "guardrail", "Requires stress windows such as earnings/Fed/halts/volatility shocks.", "Tests stack behavior in known difficult regimes."),
 )

@@ -5,24 +5,24 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from models.model_10_event_risk_governor.event_family_all_association import (
+from models.model_06_residual_event_governance.event_family_all_association import (
     build_event_family_all_association,
     write_event_family_all_association_artifacts,
 )
-from models.model_10_event_risk_governor.event_family_batch_catalog import (
+from models.model_06_residual_event_governance.event_family_batch_catalog import (
     build_event_family_batch_catalog,
     write_catalog_artifacts,
 )
-from models.model_10_event_risk_governor.event_family_empirical_coverage import (
+from models.model_06_residual_event_governance.event_family_empirical_coverage import (
     EXISTING_EMPIRICAL_ARTIFACTS,
     build_event_family_empirical_coverage,
     write_empirical_coverage_artifacts,
 )
-from models.model_10_event_risk_governor.event_family_precondition_completion import (
+from models.model_06_residual_event_governance.event_family_precondition_completion import (
     build_event_family_precondition_completion,
     write_precondition_artifacts,
 )
-from models.model_10_event_risk_governor.event_family_remaining_acceptance import (
+from models.model_06_residual_event_governance.event_family_remaining_acceptance import (
     build_event_family_remaining_acceptance,
     write_acceptance_artifacts,
 )

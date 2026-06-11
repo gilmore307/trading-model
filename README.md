@@ -69,10 +69,8 @@ src/models/model_03_event_state/                   M03 Event State.
 src/models/model_04_unified_decision/              M04 Unified Decision.
 src/models/model_05_option_expression/             M05 Option Expression.
 src/models/model_06_residual_event_governance/     M06 Residual Event Governance.
-src/model_governance/                     Shared evaluation, promotion, SQL, and local-layer helpers.
+src/model_governance/                     Shared evaluation, promotion, SQL, and current-model helpers.
 ```
-
-The older `src/models/model_01_market_regime/` through `src/models/model_10_event_risk_governor/` packages are retained only as migration-source implementation surfaces until their functionality is moved under the six current model contracts.
 
 ## Script Entry Points
 

@@ -200,7 +200,7 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
 
         self.assertEqual(script._column_type("5_option_expression_confidence_score_1W"), "DOUBLE PRECISION")
         self.assertEqual(script._column_type("5_resolved_expression_type"), "TEXT")
-        self.assertEqual(script._column_type("9_option_expression_confidence_score_1W"), "TEXT")
+        self.assertEqual(script._column_type("4_option_expression_confidence_score_1W"), "TEXT")
 
     def assert_no_retired_fields(self, value: object) -> None:
         if isinstance(value, dict):

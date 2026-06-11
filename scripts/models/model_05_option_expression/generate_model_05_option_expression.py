@@ -195,24 +195,24 @@ def _fetch_option_candidate_rows(
             return []
         cursor.execute(
             """
-            CREATE TEMP TABLE IF NOT EXISTS layer_5_option_candidate_keys (
+            CREATE TEMP TABLE IF NOT EXISTS m05_option_candidate_keys (
               underlying TEXT NOT NULL,
               snapshot_time TIMESTAMPTZ NOT NULL,
               PRIMARY KEY (underlying, snapshot_time)
             ) ON COMMIT DROP
             """
         )
-        cursor.execute("TRUNCATE layer_5_option_candidate_keys")
+        cursor.execute("TRUNCATE m05_option_candidate_keys")
         cursor.executemany(
             """
-            INSERT INTO layer_5_option_candidate_keys (underlying, snapshot_time)
+            INSERT INTO m05_option_candidate_keys (underlying, snapshot_time)
             VALUES (%s, %s::timestamptz)
             ON CONFLICT DO NOTHING
             """,
             keys,
         )
         scoped_join_sql = """
-        JOIN layer_5_option_candidate_keys AS k
+        JOIN m05_option_candidate_keys AS k
           ON k.underlying = upper(f."underlying")
          AND k.snapshot_time = f."snapshot_time"
         """
