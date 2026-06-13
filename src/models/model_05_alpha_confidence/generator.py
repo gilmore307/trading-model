@@ -25,6 +25,7 @@ def generate_rows(
     *,
     model_version: str = MODEL_VERSION,
     after_cost_alpha_model: Mapping[str, Any] | None = None,
+    validate_output: bool = True,
 ) -> list[dict[str, Any]]:
     if after_cost_alpha_model is None:
         raise ValueError("Layer 5 generation requires trained Layer 5 after-cost alpha artifacts")
@@ -32,10 +33,24 @@ def generate_rows(
     if not rows:
         raise ValueError("at least one Layer 5 input row is required")
     rows.sort(key=lambda row: (_row_time(row), str(row.get("target_candidate_id") or "")))
-    return [_model_row(row, model_version=model_version, after_cost_alpha_model=after_cost_alpha_model) for row in rows]
+    return [
+        _model_row(
+            row,
+            model_version=model_version,
+            after_cost_alpha_model=after_cost_alpha_model,
+            validate_output=validate_output,
+        )
+        for row in rows
+    ]
 
 
-def _model_row(row: Mapping[str, Any], *, model_version: str, after_cost_alpha_model: Mapping[str, Any]) -> dict[str, Any]:
+def _model_row(
+    row: Mapping[str, Any],
+    *,
+    model_version: str,
+    after_cost_alpha_model: Mapping[str, Any],
+    validate_output: bool,
+) -> dict[str, Any]:
     available_time = _iso(_row_time(row))
     tradeable_time = _iso(_parse_time(row.get("tradeable_time") or available_time))
     target_candidate_id = str(row.get("target_candidate_id") or "").strip()
@@ -83,7 +98,8 @@ def _model_row(row: Mapping[str, Any], *, model_version: str, after_cost_alpha_m
         "alpha_confidence_vector": final_payload,
         "alpha_confidence_diagnostics": diagnostics,
     }
-    _validate_no_forbidden_output(output)
+    if validate_output:
+        _validate_no_forbidden_output(output)
     return output
 
 

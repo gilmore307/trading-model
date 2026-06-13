@@ -33,17 +33,22 @@ MIN_TRADE_INTENSITY = 0.05
 MIN_EDGE_CONFIDENCE = 0.35
 
 
-def generate_rows(input_rows: Iterable[Mapping[str, Any]], *, model_version: str = MODEL_VERSION) -> list[dict[str, Any]]:
+def generate_rows(
+    input_rows: Iterable[Mapping[str, Any]],
+    *,
+    model_version: str = MODEL_VERSION,
+    validate_output: bool = True,
+) -> list[dict[str, Any]]:
     """Generate deterministic M04 unified-decision rows."""
 
     rows = [_normalize_input_row(row) for row in input_rows]
     if not rows:
         raise ValueError("at least one M04 unified decision input row is required")
     rows.sort(key=lambda row: (_row_time(row), str(row.get("target_candidate_id") or "")))
-    return [_model_row(row, model_version=model_version) for row in rows]
+    return [_model_row(row, model_version=model_version, validate_output=validate_output) for row in rows]
 
 
-def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
+def _model_row(row: Mapping[str, Any], *, model_version: str, validate_output: bool) -> dict[str, Any]:
     available_time = _iso(_row_time(row))
     tradeable_time = _iso(_parse_time(row.get("tradeable_time") or available_time))
     target_candidate_id = str(row.get("target_candidate_id") or "").strip()
@@ -147,7 +152,8 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "horizon_decisions": horizon_details,
         },
     }
-    _validate_no_forbidden_output(output)
+    if validate_output:
+        _validate_no_forbidden_output(output)
     return output
 
 
