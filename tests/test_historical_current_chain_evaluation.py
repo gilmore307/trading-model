@@ -7,6 +7,7 @@ from pathlib import Path
 
 from model_governance.current_chain import build_current_chain_rows
 from model_governance.historical_current_chain_evaluation import (
+    BASELINE_FEATURE_NAMES,
     HistoricalInputRow,
     historical_source_row_to_payload,
     run_historical_current_chain_evaluation,
@@ -70,6 +71,8 @@ class HistoricalCurrentChainEvaluationTests(unittest.TestCase):
         self.assertFalse(receipt["activation_allowed"])
         self.assertFalse(receipt["production_promotion_allowed"])
         self.assertIn("degenerate_underlying_action_distribution", receipt["warning_reasons"])
+        self.assertIn("m04_materiality_adjusted_action_1w", BASELINE_FEATURE_NAMES)
+        self.assertNotIn("m04_trade_intensity_1w", BASELINE_FEATURE_NAMES)
         self.assertEqual(len(artifact["tables"]["model_eval_label"]), 2)
         self.assertEqual(artifact["tables"]["model_eval_run"][0]["run_status"], "blocked")
 

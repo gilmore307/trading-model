@@ -34,8 +34,17 @@ class UnifiedDecisionModelTests(unittest.TestCase):
         self.assertGreater(vector["4_after_cost_edge_score_1W"], 0.5)
         self.assertGreater(vector["4_risk_budget_score_1W"], 0.0)
         self.assertGreater(vector["4_target_exposure_score_1W"], 0.0)
+        self.assertGreater(vector["4_materiality_adjusted_action_score_1W"], 0.0)
         self.assertEqual(vector["4_resolved_underlying_action_type"], "open_long")
+        self.assertEqual(
+            vector["4_resolved_materiality_adjusted_action_score"],
+            vector["4_materiality_adjusted_action_score_1W"],
+        )
         self.assertEqual(intent["handoff_to_model_05"]["underlying_path_direction"], "bullish")
+        self.assertEqual(
+            intent["materiality_adjusted_action_score"],
+            vector["4_resolved_materiality_adjusted_action_score"],
+        )
         self.assert_no_retired_outputs(output)
         assert_no_label_leakage(output)
 
@@ -55,6 +64,39 @@ class UnifiedDecisionModelTests(unittest.TestCase):
         self.assertEqual(output["direct_underlying_intent"]["current_effective_exposure_score"], 0.214377)
         self.assertEqual(output["4_resolved_underlying_action_type"], "maintain")
         self.assertIn("position_gap_below_materiality", output["4_resolved_reason_codes"])
+
+    def test_horizon_resolution_uses_materiality_adjusted_action_not_raw_intensity(self) -> None:
+        output = generate_rows(
+            [
+                _base_row(
+                    policy_gate_state={"direct_underlying_action_allowed": True},
+                    target_context_state={
+                        "2_target_direction_score_1D": 1.0,
+                        "2_target_trend_quality_score_1D": 0.45,
+                        "2_target_path_stability_score_1D": 0.35,
+                        "2_target_noise_score_1D": 0.35,
+                        "2_target_transition_risk_score_1D": 0.35,
+                        "2_context_support_quality_score_1D": 0.35,
+                        "2_tradability_score_1D": 0.95,
+                        "2_target_direction_score_1W": 0.55,
+                        "2_target_trend_quality_score_1W": 0.78,
+                        "2_target_path_stability_score_1W": 0.82,
+                        "2_target_noise_score_1W": 0.12,
+                        "2_target_transition_risk_score_1W": 0.08,
+                        "2_context_support_quality_score_1W": 0.84,
+                        "2_tradability_score_1W": 0.90,
+                    },
+                )
+            ]
+        )[0]
+
+        vector = output["unified_decision_vector"]
+        self.assertGreater(vector["4_trade_intensity_score_1D"], vector["4_trade_intensity_score_1W"])
+        self.assertGreater(
+            vector["4_materiality_adjusted_action_score_1W"],
+            vector["4_materiality_adjusted_action_score_1D"],
+        )
+        self.assertEqual(vector["4_resolved_decision_horizon"], "1W")
 
     def test_hard_gate_blocks_new_exposure(self) -> None:
         output = generate_rows(

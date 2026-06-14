@@ -30,7 +30,7 @@ BASELINE_FEATURE_NAMES = (
     "m02_tradability_1w",
     "m03_event_path_risk_1w",
     "m04_after_cost_edge_1w",
-    "m04_trade_intensity_1w",
+    "m04_materiality_adjusted_action_1w",
     "m05_expression_confidence_1w",
     "m06_intervention_severity",
 )
@@ -373,7 +373,7 @@ def _baseline_features(rows: Mapping[str, Mapping[str, Any]]) -> list[float]:
         _float(target.get("2_tradability_score_1W"), 0.0),
         _float(event.get("3_event_path_risk_score_1W"), 0.0),
         _float(decision.get("4_after_cost_edge_score_1W"), 0.0),
-        _float(decision.get("4_trade_intensity_score_1W"), 0.0),
+        _float(decision.get("4_materiality_adjusted_action_score_1W"), 0.0),
         _float(option.get("5_option_expression_confidence_score_1W"), 0.0),
         _float(residual.get("6_resolved_intervention_severity_score"), 0.0),
     ]

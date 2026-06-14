@@ -109,6 +109,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str, validate_output: b
         "4_resolved_target_exposure_score": dominant["target_exposure_score"],
         "4_resolved_position_gap_score": dominant["position_gap_score"],
         "4_resolved_trade_intensity_score": dominant["trade_intensity_score"],
+        "4_resolved_materiality_adjusted_action_score": dominant["materiality_adjusted_action_score"],
         "4_resolved_no_trade_probability_score": dominant["no_trade_probability_score"],
         "4_resolved_action_confidence_score": dominant["action_confidence_score"],
         "4_resolved_reason_codes": resolved_reason_codes,
@@ -227,6 +228,15 @@ def _horizon_decision(
     action_eligibility = _clip01((1.0 - no_trade_probability) * permission * (1.0 if abs(edge_direction) >= 0.02 else 0.4))
     entry_quality = _clip01(0.35 * quote_state["liquidity_score"] + 0.25 * (1.0 - cost_drag) + 0.20 * confidence + 0.20 * (1.0 - downside))
     action_confidence = _clip01(0.35 * confidence + 0.25 * action_eligibility + 0.20 * entry_quality + 0.20 * edge_strength)
+    minimum_trade_intensity = _minimum_trade_intensity(policy)
+    materiality_gate = _materiality_gate(trade_intensity, minimum_trade_intensity)
+    materiality_adjusted_action = _clip01(
+        materiality_gate
+        * action_confidence
+        * entry_quality
+        * (1.0 - downside)
+        * (1.0 - no_trade_probability)
+    )
     reasons = []
     if hard_gate_reasons:
         reasons.extend(hard_gate_reasons)
@@ -251,6 +261,8 @@ def _horizon_decision(
         "target_exposure_score": round(target_exposure, 6),
         "position_gap_score": round(position_gap, 6),
         "trade_intensity_score": round(trade_intensity, 6),
+        "minimum_trade_intensity": round(minimum_trade_intensity, 6),
+        "materiality_adjusted_action_score": round(materiality_adjusted_action, 6),
         "no_trade_probability_score": round(no_trade_probability, 6),
         "action_eligibility_score": round(action_eligibility, 6),
         "action_direction_score": round(_clip_signed(position_gap), 6),
@@ -277,6 +289,7 @@ def _vector_payload(horizon_details: Mapping[str, Mapping[str, Any]]) -> dict[st
                 f"4_target_exposure_score_{suffix}": detail["target_exposure_score"],
                 f"4_position_gap_score_{suffix}": detail["position_gap_score"],
                 f"4_trade_intensity_score_{suffix}": detail["trade_intensity_score"],
+                f"4_materiality_adjusted_action_score_{suffix}": detail["materiality_adjusted_action_score"],
                 f"4_no_trade_probability_score_{suffix}": detail["no_trade_probability_score"],
                 f"4_action_eligibility_score_{suffix}": detail["action_eligibility_score"],
                 f"4_action_direction_score_{suffix}": detail["action_direction_score"],
@@ -295,7 +308,7 @@ def _resolve_horizon(details: Mapping[str, Mapping[str, Any]], policy: Mapping[s
         details.items(),
         key=lambda item: (
             float(item[1]["action_confidence_score"])
-            + 0.35 * float(item[1]["trade_intensity_score"])
+            + 0.35 * float(item[1]["materiality_adjusted_action_score"])
             - 0.25 * float(item[1]["no_trade_probability_score"])
         ),
         reverse=True,
@@ -355,6 +368,7 @@ def _direct_underlying_intent(
         "current_effective_exposure_score": exposure["effective_current_underlying_exposure_score"],
         "exposure_gap_score": dominant["position_gap_score"],
         "trade_intensity_score": dominant["trade_intensity_score"],
+        "materiality_adjusted_action_score": dominant["materiality_adjusted_action_score"],
         "no_trade_probability_score": dominant["no_trade_probability_score"],
         "entry_style": entry_style,
         "reference_price": reference_price,
@@ -533,6 +547,12 @@ def _reason_codes(hard_gate_reasons: Sequence[str], dominant: Mapping[str, Any],
 
 def _minimum_trade_intensity(policy: Mapping[str, Any]) -> float:
     return _clip01(_score(policy, "minimum_trade_intensity", default=MIN_TRADE_INTENSITY))
+
+
+def _materiality_gate(trade_intensity: float, minimum_trade_intensity: float) -> float:
+    if minimum_trade_intensity <= 0.0:
+        return 1.0 if trade_intensity > 0.0 else 0.0
+    return _clip01(trade_intensity / minimum_trade_intensity)
 
 
 def _short_allowed(borrow: Mapping[str, Any], policy: Mapping[str, Any]) -> bool:
