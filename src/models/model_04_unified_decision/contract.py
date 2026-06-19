@@ -48,11 +48,9 @@ RESOLVED_FIELD_FAMILIES: Final[tuple[str, ...]] = (
 
 PLANNED_ACTION_TYPES: Final[tuple[str, ...]] = (
     "open_long",
-    "increase_long",
     "reduce_long",
     "close_long",
     "open_short",
-    "increase_short",
     "reduce_short",
     "cover_short",
     "maintain",

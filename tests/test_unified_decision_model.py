@@ -57,7 +57,7 @@ class UnifiedDecisionModelTests(unittest.TestCase):
         self.assert_no_retired_outputs(output)
         assert_no_label_leakage(output)
 
-    def test_pending_adjusted_exposure_prevents_duplicate_increase(self) -> None:
+    def test_pending_adjusted_exposure_keeps_existing_long_maintained(self) -> None:
         output = generate_rows(
             [
                 _base_row(

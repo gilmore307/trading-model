@@ -338,7 +338,9 @@ def _resolve_action(*, exposure: Mapping[str, float], dominant: Mapping[str, Any
     if gap > 0.0:
         if current < -MATERIAL_GAP_THRESHOLD:
             return {"underlying_action_type": "cover_short", "action_side": "long"}
-        return {"underlying_action_type": "increase_long" if current > MATERIAL_GAP_THRESHOLD else "open_long", "action_side": "long"}
+        if current > MATERIAL_GAP_THRESHOLD:
+            return {"underlying_action_type": "maintain", "action_side": "long"}
+        return {"underlying_action_type": "open_long", "action_side": "long"}
     if current > MATERIAL_GAP_THRESHOLD and target <= 0.0:
         return {"underlying_action_type": "close_long", "action_side": "none"}
     if current > target and current > MATERIAL_GAP_THRESHOLD:
@@ -347,7 +349,9 @@ def _resolve_action(*, exposure: Mapping[str, float], dominant: Mapping[str, Any
         if not _short_allowed(borrow, policy):
             action_type = "bearish_underlying_path_but_no_short_allowed" if current <= MATERIAL_GAP_THRESHOLD else "reduce_long"
             return {"underlying_action_type": action_type, "action_side": "none" if action_type.startswith("bearish") else "long"}
-        return {"underlying_action_type": "increase_short" if current < -MATERIAL_GAP_THRESHOLD else "open_short", "action_side": "short"}
+        if current < -MATERIAL_GAP_THRESHOLD:
+            return {"underlying_action_type": "maintain", "action_side": "short"}
+        return {"underlying_action_type": "open_short", "action_side": "short"}
     return {"underlying_action_type": "maintain", "action_side": _side(current)}
 
 
