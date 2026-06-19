@@ -60,7 +60,7 @@ Each component input must include the execution `component_id`, feature ref, fro
 | `component_06_execution_gate` / `C06 Execution Gate` | none | none | required before live or replay execution adapter |
 | `component_07_failure_review` / `C07 Failure Review` | none | `model_06_residual_event_governance` | conditional after observed failure, deviation, or residual event risk |
 
-Retired ten-layer route mappings are migration-source routes only.
+Historical ten-layer route mappings are not current realtime route contracts.
 
 ## Training Versus Execution
 

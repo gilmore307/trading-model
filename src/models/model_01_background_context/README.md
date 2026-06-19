@@ -6,4 +6,4 @@ This model owns broad market plus sector/industry background state as one curren
 
 The current deterministic pilot emits `background_context_state`, `background_context_state_ref`, and `1_*` background scores for local fixture/evaluation workflows. Production promotion still requires real point-in-time datasets, labels, baselines, leakage checks, calibration, and reviewed promotion evidence.
 
-Retired `model_01_market_regime` and `model_02_sector_context` packages remain migration-source surfaces only.
+Historical market-regime and sector-context package names are not maintained current surfaces.

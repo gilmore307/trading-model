@@ -13,7 +13,7 @@ Owner intent: reduce serial model-error propagation while keeping target selecti
 | `40_*` | historical/realtime handoff docs and governance code | Dataset scope and realtime decision handoff boundaries. |
 | `50_*` | event-family research helpers | Event-family scouting, packets, and final event-layer judgment. |
 
-Retired ten-layer packages under `src/models/model_01_market_regime/` through `src/models/model_06_residual_event_governance/` may remain as migration-source implementation surfaces only. They are not current model contracts.
+The active implementation surface is the current M01-M06 package and script set. Historical ten-layer package names are not current model contracts or maintained source surfaces.
 
 ## Architecture Summary
 

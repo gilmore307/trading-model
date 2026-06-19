@@ -12,5 +12,4 @@ underlying-price and option-price event-impact channels natively under M06,
 then emits `event_risk_intervention_ref`, `event_risk_intervention`, and `6_*`
 residual event-governance score/resolution fields.
 
-Retired `event_context_vector` / `underlying_action_plan` vocabulary is migration
-source only and must not be emitted by this current package.
+Historical event-context and underlying-action-plan names must not be emitted by this current package.

@@ -1,7 +1,6 @@
 """Shared model governance and evaluation evidence helpers."""
 
 from .promotion import (
-    build_market_regime_promotion_prompt,
     build_model_config_ref,
     build_promotion_candidate_evidence,
     build_review_artifact_from_review,
@@ -18,7 +17,6 @@ from .schema import (
 __all__ = [
     "DEFAULT_SCHEMA",
     "TABLE_NAMES",
-    "build_market_regime_promotion_prompt",
     "build_model_config_ref",
     "build_promotion_candidate_evidence",
     "build_review_artifact_from_review",

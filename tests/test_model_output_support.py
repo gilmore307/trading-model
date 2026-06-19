@@ -13,9 +13,9 @@ class ModelOutputSupportTests(unittest.TestCase):
                 "available_time": "2016-01-04T09:35:00-05:00",
                 "target_candidate_id": "anon_aapl",
                 "model_output_ref": "out_1",
-                "5_alpha_score_1W": 0.7,
-                "alpha_confidence_vector": {"score": 0.7},
-                "alpha_confidence_diagnostics": {"status": "ok"},
+                "4_after_cost_edge_score_1W": 0.7,
+                "unified_decision_vector": {"score": 0.7},
+                "unified_decision_diagnostics": {"status": "ok"},
             }
         ]
 
@@ -38,32 +38,32 @@ class ModelOutputSupportTests(unittest.TestCase):
                 object(),
                 rows,
                 target_schema="trading_model",
-                target_table="model_05_alpha_confidence",
+                target_table="model_04_unified_decision",
                 primary_key=("model_output_ref",),
-                explainability_columns={"alpha_confidence_vector"},
-                diagnostics_columns={"alpha_confidence_diagnostics"},
+                explainability_columns={"unified_decision_vector"},
+                diagnostics_columns={"unified_decision_diagnostics"},
             )
 
         self.assertEqual([call["table"] for call in calls], [
-            "model_05_alpha_confidence",
-            "model_05_alpha_confidence_explainability",
-            "model_05_alpha_confidence_diagnostics",
+            "model_04_unified_decision",
+            "model_04_unified_decision_explainability",
+            "model_04_unified_decision_diagnostics",
         ])
         primary = calls[0]["rows"][0]
-        self.assertIn("5_alpha_score_1W", primary)
-        self.assertNotIn("alpha_confidence_vector", primary)
-        self.assertNotIn("alpha_confidence_diagnostics", primary)
-        self.assertEqual(calls[0]["drop_columns"], {"alpha_confidence_vector", "alpha_confidence_diagnostics"})
+        self.assertIn("4_after_cost_edge_score_1W", primary)
+        self.assertNotIn("unified_decision_vector", primary)
+        self.assertNotIn("unified_decision_diagnostics", primary)
+        self.assertEqual(calls[0]["drop_columns"], {"unified_decision_vector", "unified_decision_diagnostics"})
         self.assertTrue(calls[0]["drop_absent_retired_horizon_columns"])
 
         explainability = calls[1]["rows"][0]
-        self.assertEqual(explainability["alpha_confidence_vector"], {"score": 0.7})
-        self.assertEqual(explainability["explanation_payload_json"]["primary_table"], "model_05_alpha_confidence")
+        self.assertEqual(explainability["unified_decision_vector"], {"score": 0.7})
+        self.assertEqual(explainability["explanation_payload_json"]["primary_table"], "model_04_unified_decision")
         self.assertFalse(calls[1]["drop_absent_retired_horizon_columns"])
 
         diagnostics = calls[2]["rows"][0]
-        self.assertEqual(diagnostics["alpha_confidence_diagnostics"], {"status": "ok"})
-        self.assertEqual(diagnostics["diagnostic_payload_json"]["primary_table"], "model_05_alpha_confidence")
+        self.assertEqual(diagnostics["unified_decision_diagnostics"], {"status": "ok"})
+        self.assertEqual(diagnostics["diagnostic_payload_json"]["primary_table"], "model_04_unified_decision")
 
     def test_support_identity_omits_null_reference_columns(self) -> None:
         rows = [
@@ -87,9 +87,9 @@ class ModelOutputSupportTests(unittest.TestCase):
             {
                 "available_time": "2016-01-04T09:35:00-05:00",
                 "model_output_ref": "out_1",
-                "5_alpha_score_1W": 0.7,
-                "alpha_confidence_vector": {},
-                "alpha_confidence_diagnostics": None,
+                "4_after_cost_edge_score_1W": 0.7,
+                "unified_decision_vector": {},
+                "unified_decision_diagnostics": None,
             }
         ]
         calls: list[dict[str, object]] = []
@@ -109,18 +109,18 @@ class ModelOutputSupportTests(unittest.TestCase):
                 object(),
                 rows,
                 target_schema="trading_model",
-                target_table="model_05_alpha_confidence",
+                target_table="model_04_unified_decision",
                 primary_key=("model_output_ref",),
-                explainability_columns={"alpha_confidence_vector"},
-                diagnostics_columns={"alpha_confidence_diagnostics"},
+                explainability_columns={"unified_decision_vector"},
+                diagnostics_columns={"unified_decision_diagnostics"},
             )
 
-        self.assertEqual([call["table"] for call in calls], ["model_05_alpha_confidence"])
-        self.assertEqual(calls[0]["drop_columns"], {"alpha_confidence_vector", "alpha_confidence_diagnostics"})
+        self.assertEqual([call["table"] for call in calls], ["model_04_unified_decision"])
+        self.assertEqual(calls[0]["drop_columns"], {"unified_decision_vector", "unified_decision_diagnostics"})
         self.assertTrue(calls[0]["drop_absent_retired_horizon_columns"])
 
     def test_retired_horizon_columns_are_current_contract_only(self) -> None:
-        self.assertTrue(model_output_support._is_retired_horizon_column("5_alpha_score_5min"))
+        self.assertTrue(model_output_support._is_retired_horizon_column("4_edge_score_5min"))
         self.assertTrue(model_output_support._is_retired_horizon_column("6_risk_score_390m"))
         self.assertFalse(model_output_support._is_retired_horizon_column("5_alpha_score_10min"))
         self.assertFalse(model_output_support._is_retired_horizon_column("target_context_state"))
@@ -153,7 +153,7 @@ class ModelOutputSupportTests(unittest.TestCase):
                     {"model_output_ref": "out_3", "score": 0.3},
                 ],
                 schema="trading_model",
-                table="model_05_alpha_confidence",
+                table="model_04_unified_decision",
                 primary_key=("model_output_ref",),
                 drop_columns=set(),
             )

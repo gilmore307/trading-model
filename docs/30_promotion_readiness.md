@@ -73,10 +73,10 @@ storage executes lifecycle
 
 Approved/promoted model bodies and required lineage must be marked for permanent retention. Regenerable intermediates may receive retention hints, but lifecycle action must route through manager `storage_lifecycle_request` and storage protected-set execution.
 
-Current retained promotion helpers that reference the retired ten-layer route are migration-source helpers only. New promotion readiness evidence should target the six current model contracts.
+Promotion readiness evidence targets the six current model contracts directly.
 
 ## Implementation Hook
 
 `src/model_governance/promotion/readiness.py` owns the lightweight reusable validation helper for this checklist. It verifies required evidence fields and gate results; it does not approve models by itself.
 
-`scripts/models/run_current_model_historical_evaluation.py` is the first historical evidence runner for the current six-model chain. It can produce `current_model_historical_evaluation_receipt`, governance table-shaped evidence rows, and a local current-chain utility baseline artifact from bounded migration-source historical rows. This runner is evidence production only; passing it does not satisfy the full per-model promotion package or authorize activation.
+`scripts/models/run_current_model_historical_evaluation.py` is the first historical evidence runner for the current six-model chain. It can produce `current_model_historical_evaluation_receipt`, governance table-shaped evidence rows, and a local current-chain utility baseline artifact from bounded point-in-time historical rows. This runner is evidence production only; passing it does not satisfy the full per-model promotion package or authorize activation.

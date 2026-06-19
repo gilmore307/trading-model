@@ -1,7 +1,7 @@
 """Historical evaluation pass for the current six-model chain.
 
 This module builds current M01-M06 rows from existing point-in-time historical
-migration-source rows. It is model-side evidence only: it reads historical data,
+feature rows. It is model-side evidence only: it reads historical data,
 builds chronological folds, may train a local baseline utility artifact, and
 never promotes, activates, writes broker/account state, or mutates SQL.
 """
@@ -55,7 +55,7 @@ def load_historical_rows_from_database(
     label_horizon_days: int = 7,
     schema_data: str = "trading_data",
 ) -> list[HistoricalInputRow]:
-    """Read bounded historical rows from existing migration-source feature tables."""
+    """Read bounded historical rows from existing point-in-time feature tables."""
 
     if limit <= 0:
         raise ValueError("limit must be positive")
@@ -81,8 +81,8 @@ def load_historical_rows_from_database(
               PARTITION BY date_trunc('month', fg.available_time)
               ORDER BY fg.available_time, fg.target_candidate_id
             ) AS month_row_number
-          FROM "{schema_data}"."model_03_target_state_vector_feature_generation" fg
-          JOIN "{schema_data}"."model_03_target_state_vector_data_acquisition" da
+          FROM "{schema_data}"."model_02_target_state_feature_generation" fg
+          JOIN "{schema_data}"."model_02_target_state_data_acquisition" da
             ON da.target_candidate_id = fg.target_candidate_id
            AND da.available_time = fg.available_time
           WHERE fg.available_time >= %s::timestamptz
@@ -109,7 +109,7 @@ def load_historical_rows_from_database(
         FROM monthly_sample
         LEFT JOIN LATERAL (
           SELECT available_time, bar_close
-          FROM "{schema_data}"."model_03_target_state_vector_data_acquisition" future_da
+          FROM "{schema_data}"."model_02_target_state_data_acquisition" future_da
           WHERE future_da.target_candidate_id = monthly_sample.target_candidate_id
             AND future_da.available_time >= monthly_sample.tradeable_time + (%s::text || ' days')::interval
             AND future_da.bar_close IS NOT NULL
@@ -132,7 +132,7 @@ def load_historical_rows_from_database(
 
 
 def historical_source_row_to_payload(row: Mapping[str, Any]) -> dict[str, Any]:
-    """Map one historical migration-source row into the current-chain payload."""
+    """Map one historical source row into the current-chain payload."""
 
     available_time = _iso(_parse_time(row.get("available_time")))
     tradeable_time = _iso(_parse_time(row.get("tradeable_time") or available_time))
@@ -509,7 +509,7 @@ def _artifact_tables(
                 "purpose": "historical_current_chain_evaluation",
                 "required_data_start_time": start,
                 "required_data_end_time": end,
-                "required_source_key": "trading_data.model_03_target_state_vector_feature_generation",
+                "required_source_key": "trading_data.model_02_target_state_feature_generation",
                 "required_feature_key": "migration_source_current_chain_payload",
                 "request_status": "completed" if receipt.get("evaluation_status") == "passed" else "blocked",
                 "request_payload_json": {"receipt": dict(receipt)},
@@ -523,7 +523,7 @@ def _artifact_tables(
                 "model_id": "current_six_model_chain",
                 "request_id": f"request_{run_id}",
                 "feature_schema": CURRENT_MODEL_HISTORICAL_SCHEMA,
-                "feature_table": "trading_data.model_03_target_state_vector_feature_generation",
+                "feature_table": "trading_data.model_02_target_state_feature_generation",
                 "data_start_time": start,
                 "data_end_time": end,
                 "feature_row_count": len(examples),

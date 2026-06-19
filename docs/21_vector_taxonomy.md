@@ -62,6 +62,6 @@ M05 owns optional option/underlying expression after M04 direct-underlying inten
 
 M06 owns missed-event checks, residual event-risk intervention, attribution, and future event-family packet eligibility. It may warn, cap, block, review, or nominate reduce/flatten review actions, but it must not send orders or mutate accounts.
 
-## Retired Vocabulary
+## Compatibility Boundary
 
-Old `market_context_state`, `context_etf_state`, `event_failure_risk_vector`, `alpha_confidence_vector`, `dynamic_risk_policy_state`, `position_projection_vector`, `underlying_action_plan`, and `event_context_vector` names may appear in retained implementation packages and historical artifacts. They are migration-source vocabulary, not the current six-model contract standard.
+Current model-facing payloads use only the M01-M06 vocabulary above. Historical artifact names belong to immutable evidence or Git history, not active contracts, scripts, docs, or model outputs.

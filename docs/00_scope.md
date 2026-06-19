@@ -41,7 +41,7 @@ The repository does **not** place orders, mutate accounts, own provider acquisit
 
 `trading-model` should be direct and disciplined: one folder per accepted model boundary, clear point-in-time inputs, narrow primary outputs, separate explainability/diagnostics, explicit labels, and evidence-backed acceptance.
 
-The active route is current-route authoritative. Historical route changes belong in Git history, not in active docs or package names. Retired ten-layer implementation packages may exist only as migration-source surfaces until their behavior is moved into the six current model contracts.
+The active route is current-route authoritative. Historical route changes belong in Git history, not in active docs, package names, or entrypoints.
 
 ## Boundary Rules
 

@@ -41,7 +41,7 @@ scripts/models/run_current_model_chain.py --receipt-only
 
 Retired ten-layer evaluation artifacts remain useful negative and migration evidence. They are not production approval for the current six-model route.
 
-The model repo may reuse retired implementation packages and evidence while migrating, but durable review requests and decisions must be submitted through `trading-manager` against the current six model contracts.
+Durable review requests and decisions must be submitted through `trading-manager` against the current six model contracts.
 
 ## Blockers
 

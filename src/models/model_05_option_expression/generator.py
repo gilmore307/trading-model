@@ -37,8 +37,6 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         raise ValueError("target_candidate_id is required")
 
     underlying_intent = _payload(row, "direct_underlying_intent")
-    if not underlying_intent:
-        underlying_intent = _payload(row, "underlying_action_plan")
     handoff = (
         _payload(underlying_intent, "handoff_to_model_05")
         or _payload(underlying_intent, "handoff_to_model_05")
@@ -46,7 +44,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         or _payload(row, "model_05_underlying_handoff")
     )
     market = _payload(row, "background_context_state") or _payload(row, "market_context_state")
-    event = _payload(row, "event_state_vector") or _payload(row, "event_context_vector")
+    event = _payload(row, "event_state_vector")
     policy = _payload(row, "option_expression_policy")
     pending = _pending_option_context(row)
     candidates = _candidate_rows(row)
@@ -694,13 +692,10 @@ def _normalize_input_row(row: Mapping[str, Any]) -> dict[str, Any]:
     for key in (
         "direct_underlying_intent",
         "unified_decision_vector",
-        "underlying_action_plan",
-        "model_05_underlying_handoff",
         "model_05_underlying_handoff",
         "background_context_state",
         "market_context_state",
         "event_state_vector",
-        "event_context_vector",
         "option_expression_policy",
     ):
         output[key] = _coerce_payload(output.get(key))

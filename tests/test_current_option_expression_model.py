@@ -223,7 +223,7 @@ def _base_row(**overrides: object) -> dict[str, object]:
         "underlying_quote_snapshot_ref": "underlying_quote_fixture",
         "underlying_reference_price": 100.25,
         "direct_underlying_intent": {
-            "underlying_action_type": "increase_long",
+            "underlying_action_type": "open_long",
             "action_side": "long",
             "dominant_horizon": "1W",
             "handoff_to_model_05": _handoff(),

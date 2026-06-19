@@ -10,9 +10,7 @@ from typing import Any
 
 from model_runtime.config import database_url_file
 from model_governance.model_output_audit import (
-    ALL_MODEL_OUTPUT_TABLES,
     CURRENT_MODEL_OUTPUT_TABLES,
-    RETAINED_MIGRATION_MODEL_OUTPUT_TABLES,
     audit_database,
 )
 
@@ -45,24 +43,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--database-url")
     parser.add_argument("--schema", default="trading_model")
     parser.add_argument("--sample-limit", type=int, default=5000)
-    parser.add_argument(
-        "--table-scope",
-        choices=("current", "retained-migration", "all"),
-        default="current",
-        help="Audit current six-model tables by default; retained migration tables are explicit.",
-    )
     parser.add_argument("--output-json", type=Path)
     parser.add_argument("--print-cleanup-sql", action="store_true", help="Print review-only DROP COLUMN candidates after the JSON audit.")
     args = parser.parse_args(argv)
-    table_scope = {
-        "current": CURRENT_MODEL_OUTPUT_TABLES,
-        "retained-migration": RETAINED_MIGRATION_MODEL_OUTPUT_TABLES,
-        "all": ALL_MODEL_OUTPUT_TABLES,
-    }[args.table_scope]
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(_database_url(args.database_url), row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
-            audit = audit_database(cursor, schema=args.schema, tables=table_scope, sample_limit=args.sample_limit)
+            audit = audit_database(cursor, schema=args.schema, tables=CURRENT_MODEL_OUTPUT_TABLES, sample_limit=args.sample_limit)
     payload = json.dumps(audit, indent=2, sort_keys=True, default=str) + "\n"
     if args.output_json:
         args.output_json.parent.mkdir(parents=True, exist_ok=True)

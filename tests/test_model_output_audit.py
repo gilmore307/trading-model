@@ -9,7 +9,6 @@ from model_governance.model_output_audit import (
     ALL_MODEL_OUTPUT_TABLES,
     CURRENT_MODEL_OUTPUT_TABLES,
     MODEL_OUTPUT_TABLES,
-    RETAINED_MIGRATION_MODEL_OUTPUT_TABLES,
     audit_database,
     audit_rows,
     cleanup_sql_for_reports,
@@ -26,8 +25,10 @@ class ModelOutputAuditTests(unittest.TestCase):
         self.assertIn("model_03_event_state", MODEL_OUTPUT_TABLES)
         self.assertIn("model_05_option_expression", MODEL_OUTPUT_TABLES)
         self.assertIn("model_06_residual_event_governance", MODEL_OUTPUT_TABLES)
-        self.assertNotIn("model_06_dynamic_risk_policy", MODEL_OUTPUT_TABLES)
+        self.assertTrue(all(table.startswith("model_0") for table in MODEL_OUTPUT_TABLES))
+        self.assertTrue(all(table[6:8] in {"01", "02", "03", "04", "05", "06"} for table in MODEL_OUTPUT_TABLES))
         self.assertEqual(MODEL_OUTPUT_TABLES, CURRENT_MODEL_OUTPUT_TABLES)
+        self.assertEqual(ALL_MODEL_OUTPUT_TABLES, CURRENT_MODEL_OUTPUT_TABLES)
         primary_tables = [
             table
             for table in MODEL_OUTPUT_TABLES
@@ -35,13 +36,7 @@ class ModelOutputAuditTests(unittest.TestCase):
         ]
         self.assertEqual(len(primary_tables), 6)
 
-    def test_retained_migration_tables_are_explicit_optional_scope(self) -> None:
-        self.assertIn("model_06_dynamic_risk_policy", RETAINED_MIGRATION_MODEL_OUTPUT_TABLES)
-        self.assertIn("model_06_residual_event_governance", RETAINED_MIGRATION_MODEL_OUTPUT_TABLES)
-        self.assertNotIn("model_06_dynamic_risk_policy", CURRENT_MODEL_OUTPUT_TABLES)
-        self.assertIn("model_06_dynamic_risk_policy", ALL_MODEL_OUTPUT_TABLES)
-
-    def test_audit_cli_exposes_explicit_table_scope(self) -> None:
+    def test_audit_cli_supports_current_table_audit(self) -> None:
         result = subprocess.run(
             [sys.executable, "scripts/models/audit_model_output_tables.py", "--help"],
             cwd=REPO_ROOT,
@@ -52,8 +47,7 @@ class ModelOutputAuditTests(unittest.TestCase):
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("--table-scope", result.stdout)
-        self.assertIn("retained-migration", result.stdout)
+        self.assertIn("--sample-limit", result.stdout)
 
     def test_audit_database_uses_fast_table_sample_before_limit_fallback(self) -> None:
         class FakeCursor:
@@ -64,7 +58,7 @@ class ModelOutputAuditTests(unittest.TestCase):
             def execute(self, sql: str, params=()) -> None:
                 self.executed.append(sql)
                 if "to_regclass" in sql:
-                    self._result = [{"table_ref": "trading_model.model_01_market_regime_model_generation"}]
+                    self._result = [{"table_ref": "trading_model.model_01_background_context"}]
                 elif "information_schema.columns" in sql:
                     self._result = [{"column_name": "available_time"}, {"column_name": "1_score"}]
                 elif "estimated_rows" in sql:
@@ -80,7 +74,7 @@ class ModelOutputAuditTests(unittest.TestCase):
 
         cursor = FakeCursor()
 
-        audit = audit_database(cursor, tables=("model_01_market_regime_model_generation",), sample_limit=1)
+        audit = audit_database(cursor, tables=("model_01_background_context",), sample_limit=1)
 
         self.assertEqual(audit["contract_type"], "model_output_table_quality_audit")
         select_sql = "\n".join(cursor.executed)
@@ -91,29 +85,29 @@ class ModelOutputAuditTests(unittest.TestCase):
             {
                 "available_time": "2016-01-04T09:35:00-05:00",
                 "target_candidate_id": "anon_aapl",
-                "model_id": "alpha_confidence_model",
-                "5_alpha_confidence_score_1W": 0.8,
+                "model_id": "unified_decision_model",
+                "4_after_cost_edge_score_1W": 0.8,
                 "event_strategy_failure_gate_ref": None,
                 "stale_debug_column": None,
             },
             {
                 "available_time": "2016-01-04T09:40:00-05:00",
                 "target_candidate_id": "anon_msft",
-                "model_id": "alpha_confidence_model",
-                "5_alpha_confidence_score_1W": None,
+                "model_id": "unified_decision_model",
+                "4_after_cost_edge_score_1W": None,
                 "event_strategy_failure_gate_ref": None,
                 "stale_debug_column": None,
             },
         ]
 
         report = audit_rows(
-            "model_05_alpha_confidence",
+            "model_04_unified_decision",
             rows,
             columns=[
                 "available_time",
                 "target_candidate_id",
                 "model_id",
-                "5_alpha_confidence_score_1W",
+                "4_after_cost_edge_score_1W",
                 "event_strategy_failure_gate_ref",
                 "stale_debug_column",
             ],
@@ -124,30 +118,30 @@ class ModelOutputAuditTests(unittest.TestCase):
         by_column = {row["column"]: row for row in report["all_null_columns"]}
         self.assertEqual(by_column["event_strategy_failure_gate_ref"]["classification"], "all_null_optional_evidence")
         self.assertEqual(by_column["stale_debug_column"]["recommended_action"], "review_drop_or_stop_emitting_column")
-        self.assertEqual(report["sparse_columns"][0]["column"], "5_alpha_confidence_score_1W")
+        self.assertEqual(report["sparse_columns"][0]["column"], "4_after_cost_edge_score_1W")
 
     def test_known_accumulation_and_selection_columns_are_not_generator_defects(self) -> None:
         report = audit_rows(
-            "model_02_sector_context_model_generation",
+            "model_02_target_state",
             [
                 {
                     "available_time": "2016-01-04T09:35:00-05:00",
-                    "2_sector_trend_stability_score": None,
-                    "2_sector_handoff_rank": None,
+                    "2_target_transition_risk_score_1W": None,
+                    "5_resolved_selected_contract_ref": None,
                 }
             ],
-            columns=["available_time", "2_sector_trend_stability_score", "2_sector_handoff_rank"],
+            columns=["available_time", "2_target_transition_risk_score_1W", "5_resolved_selected_contract_ref"],
             estimated_total_rows=1,
         )
 
         by_column = {row["column"]: row for row in report["all_null_columns"]}
-        self.assertEqual(by_column["2_sector_trend_stability_score"]["classification"], "all_null_data_accumulation_gap")
-        self.assertEqual(by_column["2_sector_handoff_rank"]["classification"], "all_null_optional_selection")
+        self.assertEqual(by_column["2_target_transition_risk_score_1W"]["classification"], "all_null_data_accumulation_gap")
+        self.assertEqual(by_column["5_resolved_selected_contract_ref"]["classification"], "all_null_optional_selection")
 
     def test_cleanup_sql_only_includes_review_drop_columns(self) -> None:
         reports = [
             {
-                "table": "model_05_alpha_confidence",
+                "table": "model_04_unified_decision",
                 "all_null_columns": [
                     {"column": "stale_debug_column", "recommended_action": "review_drop_or_stop_emitting_column"},
                     {"column": "event_strategy_failure_gate_ref", "recommended_action": "keep_as_explicit_missing_evidence_marker"},
@@ -157,7 +151,7 @@ class ModelOutputAuditTests(unittest.TestCase):
 
         sql = cleanup_sql_for_reports(reports)
 
-        self.assertEqual(sql, ['ALTER TABLE "trading_model"."model_05_alpha_confidence" DROP COLUMN IF EXISTS "stale_debug_column";'])
+        self.assertEqual(sql, ['ALTER TABLE "trading_model"."model_04_unified_decision" DROP COLUMN IF EXISTS "stale_debug_column";'])
 
 
 if __name__ == "__main__":

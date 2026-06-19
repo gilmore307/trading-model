@@ -35,10 +35,6 @@ Current local implementation emits:
 - Point-in-time target liquidity, tradability, volatility, cost, optionability, event/risk, and quality evidence.
 - Candidate-universe evidence available at or before `available_time`.
 
-## Migration Source
-
-Retired implementation package `model_03_target_state_vector` may be used as source material during migration. It is not a separate current model contract.
-
 ## Current Local Scripts
 
 ```text

@@ -6,7 +6,7 @@ This document defines the current quality gate for SQL model-output tables under
 
 Primary model-output tables should stay focused on row identity, upstream refs, stable scalar score/status fields, and the few resolved values downstream models actually need. Large nested payloads, explanation blocks, reason-code detail, and row-quality evidence belong in `_explainability` or `_diagnostics` tables.
 
-Retired ten-layer output tables may still be audited as migration-source surfaces. They must not define new current contracts.
+The audit surface is the current six-model table family. Historical table names must not define new current contracts.
 
 ## Empty Column Policy
 
@@ -22,7 +22,7 @@ PYTHONPATH=src python3 scripts/models/audit_model_output_tables.py --sample-limi
 
 The script emits `model_output_table_quality_audit`. It samples a bounded number of rows from the selected model table scope, classifies all-null and sparse columns, and emits review-only cleanup SQL candidates. It never drops columns, rewrites model rows, performs provider calls, activates models, or mutates broker/account state.
 
-By default, the audit uses `model_governance.model_output_audit.MODEL_OUTPUT_TABLES`, which aliases the current six-model table families only. Retained ten-layer tables are exposed separately as `RETAINED_MIGRATION_MODEL_OUTPUT_TABLES` and require `--table-scope retained-migration` or `--table-scope all`.
+The audit uses `model_governance.model_output_audit.MODEL_OUTPUT_TABLES`, which aliases the current six-model table families only.
 
 The stable post-generation gate entrypoint is:
 

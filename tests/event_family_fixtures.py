@@ -165,7 +165,7 @@ def _write_runtime_fixture(runtime_root: Path) -> None:
             {
                 "target_candidate_id": f"fixture_{idx}",
                 "available_time": "2016-01-15T10:00:00-05:00",
-                "underlying_action_plan_ref": f"plan_{idx}",
+                "unified_decision_vector_ref": f"decision_{idx}",
                 "planned_underlying_action_type": "no_trade",
                 "planned_action_side": "none",
                 "realized_underlying_return_after_entry": 0.035,
@@ -176,15 +176,15 @@ def _write_runtime_fixture(runtime_root: Path) -> None:
             }
         )
     _write_json(
-        runtime_root / "model_08_underlying_action/evaluation_summary_2016-01.json",
+        runtime_root / "model_04_unified_decision/evaluation_summary_2016-01.json",
         {"labels": labels},
     )
     _write_jsonl(
-        runtime_root / "model_08_underlying_action/model_rows_2016-01.jsonl",
+        runtime_root / "model_04_unified_decision/model_rows_2016-01.jsonl",
         [
             {
-                "underlying_action_plan_ref": f"plan_{idx}",
-                "underlying_action_plan": {"reason_codes": ["fixture_base_stack_reason"]},
+                "unified_decision_vector_ref": f"decision_{idx}",
+                "direct_underlying_intent": {"reason_codes": ["fixture_base_stack_reason"]},
             }
             for idx in range(12)
         ],

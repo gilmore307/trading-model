@@ -16,13 +16,13 @@ Date: 2026-06-10
 | `M05` Option Expression | `option_expression_model` | optional `option_expression_plan` / `expression_vector` | deterministic pilot present; promotion evidence deferred |
 | `M06` Residual Event Governance | `residual_event_governance_model` | `event_risk_intervention` / event-adjusted risk guidance / future event-family packet eligibility | deterministic pilot present; promotion evidence deferred |
 
-This closes the model-design re-scope to six model contracts and provides deterministic pilots for every current model surface. It does not approve production promotion and does not claim that every retired ten-layer implementation surface has already been migrated into production-grade evidence.
+This closes the model-design re-scope to six model contracts and provides deterministic pilots for every current model surface. It does not approve production promotion.
 
 `current_model_chain_receipt` is the local smoke-evidence contract for the deterministic M01-M06 route. It verifies current handoff refs, label-leakage checks, and retired-field absence, while explicitly disallowing production activation and promotion.
 
 `model_realtime_decision_route_plan` is the current fixture/shadow route-plan contract for execution-side replay/live capture refs. Its execution unit is `runtime_component`; it emits `component_routes` for the accepted execution C-components and lists the current M01-M06 model surfaces each component may need. M05 remains optional when the route is direct-underlying-only or option expression is not applicable. It does not activate production inference or authorize broker/account mutation.
 
-Retired packages and scripts named `model_01_market_regime` through `model_06_residual_event_governance` are no longer current model contracts. They may be used only as migration-source implementation surfaces until their behavior is moved into the six accepted contracts.
+Historical ten-layer package and script names are no longer current contracts or maintained entrypoints. New model work must target the six accepted contracts directly.
 
 ## Event-Governance Acceptance
 

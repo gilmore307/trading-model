@@ -56,10 +56,6 @@ M03 is the runtime surface that applies these M06-governed attributes point-in-t
 - Accepted event-family contracts from `M06 Residual Event Governance`.
 - Matched-control and impact-window evidence frozen before current-fold inference.
 
-## Migration Source
-
-Retired implementation package `model_04_event_failure_risk` and event-family helpers under retired `model_06_residual_event_governance` may be used as source material during migration. They are not separate current model contracts.
-
 ## Current Local Scripts
 
 ```text

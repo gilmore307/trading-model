@@ -128,7 +128,7 @@ def _fetch_model_04_rows(cursor: Any, *, source_start: str | None, source_end: s
               e."unified_decision_vector",
               e."direct_underlying_intent"
             FROM {_qualified('trading_model', 'model_04_unified_decision')} AS u
-            LEFT JOIN {_qualified('trading_data', 'model_03_target_state_vector_data_acquisition')} AS s
+            LEFT JOIN {_qualified('trading_data', 'model_02_target_state_data_acquisition')} AS s
               ON s."target_candidate_id" = u."target_candidate_id"
              AND s."available_time" = u."available_time"::timestamptz
             LEFT JOIN {_qualified('trading_model', explainability_table)} AS e
@@ -146,7 +146,7 @@ def _fetch_model_04_rows(cursor: Any, *, source_start: str | None, source_end: s
               s."symbol" AS "underlying_symbol",
               s."bar_close" AS "underlying_reference_price"
             FROM {_qualified('trading_model', 'model_04_unified_decision')} AS u
-            LEFT JOIN {_qualified('trading_data', 'model_03_target_state_vector_data_acquisition')} AS s
+            LEFT JOIN {_qualified('trading_data', 'model_02_target_state_data_acquisition')} AS s
               ON s."target_candidate_id" = u."target_candidate_id"
              AND s."available_time" = u."available_time"::timestamptz
             {where_sql}
@@ -312,7 +312,7 @@ def _model_05_input_rows(model_04_rows: Sequence[Mapping[str, Any]], option_cand
                 "option_surface_status": option_surface_status,
                 "option_chain_snapshot_ref": option_chain_snapshot_ref,
                 "option_quote_available_time": available_time if option_candidates else None,
-                "underlying_quote_snapshot_ref": None if not underlying else f"model_03_target_state_vector_data_acquisition:{row.get('target_candidate_id')}:{_time_key(available_time)}",
+                "underlying_quote_snapshot_ref": None if not underlying else f"model_02_target_state_data_acquisition:{row.get('target_candidate_id')}:{_time_key(available_time)}",
                 "underlying_reference_price": row.get("underlying_reference_price"),
             }
         )

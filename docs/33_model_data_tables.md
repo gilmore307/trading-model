@@ -20,7 +20,7 @@ trading_model.model_NN_<model_slug>_explainability
 trading_model.model_NN_<model_slug>_diagnostics
 ```
 
-Older ten-layer output names are retained only as migration-source audit scope while their behavior is moved under the current six contracts.
+The current audit scope is the M01-M06 output family.
 
 `trading-evaluation` owns promotion-readiness records. `trading-execution` owns runtime activation records, rollback refs, active-pointer writes, and runtime lifecycle routing. `trading-manager` owns request scheduling and shared registry authority. Promotion evidence rows may be produced here, but activation state must not live here.
 
@@ -41,7 +41,7 @@ Each accepted current model has one narrow primary table and two support tables:
 
 Primary tables are the downstream dependency surface. Explainability tables own human-review internals and nested vectors. Diagnostics tables own acceptance, monitoring, gating evidence, and reason-code detail.
 
-The canonical current audit list is `model_governance.model_output_audit.CURRENT_MODEL_OUTPUT_TABLES`. `MODEL_OUTPUT_TABLES` is an alias for that current list. `RETAINED_MIGRATION_MODEL_OUTPUT_TABLES` is available only when a migration-source audit explicitly needs older ten-layer surfaces.
+The canonical current audit list is `model_governance.model_output_audit.CURRENT_MODEL_OUTPUT_TABLES`. `MODEL_OUTPUT_TABLES` is an alias for that current list.
 
 ## Current Input Dependencies
 
@@ -73,6 +73,6 @@ These tables support promotion evidence. They do not approve promotion by themse
 
 ## Review Findings
 
-- Corrected in this pass: `docs/32_model_output_quality.md` now refers to the current six-model table families and retained migration-source table families.
-- Corrected in this pass: `docs/02_architecture.md` now treats retired ten-layer tables as migration-source implementation surfaces only.
+- Corrected in this pass: `docs/32_model_output_quality.md` now refers to the current six-model table families.
+- Corrected in this pass: `docs/02_architecture.md` now treats the current M01-M06 packages as the only active model implementation surface.
 - Retired SQL generation paths may consume their older upstream model/source tables while migration is underway. Missing upstream evidence should reduce produced rows or block the stage instead of silently manufacturing a complete model path from placeholder state.

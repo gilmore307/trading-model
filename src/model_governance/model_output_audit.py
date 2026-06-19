@@ -1,9 +1,4 @@
-"""Audit model output/support tables for empty and sparse columns.
-
-The audit is intentionally read-only. The default table set covers only the
-current six model output/support surfaces. Retained ten-layer tables remain
-available as an explicit migration-source audit scope, not as current outputs.
-"""
+"""Audit current model output/support tables for empty and sparse columns."""
 from __future__ import annotations
 
 import json
@@ -32,41 +27,8 @@ CURRENT_MODEL_OUTPUT_TABLES: tuple[str, ...] = (
     "model_06_residual_event_governance_diagnostics",
 )
 
-RETAINED_MIGRATION_MODEL_OUTPUT_TABLES: tuple[str, ...] = (
-    "model_01_market_regime_model_generation",
-    "model_01_market_regime_model_generation_explainability",
-    "model_01_market_regime_model_generation_diagnostics",
-    "model_02_sector_context_model_generation",
-    "model_02_sector_context_model_generation_explainability",
-    "model_02_sector_context_model_generation_diagnostics",
-    "model_03_target_state_vector",
-    "model_03_target_state_vector_explainability",
-    "model_03_target_state_vector_diagnostics",
-    "model_04_event_failure_risk",
-    "model_04_event_failure_risk_explainability",
-    "model_04_event_failure_risk_diagnostics",
-    "model_05_alpha_confidence",
-    "model_05_alpha_confidence_explainability",
-    "model_05_alpha_confidence_diagnostics",
-    "model_06_dynamic_risk_policy",
-    "model_06_dynamic_risk_policy_explainability",
-    "model_06_dynamic_risk_policy_diagnostics",
-    "model_07_position_projection",
-    "model_07_position_projection_explainability",
-    "model_07_position_projection_diagnostics",
-    "model_08_underlying_action",
-    "model_08_underlying_action_explainability",
-    "model_08_underlying_action_diagnostics",
-    "model_05_option_expression",
-    "model_05_option_expression_explainability",
-    "model_05_option_expression_diagnostics",
-    "model_06_residual_event_governance",
-    "model_06_residual_event_governance_explainability",
-    "model_06_residual_event_governance_diagnostics",
-)
-
 MODEL_OUTPUT_TABLES: tuple[str, ...] = CURRENT_MODEL_OUTPUT_TABLES
-ALL_MODEL_OUTPUT_TABLES: tuple[str, ...] = CURRENT_MODEL_OUTPUT_TABLES + RETAINED_MIGRATION_MODEL_OUTPUT_TABLES
+ALL_MODEL_OUTPUT_TABLES: tuple[str, ...] = CURRENT_MODEL_OUTPUT_TABLES
 
 IDENTITY_COLUMN_HINTS = {
     "available_time",
@@ -91,16 +53,13 @@ OPTIONAL_EVIDENCE_HINTS = (
 SUPPORT_PAYLOAD_COLUMNS = {"explanation_payload_json", "diagnostic_payload_json"}
 
 DATA_ACCUMULATION_SCORE_COLUMNS = {
-    "1_market_trend_quality_score",
-    "1_breadth_participation_score",
-    "2_sector_trend_stability_score",
-    "2_sector_transition_risk_score",
-    "2_sector_internal_dispersion_score",
-    "2_sector_crowding_risk_score",
+    "1_market_trend_quality_score_1W",
+    "1_sector_breadth_score_1W",
+    "2_target_transition_risk_score_1W",
 }
 
 OPTIONAL_SELECTION_COLUMNS = {
-    "2_sector_handoff_rank",
+    "5_resolved_selected_contract_ref",
 }
 
 
@@ -249,6 +208,8 @@ def _classify(table: str, column: str, sample_count: int, non_null_count: int) -
         if non_null_count < sample_count:
             return "sparse_data_gap", "keep_and_monitor_data_coverage"
         return "populated", "keep"
+    if column in OPTIONAL_SELECTION_COLUMNS:
+        return "all_null_optional_selection", "keep_as_explicit_no_selected_or_watch_rows_marker"
     if column in IDENTITY_COLUMN_HINTS or column.endswith("_ref"):
         if any(hint in column for hint in OPTIONAL_EVIDENCE_HINTS):
             return "all_null_optional_evidence", "keep_as_explicit_missing_evidence_marker"
@@ -257,8 +218,6 @@ def _classify(table: str, column: str, sample_count: int, non_null_count: int) -
         return "all_null_support_payload_error", "repair_support_payload_generation"
     if column in DATA_ACCUMULATION_SCORE_COLUMNS:
         return "all_null_data_accumulation_gap", "backfill_longer_history_or_keep_missing_until_evidence_matures"
-    if column in OPTIONAL_SELECTION_COLUMNS:
-        return "all_null_optional_selection", "keep_as_explicit_no_selected_or_watch_rows_marker"
     if any(hint in column for hint in OPTIONAL_EVIDENCE_HINTS):
         return "all_null_optional_evidence", "keep_as_explicit_missing_evidence_marker"
     if table.endswith("_diagnostics"):
@@ -345,7 +304,6 @@ __all__ = [
     "ALL_MODEL_OUTPUT_TABLES",
     "CURRENT_MODEL_OUTPUT_TABLES",
     "MODEL_OUTPUT_TABLES",
-    "RETAINED_MIGRATION_MODEL_OUTPUT_TABLES",
     "DATA_ACCUMULATION_SCORE_COLUMNS",
     "audit_database",
     "audit_rows",

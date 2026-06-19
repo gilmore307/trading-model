@@ -14,6 +14,4 @@ Current packages:
 - `model_05_option_expression/` — `M05 Option Expression`, optional option/underlying expression after direct-underlying intent exists.
 - `model_06_residual_event_governance/` — `M06 Residual Event Governance`, missed-event checks, residual intervention, attribution, and future event-family evidence.
 
-Retired ten-layer packages such as `model_01_market_regime/`, `model_05_alpha_confidence/`, and `model_06_residual_event_governance/` remain only as migration-source implementation surfaces. They are not the current model contract standard.
-
 Shared governance/promotion helpers stay outside this directory in `src/model_governance/`.

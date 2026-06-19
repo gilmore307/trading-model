@@ -26,7 +26,7 @@ The current pilot lives in `src/models/model_04_unified_decision/` and emits `4_
 
 `4_target_allocation_fraction_<horizon>` and `4_resolved_target_allocation_fraction` are model-owned target allocation percentages of total portfolio/account budget. Execution and replay components may convert the resolved fraction into notional dollars and option contract quantity, but must not invent the allocation percentage themselves.
 
-M04 does not emit executable `increase_long` or `increase_short` actions. When an existing same-direction position has positive incremental gap, the current executable action is `maintain`; full-account operation lets winners grow by mark-to-market weight rather than tactical add orders. Risk-reduction actions such as `reduce_long`, `reduce_short`, `close_long`, and `cover_short` remain valid.
+M04 does not emit executable tactical add actions. When an existing same-direction position has positive incremental gap, the current executable action is `maintain`; full-account operation lets winners grow by mark-to-market weight rather than tactical add orders. Risk-reduction actions such as `reduce_long`, `reduce_short`, `close_long`, and `cover_short` remain valid.
 
 `4_trade_intensity_score_<horizon>` remains the raw material exposure-gap magnitude. Horizon resolution uses `4_materiality_adjusted_action_score_<horizon>` so raw intensity first has to clear the configured materiality gate, then confidence, entry quality, downside risk, and no-trade pressure rank the action.
 
@@ -36,10 +36,6 @@ M04 does not emit executable `increase_long` or `increase_short` actions. When a
 - `target_context_state`.
 - `event_state_vector`.
 - Replay-safe portfolio/risk context, quote/liquidity/borrow, cost/friction, and current/pending exposure state.
-
-## Migration Source
-
-Retired packages `model_05_alpha_confidence`, `model_06_dynamic_risk_policy`, `model_07_position_projection`, and `model_08_underlying_action` may be used as source material during migration. They are not separate current model contracts.
 
 ## Current Gate
 

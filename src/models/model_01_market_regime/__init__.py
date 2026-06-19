@@ -1,1 +1,0 @@
-"""MarketRegimeModel implementation package."""

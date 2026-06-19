@@ -396,8 +396,8 @@ def _events_for_decision(decision_time: datetime, events: Sequence[Mapping[str, 
 def _target_context_state(decision: Mapping[str, Any]) -> dict[str, Any]:
     layer_diagnostics = decision.get("model_layer_diagnostics") if isinstance(decision.get("model_layer_diagnostics"), Mapping) else {}
     action_scores = (
-        layer_diagnostics.get("model_08_underlying_action", {}).get("dominant_horizon_scores", {})
-        if isinstance(layer_diagnostics.get("model_08_underlying_action"), Mapping)
+        layer_diagnostics.get("model_04_unified_decision", {}).get("dominant_horizon_scores", {})
+        if isinstance(layer_diagnostics.get("model_04_unified_decision"), Mapping)
         else {}
     )
     return {
@@ -416,7 +416,7 @@ def _generator_input(decision: Mapping[str, Any], events: Sequence[Mapping[str, 
         "symbol_for_join_only": decision.get("target_ref"),
         "asset_class": decision.get("asset_class"),
         "asset_expression_route": decision.get("asset_expression_route"),
-        "underlying_action_plan_ref": model_refs.get("model_08_underlying_action"),
+        "unified_decision_vector_ref": model_refs.get("model_04_unified_decision"),
         "target_context_state": _target_context_state(decision),
         "event_rows": list(events),
     }

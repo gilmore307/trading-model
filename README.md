@@ -92,7 +92,7 @@ scripts/models/run_model_output_quality_gate.py
 scripts/model_governance/
 ```
 
-Existing scripts under retired ten-layer paths remain migration-source entrypoints only. New work should target the six-model paths above. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
+Only the six-model script paths above are maintained current entrypoints. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
 
 ## Docs Spine
 

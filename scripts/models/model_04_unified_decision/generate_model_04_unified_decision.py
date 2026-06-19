@@ -106,7 +106,7 @@ def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_
         where.append('t."available_time"::timestamptz < %s::timestamptz')
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
-    cursor.execute("SELECT to_regclass(%s) AS table_ref", ("trading_model.model_04_event_failure_risk",))
+    cursor.execute("SELECT to_regclass(%s) AS table_ref", ("trading_model.model_03_event_state",))
     exists = cursor.fetchone()
     if isinstance(exists, Mapping):
         event_table_exists = exists.get("table_ref") is not None
@@ -117,7 +117,7 @@ def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_
     if event_table_exists:
         event_select_sql = ',\n              to_jsonb(e) AS "event_state_vector"'
         event_join_sql = f"""
-            LEFT JOIN {_qualified('trading_model', 'model_04_event_failure_risk')} AS e
+            LEFT JOIN {_qualified('trading_model', 'model_03_event_state')} AS e
               ON e."target_candidate_id" = t."target_candidate_id"
              AND e."available_time"::timestamptz = t."available_time"::timestamptz
         """
@@ -135,7 +135,7 @@ def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_
           to_jsonb(t) AS "target_context_state"
           {event_select_sql}
         FROM {_qualified('trading_model', 'model_02_target_state')} AS t
-        LEFT JOIN {_qualified('trading_data', 'model_03_target_state_vector_data_acquisition')} AS q
+        LEFT JOIN {_qualified('trading_data', 'model_02_target_state_data_acquisition')} AS q
           ON q."target_candidate_id" = t."target_candidate_id"
          AND q."available_time" = t."available_time"::timestamptz
         {event_join_sql}
@@ -162,7 +162,7 @@ def _model_04_input_rows(source_rows: Sequence[Mapping[str, Any]]) -> list[dict[
                 "tradeable_time": row.get("tradeable_time") or row.get("available_time"),
                 "target_candidate_id": row.get("target_candidate_id"),
                 "target_context_state_ref": row.get("target_context_state_ref"),
-                "event_state_vector_ref": row.get("event_failure_risk_vector_ref"),
+                "event_state_vector_ref": row.get("event_state_vector_ref"),
                 "target_context_state": target,
                 "event_state_vector": event,
                 "quality_calibration_state": {
@@ -180,7 +180,7 @@ def _model_04_input_rows(source_rows: Sequence[Mapping[str, Any]]) -> list[dict[
                     "bid_price": bid,
                     "ask_price": ask,
                     "halt_status": "active",
-                    "quote_snapshot_ref": None if not row.get("underlying_symbol") else f"model_03_target_state_vector_data_acquisition:{row.get('target_candidate_id')}:{row.get('available_time')}",
+                    "quote_snapshot_ref": None if not row.get("underlying_symbol") else f"model_02_target_state_data_acquisition:{row.get('target_candidate_id')}:{row.get('available_time')}",
                 },
                 "underlying_liquidity_state": {
                     "spread_bps": spread_bps,

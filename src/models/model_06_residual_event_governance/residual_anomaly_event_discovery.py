@@ -1,6 +1,6 @@
-"""Residual-anomaly to event-family discovery for EventRiskGovernor.
+"""Residual-anomaly to event-family discovery for ResidualEventGovernanceModel.
 
-This module starts from `base_stack_layers_01_09` evaluation labels instead of raw price moves.
+This module starts from current M04 evaluation labels instead of raw price moves.
 It identifies base-stack residual anomalies, then scans nearby point-in-time event
 families to propose observation-pool candidates or strategy-promotion review
 packets. It is safe/local by default: no provider calls, training, activation,
@@ -33,11 +33,11 @@ MIN_RESIDUAL_SEVERITY = 0.01
 
 
 @dataclass(frozen=True)
-class LayerSevenLabel:
+class UnifiedDecisionLabel:
     target_candidate_id: str
     available_time: str
     available_day: date
-    underlying_action_plan_ref: str
+    unified_decision_vector_ref: str
     planned_underlying_action_type: str
     planned_action_side: str
     realized_underlying_return_after_entry: float | None
@@ -53,7 +53,7 @@ class ResidualAnomalyRow:
     target_candidate_id: str
     available_time: str
     available_day: str
-    underlying_action_plan_ref: str
+    unified_decision_vector_ref: str
     base_action_type: str
     base_action_side: str
     residual_type: str
@@ -222,8 +222,8 @@ def _coerce_reason_codes(value: Any) -> tuple[str, ...]:
     return ()
 
 
-def _load_plan_reason_codes(runtime_root: Path, evaluation_month: str) -> dict[str, tuple[str, ...]]:
-    path = runtime_root / "model_08_underlying_action" / f"model_rows_{evaluation_month}.jsonl"
+def _load_decision_reason_codes(runtime_root: Path, evaluation_month: str) -> dict[str, tuple[str, ...]]:
+    path = runtime_root / "model_04_unified_decision" / f"model_rows_{evaluation_month}.jsonl"
     result: dict[str, tuple[str, ...]] = {}
     if not path.exists():
         return result
@@ -232,37 +232,37 @@ def _load_plan_reason_codes(runtime_root: Path, evaluation_month: str) -> dict[s
             if not line.strip():
                 continue
             row = json.loads(line)
-            ref = str(row.get("underlying_action_plan_ref") or "")
+            ref = str(row.get("unified_decision_vector_ref") or "")
             if not ref:
                 continue
-            reasons = _coerce_reason_codes(row.get("8_resolved_reason_codes"))
+            reasons = _coerce_reason_codes(row.get("4_resolved_reason_codes"))
             if not reasons:
-                plan = row.get("underlying_action_plan") if isinstance(row.get("underlying_action_plan"), Mapping) else {}
+                plan = row.get("direct_underlying_intent") if isinstance(row.get("direct_underlying_intent"), Mapping) else {}
                 reasons = _coerce_reason_codes(plan.get("reason_codes"))
             result.setdefault(ref, reasons)
     return result
 
 
-def _load_layer_seven_labels(runtime_root: Path, evaluation_month: str) -> list[LayerSevenLabel]:
-    path = runtime_root / "model_08_underlying_action" / f"evaluation_summary_{evaluation_month}.json"
+def _load_unified_decision_labels(runtime_root: Path, evaluation_month: str) -> list[UnifiedDecisionLabel]:
+    path = runtime_root / "model_04_unified_decision" / f"evaluation_summary_{evaluation_month}.json"
     if not path.exists():
         return []
     payload = json.loads(path.read_text(encoding="utf-8"))
-    reason_codes = _load_plan_reason_codes(runtime_root, evaluation_month)
-    rows: list[LayerSevenLabel] = []
+    reason_codes = _load_decision_reason_codes(runtime_root, evaluation_month)
+    rows: list[UnifiedDecisionLabel] = []
     for raw in payload.get("labels") or []:
         if not isinstance(raw, Mapping):
             continue
         parsed = _parse_dt(str(raw.get("available_time") or ""))
         if not parsed:
             continue
-        plan_ref = str(raw.get("underlying_action_plan_ref") or "")
+        decision_ref = str(raw.get("unified_decision_vector_ref") or "")
         rows.append(
-            LayerSevenLabel(
+            UnifiedDecisionLabel(
                 target_candidate_id=str(raw.get("target_candidate_id") or ""),
                 available_time=parsed.isoformat(),
                 available_day=parsed.date(),
-                underlying_action_plan_ref=plan_ref,
+                unified_decision_vector_ref=decision_ref,
                 planned_underlying_action_type=str(raw.get("planned_underlying_action_type") or "unknown"),
                 planned_action_side=str(raw.get("planned_action_side") or raw.get("action_side") or "unknown"),
                 realized_underlying_return_after_entry=_safe_float(raw.get("realized_underlying_return_after_entry")),
@@ -270,13 +270,13 @@ def _load_layer_seven_labels(runtime_root: Path, evaluation_month: str) -> list[
                 no_trade_opportunity_cost=_safe_float(raw.get("no_trade_opportunity_cost")),
                 no_trade_missed_positive_utility_rate=_truthy_rate(raw.get("no_trade_missed_positive_utility_rate")),
                 no_trade_avoided_negative_utility_rate=_truthy_rate(raw.get("no_trade_avoided_negative_utility_rate")),
-                base_reason_codes=reason_codes.get(plan_ref, ()),
+                base_reason_codes=reason_codes.get(decision_ref, ()),
             )
         )
     return rows
 
 
-def _residual_type(label: LayerSevenLabel, min_residual_severity: float) -> tuple[str | None, str, float]:
+def _residual_type(label: UnifiedDecisionLabel, min_residual_severity: float) -> tuple[str | None, str, float]:
     realized_return = label.realized_underlying_return_after_entry or 0.0
     utility = label.realized_net_underlying_utility or 0.0
     opportunity = label.no_trade_opportunity_cost or 0.0
@@ -338,7 +338,7 @@ def build_residual_anomaly_event_discovery(
     generated_at_utc: str | None = None,
 ) -> ResidualAnomalyEventDiscovery:
     generated = generated_at_utc or datetime.now(UTC).isoformat()
-    labels = _load_layer_seven_labels(runtime_root, evaluation_month)
+    labels = _load_unified_decision_labels(runtime_root, evaluation_month)
     event_dates = _event_family_dates(source_root)
     residual_rows: list[ResidualAnomalyRow] = []
     family_residual_hits: dict[str, int] = defaultdict(int)
@@ -357,7 +357,7 @@ def build_residual_anomaly_event_discovery(
                     target_candidate_id=label.target_candidate_id,
                     available_time=label.available_time,
                     available_day=label.available_day.isoformat(),
-                    underlying_action_plan_ref=label.underlying_action_plan_ref,
+                    unified_decision_vector_ref=label.unified_decision_vector_ref,
                     base_action_type=label.planned_underlying_action_type,
                     base_action_side=label.planned_action_side,
                     residual_type=residual_kind,
@@ -369,7 +369,7 @@ def build_residual_anomaly_event_discovery(
                     base_reason_codes=label.base_reason_codes,
                     nearby_event_families=families,
                     nearby_event_sources=sources,
-                    layer_1_7_basis="model_08_underlying_action_evaluation_labels_over_layers_1_7_inputs",
+                    layer_1_7_basis="model_04_unified_decision_evaluation_labels_over_current_m01_m04_inputs",
                 )
             )
         else:

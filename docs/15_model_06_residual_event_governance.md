@@ -73,4 +73,4 @@ metrics, leakage checks, stability, calibration, and manager-side review.
 
 ## Migration Source
 
-Retired implementation package `model_06_residual_event_governance` may be used as source material during migration. It is not a separate current model contract.
+`model_06_residual_event_governance` is the current M06 implementation package and the only maintained residual event-governance model surface.

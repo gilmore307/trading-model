@@ -83,4 +83,4 @@ M06 may emit warning/cap/block/review/reduce/flatten-review guidance and future 
 
 ## Retired Field Prefixes
 
-Old `1_*` through `10_*` physical score prefixes may appear in retained ten-layer implementation packages and historical artifacts. They are migration-source fields and should not define new current contracts.
+Historical score prefixes may appear in immutable artifacts, but active feature-registry entries must define the current M01-M06 contracts only.
