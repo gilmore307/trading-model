@@ -21,7 +21,7 @@ background context -> target state -> event state -> unified decision -> optiona
 
 `BackgroundContextModel` describes broad market and sector/industry background in one model. `TargetStateModel` builds anonymous target candidates and evaluates target state. `EventStateModel` applies accepted event-family and strategy-failure conditioning without changing event parameters. `UnifiedDecisionModel` produces the direct-underlying decision with structured edge, risk, exposure, and action heads. `OptionExpressionModel` composes optional offline trading guidance and option-expression context from that intent. `ResidualEventGovernanceModel` may intervene on the direct-underlying/spot thesis with point-in-time residual event risk while treating option-expression context as optional. Later decision/expression/governance layers may map back to real symbols only for audit, routing, and decision records.
 
-Historical ten-layer package names are not a parallel current standard.
+Historical retired serial package names are not a parallel current standard.
 
 ## Related Systems
 

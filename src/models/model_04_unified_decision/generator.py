@@ -4,7 +4,7 @@ M04 owns the direct-underlying decision as one current six-model contract.  The
 generator consumes point-in-time background, target, event, quote/liquidity,
 borrow, portfolio/risk, and exposure state, then emits one
 ``unified_decision_vector`` with structured edge, risk, exposure, and action
-heads.  It does not expose retired serial M05-M08 vectors and never emits broker
+heads.  It does not expose retired serial decision vectors and never emits broker
 order or option-contract fields.
 """
 from __future__ import annotations

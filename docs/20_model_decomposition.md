@@ -50,7 +50,7 @@ Local generator scripts may emit nested JSON/JSONL fixture rows for smoke eviden
 - Do not collapse rich context into a scalar unless supporting fields remain available for audit and downstream interpretation.
 - Use `docs/21_vector_taxonomy.md` as the vocabulary authority: feature surfaces feed models, feature vectors are model-facing inputs, states/state vectors are model outputs, scores are scalar dimensions, labels/outcomes are training/evaluation-only.
 - Live/paper order mutation remains outside `trading-model`.
-- Historical ten-layer package, script, and table names should not define new current contracts.
+- Historical retired serial package, script, and table names should not define new current contracts.
 
 ## Model Roles
 

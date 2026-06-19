@@ -217,7 +217,7 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
 
     def test_stale_layer_metadata_is_rejected(self) -> None:
         snapshot = _decision_input_snapshot()
-        snapshot["component_input_refs"][1]["called_model_layers"] = ["layer_04_event_failure_risk"]
+        snapshot["component_input_refs"][1]["called_model_layers"] = ["model_03_event_state"]
 
         result = validate_execution_model_decision_input_snapshot(snapshot)
 

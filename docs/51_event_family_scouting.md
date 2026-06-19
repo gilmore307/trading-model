@@ -559,6 +559,6 @@ This contract does not authorize:
 
 ## Final event-layer judgment link
 
-The current go/no-go judgment is `docs/53_event_layer_final_judgment.md`.
+The current go/no-go judgment is `docs/53_event_state_final_judgment.md`.
 
 Event-family scouting remains the required path. The event layer is accepted structurally as a risk/intelligence overlay, but no event family currently has enough controlled evidence for active alpha promotion. Option abnormality, strict option filters, and raw-news proximity remain `deferred_low_signal`; earnings/guidance remains `scouting` after the canonical shell/control pass.

@@ -65,7 +65,7 @@ class ResidualAnomalyRow:
     base_reason_codes: tuple[str, ...]
     nearby_event_families: tuple[str, ...]
     nearby_event_sources: tuple[str, ...]
-    layer_1_7_basis: str
+    model_01_context_7_basis: str
 
     def csv_row(self) -> dict[str, str]:
         out: dict[str, str] = {}
@@ -306,7 +306,7 @@ def _classify_enrichment(residual_hits: int, residual_n: int, control_hits: int,
                 "research_only_needs_non_residual_controls",
                 "no_strategy_promotion_currently",
                 False,
-                "Residual labels are saturated or controls are unavailable; build non-residual Layer 1-7 controls before observation-pool or strategy promotion.",
+                "Residual labels are saturated or controls are unavailable; build non-residual M01-7 controls before observation-pool or strategy promotion.",
             )
         return ("not_enough_residual_hits", "no_strategy_promotion_currently", False, "Too few residual hits and no controls available.")
     if residual_hits >= 20 and delta is not None and delta >= 0.12 and (lift is None or lift >= 1.5):
@@ -369,7 +369,7 @@ def build_residual_anomaly_event_discovery(
                     base_reason_codes=label.base_reason_codes,
                     nearby_event_families=families,
                     nearby_event_sources=sources,
-                    layer_1_7_basis="model_04_unified_decision_evaluation_labels_over_current_m01_m04_inputs",
+                    model_01_context_7_basis="model_04_unified_decision_evaluation_labels_over_current_m01_m04_inputs",
                 )
             )
         else:

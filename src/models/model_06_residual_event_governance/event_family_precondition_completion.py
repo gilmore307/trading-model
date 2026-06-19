@@ -341,7 +341,7 @@ def _baseline_requirements(spec: Mapping[str, Any]) -> tuple[str, ...]:
     if family == "treasury_yield_curve_shock":
         return (
             "Base rates/curve state must be computed before residual shock labels.",
-            "Shock is the unexplained move over accepted Layer 1/2 rates/market context, not raw yield movement alone.",
+            "Shock is the unexplained move over accepted M01/M02 rates/market context, not raw yield movement alone.",
         )
     if mechanism in {"capital_structure", "capital_allocation", "corporate_action", "ownership_governance"}:
         return (
@@ -388,7 +388,7 @@ def _residual_definition(spec: Mapping[str, Any]) -> str:
     if family in {"price_action_pattern", "residual_market_structure_disturbance"}:
         return (
             "Required before study: residual = observed price/market-structure behavior minus expected behavior from accepted "
-            "Layer 1 market context, Layer 2 sector context, Layer 3 target state, pre-event volatility/trend, and liquidity controls."
+            "M01 market context, M02 sector context, M02 target state, pre-event volatility/trend, and liquidity controls."
         )
     if family == "treasury_yield_curve_shock":
         return "Required before study: residual rates shock = yield/curve movement unexplained by accepted base rates/market-state context."

@@ -73,7 +73,7 @@ Hard separation rules:
 Date: 2026-06-10
 Status: Accepted
 
-The current model-contract standard is M01 through M06 only. Historical ten-layer package names, old layer terminology, and serial alpha/risk/position/action handoffs are not active contracts, active entrypoints, or maintained source surfaces in the repository.
+The current model-contract standard is M01 through M06 only. Historical retired serial package names, old layer terminology, and serial alpha/risk/position/action handoffs are not active contracts, active entrypoints, or maintained source surfaces in the repository.
 
 Accepted current model contracts:
 

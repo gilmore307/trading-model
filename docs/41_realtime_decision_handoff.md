@@ -19,7 +19,7 @@ trading-execution realtime capture
   -> fixture/shadow historical-model generation route
 ```
 
-`model_realtime_decision_route_plan` is a route plan, not a model output. Its execution unit is the accepted execution runtime component (`C01`, `C02`, and so on), not a retired ten-layer route and not a model contract renamed as a component. It validates required runtime-component input refs, records the current M01-M06 model surfaces each component may need, and records the handoff mode. Direct-underlying routes must not require M05 option-expression refs; C04 Expression Review may emit a direct-underlying pass-through or not-option-applicable state.
+`model_realtime_decision_route_plan` is a route plan, not a model output. Its execution unit is the accepted execution runtime component (`C01`, `C02`, and so on), not a retired serial route and not a model contract renamed as a component. It validates required runtime-component input refs, records the current M01-M06 model surfaces each component may need, and records the handoff mode. Direct-underlying routes must not require M05 option-expression refs; C04 Expression Review may emit a direct-underlying pass-through or not-option-applicable state.
 
 The execution-side `runtime_component_manifest` is the authoritative component
 catalog for this handoff. `trading-model` validates the manifest carried by the
@@ -60,7 +60,7 @@ Each component input must include the execution `component_id`, feature ref, fro
 | `component_06_execution_gate` / `C06 Execution Gate` | none | none | required before live or replay execution adapter |
 | `component_07_failure_review` / `C07 Failure Review` | none | `model_06_residual_event_governance` | conditional after observed failure, deviation, or residual event risk |
 
-Historical ten-layer route mappings are not current realtime route contracts.
+Historical retired serial route mappings are not current realtime route contracts.
 
 ## Training Versus Execution
 

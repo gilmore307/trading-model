@@ -45,7 +45,7 @@ TEMPORAL_FORM_SEED_FAMILIES = {"breaking_news_shock", "triple_witching_calendar"
 
 
 @dataclass(frozen=True)
-class Layer10FamilyCompletionRow:
+class M06FamilyCompletionRow:
     family_key: str
     in_catalog: bool
     replay_visible_match_count: int
@@ -82,7 +82,7 @@ class M06ResidualEventGovernanceFoldCompletion:
     generated_at_utc: str
     fold_id: str
     replay_run_id: str
-    family_rows: tuple[Layer10FamilyCompletionRow, ...]
+    family_rows: tuple[M06FamilyCompletionRow, ...]
     source_refs: dict[str, str]
     provider_calls: int = 0
     sql_writes: int = 0
@@ -406,7 +406,7 @@ def build_m06_residual_event_governance_fold_completion(
         for family, count in dict(replay_summary.get("matched_event_counts_by_family", {})).items()
     }
 
-    rows: list[Layer10FamilyCompletionRow] = []
+    rows: list[M06FamilyCompletionRow] = []
     for family in _active_family_keys(catalog=catalog, replay_summary=replay_summary, impact_summary=impact_summary):
         catalog_row = catalog.get(family)
         acceptance_row = acceptance.get(family)
@@ -453,7 +453,7 @@ def build_m06_residual_event_governance_fold_completion(
         if family in impact_windows and not next_action:
             next_action = "Enter approved focus-pool families into later folds and monitor cross-fold stability as follow-up evidence."
         rows.append(
-            Layer10FamilyCompletionRow(
+            M06FamilyCompletionRow(
                 family_key=family,
                 in_catalog=catalog_row is not None,
                 replay_visible_match_count=replay_count,
@@ -516,7 +516,7 @@ def write_m06_residual_event_governance_fold_completion_artifacts(completion: M0
         json.dumps(completion.summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     fields = list(
-        Layer10FamilyCompletionRow(
+        M06FamilyCompletionRow(
             "", False, 0, "", "", "", "", "", "", "", "", "", "", "", "", "", (), (), ""
         ).csv_row().keys()
     )
@@ -547,7 +547,7 @@ def write_completion(completion: M06ResidualEventGovernanceFoldCompletion, *, ou
 
 __all__ = [
     "DEFAULT_OUTPUT_DIR",
-    "Layer10FamilyCompletionRow",
+    "M06FamilyCompletionRow",
     "M06ResidualEventGovernanceFoldCompletion",
     "build_m06_residual_event_governance_fold_completion",
     "write_completion",

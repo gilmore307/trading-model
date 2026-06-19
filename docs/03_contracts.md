@@ -22,7 +22,7 @@ This closes the model-design re-scope to six model contracts and provides determ
 
 `model_realtime_decision_route_plan` is the current fixture/shadow route-plan contract for execution-side replay/live capture refs. Its execution unit is `runtime_component`; it emits `component_routes` for the accepted execution C-components and lists the current M01-M06 model surfaces each component may need. M05 remains optional when the route is direct-underlying-only or option expression is not applicable. It does not activate production inference or authorize broker/account mutation.
 
-Historical ten-layer package and script names are no longer current contracts or maintained entrypoints. New model work must target the six accepted contracts directly.
+Historical retired serial package and script names are no longer current contracts or maintained entrypoints. New model work must target the six accepted contracts directly.
 
 ## Event-Governance Acceptance
 

@@ -124,7 +124,7 @@ docs/41_realtime_decision_handoff.md
 docs/50_activity_price_relationship_study.md
 docs/51_event_family_scouting.md
 docs/52_earnings_guidance_event_family_packet.md
-docs/53_event_layer_final_judgment.md
+docs/53_event_state_final_judgment.md
 ```
 
 Model workflow and acceptance live in the numbered model files. Architecture and decomposition docs describe the current six-model route, not historical detours.

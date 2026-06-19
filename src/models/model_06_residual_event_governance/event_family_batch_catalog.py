@@ -446,7 +446,7 @@ FAMILY_SPECS: tuple[_FamilySpec, ...] = (
         "high",
         "proposed",
         "packet_needed_source_evidence_available",
-        "candidate_family_for_layer_1_2_risk",
+        "candidate_family_for_model_01_context_2_risk",
         "macro_alpha_without_surprise_baseline",
         ("missing_family_packet", "needs_pit_consensus_surprise"),
         (_trading_data_ref("storage/monthly_backfill/trading_economics_calendar_web/2016-01/completion_receipt.json"),),
@@ -461,7 +461,7 @@ FAMILY_SPECS: tuple[_FamilySpec, ...] = (
         "high",
         "proposed",
         "blocked_missing_family_packet",
-        "candidate_family_for_layer_1_2_risk",
+        "candidate_family_for_model_01_context_2_risk",
         "rates_news_alpha_without_policy_standard",
         ("missing_family_packet", "needs_official_calendar_and_statement_route"),
         (),
@@ -476,7 +476,7 @@ FAMILY_SPECS: tuple[_FamilySpec, ...] = (
         "normal",
         "proposed",
         "blocked_missing_family_packet",
-        "candidate_family_for_layer_1_2_risk",
+        "candidate_family_for_model_01_context_2_risk",
         "macro_alpha_without_surprise_baseline",
         ("missing_family_packet", "needs_pit_consensus_surprise"),
         (),
@@ -495,7 +495,7 @@ FAMILY_SPECS: tuple[_FamilySpec, ...] = (
         "rates_move_as_event_without_residual_test",
         ("missing_family_packet", "needs_rates_state_residual_definition"),
         (),
-        "Define residual rates shock after Layer 1 rates/market-state controls.",
+        "Define residual rates shock after M01 rates/market-state controls.",
     ),
     _FamilySpec(
         "credit_liquidity_stress",
@@ -555,7 +555,7 @@ FAMILY_SPECS: tuple[_FamilySpec, ...] = (
         "raw_abnormal_activity_alpha",
         ("needs_residual_over_base_state", "matched_controls_required"),
         (),
-        "Build residual detector against Layer 1-3 states before any association study.",
+        "Build residual detector against M01-3 states before any association study.",
     ),
     _FamilySpec(
         "microstructure_liquidity_disruption",
@@ -642,7 +642,7 @@ def build_event_family_batch_catalog(*, root: Path = Path("."), generated_at_utc
         candidates=tuple(candidates),
         source_documents=(
             "trading-model/docs/51_event_family_scouting.md",
-            "trading-model/docs/53_event_layer_final_judgment.md",
+            "trading-model/docs/53_event_state_final_judgment.md",
             "trading-manager/docs/05_decision.md#D197",
         ),
     )

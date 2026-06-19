@@ -1,6 +1,6 @@
 # Tasks
 
-This is the active model task ledger. Keep it operational and tied to current gates. Detailed event-family evidence lives in `docs/51_event_family_scouting.md`, `docs/53_event_layer_final_judgment.md`, and the referenced storage artifacts.
+This is the active model task ledger. Keep it operational and tied to current gates. Detailed event-family evidence lives in `docs/51_event_family_scouting.md`, `docs/53_event_state_final_judgment.md`, and the referenced storage artifacts.
 
 ## Active Tasks
 
@@ -44,7 +44,7 @@ These items are intentionally outside the current promote-first historical-train
 ## Current Accepted Details
 
 - Repository model-stack acceptance is complete for the current architecture boundary: six model contracts with accepted architecture/contracts, learning roles, docs, canonical package homes, and deterministic local pilots.
-- Historical ten-layer implementation packages are not current model contracts.
+- Historical retired serial implementation packages are not current model contracts.
 - M02 owns anonymous target candidate construction and model-facing target-state construction. Model-facing target context/state vectors must exclude ticker/company identity.
 - M03 consumes accepted event-family contracts as frozen inputs. Event-family identity, point-in-time clocks, scope, visibility, selected impact windows, allowed use, demotion/split/reweight/parameter revision, and future packet eligibility remain event-governance responsibilities.
 - M04 owns adjusted after-cost edge, risk policy, exposure projection, and direct-underlying action as one current model contract with structured heads.

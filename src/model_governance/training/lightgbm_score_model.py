@@ -9,7 +9,7 @@ _BOOSTER_CACHE: dict[int, tuple[str, Any]] = {}
 
 @dataclass(frozen=True)
 class LightGBMScoreModelSpec:
-    """Layer-owned artifact identity and training defaults."""
+    """Model-owned artifact identity and training defaults."""
 
     schema_version: str
     model_id: str

@@ -1,4 +1,4 @@
-# Event Layer Final Judgment
+# Event State Final Judgment
 
 Status: accepted final current-cycle judgment after the 2026-05-15 abnormal-activity/earnings/guidance passes, 2026-05-16 CPI/family-packet/empirical-coverage passes, and final all-family disposition artifact.
 

@@ -94,7 +94,7 @@ class ImpactWindowBacktestRow:
     abs_return_delta: float | None
     control_sample_count: int
     parameterization_status: str
-    layer_4_projection_type: str
+    model_03_event_projection_type: str
     event_family_impact_parameterization: dict[str, Any]
     runner_up_window_label: str
     runner_up_selection_score: float
@@ -364,7 +364,7 @@ def _impact_parameterization(
         "impact_curve_components": curve,
         "impact_scope_parameter": impact_scope_parameter,
         "severity_model": "event_vs_control_abs_return_plus_path_range_delta",
-        "layer_4_projection_type": "event_family_impact_state_projection",
+        "model_03_event_projection_type": "event_family_impact_state_projection",
     }
 
 
@@ -427,7 +427,7 @@ def build_event_family_impact_window_backtest(
                 abs_return_delta=selected.abs_return_delta,
                 control_sample_count=selected.control_sample_count,
                 parameterization_status=row_status,
-                layer_4_projection_type="event_family_impact_state_projection",
+                model_03_event_projection_type="event_family_impact_state_projection",
                 event_family_impact_parameterization=_impact_parameterization(
                     selected,
                     temporal_form,

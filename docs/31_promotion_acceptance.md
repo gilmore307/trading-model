@@ -39,7 +39,7 @@ scripts/models/run_current_model_chain.py --receipt-only
 
 ## Migration Evidence
 
-Retired ten-layer evaluation artifacts remain useful negative and migration evidence. They are not production approval for the current six-model route.
+Retired serial evaluation artifacts remain useful negative and migration evidence. They are not production approval for the current six-model route.
 
 Durable review requests and decisions must be submitted through `trading-manager` against the current six model contracts.
 

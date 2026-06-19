@@ -30,6 +30,6 @@ This directory contains the current documentation spine for `trading-model`.
 - `50_activity_price_relationship_study.md` — Activity-Price Relationship Study.
 - `51_event_family_scouting.md` — Event Family Scouting.
 - `52_earnings_guidance_event_family_packet.md` — Earnings / Guidance Event-Family Scouting Packet.
-- `53_event_layer_final_judgment.md` — Event Layer Final Judgment.
+- `53_event_state_final_judgment.md` — Event State Final Judgment.
 
 Keep generated data, artifacts, notebooks, logs, credentials, and runtime outputs out of this directory.

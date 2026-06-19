@@ -549,7 +549,7 @@ def _reason_codes(
     action_type = str(underlying_intent.get("underlying_action_type") or underlying_intent.get("planned_underlying_action_type") or "").lower()
     if option_surface_status == "non_optionable_underlying":
         reasons.append("non_optionable_underlying")
-        reasons.append("layer_5_bypassed_option_expression_scoring")
+        reasons.append("model_05_bypassed_option_expression_scoring")
     elif option_surface_status == "optionable_chain_missing":
         reasons.append("option_surface_unavailable")
     if expression_type == "no_option_expression":
