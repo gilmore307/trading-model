@@ -107,6 +107,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str, validate_output: b
         "4_resolved_underlying_action_type": action["underlying_action_type"],
         "4_resolved_action_side": action["action_side"],
         "4_resolved_target_exposure_score": dominant["target_exposure_score"],
+        "4_resolved_target_allocation_fraction": dominant["target_allocation_fraction"],
         "4_resolved_position_gap_score": dominant["position_gap_score"],
         "4_resolved_trade_intensity_score": dominant["trade_intensity_score"],
         "4_resolved_materiality_adjusted_action_score": dominant["materiality_adjusted_action_score"],
@@ -228,6 +229,13 @@ def _horizon_decision(
     action_eligibility = _clip01((1.0 - no_trade_probability) * permission * (1.0 if abs(edge_direction) >= 0.02 else 0.4))
     entry_quality = _clip01(0.35 * quote_state["liquidity_score"] + 0.25 * (1.0 - cost_drag) + 0.20 * confidence + 0.20 * (1.0 - downside))
     action_confidence = _clip01(0.35 * confidence + 0.25 * action_eligibility + 0.20 * entry_quality + 0.20 * edge_strength)
+    target_allocation_fraction = _target_allocation_fraction(
+        policy=policy,
+        risk_budget=risk_budget,
+        permission=permission,
+        action_confidence=action_confidence,
+        no_trade_probability=no_trade_probability,
+    )
     minimum_trade_intensity = _minimum_trade_intensity(policy)
     materiality_gate = _materiality_gate(trade_intensity, minimum_trade_intensity)
     materiality_adjusted_action = _clip01(
@@ -259,6 +267,7 @@ def _horizon_decision(
         "risk_budget_score": round(risk_budget, 6),
         "new_exposure_permission_score": round(permission, 6),
         "target_exposure_score": round(target_exposure, 6),
+        "target_allocation_fraction": round(target_allocation_fraction, 6),
         "position_gap_score": round(position_gap, 6),
         "trade_intensity_score": round(trade_intensity, 6),
         "minimum_trade_intensity": round(minimum_trade_intensity, 6),
@@ -287,6 +296,7 @@ def _vector_payload(horizon_details: Mapping[str, Mapping[str, Any]]) -> dict[st
                 f"4_risk_budget_score_{suffix}": detail["risk_budget_score"],
                 f"4_new_exposure_permission_score_{suffix}": detail["new_exposure_permission_score"],
                 f"4_target_exposure_score_{suffix}": detail["target_exposure_score"],
+                f"4_target_allocation_fraction_{suffix}": detail["target_allocation_fraction"],
                 f"4_position_gap_score_{suffix}": detail["position_gap_score"],
                 f"4_trade_intensity_score_{suffix}": detail["trade_intensity_score"],
                 f"4_materiality_adjusted_action_score_{suffix}": detail["materiality_adjusted_action_score"],
@@ -365,6 +375,7 @@ def _direct_underlying_intent(
         "action_side": action_side,
         "dominant_horizon": resolved_horizon,
         "target_exposure_score": dominant["target_exposure_score"],
+        "target_allocation_fraction": dominant["target_allocation_fraction"],
         "current_effective_exposure_score": exposure["effective_current_underlying_exposure_score"],
         "exposure_gap_score": dominant["position_gap_score"],
         "trade_intensity_score": dominant["trade_intensity_score"],
@@ -387,6 +398,7 @@ def _direct_underlying_intent(
             "expected_adverse_move_pct": round(-adverse_move, 6),
             "entry_price_assumption": entry_style,
             "underlying_action_confidence_score": dominant["action_confidence_score"],
+            "target_allocation_fraction": dominant["target_allocation_fraction"],
         },
         "reason_codes": list(reason_codes),
     }
@@ -525,6 +537,30 @@ def _price_location_multiplier(direction: float, price_location: Mapping[str, An
     if favorable_extension < 0.0 and thesis_intact >= 0.75:
         return _clip01(1.0 + 0.25 * abs(favorable_extension))
     return _clip01(1.0 + 0.20 * revision)
+
+
+def _target_allocation_fraction(
+    *,
+    policy: Mapping[str, Any],
+    risk_budget: float,
+    permission: float,
+    action_confidence: float,
+    no_trade_probability: float,
+) -> float:
+    policy_fraction = _score(
+        policy,
+        "target_allocation_fraction",
+        "portfolio_target_allocation_fraction",
+        "maximum_target_allocation_fraction",
+        default=0.20,
+    )
+    return _clip01(
+        policy_fraction
+        * risk_budget
+        * permission
+        * (0.50 + 0.50 * action_confidence)
+        * (1.0 - 0.50 * no_trade_probability)
+    )
 
 
 def _entry_style(action_type: str, dominant: Mapping[str, Any]) -> str:

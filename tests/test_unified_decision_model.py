@@ -34,6 +34,15 @@ class UnifiedDecisionModelTests(unittest.TestCase):
         self.assertGreater(vector["4_after_cost_edge_score_1W"], 0.5)
         self.assertGreater(vector["4_risk_budget_score_1W"], 0.0)
         self.assertGreater(vector["4_target_exposure_score_1W"], 0.0)
+        self.assertGreater(vector["4_target_allocation_fraction_1W"], 0.0)
+        self.assertEqual(
+            intent["target_allocation_fraction"],
+            vector["4_resolved_target_allocation_fraction"],
+        )
+        self.assertEqual(
+            intent["handoff_to_model_05"]["target_allocation_fraction"],
+            vector["4_resolved_target_allocation_fraction"],
+        )
         self.assertGreater(vector["4_materiality_adjusted_action_score_1W"], 0.0)
         self.assertEqual(vector["4_resolved_underlying_action_type"], "open_long")
         self.assertEqual(

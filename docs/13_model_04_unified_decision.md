@@ -24,6 +24,8 @@ Those heads are fields of one current model contract, not separate current model
 
 The current pilot lives in `src/models/model_04_unified_decision/` and emits `4_*` fields plus `unified_decision_vector_ref`. It keeps the edge, risk, exposure, and action heads inside one output and does not expose retired `alpha_confidence_vector`, `dynamic_risk_policy_state`, `position_projection_vector`, or `underlying_action_plan` outputs. Local generate/evaluate/review entrypoints live under `scripts/models/model_04_unified_decision/`.
 
+`4_target_allocation_fraction_<horizon>` and `4_resolved_target_allocation_fraction` are model-owned target allocation percentages of total portfolio/account budget. Execution and replay components may convert the resolved fraction into notional dollars and option contract quantity, but must not invent the allocation percentage themselves.
+
 `4_trade_intensity_score_<horizon>` remains the raw material exposure-gap magnitude. Horizon resolution uses `4_materiality_adjusted_action_score_<horizon>` so raw intensity first has to clear the configured materiality gate, then confidence, entry quality, downside risk, and no-trade pressure rank the action.
 
 ## Inputs
