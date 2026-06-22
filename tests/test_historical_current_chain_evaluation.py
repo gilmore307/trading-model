@@ -9,7 +9,10 @@ from model_governance.current_chain import build_current_chain_rows
 from model_governance.historical_current_chain_evaluation import (
     BASELINE_FEATURE_NAMES,
     HistoricalInputRow,
+    TARGET_STATE_FEATURE_TABLE,
+    TARGET_STATE_SOURCE_TABLE,
     historical_source_row_to_payload,
+    load_historical_rows_from_database,
     run_historical_current_chain_evaluation,
 )
 
@@ -66,15 +69,59 @@ class HistoricalCurrentChainEvaluationTests(unittest.TestCase):
         receipt = artifact["receipt"]
 
         self.assertEqual(receipt["contract_type"], "current_model_historical_evaluation_receipt")
+        self.assertEqual(receipt["source_selection_policy"], "point_in_time_liquidity_ranked_daily_stratified_sample")
         self.assertEqual(receipt["fold_count"], 2)
         self.assertEqual(receipt["label_join_coverage_rate"], 1.0)
+        self.assertEqual(receipt["unique_target_candidate_count"], 2)
+        self.assertEqual(receipt["unique_routing_symbol_count"], 2)
         self.assertFalse(receipt["activation_allowed"])
         self.assertFalse(receipt["production_promotion_allowed"])
         self.assertIn("degenerate_underlying_action_distribution", receipt["warning_reasons"])
         self.assertIn("m04_materiality_adjusted_action_1w", BASELINE_FEATURE_NAMES)
         self.assertNotIn("m04_trade_intensity_1w", BASELINE_FEATURE_NAMES)
+        self.assertEqual(artifact["tables"]["model_dataset_request"][0]["required_source_key"], f"trading_data.{TARGET_STATE_FEATURE_TABLE}")
+        self.assertEqual(artifact["tables"]["model_dataset_snapshot"][0]["feature_table"], f"trading_data.{TARGET_STATE_FEATURE_TABLE}")
         self.assertEqual(len(artifact["tables"]["model_eval_label"]), 2)
         self.assertEqual(artifact["tables"]["model_eval_run"][0]["run_status"], "blocked")
+
+    def test_historical_evaluation_blocks_single_target_candidate_evidence(self) -> None:
+        rows = [
+            HistoricalInputRow(
+                source_row=_source_row("2017-01-03T10:00:00-05:00", "tcand_a", "AAPL", 100.0, 101.0),
+                payload=historical_source_row_to_payload(_source_row("2017-01-03T10:00:00-05:00", "tcand_a", "AAPL", 100.0, 101.0)),
+                label_payload={
+                    "label_name": "future_target_return_1W",
+                    "horizon": "1W",
+                    "available_time": "2017-01-03T10:00:00-05:00",
+                    "label_time": "2017-01-10T10:00:00-05:00",
+                    "label_matured": True,
+                    "future_return_1W": 0.01,
+                    "utility_score_1W": 0.55,
+                },
+            ),
+            HistoricalInputRow(
+                source_row=_source_row("2017-02-01T10:00:00-05:00", "tcand_a", "AAPL", 50.0, 49.0),
+                payload=historical_source_row_to_payload(_source_row("2017-02-01T10:00:00-05:00", "tcand_a", "AAPL", 50.0, 49.0)),
+                label_payload={
+                    "label_name": "future_target_return_1W",
+                    "horizon": "1W",
+                    "available_time": "2017-02-01T10:00:00-05:00",
+                    "label_time": "2017-02-08T10:00:00-05:00",
+                    "label_matured": True,
+                    "future_return_1W": -0.02,
+                    "utility_score_1W": 0.40,
+                },
+            ),
+        ]
+
+        artifact = run_historical_current_chain_evaluation(rows, run_id="single_target_run", train_baseline=False)
+        receipt = artifact["receipt"]
+
+        self.assertEqual(receipt["evaluation_status"], "blocked")
+        self.assertIn("insufficient_target_candidate_diversity", receipt["blocking_reasons"])
+        self.assertIn("insufficient_routing_symbol_diversity", receipt["blocking_reasons"])
+        self.assertIn("low_target_candidate_diversity", receipt["warning_reasons"])
+        self.assertIn("low_routing_symbol_diversity", receipt["warning_reasons"])
 
     def test_historical_evaluation_cli_supports_help(self) -> None:
         result = subprocess.run(
@@ -89,6 +136,30 @@ class HistoricalCurrentChainEvaluationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("--per-month-limit", result.stdout)
         self.assertIn("--skip-baseline-training", result.stdout)
+
+    def test_database_loader_uses_point_in_time_ranked_daily_stratified_sampling(self) -> None:
+        cursor = _CapturingCursor()
+
+        rows = load_historical_rows_from_database(
+            cursor,
+            start_time="2017-01-01T00:00:00-05:00",
+            end_time="2017-02-01T00:00:00-05:00",
+            limit=10,
+            per_month_limit=5,
+        )
+
+        self.assertEqual(rows, [])
+        query = cursor.query
+        self.assertIn("point_in_time_candidate_rank", query)
+        self.assertIn("daily_sample_rank", query)
+        self.assertIn(TARGET_STATE_FEATURE_TABLE, query)
+        self.assertIn(TARGET_STATE_SOURCE_TABLE, query)
+        self.assertIn("COALESCE(da.dollar_volume, 0) DESC", query)
+        self.assertIn("COALESCE(da.spread_bps, 1000000) ASC", query)
+        self.assertIn("ORDER BY monthly_sample.available_time, monthly_sample.point_in_time_candidate_rank", query)
+        self.assertNotIn("model_02_target_state_feature_generation", query)
+        self.assertNotIn("model_02_target_state_data_acquisition", query)
+        self.assertNotIn("ORDER BY fg.available_time, fg.target_candidate_id", query)
 
 
 def _source_row(available_time: str, target_candidate_id: str, symbol: str, close: float, future_close: float) -> dict[str, object]:
@@ -135,6 +206,19 @@ def _source_row(available_time: str, target_candidate_id: str, symbol: str, clos
         "cross_state_features": {},
         "feature_quality_diagnostics": {"history_bars": 120, "has_target_close": True, "has_target_volume": True},
     }
+
+
+class _CapturingCursor:
+    def __init__(self) -> None:
+        self.query = ""
+        self.params = ()
+
+    def execute(self, query: str, params: tuple[object, ...]) -> None:
+        self.query = query
+        self.params = params
+
+    def fetchall(self) -> list[dict[str, object]]:
+        return []
 
 
 if __name__ == "__main__":

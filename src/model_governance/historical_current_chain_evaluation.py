@@ -22,6 +22,8 @@ from model_governance.training import LightGBMScoreModelSpec, predict_lightgbm_s
 
 ET = ZoneInfo("America/New_York")
 CURRENT_MODEL_HISTORICAL_SCHEMA = "current_model_historical_evaluation_artifact"
+TARGET_STATE_SOURCE_TABLE = "model_03_target_state_vector_data_acquisition"
+TARGET_STATE_FEATURE_TABLE = "model_03_target_state_vector_feature_generation"
 HORIZONS = ("10min", "1h", "1D", "1W")
 BASELINE_FEATURE_NAMES = (
     "m01_market_risk_stress_1w",
@@ -61,7 +63,7 @@ def load_historical_rows_from_database(
         raise ValueError("limit must be positive")
     cursor.execute(
         f"""
-        WITH monthly_sample AS (
+        WITH ranked_candidates AS (
           SELECT
             fg.available_time,
             fg.tradeable_time,
@@ -77,17 +79,39 @@ def load_historical_rows_from_database(
             da.avg_bid,
             da.avg_ask,
             da.spread_bps,
+            date_trunc('day', fg.available_time) AS sample_day,
             row_number() OVER (
-              PARTITION BY date_trunc('month', fg.available_time)
-              ORDER BY fg.available_time, fg.target_candidate_id
-            ) AS month_row_number
-          FROM "{schema_data}"."model_02_target_state_feature_generation" fg
-          JOIN "{schema_data}"."model_02_target_state_data_acquisition" da
+              PARTITION BY fg.available_time
+              ORDER BY
+                COALESCE(da.dollar_volume, 0) DESC,
+                COALESCE(da.spread_bps, 1000000) ASC,
+                fg.target_candidate_id ASC
+            ) AS point_in_time_candidate_rank
+          FROM "{schema_data}"."{TARGET_STATE_FEATURE_TABLE}" fg
+          JOIN "{schema_data}"."{TARGET_STATE_SOURCE_TABLE}" da
             ON da.target_candidate_id = fg.target_candidate_id
            AND da.available_time = fg.available_time
           WHERE fg.available_time >= %s::timestamptz
             AND fg.available_time < %s::timestamptz
             AND da.bar_close IS NOT NULL
+        ),
+        daily_stratified AS (
+          SELECT
+            ranked_candidates.*,
+            row_number() OVER (
+              PARTITION BY date_trunc('month', available_time), sample_day
+              ORDER BY point_in_time_candidate_rank, available_time, target_candidate_id
+            ) AS daily_sample_rank
+          FROM ranked_candidates
+        ),
+        monthly_sample AS (
+          SELECT
+            daily_stratified.*,
+            row_number() OVER (
+              PARTITION BY date_trunc('month', available_time)
+              ORDER BY daily_sample_rank, sample_day, available_time, point_in_time_candidate_rank, target_candidate_id
+            ) AS month_row_number
+          FROM daily_stratified
         )
         SELECT
           monthly_sample.available_time,
@@ -104,12 +128,14 @@ def load_historical_rows_from_database(
           monthly_sample.avg_bid,
           monthly_sample.avg_ask,
           monthly_sample.spread_bps,
+          monthly_sample.point_in_time_candidate_rank,
+          monthly_sample.daily_sample_rank,
           future_bar.available_time AS label_time,
           future_bar.bar_close AS future_close
         FROM monthly_sample
         LEFT JOIN LATERAL (
           SELECT available_time, bar_close
-          FROM "{schema_data}"."model_02_target_state_data_acquisition" future_da
+          FROM "{schema_data}"."{TARGET_STATE_SOURCE_TABLE}" future_da
           WHERE future_da.target_candidate_id = monthly_sample.target_candidate_id
             AND future_da.available_time >= monthly_sample.tradeable_time + (%s::text || ' days')::interval
             AND future_da.bar_close IS NOT NULL
@@ -117,7 +143,7 @@ def load_historical_rows_from_database(
           LIMIT 1
         ) future_bar ON TRUE
         WHERE monthly_sample.month_row_number <= %s
-        ORDER BY monthly_sample.available_time, monthly_sample.target_candidate_id
+        ORDER BY monthly_sample.available_time, monthly_sample.point_in_time_candidate_rank, monthly_sample.target_candidate_id
         LIMIT %s
         """,
         (start_time, end_time, label_horizon_days, per_month_limit, limit),
@@ -225,6 +251,8 @@ def run_historical_current_chain_evaluation(
     baseline = _baseline_training_artifact(examples, folds) if train_baseline else _skipped_baseline("baseline_training_disabled")
     metrics = _fold_metrics(examples, folds, baseline.get("artifact"))
     label_count = sum(1 for example in examples if example["label_payload"]["label_matured"])
+    target_candidate_count = len({str(example["target_candidate_id"]) for example in examples})
+    routing_symbol_count = len({str(example["routing_symbol"]) for example in examples})
     blocked_reasons = []
     if not rows:
         blocked_reasons.append("no_historical_rows")
@@ -234,15 +262,22 @@ def run_historical_current_chain_evaluation(
         blocked_reasons.append("no_matured_labels")
     if baseline.get("training_status") != "trained":
         blocked_reasons.append("baseline_training_not_completed")
+    if len(examples) > 1 and target_candidate_count < 2:
+        blocked_reasons.append("insufficient_target_candidate_diversity")
+    if len(examples) > 1 and routing_symbol_count < 2:
+        blocked_reasons.append("insufficient_routing_symbol_diversity")
     warning_reasons = _warning_reasons(examples)
 
     receipt = {
         "contract_type": "current_model_historical_evaluation_receipt",
         "schema_version": CURRENT_MODEL_HISTORICAL_SCHEMA,
         "run_id": normalized_run_id,
+        "source_selection_policy": "point_in_time_liquidity_ranked_daily_stratified_sample",
         "row_count": len(rows),
         "generated_chain_row_count": len(examples),
         "blocked_source_row_count": len(blocked_rows),
+        "unique_target_candidate_count": target_candidate_count,
+        "unique_routing_symbol_count": routing_symbol_count,
         "label_row_count": label_count,
         "label_join_coverage_rate": round(label_count / len(examples), 6) if examples else 0.0,
         "fold_count": len(folds),
@@ -475,9 +510,15 @@ def _warning_reasons(examples: Sequence[Mapping[str, Any]]) -> list[str]:
     warnings: list[str] = []
     if not examples:
         return warnings
+    target_count = len({str(example["target_candidate_id"]) for example in examples})
+    symbol_count = len({str(example["routing_symbol"]) for example in examples})
     action_counts = Counter(example["resolved_outputs"]["resolved_underlying_action"] for example in examples)
     option_counts = Counter(example["resolved_outputs"]["resolved_option_expression"] for example in examples)
     intervention_counts = Counter(example["resolved_outputs"]["resolved_event_intervention"] for example in examples)
+    if target_count == 1 and len(examples) > 1:
+        warnings.append("low_target_candidate_diversity")
+    if symbol_count == 1 and len(examples) > 1:
+        warnings.append("low_routing_symbol_diversity")
     if len(action_counts) == 1:
         warnings.append("degenerate_underlying_action_distribution")
     if len(option_counts) == 1:
@@ -509,7 +550,7 @@ def _artifact_tables(
                 "purpose": "historical_current_chain_evaluation",
                 "required_data_start_time": start,
                 "required_data_end_time": end,
-                "required_source_key": "trading_data.model_02_target_state_feature_generation",
+                "required_source_key": f"trading_data.{TARGET_STATE_FEATURE_TABLE}",
                 "required_feature_key": "migration_source_current_chain_payload",
                 "request_status": "completed" if receipt.get("evaluation_status") == "passed" else "blocked",
                 "request_payload_json": {"receipt": dict(receipt)},
@@ -523,7 +564,7 @@ def _artifact_tables(
                 "model_id": "current_six_model_chain",
                 "request_id": f"request_{run_id}",
                 "feature_schema": CURRENT_MODEL_HISTORICAL_SCHEMA,
-                "feature_table": "trading_data.model_02_target_state_feature_generation",
+                "feature_table": f"trading_data.{TARGET_STATE_FEATURE_TABLE}",
                 "data_start_time": start,
                 "data_end_time": end,
                 "feature_row_count": len(examples),
@@ -665,6 +706,8 @@ __all__ = [
     "BASELINE_FEATURE_NAMES",
     "CURRENT_MODEL_HISTORICAL_SCHEMA",
     "HistoricalInputRow",
+    "TARGET_STATE_FEATURE_TABLE",
+    "TARGET_STATE_SOURCE_TABLE",
     "historical_source_row_to_payload",
     "load_historical_rows_from_database",
     "run_historical_current_chain_evaluation",
