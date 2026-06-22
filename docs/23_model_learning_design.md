@@ -30,7 +30,7 @@ Learned-model design is direct-to-final. Do not introduce temporary learned cont
 ## Cross-Model Rules
 
 - Model-facing inputs must be point-in-time at `available_time`.
-- Training coverage and live invocation are separate. Historical training/evaluation should preserve full-minute state coverage wherever inputs can be constructed, including neutral, no-event, no-action, not-option-applicable, and no-intervention states. Live routing may still gate expensive or optional components, such as invoking M05 only after M04 produces option-expression intent.
+- Training coverage and live invocation are separate. Historical training/evaluation should preserve full-minute state coverage wherever inputs can be constructed, including neutral, no-event, no-action, structural no-option, temporary option-chain-missing, and no-intervention states. Live routing may still gate expensive or optional components, such as invoking M05 only after M04 produces option-expression intent.
 - Labels and outcomes are training/evaluation-only and must never enter inference vectors.
 - Real ticker/company identity remains audit/routing metadata, not a fitting feature.
 - Stable identity surrogates must be tested, not only banned by column name.
@@ -49,7 +49,7 @@ This does not require every model component to be invoked in the same way during
 ```text
 M03: no event -> explicit neutral/no-event event_state_vector
 M04: no action -> explicit no_trade or maintain decision state
-M05: no optionability or missing chain -> explicit not_option_applicable / no_option_expression status, not fabricated option selection
+M05: structural no optionability -> `non_optionable_underlying` with direct-underlying/no-option expression state; temporary missing chain -> `optionable_chain_missing`; neither may become fabricated option selection or zero-valued option signal
 M06: uncertain attribution -> explicit low_confidence / no_intervention / attribution_unknown state
 ```
 

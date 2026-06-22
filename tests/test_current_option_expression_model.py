@@ -99,6 +99,28 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["5_resolved_option_right"], "none")
         self.assertIn("option_expression_policy_blocked", output["5_resolved_reason_codes"])
 
+    def test_non_optionable_underlying_uses_direct_underlying_expression_without_chain(self) -> None:
+        output = generate_rows(
+            [
+                _base_row(
+                    option_expression_policy={
+                        "option_surface_status": "non_optionable_underlying",
+                        "option_expression_allowed": False,
+                        "allow_underlying_only_expression": True,
+                    },
+                    option_contract_candidates=[],
+                )
+            ]
+        )[0]
+
+        self.assertEqual(output["5_resolved_expression_type"], "underlying_only_expression")
+        self.assertEqual(output["5_resolved_option_right"], "none")
+        self.assertEqual(output["5_resolved_option_surface_status"], "non_optionable_underlying")
+        self.assertIsNone(output["5_resolved_selected_contract_ref"])
+        self.assertIn("non_optionable_underlying", output["5_resolved_reason_codes"])
+        self.assertIn("underlying_only_expression_selected", output["5_resolved_reason_codes"])
+        self.assertEqual(output["option_expression_plan"]["diagnostics"]["candidate_count_before_filter"], 0)
+
     def test_labels_are_offline_and_join_by_plan_ref(self) -> None:
         output = generate_rows([_base_row()])[0]
         labels = build_option_expression_labels(

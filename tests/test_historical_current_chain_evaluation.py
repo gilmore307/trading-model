@@ -77,6 +77,7 @@ class HistoricalCurrentChainEvaluationTests(unittest.TestCase):
         self.assertEqual(receipt["unique_routing_symbol_count"], 2)
         self.assertEqual(receipt["preferred_decision_horizon_counts"], {"1W": 2})
         self.assertEqual(receipt["rows_with_option_contract_candidates"], 0)
+        self.assertEqual(receipt["option_surface_status_counts"], {"optionable_chain_missing": 2})
         self.assertEqual(receipt["rows_with_event_observations"], 0)
         self.assertFalse(receipt["activation_allowed"])
         self.assertFalse(receipt["production_promotion_allowed"])
@@ -179,6 +180,25 @@ class HistoricalCurrentChainEvaluationTests(unittest.TestCase):
         self.assertEqual(payload["option_expression_policy"]["max_quote_age_seconds"], 604800)
         self.assertEqual(payload["option_contract_candidates"], [{"contract_ref": "AAPL_CALL", "right": "call"}])
         self.assertEqual(payload["event_observations"], [{"event_id": "evt_aapl", "dedup_status": "new_information"}])
+
+    def test_historical_source_row_marks_structural_no_option_targets(self) -> None:
+        row = _source_row("2017-01-03T10:00:00-05:00", "tcand_btc", "BTC", 100.0, 101.0)
+        row["target_state_features"]["target_option_capability_state"] = {
+            "listed_options_available": False,
+            "option_chain_valid": False,
+            "option_expression_allowed": False,
+            "option_availability_status": "structurally_unavailable",
+        }
+
+        payload = historical_source_row_to_payload(row)
+        rows = build_current_chain_rows(payload, use_fixture_defaults=False)
+        option = rows["model_05_option_expression"][0]
+
+        self.assertFalse(payload["option_expression_policy"]["option_expression_allowed"])
+        self.assertEqual(payload["option_expression_policy"]["option_surface_status"], "non_optionable_underlying")
+        self.assertEqual(option["5_resolved_option_surface_status"], "non_optionable_underlying")
+        self.assertEqual(option["5_resolved_expression_type"], "no_option_expression")
+        self.assertEqual(option["5_resolved_option_right"], "none")
 
     def test_event_overview_rows_are_standardized_before_model_consumption(self) -> None:
         payload = _event_observation_payload(

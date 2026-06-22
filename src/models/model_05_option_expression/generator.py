@@ -204,7 +204,7 @@ def _expression_type(
     if action_type in {"maintain", "no_trade"}:
         return "no_option_expression", "none"
     if option_surface_status in {"non_optionable_underlying", "optionable_chain_missing"}:
-        return "no_option_expression", "none"
+        return _underlying_only_or_no_option(direction, underlying_intent, policy, pending), "none"
     option_allowed = policy.get("option_expression_allowed")
     if option_allowed is None:
         option_allowed = policy.get("allow_option_expression", "true")

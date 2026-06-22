@@ -19,7 +19,7 @@ trading-execution realtime capture
   -> fixture/shadow historical-model generation route
 ```
 
-`model_realtime_decision_route_plan` is a route plan, not a model output. Its execution unit is the accepted execution runtime component (`C01`, `C02`, and so on), not a retired serial route and not a model contract renamed as a component. It validates required runtime-component input refs, records the current M01-M06 model surfaces each component may need, and records the handoff mode. Direct-underlying routes must not require M05 option-expression refs; C04 Expression Review may emit a direct-underlying pass-through or not-option-applicable state.
+`model_realtime_decision_route_plan` is a route plan, not a model output. Its execution unit is the accepted execution runtime component (`C01`, `C02`, and so on), not a retired serial route and not a model contract renamed as a component. It validates required runtime-component input refs, records the current M01-M06 model surfaces each component may need, and records the handoff mode. Direct-underlying routes must not require M05 option-expression refs; C04 Expression Review may emit a direct-underlying pass-through or structural no-option state.
 
 The execution-side `runtime_component_manifest` is the authoritative component
 catalog for this handoff. `trading-model` validates the manifest carried by the
@@ -64,7 +64,7 @@ Historical retired serial route mappings are not current realtime route contract
 
 ## Training Versus Execution
 
-Historical training and evaluation still preserve full-minute state coverage as defined in `docs/23_model_learning_design.md`. Live and replay execution may invoke C-components conditionally. For example, C02 can receive an M04 no-trade or direct-underlying thesis without invoking C04/M05 option review, while the training ledger still records the minute's no-option or not-option-applicable state.
+Historical training and evaluation still preserve full-minute state coverage as defined in `docs/23_model_learning_design.md`. Live and replay execution may invoke C-components conditionally. For example, C02 can receive an M04 no-trade or direct-underlying thesis without invoking C04/M05 option review, while the training ledger still records structural no-option or temporary option-chain-missing state.
 
 ## Non-Authorizations
 

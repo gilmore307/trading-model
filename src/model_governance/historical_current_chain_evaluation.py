@@ -308,7 +308,8 @@ def historical_source_row_to_payload(row: Mapping[str, Any]) -> dict[str, Any]:
 
     option_candidates = list(row.get("option_contract_candidates") or [])
     event_observations = list(row.get("event_observations") or [])
-    optionable = bool(option_candidates)
+    option_surface_status = _option_surface_status(target, quality, symbol, option_candidates)
+    option_expression_allowed = option_surface_status == "optionable_chain_available"
     preferred_horizon = _preferred_decision_horizon(target)
 
     return {
@@ -349,14 +350,37 @@ def historical_source_row_to_payload(row: Mapping[str, Any]) -> dict[str, Any]:
         "risk_budget_state": {"risk_budget_available_score": 0.80},
         "policy_gate_state": {"direct_underlying_action_allowed": True, "preferred_decision_horizon": preferred_horizon},
         "option_expression_policy": {
-            "option_expression_allowed": optionable,
+            "option_expression_allowed": option_expression_allowed,
             "allow_underlying_only_expression": True,
-            "option_surface_status": "optionable_chain_available" if optionable else "optionable_chain_missing",
+            "option_surface_status": option_surface_status,
             "max_quote_age_seconds": 604800,
         },
         "option_contract_candidates": option_candidates,
         "event_observations": event_observations,
     }
+
+
+def _option_surface_status(
+    target_features: Mapping[str, Any],
+    quality: Mapping[str, Any],
+    symbol: str,
+    option_candidates: Sequence[Mapping[str, Any]],
+) -> str:
+    if option_candidates:
+        return "optionable_chain_available"
+    capability = _mapping(target_features.get("target_option_capability_state"))
+    if not capability:
+        capability = _mapping(quality.get("target_option_capability_diagnostics"))
+    status = str(capability.get("option_availability_status") or "").strip().lower()
+    if status == "structurally_unavailable":
+        return "non_optionable_underlying"
+    if status == "available":
+        return "optionable_chain_missing"
+    if str(capability.get("listed_options_available") or "").strip().lower() in {"false", "0", "no"}:
+        return "non_optionable_underlying"
+    if symbol in {"BTC", "ETH", "SOL"}:
+        return "non_optionable_underlying"
+    return "optionable_chain_missing"
 
 
 def run_historical_current_chain_evaluation(
@@ -709,6 +733,7 @@ def _example_from_chain(historical_row: HistoricalInputRow, rows: Mapping[str, l
         "label_payload": label,
         "feature_vector": _baseline_features(by_surface),
         "preferred_decision_horizon": historical_row.payload.get("policy_gate_state", {}).get("preferred_decision_horizon"),
+        "option_surface_status": option["5_resolved_option_surface_status"],
         "option_contract_candidate_count": len(historical_row.payload.get("option_contract_candidates") or []),
         "event_observation_count": len(historical_row.payload.get("event_observations") or []),
         "resolved_outputs": {
@@ -720,6 +745,7 @@ def _example_from_chain(historical_row: HistoricalInputRow, rows: Mapping[str, l
             "event_risk_intervention_ref": residual["event_risk_intervention_ref"],
             "resolved_underlying_action": decision["4_resolved_underlying_action_type"],
             "resolved_option_expression": option["5_resolved_expression_type"],
+            "resolved_option_surface_status": option["5_resolved_option_surface_status"],
             "resolved_event_intervention": residual["6_resolved_intervention_action"],
         },
     }
@@ -831,6 +857,7 @@ def _fold_metrics(
                 "baseline_prediction_mae": round(mae, 8) if mae is not None else None,
                 "resolved_underlying_action_counts": dict(Counter(example["resolved_outputs"]["resolved_underlying_action"] for example in fold_examples)),
                 "resolved_option_expression_counts": dict(Counter(example["resolved_outputs"]["resolved_option_expression"] for example in fold_examples)),
+                "resolved_option_surface_status_counts": dict(Counter(example["resolved_outputs"]["resolved_option_surface_status"] for example in fold_examples)),
                 "resolved_event_intervention_counts": dict(Counter(example["resolved_outputs"]["resolved_event_intervention"] for example in fold_examples)),
             }
         )
@@ -864,6 +891,7 @@ def _input_coverage(examples: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     rows_with_options = sum(1 for example in examples if int(example.get("option_contract_candidate_count") or 0) > 0)
     rows_with_events = sum(1 for example in examples if int(example.get("event_observation_count") or 0) > 0)
     horizon_counts = Counter(str(example.get("preferred_decision_horizon") or "unknown") for example in examples)
+    option_surface_counts = Counter(str(example.get("option_surface_status") or "unknown") for example in examples)
     return {
         "rows_with_option_contract_candidates": rows_with_options,
         "rows_with_event_observations": rows_with_events,
@@ -872,6 +900,7 @@ def _input_coverage(examples: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "option_contract_candidate_coverage_rate": round(rows_with_options / row_count, 6) if row_count else 0.0,
         "event_observation_coverage_rate": round(rows_with_events / row_count, 6) if row_count else 0.0,
         "preferred_decision_horizon_counts": dict(sorted(horizon_counts.items())),
+        "option_surface_status_counts": dict(sorted(option_surface_counts.items())),
     }
 
 

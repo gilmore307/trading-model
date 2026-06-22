@@ -32,7 +32,7 @@ Live invocation is separate. Execution may invoke optional components only when 
 
 ```text
 optionable chain available -> M05 expression candidate row
-not optionable / no chain / crypto route -> M05 no_option_expression or not_option_applicable row
+structural no-listed-options / temporary no chain / crypto route -> M05 `non_optionable_underlying` or `optionable_chain_missing` surface status with direct-underlying/no-option expression row
 ```
 
 The same pattern applies to events and governance:
@@ -63,7 +63,7 @@ Models may use loss masks, class weights, and evaluation buckets so rare positiv
 | `M02 TargetStateModel` | Frozen point-in-time anonymous target pool across sectors, industries, styles, market caps, liquidity tiers, and crypto/context exceptions where accepted. | Targets routed from the reviewed realtime candidate universe and target metadata, with M01 context attached as conditioning evidence rather than candidate-universe membership. |
 | `M03 EventStateModel` | Full-minute background/target state paired with accepted event/strategy-failure evidence when present and explicit neutral/no-event rows when absent. Includes observe-only, entry-block, exposure-cap, disable, and adverse-path examples when point-in-time labels exist. | Current M01/M02 state plus accepted event/strategy-failure evidence or explicit neutral/no-event state for routed candidates. |
 | `M04 UnifiedDecisionModel` | Dense minute-level rows whenever M01-M03 context, quote/liquidity/borrow, costs, replay-safe portfolio/risk context, and exposure state can be constructed. Include trade and no-trade minutes, action alternatives, risk limits, churn, and adverse examples. | Current routed target/event/background stack plus replay-safe portfolio/risk and quote/liquidity context. |
-| `M05 OptionExpressionModel` | Full-minute M04 thesis ledger with option-expression candidate rows when point-in-time option-chain snapshots exist, plus explicit `no_option_expression` / `not_option_applicable` status rows for missing-chain, non-optionable, direct-underlying-only, and crypto routes. | Current M04 decision intent plus current option-chain context only when `optionable_chain_available`; missing-chain, direct-underlying, and crypto/non-optionable routes may bypass heavy M05 invocation while preserving a status. |
+| `M05 OptionExpressionModel` | Full-minute M04 thesis ledger with option-expression candidate rows when point-in-time option-chain snapshots exist, plus explicit surface-status rows for missing-chain, non-optionable, direct-underlying-only, and crypto routes. | Current M04 decision intent plus current option-chain context only when `optionable_chain_available`; missing-chain, direct-underlying, and crypto/non-optionable routes may bypass heavy option-chain work while preserving `optionable_chain_missing` or `non_optionable_underlying` status. |
 | `M06 ResidualEventGovernanceModel` | Full-minute residual-governance rows, including event/no-event, intervention/no-intervention, effective/ineffective, sector-confirmed/sector-divergent, abnormal activity, news, earnings, macro, and price-action/false-breakout cases, joined point-in-time to the M04 direct-underlying decision. Attribution confidence is a state, not an admission prerequisite. | Residual events or neutral residual state attached to the current routed target/context stack and direct-underlying thesis for warning/intervention only; option-expression context is not required. |
 
 ## Target-State Special Rule

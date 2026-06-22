@@ -17,6 +17,8 @@ model_05_option_expression
 
 The model may choose underlying-only, long call, long put, no-option, or unavailable/not-applicable status according to accepted option-expression policy. Broker orders and account mutation remain outside `trading-model`.
 
+For targets with structurally unavailable listed options, such as crypto spot, M05 emits `non_optionable_underlying` as the option surface status and falls back to direct-underlying/no-option expression states. It must not treat structural no-option availability as zero-valued IV, spread, flow, or open-interest evidence.
+
 ## Inputs
 
 - `unified_decision_vector`.
@@ -26,7 +28,7 @@ The model may choose underlying-only, long call, long put, no-option, or unavail
 
 ## Training vs Live Invocation
 
-Historical training/evaluation should preserve full-minute M04 thesis coverage. Minutes with unavailable option chains, non-optionable instruments, direct-underlying-only routes, or crypto routes should emit explicit `no_option_expression` / `not_option_applicable` status evidence instead of fabricated option selections.
+Historical training/evaluation should preserve full-minute M04 thesis coverage. Minutes with temporarily missing option chains, non-optionable instruments, direct-underlying-only routes, or crypto routes should emit explicit option-surface status evidence instead of fabricated option selections. Structural no-option rows are a capability-conditioned action-space state; temporary option-chain-missing rows remain a data/source coverage state.
 
 Live execution may invoke the heavier option-expression component only when M04 produces an option-expression-relevant thesis and option-chain context is available.
 
