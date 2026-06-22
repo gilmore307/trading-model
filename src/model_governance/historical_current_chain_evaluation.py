@@ -24,6 +24,9 @@ ET = ZoneInfo("America/New_York")
 CURRENT_MODEL_HISTORICAL_SCHEMA = "current_model_historical_evaluation_artifact"
 TARGET_STATE_SOURCE_TABLE = "model_03_target_state_vector_data_acquisition"
 TARGET_STATE_FEATURE_TABLE = "model_03_target_state_vector_feature_generation"
+OPTION_CHAIN_SOURCE_TABLE = "option_chain_state_source"
+RESIDUAL_EVENT_SOURCE_TABLE = "model_06_residual_event_governance_data_acquisition"
+RESIDUAL_EVENT_FEATURE_TABLE = "model_06_residual_event_governance_feature_generation"
 HORIZONS = ("10min", "1h", "1D", "1W")
 BASELINE_FEATURE_NAMES = (
     "m01_market_risk_stress_1w",
@@ -148,13 +151,135 @@ def load_historical_rows_from_database(
         """,
         (start_time, end_time, label_horizon_days, per_month_limit, limit),
     )
+    source_rows = [dict(row) for row in cursor.fetchall()]
+    _attach_point_in_time_context(cursor, source_rows, schema_data=schema_data)
     rows = []
-    for row in cursor.fetchall():
-        source = dict(row)
+    for source in source_rows:
         payload = historical_source_row_to_payload(source)
         label = _label_payload(source)
         rows.append(HistoricalInputRow(source_row=source, payload=payload, label_payload=label))
     return rows
+
+
+def _attach_point_in_time_context(cursor: Any, rows: list[dict[str, Any]], *, schema_data: str) -> None:
+    for row in rows:
+        symbol = str(row.get("symbol") or "").upper()
+        tradeable_time = row.get("tradeable_time") or row.get("available_time")
+        if not symbol or tradeable_time is None:
+            row["option_contract_candidates"] = []
+            row["event_observations"] = []
+            continue
+        row["option_contract_candidates"] = _load_option_contract_candidates(cursor, schema_data=schema_data, symbol=symbol, tradeable_time=tradeable_time)
+        row["event_observations"] = _load_event_observations(
+            cursor,
+            schema_data=schema_data,
+            symbol=symbol,
+            sector_type=_sector_type(row),
+            tradeable_time=tradeable_time,
+        )
+
+
+def _load_option_contract_candidates(cursor: Any, *, schema_data: str, symbol: str, tradeable_time: Any) -> list[dict[str, Any]]:
+    cursor.execute(
+        f"""
+        SELECT
+          underlying,
+          snapshot_time,
+          option_symbol,
+          expiration,
+          option_right_type,
+          strike,
+          bid,
+          ask,
+          mid,
+          spread_pct,
+          implied_vol,
+          delta,
+          theta,
+          vega,
+          underlying_price,
+          days_to_expiration,
+          bar_volume,
+          open_interest
+        FROM "{schema_data}"."{OPTION_CHAIN_SOURCE_TABLE}"
+        WHERE underlying = %s
+          AND snapshot_time <= %s::timestamptz
+          AND snapshot_time >= %s::timestamptz - interval '7 days'
+          AND bid > 0
+          AND ask > 0
+          AND days_to_expiration BETWEEN 3 AND 90
+        ORDER BY
+          snapshot_time DESC,
+          CASE
+            WHEN days_to_expiration BETWEEN 3 AND 7 THEN 0
+            WHEN days_to_expiration BETWEEN 7 AND 14 THEN 1
+            WHEN days_to_expiration BETWEEN 21 AND 45 THEN 2
+            ELSE 3
+          END,
+          abs(abs(COALESCE(delta, 0.0)) - 0.50) ASC,
+          COALESCE(spread_pct, 1000000) ASC,
+          option_symbol ASC
+        LIMIT 24
+        """,
+        (symbol, tradeable_time, tradeable_time),
+    )
+    candidates = []
+    decision_time = _parse_time(tradeable_time)
+    for row in cursor.fetchall():
+        payload = dict(row)
+        snapshot_time = _parse_time(payload.get("snapshot_time"))
+        candidates.append(_option_candidate_payload(payload, decision_time=decision_time, snapshot_time=snapshot_time))
+    return candidates
+
+
+def _load_event_observations(cursor: Any, *, schema_data: str, symbol: str, sector_type: str, tradeable_time: Any) -> list[dict[str, Any]]:
+    sector = sector_type.lower()
+    cursor.execute(
+        f"""
+        SELECT
+          da.event_id,
+          da.canonical_event_id,
+          da.dedup_status,
+          da.source_priority,
+          da.coverage_reason,
+          da.covered_by_event_id,
+          da.event_time,
+          da.available_time,
+          da.information_role_type,
+          da.event_category_type,
+          da.scope_type,
+          da.symbol,
+          da.sector_type,
+          da.title,
+          da.summary,
+          da.source_name,
+          da.reference_type,
+          da.reference,
+          fg.feature_payload_json,
+          fg.feature_quality_diagnostics
+        FROM "{schema_data}"."{RESIDUAL_EVENT_SOURCE_TABLE}" da
+        LEFT JOIN "{schema_data}"."{RESIDUAL_EVENT_FEATURE_TABLE}" fg
+          ON fg.event_id = da.event_id
+        WHERE da.available_time <= %s::timestamptz
+          AND da.available_time >= %s::timestamptz - interval '7 days'
+          AND (
+            upper(COALESCE(da.symbol, '')) = %s
+            OR lower(COALESCE(da.sector_type, '')) = %s
+            OR lower(COALESCE(da.scope_type, '')) IN ('market', 'microstructure')
+          )
+        ORDER BY
+          CASE
+            WHEN upper(COALESCE(da.symbol, '')) = %s THEN 0
+            WHEN lower(COALESCE(da.sector_type, '')) = %s THEN 1
+            ELSE 2
+          END,
+          da.available_time DESC,
+          da.event_id ASC
+        LIMIT 8
+        """,
+        (tradeable_time, tradeable_time, symbol, sector, symbol, sector),
+    )
+    return [_event_observation_payload(dict(row)) for row in cursor.fetchall()]
 
 
 def historical_source_row_to_payload(row: Mapping[str, Any]) -> dict[str, Any]:
@@ -180,6 +305,11 @@ def historical_source_row_to_payload(row: Mapping[str, Any]) -> dict[str, Any]:
     if ask <= 0 and bar_close > 0:
         ask = bar_close * 1.0005
     dollar_volume = _float(row.get("dollar_volume"), 0.0)
+
+    option_candidates = list(row.get("option_contract_candidates") or [])
+    event_observations = list(row.get("event_observations") or [])
+    optionable = bool(option_candidates)
+    preferred_horizon = _preferred_decision_horizon(target)
 
     return {
         "background_input": _background_input(available_time, market, market_payload, sector_payload, quality),
@@ -217,14 +347,15 @@ def historical_source_row_to_payload(row: Mapping[str, Any]) -> dict[str, Any]:
         },
         "underlying_borrow_state": {"short_borrow_status": "available"},
         "risk_budget_state": {"risk_budget_available_score": 0.80},
-        "policy_gate_state": {"direct_underlying_action_allowed": True, "preferred_decision_horizon": "1W"},
+        "policy_gate_state": {"direct_underlying_action_allowed": True, "preferred_decision_horizon": preferred_horizon},
         "option_expression_policy": {
-            "option_expression_allowed": False,
+            "option_expression_allowed": optionable,
             "allow_underlying_only_expression": True,
-            "option_surface_status": "optionable_chain_missing",
+            "option_surface_status": "optionable_chain_available" if optionable else "optionable_chain_missing",
+            "max_quote_age_seconds": 604800,
         },
-        "option_contract_candidates": [],
-        "event_observations": [],
+        "option_contract_candidates": option_candidates,
+        "event_observations": event_observations,
     }
 
 
@@ -267,17 +398,19 @@ def run_historical_current_chain_evaluation(
     if len(examples) > 1 and routing_symbol_count < 2:
         blocked_reasons.append("insufficient_routing_symbol_diversity")
     warning_reasons = _warning_reasons(examples)
+    input_coverage = _input_coverage(examples)
 
     receipt = {
         "contract_type": "current_model_historical_evaluation_receipt",
         "schema_version": CURRENT_MODEL_HISTORICAL_SCHEMA,
         "run_id": normalized_run_id,
-        "source_selection_policy": "point_in_time_liquidity_ranked_daily_stratified_sample",
+        "source_selection_policy": "point_in_time_liquidity_ranked_daily_stratified_context_enriched_sample",
         "row_count": len(rows),
         "generated_chain_row_count": len(examples),
         "blocked_source_row_count": len(blocked_rows),
         "unique_target_candidate_count": target_candidate_count,
         "unique_routing_symbol_count": routing_symbol_count,
+        **input_coverage,
         "label_row_count": label_count,
         "label_join_coverage_rate": round(label_count / len(examples), 6) if examples else 0.0,
         "fold_count": len(folds),
@@ -349,6 +482,84 @@ def _target_feature_vector(
     return output
 
 
+def _preferred_decision_horizon(target: Mapping[str, Any]) -> str:
+    multi = _mapping(target.get("multi_frame_state"))
+    for horizon in ("1W", "1D", "1h", "10min"):
+        frame = _mapping(multi.get(horizon))
+        if _safe_float(frame.get("return")) is not None:
+            return horizon
+    return "1W"
+
+
+def _sector_type(row: Mapping[str, Any]) -> str:
+    sector = _mapping(row.get("sector_state_features"))
+    sector_payload = _mapping(sector.get("sector_context_payload"))
+    return str(sector_payload.get("sector_or_industry_symbol") or "unknown").lower()
+
+
+def _option_candidate_payload(row: Mapping[str, Any], *, decision_time: datetime, snapshot_time: datetime) -> dict[str, Any]:
+    right = str(row.get("option_right_type") or "").strip().lower()
+    if right in {"c", "call_option"}:
+        right = "call"
+    elif right in {"p", "put_option"}:
+        right = "put"
+    quote_age = max((decision_time - snapshot_time).total_seconds(), 0.0)
+    mid = _float(row.get("mid"), 0.0)
+    bid = _float(row.get("bid"), 0.0)
+    ask = _float(row.get("ask"), 0.0)
+    if mid <= 0 and bid > 0 and ask > 0:
+        mid = (bid + ask) / 2.0
+    return {
+        "contract_ref": str(row.get("option_symbol") or ""),
+        "symbol": str(row.get("option_symbol") or ""),
+        "quote_snapshot_ref": f"{OPTION_CHAIN_SOURCE_TABLE}:{row.get('underlying')}:{_iso(snapshot_time)}:{row.get('option_symbol')}",
+        "quote_available_time": _iso(snapshot_time),
+        "quote_age_seconds": quote_age,
+        "strike": _float(row.get("strike"), 0.0),
+        "right": right,
+        "expiration": str(row.get("expiration") or ""),
+        "dte": _float(row.get("days_to_expiration"), 0.0),
+        "delta": _float(row.get("delta"), 0.0),
+        "theta": _float(row.get("theta"), 0.0),
+        "vega": _float(row.get("vega"), 0.0),
+        "iv": _float(row.get("implied_vol"), 0.0),
+        "bid_price": bid,
+        "ask_price": ask,
+        "mid_price": mid,
+        "spread_pct": _float(row.get("spread_pct"), 1.0),
+        "volume": _float(row.get("bar_volume"), 0.0),
+        "open_interest": _float(row.get("open_interest"), 0.0),
+        "underlying_reference_price": _float(row.get("underlying_price"), 0.0),
+    }
+
+
+def _event_observation_payload(row: Mapping[str, Any]) -> dict[str, Any]:
+    feature_payload = _mapping(row.get("feature_payload_json"))
+    dedup_status = str(row.get("dedup_status") or feature_payload.get("dedup_status") or "new_information")
+    scope_type = str(row.get("scope_type") or feature_payload.get("scope_type") or "unknown")
+    payload = {
+        "event_id": row.get("event_id"),
+        "canonical_event_id": row.get("canonical_event_id"),
+        "dedup_status": dedup_status,
+        "event_time": _iso(_parse_time(row.get("event_time"))),
+        "available_time": _iso(_parse_time(row.get("available_time"))),
+        "event_category_type": row.get("event_category_type"),
+        "event_native_scope_type": scope_type,
+        "scope_type": scope_type,
+        "symbol": row.get("symbol"),
+        "sector_type": row.get("sector_type"),
+        "title": row.get("title"),
+        "summary": row.get("summary"),
+        "source_name": row.get("source_name"),
+        "reference_type": row.get("reference_type"),
+        "reference": row.get("reference"),
+        "event_context_quality_score": _clip01(0.85 if row.get("canonical_event_id") else 0.65),
+    }
+    if dedup_status == "canonical":
+        payload["dedup_status"] = "new_information"
+    return payload
+
+
 def _label_payload(row: Mapping[str, Any]) -> dict[str, Any]:
     close = _float(row.get("bar_close"), 0.0)
     future_close = _float(row.get("future_close"), 0.0)
@@ -380,6 +591,9 @@ def _example_from_chain(historical_row: HistoricalInputRow, rows: Mapping[str, l
         "fold_key": _month_key(historical_row.payload["background_input"]["available_time"]),
         "label_payload": label,
         "feature_vector": _baseline_features(by_surface),
+        "preferred_decision_horizon": historical_row.payload.get("policy_gate_state", {}).get("preferred_decision_horizon"),
+        "option_contract_candidate_count": len(historical_row.payload.get("option_contract_candidates") or []),
+        "event_observation_count": len(historical_row.payload.get("event_observations") or []),
         "resolved_outputs": {
             "background_context_state_ref": by_surface["model_01_background_context"]["background_context_state_ref"],
             "target_context_state_ref": by_surface["model_02_target_state"]["target_context_state_ref"],
@@ -526,6 +740,22 @@ def _warning_reasons(examples: Sequence[Mapping[str, Any]]) -> list[str]:
     if len(intervention_counts) == 1:
         warnings.append("degenerate_event_intervention_distribution")
     return warnings
+
+
+def _input_coverage(examples: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    row_count = len(examples)
+    rows_with_options = sum(1 for example in examples if int(example.get("option_contract_candidate_count") or 0) > 0)
+    rows_with_events = sum(1 for example in examples if int(example.get("event_observation_count") or 0) > 0)
+    horizon_counts = Counter(str(example.get("preferred_decision_horizon") or "unknown") for example in examples)
+    return {
+        "rows_with_option_contract_candidates": rows_with_options,
+        "rows_with_event_observations": rows_with_events,
+        "option_contract_candidate_row_count": sum(int(example.get("option_contract_candidate_count") or 0) for example in examples),
+        "event_observation_row_count": sum(int(example.get("event_observation_count") or 0) for example in examples),
+        "option_contract_candidate_coverage_rate": round(rows_with_options / row_count, 6) if row_count else 0.0,
+        "event_observation_coverage_rate": round(rows_with_events / row_count, 6) if row_count else 0.0,
+        "preferred_decision_horizon_counts": dict(sorted(horizon_counts.items())),
+    }
 
 
 def _artifact_tables(
@@ -680,6 +910,16 @@ def _float(value: Any, default: float) -> float:
         return default
     if math.isnan(parsed) or math.isinf(parsed):
         return default
+    return parsed
+
+
+def _safe_float(value: Any) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    if math.isnan(parsed) or math.isinf(parsed):
+        return None
     return parsed
 
 

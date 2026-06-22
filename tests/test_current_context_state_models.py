@@ -120,6 +120,41 @@ class TargetStateModelTests(unittest.TestCase):
         self.assertEqual(labels[0]["target_candidate_id"], "anon_target_001")
         self.assertNotIn("future_target_return_1W", output)
 
+    def test_target_returns_are_normalized_to_direction_scores(self) -> None:
+        background = generate_background_context([_background_input()])[0]
+        output = generate_target_state(
+            [
+                _target_input(
+                    background,
+                    anonymous_target_feature_vector={
+                        "target_return_1W": 0.03,
+                        "target_return_10min": -0.01,
+                        "target_liquidity_tradability_score": 0.88,
+                    },
+                )
+            ]
+        )[0]
+
+        self.assertGreater(output["2_target_direction_score_1W"], 0.40)
+        self.assertLess(output["2_target_direction_score_10min"], -0.70)
+
+    def test_explicit_target_direction_score_takes_precedence_over_return(self) -> None:
+        background = generate_background_context([_background_input()])[0]
+        output = generate_target_state(
+            [
+                _target_input(
+                    background,
+                    anonymous_target_feature_vector={
+                        "target_return_1W": -0.20,
+                        "target_direction_score_1W": 0.25,
+                        "target_liquidity_tradability_score": 0.88,
+                    },
+                )
+            ]
+        )[0]
+
+        self.assertAlmostEqual(output["2_target_direction_score_1W"], 0.25)
+
     def test_script_fixture_and_review_defer_local_evidence(self) -> None:
         _assert_script_fixture_and_review(
             generate_script="scripts/models/model_02_target_state/generate_model_02_target_state.py",

@@ -69,11 +69,14 @@ class HistoricalCurrentChainEvaluationTests(unittest.TestCase):
         receipt = artifact["receipt"]
 
         self.assertEqual(receipt["contract_type"], "current_model_historical_evaluation_receipt")
-        self.assertEqual(receipt["source_selection_policy"], "point_in_time_liquidity_ranked_daily_stratified_sample")
+        self.assertEqual(receipt["source_selection_policy"], "point_in_time_liquidity_ranked_daily_stratified_context_enriched_sample")
         self.assertEqual(receipt["fold_count"], 2)
         self.assertEqual(receipt["label_join_coverage_rate"], 1.0)
         self.assertEqual(receipt["unique_target_candidate_count"], 2)
         self.assertEqual(receipt["unique_routing_symbol_count"], 2)
+        self.assertEqual(receipt["preferred_decision_horizon_counts"], {"1W": 2})
+        self.assertEqual(receipt["rows_with_option_contract_candidates"], 0)
+        self.assertEqual(receipt["rows_with_event_observations"], 0)
         self.assertFalse(receipt["activation_allowed"])
         self.assertFalse(receipt["production_promotion_allowed"])
         self.assertIn("degenerate_underlying_action_distribution", receipt["warning_reasons"])
@@ -160,6 +163,21 @@ class HistoricalCurrentChainEvaluationTests(unittest.TestCase):
         self.assertNotIn("model_02_target_state_feature_generation", query)
         self.assertNotIn("model_02_target_state_data_acquisition", query)
         self.assertNotIn("ORDER BY fg.available_time, fg.target_candidate_id", query)
+
+    def test_historical_source_row_preserves_point_in_time_option_and_event_context(self) -> None:
+        row = _source_row("2017-01-03T10:00:00-05:00", "tcand_a", "AAPL", 100.0, 101.0)
+        row["target_state_features"]["multi_frame_state"]["1W"]["return"] = None  # type: ignore[index]
+        row["option_contract_candidates"] = [{"contract_ref": "AAPL_CALL", "right": "call"}]
+        row["event_observations"] = [{"event_id": "evt_aapl", "dedup_status": "new_information"}]
+
+        payload = historical_source_row_to_payload(row)
+
+        self.assertEqual(payload["policy_gate_state"]["preferred_decision_horizon"], "1D")
+        self.assertTrue(payload["option_expression_policy"]["option_expression_allowed"])
+        self.assertEqual(payload["option_expression_policy"]["option_surface_status"], "optionable_chain_available")
+        self.assertEqual(payload["option_expression_policy"]["max_quote_age_seconds"], 604800)
+        self.assertEqual(payload["option_contract_candidates"], [{"contract_ref": "AAPL_CALL", "right": "call"}])
+        self.assertEqual(payload["event_observations"], [{"event_id": "evt_aapl", "dedup_status": "new_information"}])
 
 
 def _source_row(available_time: str, target_candidate_id: str, symbol: str, close: float, future_close: float) -> dict[str, object]:

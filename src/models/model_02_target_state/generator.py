@@ -11,6 +11,12 @@ from zoneinfo import ZoneInfo
 from .contract import FORBIDDEN_MODEL_FACING_FIELDS, HORIZONS, MODEL_ID, MODEL_STEP, MODEL_VERSION
 
 ET = ZoneInfo("America/New_York")
+RETURN_DIRECTION_SCALE = {
+    "10min": 0.010,
+    "1h": 0.015,
+    "1D": 0.030,
+    "1W": 0.060,
+}
 
 
 def generate_rows(input_rows: Iterable[Mapping[str, Any]], *, model_version: str = MODEL_VERSION) -> list[dict[str, Any]]:
@@ -60,7 +66,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
 
 def _horizon_payload(row: Mapping[str, Any], background: Mapping[str, Any], features: Mapping[str, Any], horizon: str) -> dict[str, float]:
     suffix = horizon
-    direction = _signed(features, f"target_return_{suffix}", f"target_direction_score_{suffix}", f"2_target_direction_score_{suffix}", default=_signed(row, f"target_return_{suffix}", "target_direction_score", default=0.0))
+    direction = _direction_signal(row, features, horizon)
     trend_quality = _score(features, f"target_trend_quality_score_{suffix}", "target_trend_quality_score", default=0.55 + 0.35 * abs(direction))
     liquidity = _score(features, "target_liquidity_tradability_score", "liquidity_tradability_score", "liquidity_score", default=0.70)
     volatility = _score(features, f"target_volatility_pressure_score_{suffix}", "target_volatility_pressure_score", "volatility_pressure_score", default=0.25)
@@ -80,6 +86,22 @@ def _horizon_payload(row: Mapping[str, Any], background: Mapping[str, Any], feat
         "context_support_quality_score": support_quality,
         "tradability_score": tradability,
     }
+
+
+def _direction_signal(row: Mapping[str, Any], features: Mapping[str, Any], horizon: str) -> float:
+    suffix = horizon
+    explicit = _first_float(features, f"target_direction_score_{suffix}", f"2_target_direction_score_{suffix}")
+    if explicit is None:
+        explicit = _first_float(row, f"target_direction_score_{suffix}", "target_direction_score")
+    if explicit is not None:
+        return _clip_signed(explicit)
+    raw_return = _first_float(features, f"target_return_{suffix}")
+    if raw_return is None:
+        raw_return = _first_float(row, f"target_return_{suffix}")
+    if raw_return is None:
+        return 0.0
+    scale = RETURN_DIRECTION_SCALE.get(horizon, 0.030)
+    return _clip_signed(math.tanh(raw_return / scale))
 
 
 def _score_payload(horizon_payloads: Mapping[str, Mapping[str, float]]) -> dict[str, float]:
@@ -172,6 +194,14 @@ def _signed(row: Mapping[str, Any], *keys: str, default: float) -> float:
         if value is not None:
             return _clip_signed(value)
     return _clip_signed(default)
+
+
+def _first_float(row: Mapping[str, Any], *keys: str) -> float | None:
+    for key in keys:
+        value = _safe_float(row.get(key))
+        if value is not None:
+            return value
+    return None
 
 
 def _safe_float(value: Any) -> float | None:
