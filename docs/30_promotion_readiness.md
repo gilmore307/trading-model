@@ -40,12 +40,12 @@ Promotion reviews should distinguish:
 
 | Model | Output | Current production status | Blocking gap |
 |---|---|---|---|
-| `M01 BackgroundContextModel` | `background_context_state` | deferred: deterministic pilot only | real background-context dataset assembly, labels, baseline, stability, leakage, and calibration evidence missing |
-| `M02 TargetStateModel` | `target_context_state` | deferred: deterministic pilot only | real target-state dataset assembly, upstream M01 evidence, labels, baseline, stability, leakage, and calibration evidence missing |
-| `M03 EventStateModel` | `event_state_vector` | deferred: deterministic pilot only | real event-state dataset assembly, accepted event-family inputs, labels, baseline, stability, leakage, and calibration evidence missing |
-| `M04 UnifiedDecisionModel` | `unified_decision_vector` | deferred: deterministic pilot only | unified decision training/evaluation run, direct utility labels, and replay evidence missing |
-| `M05 OptionExpressionModel` | `option_expression_plan` / `expression_vector` | deferred: deterministic pilot only | option-chain replay labels, cost/fill/theta/IV validation, and baseline evidence missing |
-| `M06 ResidualEventGovernanceModel` | `event_risk_intervention` / packet eligibility | deferred: deterministic pilot only | residual event-governance evaluation run, overblock/accounting metrics, and calibrated residual-risk labels missing |
+| `M01 BackgroundContextModel` | `background_context_state` | deferred: deterministic pilot plus current-chain historical replay support | model-specific broad-sample labels, baselines, stability, leakage, and calibration evidence missing |
+| `M02 TargetStateModel` | `target_context_state` | deferred: deterministic pilot plus current-chain historical replay support | model-specific target-state labels, baselines, stability, leakage, and calibration evidence missing |
+| `M03 EventStateModel` | `event_state_vector` | deferred: deterministic pilot plus current-chain historical replay support | accepted event-family labels, baselines, stability, leakage, and calibration evidence missing |
+| `M04 UnifiedDecisionModel` | `unified_decision_vector` | deferred: deterministic pilot plus non-degenerate current-chain replay behavior | direct utility labels, broader walk-forward replay, no-trade calibration, cost/fill sensitivity, leakage checks, and promotion metrics missing |
+| `M05 OptionExpressionModel` | `option_expression_plan` / `expression_vector` | deferred: deterministic pilot plus point-in-time option-expression replay behavior | option-expression labels, cost/fill/theta/IV validation, baseline comparison, leakage checks, and calibration evidence missing |
+| `M06 ResidualEventGovernanceModel` | `event_risk_intervention` / packet eligibility | deferred: deterministic pilot plus standardized-event replay behavior | residual-event labels, overblock/accounting metrics, calibration, leakage checks, and stability evidence missing |
 
 No model in this matrix is currently production-approved by this document.
 
@@ -79,4 +79,6 @@ Promotion readiness evidence targets the six current model contracts directly.
 
 `src/model_governance/promotion/readiness.py` owns the lightweight reusable validation helper for this checklist. It verifies required evidence fields and gate results; it does not approve models by itself.
 
-`scripts/models/run_current_model_historical_evaluation.py` is the first historical evidence runner for the current six-model chain. It can produce `current_model_historical_evaluation_receipt`, governance table-shaped evidence rows, and a local current-chain utility baseline artifact from bounded point-in-time historical rows. This runner is evidence production only; passing it does not satisfy the full per-model promotion package or authorize activation.
+`scripts/models/run_current_model_historical_evaluation.py` is the historical replay/training evidence runner for the current six-model chain. It can produce `current_model_historical_evaluation_receipt`, governance table-shaped evidence rows, input-coverage diagnostics, non-degenerate M04/M05/M06 distribution evidence, and a local current-chain utility baseline artifact from bounded point-in-time historical rows. This runner is evidence production only; passing it does not satisfy the full per-model promotion package or authorize activation.
+
+Latest existing-data replay evidence: `current_chain_retrain_replay_20260622T0903_et` produced 750 current-chain rows over 2021Q1, trained the local utility baseline, joined mature labels for every row, covered 19 unique routing symbols, and returned `evaluation_status = passed` with `warning_reasons = []`. Activation and production promotion remained disallowed. The artifact is stored at `/root/projects/trading-storage/storage/03_model_artifacts/current_chain_retrain_replay_20260622T0903_et/current_model_historical_evaluation.json`.
