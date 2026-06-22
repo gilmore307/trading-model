@@ -80,6 +80,39 @@ class ResidualEventGovernanceModelTests(unittest.TestCase):
         self.assertEqual(output["6_resolved_intervention_action"], "no_intervention")
         self.assertIn("no_visible_point_in_time_event", output["6_resolved_reason_codes"])
 
+    def test_consumes_standardized_event_interpretation_payload(self) -> None:
+        row = _base_row(
+            event_observations=[
+                {
+                    "event_id": "evt_option_activity",
+                    "dedup_status": "new_information",
+                    "event_time": "2026-05-07T10:20:00-04:00",
+                    "available_time": "2026-05-07T10:21:00-04:00",
+                    "event_category_type": "symbol_news",
+                    "scope_type": "symbol",
+                    "symbol": "AAPL",
+                    "event_interpretation": {
+                        "schema_version": "event_interpretation_v1",
+                        "normalized_event_type": "option_derivatives_abnormality",
+                        "affected_scope": {"primary_scope": "microstructure", "symbol": "AAPL"},
+                        "direction_bias_score": 0.0,
+                        "intensity_score": 0.65,
+                        "uncertainty_score": 0.45,
+                        "option_impact_score": 0.75,
+                        "impact_channels": {"option_price": 0.75, "volatility_surface": 0.65},
+                    },
+                }
+            ]
+        )
+
+        output = generate_rows([row])[0]
+
+        self.assertIn(output["6_resolved_intervention_action"], {"warn", "cap_new_exposure", "reduce_or_flatten_review"})
+        self.assertIn("option_expression_sensitive_event", output["6_resolved_reason_codes"])
+        self.assertGreaterEqual(output["6_event_option_impact_score_1W"], 0.70)
+        encoded = output["residual_event_governance_diagnostics"]["encoded_events"][0]
+        self.assertEqual(encoded["normalized_event_type"], "option_derivatives_abnormality")
+
     def test_labels_are_offline_and_join_by_intervention_ref(self) -> None:
         output = generate_rows([_base_row()])[0]
         labels = build_residual_event_governance_labels(

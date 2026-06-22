@@ -186,18 +186,20 @@ def _visible_events(row: Mapping[str, Any], decision_time: datetime) -> list[Map
 
 
 def _encode_event(event: Mapping[str, Any], decision_time: datetime, row: Mapping[str, Any]) -> dict[str, Any]:
+    interpretation = _interpretation_payload(event)
     event_time = _parse_time(event.get("event_time") or event.get("event_actual_time") or event.get("available_time"))
     age_minutes = (decision_time - event_time).total_seconds() / 60.0
     dedup_status = str(event.get("dedup_status") or "new_information").lower()
     dedup_weight = 0.25 if dedup_status in {"covered_by_canonical_event", "duplicate", "covered"} else 1.0
-    intensity = _score(event, "event_intensity_score", "intensity_score", "surprise_abs_score", default=0.35) * dedup_weight
-    direction_bias = _signed(event, "direction_bias_score", "event_direction_bias_score", "surprise_score", default=0.0)
-    uncertainty = _score(event, "uncertainty_score", "revision_risk_score", default=0.25)
-    native_scope = str(event.get("event_native_scope_type") or event.get("scope_type") or _scope_from_event(event)).lower()
+    event_for_scoring = _event_for_scoring(event, interpretation)
+    intensity = _score(interpretation, "intensity_score", default=_score(event, "event_intensity_score", "intensity_score", "surprise_abs_score", default=0.35)) * dedup_weight
+    direction_bias = _signed(interpretation, "direction_bias_score", default=_signed(event, "direction_bias_score", "event_direction_bias_score", "surprise_score", default=0.0))
+    uncertainty = _score(interpretation, "uncertainty_score", default=_score(event, "uncertainty_score", "revision_risk_score", default=0.25))
+    native_scope = str(_scope_from_interpretation(interpretation) or event.get("event_native_scope_type") or event.get("scope_type") or _scope_from_event(event_for_scoring)).lower()
     relevance = _score(event, "target_relevance_score", "event_target_relevance_score", default=_target_relevance(event, row, native_scope))
-    impact_scores = _impact_scores(event, native_scope, relevance, intensity, direction_bias)
-    underlying_impact = _signed(event, "underlying_impact_score", "underlying_price_impact_score", default=impact_scores["symbol"] or direction_bias * relevance)
-    option_impact = _score(event, "option_impact_score", "option_price_impact_score", default=_option_impact(event, native_scope, intensity, uncertainty))
+    impact_scores = _impact_scores(event_for_scoring, native_scope, relevance, intensity, direction_bias)
+    underlying_impact = _signed(interpretation, "underlying_impact_score", default=_signed(event, "underlying_impact_score", "underlying_price_impact_score", default=impact_scores["symbol"] or direction_bias * relevance))
+    option_impact = _score(interpretation, "option_impact_score", default=_score(event, "option_impact_score", "option_price_impact_score", default=_option_impact(event_for_scoring, native_scope, intensity, uncertainty)))
     gap_risk = _score(event, "gap_risk_score", default=intensity * (0.8 if abs(age_minutes) <= 60 else 0.35))
     reversal_risk = _score(event, "reversal_risk_score", default=uncertainty * max(intensity, 0.25))
     liquidity_risk = _score(event, "liquidity_disruption_score", default=intensity * (1.0 if native_scope in {"microstructure", "option_abnormal_activity", "price_action"} else 0.35))
@@ -209,6 +211,8 @@ def _encode_event(event: Mapping[str, Any], decision_time: datetime, row: Mappin
     return {
         "event_id": event.get("event_id"),
         "canonical_event_id": event.get("canonical_event_id"),
+        "event_interpretation_ref": interpretation.get("source_artifact_ref") or interpretation.get("interpretation_ref"),
+        "normalized_event_type": interpretation.get("normalized_event_type"),
         "dedup_status": dedup_status,
         "dedup_weight": round(dedup_weight, 4),
         "event_time": _iso(event_time),
@@ -229,8 +233,43 @@ def _encode_event(event: Mapping[str, Any], decision_time: datetime, row: Mappin
         "impact_scores": impact_scores,
         "underlying_impact_score": underlying_impact,
         "option_impact_score": option_impact,
-        "option_impact_mechanisms": _option_impact_mechanisms(event, option_impact),
+        "option_impact_mechanisms": _option_impact_mechanisms(event_for_scoring, option_impact),
     }
+
+
+def _interpretation_payload(event: Mapping[str, Any]) -> Mapping[str, Any]:
+    for key in ("event_interpretation", "event_interpretation_v1", "standardized_event_interpretation"):
+        value = event.get(key)
+        if isinstance(value, Mapping):
+            return value
+    return {}
+
+
+def _event_for_scoring(event: Mapping[str, Any], interpretation: Mapping[str, Any]) -> dict[str, Any]:
+    output = dict(event)
+    normalized_type = interpretation.get("normalized_event_type")
+    if normalized_type:
+        output["event_category_type"] = normalized_type
+        output["event_family"] = normalized_type
+    channels = interpretation.get("impact_channels")
+    if isinstance(channels, Mapping):
+        output["impact_channels"] = channels
+    mechanisms = interpretation.get("option_impact_mechanisms")
+    if mechanisms:
+        output["option_impact_mechanisms"] = mechanisms
+    return output
+
+
+def _scope_from_interpretation(interpretation: Mapping[str, Any]) -> str:
+    scope = interpretation.get("affected_scope")
+    if isinstance(scope, str):
+        return scope
+    if isinstance(scope, Mapping):
+        for key in ("primary_scope", "scope_type", "event_native_scope_type"):
+            value = scope.get(key)
+            if value:
+                return str(value)
+    return ""
 
 
 def _parse_time(value: Any) -> datetime:

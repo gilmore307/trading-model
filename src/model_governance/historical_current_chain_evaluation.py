@@ -537,6 +537,7 @@ def _event_observation_payload(row: Mapping[str, Any]) -> dict[str, Any]:
     feature_payload = _mapping(row.get("feature_payload_json"))
     dedup_status = str(row.get("dedup_status") or feature_payload.get("dedup_status") or "new_information")
     scope_type = str(row.get("scope_type") or feature_payload.get("scope_type") or "unknown")
+    interpretation = _event_interpretation_payload(row, feature_payload=feature_payload, dedup_status=dedup_status, scope_type=scope_type)
     payload = {
         "event_id": row.get("event_id"),
         "canonical_event_id": row.get("canonical_event_id"),
@@ -554,10 +555,126 @@ def _event_observation_payload(row: Mapping[str, Any]) -> dict[str, Any]:
         "reference_type": row.get("reference_type"),
         "reference": row.get("reference"),
         "event_context_quality_score": _clip01(0.85 if row.get("canonical_event_id") else 0.65),
+        "event_interpretation": interpretation,
     }
     if dedup_status == "canonical":
         payload["dedup_status"] = "new_information"
     return payload
+
+
+def _event_interpretation_payload(
+    row: Mapping[str, Any],
+    *,
+    feature_payload: Mapping[str, Any],
+    dedup_status: str,
+    scope_type: str,
+) -> dict[str, Any]:
+    title = str(row.get("title") or "")
+    summary = str(row.get("summary") or "")
+    text = f"{title} {summary}".lower()
+    category = str(row.get("event_category_type") or feature_payload.get("event_category_type") or "unclassified_event")
+    source_priority = str(row.get("source_priority") or feature_payload.get("source_priority") or "")
+    normalized_type = category
+    domain_tags = [category]
+    intensity = 0.35
+    uncertainty = 0.35
+    direction = 0.0
+    novelty = 0.35
+    option_impact = 0.0
+    impact_channels: dict[str, float] = {}
+    mechanisms: list[str] = []
+    primary_scope = scope_type
+
+    if "earnings" in category or "guidance" in category:
+        normalized_type = "earnings_guidance"
+        domain_tags = ["earnings_guidance", "official_disclosure"]
+        intensity = 0.70 if source_priority == "official_disclosure" else 0.55
+        uncertainty = 0.30
+        novelty = 0.70
+    elif _is_option_activity_text(text):
+        normalized_type = "option_derivatives_abnormality"
+        domain_tags = ["option_derivatives_abnormality", "market_structure", "abnormal_activity"]
+        intensity = 0.65
+        uncertainty = 0.45
+        novelty = 0.60
+        option_impact = 0.75
+        impact_channels = {"option_price": 0.75, "volatility_surface": 0.65, "option_liquidity_spread": 0.50}
+        mechanisms = ["option_price", "volatility_surface"]
+        primary_scope = "microstructure"
+    elif scope_type == "sector":
+        normalized_type = "sector_news"
+        domain_tags = ["sector_news"]
+        intensity = 0.40
+        uncertainty = 0.40
+
+    if any(token in text for token in ("downgrade", "cut price target", "lawsuit", "investigation", "recall", "bankruptcy")):
+        direction = -0.35
+        intensity = max(intensity, 0.55)
+        novelty = max(novelty, 0.55)
+    elif any(token in text for token in ("upgrade", "raise price target", "raises price target", "approval", "beats", "partnership")):
+        direction = 0.35
+        intensity = max(intensity, 0.50)
+        novelty = max(novelty, 0.50)
+
+    published_time = _iso(_parse_time(row.get("event_time") or row.get("available_time")))
+    available_time = _iso(_parse_time(row.get("available_time")))
+    source_ref = str(row.get("reference") or row.get("event_id") or "")
+    source_hash = _stable_id("event_source_hash", row.get("event_id"), title, summary, source_ref)
+    evidence_text = title or summary or category
+    return {
+        "schema_version": "event_interpretation_v1",
+        "policy_version": "historical_current_chain_event_interpretation_policy",
+        "source_artifact_ref": source_ref,
+        "source_artifact_hash": source_hash,
+        "source_name": row.get("source_name"),
+        "source_type": row.get("reference_type") or "event_overview_row",
+        "published_time": published_time,
+        "available_time": available_time,
+        "interpreted_at": available_time,
+        "interpreter_agent_id": "historical_current_chain_evaluation",
+        "interpreter_model_id": "deterministic_event_overview_interpreter",
+        "prompt_policy_hash": _stable_id("prompt_policy_hash", "historical_current_chain_event_interpretation_policy"),
+        "normalized_event_type": normalized_type,
+        "event_domain_tags": sorted(set(domain_tags)),
+        "affected_scope": {
+            "primary_scope": primary_scope,
+            "scope_type": scope_type,
+            "symbol": row.get("symbol"),
+            "sector_type": row.get("sector_type"),
+        },
+        "affected_entities": [value for value in (row.get("symbol"), row.get("sector_type")) if value],
+        "direction_bias_score": round(direction, 6),
+        "intensity_score": round(_clip01(intensity), 6),
+        "uncertainty_score": round(_clip01(uncertainty), 6),
+        "novelty_score": round(_clip01(novelty), 6),
+        "source_quality_score": 0.85 if source_priority == "official_disclosure" else 0.70,
+        "evidence_confidence_score": 0.75 if evidence_text else 0.45,
+        "canonical_relation": {
+            "relation_type": "new_information" if dedup_status in {"canonical", "new_information"} else dedup_status,
+            "canonical_event_id": row.get("canonical_event_id"),
+            "covered_by_event_id": row.get("covered_by_event_id"),
+        },
+        "rationale_summary": _event_interpretation_rationale(normalized_type),
+        "evidence_spans": [{"field": "title", "text": title[:240]}] if title else [{"field": "summary", "text": summary[:240]}],
+        "review_status": "review_required" if normalized_type in {"earnings_guidance"} else "auto_standardized",
+        "standardization_status": "accepted_standard",
+        "option_impact_score": round(option_impact, 6),
+        "impact_channels": impact_channels,
+        "option_impact_mechanisms": mechanisms,
+    }
+
+
+def _is_option_activity_text(text: str) -> bool:
+    option_terms = ("unusual option", "unusual options", "options alert", "option activity", "options activity")
+    return any(term in text for term in option_terms)
+
+
+def _event_interpretation_rationale(normalized_type: str) -> str:
+    if normalized_type == "option_derivatives_abnormality":
+        return "Source overview describes unusual option activity; standardized as option-sensitive event risk without directional alpha."
+    if normalized_type == "earnings_guidance":
+        return "Official earnings or guidance overview row; direction remains conservative without reviewed result interpretation."
+    return "Source overview row preserved as low-intensity event context without alpha interpretation."
 
 
 def _label_payload(row: Mapping[str, Any]) -> dict[str, Any]:

@@ -11,6 +11,7 @@ from model_governance.historical_current_chain_evaluation import (
     HistoricalInputRow,
     TARGET_STATE_FEATURE_TABLE,
     TARGET_STATE_SOURCE_TABLE,
+    _event_observation_payload,
     historical_source_row_to_payload,
     load_historical_rows_from_database,
     run_historical_current_chain_evaluation,
@@ -178,6 +179,35 @@ class HistoricalCurrentChainEvaluationTests(unittest.TestCase):
         self.assertEqual(payload["option_expression_policy"]["max_quote_age_seconds"], 604800)
         self.assertEqual(payload["option_contract_candidates"], [{"contract_ref": "AAPL_CALL", "right": "call"}])
         self.assertEqual(payload["event_observations"], [{"event_id": "evt_aapl", "dedup_status": "new_information"}])
+
+    def test_event_overview_rows_are_standardized_before_model_consumption(self) -> None:
+        payload = _event_observation_payload(
+            {
+                "event_id": "evt_option_activity",
+                "canonical_event_id": "evt_option_activity",
+                "dedup_status": "canonical",
+                "event_time": "2021-01-04T12:38:03-05:00",
+                "available_time": "2021-01-04T12:38:03-05:00",
+                "event_category_type": "symbol_news",
+                "scope_type": "symbol",
+                "symbol": "AAPL",
+                "title": "10 Information Technology Stocks With Unusual Options Alerts In Today's Session",
+                "summary": "This unusual options alert can help traders track potentially big trading opportunities.",
+                "source_name": "Benzinga",
+                "source_priority": "verified_news",
+                "reference_type": "web_url",
+                "reference": "https://example.test/news",
+                "feature_payload_json": {"event_category_type": "symbol_news", "scope_type": "symbol"},
+            }
+        )
+
+        interpretation = payload["event_interpretation"]
+        self.assertEqual(payload["dedup_status"], "new_information")
+        self.assertEqual(interpretation["schema_version"], "event_interpretation_v1")
+        self.assertEqual(interpretation["normalized_event_type"], "option_derivatives_abnormality")
+        self.assertEqual(interpretation["affected_scope"]["primary_scope"], "microstructure")
+        self.assertGreaterEqual(interpretation["option_impact_score"], 0.70)
+        self.assertIn("option_price", interpretation["impact_channels"])
 
 
 def _source_row(available_time: str, target_candidate_id: str, symbol: str, close: float, future_close: float) -> dict[str, object]:
