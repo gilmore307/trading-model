@@ -105,7 +105,7 @@ Portfolio replay and execution distinguish two replacement cases:
 - If an existing position is no longer suitable, lifecycle exits or reduces it first; released capital may then enter the normal ranked candidate path.
 - If an existing position remains suitable but a new candidate is better, replacement is allowed only when the new candidate exceeds the worst held position by an explicit switch threshold after costs and feasibility checks.
 
-Default operation has no fixed top-N position-count cap. Position replacement is therefore a deliberate policy action, not continuous optimization churn.
+Default operation has an explicit finite portfolio-capacity cap. The current equity/options default is five simultaneous risk slots, derived from the `0.20` default target-allocation fraction. Position replacement is therefore a deliberate policy action after capacity is full, not continuous optimization churn; research runs may use an explicit wider or unbounded override, but those runs are a different portfolio policy and are not promotion-compatible by default.
 
 ## D007 - Production promotion remains evidence-gated
 
