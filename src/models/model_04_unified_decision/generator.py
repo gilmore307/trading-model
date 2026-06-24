@@ -558,13 +558,9 @@ def _target_allocation_fraction(
         "maximum_target_allocation_fraction",
         default=0.20,
     )
-    return _clip01(
-        policy_fraction
-        * risk_budget
-        * permission
-        * (0.50 + 0.50 * action_confidence)
-        * (1.0 - 0.50 * no_trade_probability)
-    )
+    if permission <= 0.0:
+        return 0.0
+    return _clip01(policy_fraction)
 
 
 def _entry_style(action_type: str, dominant: Mapping[str, Any]) -> str:
