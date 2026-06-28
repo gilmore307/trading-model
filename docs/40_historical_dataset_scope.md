@@ -55,6 +55,14 @@ Models may use loss masks, class weights, and evaluation buckets so rare positiv
 6. Candidate thresholds, action triggers, and downstream execution routes are calibration/routing policies after scoring; they must not become default training-row admission filters.
 7. Promotion evidence should report both broad historical generalization and live-route simulation performance when a model's live candidate set is narrower than its training sample universe.
 
+Training rows must also satisfy the manager-owned
+`train_replay_realtime_input_parity` contract. A training input may come from
+historical artifacts and may sample more broadly than live routing, but its
+semantic family, source identity, feature/vector definition, point-in-time clock
+rule, fallback state, and governance status must be the same contract that replay
+and realtime resolve later. Training-only convenience fields must not become
+implicit live model inputs.
+
 ## Dataset-Scope Matrix
 
 | Model | Historical training sampling universe | Live inference routing universe |
