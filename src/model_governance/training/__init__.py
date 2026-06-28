@@ -12,7 +12,7 @@ from .cumulative_model_scheme_validation import (
     EXPERIMENT_SCHEMA_VERSION,
     VALIDATED_MODEL_IMPLEMENTATION_ID,
     VALIDATED_MODEL_SCHEME_ID,
-    LAYER_SELECTION_MATRIX,
+    LAYER_ACTIVE_SCHEME_MATRIX,
     build_cumulative_model_scheme_validation_receipt,
 )
 
@@ -21,7 +21,7 @@ __all__ = [
     "EXPERIMENT_SCHEMA_VERSION",
     "VALIDATED_MODEL_IMPLEMENTATION_ID",
     "VALIDATED_MODEL_SCHEME_ID",
-    "LAYER_SELECTION_MATRIX",
+    "LAYER_ACTIVE_SCHEME_MATRIX",
     "build_cumulative_model_scheme_validation_receipt",
     "chronological_month_splits",
     "predict_mlp",

@@ -4,6 +4,7 @@ import unittest
 
 from model_governance.training import (
     EXPERIMENT_CONTRACT_TYPE,
+    LAYER_ACTIVE_SCHEME_MATRIX,
     VALIDATED_MODEL_SCHEME_ID,
     build_cumulative_model_scheme_validation_receipt,
     chronological_month_splits,
@@ -84,6 +85,21 @@ class ContinualResidualMlpTests(unittest.TestCase):
         self.assertTrue(receipt["experiment_scope"]["scheme_validation_completed"])
         self.assertEqual(receipt["row_counts"]["unique_symbols"], 3)
         self.assertEqual(receipt["experiment_scope"]["validated_model_scheme"], VALIDATED_MODEL_SCHEME_ID)
+        self.assertEqual(
+            [row["active_scheme"] for row in receipt["layer_active_scheme_matrix"]],
+            [row["active_scheme"] for row in LAYER_ACTIVE_SCHEME_MATRIX],
+        )
+        self.assertEqual(
+            [row["active_scheme"] for row in LAYER_ACTIVE_SCHEME_MATRIX],
+            [
+                "continual_residual_mlp_context_classifier",
+                "continual_residual_mlp_target_ranker",
+                "continual_residual_mlp_event_risk_scorer",
+                "continual_residual_mlp_policy_value",
+                "continual_residual_mlp_option_chain_ranker",
+                "continual_residual_mlp_risk_gate",
+            ],
+        )
         self.assertIn(VALIDATED_MODEL_SCHEME_ID, receipt["scheme_verdict"])
         self.assertEqual(tuple(receipt["scheme_verdict"]), (VALIDATED_MODEL_SCHEME_ID,))
         self.assertTrue(receipt["checkpoint_restore_checks"][VALIDATED_MODEL_SCHEME_ID]["passed"])

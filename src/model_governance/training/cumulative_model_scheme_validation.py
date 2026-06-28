@@ -25,41 +25,41 @@ VALIDATED_MODEL_SCHEME_ID = "continual_residual_mlp"
 VALIDATED_MODEL_IMPLEMENTATION_ID = "one_hidden_layer_mlp_sgd"
 
 
-LAYER_SELECTION_MATRIX: tuple[dict[str, str], ...] = (
+LAYER_ACTIVE_SCHEME_MATRIX: tuple[dict[str, str], ...] = (
     {
         "layer": "M01 BackgroundContextModel",
-        "selection_boundary": "market, sector, liquidity, volatility, and regime state",
-        "active_scheme_rule": "select one cumulative/replayable context-state scheme from M01 evidence",
+        "active_scheme": "continual_residual_mlp_context_classifier",
+        "structure": "hashed-feature residual MLP classifier/embedding model over point-in-time market, sector, liquidity, volatility, macro, and cross-asset state",
         "deciding_metrics": "calibration; regime-transition accuracy; volatility/liquidity error; downstream lift",
     },
     {
         "layer": "M02 TargetStateModel",
-        "selection_boundary": "anonymous target-state ranking, eligibility, and utility",
-        "active_scheme_rule": "select one cumulative/replayable target-state scheme from M02 evidence",
+        "active_scheme": "continual_residual_mlp_target_ranker",
+        "structure": "pairwise/listwise residual MLP ranker over anonymous target-state vectors",
         "deciding_metrics": "rank IC/NDCG; calibrated eligibility; identity-leakage probe; target-selection utility",
     },
     {
         "layer": "M03 EventStateModel",
-        "selection_boundary": "structured event response and risk",
-        "active_scheme_rule": "select one cumulative/replayable event-state scheme from M03 evidence",
+        "active_scheme": "continual_residual_mlp_event_risk_scorer",
+        "structure": "multi-head residual MLP event-risk scorer over reviewed structured event features",
         "deciding_metrics": "event calibration; response/risk loss; tail-risk recall; no same-fold M06 leakage",
     },
     {
         "layer": "M04 UnifiedDecisionModel",
-        "selection_boundary": "cost-aware utility, action, no-trade, exposure, and policy scoring",
-        "active_scheme_rule": "select one cumulative/replayable decision-policy scheme from M04 evidence",
+        "active_scheme": "continual_residual_mlp_policy_value",
+        "structure": "conservative supervised/off-policy residual MLP policy-value model over chain state, costs, risk, exposure, and portfolio context",
         "deciding_metrics": "after-cost utility; no-trade calibration; downside risk; turnover; chain PnL/risk",
     },
     {
         "layer": "M05 OptionExpressionModel",
-        "selection_boundary": "option-vs-underlying expression and option candidate ranking",
-        "active_scheme_rule": "select one cumulative/replayable option-expression scheme from M05 evidence",
+        "active_scheme": "continual_residual_mlp_option_chain_ranker",
+        "structure": "residual MLP option-chain ranker over option-relative features, Greeks, liquidity, spread, surface, horizon, and expression state",
         "deciding_metrics": "option after-cost utility; fill realism; top-k ranking; no-option calibration",
     },
     {
         "layer": "M06 ResidualEventGovernanceModel",
-        "selection_boundary": "residual event risk, intervention, and overblock cost",
-        "active_scheme_rule": "select one cumulative/replayable residual-governance scheme from M06 evidence plus deterministic guardrails",
+        "active_scheme": "continual_residual_mlp_risk_gate",
+        "structure": "calibrated residual MLP risk-gate/intervention scorer with abstain, block, size-down, and allow outputs plus deterministic hard guardrails",
         "deciding_metrics": "missed-event loss; overblock cost; attribution precision/recall; packet quality",
     },
 )
@@ -193,7 +193,7 @@ def build_cumulative_model_scheme_validation_receipt(
                 for split in splits
             ],
         },
-        "layer_selection_matrix": list(LAYER_SELECTION_MATRIX),
+        "layer_active_scheme_matrix": list(LAYER_ACTIVE_SCHEME_MATRIX),
         "selected_model": {
             model_id: _model_summary(artifacts[model_id])
             for model_id in artifacts
@@ -206,7 +206,7 @@ def build_cumulative_model_scheme_validation_receipt(
         "selection_rule": {
             "validated_scheme": VALIDATED_MODEL_SCHEME_ID,
             "per_layer_single_active_policy": "one_active_model_scheme_per_layer_no_parallel_runtime_challengers",
-            "implementation_note": "This receipt validates one cumulative MLP scheme; it is not a global mandate for every layer.",
+            "implementation_note": "This receipt validates the cumulative residual MLP family; each layer uses the active scheme listed in layer_active_scheme_matrix.",
             "promotion_requires": [
                 "layer_specific_objective_lift",
                 "full_chain_replay_neutral_or_positive",
@@ -256,7 +256,7 @@ def _blocked_receipt(
             "train_months": train_months,
             "validation_months": validation_months,
         },
-        "layer_selection_matrix": list(LAYER_SELECTION_MATRIX),
+        "layer_active_scheme_matrix": list(LAYER_ACTIVE_SCHEME_MATRIX),
         "scheme_verdict": {},
         "blocked_reasons": list(blocked_reasons),
         "safety": {
@@ -431,6 +431,6 @@ __all__ = [
     "EXPERIMENT_SCHEMA_VERSION",
     "VALIDATED_MODEL_IMPLEMENTATION_ID",
     "VALIDATED_MODEL_SCHEME_ID",
-    "LAYER_SELECTION_MATRIX",
+    "LAYER_ACTIVE_SCHEME_MATRIX",
     "build_cumulative_model_scheme_validation_receipt",
 ]
