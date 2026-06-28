@@ -3,6 +3,8 @@ from __future__ import annotations
 import unittest
 
 from model_governance.training import (
+    EXPERIMENT_CONTRACT_TYPE,
+    build_cumulative_backend_experiment_receipt,
     chronological_month_splits,
     predict_mlp,
     predict_online_linear,
@@ -56,7 +58,71 @@ class ContinualCandidateModelTests(unittest.TestCase):
         self.assertEqual(metrics["mae"], 0.1)
         self.assertEqual(metrics["directional_accuracy_vs_neutral"], 1.0)
 
+    def test_cumulative_backend_experiment_receipt_proves_first_wave_contract(self) -> None:
+        examples = []
+        months = ("2016-01", "2016-02", "2016-03", "2016-04")
+        symbols = ("AAPL", "MSFT", "NVDA")
+        for month_index, month in enumerate(months):
+            for symbol_index, symbol in enumerate(symbols):
+                examples.append(
+                    {
+                        "routing_symbol": symbol,
+                        "fold_key": month,
+                        "feature_vector": [
+                            0.1 * month_index,
+                            0.2 * symbol_index,
+                            0.05 * (month_index + symbol_index),
+                        ],
+                        "label_payload": {"utility_score_1W": 0.35 + 0.05 * month_index + 0.02 * symbol_index},
+                    }
+                )
+
+        receipt = build_cumulative_backend_experiment_receipt(
+            examples,
+            run_id="unit_test_bakeoff",
+            feature_names=("f1", "f2", "f3"),
+            train_months=2,
+            validation_months=1,
+        )
+
+        self.assertEqual(receipt["contract_type"], EXPERIMENT_CONTRACT_TYPE)
+        self.assertFalse(receipt["experiment_scope"]["backend_finalized"])
+        self.assertEqual(receipt["row_counts"]["unique_symbols"], 3)
+        self.assertIn("online_sigmoid_linear_sgd", receipt["candidate_verdicts"])
+        self.assertIn("one_hidden_layer_mlp_sgd", receipt["candidate_verdicts"])
+        self.assertTrue(receipt["checkpoint_restore_checks"]["online_sigmoid_linear_sgd"]["passed"])
+        self.assertTrue(receipt["checkpoint_restore_checks"]["one_hidden_layer_mlp_sgd"]["passed"])
+        self.assertEqual(receipt["identity_leakage_probe"]["status"], "passed")
+        self.assertFalse(receipt["candidate_verdicts"]["online_sigmoid_linear_sgd"]["promotion_ready"])
+        self.assertFalse(receipt["safety"]["production_promotion_allowed"])
+
+    def test_cumulative_backend_experiment_blocks_single_symbol_evidence(self) -> None:
+        examples = [
+            {
+                "routing_symbol": "AAPL",
+                "fold_key": "2016-01",
+                "feature_vector": [0.1, 0.2],
+                "label_payload": {"utility_score_1W": 0.55},
+            },
+            {
+                "routing_symbol": "AAPL",
+                "fold_key": "2016-02",
+                "feature_vector": [0.2, 0.3],
+                "label_payload": {"utility_score_1W": 0.57},
+            },
+        ]
+
+        receipt = build_cumulative_backend_experiment_receipt(
+            examples,
+            run_id="unit_test_blocked",
+            feature_names=("f1", "f2"),
+            train_months=1,
+            validation_months=1,
+        )
+
+        self.assertEqual(receipt["experiment_scope"]["evidence_level"], "blocked")
+        self.assertIn("insufficient_symbol_diversity_for_identity_probe", receipt["blocked_reasons"])
+
 
 if __name__ == "__main__":
     unittest.main()
-

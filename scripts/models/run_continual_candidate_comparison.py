@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare online and MLP continual candidates on one historical fold.
+"""Run the first-wave cumulative backend experiment over historical folds.
 
 This script is model-side experiment evidence only. It reads existing
 point-in-time rows, writes a local comparison artifact, and never promotes,
@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 from datetime import UTC, datetime
 from pathlib import Path
@@ -19,25 +20,38 @@ from model_governance.historical_current_chain_evaluation import (
     build_historical_current_chain_examples,
     load_historical_rows_from_database,
 )
-from model_governance.training import (
-    chronological_month_splits,
-    predict_mlp,
-    predict_online_linear,
-    regression_metrics,
-    standardize_by_train,
-    train_mlp_regressor,
-    train_online_linear_regressor,
-)
+from model_governance.training import build_cumulative_backend_experiment_receipt
 from model_runtime.config import database_url_file, model_storage_root
 
 
 DEFAULT_DB_URL_FILE = database_url_file()
+SOURCE_PROXY_FEATURE_NAMES = (
+    "log_reference_price",
+    "intrabar_return",
+    "high_low_range",
+    "vwap_deviation",
+    "log_bar_volume",
+    "log_trade_count",
+    "log_dollar_volume",
+    "spread_bps_scaled",
+    "quote_mid_deviation",
+    "minute_of_day_sin",
+    "minute_of_day_cos",
+    "day_of_week_scaled",
+)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url")
-    parser.add_argument("--target-symbol", default="AAPL")
+    parser.add_argument(
+        "--input-mode",
+        choices=("target_state_source_proxy", "current_chain_features"),
+        default="target_state_source_proxy",
+        help="Use lightweight anonymous source-state vectors for the first bake-off, or full current-chain feature rows.",
+    )
+    parser.add_argument("--target-symbol", default=None, help="Optional debug filter. Omit for multi-symbol experiment evidence.")
+    parser.add_argument("--minimum-symbols", type=int, default=3)
     parser.add_argument("--start-time", default="2016-01-01T00:00:00-05:00")
     parser.add_argument("--end-time", default="2016-08-01T00:00:00-04:00")
     parser.add_argument("--limit", type=int, default=3000)
@@ -49,122 +63,257 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-json", type=Path)
     args = parser.parse_args(argv)
 
-    run_id = args.run_id or "continual_candidate_comparison_" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    target_symbol = args.target_symbol.strip().upper()
+    run_id = args.run_id or "cumulative_backend_layer_bakeoff_" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    target_symbol = args.target_symbol.strip().upper() if args.target_symbol else None
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(_database_url(args.database_url), row_factory=dict_row) as conn:
         with conn.cursor() as cursor:
-            rows = load_historical_rows_from_database(
-                cursor,
-                start_time=args.start_time,
-                end_time=args.end_time,
-                limit=args.limit,
-                per_month_limit=args.per_month_limit,
-                label_horizon_days=args.label_horizon_days,
-            )
-
-    target_rows = [row for row in rows if str(row.source_row.get("symbol") or "").strip().upper() == target_symbol]
-    examples, blocked_rows = build_historical_current_chain_examples(target_rows)
-    labeled_examples = [example for example in examples if example["label_payload"].get("utility_score_1W") is not None]
-    if not labeled_examples:
-        raise SystemExit("no labeled examples available for comparison")
-
-    feature_rows = [example["feature_vector"] for example in labeled_examples]
-    targets = [float(example["label_payload"]["utility_score_1W"]) for example in labeled_examples]
-    fold_keys = [str(example["fold_key"]) for example in labeled_examples]
-    splits = chronological_month_splits(
-        fold_keys,
+            if args.input_mode == "current_chain_features":
+                rows = load_historical_rows_from_database(
+                    cursor,
+                    start_time=args.start_time,
+                    end_time=args.end_time,
+                    limit=args.limit,
+                    per_month_limit=args.per_month_limit,
+                    label_horizon_days=args.label_horizon_days,
+                )
+                target_rows = (
+                    [row for row in rows if str(row.source_row.get("symbol") or "").strip().upper() == target_symbol]
+                    if target_symbol
+                    else rows
+                )
+                examples, blocked_rows = build_historical_current_chain_examples(target_rows)
+                feature_names = BASELINE_FEATURE_NAMES
+                label_proxy = "current_chain_utility_score_1W"
+                source_row_count = len(rows)
+                target_source_row_count = len(target_rows)
+            else:
+                examples, blocked_rows, source_row_count, target_source_row_count = load_source_proxy_examples_from_database(
+                    cursor,
+                    start_time=args.start_time,
+                    end_time=args.end_time,
+                    limit=args.limit,
+                    per_month_limit=args.per_month_limit,
+                    label_horizon_days=args.label_horizon_days,
+                    target_symbol=target_symbol,
+                )
+                feature_names = SOURCE_PROXY_FEATURE_NAMES
+                label_proxy = "target_state_source_proxy_7d_forward_return"
+    receipt = build_cumulative_backend_experiment_receipt(
+        examples,
+        run_id=run_id,
+        feature_names=feature_names,
+        label_proxy=label_proxy,
         train_months=args.train_months,
         validation_months=args.validation_months,
+        minimum_symbols=args.minimum_symbols,
     )
-    train_split = next(split for split in splits if split.name == "train")
-    scaled_features, scaler = standardize_by_train(feature_rows, train_split.indexes)
-
-    online_artifact = train_online_linear_regressor(
-        feature_rows=scaled_features,
-        targets=targets,
-        train_indexes=train_split.indexes,
-    )
-    mlp_artifact = train_mlp_regressor(
-        feature_rows=scaled_features,
-        targets=targets,
-        train_indexes=train_split.indexes,
-    )
-
-    predictions = {
-        "online_sigmoid_linear_sgd": predict_online_linear(scaled_features, online_artifact),
-        "one_hidden_layer_mlp_sgd": predict_mlp(scaled_features, mlp_artifact),
-    }
-    split_metrics = {
-        model_name: {
-            split.name: regression_metrics(
-                [targets[index] for index in split.indexes],
-                [model_predictions[index] for index in split.indexes],
-            )
-            for split in splits
+    receipt.update(
+        {
+            "source_window": {
+                "start_time": args.start_time,
+                "end_time": args.end_time,
+                "label_horizon_days": args.label_horizon_days,
+            },
+            "input_mode": args.input_mode,
+            "target_symbol_filter": target_symbol,
+            "source_row_counts": {
+                "source_rows": source_row_count,
+                "target_source_rows": target_source_row_count,
+                "generated_examples": len(examples),
+                "blocked_examples": len(blocked_rows),
+            },
+            "generated_at_utc": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         }
-        for model_name, model_predictions in predictions.items()
-    }
-    receipt = {
-        "contract_type": "continual_model_candidate_comparison_receipt",
-        "schema_version": "2026-06-27",
-        "run_id": run_id,
-        "target_symbol": target_symbol,
-        "source_window": {
-            "start_time": args.start_time,
-            "end_time": args.end_time,
-            "label_horizon_days": args.label_horizon_days,
-        },
-        "split_policy": {
-            "name": "chronological_rolling_fold_4_1_1",
-            "train_months": args.train_months,
-            "validation_months": args.validation_months,
-            "splits": [
-                {"name": split.name, "fold_keys": list(split.fold_keys), "row_count": len(split.indexes)}
-                for split in splits
-            ],
-        },
-        "row_counts": {
-            "source_rows": len(rows),
-            "target_source_rows": len(target_rows),
-            "generated_examples": len(examples),
-            "blocked_examples": len(blocked_rows),
-            "labeled_examples": len(labeled_examples),
-        },
-        "feature_names": list(BASELINE_FEATURE_NAMES),
-        "feature_scaler": scaler,
-        "models": {
-            "online_sigmoid_linear_sgd": _model_summary(online_artifact),
-            "one_hidden_layer_mlp_sgd": _model_summary(mlp_artifact),
-        },
-        "split_metrics": split_metrics,
-        "safety": {
-            "provider_calls_performed": False,
-            "sql_mutation_performed": False,
-            "model_activation_performed": False,
-            "production_promotion_allowed": False,
-            "broker_or_account_mutation_performed": False,
-        },
-        "generated_at_utc": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-    }
+    )
 
     output_path = args.output_json or default_output_path(run_id)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({"status": "succeeded", "output_json": str(output_path), "run_id": run_id}, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "status": "succeeded",
+                "contract_type": receipt.get("contract_type"),
+                "output_json": str(output_path),
+                "run_id": run_id,
+            },
+            sort_keys=True,
+        )
+    )
     return 0
 
 
 def default_output_path(run_id: str) -> Path:
-    return model_storage_root() / "continual_model_candidate_comparison" / run_id / "comparison_receipt.json"
+    return model_storage_root() / "cumulative_backend_layer_bakeoff" / run_id / "comparison_receipt.json"
 
 
-def _model_summary(artifact: Mapping[str, Any]) -> dict[str, Any]:
+def load_source_proxy_examples_from_database(
+    cursor: Any,
+    *,
+    start_time: str,
+    end_time: str,
+    limit: int,
+    per_month_limit: int,
+    label_horizon_days: int,
+    target_symbol: str | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], int, int]:
+    """Build lightweight anonymous examples directly from target-state source rows."""
+
+    symbol_clause = "AND da.symbol = %s" if target_symbol else ""
+    params: list[Any] = [start_time, end_time, label_horizon_days]
+    if target_symbol:
+        params.insert(2, target_symbol)
+    params.extend([per_month_limit, limit])
+    cursor.execute(
+        f"""
+        WITH source_rows AS (
+          SELECT
+            da.target_candidate_id,
+            da.symbol,
+            da.available_time,
+            da.timestamp,
+            da.bar_open,
+            da.bar_high,
+            da.bar_low,
+            da.bar_close,
+            da.bar_volume,
+            da.bar_vwap,
+            da.bar_trade_count,
+            da.dollar_volume,
+            da.avg_bid,
+            da.avg_ask,
+            da.spread_bps,
+            date_trunc('day', da.available_time) AS sample_day,
+            row_number() OVER (
+              PARTITION BY date_trunc('month', da.available_time), date_trunc('day', da.available_time), da.symbol
+              ORDER BY da.available_time, da.target_candidate_id
+            ) AS daily_symbol_rank
+          FROM trading_data.model_03_target_state_vector_data_acquisition da
+          WHERE da.available_time >= %s::timestamptz
+            AND da.available_time < %s::timestamptz
+            {symbol_clause}
+            AND da.bar_close IS NOT NULL
+        ),
+        daily_sample AS (
+          SELECT
+            source_rows.*,
+            row_number() OVER (
+              PARTITION BY date_trunc('month', available_time)
+              ORDER BY daily_symbol_rank, sample_day, symbol, available_time
+            ) AS month_row_number
+          FROM source_rows
+        )
+        SELECT
+          daily_sample.*,
+          future_bar.available_time AS label_time,
+          future_bar.bar_close AS future_close
+        FROM daily_sample
+        LEFT JOIN LATERAL (
+          SELECT available_time, bar_close
+          FROM trading_data.model_03_target_state_vector_data_acquisition future_da
+          WHERE future_da.target_candidate_id = daily_sample.target_candidate_id
+            AND future_da.available_time >= daily_sample.available_time + (%s::text || ' days')::interval
+            AND future_da.bar_close IS NOT NULL
+          ORDER BY future_da.available_time
+          LIMIT 1
+        ) future_bar ON TRUE
+        WHERE daily_sample.month_row_number <= %s
+        ORDER BY daily_sample.available_time, daily_sample.symbol, daily_sample.target_candidate_id
+        LIMIT %s
+        """,
+        tuple(params),
+    )
+    rows = [dict(row) for row in cursor.fetchall()]
+    examples: list[dict[str, Any]] = []
+    blocked: list[dict[str, Any]] = []
+    for index, row in enumerate(rows):
+        try:
+            example = _source_proxy_example(row)
+        except Exception as error:  # pragma: no cover - evidence path
+            blocked.append({"row_index": index, "error": str(error), "symbol": row.get("symbol")})
+            continue
+        examples.append(example)
+    return examples, blocked, len(rows), len(rows)
+
+
+def _source_proxy_example(row: dict[str, Any]) -> dict[str, Any]:
+    available_time = _parse_dt(row["available_time"])
+    close = _float(row.get("bar_close"))
+    future_close = _float(row.get("future_close"))
+    if close <= 0:
+        raise ValueError("bar_close must be positive")
+    label = None
+    label_matured = future_close > 0
+    if label_matured:
+        future_return = (future_close - close) / close
+        label = _clip01(0.5 + future_return * 5.0)
+    feature_vector = _source_proxy_feature_vector(row, available_time=available_time, close=close)
     return {
-        key: artifact.get(key)
-        for key in ("model_id", "model_type", "model_version", "seed", "epochs", "iterations", "learning_rate", "l2", "hidden_units", "training_summary")
-        if key in artifact
+        "available_time": available_time.isoformat(),
+        "fold_key": f"{available_time.year:04d}-{available_time.month:02d}",
+        "target_candidate_id": str(row.get("target_candidate_id") or ""),
+        "routing_symbol": str(row.get("symbol") or "").upper(),
+        "feature_vector": feature_vector,
+        "label_payload": {
+            "utility_score_1W": label,
+            "label_matured": label_matured,
+            "label_time": None if row.get("label_time") is None else _parse_dt(row["label_time"]).isoformat(),
+        },
     }
+
+
+def _source_proxy_feature_vector(row: dict[str, Any], *, available_time: datetime, close: float) -> list[float]:
+    open_price = _float(row.get("bar_open"), close)
+    high = _float(row.get("bar_high"), close)
+    low = _float(row.get("bar_low"), close)
+    vwap = _float(row.get("bar_vwap"), close)
+    volume = _float(row.get("bar_volume"))
+    trade_count = _float(row.get("bar_trade_count"))
+    dollar_volume = _float(row.get("dollar_volume"))
+    spread_bps = _float(row.get("spread_bps"), 10.0)
+    bid = _float(row.get("avg_bid"), close)
+    ask = _float(row.get("avg_ask"), close)
+    minute_of_day = available_time.hour * 60 + available_time.minute
+    return [
+        math.log(max(close, 1e-9)),
+        _safe_return(close, open_price),
+        (high - low) / close if close else 0.0,
+        _safe_return(close, vwap),
+        math.log1p(max(volume, 0.0)),
+        math.log1p(max(trade_count, 0.0)),
+        math.log1p(max(dollar_volume, 0.0)),
+        spread_bps / 1000.0,
+        ((bid + ask) / 2.0 - close) / close if close and bid > 0 and ask > 0 else 0.0,
+        math.sin(2.0 * math.pi * minute_of_day / 1440.0),
+        math.cos(2.0 * math.pi * minute_of_day / 1440.0),
+        available_time.weekday() / 6.0,
+    ]
+
+
+def _safe_return(left: float, right: float) -> float:
+    return (left - right) / right if right else 0.0
+
+
+def _float(value: Any, default: float = 0.0) -> float:
+    try:
+        output = float(value)
+    except (TypeError, ValueError):
+        return default
+    return output if math.isfinite(output) else default
+
+
+def _clip01(value: float) -> float:
+    return max(0.0, min(1.0, float(value)))
+
+
+def _parse_dt(value: Any) -> datetime:
+    if isinstance(value, datetime):
+        return value
+    text = str(value)
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    return datetime.fromisoformat(text)
 
 
 def _database_url(explicit: str | None) -> str:
