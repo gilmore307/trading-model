@@ -1,90 +1,71 @@
-"""Replayable cumulative backend experiment contracts."""
+"""Replayable cumulative model scheme validation contracts."""
 from __future__ import annotations
 
 import json
 import math
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from typing import Any
 
-from .continual_candidate_models import (
+from .continual_residual_mlp import (
     DatasetSplit,
     chronological_month_splits,
     predict_mlp,
-    predict_online_linear,
     regression_metrics,
     standardize_by_train,
     train_mlp_regressor,
-    train_online_linear_regressor,
 )
 
 
-EXPERIMENT_CONTRACT_TYPE = "cumulative_backend_layer_bakeoff_receipt"
-EXPERIMENT_SCHEMA_VERSION = "2026-06-27"
+EXPERIMENT_CONTRACT_TYPE = "cumulative_model_scheme_validation_receipt"
+EXPERIMENT_SCHEMA_VERSION = "2026-06-28"
 
 
-@dataclass(frozen=True)
-class BackendCandidateSpec:
-    """One first-wave cumulative backend candidate."""
-
-    model_id: str
-    role: str
-
-
-FIRST_WAVE_CANDIDATES: tuple[BackendCandidateSpec, ...] = (
-    BackendCandidateSpec(model_id="online_sigmoid_linear_sgd", role="primary_online_cumulative_candidate"),
-    BackendCandidateSpec(model_id="one_hidden_layer_mlp_sgd", role="required_nonlinear_challenger"),
-)
+FINAL_MODEL_SCHEME_ID = "continual_residual_mlp"
+FINAL_MODEL_IMPLEMENTATION_ID = "one_hidden_layer_mlp_sgd"
 
 
 LAYER_EXPERIMENT_MATRIX: tuple[dict[str, str], ...] = (
     {
         "layer": "M01 BackgroundContextModel",
-        "primary_candidate": "online market/sector regime-state estimator",
-        "required_challenger": "residual MLP",
-        "later_gated_family": "temporal/state-space regime model",
+        "selected_scheme": "continual residual MLP market/sector regime-state estimator",
+        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
         "deciding_metrics": "calibration; regime-transition accuracy; volatility/liquidity error; downstream lift",
     },
     {
         "layer": "M02 TargetStateModel",
-        "primary_candidate": "anonymous online target-state ranker/classifier",
-        "required_challenger": "residual MLP",
-        "later_gated_family": "panel embedding, factorization, or listwise neural ranker",
+        "selected_scheme": "continual residual MLP anonymous target-state ranker/classifier",
+        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
         "deciding_metrics": "rank IC/NDCG; calibrated eligibility; identity-leakage probe; target-selection utility",
     },
     {
         "layer": "M03 EventStateModel",
-        "primary_candidate": "structured-event online response/risk model",
-        "required_challenger": "residual MLP",
-        "later_gated_family": "event embedding or event trajectory model",
+        "selected_scheme": "continual residual MLP structured-event response/risk model",
+        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
         "deciding_metrics": "event calibration; response/risk loss; tail-risk recall; no same-fold M06 leakage",
     },
     {
         "layer": "M04 UnifiedDecisionModel",
-        "primary_candidate": "cost-aware online multi-head utility and policy scorer",
-        "required_challenger": "residual MLP",
-        "later_gated_family": "sequence/state-fusion policy scorer",
+        "selected_scheme": "continual residual MLP cost-aware multi-head utility and policy scorer",
+        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
         "deciding_metrics": "after-cost utility; no-trade calibration; downside risk; turnover; chain PnL/risk",
     },
     {
         "layer": "M05 OptionExpressionModel",
-        "primary_candidate": "online option candidate utility/ranking model",
-        "required_challenger": "residual MLP",
-        "later_gated_family": "option surface or term-structure representation model",
+        "selected_scheme": "continual residual MLP option candidate utility/ranking model",
+        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
         "deciding_metrics": "option after-cost utility; fill realism; top-k ranking; no-option calibration",
     },
     {
         "layer": "M06 ResidualEventGovernanceModel",
-        "primary_candidate": "online residual-risk and overblock-cost model plus deterministic guardrails",
-        "required_challenger": "residual MLP",
-        "later_gated_family": "event trajectory or text-representation model",
+        "selected_scheme": "continual residual MLP residual-risk and overblock-cost model plus deterministic guardrails",
+        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
         "deciding_metrics": "missed-event loss; overblock cost; attribution precision/recall; packet quality",
     },
 )
 
 
-def build_cumulative_backend_experiment_receipt(
+def build_cumulative_model_scheme_validation_receipt(
     examples: Sequence[Mapping[str, Any]],
     *,
     run_id: str,
@@ -94,7 +75,7 @@ def build_cumulative_backend_experiment_receipt(
     validation_months: int = 1,
     minimum_symbols: int = 3,
 ) -> dict[str, Any]:
-    """Build first-wave cumulative backend bake-off evidence from current-chain examples."""
+    """Build selected cumulative model scheme validation evidence from current-chain examples."""
 
     labeled = [example for example in examples if _label(example) is not None]
     symbols = sorted({str(example.get("routing_symbol") or "").upper() for example in labeled if example.get("routing_symbol")})
@@ -132,20 +113,14 @@ def build_cumulative_backend_experiment_receipt(
     targets = [float(_label(example)) for example in labeled]
     scaled_features, scaler = standardize_by_train(feature_rows, train_split.indexes)
     artifacts = {
-        "online_sigmoid_linear_sgd": train_online_linear_regressor(
-            feature_rows=scaled_features,
-            targets=targets,
-            train_indexes=train_split.indexes,
-        ),
-        "one_hidden_layer_mlp_sgd": train_mlp_regressor(
+        FINAL_MODEL_SCHEME_ID: train_mlp_regressor(
             feature_rows=scaled_features,
             targets=targets,
             train_indexes=train_split.indexes,
         ),
     }
     predictions = {
-        "online_sigmoid_linear_sgd": predict_online_linear(scaled_features, artifacts["online_sigmoid_linear_sgd"]),
-        "one_hidden_layer_mlp_sgd": predict_mlp(scaled_features, artifacts["one_hidden_layer_mlp_sgd"]),
+        FINAL_MODEL_SCHEME_ID: predict_mlp(scaled_features, artifacts[FINAL_MODEL_SCHEME_ID]),
     }
     split_metrics = {
         model_id: {
@@ -174,17 +149,18 @@ def build_cumulative_backend_experiment_receipt(
         splits=splits,
     )
     leakage_passed = identity_probe["status"] == "passed"
-    candidate_verdicts = {
+    scheme_verdict = {
         model_id: {
-            "candidate_viable": checkpoint_checks[model_id]["passed"] and leakage_passed,
+            "scheme_viable": checkpoint_checks[model_id]["passed"] and leakage_passed,
             "promotion_ready": False,
             "promotion_blockers": [
-                "first_wave_experiment_only",
+                "initial_scheme_validation_only",
                 "full_chain_replay_not_yet_run",
                 "layer_specific_labels_not_yet_complete",
             ]
             + ([] if leakage_passed else ["identity_leakage_probe_not_passed"]),
-            "role": next(spec.role for spec in FIRST_WAVE_CANDIDATES if spec.model_id == model_id),
+            "role": "selected_single_cumulative_model_scheme",
+            "implementation_id": FINAL_MODEL_IMPLEMENTATION_ID,
         }
         for model_id in artifacts
     }
@@ -194,10 +170,11 @@ def build_cumulative_backend_experiment_receipt(
         "schema_version": EXPERIMENT_SCHEMA_VERSION,
         "run_id": run_id,
         "experiment_scope": {
-            "name": "first_wave_cumulative_backend_bakeoff",
-            "evidence_level": "candidate_viability_not_promotion",
+            "name": "cumulative_residual_mlp_scheme_validation",
+            "evidence_level": "scheme_viability_not_promotion",
             "label_proxy": label_proxy,
-            "backend_finalized": False,
+            "scheme_finalized": True,
+            "selected_model_scheme": FINAL_MODEL_SCHEME_ID,
         },
         "row_counts": {
             "generated_examples": len(examples),
@@ -217,7 +194,7 @@ def build_cumulative_backend_experiment_receipt(
             ],
         },
         "layer_experiment_matrix": list(LAYER_EXPERIMENT_MATRIX),
-        "candidate_models": {
+        "selected_model": {
             model_id: _model_summary(artifacts[model_id])
             for model_id in artifacts
         },
@@ -225,10 +202,11 @@ def build_cumulative_backend_experiment_receipt(
         "split_metrics": split_metrics,
         "checkpoint_restore_checks": checkpoint_checks,
         "identity_leakage_probe": identity_probe,
-        "candidate_verdicts": candidate_verdicts,
+        "scheme_verdict": scheme_verdict,
         "selection_rule": {
-            "primary_preference": "prefer_online_primary_unless_mlp_produces_stable_material_lift",
-            "heavy_neural_gate": "requires_clean_online_and_mlp_receipts_plus_layer_specific_representation_gap",
+            "selected_scheme": FINAL_MODEL_SCHEME_ID,
+            "single_scheme_policy": "no_parallel_model_families_in_active_route",
+            "implementation_note": "The current dependency-light implementation is one_hidden_layer_mlp_sgd; future deeper/residual MLP internals must keep the same cumulative checkpoint/replay contract.",
             "promotion_requires": [
                 "layer_specific_objective_lift",
                 "full_chain_replay_neutral_or_positive",
@@ -262,9 +240,9 @@ def _blocked_receipt(
         "schema_version": EXPERIMENT_SCHEMA_VERSION,
         "run_id": run_id,
         "experiment_scope": {
-            "name": "first_wave_cumulative_backend_bakeoff",
+            "name": "cumulative_residual_mlp_scheme_validation",
             "evidence_level": "blocked",
-            "backend_finalized": False,
+            "scheme_finalized": False,
         },
         "row_counts": {
             "generated_examples": len(examples),
@@ -279,7 +257,7 @@ def _blocked_receipt(
             "validation_months": validation_months,
         },
         "layer_experiment_matrix": list(LAYER_EXPERIMENT_MATRIX),
-        "candidate_verdicts": {},
+        "scheme_verdict": {},
         "blocked_reasons": list(blocked_reasons),
         "safety": {
             "provider_calls_performed": False,
@@ -301,11 +279,7 @@ def _checkpoint_restore_check(
 ) -> dict[str, Any]:
     checkpoint = json.loads(json.dumps({"feature_scaler": scaler, "model": artifact}, sort_keys=True))
     restored_model = checkpoint["model"]
-    restored_predictions = (
-        predict_online_linear(scaled_features, restored_model)
-        if model_id == "online_sigmoid_linear_sgd"
-        else predict_mlp(scaled_features, restored_model)
-    )
+    restored_predictions = predict_mlp(scaled_features, restored_model)
     max_delta = max((abs(a - b) for a, b in zip(original_predictions, restored_predictions)), default=0.0)
     return {
         "passed": max_delta <= 1e-12,
@@ -455,7 +429,8 @@ def _model_summary(artifact: Mapping[str, Any]) -> dict[str, Any]:
 __all__ = [
     "EXPERIMENT_CONTRACT_TYPE",
     "EXPERIMENT_SCHEMA_VERSION",
-    "FIRST_WAVE_CANDIDATES",
+    "FINAL_MODEL_IMPLEMENTATION_ID",
+    "FINAL_MODEL_SCHEME_ID",
     "LAYER_EXPERIMENT_MATRIX",
-    "build_cumulative_backend_experiment_receipt",
+    "build_cumulative_model_scheme_validation_receipt",
 ]

@@ -114,30 +114,17 @@ Status: Accepted
 
 Deterministic pilots and local chain smoke tests prove structural contracts only. Production promotion still requires point-in-time training data, walk-forward replay, calibration, leakage checks, cost/fill sensitivity, option-chain evidence where applicable, baseline comparison, and manager-side promotion review. Broker orders and account mutation remain outside `trading-model`.
 
-## D008 - Model backends are selected by replayable cumulative layer bake-offs
+## D008 - Learned model scheme is the replayable cumulative residual MLP
 
-Date: 2026-06-27
+Date: 2026-06-28
 Status: Accepted
 
-The active model-framework route is replayable cumulative learning. Batch-only tree boosting is not an active route. LightGBM artifacts, if any remain in historical storage, are historical evidence only and must not be used as the current default baseline or promotion path.
+The active model-framework route is replayable cumulative learning. Batch-only tree boosting is not an active route. Any older batch-model artifacts that remain in historical storage are historical evidence only and must not be used as the current default baseline or promotion path.
 
-Backend selection is layer-specific rather than global. Each M01-M06 layer must select the weakest replayable cumulative learner that clears its objective, checkpoint, leakage, calibration, walk-forward, and downstream-chain utility gates. Deterministic behavior remains valid for hard guardrails, schema validation, routing, and reference behavior, but it must not stand in for a learned model where the current contract requires estimation or policy optimization.
+The single learned model scheme for M01-M06 is `continual_residual_mlp`. The current lightweight implementation is `one_hidden_layer_mlp_sgd`; future deeper or residual MLP internals may replace it only inside the same scheme and without changing the checkpoint, replay, update, or public output contracts.
 
-The first implementation wave is fixed:
+Online-linear, FTRL, passive-aggressive, tree boosting, sequence, embedding, factorization, state-space, and other heavy-neural alternatives are not active parallel model schemes. Deterministic behavior remains valid for hard guardrails, schema validation, routing, and reference behavior, but it must not stand in for a learned model where the current contract requires estimation or policy optimization.
 
-- primary family: online linear, logistic, regression, SGD, FTRL, or passive-aggressive learners;
-- required challenger: small MLP or residual MLP over checkpointed state vectors;
-- gated later families: sequence, embedding, factorization, state-space, or heavier neural models only after the primary and challenger expose a layer-specific representation or temporal-structure gap.
+Layer-specific heads, losses, masks, horizons, and output schemas are allowed under `continual_residual_mlp`. A different model family is not.
 
-Layer-specific backend selection follows `docs/24_model_framework_readiness.md`:
-
-| Layer | Active experiment primary | Required challenger | Later gated family |
-|---|---|---|---|
-| M01 Background Context | Online market/sector regime-state estimator. | Residual MLP. | Temporal/state-space regime model. |
-| M02 Target State | Anonymous online target-state ranker/classifier. | Residual MLP. | Panel embedding, factorization, or listwise neural ranker. |
-| M03 Event State | Structured-event online response/risk model. | Residual MLP. | Event embedding or event trajectory model. |
-| M04 Unified Decision | Cost-aware online multi-head utility and policy scorer. | Residual MLP. | Sequence/state-fusion policy scorer. |
-| M05 Option Expression | Online option candidate utility/ranking model. | Residual MLP. | Option surface or term-structure representation model. |
-| M06 Residual Event Governance | Online residual-risk and overblock-cost model plus deterministic guardrails. | Residual MLP. | Event trajectory or text-representation model. |
-
-Every candidate must first prove replay eligibility: checkpoint restore must reproduce predictions; weights, scalers, normalizers, embeddings, feature maps, and calibration state must be checkpointed; raw identity, surrogate identity dominance, future labels, same-fold downstream outcomes, and M06 hindsight feedback must be rejected. Promotion requires downstream-neutral or downstream-positive full-chain replay evidence, not only layer-local scores.
+The selected route follows `docs/24_model_framework_readiness.md`. Every learned checkpoint must first prove replay eligibility: checkpoint restore must reproduce predictions; weights, scalers, normalizers, feature maps, calibration state, and update state must be checkpointed; raw identity, surrogate identity dominance, future labels, same-fold downstream outcomes, and M06 hindsight feedback must be rejected. Promotion requires downstream-neutral or downstream-positive full-chain replay evidence, not only layer-local scores.

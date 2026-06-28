@@ -18,7 +18,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from model_governance.current_chain import build_current_chain_rows
-from model_governance.training import predict_online_linear, standardize_by_train, train_online_linear_regressor
+from model_governance.training import predict_mlp, standardize_by_train, train_mlp_regressor
 
 ET = ZoneInfo("America/New_York")
 CURRENT_MODEL_HISTORICAL_SCHEMA = "current_model_historical_evaluation_artifact"
@@ -808,13 +808,13 @@ def _baseline_training_artifact(examples: Sequence[Mapping[str, Any]], folds: Se
         return _skipped_baseline("requires_at_least_two_labeled_training_rows")
     all_feature_rows = [example["feature_vector"] for example in train_examples]
     scaled_features, scaler = standardize_by_train(all_feature_rows, tuple(range(len(train_examples))))
-    artifact = train_online_linear_regressor(
+    artifact = train_mlp_regressor(
         feature_rows=scaled_features,
         targets=[float(example["label_payload"]["utility_score_1W"]) for example in train_examples],
         train_indexes=tuple(range(len(train_examples))),
         seed=11,
-        epochs=120,
-        learning_rate=0.03,
+        epochs=450,
+        learning_rate=0.015,
         l2=0.0005,
     )
     artifact.update(
@@ -834,7 +834,7 @@ def _baseline_training_artifact(examples: Sequence[Mapping[str, Any]], folds: Se
                     sum(float(example["label_payload"]["utility_score_1W"]) for example in train_examples) / len(train_examples),
                     8,
                 ),
-                "training_mode": "online_sigmoid_linear_sgd",
+                "training_mode": "continual_residual_mlp",
             },
         }
     )
@@ -889,21 +889,21 @@ def _baseline_predictions(examples: Sequence[Mapping[str, Any]], artifact: Mappi
     mean = scaler.get("mean")
     std = scaler.get("std")
     if not isinstance(mean, Sequence) or isinstance(mean, (str, bytes)):
-        raise ValueError("online baseline artifact missing feature_scaler.mean")
+        raise ValueError("continual residual MLP artifact missing feature_scaler.mean")
     if not isinstance(std, Sequence) or isinstance(std, (str, bytes)):
-        raise ValueError("online baseline artifact missing feature_scaler.std")
+        raise ValueError("continual residual MLP artifact missing feature_scaler.std")
     scaled_rows = []
     for example in examples:
         row = list(example["feature_vector"])
         if len(row) != len(mean) or len(row) != len(std):
-            raise ValueError("feature row width does not match online baseline scaler")
+            raise ValueError("feature row width does not match continual residual MLP scaler")
         scaled_rows.append(
             [
                 (float(value) - float(offset)) / (float(scale) if abs(float(scale)) > 1e-9 else 1.0)
                 for value, offset, scale in zip(row, mean, std)
             ]
         )
-    return predict_online_linear(scaled_rows, artifact)
+    return predict_mlp(scaled_rows, artifact)
 
 
 def _warning_reasons(examples: Sequence[Mapping[str, Any]]) -> list[str]:

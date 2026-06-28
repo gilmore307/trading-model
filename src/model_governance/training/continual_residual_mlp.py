@@ -1,4 +1,4 @@
-"""Small dependency-light continual learner candidates for model comparison."""
+"""Small dependency-light continual residual MLP learner helpers."""
 from __future__ import annotations
 
 import math
@@ -58,57 +58,6 @@ def standardize_by_train(
     return scaled.tolist(), {"mean": mean.tolist(), "std": std.tolist()}
 
 
-def train_online_linear_regressor(
-    *,
-    feature_rows: Sequence[Sequence[float]],
-    targets: Sequence[float],
-    train_indexes: Sequence[int],
-    epochs: int = 120,
-    learning_rate: float = 0.03,
-    l2: float = 0.0005,
-    seed: int = 17,
-) -> dict[str, Any]:
-    """Train a deterministic online sigmoid-linear candidate with SGD."""
-
-    np = _load_numpy()
-    x = np.asarray(feature_rows, dtype=float)
-    y = np.asarray(targets, dtype=float)
-    _validate_xy(x, y)
-    rng = np.random.default_rng(seed)
-    weights = rng.normal(0.0, 0.01, size=x.shape[1])
-    bias = 0.0
-    train = tuple(int(index) for index in train_indexes)
-    for _epoch in range(max(1, epochs)):
-        for index in train:
-            row = x[index]
-            target = y[index]
-            prediction = _sigmoid(float(row @ weights + bias))
-            error = prediction - target
-            slope = prediction * (1.0 - prediction)
-            grad = error * slope
-            weights -= learning_rate * (grad * row + l2 * weights)
-            bias -= learning_rate * grad
-    return {
-        "model_type": "online_sigmoid_linear_sgd",
-        "seed": seed,
-        "epochs": epochs,
-        "learning_rate": learning_rate,
-        "l2": l2,
-        "weights": weights.tolist(),
-        "bias": bias,
-    }
-
-
-def predict_online_linear(feature_rows: Sequence[Sequence[float]], artifact: Mapping[str, Any]) -> list[float]:
-    """Predict with an online sigmoid-linear artifact."""
-
-    np = _load_numpy()
-    x = np.asarray(feature_rows, dtype=float)
-    weights = np.asarray(artifact["weights"], dtype=float)
-    bias = float(artifact["bias"])
-    return [_sigmoid(float(row @ weights + bias)) for row in x]
-
-
 def train_mlp_regressor(
     *,
     feature_rows: Sequence[Sequence[float]],
@@ -120,7 +69,7 @@ def train_mlp_regressor(
     l2: float = 0.0005,
     seed: int = 23,
 ) -> dict[str, Any]:
-    """Train a deterministic one-hidden-layer MLP candidate with SGD."""
+    """Train a deterministic one-hidden-layer MLP implementation with SGD."""
 
     np = _load_numpy()
     x = np.asarray(feature_rows, dtype=float)
@@ -181,7 +130,7 @@ def predict_mlp(feature_rows: Sequence[Sequence[float]], artifact: Mapping[str, 
 
 
 def regression_metrics(targets: Sequence[float], predictions: Sequence[float]) -> dict[str, Any]:
-    """Return compact regression and directional metrics for score comparison."""
+    """Return compact regression and directional metrics for scheme validation."""
 
     if len(targets) != len(predictions):
         raise ValueError("target and prediction counts must match")
@@ -241,6 +190,5 @@ def _load_numpy() -> Any:
     try:
         import numpy as np  # type: ignore[import-not-found]
     except ModuleNotFoundError as error:  # pragma: no cover
-        raise RuntimeError("NumPy is required for continual candidate model comparison") from error
+        raise RuntimeError("NumPy is required for continual residual MLP model validation") from error
     return np
-

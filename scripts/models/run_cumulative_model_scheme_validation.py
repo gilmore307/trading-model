@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Run the first-wave cumulative backend experiment over historical folds.
+"""Validate the selected cumulative residual MLP scheme over historical folds.
 
 This script is model-side experiment evidence only. It reads existing
-point-in-time rows, writes a local comparison artifact, and never promotes,
+point-in-time rows, writes a local scheme-validation artifact, and never promotes,
 activates, calls providers, mutates SQL, or touches broker/account state.
 """
 from __future__ import annotations
@@ -20,7 +20,7 @@ from model_governance.historical_current_chain_evaluation import (
     build_historical_current_chain_examples,
     load_historical_rows_from_database,
 )
-from model_governance.training import build_cumulative_backend_experiment_receipt
+from model_governance.training import build_cumulative_model_scheme_validation_receipt
 from model_runtime.config import database_url_file, model_storage_root
 
 
@@ -48,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
         "--input-mode",
         choices=("target_state_source_proxy", "current_chain_features"),
         default="target_state_source_proxy",
-        help="Use lightweight anonymous source-state vectors for the first bake-off, or full current-chain feature rows.",
+        help="Use lightweight anonymous source-state vectors for first scheme validation, or full current-chain feature rows.",
     )
     parser.add_argument("--target-symbol", default=None, help="Optional debug filter. Omit for multi-symbol experiment evidence.")
     parser.add_argument("--minimum-symbols", type=int, default=3)
@@ -63,7 +63,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-json", type=Path)
     args = parser.parse_args(argv)
 
-    run_id = args.run_id or "cumulative_backend_layer_bakeoff_" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    run_id = args.run_id or "cumulative_model_scheme_validation_" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     target_symbol = args.target_symbol.strip().upper() if args.target_symbol else None
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(_database_url(args.database_url), row_factory=dict_row) as conn:
@@ -99,7 +99,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 feature_names = SOURCE_PROXY_FEATURE_NAMES
                 label_proxy = "target_state_source_proxy_7d_forward_return"
-    receipt = build_cumulative_backend_experiment_receipt(
+    receipt = build_cumulative_model_scheme_validation_receipt(
         examples,
         run_id=run_id,
         feature_names=feature_names,
@@ -145,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def default_output_path(run_id: str) -> Path:
-    return model_storage_root() / "cumulative_backend_layer_bakeoff" / run_id / "comparison_receipt.json"
+    return model_storage_root() / "cumulative_model_scheme_validation" / run_id / "scheme_validation_receipt.json"
 
 
 def load_source_proxy_examples_from_database(
@@ -333,7 +333,7 @@ def _load_psycopg() -> tuple[Any, Any]:
         import psycopg  # type: ignore
         from psycopg.rows import dict_row  # type: ignore
     except ModuleNotFoundError as error:  # pragma: no cover
-        raise SystemExit("psycopg is required for continual candidate comparison; install psycopg[binary].") from error
+        raise SystemExit("psycopg is required for cumulative model scheme validation; install psycopg[binary].") from error
     return psycopg, dict_row
 
 
