@@ -392,15 +392,7 @@ def run_historical_current_chain_evaluation(
     """Run current-chain rows, fold metrics, and optional learned baseline artifact."""
 
     normalized_run_id = run_id or _stable_id("current_model_historical_eval", len(rows), _iso(datetime.now(tz=ET)))
-    examples = []
-    blocked_rows = []
-    for index, historical_row in enumerate(rows):
-        try:
-            chain_rows = build_current_chain_rows(historical_row.payload, use_fixture_defaults=False)
-        except Exception as exc:  # pragma: no cover - defensive evidence path
-            blocked_rows.append({"row_index": index, "target_candidate_id": historical_row.payload.get("target_candidate_id"), "error": str(exc)})
-            continue
-        examples.append(_example_from_chain(historical_row, chain_rows))
+    examples, blocked_rows = build_historical_current_chain_examples(rows)
 
     folds = _folds(examples)
     baseline = _baseline_training_artifact(examples, folds) if train_baseline else _skipped_baseline("baseline_training_disabled")
@@ -458,6 +450,23 @@ def run_historical_current_chain_evaluation(
         "tables": _artifact_tables(normalized_run_id, examples, folds, metrics, receipt),
         "sample_examples": examples[:5],
     }
+
+
+def build_historical_current_chain_examples(
+    rows: Sequence[HistoricalInputRow],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Build point-in-time current-chain examples from historical input rows."""
+
+    examples = []
+    blocked_rows = []
+    for index, historical_row in enumerate(rows):
+        try:
+            chain_rows = build_current_chain_rows(historical_row.payload, use_fixture_defaults=False)
+        except Exception as exc:  # pragma: no cover - defensive evidence path
+            blocked_rows.append({"row_index": index, "target_candidate_id": historical_row.payload.get("target_candidate_id"), "error": str(exc)})
+            continue
+        examples.append(_example_from_chain(historical_row, chain_rows))
+    return examples, blocked_rows
 
 
 def _background_input(
@@ -1094,6 +1103,7 @@ __all__ = [
     "HistoricalInputRow",
     "TARGET_STATE_FEATURE_TABLE",
     "TARGET_STATE_SOURCE_TABLE",
+    "build_historical_current_chain_examples",
     "historical_source_row_to_payload",
     "load_historical_rows_from_database",
     "run_historical_current_chain_evaluation",
