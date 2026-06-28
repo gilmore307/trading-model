@@ -119,7 +119,7 @@ Deterministic pilots and local chain smoke tests prove structural contracts only
 Date: 2026-06-28
 Status: Accepted
 
-The active model-framework route is replayable cumulative learning. Each M01-M06 layer has exactly one active learned model scheme at a time. The accepted first active family is cumulative residual MLP, specialized per layer by head, loss, labels, and output contract.
+The active model-framework route is replayable cumulative learning. Each M01-M06 layer has exactly one active learned model scheme at a time. The system standardizes checkpoint, replay, rollback, point-in-time safety, target-anonymity, output contracts, and promotion evidence; it does not standardize every layer on the same model structure.
 
 The rule is not "keep several models and compare them at runtime." The rule is "one active scheme per layer." Once a layer selects its active scheme, prior alternatives for that layer are retired from runtime use and no parallel challenger route is maintained for that layer. Offline research may still produce evidence for a future replacement, but replacement must retire the previous active scheme for that layer in the same acceptance batch.
 
@@ -127,13 +127,13 @@ All eligible schemes must be cumulative, checkpointable, replayable, target-anon
 
 The selected layer schemes are:
 
-- M01: `continual_residual_mlp_context_classifier`
-- M02: `continual_residual_mlp_target_ranker`
-- M03: `continual_residual_mlp_event_risk_scorer`
+- M01: `continual_state_space_context_estimator`
+- M02: `continual_pairwise_residual_mlp_target_ranker`
+- M03: `continual_hashed_ftrl_event_risk_scorer`
 - M04: `continual_residual_mlp_policy_value`
 - M05: `continual_residual_mlp_option_chain_ranker`
-- M06: `continual_residual_mlp_risk_gate`
+- M06: `continual_calibrated_ftrl_risk_gate`
 
-The current small cumulative residual MLP validation proves that one implementation can train, checkpoint, restore, and emit bounded target-anonymous predictions. It is scheme viability evidence only and not promotion evidence.
+The current small cumulative residual MLP validation proves that a residual-MLP implementation can train, checkpoint, restore, and emit bounded target-anonymous predictions. It is scheme viability evidence for the residual-MLP layers only and not promotion evidence for any layer.
 
 The selected route follows `docs/24_model_framework_readiness.md`. Every learned checkpoint must first prove replay eligibility: checkpoint restore must reproduce predictions; weights, scalers, normalizers, feature maps, calibration state, and update state must be checkpointed; raw identity, surrogate identity dominance, future labels, same-fold downstream outcomes, and M06 hindsight feedback must be rejected. Promotion requires downstream-neutral or downstream-positive full-chain replay evidence, not only layer-local scores.

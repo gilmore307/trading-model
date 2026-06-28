@@ -28,20 +28,20 @@ VALIDATED_MODEL_IMPLEMENTATION_ID = "one_hidden_layer_mlp_sgd"
 LAYER_ACTIVE_SCHEME_MATRIX: tuple[dict[str, str], ...] = (
     {
         "layer": "M01 BackgroundContextModel",
-        "active_scheme": "continual_residual_mlp_context_classifier",
-        "structure": "hashed-feature residual MLP classifier/embedding model over point-in-time market, sector, liquidity, volatility, macro, and cross-asset state",
+        "active_scheme": "continual_state_space_context_estimator",
+        "structure": "online state-space/regime estimator over point-in-time market, sector, liquidity, volatility, macro, and cross-asset state",
         "deciding_metrics": "calibration; regime-transition accuracy; volatility/liquidity error; downstream lift",
     },
     {
         "layer": "M02 TargetStateModel",
-        "active_scheme": "continual_residual_mlp_target_ranker",
+        "active_scheme": "continual_pairwise_residual_mlp_target_ranker",
         "structure": "pairwise/listwise residual MLP ranker over anonymous target-state vectors",
         "deciding_metrics": "rank IC/NDCG; calibrated eligibility; identity-leakage probe; target-selection utility",
     },
     {
         "layer": "M03 EventStateModel",
-        "active_scheme": "continual_residual_mlp_event_risk_scorer",
-        "structure": "multi-head residual MLP event-risk scorer over reviewed structured event features",
+        "active_scheme": "continual_hashed_ftrl_event_risk_scorer",
+        "structure": "hashed sparse FTRL event-risk scorer over reviewed structured event features",
         "deciding_metrics": "event calibration; response/risk loss; tail-risk recall; no same-fold M06 leakage",
     },
     {
@@ -58,8 +58,8 @@ LAYER_ACTIVE_SCHEME_MATRIX: tuple[dict[str, str], ...] = (
     },
     {
         "layer": "M06 ResidualEventGovernanceModel",
-        "active_scheme": "continual_residual_mlp_risk_gate",
-        "structure": "calibrated residual MLP risk-gate/intervention scorer with abstain, block, size-down, and allow outputs plus deterministic hard guardrails",
+        "active_scheme": "continual_calibrated_ftrl_risk_gate",
+        "structure": "calibrated sparse FTRL risk-gate/intervention scorer with abstain, block, size-down, and allow outputs plus deterministic hard guardrails",
         "deciding_metrics": "missed-event loss; overblock cost; attribution precision/recall; packet quality",
     },
 )
@@ -206,7 +206,7 @@ def build_cumulative_model_scheme_validation_receipt(
         "selection_rule": {
             "validated_scheme": VALIDATED_MODEL_SCHEME_ID,
             "per_layer_single_active_policy": "one_active_model_scheme_per_layer_no_parallel_runtime_challengers",
-            "implementation_note": "This receipt validates the cumulative residual MLP family; each layer uses the active scheme listed in layer_active_scheme_matrix.",
+            "implementation_note": "This receipt validates the residual MLP implementation used by selected layers; each layer uses the active scheme listed in layer_active_scheme_matrix.",
             "promotion_requires": [
                 "layer_specific_objective_lift",
                 "full_chain_replay_neutral_or_positive",

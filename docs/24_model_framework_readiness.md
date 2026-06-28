@@ -5,7 +5,7 @@ Date: 2026-06-28
 
 ## Principle
 
-The current six-model stack selects learned model schemes per layer. Each layer has exactly one active cumulative/replayable scheme at a time. The accepted first active family is cumulative residual MLP, specialized per layer by head, loss, labels, and output contract.
+The current six-model stack selects learned model schemes per layer. Each layer has exactly one active cumulative/replayable scheme at a time. The shared standard is lifecycle and evidence, not identical model architecture: every layer must be checkpointable, replayable, rollbackable, point-in-time safe, target-anonymous, and calibrated to its public output contract.
 
 The route is selected for cumulative data absorption, future online deployment, and auditable model-state replay. It is not selected because one early validation receipt proves promotion readiness. Promotion still requires layer-specific labels, walk-forward replay, calibration, cost/fill stress, leakage checks, checkpoint replay, rollback evidence, and full-chain utility evidence.
 
@@ -17,7 +17,8 @@ The accepted contract is:
 
 - one active learned scheme per layer;
 - no parallel challenger route inside a layer;
-- layers use the active cumulative residual MLP family with layer-specific heads and losses;
+- each layer may use a different cumulative/replayable model family when that family fits the layer task;
+- shared lifecycle, calibration, checkpoint, replay, rollback, and promotion gates are mandatory for every layer;
 - an offline replacement study may exist only as evidence, not runtime routing;
 - when a layer changes scheme, the old active scheme for that layer must be retired in the same acceptance batch.
 
@@ -29,14 +30,14 @@ Deterministic behavior remains valid for hard guardrails, schema validation, rou
 
 | Layer | Active learned scheme | Structure | Deciding metrics |
 |---|---|---|---|
-| `M01 BackgroundContextModel` | `continual_residual_mlp_context_classifier` | Hashed-feature residual MLP classifier/embedding model over point-in-time market, sector, liquidity, volatility, macro, and cross-asset state. | Calibration, regime-transition accuracy, volatility/liquidity error, stability across regimes, downstream lift to M02-M04. |
-| `M02 TargetStateModel` | `continual_residual_mlp_target_ranker` | Pairwise/listwise residual MLP ranker over anonymous target-state vectors; no raw symbol identity. | Rank IC/NDCG, calibrated eligibility, persistence/reversion error, liquidity/tradability error, identity-leakage checks, downstream target-selection utility. |
-| `M03 EventStateModel` | `continual_residual_mlp_event_risk_scorer` | Multi-head residual MLP event-risk scorer over reviewed structured event features, with direction, magnitude, horizon, and uncertainty heads. | Event-bucket calibration, response/risk Brier or log loss, tail-risk recall at fixed false-block cost, stability by event family, no same-fold M06 leakage. |
+| `M01 BackgroundContextModel` | `continual_state_space_context_estimator` | Online state-space/regime estimator over point-in-time market, sector, liquidity, volatility, macro, and cross-asset state. | Calibration, regime-transition accuracy, volatility/liquidity error, stability across regimes, downstream lift to M02-M04. |
+| `M02 TargetStateModel` | `continual_pairwise_residual_mlp_target_ranker` | Pairwise/listwise residual MLP ranker over anonymous target-state vectors; no raw symbol identity. | Rank IC/NDCG, calibrated eligibility, persistence/reversion error, liquidity/tradability error, identity-leakage checks, downstream target-selection utility. |
+| `M03 EventStateModel` | `continual_hashed_ftrl_event_risk_scorer` | Hashed sparse FTRL event-risk scorer over reviewed structured event features, with calibrated direction, magnitude, horizon, and uncertainty outputs. | Event-bucket calibration, response/risk Brier or log loss, tail-risk recall at fixed false-block cost, stability by event family, no same-fold M06 leakage. |
 | `M04 UnifiedDecisionModel` | `continual_residual_mlp_policy_value` | Conservative supervised/off-policy residual MLP policy-value model over M01-M03 state, cost, risk, exposure, portfolio context, and no-trade context. | After-cost utility, no-trade calibration, downside/path risk, turnover/churn, exposure regret, fill/cost sensitivity, chain-level PnL/risk improvement. |
 | `M05 OptionExpressionModel` | `continual_residual_mlp_option_chain_ranker` | Residual MLP option-chain ranker over option-relative features, Greeks, liquidity, spread, surface, horizon, and expression-state vectors. | Option after-cost utility, slippage/theta/IV-adjusted return, fill realism, top-k candidate ranking, no-option calibration, underlying-only counterfactual comparison. |
-| `M06 ResidualEventGovernanceModel` | `continual_residual_mlp_risk_gate` | Calibrated residual MLP risk-gate/intervention scorer with abstain, block, size-down, and allow outputs plus deterministic hard guardrails. | Missed-event loss reduction, overblock cost, attribution precision/recall, intervention utility, future-packet quality, strict quarantine from same-fold upstream mutation. |
+| `M06 ResidualEventGovernanceModel` | `continual_calibrated_ftrl_risk_gate` | Calibrated sparse FTRL risk-gate/intervention scorer with abstain, block, size-down, and allow outputs plus deterministic hard guardrails. | Missed-event loss reduction, overblock cost, attribution precision/recall, intervention utility, future-packet quality, strict quarantine from same-fold upstream mutation. |
 
-These are active scheme choices, not promotion claims. The current implementation can start with dependency-light `one_hidden_layer_mlp_sgd` where needed, but the accepted layer schemes are the structures above.
+These are active scheme choices, not promotion claims. Residual MLP is selected where nonlinear dense state interaction is the main task. State-space and FTRL structures are selected where regime persistence, sparse event evidence, calibration, and conservative risk gating matter more than dense nonlinear capacity.
 
 ## Lifecycle Contract
 
@@ -79,6 +80,6 @@ A layer-selected scheme must pass these gates before promotion:
 
 ## Current Evidence
 
-The first small cumulative model scheme validation used AAPL, MSFT, and NVDA over 2016-01 through 2016-06 with 3,600 examples and 3,575 labeled rows. It proved that the lightweight `continual_residual_mlp` implementation can train, checkpoint, restore, and emit bounded predictions under the target-anonymous source-proxy harness.
+The first small cumulative model scheme validation used AAPL, MSFT, and NVDA over 2016-01 through 2016-06 with 3,600 examples and 3,575 labeled rows. It proved that the lightweight residual-MLP implementation can train, checkpoint, restore, and emit bounded predictions under the target-anonymous source-proxy harness.
 
-The result is evidence that cumulative residual MLP checkpoints are viable. It does not by itself promote any layer. The active per-layer schemes are fixed by the matrix above and still need their layer-specific labels, replay, and promotion evidence.
+The result is evidence that residual-MLP checkpoints are viable for the residual-MLP-selected layers. It does not by itself promote any layer and does not validate the state-space or FTRL-selected layers. The active per-layer schemes are fixed by the matrix above and still need their layer-specific labels, replay, and promotion evidence.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the selected cumulative residual MLP scheme over historical folds.
+"""Validate selected per-layer cumulative model schemes over historical folds.
 
 This script is model-side experiment evidence only. It reads existing
 point-in-time rows, writes a local scheme-validation artifact, and never promotes,
