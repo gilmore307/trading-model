@@ -92,12 +92,12 @@ class ContinualResidualMlpTests(unittest.TestCase):
         self.assertEqual(
             [row["active_scheme"] for row in LAYER_ACTIVE_SCHEME_MATRIX],
             [
-                "continual_state_space_context_estimator",
+                "continual_gru_context_estimator",
                 "continual_pairwise_residual_mlp_target_ranker",
-                "continual_hashed_ftrl_event_risk_scorer",
+                "continual_gru_event_risk_scorer",
                 "continual_residual_mlp_policy_value",
                 "continual_residual_mlp_option_chain_ranker",
-                "continual_calibrated_ftrl_risk_gate",
+                "continual_gru_residual_risk_gate",
             ],
         )
         self.assertIn(VALIDATED_MODEL_SCHEME_ID, receipt["scheme_verdict"])

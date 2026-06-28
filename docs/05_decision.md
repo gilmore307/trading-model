@@ -127,12 +127,12 @@ All eligible schemes must be cumulative, checkpointable, replayable, target-anon
 
 The selected layer schemes are:
 
-- M01: `continual_state_space_context_estimator`
+- M01: `continual_gru_context_estimator`
 - M02: `continual_pairwise_residual_mlp_target_ranker`
-- M03: `continual_hashed_ftrl_event_risk_scorer`
+- M03: `continual_gru_event_risk_scorer`
 - M04: `continual_residual_mlp_policy_value`
 - M05: `continual_residual_mlp_option_chain_ranker`
-- M06: `continual_calibrated_ftrl_risk_gate`
+- M06: `continual_gru_residual_risk_gate`
 
 The current small cumulative residual MLP validation proves that a residual-MLP implementation can train, checkpoint, restore, and emit bounded target-anonymous predictions. It is scheme viability evidence for the residual-MLP layers only and not promotion evidence for any layer.
 

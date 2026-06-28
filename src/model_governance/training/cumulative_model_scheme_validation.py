@@ -28,8 +28,8 @@ VALIDATED_MODEL_IMPLEMENTATION_ID = "one_hidden_layer_mlp_sgd"
 LAYER_ACTIVE_SCHEME_MATRIX: tuple[dict[str, str], ...] = (
     {
         "layer": "M01 BackgroundContextModel",
-        "active_scheme": "continual_state_space_context_estimator",
-        "structure": "online state-space/regime estimator over point-in-time market, sector, liquidity, volatility, macro, and cross-asset state",
+        "active_scheme": "continual_gru_context_estimator",
+        "structure": "CPU-friendly short-window GRU context estimator over point-in-time market, sector, liquidity, volatility, macro, and cross-asset state sequences",
         "deciding_metrics": "calibration; regime-transition accuracy; volatility/liquidity error; downstream lift",
     },
     {
@@ -40,8 +40,8 @@ LAYER_ACTIVE_SCHEME_MATRIX: tuple[dict[str, str], ...] = (
     },
     {
         "layer": "M03 EventStateModel",
-        "active_scheme": "continual_hashed_ftrl_event_risk_scorer",
-        "structure": "hashed sparse FTRL event-risk scorer over reviewed structured event features",
+        "active_scheme": "continual_gru_event_risk_scorer",
+        "structure": "CPU-friendly short-window GRU event-risk scorer over reviewed structured event streams, decay state, event clusters, and point-in-time context",
         "deciding_metrics": "event calibration; response/risk loss; tail-risk recall; no same-fold M06 leakage",
     },
     {
@@ -58,8 +58,8 @@ LAYER_ACTIVE_SCHEME_MATRIX: tuple[dict[str, str], ...] = (
     },
     {
         "layer": "M06 ResidualEventGovernanceModel",
-        "active_scheme": "continual_calibrated_ftrl_risk_gate",
-        "structure": "calibrated sparse FTRL risk-gate/intervention scorer with abstain, block, size-down, and allow outputs plus deterministic hard guardrails",
+        "active_scheme": "continual_gru_residual_risk_gate",
+        "structure": "CPU-friendly short-window GRU residual-risk gate over recent model outputs, residual event state, failure traces, and anomaly sequences plus deterministic hard guardrails",
         "deciding_metrics": "missed-event loss; overblock cost; attribution precision/recall; packet quality",
     },
 )
