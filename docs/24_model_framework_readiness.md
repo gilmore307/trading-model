@@ -57,3 +57,52 @@ The current implementation lane removes batch-only tree boosting from the active
 - introduce heavier neural models only for surfaces whose evidence shows a specific representation or sequence advantage.
 
 If a future neural candidate is justified, it should enter as an implementation backend for the existing model contract, not as a new model layer or compatibility route.
+
+## Final Experiment Contract
+
+Backend selection is decided by layer-specific bake-offs under the shared cumulative-learning control contract in `docs/23_model_learning_design.md`. The decision is not a global model-family choice. Each layer must select the weakest replayable cumulative learner that clears its own objective, leakage, calibration, checkpoint, and downstream-chain utility gates.
+
+Every candidate must produce two verdicts:
+
+- `candidate_viable`: the backend can train, checkpoint, restore, replay deterministically, and pass leakage checks without changing the public layer contract.
+- `promotion_ready`: the backend improves the layer metric and does not degrade the full M01-M06 chain under walk-forward replay evidence.
+
+The final active route for experiments is:
+
+| Layer | Primary candidate | Required challenger | Gated later candidate | Deciding metrics |
+|---|---|---|---|---|
+| `M01 BackgroundContextModel` | Online regression/classification for market, sector, liquidity, volatility, and transition state. | Small residual MLP over checkpointed state vectors. | Temporal/state-space regime learner only if sequence evidence beats online/MLP baselines. | Calibration, regime-transition accuracy, volatility/liquidity error, stability across regimes, downstream lift to M02-M04. |
+| `M02 TargetStateModel` | Anonymous target-state online ranker/classifier with calibrated eligibility and utility scores. | Small residual MLP over anonymous target-state panel vectors. | Factorization, panel embedding, or listwise neural ranker only after identity-leakage probes pass. | Rank IC/NDCG, calibrated eligibility, persistence/reversion error, liquidity/tradability error, identity-leakage probe failure, downstream target-selection utility. |
+| `M03 EventStateModel` | Structured-event online response/risk model over reviewed event features. | Residual MLP over accepted event-state vectors. | Event embedding, event trajectory, or text-derived representation only after reviewed event artifacts and leakage gates exist. | Event-bucket calibration, response/risk Brier or log loss, tail-risk recall at fixed false-block cost, stability by event family, no same-fold M06 leakage. |
+| `M04 UnifiedDecisionModel` | Cost-aware multi-head online utility and constrained policy scorer. | Residual MLP over M01-M03 state, cost, risk, exposure, and portfolio context vectors. | Sequence/state-fusion policy scorer only if it improves after-cost utility and no-trade calibration across regimes. | After-cost utility, no-trade calibration, downside/path risk, turnover/churn, exposure regret, fill/cost sensitivity, chain-level PnL/risk improvement. |
+| `M05 OptionExpressionModel` | Online option-vs-underlying utility/ranking model over timestamped option candidates. | Residual MLP over option-surface, liquidity, theta, IV, cost, and expression-state vectors. | Surface/term-structure representation model only after large option-chain replay shows stable lift. | Option after-cost utility, slippage/theta/IV-adjusted return, fill realism, top-k candidate ranking, no-option calibration, underlying-only counterfactual comparison. |
+| `M06 ResidualEventGovernanceModel` | Online residual-risk and overblock-cost model with deterministic guardrails. | Residual MLP over residual event, thesis, intervention, and failure-context vectors. | Event trajectory or text representation only if it reduces missed-event loss without excessive overblock cost. | Missed-event loss reduction, overblock cost, attribution precision/recall, intervention utility, future-packet quality, strict quarantine from same-fold upstream mutation. |
+
+The first implementation wave must include only dependency-light cumulative candidates:
+
+- online linear/logistic/regression, SGD, FTRL, or passive-aggressive variants as the primary family;
+- small MLP or residual MLP as the required nonlinear challenger;
+- deterministic/rule behavior only as reference behavior and hard guardrails, not as a learned-model substitute.
+
+Heavy neural, sequence, embedding, factorization, or state-space candidates are second-wave candidates. They may enter only after the primary online candidate and required MLP challenger produce clean evidence receipts and the layer shows a specific representation or temporal-structure gap.
+
+## Experiment Sequence
+
+Run the selection in this order:
+
+1. **Replay contract proof.** Use a small multi-symbol, multi-fold harness to prove deterministic checkpoint restore, point-in-time scaler/normalizer state, feature-schema stability, raw and surrogate identity-leakage checks, and M06 same-fold quarantine. If this fails, no backend comparison is valid.
+2. **Layer-local bake-off.** For each layer, train the primary online candidate and required MLP challenger on the same point-in-time state-vector stream, with the same labels, folds, masks, and applicability states.
+3. **Chain replay.** Replay the full M01-M06 chain using each viable layer candidate while holding the other layers at their best viable current candidate. A layer-local win that damages downstream chain behavior is rejected.
+4. **Stress slices.** Report all accepted candidates by regime, symbol group, sector/liquidity bucket, optionable/non-optionable state, event/no-event state, and high-volatility windows. Concentrated wins do not promote.
+5. **Backend selection.** Pick the weakest candidate that is viable, stable, calibrated, replayable, and non-degrading downstream. Prefer online primary over MLP unless MLP produces stable material lift. Prefer MLP over heavier neural unless heavier neural proves a layer-specific representation advantage.
+
+Required acceptance gates for every candidate:
+
+- replay restore reproduces predictions;
+- weights, scalers, normalizers, embeddings, feature maps, and calibration state are checkpointed;
+- no future labels, raw identity, surrogate identity dominance, same-fold downstream outcomes, or M06 hindsight feedback enter inference;
+- walk-forward improvement holds across folds, symbols, and regimes;
+- probabilities and utilities are calibrated near decision thresholds;
+- M04 and M05 survive transaction-cost, slippage, liquidity, fill, and turnover stress;
+- backend changes do not change public layer output contracts;
+- layer improvement is downstream-neutral or downstream-positive under chain replay.
