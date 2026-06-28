@@ -18,14 +18,16 @@ Learned-model design is direct-to-final. Do not introduce temporary learned cont
 
 ## Current Learning Route
 
-| Model | Learning role |
-|---|---|
-| `M01` Background Context | Shared market/sector/industry background estimator. |
-| `M02` Target State | Target eligibility, ranking, and target-state estimator. |
-| `M03` Event State | Event-conditioned response/risk estimator under frozen event-governance contracts. |
-| `M04` Unified Decision | Direct downstream decision/utility model with structured edge, risk, exposure, and action heads. |
-| `M05` Option Expression | Separate option/expression utility model consuming clean direct-underlying decision intent. |
-| `M06` Residual Event Governance | Separate event governance, residual attribution, intervention, and future-packet routing model. |
+| Model | Active learned scheme | Learning role |
+|---|---|---|
+| `M01` Background Context | `continual_gru_context_estimator` | CPU-friendly short-window sequence estimator for shared market/sector/industry context and regime persistence. |
+| `M02` Target State | `continual_pairwise_residual_mlp_target_ranker` | Pairwise/listwise anonymous target eligibility, ranking, and target-state estimator. |
+| `M03` Event State | `continual_gru_event_risk_scorer` | CPU-friendly short-window sequence scorer for event-conditioned response/risk, event decay, and event-cluster state under frozen event-governance contracts. |
+| `M04` Unified Decision | `continual_residual_mlp_policy_value` | Direct downstream decision/utility model with structured edge, risk, exposure, no-trade, and action heads. |
+| `M05` Option Expression | `continual_residual_mlp_option_chain_ranker` | Separate option/expression utility ranker consuming clean direct-underlying decision intent and point-in-time option-chain context. |
+| `M06` Residual Event Governance | `continual_gru_residual_risk_gate` | CPU-friendly short-window residual-risk sequence gate for residual event governance, attribution, intervention, and future-packet routing. |
+
+The active scheme choices are not promotion claims. GRU is selected where sequence memory and state persistence are central to the layer. Residual MLP is selected where nonlinear dense-state interaction or structured ranking is central to the layer. Transformer-style attention is not the active route on the current CPU-only server.
 
 ## Cross-Model Rules
 
@@ -158,4 +160,4 @@ Before expanding a model implementation, define its objective contract:
 
 Then trace one historical fold row through M01-M06. Every emitted field must be classifiable as estimate, policy output, hard gate, diagnostic, explainability, or attribution. Any field that mixes score, policy, reason, and constraint should be split before implementation proceeds.
 
-Framework selection is a later gate. `docs/24_model_framework_readiness.md` owns the current assessment: deep learning is not a default dependency, and neural models may enter only after non-deep baselines, point-in-time data, leakage checks, calibration, and after-cost walk-forward evidence justify them for a specific model surface.
+Framework selection is accepted in `docs/24_model_framework_readiness.md`: M01/M03/M06 use CPU-friendly GRU schemes, while M02/M04/M05 use residual-MLP schemes. Promotion remains a later evidence gate; selected schemes still need layer-specific labels, point-in-time replay, leakage checks, calibration, checkpoint restore, rollback evidence, and downstream-neutral or downstream-positive full-chain validation.

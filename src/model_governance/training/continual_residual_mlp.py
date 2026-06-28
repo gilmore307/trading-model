@@ -69,7 +69,7 @@ def train_mlp_regressor(
     l2: float = 0.0005,
     seed: int = 23,
 ) -> dict[str, Any]:
-    """Train a deterministic one-hidden-layer MLP implementation with SGD."""
+    """Train the current dependency-light continual residual MLP implementation."""
 
     np = _load_numpy()
     x = np.asarray(feature_rows, dtype=float)
@@ -102,7 +102,7 @@ def train_mlp_regressor(
             w1 -= learning_rate * grad_w1
             b1 -= learning_rate * grad_b1
     return {
-        "model_type": "one_hidden_layer_mlp_sgd",
+        "model_type": "continual_residual_mlp_sgd",
         "seed": seed,
         "epochs": epochs,
         "learning_rate": learning_rate,

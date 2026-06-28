@@ -389,7 +389,7 @@ def run_historical_current_chain_evaluation(
     run_id: str | None = None,
     train_baseline: bool = True,
 ) -> dict[str, Any]:
-    """Run current-chain rows, fold metrics, and optional learned baseline artifact."""
+    """Run current-chain rows, fold metrics, and optional residual-MLP utility artifact."""
 
     normalized_run_id = run_id or _stable_id("current_model_historical_eval", len(rows), _iso(datetime.now(tz=ET)))
     examples, blocked_rows = build_historical_current_chain_examples(rows)

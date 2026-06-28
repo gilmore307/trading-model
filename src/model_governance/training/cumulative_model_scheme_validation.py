@@ -22,7 +22,7 @@ EXPERIMENT_SCHEMA_VERSION = "2026-06-28"
 
 
 VALIDATED_MODEL_SCHEME_ID = "continual_residual_mlp"
-VALIDATED_MODEL_IMPLEMENTATION_ID = "one_hidden_layer_mlp_sgd"
+VALIDATED_MODEL_IMPLEMENTATION_ID = "continual_residual_mlp_sgd"
 
 
 LAYER_ACTIVE_SCHEME_MATRIX: tuple[dict[str, str], ...] = (

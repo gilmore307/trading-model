@@ -42,6 +42,19 @@ M06 Residual Event Governance
 
 M01 owns broad market and sector/industry background as one model. M02 owns target selection/state and keeps ticker/company identity out of model-facing fitting vectors. M03 owns accepted event-state conditioning without changing event-family parameters. M04 owns the full direct-underlying decision and exposes structured edge, risk, exposure, and action heads. M05 owns optional option expression after direct-underlying intent exists. M06 owns residual event governance and future event-family evidence. Broker orders and account mutation stay outside this repository.
 
+The accepted learned-model route is replayable cumulative learning with one active learned scheme per layer:
+
+```text
+M01 -> continual_gru_context_estimator
+M02 -> continual_pairwise_residual_mlp_target_ranker
+M03 -> continual_gru_event_risk_scorer
+M04 -> continual_residual_mlp_policy_value
+M05 -> continual_residual_mlp_option_chain_ranker
+M06 -> continual_gru_residual_risk_gate
+```
+
+M01, M03, and M06 use CPU-friendly short-window GRU schemes because they need sequence memory and state persistence. M02, M04, and M05 use residual-MLP ranking/policy schemes because they need nonlinear dense-state interaction over anonymous target, decision, and option-chain state. Every learned scheme must be checkpointable, replayable, rollbackable, target-anonymous, and point-in-time safe.
+
 ## Top-Level Structure
 
 ```text
