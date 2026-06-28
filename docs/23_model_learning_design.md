@@ -55,9 +55,9 @@ M06: uncertain attribution -> explicit low_confidence / no_intervention / attrib
 
 Training loss, metrics, and promotion evidence may still use masks, weights, and sub-buckets so rare event/action/option/intervention cases are not drowned by neutral minutes. Those masks are optimization and reporting controls; they are not permission to remove blank minutes from the point-in-time ledger.
 
-## Closed-Loop Evidence Lifecycle
+## Replayable Cumulative Learning Lifecycle
 
-The accepted model stack is closed loop as an evidence lifecycle, not as a live recursive model loop and not as automatic online learning.
+The accepted model stack is closed loop as an evidence lifecycle and uses replayable cumulative learning as the long-term training route. Model families are chosen per layer, but every learned layer must support point-in-time updates, immutable checkpoints, replay restore, rollback, and promotion-gated deployment. A cumulative learner may absorb new finalized samples over time; it must not update same-fold inference state from future labels or downstream outcomes.
 
 The loop has three separate paths:
 
@@ -69,10 +69,23 @@ Evaluation path:
   fold/replay settles -> future labels, utilities, diagnostics, and residuals are joined after the fact
 
 Promotion feedback path:
-  evaluation evidence -> review/promotion gate -> later-fold artifact update or rejection
+  finalized evaluation evidence -> review/promotion gate -> later checkpoint update, shadow promotion, or rejection
 ```
 
-No future label, realized utility, downstream failure, broker outcome, same-fold M06 discovery, or post-event interpretation may feed back into the same fold's inference features. A model can learn from failure only through a later training/evaluation dataset, frozen artifact lineage, and accepted review gate.
+No future label, realized utility, downstream failure, broker outcome, same-fold M06 discovery, or post-event interpretation may feed back into the same fold's inference features. A model can learn from failure only through finalized training events, frozen artifact lineage, immutable checkpoints, and accepted review gates.
+
+Every cumulative model backend must expose the same control contract:
+
+```text
+predict(as_of_time, state_vector, checkpoint)
+update(as_of_time, finalized_training_events)
+checkpoint(as_of_time)
+restore(checkpoint_id)
+replay(start_time, end_time, checkpoint_seed)
+audit(sample_id)
+```
+
+Feature normalizers, scalers, embeddings, and label joins are part of the model state. They must be checkpointed and replayed point-in-time; they may not be fit on future data and reused for earlier replay clocks.
 
 M06 has one special feedback route:
 

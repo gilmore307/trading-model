@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare LightGBM, online, and MLP candidates on one historical fold.
+"""Compare online and MLP continual candidates on one historical fold.
 
 This script is model-side experiment evidence only. It reads existing
 point-in-time rows, writes a local comparison artifact, and never promotes,
@@ -12,7 +12,7 @@ import json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 from model_governance.historical_current_chain_evaluation import (
     BASELINE_FEATURE_NAMES,
@@ -20,14 +20,11 @@ from model_governance.historical_current_chain_evaluation import (
     load_historical_rows_from_database,
 )
 from model_governance.training import (
-    LightGBMScoreModelSpec,
     chronological_month_splits,
-    predict_lightgbm_score,
     predict_mlp,
     predict_online_linear,
     regression_metrics,
     standardize_by_train,
-    train_lightgbm_score_model,
     train_mlp_regressor,
     train_online_linear_regressor,
 )
@@ -83,22 +80,6 @@ def main(argv: list[str] | None = None) -> int:
     train_split = next(split for split in splits if split.name == "train")
     scaled_features, scaler = standardize_by_train(feature_rows, train_split.indexes)
 
-    lightgbm_artifact = train_lightgbm_score_model(
-        spec=LightGBMScoreModelSpec(
-            schema_version="continual_candidate_comparison_artifact",
-            model_id="lightgbm_same_split_baseline",
-            model_version=run_id,
-            model_type="lightgbm_gbdt_current_chain_utility_score",
-            score_semantics="0.5_neutral_future_1w_utility",
-            seed=31,
-            iterations=120,
-            learning_rate=0.06,
-        ),
-        feature_rows=[scaled_features[index] for index in train_split.indexes],
-        targets=[targets[index] for index in train_split.indexes],
-        feature_names=BASELINE_FEATURE_NAMES,
-        artifact_fields={"activation_allowed": False, "production_promotion_allowed": False},
-    )
     online_artifact = train_online_linear_regressor(
         feature_rows=scaled_features,
         targets=targets,
@@ -111,7 +92,6 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     predictions = {
-        "lightgbm_same_split_baseline": predict_lightgbm_score_matrix(scaled_features, lightgbm_artifact),
         "online_sigmoid_linear_sgd": predict_online_linear(scaled_features, online_artifact),
         "one_hidden_layer_mlp_sgd": predict_mlp(scaled_features, mlp_artifact),
     }
@@ -154,7 +134,6 @@ def main(argv: list[str] | None = None) -> int:
         "feature_names": list(BASELINE_FEATURE_NAMES),
         "feature_scaler": scaler,
         "models": {
-            "lightgbm_same_split_baseline": _model_summary(lightgbm_artifact),
             "online_sigmoid_linear_sgd": _model_summary(online_artifact),
             "one_hidden_layer_mlp_sgd": _model_summary(mlp_artifact),
         },
@@ -174,10 +153,6 @@ def main(argv: list[str] | None = None) -> int:
     output_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"status": "succeeded", "output_json": str(output_path), "run_id": run_id}, sort_keys=True))
     return 0
-
-
-def predict_lightgbm_score_matrix(feature_rows: Sequence[Sequence[float]], artifact: Mapping[str, Any]) -> list[float]:
-    return [predict_lightgbm_score(row, artifact) for row in feature_rows]
 
 
 def default_output_path(run_id: str) -> Path:
@@ -215,4 +190,3 @@ def _load_psycopg() -> tuple[Any, Any]:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

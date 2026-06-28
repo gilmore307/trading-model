@@ -18,7 +18,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from model_governance.current_chain import build_current_chain_rows
-from model_governance.training import LightGBMScoreModelSpec, predict_lightgbm_score, train_lightgbm_score_model
+from model_governance.training import predict_online_linear, standardize_by_train, train_online_linear_regressor
 
 ET = ZoneInfo("America/New_York")
 CURRENT_MODEL_HISTORICAL_SCHEMA = "current_model_historical_evaluation_artifact"
@@ -806,26 +806,37 @@ def _baseline_training_artifact(examples: Sequence[Mapping[str, Any]], folds: Se
     ]
     if len(train_examples) < 2:
         return _skipped_baseline("requires_at_least_two_labeled_training_rows")
-    spec = LightGBMScoreModelSpec(
-        schema_version="current_chain_utility_baseline_artifact",
-        model_id="current_chain_utility_baseline",
-        model_version="historical_evaluation_baseline",
-        model_type="lightgbm_gbdt_current_chain_utility_score",
-        score_semantics="0.5_neutral_future_1w_utility",
-        seed=11,
-        iterations=50,
-        learning_rate=0.08,
-    )
-    artifact = train_lightgbm_score_model(
-        spec=spec,
-        feature_rows=[example["feature_vector"] for example in train_examples],
+    all_feature_rows = [example["feature_vector"] for example in train_examples]
+    scaled_features, scaler = standardize_by_train(all_feature_rows, tuple(range(len(train_examples))))
+    artifact = train_online_linear_regressor(
+        feature_rows=scaled_features,
         targets=[float(example["label_payload"]["utility_score_1W"]) for example in train_examples],
-        feature_names=BASELINE_FEATURE_NAMES,
-        artifact_fields={
+        train_indexes=tuple(range(len(train_examples))),
+        seed=11,
+        epochs=120,
+        learning_rate=0.03,
+        l2=0.0005,
+    )
+    artifact.update(
+        {
+            "schema_version": "current_chain_utility_baseline_artifact",
+            "model_id": "current_chain_utility_baseline",
+            "model_version": "historical_evaluation_baseline",
+            "score_semantics": "0.5_neutral_future_1w_utility",
+            "feature_names": list(BASELINE_FEATURE_NAMES),
+            "feature_scaler": scaler,
             "training_fold_keys": sorted(train_fold_keys),
             "production_promotion_allowed": False,
             "activation_allowed": False,
-        },
+            "training_summary": {
+                "sample_count": len(train_examples),
+                "mean_target_score": round(
+                    sum(float(example["label_payload"]["utility_score_1W"]) for example in train_examples) / len(train_examples),
+                    8,
+                ),
+                "training_mode": "online_sigmoid_linear_sgd",
+            },
+        }
     )
     return {"training_status": "trained", "artifact": artifact}
 
@@ -847,7 +858,7 @@ def _fold_metrics(
     for fold in folds:
         fold_examples = [example for example in examples if example["fold_key"] == fold["fold_key"]]
         labeled = [example for example in fold_examples if example["label_payload"].get("utility_score_1W") is not None]
-        predictions = [predict_lightgbm_score(example["feature_vector"], artifact) for example in labeled] if artifact else []
+        predictions = _baseline_predictions(labeled, artifact) if artifact else []
         targets = [float(example["label_payload"]["utility_score_1W"]) for example in labeled]
         mae = (
             sum(abs(prediction - target) for prediction, target in zip(predictions, targets)) / len(targets)
@@ -871,6 +882,28 @@ def _fold_metrics(
             }
         )
     return metrics
+
+
+def _baseline_predictions(examples: Sequence[Mapping[str, Any]], artifact: Mapping[str, Any]) -> list[float]:
+    scaler = _mapping(artifact.get("feature_scaler"))
+    mean = scaler.get("mean")
+    std = scaler.get("std")
+    if not isinstance(mean, Sequence) or isinstance(mean, (str, bytes)):
+        raise ValueError("online baseline artifact missing feature_scaler.mean")
+    if not isinstance(std, Sequence) or isinstance(std, (str, bytes)):
+        raise ValueError("online baseline artifact missing feature_scaler.std")
+    scaled_rows = []
+    for example in examples:
+        row = list(example["feature_vector"])
+        if len(row) != len(mean) or len(row) != len(std):
+            raise ValueError("feature row width does not match online baseline scaler")
+        scaled_rows.append(
+            [
+                (float(value) - float(offset)) / (float(scale) if abs(float(scale)) > 1e-9 else 1.0)
+                for value, offset, scale in zip(row, mean, std)
+            ]
+        )
+    return predict_online_linear(scaled_rows, artifact)
 
 
 def _warning_reasons(examples: Sequence[Mapping[str, Any]]) -> list[str]:
