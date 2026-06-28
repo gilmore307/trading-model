@@ -10,18 +10,18 @@ from .continual_residual_mlp import (
 from .cumulative_model_scheme_validation import (
     EXPERIMENT_CONTRACT_TYPE,
     EXPERIMENT_SCHEMA_VERSION,
-    FINAL_MODEL_IMPLEMENTATION_ID,
-    FINAL_MODEL_SCHEME_ID,
-    LAYER_EXPERIMENT_MATRIX,
+    VALIDATED_MODEL_IMPLEMENTATION_ID,
+    VALIDATED_MODEL_SCHEME_ID,
+    LAYER_SELECTION_MATRIX,
     build_cumulative_model_scheme_validation_receipt,
 )
 
 __all__ = [
     "EXPERIMENT_CONTRACT_TYPE",
     "EXPERIMENT_SCHEMA_VERSION",
-    "FINAL_MODEL_IMPLEMENTATION_ID",
-    "FINAL_MODEL_SCHEME_ID",
-    "LAYER_EXPERIMENT_MATRIX",
+    "VALIDATED_MODEL_IMPLEMENTATION_ID",
+    "VALIDATED_MODEL_SCHEME_ID",
+    "LAYER_SELECTION_MATRIX",
     "build_cumulative_model_scheme_validation_receipt",
     "chronological_month_splits",
     "predict_mlp",

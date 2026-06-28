@@ -4,7 +4,7 @@ import unittest
 
 from model_governance.training import (
     EXPERIMENT_CONTRACT_TYPE,
-    FINAL_MODEL_SCHEME_ID,
+    VALIDATED_MODEL_SCHEME_ID,
     build_cumulative_model_scheme_validation_receipt,
     chronological_month_splits,
     predict_mlp,
@@ -81,14 +81,14 @@ class ContinualResidualMlpTests(unittest.TestCase):
         )
 
         self.assertEqual(receipt["contract_type"], EXPERIMENT_CONTRACT_TYPE)
-        self.assertTrue(receipt["experiment_scope"]["scheme_finalized"])
+        self.assertTrue(receipt["experiment_scope"]["scheme_validation_completed"])
         self.assertEqual(receipt["row_counts"]["unique_symbols"], 3)
-        self.assertEqual(receipt["experiment_scope"]["selected_model_scheme"], FINAL_MODEL_SCHEME_ID)
-        self.assertIn(FINAL_MODEL_SCHEME_ID, receipt["scheme_verdict"])
-        self.assertEqual(tuple(receipt["scheme_verdict"]), (FINAL_MODEL_SCHEME_ID,))
-        self.assertTrue(receipt["checkpoint_restore_checks"][FINAL_MODEL_SCHEME_ID]["passed"])
+        self.assertEqual(receipt["experiment_scope"]["validated_model_scheme"], VALIDATED_MODEL_SCHEME_ID)
+        self.assertIn(VALIDATED_MODEL_SCHEME_ID, receipt["scheme_verdict"])
+        self.assertEqual(tuple(receipt["scheme_verdict"]), (VALIDATED_MODEL_SCHEME_ID,))
+        self.assertTrue(receipt["checkpoint_restore_checks"][VALIDATED_MODEL_SCHEME_ID]["passed"])
         self.assertEqual(receipt["identity_leakage_probe"]["status"], "passed")
-        self.assertFalse(receipt["scheme_verdict"][FINAL_MODEL_SCHEME_ID]["promotion_ready"])
+        self.assertFalse(receipt["scheme_verdict"][VALIDATED_MODEL_SCHEME_ID]["promotion_ready"])
         self.assertFalse(receipt["safety"]["production_promotion_allowed"])
 
     def test_cumulative_model_scheme_validation_blocks_single_symbol_evidence(self) -> None:

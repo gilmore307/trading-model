@@ -21,45 +21,45 @@ EXPERIMENT_CONTRACT_TYPE = "cumulative_model_scheme_validation_receipt"
 EXPERIMENT_SCHEMA_VERSION = "2026-06-28"
 
 
-FINAL_MODEL_SCHEME_ID = "continual_residual_mlp"
-FINAL_MODEL_IMPLEMENTATION_ID = "one_hidden_layer_mlp_sgd"
+VALIDATED_MODEL_SCHEME_ID = "continual_residual_mlp"
+VALIDATED_MODEL_IMPLEMENTATION_ID = "one_hidden_layer_mlp_sgd"
 
 
-LAYER_EXPERIMENT_MATRIX: tuple[dict[str, str], ...] = (
+LAYER_SELECTION_MATRIX: tuple[dict[str, str], ...] = (
     {
         "layer": "M01 BackgroundContextModel",
-        "selected_scheme": "continual residual MLP market/sector regime-state estimator",
-        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
+        "selection_boundary": "market, sector, liquidity, volatility, and regime state",
+        "active_scheme_rule": "select one cumulative/replayable context-state scheme from M01 evidence",
         "deciding_metrics": "calibration; regime-transition accuracy; volatility/liquidity error; downstream lift",
     },
     {
         "layer": "M02 TargetStateModel",
-        "selected_scheme": "continual residual MLP anonymous target-state ranker/classifier",
-        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
+        "selection_boundary": "anonymous target-state ranking, eligibility, and utility",
+        "active_scheme_rule": "select one cumulative/replayable target-state scheme from M02 evidence",
         "deciding_metrics": "rank IC/NDCG; calibrated eligibility; identity-leakage probe; target-selection utility",
     },
     {
         "layer": "M03 EventStateModel",
-        "selected_scheme": "continual residual MLP structured-event response/risk model",
-        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
+        "selection_boundary": "structured event response and risk",
+        "active_scheme_rule": "select one cumulative/replayable event-state scheme from M03 evidence",
         "deciding_metrics": "event calibration; response/risk loss; tail-risk recall; no same-fold M06 leakage",
     },
     {
         "layer": "M04 UnifiedDecisionModel",
-        "selected_scheme": "continual residual MLP cost-aware multi-head utility and policy scorer",
-        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
+        "selection_boundary": "cost-aware utility, action, no-trade, exposure, and policy scoring",
+        "active_scheme_rule": "select one cumulative/replayable decision-policy scheme from M04 evidence",
         "deciding_metrics": "after-cost utility; no-trade calibration; downside risk; turnover; chain PnL/risk",
     },
     {
         "layer": "M05 OptionExpressionModel",
-        "selected_scheme": "continual residual MLP option candidate utility/ranking model",
-        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
+        "selection_boundary": "option-vs-underlying expression and option candidate ranking",
+        "active_scheme_rule": "select one cumulative/replayable option-expression scheme from M05 evidence",
         "deciding_metrics": "option after-cost utility; fill realism; top-k ranking; no-option calibration",
     },
     {
         "layer": "M06 ResidualEventGovernanceModel",
-        "selected_scheme": "continual residual MLP residual-risk and overblock-cost model plus deterministic guardrails",
-        "architecture_scope": "shared cumulative MLP family with layer-specific output heads",
+        "selection_boundary": "residual event risk, intervention, and overblock cost",
+        "active_scheme_rule": "select one cumulative/replayable residual-governance scheme from M06 evidence plus deterministic guardrails",
         "deciding_metrics": "missed-event loss; overblock cost; attribution precision/recall; packet quality",
     },
 )
@@ -113,14 +113,14 @@ def build_cumulative_model_scheme_validation_receipt(
     targets = [float(_label(example)) for example in labeled]
     scaled_features, scaler = standardize_by_train(feature_rows, train_split.indexes)
     artifacts = {
-        FINAL_MODEL_SCHEME_ID: train_mlp_regressor(
+        VALIDATED_MODEL_SCHEME_ID: train_mlp_regressor(
             feature_rows=scaled_features,
             targets=targets,
             train_indexes=train_split.indexes,
         ),
     }
     predictions = {
-        FINAL_MODEL_SCHEME_ID: predict_mlp(scaled_features, artifacts[FINAL_MODEL_SCHEME_ID]),
+        VALIDATED_MODEL_SCHEME_ID: predict_mlp(scaled_features, artifacts[VALIDATED_MODEL_SCHEME_ID]),
     }
     split_metrics = {
         model_id: {
@@ -159,8 +159,8 @@ def build_cumulative_model_scheme_validation_receipt(
                 "layer_specific_labels_not_yet_complete",
             ]
             + ([] if leakage_passed else ["identity_leakage_probe_not_passed"]),
-            "role": "selected_single_cumulative_model_scheme",
-            "implementation_id": FINAL_MODEL_IMPLEMENTATION_ID,
+            "role": "validated_cumulative_model_scheme",
+            "implementation_id": VALIDATED_MODEL_IMPLEMENTATION_ID,
         }
         for model_id in artifacts
     }
@@ -173,8 +173,8 @@ def build_cumulative_model_scheme_validation_receipt(
             "name": "cumulative_residual_mlp_scheme_validation",
             "evidence_level": "scheme_viability_not_promotion",
             "label_proxy": label_proxy,
-            "scheme_finalized": True,
-            "selected_model_scheme": FINAL_MODEL_SCHEME_ID,
+            "scheme_validation_completed": True,
+            "validated_model_scheme": VALIDATED_MODEL_SCHEME_ID,
         },
         "row_counts": {
             "generated_examples": len(examples),
@@ -193,7 +193,7 @@ def build_cumulative_model_scheme_validation_receipt(
                 for split in splits
             ],
         },
-        "layer_experiment_matrix": list(LAYER_EXPERIMENT_MATRIX),
+        "layer_selection_matrix": list(LAYER_SELECTION_MATRIX),
         "selected_model": {
             model_id: _model_summary(artifacts[model_id])
             for model_id in artifacts
@@ -204,9 +204,9 @@ def build_cumulative_model_scheme_validation_receipt(
         "identity_leakage_probe": identity_probe,
         "scheme_verdict": scheme_verdict,
         "selection_rule": {
-            "selected_scheme": FINAL_MODEL_SCHEME_ID,
-            "single_scheme_policy": "no_parallel_model_families_in_active_route",
-            "implementation_note": "The current dependency-light implementation is one_hidden_layer_mlp_sgd; future deeper/residual MLP internals must keep the same cumulative checkpoint/replay contract.",
+            "validated_scheme": VALIDATED_MODEL_SCHEME_ID,
+            "per_layer_single_active_policy": "one_active_model_scheme_per_layer_no_parallel_runtime_challengers",
+            "implementation_note": "This receipt validates one cumulative MLP scheme; it is not a global mandate for every layer.",
             "promotion_requires": [
                 "layer_specific_objective_lift",
                 "full_chain_replay_neutral_or_positive",
@@ -242,7 +242,7 @@ def _blocked_receipt(
         "experiment_scope": {
             "name": "cumulative_residual_mlp_scheme_validation",
             "evidence_level": "blocked",
-            "scheme_finalized": False,
+            "scheme_validation_completed": False,
         },
         "row_counts": {
             "generated_examples": len(examples),
@@ -256,7 +256,7 @@ def _blocked_receipt(
             "train_months": train_months,
             "validation_months": validation_months,
         },
-        "layer_experiment_matrix": list(LAYER_EXPERIMENT_MATRIX),
+        "layer_selection_matrix": list(LAYER_SELECTION_MATRIX),
         "scheme_verdict": {},
         "blocked_reasons": list(blocked_reasons),
         "safety": {
@@ -429,8 +429,8 @@ def _model_summary(artifact: Mapping[str, Any]) -> dict[str, Any]:
 __all__ = [
     "EXPERIMENT_CONTRACT_TYPE",
     "EXPERIMENT_SCHEMA_VERSION",
-    "FINAL_MODEL_IMPLEMENTATION_ID",
-    "FINAL_MODEL_SCHEME_ID",
-    "LAYER_EXPERIMENT_MATRIX",
+    "VALIDATED_MODEL_IMPLEMENTATION_ID",
+    "VALIDATED_MODEL_SCHEME_ID",
+    "LAYER_SELECTION_MATRIX",
     "build_cumulative_model_scheme_validation_receipt",
 ]

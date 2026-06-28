@@ -114,17 +114,17 @@ Status: Accepted
 
 Deterministic pilots and local chain smoke tests prove structural contracts only. Production promotion still requires point-in-time training data, walk-forward replay, calibration, leakage checks, cost/fill sensitivity, option-chain evidence where applicable, baseline comparison, and manager-side promotion review. Broker orders and account mutation remain outside `trading-model`.
 
-## D008 - Learned model scheme is the replayable cumulative residual MLP
+## D008 - Learned model schemes are selected per layer
 
 Date: 2026-06-28
 Status: Accepted
 
-The active model-framework route is replayable cumulative learning. Batch-only tree boosting is not an active route. Any older batch-model artifacts that remain in historical storage are historical evidence only and must not be used as the current default baseline or promotion path.
+The active model-framework route is replayable cumulative learning. Each M01-M06 layer must have exactly one active learned model scheme at a time, selected for that layer's target, data shape, replay requirements, and operational constraints. Different layers may use different model families.
 
-The single learned model scheme for M01-M06 is `continual_residual_mlp`. The current lightweight implementation is `one_hidden_layer_mlp_sgd`; future deeper or residual MLP internals may replace it only inside the same scheme and without changing the checkpoint, replay, update, or public output contracts.
+The rule is not "one model family for all six layers." The rule is "one active scheme per layer." Once a layer selects its active scheme, prior alternatives for that layer are retired from runtime use and no parallel challenger route is maintained for that layer. Offline research may still produce evidence for a future replacement, but replacement must retire the previous active scheme for that layer in the same acceptance batch.
 
-Online-linear, FTRL, passive-aggressive, tree boosting, sequence, embedding, factorization, state-space, and other heavy-neural alternatives are not active parallel model schemes. Deterministic behavior remains valid for hard guardrails, schema validation, routing, and reference behavior, but it must not stand in for a learned model where the current contract requires estimation or policy optimization.
+All eligible schemes must be cumulative, checkpointable, replayable, target-anonymous, point-in-time safe, and rollbackable. Deterministic behavior remains valid for hard guardrails, schema validation, routing, and reference behavior, but it must not stand in for a learned model where the current contract requires estimation or policy optimization.
 
-Layer-specific heads, losses, masks, horizons, and output schemas are allowed under `continual_residual_mlp`. A different model family is not.
+The current small `continual_residual_mlp` validation proves that one cumulative MLP implementation can train, checkpoint, restore, and emit bounded target-anonymous predictions. It is scheme viability evidence only. It is not a global mandate that all six layers must use that model family, and it is not promotion evidence.
 
 The selected route follows `docs/24_model_framework_readiness.md`. Every learned checkpoint must first prove replay eligibility: checkpoint restore must reproduce predictions; weights, scalers, normalizers, feature maps, calibration state, and update state must be checkpointed; raw identity, surrogate identity dominance, future labels, same-fold downstream outcomes, and M06 hindsight feedback must be rejected. Promotion requires downstream-neutral or downstream-positive full-chain replay evidence, not only layer-local scores.
