@@ -275,6 +275,15 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
             for field in ("feature_ref", "frozen_model_config_ref", "historical_dataset_snapshot_ref"):
                 if not row.get(field):
                     row_errors.append(f"component_input_refs[{index}].{field} missing")
+                elif str(row.get(field)).startswith("placeholder://"):
+                    row_errors.append(f"component_input_refs[{index}].{field} must not be placeholder")
+            upstream_context_refs = row.get("upstream_context_refs") or []
+            if not _is_sequence(upstream_context_refs):
+                row_errors.append(f"component_input_refs[{index}].upstream_context_refs must be a list")
+            else:
+                for ref in upstream_context_refs:
+                    if str(ref).startswith("placeholder://"):
+                        row_errors.append(f"component_input_refs[{index}].upstream_context_refs must not contain placeholder refs")
             if row.get("component_step") and row.get("component_step") != metadata["component_step"]:
                 row_errors.append(f"component_input_refs[{index}].component_step mismatch for {component}")
             if row.get("component_name") and row.get("component_name") != metadata["component_name"]:

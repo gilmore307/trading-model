@@ -78,7 +78,7 @@ def _decision_input_snapshot() -> dict[str, object]:
                 "required_model_surfaces": list(required_surfaces),
                 "optional_model_surfaces": list(optional_surfaces),
                 "feature_ref": f"realtime-feature://rtfeat_unit/{component_id}",
-                "upstream_context_refs": [f"placeholder://upstream-context/rtdecision_unit/{component_id}"],
+                "upstream_context_refs": [f"model-input-context://rtdecision_unit/{component_id}"],
                 "frozen_model_config_ref": "trading-model://configs/frozen/unit",
                 "historical_dataset_snapshot_ref": "trading-model://snapshots/historical/unit",
                 "realtime_feature_snapshot_ref": "realtime-feature-snapshot://rtfeat_unit",
@@ -179,6 +179,18 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
 
         self.assertFalse(result["valid"])
         self.assertIn("model_activation", result["forbidden_actions_present"])
+
+    def test_placeholder_upstream_context_refs_are_rejected(self) -> None:
+        snapshot = _decision_input_snapshot()
+        snapshot["component_input_refs"][1]["upstream_context_refs"] = ["placeholder://upstream-context/model_03_event_state"]
+
+        result = validate_execution_model_decision_input_snapshot(snapshot)
+
+        self.assertFalse(result["valid"])
+        self.assertIn(
+            "component_input_refs[1].upstream_context_refs must not contain placeholder refs",
+            result["row_errors"],
+        )
 
     def test_live_dataset_role_is_not_valid_shadow_input(self) -> None:
         snapshot = _decision_input_snapshot()
