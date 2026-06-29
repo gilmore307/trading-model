@@ -84,7 +84,7 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
             parent_path = tmp / "after_cost_alpha_model_2016-01_2017-06.json"
             parent = script.build_model_artifact(
                 target_symbol="AAPL",
-                fold_id="fold_2016-01_2017-06",
+                fold_id="fold_aapl_2016",
                 source_start="2016-01-01T00:00:00-05:00",
                 source_end="2016-05-01T00:00:00-05:00",
                 horizons=["10min", "1h", "1D", "1W"],
@@ -103,12 +103,12 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
                 output_json=parent_path,
             )
             parent_path.write_text(json.dumps(parent, sort_keys=True) + "\n", encoding="utf-8")
-            output_path = tmp / "after_cost_alpha_model_2016-07_2016-12.json"
+            output_path = tmp / "after_cost_alpha_model_2017-01_2018-06.json"
             artifact = script.build_model_artifact(
                 target_symbol="AAPL",
-                fold_id="fold_2016-07_2016-12",
-                source_start="2016-07-01T00:00:00-05:00",
-                source_end="2016-11-01T00:00:00-05:00",
+                fold_id="fold_aapl_2017",
+                source_start="2017-01-01T00:00:00-05:00",
+                source_end="2017-05-01T00:00:00-05:00",
                 horizons=["10min", "1h", "1D", "1W"],
                 label_horizon="1D",
                 cost_bps=10.0,
@@ -129,11 +129,11 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
         self.assertEqual(artifact["contract_type"], "after_cost_alpha_model")
         self.assertEqual(artifact["model_type"], "fold_supervised_after_cost_alpha_logistic")
         self.assertEqual(artifact["target_symbol"], "AAPL")
-        self.assertEqual(artifact["fold_id"], "fold_2016-07_2016-12")
+        self.assertEqual(artifact["fold_id"], "fold_aapl_2017")
         self.assertEqual(artifact["learning_contract"], "replayable_cumulative_fold_checkpoint")
         self.assertTrue(artifact["seed_checkpoint_ref"].endswith("after_cost_alpha_model_2016-01_2017-06.json"))
         self.assertTrue(artifact["parent_checkpoint_ref"].endswith("after_cost_alpha_model_2016-01_2017-06.json"))
-        self.assertTrue(artifact["checkpoint_ref"].endswith("after_cost_alpha_model_2016-07_2016-12.json"))
+        self.assertTrue(artifact["checkpoint_ref"].endswith("after_cost_alpha_model_2017-01_2018-06.json"))
         self.assertEqual(artifact["lineage"]["learning_mode"], "cumulative_checkpoint")
         self.assertEqual(artifact["training_summary"]["training_mode"], "supervised_fit")
         self.assertEqual(artifact["training_summary"]["cumulative_learning_mode"], "cumulative_checkpoint")
