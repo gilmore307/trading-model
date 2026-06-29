@@ -89,6 +89,8 @@ audit(sample_id)
 
 Feature normalizers, scalers, embeddings, and label joins are part of the model state. They must be checkpointed and replayed point-in-time; they may not be fit on future data and reused for earlier replay clocks.
 
+Fold-scoped training checkpoints are cumulative state, not isolated fold fits. The first eligible fold may cold start from its approved feature contract. Each later fold must restore the previous fold checkpoint, keep the checkpointed feature scaler/state as the seed state, update only on finalized training events available to the new fold's training window, and write a new checkpoint whose parent points to the immediately previous fold checkpoint.
+
 M06 has one special feedback route:
 
 ```text

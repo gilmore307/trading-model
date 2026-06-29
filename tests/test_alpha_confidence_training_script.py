@@ -79,40 +79,67 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
             {name: 0.8 for name in script.FEATURE_NAMES},
         ]
         labels = [0, 1, 0, 1]
-        artifact = script.build_model_artifact(
-            target_symbol="AAPL",
-            fold_id="fold_2016-07_2016-12",
-            source_start="2016-07-01T00:00:00-05:00",
-            source_end="2016-11-01T00:00:00-05:00",
-            horizons=["10min", "1h", "1D", "1W"],
-            label_horizon="1D",
-            cost_bps=10.0,
-            features=features,
-            labels=labels,
-            label_summary={
-                "sample_count": 4,
-                "positive_count": 2,
-                "negative_count": 2,
-                "source_row_count": 4,
-                "bar_row_count": 8,
-                "mean_realized_after_cost_return": 0.01,
-            },
-            output_json=Path("/tmp/after_cost_alpha_model_2016-07_2016-12.json"),
-            parent_checkpoint_ref="/tmp/after_cost_alpha_model_2016-01_2016-06.json",
-        )
+        with tempfile.TemporaryDirectory() as raw_tmp:
+            tmp = Path(raw_tmp)
+            parent_path = tmp / "after_cost_alpha_model_2016-01_2016-06.json"
+            parent = script.build_model_artifact(
+                target_symbol="AAPL",
+                fold_id="fold_2016-01_2016-06",
+                source_start="2016-01-01T00:00:00-05:00",
+                source_end="2016-05-01T00:00:00-05:00",
+                horizons=["10min", "1h", "1D", "1W"],
+                label_horizon="1D",
+                cost_bps=10.0,
+                features=features,
+                labels=labels,
+                label_summary={
+                    "sample_count": 4,
+                    "positive_count": 2,
+                    "negative_count": 2,
+                    "source_row_count": 4,
+                    "bar_row_count": 8,
+                    "mean_realized_after_cost_return": 0.01,
+                },
+                output_json=parent_path,
+            )
+            parent_path.write_text(json.dumps(parent, sort_keys=True) + "\n", encoding="utf-8")
+            output_path = tmp / "after_cost_alpha_model_2016-07_2016-12.json"
+            artifact = script.build_model_artifact(
+                target_symbol="AAPL",
+                fold_id="fold_2016-07_2016-12",
+                source_start="2016-07-01T00:00:00-05:00",
+                source_end="2016-11-01T00:00:00-05:00",
+                horizons=["10min", "1h", "1D", "1W"],
+                label_horizon="1D",
+                cost_bps=10.0,
+                features=features,
+                labels=labels,
+                label_summary={
+                    "sample_count": 4,
+                    "positive_count": 2,
+                    "negative_count": 2,
+                    "source_row_count": 4,
+                    "bar_row_count": 8,
+                    "mean_realized_after_cost_return": 0.01,
+                },
+                output_json=output_path,
+                parent_checkpoint_ref=str(parent_path),
+            )
 
         self.assertEqual(artifact["contract_type"], "after_cost_alpha_model")
         self.assertEqual(artifact["model_type"], "fold_supervised_after_cost_alpha_logistic")
         self.assertEqual(artifact["target_symbol"], "AAPL")
         self.assertEqual(artifact["fold_id"], "fold_2016-07_2016-12")
         self.assertEqual(artifact["learning_contract"], "replayable_cumulative_fold_checkpoint")
-        self.assertEqual(artifact["seed_checkpoint_ref"], "/tmp/after_cost_alpha_model_2016-01_2016-06.json")
-        self.assertEqual(artifact["parent_checkpoint_ref"], "/tmp/after_cost_alpha_model_2016-01_2016-06.json")
-        self.assertEqual(artifact["checkpoint_ref"], "/tmp/after_cost_alpha_model_2016-07_2016-12.json")
+        self.assertTrue(artifact["seed_checkpoint_ref"].endswith("after_cost_alpha_model_2016-01_2016-06.json"))
+        self.assertTrue(artifact["parent_checkpoint_ref"].endswith("after_cost_alpha_model_2016-01_2016-06.json"))
+        self.assertTrue(artifact["checkpoint_ref"].endswith("after_cost_alpha_model_2016-07_2016-12.json"))
         self.assertEqual(artifact["lineage"]["learning_mode"], "cumulative_checkpoint")
         self.assertEqual(artifact["training_summary"]["training_mode"], "supervised_fit")
         self.assertEqual(artifact["training_summary"]["cumulative_learning_mode"], "cumulative_checkpoint")
         self.assertEqual(artifact["training_summary"]["seed_policy"], "parent_checkpoint")
+        self.assertEqual(artifact["training_summary"]["update_mode"], "continued_from_parent_checkpoint")
+        self.assertEqual(artifact["score_model"]["training_update_mode"], "continued_from_parent_checkpoint")
         self.assertEqual(artifact["training_summary"]["sample_count"], 4)
         self.assertEqual(artifact["score_model"]["model_family"], "logistic_regression")
         self.assertEqual(artifact["score_model"]["feature_names"], list(script.FEATURE_NAMES))

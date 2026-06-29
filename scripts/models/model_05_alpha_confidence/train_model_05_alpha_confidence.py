@@ -295,11 +295,63 @@ def _standardize(features: list[dict[str, float]]) -> tuple[list[list[float]], d
     return matrix, means, scales
 
 
-def _train_logistic_model(features: list[dict[str, float]], labels: list[int]) -> dict[str, Any]:
-    matrix, means, scales = _standardize(features)
-    weights = [0.0 for _ in FEATURE_NAMES]
-    positive_rate = max(1e-6, min(1 - 1e-6, sum(labels) / len(labels)))
-    intercept = math.log(positive_rate / (1.0 - positive_rate))
+def _standardize_with_stats(
+    features: list[dict[str, float]],
+    means: Mapping[str, Any],
+    scales: Mapping[str, Any],
+) -> list[list[float]]:
+    return [
+        [
+            (row[name] - float(means.get(name, 0.0))) / (float(scales.get(name, 1.0)) or 1.0)
+            for name in FEATURE_NAMES
+        ]
+        for row in features
+    ]
+
+
+def _load_parent_checkpoint(parent_checkpoint_ref: str | None) -> dict[str, Any] | None:
+    if not parent_checkpoint_ref:
+        return None
+    path = Path(parent_checkpoint_ref)
+    if not path.exists():
+        raise FileNotFoundError(f"parent checkpoint does not exist: {path}")
+    artifact = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(artifact, Mapping):
+        raise ValueError(f"parent checkpoint is not a JSON object: {path}")
+    score_model = artifact.get("score_model")
+    if not isinstance(score_model, Mapping):
+        raise ValueError(f"parent checkpoint lacks score_model: {path}")
+    if tuple(score_model.get("feature_names") or ()) != FEATURE_NAMES:
+        raise ValueError(f"parent checkpoint feature set does not match current contract: {path}")
+    if str(artifact.get("learning_contract") or "") != "replayable_cumulative_fold_checkpoint":
+        raise ValueError(f"parent checkpoint lacks replayable cumulative contract: {path}")
+    return dict(artifact)
+
+
+def _train_logistic_model(
+    features: list[dict[str, float]],
+    labels: list[int],
+    *,
+    parent_checkpoint: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    parent_score_model = parent_checkpoint.get("score_model") if isinstance(parent_checkpoint, Mapping) else None
+    if isinstance(parent_score_model, Mapping):
+        means = {name: float((parent_score_model.get("feature_means") or {}).get(name, 0.0)) for name in FEATURE_NAMES}
+        scales = {name: float((parent_score_model.get("feature_scales") or {}).get(name, 1.0)) or 1.0 for name in FEATURE_NAMES}
+        matrix = _standardize_with_stats(features, means, scales)
+        weights = [float(value) for value in (parent_score_model.get("coefficients") or [])]
+        if len(weights) != len(FEATURE_NAMES):
+            raise ValueError("parent checkpoint coefficient count does not match current feature contract")
+        intercept = float(parent_score_model.get("intercept") or 0.0)
+        initial_checkpoint_ref = parent_checkpoint.get("checkpoint_ref")
+        training_update_mode = "continued_from_parent_checkpoint"
+    else:
+        matrix, means, scales = _standardize(features)
+        weights = [0.0 for _ in FEATURE_NAMES]
+        positive_rate = max(1e-6, min(1 - 1e-6, sum(labels) / len(labels)))
+        intercept = math.log(positive_rate / (1.0 - positive_rate))
+        initial_checkpoint_ref = None
+        training_update_mode = "cold_start_fit"
     learning_rate = 0.05
     regularization = 0.001
     for _epoch in range(80):
@@ -324,6 +376,8 @@ def _train_logistic_model(features: list[dict[str, float]], labels: list[int]) -
         "intercept": round(intercept, 10),
         "feature_means": {name: round(value, 10) for name, value in means.items()},
         "feature_scales": {name: round(value, 10) for name, value in scales.items()},
+        "training_update_mode": training_update_mode,
+        "initial_checkpoint_ref": initial_checkpoint_ref,
     }
 
 
@@ -342,7 +396,8 @@ def build_model_artifact(
     output_json: Path | None = None,
     parent_checkpoint_ref: str | None = None,
 ) -> dict[str, Any]:
-    score_model = _train_logistic_model(features, labels)
+    parent_checkpoint = _load_parent_checkpoint(parent_checkpoint_ref)
+    score_model = _train_logistic_model(features, labels, parent_checkpoint=parent_checkpoint)
     positive_rate = label_summary["positive_count"] / label_summary["sample_count"]
     resolved_parent_ref = (parent_checkpoint_ref or "").strip() or None
     checkpoint_ref = str(output_json) if output_json is not None else None
@@ -399,6 +454,12 @@ def build_model_artifact(
             "cumulative_learning_mode": "cumulative_checkpoint",
             "seed_policy": seed_policy,
             "source": "database",
+            "parent_sample_count": (
+                ((parent_checkpoint or {}).get("training_summary") or {}).get("sample_count")
+                if isinstance((parent_checkpoint or {}).get("training_summary"), Mapping)
+                else None
+            ),
+            "update_mode": score_model["training_update_mode"],
             "sample_count": label_summary["sample_count"],
             "positive_count": label_summary["positive_count"],
             "negative_count": label_summary["negative_count"],
