@@ -249,6 +249,125 @@ class TargetStateModelTests(unittest.TestCase):
                     else:
                         os.environ[key] = value
 
+    def test_model_02_database_input_rows_stream_in_batches(self) -> None:
+        script = _load_script("scripts/models/model_02_target_state/generate_model_02_target_state.py")
+
+        class Cursor:
+            def __init__(self) -> None:
+                self.rows = [
+                    {
+                        "available_time": "2016-01-04T09:35:00-05:00",
+                        "tradeable_time": "2016-01-04T09:35:00-05:00",
+                        "target_candidate_id": f"anon_{index}",
+                        "background_context_state_ref": "mcs_1",
+                        "background_context_state": {},
+                        "anonymous_target_feature_vector": {"target_return_1W": 0.01},
+                    }
+                    for index in range(3)
+                ]
+
+            def execute(self, *_args: object) -> None:
+                return None
+
+            def fetchmany(self, size: int) -> list[dict[str, object]]:
+                batch = self.rows[:size]
+                self.rows = self.rows[size:]
+                return batch
+
+        batches = list(
+            script._iter_database_input_row_batches(
+                Cursor(),
+                source_schema="trading_data",
+                source_table="model_03_target_state_vector_feature_generation",
+                source_start=None,
+                source_end=None,
+                batch_size=2,
+            )
+        )
+
+        self.assertEqual([len(batch) for batch in batches], [2, 1])
+        self.assertEqual(batches[1][0]["target_candidate_id"], "anon_2")
+
+    def test_model_02_database_generation_keeps_read_and_write_cursors_separate(self) -> None:
+        script = _load_script("scripts/models/model_02_target_state/generate_model_02_target_state.py")
+
+        class Cursor:
+            def __init__(self, rows: list[dict[str, object]] | None = None) -> None:
+                self.rows = rows or []
+                self.executed = False
+
+            def __enter__(self) -> "Cursor":
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def execute(self, *_args: object) -> None:
+                self.executed = True
+
+            def fetchmany(self, size: int) -> list[dict[str, object]]:
+                batch = self.rows[:size]
+                self.rows = self.rows[size:]
+                return batch
+
+        class Connection:
+            def __init__(self) -> None:
+                self.read_cursor = Cursor(
+                    [
+                        {
+                            "available_time": "2016-01-04T09:35:00-05:00",
+                            "tradeable_time": "2016-01-04T09:35:00-05:00",
+                            "target_candidate_id": f"anon_{index}",
+                            "background_context_state_ref": "mcs_1",
+                            "background_context_state": {},
+                            "anonymous_target_feature_vector": {"target_return_1W": 0.01},
+                        }
+                        for index in range(1001)
+                    ]
+                )
+                self.write_cursor = Cursor()
+                self.cursor_names: list[str | None] = []
+
+            def __enter__(self) -> "Connection":
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def cursor(self, *, name: str | None = None) -> Cursor:
+                self.cursor_names.append(name)
+                return self.read_cursor if name else self.write_cursor
+
+        connection = Connection()
+        writes: list[list[dict[str, object]]] = []
+        original_load_psycopg = script._load_psycopg
+        original_generate_rows = script.generate_rows
+        original_write_sql = script._write_sql
+        try:
+            script._load_psycopg = lambda: (type("Psycopg", (), {"connect": lambda *_args, **_kwargs: connection}), object)
+            script.generate_rows = lambda rows, *, model_version: [{"target_context_state_ref": row["target_candidate_id"]} for row in rows]
+            script._write_sql = lambda _cursor, rows, **_kwargs: writes.append(list(rows))
+
+            count = script.generate_from_database(
+                database_url="postgresql://redacted",
+                source_schema="trading_data",
+                source_table="model_03_target_state_vector_feature_generation",
+                source_start=None,
+                source_end=None,
+                target_schema="trading_model",
+                target_table="model_02_target_state",
+                model_version="test",
+                output_jsonl=None,
+            )
+        finally:
+            script._load_psycopg = original_load_psycopg
+            script.generate_rows = original_generate_rows
+            script._write_sql = original_write_sql
+
+        self.assertEqual(count, 1001)
+        self.assertEqual(connection.cursor_names, ["model_02_target_state_input_rows", None])
+        self.assertEqual([len(batch) for batch in writes], [1000, 1])
+
     def assert_no_key(self, value: object, forbidden: str) -> None:
         if isinstance(value, dict):
             for key, nested in value.items():

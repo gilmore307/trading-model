@@ -10,7 +10,7 @@ import threading
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Iterator, Mapping, Sequence
 
 from model_runtime.config import database_url_file
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
@@ -26,6 +26,7 @@ EXPLAINABILITY_COLUMNS = {"target_context_state"}
 DIAGNOSTICS_COLUMNS = {"target_state_diagnostics"}
 TEXT_2_COLUMNS: set[str] = set()
 PROGRESS_HEARTBEAT_SECONDS = 60.0
+DATABASE_BATCH_SIZE = 1000
 
 
 def _quote_identifier(identifier: str) -> str:
@@ -71,6 +72,8 @@ def _write_stage_progress(
     node_id: str,
     node_label: str,
     current_activity: str,
+    processed_count: int | None = None,
+    expected_count: int | None = None,
 ) -> None:
     env = _progress_env()
     if env is None:
@@ -99,28 +102,28 @@ def _write_stage_progress(
         "contract_type": "manager_worker_task_progress",
         "current_activity": current_activity,
         "elapsed_seconds": None,
-        "expected_count": None,
+        "expected_count": expected_count,
         "expected_seconds": None,
         "extra": extra,
         "nodes": [
             {
                 "elapsed_seconds": None,
-                "expected_count": None,
+                "expected_count": expected_count,
                 "expected_seconds": None,
                 "node_id": node_id,
                 "node_label": node_label,
-                "processed_count": None,
+                "processed_count": processed_count,
                 "status": "running",
                 "updated_at_utc": now,
             }
         ],
-        "processed_count": None,
+        "processed_count": processed_count,
         "progress_basis": extra["progress_basis"],
         "progress_source": "active_progress_file",
         "stage_id": stage_id,
         "status": "running",
         "task_uid": task_uid,
-        "unit_label": "model operation",
+        "unit_label": "rows",
         "updated_at_utc": now,
         "worker_id": worker_id,
     }
@@ -216,6 +219,67 @@ def _fetch_database_input_rows(
     return _model_02_input_rows(cursor.fetchall())
 
 
+def _execute_database_input_query(
+    cursor: Any,
+    *,
+    source_schema: str,
+    source_table: str,
+    source_start: str | None,
+    source_end: str | None,
+) -> None:
+    where: list[str] = []
+    params: list[Any] = []
+    if source_start:
+        where.append('"available_time"::timestamptz >= %s::timestamptz')
+        params.append(source_start)
+    if source_end:
+        where.append('"available_time"::timestamptz < %s::timestamptz')
+        params.append(source_end)
+    where_sql = " WHERE " + " AND ".join(where) if where else ""
+    cursor.execute(
+        f"""
+        SELECT
+          "available_time",
+          "tradeable_time",
+          "target_candidate_id",
+          "market_context_state_ref" AS "background_context_state_ref",
+          "market_state_features" AS "background_context_state",
+          "target_state_features" AS "anonymous_target_feature_vector",
+          "sector_state_features",
+          "cross_state_features",
+          "feature_quality_diagnostics"
+        FROM {_qualified(source_schema, source_table)}
+        {where_sql}
+        ORDER BY "available_time"::timestamptz ASC, "target_candidate_id" ASC
+        """,
+        params,
+    )
+
+
+def _iter_database_input_row_batches(
+    cursor: Any,
+    *,
+    source_schema: str,
+    source_table: str,
+    source_start: str | None,
+    source_end: str | None,
+    batch_size: int | None = None,
+) -> Iterator[list[dict[str, Any]]]:
+    _execute_database_input_query(
+        cursor,
+        source_schema=source_schema,
+        source_table=source_table,
+        source_start=source_start,
+        source_end=source_end,
+    )
+    effective_batch_size = batch_size or DATABASE_BATCH_SIZE
+    while True:
+        rows = cursor.fetchmany(effective_batch_size)
+        if not rows:
+            break
+        yield _model_02_input_rows(rows)
+
+
 def _model_02_input_rows(source_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for row in source_rows:
@@ -261,50 +325,36 @@ def generate_from_database(
     output_jsonl: Path | None,
 ) -> int:
     psycopg, dict_row = _load_psycopg()
-    with psycopg.connect(database_url, row_factory=dict_row) as conn:
-        with conn.cursor() as cursor:
+    total_count = 0
+    output_rows: list[dict[str, Any]] = []
+    with psycopg.connect(database_url, row_factory=dict_row) as read_conn, psycopg.connect(database_url, row_factory=dict_row) as write_conn:
+        with read_conn.cursor(name="model_02_target_state_input_rows") as read_cursor, write_conn.cursor() as write_cursor:
             with _ProgressHeartbeat(
                 node_id="fetch_database_input_rows",
                 node_label="Fetch database input rows",
-                current_activity="Fetching M02 target-state feature rows",
+                current_activity="Streaming M02 target-state feature rows",
             ):
-                input_rows = _fetch_database_input_rows(
-                    cursor,
+                for input_rows in _iter_database_input_row_batches(
+                    read_cursor,
                     source_schema=source_schema,
                     source_table=source_table,
                     source_start=source_start,
                     source_end=source_end,
-                )
-            _write_stage_progress(
-                node_id="database_input_rows_fetched",
-                node_label="Database input rows fetched",
-                current_activity=f"Fetched {len(input_rows)} M02 target-state feature rows",
-            )
-            with _ProgressHeartbeat(
-                node_id="generate_model_rows",
-                node_label="Generate model rows",
-                current_activity="Generating M02 target-state rows",
-            ):
-                model_rows = generate_rows(input_rows, model_version=model_version)
-            _write_stage_progress(
-                node_id="model_rows_generated",
-                node_label="Model rows generated",
-                current_activity=f"Generated {len(model_rows)} M02 target-state rows",
-            )
-            with _ProgressHeartbeat(
-                node_id="write_model_rows",
-                node_label="Write model rows",
-                current_activity=f"Writing {len(model_rows)} M02 target-state rows",
-            ):
-                _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
-            _write_stage_progress(
-                node_id="model_rows_written",
-                node_label="Model rows written",
-                current_activity=f"Wrote {len(model_rows)} M02 target-state rows",
-            )
+                ):
+                    model_rows = generate_rows(input_rows, model_version=model_version)
+                    _write_sql(write_cursor, model_rows, target_schema=target_schema, target_table=target_table)
+                    if output_jsonl:
+                        output_rows.extend(model_rows)
+                    total_count += len(model_rows)
+                    _write_stage_progress(
+                        node_id="model_rows_written",
+                        node_label="Model rows written",
+                        current_activity=f"Wrote {total_count} M02 target-state rows",
+                        processed_count=total_count,
+                    )
     if output_jsonl:
-        write_rows(model_rows, output_jsonl)
-    return len(model_rows)
+        write_rows(output_rows, output_jsonl)
+    return total_count
 
 
 def main(argv: list[str] | None = None) -> int:
