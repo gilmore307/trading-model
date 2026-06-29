@@ -35,7 +35,7 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
 
     def test_script_rejects_without_supervised_labels(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:
-            output_path = Path(raw_tmp) / "after_cost_alpha_model_2016-01_2016-06.json"
+            output_path = Path(raw_tmp) / "after_cost_alpha_model_2016-01_2017-06.json"
             result = subprocess.run(
                 [
                     sys.executable,
@@ -81,10 +81,10 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
         labels = [0, 1, 0, 1]
         with tempfile.TemporaryDirectory() as raw_tmp:
             tmp = Path(raw_tmp)
-            parent_path = tmp / "after_cost_alpha_model_2016-01_2016-06.json"
+            parent_path = tmp / "after_cost_alpha_model_2016-01_2017-06.json"
             parent = script.build_model_artifact(
                 target_symbol="AAPL",
-                fold_id="fold_2016-01_2016-06",
+                fold_id="fold_2016-01_2017-06",
                 source_start="2016-01-01T00:00:00-05:00",
                 source_end="2016-05-01T00:00:00-05:00",
                 horizons=["10min", "1h", "1D", "1W"],
@@ -131,8 +131,8 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
         self.assertEqual(artifact["target_symbol"], "AAPL")
         self.assertEqual(artifact["fold_id"], "fold_2016-07_2016-12")
         self.assertEqual(artifact["learning_contract"], "replayable_cumulative_fold_checkpoint")
-        self.assertTrue(artifact["seed_checkpoint_ref"].endswith("after_cost_alpha_model_2016-01_2016-06.json"))
-        self.assertTrue(artifact["parent_checkpoint_ref"].endswith("after_cost_alpha_model_2016-01_2016-06.json"))
+        self.assertTrue(artifact["seed_checkpoint_ref"].endswith("after_cost_alpha_model_2016-01_2017-06.json"))
+        self.assertTrue(artifact["parent_checkpoint_ref"].endswith("after_cost_alpha_model_2016-01_2017-06.json"))
         self.assertTrue(artifact["checkpoint_ref"].endswith("after_cost_alpha_model_2016-07_2016-12.json"))
         self.assertEqual(artifact["lineage"]["learning_mode"], "cumulative_checkpoint")
         self.assertEqual(artifact["training_summary"]["training_mode"], "supervised_fit")

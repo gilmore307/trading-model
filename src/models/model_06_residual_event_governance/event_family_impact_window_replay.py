@@ -25,7 +25,7 @@ from models.model_06_residual_event_governance.event_observation_pool_policy imp
 
 ET = ZoneInfo("America/New_York")
 DEFAULT_REPLAY_RUN_ID = "model_group_replay_20260609T060059Z"
-DEFAULT_FOLD_ID = "fold_2016-01_2016-06"
+DEFAULT_FOLD_ID = "fold_2016-01_2017-06"
 DEFAULT_DATASET_ROOT = component_storage_root("replay") / "promotion_replay_candidate_policy"
 DEFAULT_REPLAY_DECISION_ROWS = DEFAULT_DATASET_ROOT / "replay_execution_runs" / DEFAULT_REPLAY_RUN_ID / "decision_rows.jsonl"
 DEFAULT_IMPACT_WINDOW_ROOT = model_storage_root() / "event_family_impact_window_real_input_backtest_20260610"

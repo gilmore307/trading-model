@@ -19,7 +19,7 @@ from model_runtime.config import model_storage_root
 CONTRACT_TYPE = "m06_residual_event_governance_fold_completion"
 SUMMARY_CONTRACT_TYPE = "m06_residual_event_governance_fold_completion_summary"
 
-DEFAULT_FOLD_ID = "fold_2016-01_2016-06"
+DEFAULT_FOLD_ID = "fold_2016-01_2017-06"
 DEFAULT_REPLAY_RUN_ID = "model_group_replay_20260609T060059Z"
 DEFAULT_OUTPUT_DIR = model_storage_root() / "m06_residual_event_governance_fold_completion_20260610" / DEFAULT_FOLD_ID / DEFAULT_REPLAY_RUN_ID
 
