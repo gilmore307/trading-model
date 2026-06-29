@@ -81,6 +81,7 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
         labels = [0, 1, 0, 1]
         artifact = script.build_model_artifact(
             target_symbol="AAPL",
+            fold_id="fold_2016-07_2016-12",
             source_start="2016-07-01T00:00:00-05:00",
             source_end="2016-11-01T00:00:00-05:00",
             horizons=["10min", "1h", "1D", "1W"],
@@ -96,12 +97,22 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
                 "bar_row_count": 8,
                 "mean_realized_after_cost_return": 0.01,
             },
+            output_json=Path("/tmp/after_cost_alpha_model_2016-07_2016-12.json"),
+            parent_checkpoint_ref="/tmp/after_cost_alpha_model_2016-01_2016-06.json",
         )
 
         self.assertEqual(artifact["contract_type"], "after_cost_alpha_model")
         self.assertEqual(artifact["model_type"], "fold_supervised_after_cost_alpha_logistic")
         self.assertEqual(artifact["target_symbol"], "AAPL")
+        self.assertEqual(artifact["fold_id"], "fold_2016-07_2016-12")
+        self.assertEqual(artifact["learning_contract"], "replayable_cumulative_fold_checkpoint")
+        self.assertEqual(artifact["seed_checkpoint_ref"], "/tmp/after_cost_alpha_model_2016-01_2016-06.json")
+        self.assertEqual(artifact["parent_checkpoint_ref"], "/tmp/after_cost_alpha_model_2016-01_2016-06.json")
+        self.assertEqual(artifact["checkpoint_ref"], "/tmp/after_cost_alpha_model_2016-07_2016-12.json")
+        self.assertEqual(artifact["lineage"]["learning_mode"], "cumulative_checkpoint")
         self.assertEqual(artifact["training_summary"]["training_mode"], "supervised_fit")
+        self.assertEqual(artifact["training_summary"]["cumulative_learning_mode"], "cumulative_checkpoint")
+        self.assertEqual(artifact["training_summary"]["seed_policy"], "parent_checkpoint")
         self.assertEqual(artifact["training_summary"]["sample_count"], 4)
         self.assertEqual(artifact["score_model"]["model_family"], "logistic_regression")
         self.assertEqual(artifact["score_model"]["feature_names"], list(script.FEATURE_NAMES))

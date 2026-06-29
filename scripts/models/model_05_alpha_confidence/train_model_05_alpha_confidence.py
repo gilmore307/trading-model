@@ -330,6 +330,7 @@ def _train_logistic_model(features: list[dict[str, float]], labels: list[int]) -
 def build_model_artifact(
     *,
     target_symbol: str,
+    fold_id: str | None,
     source_start: str,
     source_end: str,
     horizons: list[str],
@@ -338,9 +339,14 @@ def build_model_artifact(
     features: list[dict[str, float]],
     labels: list[int],
     label_summary: dict[str, Any],
+    output_json: Path | None = None,
+    parent_checkpoint_ref: str | None = None,
 ) -> dict[str, Any]:
     score_model = _train_logistic_model(features, labels)
     positive_rate = label_summary["positive_count"] / label_summary["sample_count"]
+    resolved_parent_ref = (parent_checkpoint_ref or "").strip() or None
+    checkpoint_ref = str(output_json) if output_json is not None else None
+    seed_policy = "parent_checkpoint" if resolved_parent_ref else "target_first_fold_cold_start"
     return {
         "contract_type": CONTRACT_TYPE,
         "schema_version": "2026-06-23",
@@ -348,7 +354,31 @@ def build_model_artifact(
         "model_version": MODEL_VERSION,
         "model_type": "fold_supervised_after_cost_alpha_logistic",
         "target_symbol": target_symbol,
+        "fold_id": fold_id,
         "horizons": horizons,
+        "learning_contract": "replayable_cumulative_fold_checkpoint",
+        "seed_checkpoint_ref": resolved_parent_ref,
+        "parent_checkpoint_ref": resolved_parent_ref,
+        "checkpoint_ref": checkpoint_ref,
+        "lineage": {
+            "learning_mode": "cumulative_checkpoint",
+            "seed_policy": seed_policy,
+            "parent_checkpoint_ref": resolved_parent_ref,
+            "checkpoint_ref": checkpoint_ref,
+            "fold_id": fold_id,
+            "target_symbol": target_symbol,
+        },
+        "cumulative_learning_scope": {
+            "mode": "cumulative_checkpoint",
+            "seed_policy": seed_policy,
+            "finalized_training_event_cutoff": source_start,
+            "update_window": {
+                "source_start": source_start,
+                "source_end": source_end,
+            },
+            "training_universe_scope": label_summary.get("training_universe_scope"),
+            "candidate_training_target": label_summary.get("candidate_training_target", target_symbol),
+        },
         "score_model": score_model,
         "selected_thresholds": {
             "minimum_entry_alpha_confidence": 0.5,
@@ -366,6 +396,8 @@ def build_model_artifact(
         },
         "training_summary": {
             "training_mode": "supervised_fit",
+            "cumulative_learning_mode": "cumulative_checkpoint",
+            "seed_policy": seed_policy,
             "source": "database",
             "sample_count": label_summary["sample_count"],
             "positive_count": label_summary["positive_count"],
@@ -399,6 +431,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-start")
     parser.add_argument("--source-end")
     parser.add_argument("--target-symbol", required=True)
+    parser.add_argument("--fold-id")
+    parser.add_argument("--parent-checkpoint-ref")
     parser.add_argument("--candidate-universe-path", type=Path, default=DEFAULT_CANDIDATE_UNIVERSE_PATH)
     parser.add_argument("--max-samples-per-symbol", type=int, default=DEFAULT_MAX_SAMPLES_PER_SYMBOL)
     parser.add_argument("--database-url")
@@ -458,6 +492,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     model = build_model_artifact(
         target_symbol=target_symbol,
+        fold_id=args.fold_id,
         source_start=args.source_start,
         source_end=args.source_end,
         horizons=horizons,
@@ -466,6 +501,8 @@ def main(argv: list[str] | None = None) -> int:
         features=features,
         labels=labels,
         label_summary=label_summary,
+        output_json=args.output_json,
+        parent_checkpoint_ref=args.parent_checkpoint_ref,
     )
     write_artifact(args.output_json, model)
     rejection_path = rejection_receipt_path(args.output_json)
