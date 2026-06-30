@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -250,6 +251,68 @@ class ResidualEventGovernanceModelTests(unittest.TestCase):
             review = json.loads(review_path.read_text(encoding="utf-8"))
             self.assertEqual(review["decision_status"], "deferred")
             self.assertFalse(review["activation_allowed"])
+
+    def test_database_generation_refreshes_manager_task_progress(self) -> None:
+        script = _load_generator_script()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            previous_env = {
+                key: os.environ.get(key)
+                for key in (
+                    "TRADING_MANAGER_TASK_PROGRESS_ROOT",
+                    "TRADING_MANAGER_TASK_PROGRESS_WORKER_ID",
+                    "TRADING_MANAGER_TASK_PROGRESS_TASK_UID",
+                    "TRADING_MANAGER_TASK_PROGRESS_STAGE_ID",
+                    "TRADING_MODEL_DATASET_SPLIT_NAME",
+                    "TRADING_MODEL_DATASET_SPLIT_POLICY",
+                )
+            }
+            try:
+                os.environ.update(
+                    {
+                        "TRADING_MANAGER_TASK_PROGRESS_ROOT": tmpdir,
+                        "TRADING_MANAGER_TASK_PROGRESS_WORKER_ID": "model_worker_1",
+                        "TRADING_MANAGER_TASK_PROGRESS_TASK_UID": "2016-01..2017-06:model_06_residual_event_governance.model_generation.train",
+                        "TRADING_MANAGER_TASK_PROGRESS_STAGE_ID": "model_06_residual_event_governance.model_generation.train",
+                        "TRADING_MODEL_DATASET_SPLIT_NAME": "train",
+                        "TRADING_MODEL_DATASET_SPLIT_POLICY": "chronological_cumulative_walk_forward_12_3_3",
+                    }
+                )
+
+                script._write_stage_progress(
+                    node_id="fetch_database_input_rows",
+                    node_label="Fetch database input rows",
+                    current_activity="Generating M06 residual-event-governance rows from database inputs",
+                )
+
+                progress = json.loads((Path(tmpdir) / "model_worker_1.json").read_text(encoding="utf-8"))
+                self.assertEqual(progress["contract_type"], "manager_worker_task_progress")
+                self.assertEqual(progress["status"], "running")
+                self.assertEqual(progress["stage_id"], "model_06_residual_event_governance.model_generation.train")
+                self.assertIsNone(progress["processed_count"])
+                self.assertEqual(progress["nodes"][0]["node_id"], "fetch_database_input_rows")
+                self.assertEqual(progress["extra"]["dataset_split"]["split_name"], "train")
+                self.assertEqual(progress["extra"]["source"], "model_06_residual_event_governance_database_generator")
+
+                script._write_stage_progress(
+                    node_id="write_model_rows",
+                    node_label="Write model rows",
+                    current_activity="Writing 7 M06 residual-event-governance rows",
+                    processed_count=7,
+                    expected_count=12,
+                )
+                progress = json.loads((Path(tmpdir) / "model_worker_1.json").read_text(encoding="utf-8"))
+                self.assertEqual(progress["processed_count"], 7)
+                self.assertEqual(progress["expected_count"], 12)
+                self.assertEqual(progress["unit_label"], "rows")
+                self.assertEqual(progress["nodes"][0]["processed_count"], 7)
+                self.assertEqual(progress["nodes"][0]["expected_count"], 12)
+            finally:
+                for key, value in previous_env.items():
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
 
     def assert_no_retired_outputs(self, value: object) -> None:
         if isinstance(value, dict):
