@@ -266,6 +266,20 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
                 self.assertEqual(progress["nodes"][0]["node_id"], "fetch_database_input_rows")
                 self.assertEqual(progress["extra"]["dataset_split"]["split_name"], "train")
                 self.assertEqual(progress["extra"]["source"], "model_05_option_expression_database_generator")
+
+                script._write_stage_progress(
+                    node_id="generate_model_rows",
+                    node_label="Generate model rows",
+                    current_activity="Generated 7/12 M05 option-expression rows",
+                    processed_count=7,
+                    expected_count=12,
+                )
+                progress = json.loads((Path(tmpdir) / "model_worker_1.json").read_text(encoding="utf-8"))
+                self.assertEqual(progress["processed_count"], 7)
+                self.assertEqual(progress["expected_count"], 12)
+                self.assertEqual(progress["unit_label"], "rows")
+                self.assertEqual(progress["nodes"][0]["processed_count"], 7)
+                self.assertEqual(progress["nodes"][0]["expected_count"], 12)
             finally:
                 for key, value in previous_env.items():
                     if value is None:

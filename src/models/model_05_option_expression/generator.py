@@ -13,7 +13,7 @@ import hashlib
 import json
 import math
 from datetime import datetime
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 from .contract import EXPRESSION_TYPES, FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_STEP, MODEL_VERSION, OPTION_SURFACE_STATUSES
@@ -21,12 +21,23 @@ from .contract import EXPRESSION_TYPES, FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL
 ET = ZoneInfo("America/New_York")
 
 
-def generate_rows(input_rows: Iterable[Mapping[str, Any]], *, model_version: str = MODEL_VERSION) -> list[dict[str, Any]]:
+def generate_rows(
+    input_rows: Iterable[Mapping[str, Any]],
+    *,
+    model_version: str = MODEL_VERSION,
+    progress_callback: Callable[[int, int], None] | None = None,
+) -> list[dict[str, Any]]:
     rows = [_normalize_input_row(row) for row in input_rows]
     if not rows:
         raise ValueError("at least one M05 input row is required")
     rows.sort(key=lambda row: (_row_time(row), str(row.get("target_candidate_id") or "")))
-    return [_model_row(row, model_version=model_version) for row in rows]
+    total = len(rows)
+    model_rows: list[dict[str, Any]] = []
+    for index, row in enumerate(rows, start=1):
+        model_rows.append(_model_row(row, model_version=model_version))
+        if progress_callback is not None:
+            progress_callback(index, total)
+    return model_rows
 
 
 def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:

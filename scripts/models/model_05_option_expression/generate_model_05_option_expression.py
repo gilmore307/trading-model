@@ -174,15 +174,26 @@ def _write_stage_progress(
 
 
 class _ProgressHeartbeat:
-    def __init__(self, *, node_id: str, node_label: str, current_activity: str) -> None:
+    def __init__(
+        self,
+        *,
+        node_id: str,
+        node_label: str,
+        current_activity: str,
+        processed_count: int | None = None,
+        expected_count: int | None = None,
+    ) -> None:
         self.node_id = node_id
         self.node_label = node_label
         self.current_activity = current_activity
+        self.processed_count = processed_count
+        self.expected_count = expected_count
+        self._lock = threading.Lock()
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name=f"{node_id}_progress_heartbeat", daemon=True)
 
     def __enter__(self) -> "_ProgressHeartbeat":
-        _write_stage_progress(node_id=self.node_id, node_label=self.node_label, current_activity=self.current_activity)
+        self._write()
         self._thread.start()
         return self
 
@@ -190,9 +201,45 @@ class _ProgressHeartbeat:
         self._stop.set()
         self._thread.join(timeout=1.0)
 
+    def update(
+        self,
+        *,
+        node_id: str | None = None,
+        node_label: str | None = None,
+        current_activity: str | None = None,
+        processed_count: int | None = None,
+        expected_count: int | None = None,
+    ) -> None:
+        with self._lock:
+            if node_id is not None:
+                self.node_id = node_id
+            if node_label is not None:
+                self.node_label = node_label
+            if current_activity is not None:
+                self.current_activity = current_activity
+            if processed_count is not None:
+                self.processed_count = processed_count
+            if expected_count is not None:
+                self.expected_count = expected_count
+        self._write()
+
+    def _snapshot(self) -> tuple[str, str, str, int | None, int | None]:
+        with self._lock:
+            return self.node_id, self.node_label, self.current_activity, self.processed_count, self.expected_count
+
+    def _write(self) -> None:
+        node_id, node_label, current_activity, processed_count, expected_count = self._snapshot()
+        _write_stage_progress(
+            node_id=node_id,
+            node_label=node_label,
+            current_activity=current_activity,
+            processed_count=processed_count,
+            expected_count=expected_count,
+        )
+
     def _run(self) -> None:
         while not self._stop.wait(PROGRESS_HEARTBEAT_SECONDS):
-            _write_stage_progress(node_id=self.node_id, node_label=self.node_label, current_activity=self.current_activity)
+            self._write()
 
 
 def _column_type(column: str) -> str:
@@ -476,20 +523,68 @@ def generate_from_database(
                 node_id="fetch_database_input_rows",
                 node_label="Fetch database input rows",
                 current_activity="Generating M05 option-expression rows from database inputs",
-            ):
+                processed_count=0,
+                expected_count=1,
+            ) as progress:
                 model_04_rows = _fetch_model_04_rows(cursor, source_start=source_start, source_end=source_end)
+                progress.update(
+                    current_activity=f"Fetched {len(model_04_rows)} M04 unified-decision rows",
+                    processed_count=1,
+                    expected_count=4,
+                )
                 option_candidate_rows = _fetch_option_candidate_rows(cursor, source_start=source_start, source_end=source_end, model_04_rows=model_04_rows)
+                progress.update(
+                    node_id="fetch_option_candidate_rows",
+                    node_label="Fetch option candidate rows",
+                    current_activity=f"Fetched {len(option_candidate_rows)} M05 option candidate rows",
+                    processed_count=2,
+                    expected_count=4,
+                )
                 input_rows = _model_05_input_rows(model_04_rows, option_candidate_rows)
+                progress.update(
+                    node_id="build_model_input_rows",
+                    node_label="Build model input rows",
+                    current_activity=f"Built {len(input_rows)} M05 model input rows",
+                    processed_count=3,
+                    expected_count=4,
+                )
                 if not input_rows:
                     model_rows = []
                 else:
-                    model_rows = generate_rows(input_rows, model_version=model_version)
+                    row_update_interval = max(1, min(1000, len(input_rows) // 100 or 1))
+
+                    def on_row_progress(processed_count: int, expected_count: int) -> None:
+                        if processed_count == expected_count or processed_count % row_update_interval == 0:
+                            progress.update(
+                                node_id="generate_model_rows",
+                                node_label="Generate model rows",
+                                current_activity=f"Generated {processed_count}/{expected_count} M05 option-expression rows",
+                                processed_count=processed_count,
+                                expected_count=expected_count,
+                            )
+
+                    progress.update(
+                        node_id="generate_model_rows",
+                        node_label="Generate model rows",
+                        current_activity=f"Generating 0/{len(input_rows)} M05 option-expression rows",
+                        processed_count=0,
+                        expected_count=len(input_rows),
+                    )
+                    model_rows = generate_rows(input_rows, model_version=model_version, progress_callback=on_row_progress)
+                progress.update(
+                    node_id="write_model_rows",
+                    node_label="Write model rows",
+                    current_activity=f"Writing {len(model_rows)} M05 option-expression rows",
+                    processed_count=0,
+                    expected_count=max(len(model_rows), 1),
+                )
                 _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
-                _write_stage_progress(
+                progress.update(
                     node_id="model_rows_written",
                     node_label="Model rows written",
                     current_activity=f"Wrote {len(model_rows)} M05 option-expression rows",
                     processed_count=len(model_rows),
+                    expected_count=max(len(model_rows), 1),
                 )
     if output_jsonl:
         _write_jsonl(output_jsonl, model_rows)
