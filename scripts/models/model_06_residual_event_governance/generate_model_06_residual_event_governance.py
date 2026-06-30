@@ -10,7 +10,7 @@ import threading
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Iterator, Mapping, Sequence
 
 from model_runtime.config import database_url_file
 
@@ -31,6 +31,7 @@ EXPLAINABILITY_COLUMNS = {"event_risk_intervention"}
 DIAGNOSTICS_COLUMNS = {"6_resolved_reason_codes", "residual_event_governance_diagnostics"}
 TEXT_6_COLUMNS = {"6_resolved_intervention_action", "6_resolved_risk_horizon"}
 PROGRESS_HEARTBEAT_SECONDS = 60.0
+DATABASE_BATCH_SIZE = 10_000
 
 
 def _quote_identifier(identifier: str) -> str:
@@ -257,12 +258,15 @@ def _write_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema:
     )
 
 
-def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
+def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]], *, append: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(row, sort_keys=True, default=str) + "\n" for row in rows), encoding="utf-8")
+    mode = "a" if append else "w"
+    with path.open(mode, encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, sort_keys=True, default=str) + "\n")
 
 
-def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+def _database_input_where(*, source_start: str | None, source_end: str | None) -> tuple[str, list[Any]]:
     where: list[str] = []
     params: list[Any] = []
     if source_start:
@@ -271,7 +275,29 @@ def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_
     if source_end:
         where.append('u."available_time"::timestamptz < %s::timestamptz')
         params.append(source_end)
-    where_sql = " WHERE " + " AND ".join(where) if where else ""
+    return (" WHERE " + " AND ".join(where) if where else ""), params
+
+
+def _count_database_input_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> int:
+    where_sql, params = _database_input_where(source_start=source_start, source_end=source_end)
+    cursor.execute(
+        f"""
+        SELECT COUNT(*) AS row_count
+        FROM {_qualified("trading_model", "model_04_unified_decision")} AS u
+        {where_sql}
+        """,
+        params,
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return 0
+    if isinstance(row, Mapping):
+        return int(row.get("row_count") or 0)
+    return int(row[0] or 0)
+
+
+def _execute_database_input_query(cursor: Any, *, source_start: str | None, source_end: str | None) -> None:
+    where_sql, params = _database_input_where(source_start=source_start, source_end=source_end)
     cursor.execute(
         f"""
         SELECT
@@ -298,12 +324,36 @@ def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_
         """,
         params,
     )
+
+
+def _database_input_rows(raw_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for raw in cursor.fetchall():
+    for raw in raw_rows:
         row = dict(raw)
         row["event_observations"] = []
         rows.append(row)
     return rows
+
+
+def _iter_database_input_row_batches(
+    cursor: Any,
+    *,
+    source_start: str | None,
+    source_end: str | None,
+    batch_size: int | None = None,
+) -> Iterator[list[dict[str, Any]]]:
+    _execute_database_input_query(cursor, source_start=source_start, source_end=source_end)
+    effective_batch_size = batch_size or DATABASE_BATCH_SIZE
+    while True:
+        raw_rows = cursor.fetchmany(effective_batch_size)
+        if not raw_rows:
+            break
+        yield _database_input_rows(raw_rows)
+
+
+def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+    _execute_database_input_query(cursor, source_start=source_start, source_end=source_end)
+    return _database_input_rows(cursor.fetchall())
 
 
 def generate_from_database(
@@ -317,59 +367,60 @@ def generate_from_database(
     output_jsonl: Path | None,
 ) -> int:
     psycopg, dict_row = _load_psycopg()
-    with psycopg.connect(database_url, row_factory=dict_row) as conn:
-        with conn.cursor() as cursor:
+    total_count = 0
+    if output_jsonl and output_jsonl.exists():
+        output_jsonl.unlink()
+    with psycopg.connect(database_url, row_factory=dict_row) as read_conn, psycopg.connect(database_url, row_factory=dict_row) as write_conn:
+        with read_conn.cursor(name="model_06_residual_event_governance_input_rows") as read_cursor, write_conn.cursor() as write_cursor:
             with _ProgressHeartbeat(
-                node_id="fetch_database_input_rows",
-                node_label="Fetch database input rows",
-                current_activity="Generating M06 residual-event-governance rows from database inputs",
+                node_id="count_database_input_rows",
+                node_label="Count database input rows",
+                current_activity="Counting M06 residual-event-governance input rows",
                 processed_count=0,
-                expected_count=1,
             ) as progress:
-                input_rows = _fetch_database_input_rows(cursor, source_start=source_start, source_end=source_end)
+                input_count = _count_database_input_rows(write_cursor, source_start=source_start, source_end=source_end)
+                if input_count <= 0:
+                    raise ValueError("at least one M06 residual event governance input row is required")
                 progress.update(
-                    current_activity=f"Fetched {len(input_rows)} M04/M05 input rows for M06 residual-event governance",
-                    processed_count=1,
-                    expected_count=3,
-                )
-                progress.update(
-                    node_id="generate_model_rows",
-                    node_label="Generate model rows",
-                    current_activity=f"Generating {len(input_rows)} M06 residual-event-governance rows",
+                    node_id="stream_database_input_rows",
+                    node_label="Stream database input rows",
+                    current_activity=f"Streaming {input_count} M06 residual-event-governance input rows",
                     processed_count=0,
-                    expected_count=max(len(input_rows), 1),
+                    expected_count=input_count,
                 )
-                row_update_interval = max(len(input_rows) // 200, 1)
+                row_update_interval = max(input_count // 200, 1)
+                for input_rows in _iter_database_input_row_batches(
+                    read_cursor,
+                    source_start=source_start,
+                    source_end=source_end,
+                ):
+                    batch_offset = total_count
 
-                def on_row_progress(processed_count: int, expected_count: int) -> None:
-                    if processed_count == expected_count or processed_count % row_update_interval == 0:
-                        progress.update(
-                            node_id="generate_model_rows",
-                            node_label="Generate model rows",
-                            current_activity=f"Generated {processed_count}/{expected_count} M06 residual-event-governance rows",
-                            processed_count=processed_count,
-                            expected_count=expected_count,
-                        )
+                    def on_row_progress(processed_count: int, expected_count: int) -> None:
+                        global_processed = min(batch_offset + processed_count, input_count)
+                        if global_processed == input_count or global_processed % row_update_interval == 0:
+                            progress.update(
+                                node_id="generate_model_rows",
+                                node_label="Generate model rows",
+                                current_activity=f"Generated {global_processed}/{input_count} M06 residual-event-governance rows",
+                                processed_count=global_processed,
+                                expected_count=input_count,
+                            )
 
-                model_rows = generate_rows(input_rows, model_version=model_version, progress_callback=on_row_progress)
-                progress.update(
-                    node_id="write_model_rows",
-                    node_label="Write model rows",
-                    current_activity=f"Writing {len(model_rows)} M06 residual-event-governance rows",
-                    processed_count=0,
-                    expected_count=max(len(model_rows), 1),
-                )
-                _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
-                progress.update(
-                    node_id="model_rows_written",
-                    node_label="Model rows written",
-                    current_activity=f"Wrote {len(model_rows)} M06 residual-event-governance rows",
-                    processed_count=len(model_rows),
-                    expected_count=max(len(model_rows), 1),
-                )
-    if output_jsonl:
-        _write_jsonl(output_jsonl, model_rows)
-    return len(model_rows)
+                    model_rows = generate_rows(input_rows, model_version=model_version, progress_callback=on_row_progress)
+                    _write_sql(write_cursor, model_rows, target_schema=target_schema, target_table=target_table)
+                    write_conn.commit()
+                    if output_jsonl:
+                        _write_jsonl(output_jsonl, model_rows, append=True)
+                    total_count += len(model_rows)
+                    progress.update(
+                        node_id="model_rows_written",
+                        node_label="Model rows written",
+                        current_activity=f"Wrote {total_count}/{input_count} M06 residual-event-governance rows",
+                        processed_count=total_count,
+                        expected_count=input_count,
+                    )
+    return total_count
 
 
 def main(argv: list[str] | None = None) -> int:

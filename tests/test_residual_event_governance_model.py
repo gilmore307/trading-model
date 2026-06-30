@@ -204,6 +204,113 @@ class ResidualEventGovernanceModelTests(unittest.TestCase):
         self.assertEqual(rows[0]["event_observations"], [])
         self.assertEqual(rows[0]["unified_decision_vector_ref"], "udv_1")
 
+    def test_database_generation_streams_batches(self) -> None:
+        script = _load_generator_script()
+
+        class Cursor:
+            def __init__(self, rows: list[dict[str, object]] | None = None, *, count: int | None = None) -> None:
+                self.rows = rows or []
+                self.count = count
+                self.statements: list[tuple[str, object]] = []
+
+            def __enter__(self) -> "Cursor":
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def execute(self, statement: str, params: object = None) -> None:
+                self.statements.append((statement, params))
+
+            def fetchone(self) -> dict[str, int] | None:
+                if self.count is None:
+                    return None
+                return {"row_count": self.count}
+
+            def fetchmany(self, size: int) -> list[dict[str, object]]:
+                batch = self.rows[:size]
+                self.rows = self.rows[size:]
+                return batch
+
+        class Connection:
+            def __init__(self, *, rows: list[dict[str, object]] | None = None, count: int | None = None) -> None:
+                self.read_cursor = Cursor(rows)
+                self.write_cursor = Cursor(count=count)
+                self.cursor_names: list[str | None] = []
+                self.commits = 0
+
+            def __enter__(self) -> "Connection":
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def cursor(self, *, name: str | None = None) -> Cursor:
+                self.cursor_names.append(name)
+                return self.read_cursor if name else self.write_cursor
+
+            def commit(self) -> None:
+                self.commits += 1
+
+        source_rows = [
+            {
+                "available_time": "2016-01-04T09:35:00-05:00",
+                "tradeable_time": "2016-01-04T09:35:00-05:00",
+                "target_candidate_id": f"anon_{index}",
+                "background_context_state_ref": "bcs_1",
+                "target_context_state_ref": "tcs_1",
+                "event_state_vector_ref": "esv_1",
+                "unified_decision_vector_ref": "udv_1",
+                "unified_decision_vector": {"4_resolved_underlying_action_type": "watch"},
+                "direct_underlying_intent": {"action": "watch"},
+                "option_expression_plan_ref": "oep_1",
+                "option_expression_plan": {"5_resolved_expression_type": "underlying_only_expression"},
+            }
+            for index in range(5)
+        ]
+        read_connection = Connection(rows=source_rows)
+        write_connection = Connection(count=len(source_rows))
+        connections = [read_connection, write_connection]
+        writes: list[list[dict[str, object]]] = []
+        original_batch_size = script.DATABASE_BATCH_SIZE
+        original_load_psycopg = script._load_psycopg
+        original_generate_rows = script.generate_rows
+        original_write_sql = script._write_sql
+        try:
+            script.DATABASE_BATCH_SIZE = 2
+
+            class Psycopg:
+                @staticmethod
+                def connect(*_args: object, **_kwargs: object) -> Connection:
+                    return connections.pop(0)
+
+            script._load_psycopg = lambda: (Psycopg, object)
+            script.generate_rows = lambda rows, *, model_version, progress_callback: [
+                {"event_risk_intervention_ref": row["target_candidate_id"]} for row in rows
+            ]
+            script._write_sql = lambda _cursor, rows, **_kwargs: writes.append(list(rows))
+
+            count = script.generate_from_database(
+                database_url="postgresql://redacted",
+                source_start=None,
+                source_end=None,
+                target_schema="trading_model",
+                target_table="model_06_residual_event_governance",
+                model_version="test",
+                output_jsonl=None,
+            )
+        finally:
+            script.DATABASE_BATCH_SIZE = original_batch_size
+            script._load_psycopg = original_load_psycopg
+            script.generate_rows = original_generate_rows
+            script._write_sql = original_write_sql
+
+        self.assertEqual(count, 5)
+        self.assertEqual(read_connection.cursor_names, ["model_06_residual_event_governance_input_rows"])
+        self.assertEqual(write_connection.cursor_names, [None])
+        self.assertEqual([len(batch) for batch in writes], [2, 2, 1])
+        self.assertEqual(write_connection.commits, 3)
+
     def test_current_generate_evaluate_review_scripts_support_help(self) -> None:
         scripts = [
             "scripts/models/model_06_residual_event_governance/generate_model_06_residual_event_governance.py",
