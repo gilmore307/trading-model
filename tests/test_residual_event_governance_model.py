@@ -56,6 +56,20 @@ class ResidualEventGovernanceModelTests(unittest.TestCase):
         assert_no_label_leakage(output)
         self.assert_no_retired_outputs(output)
 
+    def test_generator_reports_row_progress(self) -> None:
+        updates: list[tuple[int, int]] = []
+
+        rows = generate_rows(
+            [
+                _base_row(target_candidate_id="anon_target_002"),
+                _base_row(target_candidate_id="anon_target_001"),
+            ],
+            progress_callback=lambda processed, total: updates.append((processed, total)),
+        )
+
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(updates, [(1, 2), (2, 2)])
+
     def test_generator_no_longer_imports_retired_m10_scorer(self) -> None:
         source = (REPO_ROOT / "src/models/model_06_residual_event_governance/generator.py").read_text(encoding="utf-8")
 

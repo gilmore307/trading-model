@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import math
 from datetime import datetime
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 from .contract import FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_STEP, MODEL_VERSION
@@ -20,12 +20,23 @@ SCOPE_KEYS = ("market", "sector", "industry", "theme_factor", "peer_group", "sym
 HORIZON_MINUTES = {"10min": 10, "1h": 60, "1D": 24 * 60, "1W": 7 * 24 * 60}
 
 
-def generate_rows(input_rows: Iterable[Mapping[str, Any]], *, model_version: str = MODEL_VERSION) -> list[dict[str, Any]]:
+def generate_rows(
+    input_rows: Iterable[Mapping[str, Any]],
+    *,
+    model_version: str = MODEL_VERSION,
+    progress_callback: Callable[[int, int], None] | None = None,
+) -> list[dict[str, Any]]:
     rows = [dict(row) for row in input_rows]
     if not rows:
         raise ValueError("at least one M06 residual event governance input row is required")
     rows.sort(key=lambda row: (str(row.get("available_time") or ""), str(row.get("target_candidate_id") or "")))
-    return [_model_row(row, model_version=model_version) for row in rows]
+    total = len(rows)
+    model_rows: list[dict[str, Any]] = []
+    for index, row in enumerate(rows, start=1):
+        model_rows.append(_model_row(row, model_version=model_version))
+        if progress_callback is not None:
+            progress_callback(index, total)
+    return model_rows
 
 
 def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:

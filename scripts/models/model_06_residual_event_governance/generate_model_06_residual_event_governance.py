@@ -339,7 +339,19 @@ def generate_from_database(
                     processed_count=0,
                     expected_count=max(len(input_rows), 1),
                 )
-                model_rows = generate_rows(input_rows, model_version=model_version)
+                row_update_interval = max(len(input_rows) // 200, 1)
+
+                def on_row_progress(processed_count: int, expected_count: int) -> None:
+                    if processed_count == expected_count or processed_count % row_update_interval == 0:
+                        progress.update(
+                            node_id="generate_model_rows",
+                            node_label="Generate model rows",
+                            current_activity=f"Generated {processed_count}/{expected_count} M06 residual-event-governance rows",
+                            processed_count=processed_count,
+                            expected_count=expected_count,
+                        )
+
+                model_rows = generate_rows(input_rows, model_version=model_version, progress_callback=on_row_progress)
                 progress.update(
                     node_id="write_model_rows",
                     node_label="Write model rows",
