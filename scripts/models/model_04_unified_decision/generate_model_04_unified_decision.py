@@ -8,6 +8,7 @@ import os
 import re
 import threading
 import uuid
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -27,6 +28,7 @@ EXPLAINABILITY_COLUMNS = {"unified_decision_vector", "direct_underlying_intent"}
 DIAGNOSTICS_COLUMNS = {"4_resolved_reason_codes", "unified_decision_diagnostics"}
 TEXT_4_COLUMNS = {"4_resolved_decision_horizon", "4_resolved_underlying_action_type", "4_resolved_action_side"}
 PROGRESS_HEARTBEAT_SECONDS = 60.0
+DATABASE_BATCH_SIZE = 10_000
 
 
 def _quote_identifier(identifier: str) -> str:
@@ -135,15 +137,26 @@ def _write_stage_progress(
 
 
 class _ProgressHeartbeat:
-    def __init__(self, *, node_id: str, node_label: str, current_activity: str) -> None:
+    def __init__(
+        self,
+        *,
+        node_id: str,
+        node_label: str,
+        current_activity: str,
+        processed_count: int | None = None,
+        expected_count: int | None = None,
+    ) -> None:
         self.node_id = node_id
         self.node_label = node_label
         self.current_activity = current_activity
+        self.processed_count = processed_count
+        self.expected_count = expected_count
+        self._lock = threading.Lock()
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name=f"{node_id}_progress_heartbeat", daemon=True)
 
     def __enter__(self) -> "_ProgressHeartbeat":
-        _write_stage_progress(node_id=self.node_id, node_label=self.node_label, current_activity=self.current_activity)
+        self._write()
         self._thread.start()
         return self
 
@@ -151,9 +164,45 @@ class _ProgressHeartbeat:
         self._stop.set()
         self._thread.join(timeout=1.0)
 
+    def update(
+        self,
+        *,
+        node_id: str | None = None,
+        node_label: str | None = None,
+        current_activity: str | None = None,
+        processed_count: int | None = None,
+        expected_count: int | None = None,
+    ) -> None:
+        with self._lock:
+            if node_id is not None:
+                self.node_id = node_id
+            if node_label is not None:
+                self.node_label = node_label
+            if current_activity is not None:
+                self.current_activity = current_activity
+            if processed_count is not None:
+                self.processed_count = processed_count
+            if expected_count is not None:
+                self.expected_count = expected_count
+        self._write()
+
+    def _snapshot(self) -> tuple[str, str, str, int | None, int | None]:
+        with self._lock:
+            return self.node_id, self.node_label, self.current_activity, self.processed_count, self.expected_count
+
+    def _write(self) -> None:
+        node_id, node_label, current_activity, processed_count, expected_count = self._snapshot()
+        _write_stage_progress(
+            node_id=node_id,
+            node_label=node_label,
+            current_activity=current_activity,
+            processed_count=processed_count,
+            expected_count=expected_count,
+        )
+
     def _run(self) -> None:
         while not self._stop.wait(PROGRESS_HEARTBEAT_SECONDS):
-            _write_stage_progress(node_id=self.node_id, node_label=self.node_label, current_activity=self.current_activity)
+            self._write()
 
 
 def _database_url(explicit: str | None) -> str:
@@ -206,38 +255,104 @@ def _write_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema:
     )
 
 
-def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
+def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]], *, append: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(row, sort_keys=True, default=str) + "\n" for row in rows), encoding="utf-8")
+    mode = "a" if append else "w"
+    with path.open(mode, encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, sort_keys=True, default=str) + "\n")
 
 
-def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+def _database_input_where(*, source_start: str | None, source_end: str | None, alias: str = "t") -> tuple[str, list[Any]]:
     where: list[str] = []
     params: list[Any] = []
     if source_start:
-        where.append('t."available_time"::timestamptz >= %s::timestamptz')
+        where.append(f'{alias}."available_time" >= %s::timestamptz')
         params.append(source_start)
     if source_end:
-        where.append('t."available_time"::timestamptz < %s::timestamptz')
+        where.append(f'{alias}."available_time" < %s::timestamptz')
         params.append(source_end)
-    where_sql = " WHERE " + " AND ".join(where) if where else ""
+    return (" WHERE " + " AND ".join(where) if where else ""), params
+
+
+def _count_database_input_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> int:
+    where_sql, params = _database_input_where(source_start=source_start, source_end=source_end)
+    cursor.execute(
+        f"""
+        SELECT COUNT(*) AS row_count
+        FROM {_qualified('trading_model', 'model_02_target_state')} AS t
+        {where_sql}
+        """,
+        params,
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return 0
+    if isinstance(row, Mapping):
+        return int(row.get("row_count") or 0)
+    return int(row[0] or 0)
+
+
+def _event_table_exists(cursor: Any) -> bool:
     cursor.execute("SELECT to_regclass(%s) AS table_ref", ("trading_model.model_03_event_state",))
     exists = cursor.fetchone()
     if isinstance(exists, Mapping):
-        event_table_exists = exists.get("table_ref") is not None
-    else:
-        event_table_exists = bool(exists and exists[0] is not None)
+        return exists.get("table_ref") is not None
+    return bool(exists and exists[0] is not None)
+
+
+def _execute_database_input_query(
+    cursor: Any,
+    *,
+    source_start: str | None,
+    source_end: str | None,
+    event_table_exists: bool | None = None,
+) -> None:
+    target_where_sql, target_params = _database_input_where(source_start=source_start, source_end=source_end, alias="t")
+    quote_where_sql, quote_params = _database_input_where(source_start=source_start, source_end=source_end, alias="q")
+    params = [*target_params, *quote_params]
     event_select_sql = ""
+    event_cte_sql = ""
     event_join_sql = ""
+    if event_table_exists is None:
+        event_table_exists = _event_table_exists(cursor)
     if event_table_exists:
+        event_where_sql, event_params = _database_input_where(source_start=source_start, source_end=source_end, alias="e")
+        params.extend(event_params)
+        event_cte_sql = f""",
+        event_rows AS MATERIALIZED (
+            SELECT *
+            FROM {_qualified('trading_model', 'model_03_event_state')} AS e
+            {event_where_sql}
+        )"""
         event_select_sql = ',\n              to_jsonb(e) AS "event_state_vector"'
-        event_join_sql = f"""
-            LEFT JOIN {_qualified('trading_model', 'model_03_event_state')} AS e
+        event_join_sql = """
+            LEFT JOIN event_rows AS e
               ON e."target_candidate_id" = t."target_candidate_id"
-             AND e."available_time"::timestamptz = t."available_time"::timestamptz
+             AND e."available_time" = t."available_time"
         """
     cursor.execute(
         f"""
+        WITH target_rows AS MATERIALIZED (
+            SELECT *
+            FROM {_qualified('trading_model', 'model_02_target_state')} AS t
+            {target_where_sql}
+        ),
+        quote_rows AS MATERIALIZED (
+            SELECT
+              q."target_candidate_id",
+              q."available_time",
+              q."symbol",
+              q."bar_close",
+              q."last_bid",
+              q."last_ask",
+              q."avg_spread",
+              q."spread_bps",
+              q."dollar_volume"
+            FROM {_qualified('trading_data', 'model_03_target_state_vector_data_acquisition')} AS q
+            {quote_where_sql}
+        )
+        {event_cte_sql}
         SELECT
           t.*,
           q."symbol" AS "underlying_symbol",
@@ -249,16 +364,39 @@ def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_
           q."dollar_volume",
           to_jsonb(t) AS "target_context_state"
           {event_select_sql}
-        FROM {_qualified('trading_model', 'model_02_target_state')} AS t
-        LEFT JOIN {_qualified('trading_data', 'model_03_target_state_vector_data_acquisition')} AS q
+        FROM target_rows AS t
+        LEFT JOIN quote_rows AS q
           ON q."target_candidate_id" = t."target_candidate_id"
-         AND q."available_time" = t."available_time"::timestamptz
+         AND q."available_time" = t."available_time"
         {event_join_sql}
-        {where_sql}
-        ORDER BY t."available_time"::timestamptz ASC, t."target_candidate_id" ASC
+        ORDER BY t."available_time" ASC, t."target_candidate_id" ASC
         """,
         params,
     )
+
+
+def _database_input_rows(raw_rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    return [dict(row) for row in raw_rows]
+
+
+def _iter_database_input_row_batches(
+    cursor: Any,
+    *,
+    source_start: str | None,
+    source_end: str | None,
+    batch_size: int | None = None,
+) -> Iterator[list[dict[str, Any]]]:
+    _execute_database_input_query(cursor, source_start=source_start, source_end=source_end)
+    effective_batch_size = batch_size or DATABASE_BATCH_SIZE
+    while True:
+        raw_rows = cursor.fetchmany(effective_batch_size)
+        if not raw_rows:
+            break
+        yield _database_input_rows(raw_rows)
+
+
+def _fetch_database_input_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+    _execute_database_input_query(cursor, source_start=source_start, source_end=source_end)
     return [dict(row) for row in cursor.fetchall()]
 
 
@@ -321,25 +459,49 @@ def generate_from_database(
     output_jsonl: Path | None,
 ) -> int:
     psycopg, dict_row = _load_psycopg()
-    with psycopg.connect(database_url, row_factory=dict_row) as conn:
-        with conn.cursor() as cursor:
+    total_count = 0
+    if output_jsonl and output_jsonl.exists():
+        output_jsonl.unlink()
+    with psycopg.connect(database_url, row_factory=dict_row) as read_conn, psycopg.connect(database_url, row_factory=dict_row) as write_conn:
+        with read_conn.cursor(name="model_04_unified_decision_input_rows") as read_cursor, write_conn.cursor() as write_cursor:
             with _ProgressHeartbeat(
-                node_id="fetch_database_input_rows",
-                node_label="Fetch database input rows",
-                current_activity="Generating M04 unified-decision rows from database inputs",
-            ):
-                source_rows = _fetch_database_input_rows(cursor, source_start=source_start, source_end=source_end)
-                model_rows = generate_rows(_model_04_input_rows(source_rows), model_version=model_version)
-                _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
-                _write_stage_progress(
+                node_id="count_database_input_rows",
+                node_label="Count database input rows",
+                current_activity="Counting M04 unified-decision input rows",
+                processed_count=0,
+            ) as progress:
+                input_count = _count_database_input_rows(write_cursor, source_start=source_start, source_end=source_end)
+                if input_count <= 0:
+                    raise ValueError("at least one M04 unified decision input row is required")
+                progress.update(
+                    node_id="stream_database_input_rows",
+                    node_label="Stream database input rows",
+                    current_activity=f"Streaming {input_count} M04 unified-decision input rows",
+                    processed_count=0,
+                    expected_count=input_count,
+                )
+                for source_rows in _iter_database_input_row_batches(read_cursor, source_start=source_start, source_end=source_end):
+                    model_rows = generate_rows(_model_04_input_rows(source_rows), model_version=model_version)
+                    _write_sql(write_cursor, model_rows, target_schema=target_schema, target_table=target_table)
+                    write_conn.commit()
+                    if output_jsonl:
+                        _write_jsonl(output_jsonl, model_rows, append=True)
+                    total_count += len(model_rows)
+                    progress.update(
+                        node_id="model_rows_written",
+                        node_label="Model rows written",
+                        current_activity=f"Wrote {total_count}/{input_count} M04 unified-decision rows",
+                        processed_count=total_count,
+                        expected_count=input_count,
+                    )
+                progress.update(
                     node_id="model_rows_written",
                     node_label="Model rows written",
-                    current_activity=f"Wrote {len(model_rows)} M04 unified-decision rows",
-                    processed_count=len(model_rows),
+                    current_activity=f"Wrote {total_count} M04 unified-decision rows",
+                    processed_count=total_count,
+                    expected_count=input_count,
                 )
-    if output_jsonl:
-        _write_jsonl(output_jsonl, model_rows)
-    return len(model_rows)
+    return total_count
 
 
 def main(argv: list[str] | None = None) -> int:
