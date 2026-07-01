@@ -328,6 +328,24 @@ def _load_parent_checkpoint(parent_checkpoint_ref: str | None) -> dict[str, Any]
     return dict(artifact)
 
 
+def _parent_cumulative_source_start(parent_checkpoint: Mapping[str, Any] | None, fallback: str) -> str:
+    if not isinstance(parent_checkpoint, Mapping):
+        return fallback
+    cumulative_scope = parent_checkpoint.get("cumulative_learning_scope")
+    if isinstance(cumulative_scope, Mapping):
+        cumulative_window = cumulative_scope.get("cumulative_source_window")
+        if isinstance(cumulative_window, Mapping):
+            value = str(cumulative_window.get("source_start") or "").strip()
+            if value:
+                return value
+    source_window = parent_checkpoint.get("source_window")
+    if isinstance(source_window, Mapping):
+        value = str(source_window.get("source_start") or "").strip()
+        if value:
+            return value
+    return fallback
+
+
 def _train_logistic_model(
     features: list[dict[str, float]],
     labels: list[int],
@@ -336,15 +354,12 @@ def _train_logistic_model(
 ) -> dict[str, Any]:
     parent_score_model = parent_checkpoint.get("score_model") if isinstance(parent_checkpoint, Mapping) else None
     if isinstance(parent_score_model, Mapping):
-        means = {name: float((parent_score_model.get("feature_means") or {}).get(name, 0.0)) for name in FEATURE_NAMES}
-        scales = {name: float((parent_score_model.get("feature_scales") or {}).get(name, 1.0)) or 1.0 for name in FEATURE_NAMES}
-        matrix = _standardize_with_stats(features, means, scales)
-        weights = [float(value) for value in (parent_score_model.get("coefficients") or [])]
-        if len(weights) != len(FEATURE_NAMES):
-            raise ValueError("parent checkpoint coefficient count does not match current feature contract")
-        intercept = float(parent_score_model.get("intercept") or 0.0)
+        matrix, means, scales = _standardize(features)
+        weights = [0.0 for _ in FEATURE_NAMES]
+        positive_rate = max(1e-6, min(1 - 1e-6, sum(labels) / len(labels)))
+        intercept = math.log(positive_rate / (1.0 - positive_rate))
         initial_checkpoint_ref = parent_checkpoint.get("checkpoint_ref")
-        training_update_mode = "continued_from_parent_checkpoint"
+        training_update_mode = "cumulative_refit_from_training_rows"
     else:
         matrix, means, scales = _standardize(features)
         weights = [0.0 for _ in FEATURE_NAMES]
@@ -378,6 +393,7 @@ def _train_logistic_model(
         "feature_scales": {name: round(value, 10) for name, value in scales.items()},
         "training_update_mode": training_update_mode,
         "initial_checkpoint_ref": initial_checkpoint_ref,
+        "feature_stat_provenance": "computed_from_current_cumulative_training_rows",
     }
 
 
@@ -393,15 +409,22 @@ def build_model_artifact(
     features: list[dict[str, float]],
     labels: list[int],
     label_summary: dict[str, Any],
+    update_label_summary: dict[str, Any],
     output_json: Path | None = None,
     parent_checkpoint_ref: str | None = None,
+    parent_checkpoint: Mapping[str, Any] | None = None,
+    cumulative_source_start: str | None = None,
 ) -> dict[str, Any]:
-    parent_checkpoint = _load_parent_checkpoint(parent_checkpoint_ref)
+    if parent_checkpoint is None:
+        parent_checkpoint = _load_parent_checkpoint(parent_checkpoint_ref)
     score_model = _train_logistic_model(features, labels, parent_checkpoint=parent_checkpoint)
     positive_rate = label_summary["positive_count"] / label_summary["sample_count"]
     resolved_parent_ref = (parent_checkpoint_ref or "").strip() or None
     checkpoint_ref = str(output_json) if output_json is not None else None
     seed_policy = "parent_checkpoint" if resolved_parent_ref else "target_first_fold_cold_start"
+    parent_training_summary = (parent_checkpoint or {}).get("training_summary") if isinstance(parent_checkpoint, Mapping) else None
+    if not isinstance(parent_training_summary, Mapping):
+        parent_training_summary = {}
     return {
         "contract_type": CONTRACT_TYPE,
         "schema_version": "2026-06-23",
@@ -426,7 +449,11 @@ def build_model_artifact(
         "cumulative_learning_scope": {
             "mode": "cumulative_checkpoint",
             "seed_policy": seed_policy,
-            "finalized_training_event_cutoff": source_start,
+            "finalized_training_event_cutoff": source_end,
+            "cumulative_source_window": {
+                "source_start": cumulative_source_start or source_start,
+                "source_end": source_end,
+            },
             "update_window": {
                 "source_start": source_start,
                 "source_end": source_end,
@@ -454,13 +481,16 @@ def build_model_artifact(
             "cumulative_learning_mode": "cumulative_checkpoint",
             "seed_policy": seed_policy,
             "source": "database",
-            "parent_sample_count": (
-                ((parent_checkpoint or {}).get("training_summary") or {}).get("sample_count")
-                if isinstance((parent_checkpoint or {}).get("training_summary"), Mapping)
-                else None
-            ),
+            "parent_sample_count": parent_training_summary.get("cumulative_sample_count")
+            or parent_training_summary.get("sample_count"),
             "update_mode": score_model["training_update_mode"],
             "sample_count": label_summary["sample_count"],
+            "cumulative_sample_count": label_summary["sample_count"],
+            "cumulative_positive_count": label_summary["positive_count"],
+            "cumulative_negative_count": label_summary["negative_count"],
+            "update_sample_count": update_label_summary["sample_count"],
+            "update_positive_count": update_label_summary["positive_count"],
+            "update_negative_count": update_label_summary["negative_count"],
             "positive_count": label_summary["positive_count"],
             "negative_count": label_summary["negative_count"],
             "positive_rate": round(positive_rate, 10),
@@ -473,6 +503,20 @@ def build_model_artifact(
             "source_row_count": label_summary["source_row_count"],
             "bar_row_count": label_summary["bar_row_count"],
             "mean_realized_after_cost_return": label_summary["mean_realized_after_cost_return"],
+            "update_window": {
+                "source_start": source_start,
+                "source_end": source_end,
+                "sample_count": update_label_summary["sample_count"],
+                "positive_count": update_label_summary["positive_count"],
+                "negative_count": update_label_summary["negative_count"],
+                "source_row_count": update_label_summary["source_row_count"],
+                "bar_row_count": update_label_summary["bar_row_count"],
+                "mean_realized_after_cost_return": update_label_summary["mean_realized_after_cost_return"],
+            },
+            "cumulative_source_window": {
+                "source_start": cumulative_source_start or source_start,
+                "source_end": source_end,
+            },
         },
         "safety": {
             "provider_calls_performed": False,
@@ -505,7 +549,38 @@ def main(argv: list[str] | None = None) -> int:
     target_symbol = args.target_symbol.strip().upper()
     horizons = list(HORIZONS if args.all_horizons else (args.label_horizon,))
     try:
+        parent_checkpoint = _load_parent_checkpoint(args.parent_checkpoint_ref)
+    except Exception as exc:
+        artifact = build_rejection_artifact(
+            source_start=args.source_start,
+            source_end=args.source_end,
+            all_horizons=args.all_horizons,
+            from_database=args.from_database,
+        )
+        message = {
+            "status": "failed",
+            "reason_code": "after_cost_alpha_parent_checkpoint_invalid",
+            "reason": f"{type(exc).__name__}: {exc}",
+            "output_json": str(args.output_json),
+            "contract_type": artifact["contract_type"],
+            "training_summary": artifact["training_summary"],
+        }
+        write_artifact(rejection_receipt_path(args.output_json), artifact | message)
+        print(json.dumps(message, sort_keys=True), file=sys.stderr)
+        return 2
+    cumulative_source_start = _parent_cumulative_source_start(parent_checkpoint, args.source_start)
+    try:
         features, labels, label_summary = _load_training_rows(
+            database_url=_database_url(args.database_url),
+            target_symbol=target_symbol,
+            candidate_universe_path=args.candidate_universe_path,
+            source_start=cumulative_source_start,
+            source_end=args.source_end,
+            horizon=args.label_horizon,
+            cost_bps=args.cost_bps,
+            max_samples_per_symbol=args.max_samples_per_symbol,
+        )
+        _, update_labels, update_label_summary = _load_training_rows(
             database_url=_database_url(args.database_url),
             target_symbol=target_symbol,
             candidate_universe_path=args.candidate_universe_path,
@@ -562,8 +637,11 @@ def main(argv: list[str] | None = None) -> int:
         features=features,
         labels=labels,
         label_summary=label_summary,
+        update_label_summary=update_label_summary,
         output_json=args.output_json,
         parent_checkpoint_ref=args.parent_checkpoint_ref,
+        parent_checkpoint=parent_checkpoint,
+        cumulative_source_start=cumulative_source_start,
     )
     write_artifact(args.output_json, model)
     rejection_path = rejection_receipt_path(args.output_json)
@@ -576,6 +654,8 @@ def main(argv: list[str] | None = None) -> int:
                 "reason_code": "after_cost_alpha_supervised_training_completed",
                 "output_json": str(args.output_json),
                 "sample_count": len(labels),
+                "cumulative_sample_count": len(labels),
+                "update_sample_count": len(update_labels),
                 "positive_count": sum(labels),
                 "target_symbol": target_symbol,
             },

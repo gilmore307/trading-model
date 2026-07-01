@@ -100,7 +100,16 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
                     "bar_row_count": 8,
                     "mean_realized_after_cost_return": 0.01,
                 },
+                update_label_summary={
+                    "sample_count": 4,
+                    "positive_count": 2,
+                    "negative_count": 2,
+                    "source_row_count": 4,
+                    "bar_row_count": 8,
+                    "mean_realized_after_cost_return": 0.01,
+                },
                 output_json=parent_path,
+                cumulative_source_start="2016-01-01T00:00:00-05:00",
             )
             parent_path.write_text(json.dumps(parent, sort_keys=True) + "\n", encoding="utf-8")
             output_path = tmp / "after_cost_alpha_model_2017-01_2018-06.json"
@@ -115,6 +124,14 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
                 features=features,
                 labels=labels,
                 label_summary={
+                    "sample_count": 8,
+                    "positive_count": 4,
+                    "negative_count": 4,
+                    "source_row_count": 8,
+                    "bar_row_count": 16,
+                    "mean_realized_after_cost_return": 0.01,
+                },
+                update_label_summary={
                     "sample_count": 4,
                     "positive_count": 2,
                     "negative_count": 2,
@@ -124,6 +141,7 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
                 },
                 output_json=output_path,
                 parent_checkpoint_ref=str(parent_path),
+                cumulative_source_start="2016-01-01T00:00:00-05:00",
             )
 
         self.assertEqual(artifact["contract_type"], "after_cost_alpha_model")
@@ -138,9 +156,16 @@ class AlphaConfidenceTrainingScriptTests(unittest.TestCase):
         self.assertEqual(artifact["training_summary"]["training_mode"], "supervised_fit")
         self.assertEqual(artifact["training_summary"]["cumulative_learning_mode"], "cumulative_checkpoint")
         self.assertEqual(artifact["training_summary"]["seed_policy"], "parent_checkpoint")
-        self.assertEqual(artifact["training_summary"]["update_mode"], "continued_from_parent_checkpoint")
-        self.assertEqual(artifact["score_model"]["training_update_mode"], "continued_from_parent_checkpoint")
-        self.assertEqual(artifact["training_summary"]["sample_count"], 4)
+        self.assertEqual(artifact["training_summary"]["update_mode"], "cumulative_refit_from_training_rows")
+        self.assertEqual(artifact["score_model"]["training_update_mode"], "cumulative_refit_from_training_rows")
+        self.assertEqual(artifact["score_model"]["feature_stat_provenance"], "computed_from_current_cumulative_training_rows")
+        self.assertEqual(artifact["training_summary"]["sample_count"], 8)
+        self.assertEqual(artifact["training_summary"]["cumulative_sample_count"], 8)
+        self.assertEqual(artifact["training_summary"]["update_sample_count"], 4)
+        self.assertEqual(
+            artifact["training_summary"]["cumulative_source_window"]["source_start"],
+            "2016-01-01T00:00:00-05:00",
+        )
         self.assertEqual(artifact["score_model"]["model_family"], "logistic_regression")
         self.assertEqual(artifact["score_model"]["feature_names"], list(script.FEATURE_NAMES))
 
