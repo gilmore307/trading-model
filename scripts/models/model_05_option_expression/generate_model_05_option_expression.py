@@ -45,6 +45,7 @@ TEXT_5_COLUMNS = {
     "5_resolved_selected_contract_ref",
 }
 PROGRESS_HEARTBEAT_SECONDS = 60.0
+DATABASE_BATCH_SIZE = 5000
 
 
 def _database_url(explicit: str | None) -> str:
@@ -262,7 +263,17 @@ def _coerce_json_mapping(value: Any) -> dict[str, Any]:
     return {}
 
 
-def _fetch_model_04_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+def _model_04_support_exists(cursor: Any) -> bool:
+    explainability_table = "model_04_unified_decision_explainability"
+    cursor.execute("SELECT to_regclass(%s) AS table_ref", (f"trading_model.{explainability_table}",))
+    exists = cursor.fetchone()
+    if isinstance(exists, Mapping):
+        return exists.get("table_ref") is not None
+    return bool(exists and exists[0] is not None)
+
+
+def _model_04_select_sql(*, source_start: str | None, source_end: str | None, support_exists: bool) -> tuple[str, list[Any]]:
+    explainability_table = "model_04_unified_decision_explainability"
     where: list[str] = []
     params: list[Any] = []
     if source_start:
@@ -272,16 +283,8 @@ def _fetch_model_04_rows(cursor: Any, *, source_start: str | None, source_end: s
         where.append('u."available_time"::timestamptz < %s::timestamptz')
         params.append(source_end)
     where_sql = " WHERE " + " AND ".join(where) if where else ""
-    explainability_table = "model_04_unified_decision_explainability"
-    cursor.execute("SELECT to_regclass(%s) AS table_ref", (f"trading_model.{explainability_table}",))
-    exists = cursor.fetchone()
-    if isinstance(exists, Mapping):
-        support_exists = exists.get("table_ref") is not None
-    else:
-        support_exists = bool(exists and exists[0] is not None)
     if support_exists:
-        cursor.execute(
-            f"""
+        sql = f"""
             SELECT
               u."available_time",
               u."tradeable_time",
@@ -298,12 +301,9 @@ def _fetch_model_04_rows(cursor: Any, *, source_start: str | None, source_end: s
               ON e."unified_decision_vector_ref" = u."unified_decision_vector_ref"
             {where_sql}
             ORDER BY u."available_time"::timestamptz ASC, u."target_candidate_id" ASC
-            """,
-            params,
-        )
+            """
     else:
-        cursor.execute(
-            f"""
+        sql = f"""
             SELECT
               u."available_time",
               u."tradeable_time",
@@ -317,9 +317,17 @@ def _fetch_model_04_rows(cursor: Any, *, source_start: str | None, source_end: s
              AND s."available_time" = u."available_time"::timestamptz
             {where_sql}
             ORDER BY u."available_time"::timestamptz ASC, u."target_candidate_id" ASC
-            """,
-            params,
-        )
+            """
+    return sql, params
+
+
+def _fetch_model_04_rows(cursor: Any, *, source_start: str | None, source_end: str | None) -> list[dict[str, Any]]:
+    sql, params = _model_04_select_sql(
+        source_start=source_start,
+        source_end=source_end,
+        support_exists=_model_04_support_exists(cursor),
+    )
+    cursor.execute(sql, params)
     return [dict(row) for row in cursor.fetchall()]
 
 
@@ -347,7 +355,7 @@ def _fetch_option_candidate_rows(
     if source_end:
         where.append('f."snapshot_time" < %s::timestamptz')
         params.append(source_end)
-    scoped_join_sql = ""
+    from_sql = f"FROM {_qualified('trading_data', feature_table)} AS f"
     if model_04_rows is not None:
         keys = sorted(
             {
@@ -377,10 +385,23 @@ def _fetch_option_candidate_rows(
             """,
             keys,
         )
-        scoped_join_sql = """
-        JOIN m05_option_candidate_keys AS k
-          ON k.underlying = upper(f."underlying")
-         AND k.snapshot_time = f."snapshot_time"
+        cursor.execute("ANALYZE m05_option_candidate_keys")
+        where = ['lower(coalesce(f."snapshot_type", \'\')) = \'entry\'']
+        params = []
+        from_sql = f"""
+        FROM m05_option_candidate_keys AS k
+        JOIN LATERAL (
+          SELECT
+            f."underlying",
+            f."snapshot_time",
+            f."snapshot_type",
+            f."option_symbol",
+            f."feature_payload_json",
+            f."feature_quality_diagnostics"
+          FROM {_qualified('trading_data', feature_table)} AS f
+          WHERE f."underlying" = k.underlying
+            AND f."snapshot_time" = k.snapshot_time
+        ) AS f ON TRUE
         """
     where_sql = " WHERE " + " AND ".join(where) if where else ""
     cursor.execute(
@@ -392,8 +413,7 @@ def _fetch_option_candidate_rows(
           f."option_symbol",
           f."feature_payload_json",
           f."feature_quality_diagnostics"
-        FROM {_qualified('trading_data', feature_table)} AS f
-        {scoped_join_sql}
+        {from_sql}
         {where_sql}
         ORDER BY f."underlying" ASC, f."snapshot_time" ASC, f."option_symbol" ASC
         """,
@@ -511,6 +531,23 @@ def _write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
     path.write_text("".join(json.dumps(row, sort_keys=True, default=str) + "\n" for row in rows), encoding="utf-8")
 
 
+def _append_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.writelines(json.dumps(row, sort_keys=True, default=str) + "\n" for row in rows)
+
+
+def _database_batch_size() -> int:
+    raw = os.environ.get("TRADING_MODEL_M05_DATABASE_BATCH_SIZE", "").strip()
+    if not raw:
+        return DATABASE_BATCH_SIZE
+    try:
+        value = int(raw)
+    except ValueError:
+        return DATABASE_BATCH_SIZE
+    return max(1, value)
+
+
 def generate_from_database(
     *,
     database_url: str,
@@ -531,69 +568,92 @@ def generate_from_database(
                 processed_count=0,
                 expected_count=1,
             ) as progress:
-                model_04_rows = _fetch_model_04_rows(cursor, source_start=source_start, source_end=source_end)
-                progress.update(
-                    current_activity=f"Fetched {len(model_04_rows)} M04 unified-decision rows",
-                    processed_count=1,
-                    expected_count=4,
+                if output_jsonl:
+                    _write_jsonl(output_jsonl, [])
+                total_model_04_rows = 0
+                total_model_rows = 0
+                batch_size = _database_batch_size()
+                sql, params = _model_04_select_sql(
+                    source_start=source_start,
+                    source_end=source_end,
+                    support_exists=_model_04_support_exists(cursor),
                 )
-                option_candidate_rows = _fetch_option_candidate_rows(cursor, source_start=source_start, source_end=source_end, model_04_rows=model_04_rows)
-                progress.update(
-                    node_id="fetch_option_candidate_rows",
-                    node_label="Fetch option candidate rows",
-                    current_activity=f"Fetched {len(option_candidate_rows)} M05 option candidate rows",
-                    processed_count=2,
-                    expected_count=4,
-                )
-                input_rows = _model_05_input_rows(model_04_rows, option_candidate_rows)
-                progress.update(
-                    node_id="build_model_input_rows",
-                    node_label="Build model input rows",
-                    current_activity=f"Built {len(input_rows)} M05 model input rows",
-                    processed_count=3,
-                    expected_count=4,
-                )
-                if not input_rows:
-                    model_rows = []
-                else:
-                    row_update_interval = max(1, min(1000, len(input_rows) // 100 or 1))
+                with conn.cursor(name="m05_model_04_input_rows", row_factory=dict_row) as model_04_cursor:
+                    model_04_cursor.itersize = batch_size
+                    model_04_cursor.execute(sql, params)
+                    while True:
+                        model_04_rows = [dict(row) for row in model_04_cursor.fetchmany(batch_size)]
+                        if not model_04_rows:
+                            break
+                        total_model_04_rows += len(model_04_rows)
+                        progress.update(
+                            current_activity=f"Fetched {total_model_04_rows} M04 unified-decision rows",
+                            processed_count=total_model_04_rows,
+                            expected_count=None,
+                        )
+                        option_candidate_rows = _fetch_option_candidate_rows(
+                            cursor,
+                            source_start=source_start,
+                            source_end=source_end,
+                            model_04_rows=model_04_rows,
+                        )
+                        progress.update(
+                            node_id="fetch_option_candidate_rows",
+                            node_label="Fetch option candidate rows",
+                            current_activity=f"Fetched {len(option_candidate_rows)} M05 option candidate rows for current batch",
+                            processed_count=total_model_04_rows,
+                            expected_count=None,
+                        )
+                        input_rows = _model_05_input_rows(model_04_rows, option_candidate_rows)
+                        progress.update(
+                            node_id="build_model_input_rows",
+                            node_label="Build model input rows",
+                            current_activity=f"Built {len(input_rows)} M05 model input rows for current batch",
+                            processed_count=total_model_04_rows,
+                            expected_count=None,
+                        )
+                        if not input_rows:
+                            model_rows = []
+                        else:
+                            row_update_interval = max(1, min(1000, len(input_rows) // 100 or 1))
 
-                    def on_row_progress(processed_count: int, expected_count: int) -> None:
-                        if processed_count == expected_count or processed_count % row_update_interval == 0:
+                            def on_row_progress(processed_count: int, expected_count: int) -> None:
+                                if processed_count == expected_count or processed_count % row_update_interval == 0:
+                                    progress.update(
+                                        node_id="generate_model_rows",
+                                        node_label="Generate model rows",
+                                        current_activity=f"Generated {total_model_rows + processed_count} M05 option-expression rows",
+                                        processed_count=total_model_rows + processed_count,
+                                        expected_count=None,
+                                    )
+
                             progress.update(
                                 node_id="generate_model_rows",
                                 node_label="Generate model rows",
-                                current_activity=f"Generated {processed_count}/{expected_count} M05 option-expression rows",
-                                processed_count=processed_count,
-                                expected_count=expected_count,
+                                current_activity=f"Generating next {len(input_rows)} M05 option-expression rows",
+                                processed_count=total_model_rows,
+                                expected_count=None,
                             )
-
-                    progress.update(
-                        node_id="generate_model_rows",
-                        node_label="Generate model rows",
-                        current_activity=f"Generating 0/{len(input_rows)} M05 option-expression rows",
-                        processed_count=0,
-                        expected_count=len(input_rows),
-                    )
-                    model_rows = generate_rows(input_rows, model_version=model_version, progress_callback=on_row_progress)
-                progress.update(
-                    node_id="write_model_rows",
-                    node_label="Write model rows",
-                    current_activity=f"Writing {len(model_rows)} M05 option-expression rows",
-                    processed_count=0,
-                    expected_count=max(len(model_rows), 1),
-                )
-                _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
+                            model_rows = generate_rows(input_rows, model_version=model_version, progress_callback=on_row_progress)
+                        progress.update(
+                            node_id="write_model_rows",
+                            node_label="Write model rows",
+                            current_activity=f"Writing {len(model_rows)} M05 option-expression rows for current batch",
+                            processed_count=total_model_rows,
+                            expected_count=None,
+                        )
+                        _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
+                        if output_jsonl and model_rows:
+                            _append_jsonl(output_jsonl, model_rows)
+                        total_model_rows += len(model_rows)
                 progress.update(
                     node_id="model_rows_written",
                     node_label="Model rows written",
-                    current_activity=f"Wrote {len(model_rows)} M05 option-expression rows",
-                    processed_count=len(model_rows),
-                    expected_count=max(len(model_rows), 1),
+                    current_activity=f"Wrote {total_model_rows} M05 option-expression rows",
+                    processed_count=total_model_rows,
+                    expected_count=max(total_model_rows, 1),
                 )
-    if output_jsonl:
-        _write_jsonl(output_jsonl, model_rows)
-    return len(model_rows)
+    return total_model_rows
 
 
 def main(argv: list[str] | None = None) -> int:
