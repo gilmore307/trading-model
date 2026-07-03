@@ -283,10 +283,12 @@ def _fetch_model_04_rows(cursor: Any, *, source_start: str | None, source_end: s
         cursor.execute(
             f"""
             SELECT
-              u.*,
+              u."available_time",
+              u."tradeable_time",
+              u."target_candidate_id",
+              u."unified_decision_vector_ref",
               s."symbol" AS "underlying_symbol",
               s."bar_close" AS "underlying_reference_price",
-              e."unified_decision_vector",
               e."direct_underlying_intent"
             FROM {_qualified('trading_model', 'model_04_unified_decision')} AS u
             LEFT JOIN {_qualified('trading_data', 'model_03_target_state_vector_data_acquisition')} AS s
@@ -303,7 +305,10 @@ def _fetch_model_04_rows(cursor: Any, *, source_start: str | None, source_end: s
         cursor.execute(
             f"""
             SELECT
-              u.*,
+              u."available_time",
+              u."tradeable_time",
+              u."target_candidate_id",
+              u."unified_decision_vector_ref",
               s."symbol" AS "underlying_symbol",
               s."bar_close" AS "underlying_reference_price"
             FROM {_qualified('trading_model', 'model_04_unified_decision')} AS u

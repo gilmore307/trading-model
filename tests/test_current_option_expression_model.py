@@ -225,6 +225,24 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(script._column_type("5_resolved_expression_type"), "TEXT")
         self.assertEqual(script._column_type("4_option_expression_confidence_score_1W"), "TEXT")
 
+    def test_database_fetch_projects_only_m05_input_columns(self) -> None:
+        script = _load_generator_script()
+        cursor = _FakeCursor(
+            fetchone_rows=[{"table_ref": "trading_model.model_04_unified_decision_explainability"}],
+            fetchall_rows=[],
+        )
+
+        script._fetch_model_04_rows(cursor, source_start="2016-01-01T00:00:00-05:00", source_end="2017-01-01T00:00:00-05:00")
+
+        select_sql = cursor.executed_sql[1]
+        self.assertIn('u."available_time"', select_sql)
+        self.assertIn('u."tradeable_time"', select_sql)
+        self.assertIn('u."target_candidate_id"', select_sql)
+        self.assertIn('u."unified_decision_vector_ref"', select_sql)
+        self.assertIn('e."direct_underlying_intent"', select_sql)
+        self.assertNotIn("u.*", select_sql)
+        self.assertNotIn('e."unified_decision_vector"', select_sql)
+
     def test_database_generation_refreshes_manager_task_progress(self) -> None:
         script = _load_generator_script()
 
@@ -409,6 +427,23 @@ def _load_generator_script():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+class _FakeCursor:
+    def __init__(self, *, fetchone_rows: list[dict[str, object]], fetchall_rows: list[dict[str, object]]) -> None:
+        self._fetchone_rows = list(fetchone_rows)
+        self._fetchall_rows = list(fetchall_rows)
+        self.executed_sql: list[str] = []
+
+    def execute(self, sql: str, params: object = None) -> None:
+        del params
+        self.executed_sql.append(sql)
+
+    def fetchone(self) -> dict[str, object] | None:
+        return self._fetchone_rows.pop(0) if self._fetchone_rows else None
+
+    def fetchall(self) -> list[dict[str, object]]:
+        return list(self._fetchall_rows)
 
 
 if __name__ == "__main__":
