@@ -33,6 +33,12 @@ DEFAULT_FAMILY_KEYS = (
 )
 DEFAULT_PRICE_SYMBOLS = ("TLT", "XLF", "XLK", "HYG", "XLE")
 HORIZONS = (1, 5)
+FAMILY_SOURCE_IDS = {
+    "equity_offering_dilution": ("sec_company_financials",),
+    "legal_regulatory_investigation": ("sec_company_financials",),
+    "cpi_inflation_release": ("trading_economics_calendar_web",),
+    "credit_liquidity_stress": ("gdelt_news", "alpaca_news", "trading_economics_calendar_web"),
+}
 
 
 def _monthly_backfill_root(data_root: Path) -> Path:
@@ -273,6 +279,56 @@ def _completion_receipts(data_root: Path, family_key: str, month: str) -> list[P
     else:
         patterns = []
     return [path for path in patterns if path.exists()]
+
+
+def _compact_receipt_manifest_path(data_root: Path) -> Path:
+    return (
+        _monthly_backfill_root(data_root).parent
+        / "90_lifecycle"
+        / "maintenance"
+        / "compact_contracts"
+        / "event_feed_monthly_receipt_compaction_manifest.json"
+    )
+
+
+def _compact_receipt_rows(
+    data_root: Path,
+    family_key: str,
+    month: str,
+    *,
+    existing_receipts: Sequence[Path] = (),
+) -> tuple[int, tuple[str, ...]]:
+    existing_sources = {
+        path.parent.parent.name
+        for path in existing_receipts
+        if path.name == "completion_receipt.json" and path.parent.parent.name
+    }
+    needed_sources = [source for source in FAMILY_SOURCE_IDS.get(family_key, ()) if source not in existing_sources]
+    if not needed_sources:
+        return 0, ()
+    manifest_path = _compact_receipt_manifest_path(data_root)
+    try:
+        manifest = _read_json(manifest_path)
+    except (OSError, json.JSONDecodeError):
+        return 0, ()
+    rows = manifest.get("source_month_summaries")
+    if not isinstance(rows, list):
+        return 0, ()
+    total = 0
+    matched = False
+    for row in rows:
+        if not isinstance(row, Mapping):
+            continue
+        if row.get("source_id") not in needed_sources or row.get("month") != month:
+            continue
+        row_counts = row.get("row_counts")
+        if not isinstance(row_counts, Mapping):
+            continue
+        matched = True
+        for value in row_counts.values():
+            if isinstance(value, int):
+                total += value
+    return total, (str(manifest_path),) if matched else ()
 
 
 def _receipt_rows(path: Path) -> int:
@@ -542,7 +598,13 @@ def build_event_price_association_readiness_batch(
         labels = _price_labels(data_root, month, candidate_events, price_symbols) if family_key == "cpi_inflation_release" else []
         receipts = _completion_receipts(data_root, family_key, month)
         receipt_refs = tuple(str(path) for path in receipts)
-        source_rows = sum(_receipt_rows(path) for path in receipts)
+        compact_rows, compact_refs = _compact_receipt_rows(
+            data_root,
+            family_key,
+            month,
+            existing_receipts=receipts,
+        )
+        source_rows = sum(_receipt_rows(path) for path in receipts) + compact_rows
         readiness_status, association_status, control_status, blockers, next_action = _status_for_family(
             family_key,
             len(candidate_events),
@@ -550,7 +612,7 @@ def build_event_price_association_readiness_batch(
         )
         if source_rows == 0 and not candidate_events:
             blockers = tuple(dict.fromkeys((*blockers, "missing_local_source_evidence")))
-        evidence_refs = tuple(dict.fromkeys((*[str(ref) for ref in spec.get("evidence_refs", [])], *receipt_refs)))
+        evidence_refs = tuple(dict.fromkeys((*[str(ref) for ref in spec.get("evidence_refs", [])], *receipt_refs, *compact_refs)))
         readiness_rows.append(
             FamilyReadiness(
                 family_key=family_key,

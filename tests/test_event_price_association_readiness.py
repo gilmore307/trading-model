@@ -50,6 +50,51 @@ class EventPriceAssociationReadinessTests(unittest.TestCase):
         )
         self.assertIn("single_month_only", by_family["cpi_inflation_release"].blocker_codes)
 
+    def test_readiness_uses_compact_event_feed_receipt_manifest_after_cleanup(self) -> None:
+        receipt = (
+            self.fixture.trading_data_root
+            / "storage"
+            / "monthly_backfill"
+            / "trading_economics_calendar_web"
+            / "2016-01"
+            / "completion_receipt.json"
+        )
+        receipt.unlink()
+        manifest = (
+            self.fixture.trading_data_root
+            / "storage"
+            / "90_lifecycle"
+            / "maintenance"
+            / "compact_contracts"
+            / "event_feed_monthly_receipt_compaction_manifest.json"
+        )
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text(
+            json.dumps(
+                {
+                    "contract_type": "storage_event_feed_monthly_receipt_compaction_manifest",
+                    "source_month_summaries": [
+                        {
+                            "source_id": "trading_economics_calendar_web",
+                            "month": "2016-01",
+                            "row_counts": {"trading_economics_calendar_event": 2},
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        batch = build_event_price_association_readiness_batch(
+            catalog_path=self.fixture.catalog_path,
+            data_root=self.fixture.trading_data_root,
+            generated_at_utc="2026-05-16T12:00:00+00:00",
+        )
+        by_family = {row.family_key: row for row in batch.family_readiness}
+
+        self.assertIn(str(manifest), by_family["cpi_inflation_release"].evidence_refs)
+        self.assertNotIn("missing_local_source_evidence", by_family["cpi_inflation_release"].blocker_codes)
+
     def test_blocked_families_do_not_claim_association(self) -> None:
         batch = build_event_price_association_readiness_batch(catalog_path=self.fixture.catalog_path, data_root=self.fixture.trading_data_root, generated_at_utc="2026-05-16T12:00:00+00:00")
         by_family = {row.family_key: row for row in batch.family_readiness}
