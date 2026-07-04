@@ -68,6 +68,8 @@ STATE_VECTOR_FEATURE_SEMANTICS: Final[tuple[FeatureSemantics, ...]] = (
     FeatureSemantics("3_event_option_liquidity_spread_impact_score_<horizon>", "model_03_event_state", "float", "[0, 1]", "liquidity", "bad", "model_facing", "Option liquidity/spread disruption pressure."),
     FeatureSemantics("3_event_expiry_gamma_flow_impact_score_<horizon>", "model_03_event_state", "float", "[0, 1]", "risk", "bad", "model_facing", "Expiry/gamma-flow event sensitivity."),
     FeatureSemantics("4_edge_direction_score_<horizon>", "model_04_unified_decision", "float", "[-1, 1]", "direction", "signed", "model_facing", "Signed decision edge direction."),
+    FeatureSemantics("4_direction_thesis_score_<horizon>", "model_04_unified_decision", "float", "[-1, 1]", "direction", "signed", "model_facing", "Signed path thesis direction before direct-underlying eligibility."),
+    FeatureSemantics("4_direction_certainty_score_<horizon>", "model_04_unified_decision", "float", "[0, 1]", "direction_strength", "good", "model_facing", "Direction certainty independent of bullish or bearish sign."),
     FeatureSemantics("4_after_cost_edge_score_<horizon>", "model_04_unified_decision", "float", "[0, 1]", "expected_return", "good", "model_facing", "After-cost normalized edge; high is better."),
     FeatureSemantics("4_expected_return_score_<horizon>", "model_04_unified_decision", "float", "[-1, 1]", "expected_return", "signed", "model_facing", "Signed expected return evidence."),
     FeatureSemantics("4_edge_confidence_score_<horizon>", "model_04_unified_decision", "float", "[0, 1]", "quality", "good", "model_facing", "Confidence in the decision edge."),

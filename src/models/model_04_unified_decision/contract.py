@@ -14,6 +14,8 @@ HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "4_edge_direction_score_<horizon>",
+    "4_direction_thesis_score_<horizon>",
+    "4_direction_certainty_score_<horizon>",
     "4_after_cost_edge_score_<horizon>",
     "4_expected_return_score_<horizon>",
     "4_edge_confidence_score_<horizon>",
@@ -34,6 +36,10 @@ SCORE_FAMILIES: Final[tuple[str, ...]] = (
 
 RESOLVED_FIELD_FAMILIES: Final[tuple[str, ...]] = (
     "4_resolved_decision_horizon",
+    "4_resolved_direction_thesis",
+    "4_resolved_direction_thesis_score",
+    "4_resolved_direction_certainty_score",
+    "4_resolved_trade_eligibility_status",
     "4_resolved_underlying_action_type",
     "4_resolved_action_side",
     "4_resolved_target_exposure_score",

@@ -104,6 +104,10 @@ def _model_row(row: Mapping[str, Any], *, model_version: str, validate_output: b
     resolved_reason_codes = _reason_codes(hard_gate_reasons, dominant, action)
     resolved_payload = {
         "4_resolved_decision_horizon": resolved_horizon,
+        "4_resolved_direction_thesis": dominant["direction_thesis"],
+        "4_resolved_direction_thesis_score": dominant["direction_thesis_score"],
+        "4_resolved_direction_certainty_score": dominant["direction_certainty_score"],
+        "4_resolved_trade_eligibility_status": action["trade_eligibility_status"],
         "4_resolved_underlying_action_type": action["underlying_action_type"],
         "4_resolved_action_side": action["action_side"],
         "4_resolved_target_exposure_score": dominant["target_exposure_score"],
@@ -214,6 +218,7 @@ def _horizon_decision(
     )
     downside = _clip01(0.26 * transition_risk + 0.24 * event_path_risk + 0.18 * event_pressure + 0.14 * market_stress + 0.10 * ood + 0.08 * (1.0 - market_liquidity))
     confidence = _clip01(0.30 * data_quality + 0.25 * calibration + 0.20 * path_quality + 0.15 * support_quality + 0.10 * (1.0 - ood))
+    direction_certainty = _clip01(edge_strength * confidence)
     expected_return = _clip_signed(edge_direction * edge_strength * risk_budget * (1.0 - 0.55 * downside) * (1.0 - cost_drag) * 0.12)
     after_cost_edge = _clip01(0.5 + expected_return * 5.0)
     price_multiplier = _price_location_multiplier(edge_direction, price_location)
@@ -260,6 +265,9 @@ def _horizon_decision(
         reasons.append("unified_decision_edge_risk_exposure_action_aligned")
     return {
         "edge_direction_score": round(edge_direction, 6),
+        "direction_thesis": _direction_thesis(edge_direction),
+        "direction_thesis_score": round(edge_direction, 6),
+        "direction_certainty_score": round(direction_certainty, 6),
         "after_cost_edge_score": round(after_cost_edge, 6),
         "expected_return_score": round(expected_return, 6),
         "edge_confidence_score": round(confidence, 6),
@@ -289,6 +297,8 @@ def _vector_payload(horizon_details: Mapping[str, Mapping[str, Any]]) -> dict[st
         payload.update(
             {
                 f"4_edge_direction_score_{suffix}": detail["edge_direction_score"],
+                f"4_direction_thesis_score_{suffix}": detail["direction_thesis_score"],
+                f"4_direction_certainty_score_{suffix}": detail["direction_certainty_score"],
                 f"4_after_cost_edge_score_{suffix}": detail["after_cost_edge_score"],
                 f"4_expected_return_score_{suffix}": detail["expected_return_score"],
                 f"4_edge_confidence_score_{suffix}": detail["edge_confidence_score"],
@@ -334,25 +344,27 @@ def _resolve_action(*, exposure: Mapping[str, float], dominant: Mapping[str, Any
     no_trade_probability = float(dominant["no_trade_probability_score"])
     if no_trade_probability >= 0.70 or intensity < _minimum_trade_intensity(policy):
         action_type = "maintain" if abs(current) >= MATERIAL_GAP_THRESHOLD else "no_trade"
-        return {"underlying_action_type": action_type, "action_side": _side(current)}
+        eligibility = "blocked_by_no_trade_probability" if no_trade_probability >= 0.70 else "blocked_by_trade_materiality"
+        return {"underlying_action_type": action_type, "action_side": _side(current), "trade_eligibility_status": eligibility}
     if gap > 0.0:
         if current < -MATERIAL_GAP_THRESHOLD:
-            return {"underlying_action_type": "cover_short", "action_side": "long"}
+            return {"underlying_action_type": "cover_short", "action_side": "long", "trade_eligibility_status": "eligible"}
         if current > MATERIAL_GAP_THRESHOLD:
-            return {"underlying_action_type": "maintain", "action_side": "long"}
-        return {"underlying_action_type": "open_long", "action_side": "long"}
+            return {"underlying_action_type": "maintain", "action_side": "long", "trade_eligibility_status": "eligible"}
+        return {"underlying_action_type": "open_long", "action_side": "long", "trade_eligibility_status": "eligible"}
     if current > MATERIAL_GAP_THRESHOLD and target <= 0.0:
-        return {"underlying_action_type": "close_long", "action_side": "none"}
+        return {"underlying_action_type": "close_long", "action_side": "none", "trade_eligibility_status": "eligible"}
     if current > target and current > MATERIAL_GAP_THRESHOLD:
-        return {"underlying_action_type": "reduce_long", "action_side": "long"}
+        return {"underlying_action_type": "reduce_long", "action_side": "long", "trade_eligibility_status": "eligible"}
     if gap < 0.0:
         if not _short_allowed(borrow, policy):
             action_type = "bearish_underlying_path_but_no_short_allowed" if current <= MATERIAL_GAP_THRESHOLD else "reduce_long"
-            return {"underlying_action_type": action_type, "action_side": "none" if action_type.startswith("bearish") else "long"}
+            eligibility = "blocked_by_direct_short_policy" if action_type.startswith("bearish") else "eligible"
+            return {"underlying_action_type": action_type, "action_side": "none" if action_type.startswith("bearish") else "long", "trade_eligibility_status": eligibility}
         if current < -MATERIAL_GAP_THRESHOLD:
-            return {"underlying_action_type": "maintain", "action_side": "short"}
-        return {"underlying_action_type": "open_short", "action_side": "short"}
-    return {"underlying_action_type": "maintain", "action_side": _side(current)}
+            return {"underlying_action_type": "maintain", "action_side": "short", "trade_eligibility_status": "eligible"}
+        return {"underlying_action_type": "open_short", "action_side": "short", "trade_eligibility_status": "eligible"}
+    return {"underlying_action_type": "maintain", "action_side": _side(current), "trade_eligibility_status": "eligible"}
 
 
 def _direct_underlying_intent(
@@ -370,7 +382,7 @@ def _direct_underlying_intent(
     expected_return = float(dominant["expected_return_score"])
     adverse_move = max(0.004, float(dominant["downside_risk_score"]) * 0.05)
     favorable_move = max(0.004, abs(expected_return))
-    direction = "bullish" if action_side == "long" else "bearish" if action_side == "short" else "neutral"
+    direction = str(dominant.get("direction_thesis") or "neutral")
     entry_style = _entry_style(action_type, dominant)
     target_price = _price(reference_price, favorable_move if direction != "bearish" else -favorable_move)
     stop_price = _price(reference_price, -adverse_move if direction != "bearish" else adverse_move)
@@ -385,6 +397,10 @@ def _direct_underlying_intent(
         "trade_intensity_score": dominant["trade_intensity_score"],
         "materiality_adjusted_action_score": dominant["materiality_adjusted_action_score"],
         "no_trade_probability_score": dominant["no_trade_probability_score"],
+        "direction_thesis": direction,
+        "direction_thesis_score": dominant["direction_thesis_score"],
+        "direction_certainty_score": dominant["direction_certainty_score"],
+        "trade_eligibility_status": action["trade_eligibility_status"],
         "entry_style": entry_style,
         "reference_price": reference_price,
         "expected_target_price": target_price,
@@ -392,6 +408,10 @@ def _direct_underlying_intent(
         "expected_holding_time_minutes": HORIZON_MINUTES[resolved_horizon],
         "handoff_to_model_05": {
             "underlying_path_direction": direction,
+            "direction_thesis": direction,
+            "direction_thesis_score": dominant["direction_thesis_score"],
+            "direction_certainty_score": dominant["direction_certainty_score"],
+            "trade_eligibility_status": action["trade_eligibility_status"],
             "expected_entry_price": reference_price,
             "expected_target_price": target_price,
             "stop_loss_price": stop_price,
@@ -596,6 +616,14 @@ def _short_allowed(borrow: Mapping[str, Any], policy: Mapping[str, Any]) -> bool
         return False
     status = str(borrow.get("short_borrow_status") or "unavailable").lower()
     return status in {"available", "easy", "located"}
+
+
+def _direction_thesis(score: float) -> str:
+    if score > 0.02:
+        return "bullish"
+    if score < -0.02:
+        return "bearish"
+    return "neutral"
 
 
 def _side(exposure: float) -> str:

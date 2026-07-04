@@ -51,7 +51,14 @@ class UnifiedDecisionModelTests(unittest.TestCase):
             vector["4_resolved_materiality_adjusted_action_score"],
             vector["4_materiality_adjusted_action_score_1W"],
         )
+        self.assertEqual(vector["4_resolved_direction_thesis"], "bullish")
+        self.assertGreater(vector["4_resolved_direction_thesis_score"], 0.0)
+        self.assertGreater(vector["4_resolved_direction_certainty_score"], 0.0)
+        self.assertEqual(vector["4_resolved_trade_eligibility_status"], "eligible")
+        self.assertEqual(intent["direction_thesis"], "bullish")
+        self.assertGreater(intent["direction_certainty_score"], 0.0)
         self.assertEqual(intent["handoff_to_model_05"]["underlying_path_direction"], "bullish")
+        self.assertEqual(intent["handoff_to_model_05"]["direction_thesis"], "bullish")
         self.assertEqual(
             intent["materiality_adjusted_action_score"],
             vector["4_resolved_materiality_adjusted_action_score"],
@@ -140,6 +147,20 @@ class UnifiedDecisionModelTests(unittest.TestCase):
 
         self.assertEqual(output["4_resolved_underlying_action_type"], "bearish_underlying_path_but_no_short_allowed")
         self.assertEqual(output["4_resolved_action_side"], "none")
+        self.assertEqual(output["4_resolved_direction_thesis"], "bearish")
+        self.assertLess(output["4_resolved_direction_thesis_score"], 0.0)
+        self.assertGreater(output["4_resolved_direction_certainty_score"], 0.0)
+        self.assertEqual(output["4_resolved_trade_eligibility_status"], "blocked_by_direct_short_policy")
+        self.assertEqual(output["direct_underlying_intent"]["action_side"], "none")
+        self.assertEqual(output["direct_underlying_intent"]["direction_thesis"], "bearish")
+        self.assertEqual(
+            output["direct_underlying_intent"]["handoff_to_model_05"]["underlying_path_direction"],
+            "bearish",
+        )
+        self.assertEqual(
+            output["direct_underlying_intent"]["handoff_to_model_05"]["trade_eligibility_status"],
+            "blocked_by_direct_short_policy",
+        )
         self.assert_no_retired_outputs(output)
 
     def test_labels_are_offline_and_join_by_unified_decision_ref(self) -> None:
@@ -181,6 +202,9 @@ class UnifiedDecisionModelTests(unittest.TestCase):
 
         self.assertEqual(script._column_type("4_after_cost_edge_score_1W"), "DOUBLE PRECISION")
         self.assertEqual(script._column_type("4_resolved_underlying_action_type"), "TEXT")
+        self.assertEqual(script._column_type("4_resolved_direction_thesis"), "TEXT")
+        self.assertEqual(script._column_type("4_resolved_trade_eligibility_status"), "TEXT")
+        self.assertEqual(script._column_type("4_resolved_direction_certainty_score"), "DOUBLE PRECISION")
         self.assertEqual(script._column_type("5_after_cost_edge_score_1W"), "TEXT")
 
     def test_database_generation_refreshes_manager_task_progress(self) -> None:

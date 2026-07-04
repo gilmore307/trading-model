@@ -26,7 +26,13 @@ JSON_COLUMNS = {"4_resolved_reason_codes", "unified_decision_vector", "direct_un
 PRIMARY_KEY = ("unified_decision_vector_ref",)
 EXPLAINABILITY_COLUMNS = {"unified_decision_vector", "direct_underlying_intent"}
 DIAGNOSTICS_COLUMNS = {"4_resolved_reason_codes", "unified_decision_diagnostics"}
-TEXT_4_COLUMNS = {"4_resolved_decision_horizon", "4_resolved_underlying_action_type", "4_resolved_action_side"}
+TEXT_4_COLUMNS = {
+    "4_resolved_decision_horizon",
+    "4_resolved_direction_thesis",
+    "4_resolved_trade_eligibility_status",
+    "4_resolved_underlying_action_type",
+    "4_resolved_action_side",
+}
 PROGRESS_HEARTBEAT_SECONDS = 60.0
 DATABASE_BATCH_SIZE = 10_000
 

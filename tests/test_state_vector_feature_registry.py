@@ -22,6 +22,8 @@ class StateVectorFeatureRegistryTests(unittest.TestCase):
         self.assertEqual(by_field["2_tradability_score_<horizon>"].feature_use, "model_facing")
         self.assertEqual(by_field["3_event_path_risk_score_<horizon>"].high_value_meaning, "bad")
         self.assertEqual(by_field["4_edge_direction_score_<horizon>"].high_value_meaning, "signed")
+        self.assertEqual(by_field["4_direction_thesis_score_<horizon>"].high_value_meaning, "signed")
+        self.assertEqual(by_field["4_direction_certainty_score_<horizon>"].score_class, "direction_strength")
         self.assertEqual(by_field["4_downside_risk_score_<horizon>"].high_value_meaning, "bad")
         self.assertEqual(by_field["6_event_direction_bias_score_<horizon>"].high_value_meaning, "signed")
         self.assertEqual(by_field["6_event_gap_risk_score_<horizon>"].high_value_meaning, "bad")

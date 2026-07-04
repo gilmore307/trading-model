@@ -18,7 +18,8 @@ The vector must expose structured heads for:
 - edge / after-cost alpha;
 - risk policy and risk constraints;
 - exposure / size / position projection;
-- direct-underlying action thesis, including no-trade and invalidation profile.
+- point-in-time direction thesis and certainty;
+- direct-underlying action eligibility, including no-trade and invalidation profile.
 
 Those heads are fields of one current model contract, not separate current model contracts.
 
@@ -29,6 +30,14 @@ The current pilot lives in `src/models/model_04_unified_decision/` and emits `4_
 M04 does not emit executable tactical add actions. When an existing same-direction position has positive incremental gap, the current executable action is `maintain`; full-account operation lets winners grow by mark-to-market weight rather than tactical add orders. Risk-reduction actions such as `reduce_long`, `reduce_short`, `close_long`, and `cover_short` remain valid.
 
 `4_trade_intensity_score_<horizon>` remains the raw material exposure-gap magnitude. Horizon resolution uses `4_materiality_adjusted_action_score_<horizon>` so raw intensity first has to clear the configured materiality gate, then confidence, entry quality, downside risk, and no-trade pressure rank the action.
+
+Direction and trade eligibility are separate contract facts. `4_direction_thesis_score_<horizon>` /
+`4_resolved_direction_thesis` carry the signed bullish, bearish, or neutral path view;
+`4_direction_certainty_score_<horizon>` / `4_resolved_direction_certainty_score`
+carry confidence without sign; `4_resolved_trade_eligibility_status` records whether
+the direct-underlying action is eligible or blocked by no-trade, materiality, or direct
+short policy. A blocked direct short must not erase a bearish thesis before M05 option
+expression.
 
 ## Inputs
 

@@ -67,11 +67,15 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         row = _base_row(
             direct_underlying_intent={
                 "underlying_action_type": "bearish_underlying_path_but_no_short_allowed",
-                "action_side": "bearish_no_direct_short",
+                "action_side": "none",
+                "direction_thesis": "bearish",
+                "trade_eligibility_status": "blocked_by_direct_short_policy",
                 "dominant_horizon": "1W",
                 "handoff_to_model_05": {
                     **_handoff(),
                     "underlying_path_direction": "bearish",
+                    "direction_thesis": "bearish",
+                    "trade_eligibility_status": "blocked_by_direct_short_policy",
                     "expected_favorable_move_pct": 0.045,
                     "expected_adverse_move_pct": -0.018,
                 },
