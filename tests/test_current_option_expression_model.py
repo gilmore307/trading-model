@@ -36,6 +36,7 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["model_step"], "M05")
         self.assertEqual(output["unified_decision_vector_ref"], "udv_fixture")
         self.assertEqual(output["thesis_distribution_surface_ref"], "tds_fixture")
+        self.assertIn("expression_probability_surface_ref", output)
         self.assertEqual(output["5_resolved_expression_type"], "long_call")
         self.assertEqual(output["5_resolved_option_right"], "call")
         self.assertEqual(output["5_resolved_selected_contract_ref"], "AAPL_CALL_GOOD")
@@ -43,6 +44,14 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(plan["underlying_thesis_ref"], "udv_fixture")
         self.assertEqual(plan["underlying_path_assumptions"]["underlying_path_direction"], "bullish")
         candidate_set = output[CANDIDATE_SET_OUTPUT]
+        probability_surface = output["expression_probability_surface"]
+        self.assertEqual(probability_surface["schema_ref"], "expression_probability_surface")
+        self.assertEqual(probability_surface["source_expression_candidate_set_ref"], candidate_set["candidate_set_ref"])
+        self.assertEqual(probability_surface["source_thesis_distribution_surface_ref"], "tds_fixture")
+        self.assertEqual(probability_surface["axes"]["x"], "expression_candidate")
+        self.assertEqual(probability_surface["axes"]["y"], "conditional_probability")
+        self.assertEqual(probability_surface["surface_type"], "candidate_payoff_probability_distribution")
+        self.assertEqual(probability_surface["future_label_used"], False)
         self.assertEqual(candidate_set["source_m04_decision_ref"], "udv_fixture")
         self.assertEqual(candidate_set["source_thesis_distribution_surface_ref"], "tds_fixture")
         self.assertTrue(candidate_set["source_thesis_distribution_surface_summary"]["available"])
@@ -50,6 +59,10 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertFalse(candidate_set["selector_result"]["production_behavior_changed"])
         self.assertEqual(candidate_set["selector_result"]["selected_expression_type"], "long_call")
         self.assertEqual(plan["diagnostics"]["expression_candidate_set_ref"], candidate_set["candidate_set_ref"])
+        self.assertEqual(
+            plan["diagnostics"]["expression_probability_surface_ref"],
+            probability_surface["surface_ref"],
+        )
         self.assertEqual(plan["diagnostics"]["expression_candidate_count"], candidate_set["candidate_count"])
         candidates = candidate_set["candidate_vectors"]
         self.assertEqual({candidate["expression_type"] for candidate in candidates}, {"underlying_equity", "option_contract"})
@@ -57,6 +70,11 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(_selected_candidate(candidate_set)["expression_type"], "option_contract")
         self.assertEqual(_selected_candidate(candidate_set)["source_thesis_distribution_surface_ref"], "tds_fixture")
         self.assertTrue(_selected_candidate(candidate_set)["components"]["inherited_thesis_distribution_surface"]["available"])
+        self.assertIn("payoff_positive_probability", _selected_candidate(candidate_set)["probability_function"])
+        self.assertEqual(
+            probability_surface["selected_candidate_id"],
+            _selected_candidate(candidate_set)["candidate_id"],
+        )
         self.assertIn("underlying_equity_proxy", {candidate["instrument_ref"] for candidate in candidates})
         rejected_put = next(candidate for candidate in candidates if candidate["instrument_ref"] == "AAPL_PUT_GOOD")
         self.assertEqual(rejected_put["eligibility_status"], "rejected")

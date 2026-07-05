@@ -1,7 +1,8 @@
 """OptionExpressionModel generator.
 
 This package consumes M04 ``direct_underlying_intent`` plus
-point-in-time option-chain context and emits an offline ``option_expression_plan`` /
+point-in-time option-chain context and emits an offline
+``expression_probability_surface`` plus derived ``option_expression_plan`` /
 ``expression_vector`` for the M05 option-expression boundary.
 It can select an expression type, option right, contract reference, and contract
 constraints. It must not place orders, route orders, or mutate broker/account
@@ -16,7 +17,17 @@ from datetime import datetime
 from typing import Any, Callable, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
-from .contract import CANDIDATE_SET_OUTPUT, EXPRESSION_TYPES, FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_STEP, MODEL_VERSION, OPTION_SURFACE_STATUSES
+from .contract import (
+    CANDIDATE_SET_OUTPUT,
+    EXPRESSION_PROBABILITY_SURFACE_OUTPUT,
+    EXPRESSION_TYPES,
+    FORBIDDEN_OUTPUT_FIELDS,
+    HORIZONS,
+    MODEL_ID,
+    MODEL_STEP,
+    MODEL_VERSION,
+    OPTION_SURFACE_STATUSES,
+)
 
 ET = ZoneInfo("America/New_York")
 
@@ -131,6 +142,15 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         scored_candidates=scored_candidates,
         selector_diagnostics=selector_diagnostics,
     )
+    expression_probability_surface = _expression_probability_surface(
+        expression_plan_ref=expression_plan_ref,
+        target_candidate_id=target_candidate_id,
+        available_time=available_time,
+        model_version=model_version,
+        candidate_set=candidate_set,
+        dominant_horizon=dominant_horizon,
+        horizon_payloads=horizon_payloads,
+    )
     score_payload: dict[str, Any] = {}
     for horizon, payload in horizon_payloads.items():
         suffix = _suffix(horizon)
@@ -182,6 +202,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "unified_decision_vector_ref": thesis_ref,
         "thesis_distribution_surface_ref": thesis_surface_ref,
         "option_expression_plan_ref": expression_plan_ref,
+        "expression_probability_surface_ref": expression_probability_surface["surface_ref"],
         "option_chain_snapshot_ref": replay_context["option_chain_snapshot_ref"],
         "option_quote_available_time": replay_context["option_quote_available_time"],
         "underlying_quote_snapshot_ref": replay_context["underlying_quote_snapshot_ref"],
@@ -191,6 +212,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         **score_payload,
         **resolved_payload,
         "expression_vector": {**score_payload, **resolved_payload},
+        EXPRESSION_PROBABILITY_SURFACE_OUTPUT: expression_probability_surface,
         CANDIDATE_SET_OUTPUT: candidate_set,
         "option_expression_plan": {
             "selected_expression_type": expression_type,
@@ -218,6 +240,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
                 "no_option_candidate_score": no_option_candidate["score"],
                 "no_option_proxy_expression_type": no_option_candidate["proxy_expression_type"],
                 "expression_selector": _selector_diagnostics_payload(selector_diagnostics),
+                "expression_probability_surface_ref": expression_probability_surface["surface_ref"],
                 "expression_candidate_set_ref": candidate_set["candidate_set_ref"],
                 "expression_candidate_count": candidate_set["candidate_count"],
                 "horizon_scores": horizon_payloads,
@@ -688,6 +711,7 @@ def _underlying_expression_candidate_vector(
         "eligibility_status": "eligible",
         "rejection_reasons": [],
         "selected_by_compatibility_selector": bool(selected),
+        "probability_function": _candidate_probability_function(vector),
         "comparable_vector": vector,
         "selector_utility": vector["selector_utility"],
         "components": {
@@ -743,6 +767,7 @@ def _option_expression_candidate_vector(
         "eligibility_status": "eligible" if eligible else "rejected",
         "rejection_reasons": list(candidate.get("hard_filter_fail_reason_codes") or []),
         "selected_by_compatibility_selector": bool(selected),
+        "probability_function": _candidate_probability_function(vector),
         "comparable_vector": vector,
         "selector_utility": vector["selector_utility"],
         "components": {
@@ -822,6 +847,91 @@ def _shared_expression_vector(
         "expression_cost_score": round(expression_cost_score, 6),
         "policy_penalty_score": round(policy_penalty, 6),
         "selector_utility": round(selector_utility, 6),
+    }
+
+
+def _candidate_probability_function(vector: Mapping[str, Any]) -> dict[str, float]:
+    payoff_positive = _clip01(
+        0.45 * _score(vector, "after_cost_edge_score", default=0.0)
+        + 0.25 * _score(vector, "confidence_score", default=0.0)
+        + 0.20 * _score(vector, "liquidity_score", default=0.0)
+        + 0.10 * _score(vector, "horizon_fit_score", default=0.0)
+    )
+    premium_loss = _clip01(
+        0.55 * _score(vector, "downside_risk_score", default=0.0)
+        + 0.25 * (1.0 - _score(vector, "fill_quality_score", default=0.0))
+        + 0.20 * _score(vector, "policy_penalty_score", default=0.0)
+    )
+    return {
+        "payoff_positive_probability": round(payoff_positive, 6),
+        "premium_loss_probability": round(premium_loss, 6),
+        "fill_probability": round(_score(vector, "fill_quality_score", default=0.0), 6),
+        "selector_probability": round(_score(vector, "selector_utility", default=0.0), 6),
+        "confidence_probability": round(_score(vector, "confidence_score", default=0.0), 6),
+    }
+
+
+def _expression_probability_surface(
+    *,
+    expression_plan_ref: str,
+    target_candidate_id: str,
+    available_time: str,
+    model_version: str,
+    candidate_set: Mapping[str, Any],
+    dominant_horizon: str,
+    horizon_payloads: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    candidates = candidate_set.get("candidate_vectors")
+    if not isinstance(candidates, Sequence):
+        candidates = []
+    candidate_probability_functions = [
+        {
+            "candidate_id": candidate.get("candidate_id"),
+            "expression_type": candidate.get("expression_type"),
+            "instrument_ref": candidate.get("instrument_ref"),
+            "option_right": candidate.get("option_right"),
+            "eligibility_status": candidate.get("eligibility_status"),
+            "selected": bool(candidate.get("selected_by_compatibility_selector")),
+            "probability_function": dict(candidate.get("probability_function") or {}),
+        }
+        for candidate in candidates
+        if isinstance(candidate, Mapping)
+    ]
+    selected_candidate_id = next(
+        (candidate["candidate_id"] for candidate in candidate_probability_functions if candidate.get("selected")),
+        None,
+    )
+    dominant_payload = horizon_payloads.get(dominant_horizon) or {}
+    return {
+        "surface_ref": _stable_id("eps", expression_plan_ref, model_version),
+        "schema_ref": "expression_probability_surface",
+        "source_model": "model_05_option_expression",
+        "source_expression_candidate_set_ref": candidate_set.get("candidate_set_ref"),
+        "source_option_expression_plan_ref": expression_plan_ref,
+        "source_m04_decision_ref": candidate_set.get("source_m04_decision_ref"),
+        "source_thesis_distribution_surface_ref": candidate_set.get("source_thesis_distribution_surface_ref"),
+        "target_candidate_id": target_candidate_id,
+        "available_time": available_time,
+        "model_version": model_version,
+        "axes": {
+            "x": "expression_candidate",
+            "t": "forecast_horizon",
+            "y": "conditional_probability",
+        },
+        "horizons": list(HORIZONS),
+        "resolved_horizon": dominant_horizon,
+        "surface_type": "candidate_payoff_probability_distribution",
+        "candidate_probability_functions": candidate_probability_functions,
+        "selected_candidate_id": selected_candidate_id,
+        "resolved_expression_type": dominant_payload.get("expression_type"),
+        "resolved_probability_summary": {
+            "expression_eligibility_probability": _round_optional(_first_float(dominant_payload, "expression_eligibility_score")),
+            "expression_confidence_probability": _round_optional(_first_float(dominant_payload, "expression_confidence_score")),
+            "contract_fit_probability": _round_optional(_first_float(dominant_payload, "contract_fit_score")),
+        },
+        "comparable_probability_scale": "calibrated_candidate_payoff_probability",
+        "point_in_time_input_only": True,
+        "future_label_used": False,
     }
 
 
