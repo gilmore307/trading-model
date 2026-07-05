@@ -25,8 +25,8 @@ The vector must expose structured heads for:
 Those heads are fields of one current model contract, not separate current model contracts.
 
 `thesis_distribution_surface` is the current PIT forecast contract for the
-underlying thesis. It is not a static two-dimensional PDF. It is a discrete
-horizon conditional return distribution surface:
+underlying thesis. It is not a static two-dimensional PDF. It is a conditional
+return distribution surface:
 
 ```text
 P(underlying return bucket at horizon tau | PIT context, target, asof)
@@ -38,12 +38,25 @@ The current axis contract is:
 - `t`: forecast horizon;
 - `y`: conditional probability.
 
-The first accepted implementation uses the existing M04 horizons
-`10min`, `1h`, `1D`, and `1W`; it exposes horizon-level return quantiles,
-CDF thresholds, upside/downside probability, tail-loss probability, uncertainty
-spread, and skew proxy. This is deliberately a calibrated discrete surface, not
-a smooth continuous price-time PDF. Future realized returns are evaluation
+The current production-compatible implementation still emits the existing M04
+horizons `10min`, `1h`, `1D`, and `1W`; it exposes horizon-level return
+quantiles, CDF thresholds, upside/downside probability, tail-loss probability,
+uncertainty spread, and skew proxy. Future realized returns are evaluation
 labels only and must not enter the emitted surface.
+
+The accepted research migration target is
+`tradable_time_return_distribution_surface`: a single calendar-aware conditional
+surface over an equal-step tradable-time target grid. For US equity pilots the
+current grid uses 10-minute anchors and 10-minute future target steps through
+the configured future window. Closed-session time does not advance
+`tau_trading_minutes`; the row still records `tau_calendar_minutes`,
+session-gap counts, and open/close context. Open, close, overnight, 2D, and 3D
+effects are target-row context features and validation slices, not separate
+label heads or independent models.
+
+Reusable pilot code lives in `src/models/return_distribution_surface/`; the
+read-only SQL entrypoint is
+`scripts/models/run_tradable_time_distribution_surface_pilot.py`.
 
 The current pilot lives in `src/models/model_04_unified_decision/` and emits `4_*` fields plus `unified_decision_vector_ref`. It keeps the edge, risk, exposure, and action heads inside one output and does not expose retired `alpha_confidence_vector`, `dynamic_risk_policy_state`, `position_projection_vector`, or `underlying_action_plan` outputs. Local generate/evaluate/review entrypoints live under `scripts/models/model_04_unified_decision/`.
 

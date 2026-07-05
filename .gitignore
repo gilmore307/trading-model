@@ -20,6 +20,7 @@ outputs/
 runs/
 logs/
 tmp/
+.tmp/
 *.log
 
 # Secrets and credentials

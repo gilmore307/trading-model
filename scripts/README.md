@@ -17,7 +17,8 @@ Scripts are the runtime boundary. Reusable model logic belongs in `src/`; script
 - `models/model_04_unified_decision/` — current home for M04 Unified Decision entrypoints.
 - `models/model_05_option_expression/` — current home for M05 Option Expression entrypoints.
 - `models/model_06_residual_event_governance/` — current home for M06 Residual Event Governance entrypoints.
-- - `models/audit_model_output_tables.py` emits a read-only `model_output_table_quality_audit` over current and model output/support table families.
+- `models/run_tradable_time_distribution_surface_pilot.py` builds a read-only tradable-time return distribution surface pilot from PIT SQL bars. It samples 10-minute anchors, expands an equal-step tradable-time target grid through the configured future window, and reports quantile/CDF calibration plus open/close/overnight slice diagnostics.
+- `models/audit_model_output_tables.py` emits a read-only `model_output_table_quality_audit` over current and model output/support table families.
 - `models/run_current_model_chain.py` is a local fixture smoke gate for the current M01-M06 contracts. It does not produce production promotion evidence.
 - `models/run_current_model_historical_evaluation.py` runs the current M01-M06 chain over bounded point-in-time historical rows, builds chronological folds and mature future-return labels, and may train a local cumulative residual-MLP utility baseline artifact for chain-level evidence. It is read-only evidence generation and never promotes or activates a model.
 - `models/run_model_output_quality_gate.py` emits `model_output_quality_gate` and exits non-zero when post-generation primary output defects should block acceptance.

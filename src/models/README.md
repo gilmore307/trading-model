@@ -13,5 +13,6 @@ Current packages:
 - `model_04_unified_decision/` — `M04 Unified Decision`, structured edge/risk/exposure/action heads in one direct-underlying decision contract.
 - `model_05_option_expression/` — `M05 Option Expression`, optional option/underlying expression after direct-underlying intent exists.
 - `model_06_residual_event_governance/` — `M06 Residual Event Governance`, missed-event checks, residual intervention, attribution, and future event-family evidence.
+- `return_distribution_surface/` — shared pilot utilities for the tradable-time conditional return distribution surface that M01 through M05 will progressively adopt.
 
 Shared governance/promotion helpers stay outside this directory in `src/model_governance/`.
