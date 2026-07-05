@@ -85,6 +85,11 @@ gaps, and multi-day horizons.
 Reusable surface code lives in `src/models/return_distribution_surface/`; the
 read-only SQL entrypoint is
 `scripts/models/build_tradable_time_return_distribution_surface.py`.
+`scripts/models/run_current_model_chain.py` can consume that entrypoint's
+`surface_summary.json` through `--return-surface-summary-json`. The chain
+rejects symbol/scope mismatch, records the source surface summary inside M04's
+`thesis_distribution_surface`, and requires M05's `expression_candidate_set` to
+receive the M04 surface summary before the local handoff receipt can pass.
 
 The current pilot lives in `src/models/model_04_unified_decision/` and emits `4_*` fields plus `unified_decision_vector_ref`. It keeps the edge, risk, exposure, and action heads inside one output and does not expose retired `alpha_confidence_vector`, `dynamic_risk_policy_state`, `position_projection_vector`, or `underlying_action_plan` outputs. Local generate/evaluate/review entrypoints live under `scripts/models/model_04_unified_decision/`.
 

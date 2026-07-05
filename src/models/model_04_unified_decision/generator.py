@@ -73,6 +73,12 @@ def _model_row(row: Mapping[str, Any], *, model_version: str, validate_output: b
     risk = _payload(row, "risk_budget_state")
     policy = _payload(row, "policy_gate_state")
     price_location = _payload(row, "price_location_state")
+    source_return_surface = _payload(
+        row,
+        "tradable_time_return_distribution_surface_summary",
+        "return_distribution_surface_summary",
+        "tradable_time_return_distribution_surface",
+    )
 
     exposure = _exposure_state(current, pending)
     quote_state = _quote_state(quote, liquidity)
@@ -132,6 +138,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str, validate_output: b
         model_version=model_version,
         horizon_details=horizon_details,
         resolved_horizon=resolved_horizon,
+        source_return_surface=source_return_surface,
     )
     direct_intent = _direct_underlying_intent(
         action=action,
@@ -343,6 +350,7 @@ def _thesis_distribution_surface(
     model_version: str,
     horizon_details: Mapping[str, Mapping[str, Any]],
     resolved_horizon: str,
+    source_return_surface: Mapping[str, Any],
 ) -> dict[str, Any]:
     horizon_surfaces = {
         horizon: _horizon_return_distribution(horizon, detail)
@@ -367,8 +375,33 @@ def _thesis_distribution_surface(
         "cdf_thresholds": list(RETURN_DISTRIBUTION_CDF_THRESHOLDS),
         "horizon_distributions": horizon_surfaces,
         "surface_type": "discrete_horizon_return_distribution",
+        "source_tradable_time_return_distribution_surface": _source_return_surface_summary(source_return_surface),
         "point_in_time_input_only": True,
         "future_label_used": False,
+    }
+
+
+def _source_return_surface_summary(surface: Mapping[str, Any]) -> dict[str, Any]:
+    if not surface:
+        return {"available": False}
+    target_grid = surface.get("target_grid") if isinstance(surface.get("target_grid"), Mapping) else {}
+    evaluation = surface.get("evaluation") if isinstance(surface.get("evaluation"), Mapping) else {}
+    side_effects = surface.get("side_effects") if isinstance(surface.get("side_effects"), Mapping) else {}
+    return {
+        "available": True,
+        "contract_type": surface.get("contract_type"),
+        "symbol": surface.get("symbol"),
+        "source_table": surface.get("source_table"),
+        "source_timeframe": surface.get("source_timeframe"),
+        "anchor_minutes": surface.get("anchor_minutes"),
+        "target_grid_type": target_grid.get("grid_type"),
+        "horizon_count": target_grid.get("horizon_count"),
+        "max_tau_trading_minutes": target_grid.get("max_tau_trading_minutes"),
+        "mean_abs_coverage_error": evaluation.get("mean_abs_coverage_error"),
+        "cdf_monotone_failures": evaluation.get("cdf_monotone_failures"),
+        "provider_call_performed": bool(side_effects.get("provider_call_performed", False)),
+        "sql_mutation_performed": bool(side_effects.get("sql_mutation_performed", False)),
+        "model_activation_performed": bool(side_effects.get("model_activation_performed", False)),
     }
 
 

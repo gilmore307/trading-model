@@ -141,6 +141,7 @@ def build_current_chain_rows(
     """Generate current M01-M06 rows from one point-in-time input payload."""
 
     payload = _fixture_payload(input_payload or {}) if use_fixture_defaults else dict(input_payload or {})
+    _validate_surface_scope(payload)
     background = generate_background_context([payload["background_input"]])[0]
     target = generate_target_state([_target_input(payload, background)])[0]
     event = generate_event_state([_event_input(payload, background, target)])[0]
@@ -259,6 +260,19 @@ def _fixture_payload(overrides: Mapping[str, Any]) -> dict[str, Any]:
     return _deep_update(payload, overrides)
 
 
+def _validate_surface_scope(payload: Mapping[str, Any]) -> None:
+    surface = payload.get("tradable_time_return_distribution_surface_summary")
+    if not isinstance(surface, Mapping) or not surface:
+        return
+    surface_symbol = str(surface.get("symbol") or "").upper()
+    routing_symbol = str(payload.get("routing_symbol") or "").upper()
+    if surface_symbol and routing_symbol and surface_symbol != routing_symbol:
+        raise ValueError(
+            "tradable_time_return_distribution_surface_summary.symbol "
+            f"{surface_symbol!r} does not match routing_symbol {routing_symbol!r}"
+        )
+
+
 def _target_input(payload: Mapping[str, Any], background: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "available_time": background["available_time"],
@@ -305,6 +319,7 @@ def _decision_input(payload: Mapping[str, Any], background: Mapping[str, Any], t
         "underlying_borrow_state": payload["underlying_borrow_state"],
         "risk_budget_state": payload["risk_budget_state"],
         "policy_gate_state": payload["policy_gate_state"],
+        "tradable_time_return_distribution_surface_summary": payload.get("tradable_time_return_distribution_surface_summary"),
     }
 
 
@@ -319,6 +334,8 @@ def _option_input(payload: Mapping[str, Any], background: Mapping[str, Any], eve
         "underlying_quote_snapshot_ref": "underlying_quote_fixture",
         "underlying_reference_price": payload["underlying_quote_state"]["reference_price"],
         "direct_underlying_intent": decision["direct_underlying_intent"],
+        "thesis_distribution_surface_ref": decision["thesis_distribution_surface_ref"],
+        "thesis_distribution_surface": decision["thesis_distribution_surface"],
         "background_context_state": background["background_context_state"]["score_payload"],
         "event_state_vector": event["event_state_vector"]["score_payload"],
         "option_expression_policy": payload["option_expression_policy"],
@@ -369,6 +386,15 @@ def _handoff_checks(
         _check("m02_to_m04_target_ref", decision.get("target_context_state_ref") == target.get("target_context_state_ref")),
         _check("m03_to_m04_event_ref", decision.get("event_state_vector_ref") == event.get("event_state_vector_ref")),
         _check("m04_to_m05_unified_decision_ref", option.get("unified_decision_vector_ref") == decision.get("unified_decision_vector_ref")),
+        _check("m04_to_m05_thesis_surface_ref", option.get("thesis_distribution_surface_ref") == decision.get("thesis_distribution_surface_ref")),
+        _check(
+            "m04_surface_to_m05_candidate_set_summary",
+            bool(
+                option.get("expression_candidate_set", {})
+                .get("source_thesis_distribution_surface_summary", {})
+                .get("available")
+            ),
+        ),
         _check("m01_to_m06_background_ref", residual.get("background_context_state_ref") == background.get("background_context_state_ref")),
         _check("m03_to_m06_event_ref", residual.get("event_state_vector_ref") == event.get("event_state_vector_ref")),
         _check("m04_to_m06_unified_decision_ref", residual.get("unified_decision_vector_ref") == decision.get("unified_decision_vector_ref")),

@@ -37,6 +37,13 @@ surface and instrument terms into comparable candidate utility while preserving
 the M04/M05 boundary: M05 must not redefine the M04 target-level direction
 thesis or use future realized outcomes at decision time.
 
+The local M01-M06 chain receipt now checks the surface handoff explicitly:
+M05's `thesis_distribution_surface_ref` must match M04's emitted surface ref,
+and the `expression_candidate_set.source_thesis_distribution_surface_summary`
+must be available. This closes the read-only surface path from
+`tradable_time_return_distribution_surface` evidence into M04 thesis formation
+and then into M05 expression comparison without enabling production behavior.
+
 For targets with structurally unavailable listed options, such as crypto spot, M05 emits `non_optionable_underlying` as the option surface status and falls back to direct-underlying/no-option expression states. It must not treat structural no-option availability as zero-valued IV, spread, flow, or open-interest evidence.
 
 ## Inputs
