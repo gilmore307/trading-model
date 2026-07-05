@@ -11,6 +11,7 @@ CONCEPTUAL_OUTPUT: Final[str] = "option_expression_plan"
 MODEL_VERSION: Final[str] = "option_expression_plan_contract"
 PRIMARY_OUTPUT: Final[str] = CONCEPTUAL_OUTPUT
 VECTOR_OUTPUT: Final[str] = "expression_vector"
+CANDIDATE_SET_OUTPUT: Final[str] = "expression_candidate_set"
 HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 
 SCORE_FAMILIES: Final[tuple[str, ...]] = (

@@ -22,7 +22,7 @@ from model_runtime.config import database_url_file
 
 from model_governance.model_output_support import write_model_output_with_support
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
-from models.model_05_option_expression import MODEL_SURFACE, MODEL_VERSION, generate_rows
+from models.model_05_option_expression import CANDIDATE_SET_OUTPUT, MODEL_SURFACE, MODEL_VERSION, generate_rows
 
 DEFAULT_DB_URL_FILE = database_url_file()
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -33,9 +33,10 @@ JSON_COLUMNS = {
     "5_resolved_reason_codes",
     "pending_option_exposure_context",
     "expression_vector",
+    CANDIDATE_SET_OUTPUT,
     "option_expression_plan",
 }
-EXPLAINABILITY_COLUMNS = {"pending_option_exposure_context", "expression_vector", "option_expression_plan"}
+EXPLAINABILITY_COLUMNS = {"pending_option_exposure_context", "expression_vector", CANDIDATE_SET_OUTPUT, "option_expression_plan"}
 DIAGNOSTICS_COLUMNS = {"5_resolved_no_option_reason_codes", "5_resolved_reason_codes"}
 TEXT_5_COLUMNS = {
     "5_resolved_expression_type",

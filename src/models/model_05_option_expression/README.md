@@ -4,7 +4,7 @@ Canonical package boundary for current `M05 Option Expression`.
 
 This model owns optional option/underlying expression after the unified direct-underlying decision intent exists. It must not choose broker orders, mutate accounts, or absorb the main decision model before option-chain, liquidity, volatility, and structure-specific validation is mature.
 
-The current generator consumes `direct_underlying_intent` / `unified_decision_vector_ref` from M04 plus point-in-time option-chain candidates. It emits `option_expression_plan`, `expression_vector`, and `5_*` score/resolution fields.
+The current generator consumes `direct_underlying_intent` / `unified_decision_vector_ref` from M04 plus point-in-time option-chain candidates. It emits `option_expression_plan`, `expression_vector`, `expression_candidate_set`, and `5_*` score/resolution fields.
 
 M05 reads the path direction from the M04 handoff before falling back to
 `action_side`. This preserves bearish option-expression routing when M04 has a
@@ -14,3 +14,10 @@ When M05 compares option contracts with `no_option_expression`, the no-option
 candidate is scored as the pure underlying-equity proxy for the M04 thesis. It
 is not a cash/no-trade shortcut; no-trade remains owned by the upstream M04
 action state.
+
+`expression_candidate_set` is the native M05 comparison surface. It contains a
+same-shaped `comparable_vector` for the underlying-equity proxy and each
+point-in-time option contract candidate, including rejected candidates with
+their policy reasons. The existing `option_expression_plan` remains the
+selected-candidate compatibility projection used by downstream current-chain
+consumers until the final selector is explicitly cut over.

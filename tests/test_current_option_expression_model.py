@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 from models.model_05_option_expression import generate_rows
-from models.model_05_option_expression.contract import EVENT_STATE_CONSUMED_FIELDS
+from models.model_05_option_expression.contract import CANDIDATE_SET_OUTPUT, EVENT_STATE_CONSUMED_FIELDS
 from models.model_05_option_expression.evaluation import assert_no_label_leakage, build_option_expression_labels
 
 
@@ -41,6 +41,21 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertGreater(output["5_option_expression_confidence_score_1W"], 0.0)
         self.assertEqual(plan["underlying_thesis_ref"], "udv_fixture")
         self.assertEqual(plan["underlying_path_assumptions"]["underlying_path_direction"], "bullish")
+        candidate_set = output[CANDIDATE_SET_OUTPUT]
+        self.assertEqual(candidate_set["source_m04_decision_ref"], "udv_fixture")
+        self.assertFalse(candidate_set["selector_result"]["production_behavior_changed"])
+        self.assertEqual(candidate_set["selector_result"]["selected_expression_type"], "long_call")
+        self.assertEqual(plan["diagnostics"]["expression_candidate_set_ref"], candidate_set["candidate_set_ref"])
+        self.assertEqual(plan["diagnostics"]["expression_candidate_count"], candidate_set["candidate_count"])
+        candidates = candidate_set["candidate_vectors"]
+        self.assertEqual({candidate["expression_type"] for candidate in candidates}, {"underlying_equity", "option_contract"})
+        self.assertEqual(_selected_candidate(candidate_set)["instrument_ref"], "AAPL_CALL_GOOD")
+        self.assertEqual(_selected_candidate(candidate_set)["expression_type"], "option_contract")
+        self.assertIn("underlying_equity_proxy", {candidate["instrument_ref"] for candidate in candidates})
+        rejected_put = next(candidate for candidate in candidates if candidate["instrument_ref"] == "AAPL_PUT_GOOD")
+        self.assertEqual(rejected_put["eligibility_status"], "rejected")
+        self.assertIn("option_right_mismatch", rejected_put["rejection_reasons"])
+        self.assertEqual(len(_candidate_vector_key_sets(candidate_set)), 1)
         assert_no_label_leakage(output)
         self.assert_no_retired_fields(output)
 
@@ -88,10 +103,16 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["5_resolved_expression_type"], "no_option_expression")
         self.assertGreater(output["5_option_expression_direction_score_1W"], 0.0)
         self.assertEqual(diagnostics["candidate_count_after_filter"], 1)
-        self.assertEqual(diagnostics["no_option_candidate"]["proxy_expression_type"], "underlying_equity")
-        self.assertGreater(diagnostics["no_option_candidate"]["score"], diagnostics["expression_selector"]["best_contract_score"])
+        self.assertEqual(diagnostics["no_option_proxy_expression_type"], "underlying_equity")
+        self.assertGreater(diagnostics["no_option_candidate_score"], diagnostics["expression_selector"]["best_contract_score"])
         self.assertEqual(diagnostics["expression_selector"]["selection_reason"], "no_option_won_policy_adjusted_score")
         self.assertIn("no_option_won_policy_adjusted_score", output["5_resolved_reason_codes"])
+        candidate_set = output[CANDIDATE_SET_OUTPUT]
+        selected = _selected_candidate(candidate_set)
+        self.assertEqual(selected["expression_type"], "underlying_equity")
+        self.assertEqual(selected["instrument_ref"], "underlying_equity_proxy")
+        self.assertEqual(selected["selector_utility"], selected["comparable_vector"]["selector_utility"])
+        self.assertEqual(len(_candidate_vector_key_sets(candidate_set)), 1)
 
     def test_no_option_comparison_does_not_expand_dte_policy(self) -> None:
         output = generate_rows(
@@ -112,7 +133,14 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["5_resolved_expression_type"], "no_option_expression")
         self.assertEqual(diagnostics["candidate_count_after_filter"], 0)
         self.assertEqual(diagnostics["expression_selector"]["selection_reason"], "no_option_won_no_eligible_contract")
-        self.assertIn("dte_outside_policy_range", diagnostics["scored_candidates"][0]["hard_filter_fail_reason_codes"])
+        self.assertEqual(diagnostics["candidate_filter_reason_counts"]["dte_outside_policy_range"], 1)
+        candidate_set = output[CANDIDATE_SET_OUTPUT]
+        selected = _selected_candidate(candidate_set)
+        self.assertEqual(selected["expression_type"], "underlying_equity")
+        rejected = next(candidate for candidate in candidate_set["candidate_vectors"] if candidate["instrument_ref"] == "AAPL_CALL_OUTSIDE_DTE")
+        self.assertEqual(rejected["eligibility_status"], "rejected")
+        self.assertIn("dte_outside_policy_range", rejected["rejection_reasons"])
+        self.assertEqual(len(_candidate_vector_key_sets(candidate_set)), 1)
 
     def test_bearish_no_direct_short_intent_selects_long_put(self) -> None:
         row = _base_row(
@@ -154,6 +182,8 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["5_resolved_expression_type"], "underlying_only_expression")
         self.assertEqual(output["5_resolved_option_right"], "none")
         self.assertIn("option_expression_policy_blocked", output["5_resolved_reason_codes"])
+        selected = _selected_candidate(output[CANDIDATE_SET_OUTPUT])
+        self.assertEqual(selected["expression_type"], "underlying_equity")
 
     def test_non_optionable_underlying_uses_direct_underlying_expression_without_chain(self) -> None:
         output = generate_rows(
@@ -209,6 +239,7 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["model_step"], "M05")
         self.assertIn("5_resolved_expression_type", rows[0])
+        self.assertIn(CANDIDATE_SET_OUTPUT, rows[0])
         self.assertNotIn("underlying_action_plan_ref", rows[0])
 
     def test_current_generate_evaluate_review_scripts_support_help(self) -> None:
@@ -276,6 +307,7 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
     def test_current_script_column_type_uses_model_05_prefix(self) -> None:
         script = _load_generator_script()
 
+        self.assertEqual(script._column_type(CANDIDATE_SET_OUTPUT), "JSONB")
         self.assertEqual(script._column_type("5_option_expression_confidence_score_1W"), "DOUBLE PRECISION")
         self.assertEqual(script._column_type("5_resolved_expression_type"), "TEXT")
         self.assertEqual(script._column_type("4_option_expression_confidence_score_1W"), "TEXT")
@@ -368,6 +400,27 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         elif isinstance(value, list):
             for nested in value:
                 self.assert_no_retired_fields(nested)
+
+
+def _selected_candidate(candidate_set: dict[str, object]) -> dict[str, object]:
+    candidates = candidate_set["candidate_vectors"]
+    if not isinstance(candidates, list):
+        raise AssertionError("candidate_vectors must be a list")
+    selected = [candidate for candidate in candidates if isinstance(candidate, dict) and candidate.get("selected_by_compatibility_selector")]
+    if len(selected) != 1:
+        raise AssertionError(f"expected one selected expression candidate, got {len(selected)}")
+    return selected[0]
+
+
+def _candidate_vector_key_sets(candidate_set: dict[str, object]) -> set[frozenset[str]]:
+    candidates = candidate_set["candidate_vectors"]
+    if not isinstance(candidates, list):
+        raise AssertionError("candidate_vectors must be a list")
+    return {
+        frozenset(candidate["comparable_vector"].keys())
+        for candidate in candidates
+        if isinstance(candidate, dict) and isinstance(candidate.get("comparable_vector"), dict)
+    }
 
 
 def _base_row(**overrides: object) -> dict[str, object]:

@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import Any, Callable, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
-from .contract import EXPRESSION_TYPES, FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_STEP, MODEL_VERSION, OPTION_SURFACE_STATUSES
+from .contract import CANDIDATE_SET_OUTPUT, EXPRESSION_TYPES, FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_STEP, MODEL_VERSION, OPTION_SURFACE_STATUSES
 
 ET = ZoneInfo("America/New_York")
 
@@ -107,6 +107,22 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         dominant = horizon_payloads[dominant_horizon]
 
     expression_plan_ref = _stable_id("oep", target_candidate_id, available_time, model_version)
+    thesis_ref = row.get("unified_decision_vector_ref") or underlying_intent.get("unified_decision_vector_ref")
+    candidate_set = _expression_candidate_set(
+        expression_plan_ref=expression_plan_ref,
+        target_candidate_id=target_candidate_id,
+        available_time=available_time,
+        model_version=model_version,
+        thesis_ref=thesis_ref,
+        direction=direction,
+        handoff=handoff,
+        market=market,
+        event=event,
+        option_surface_status=option_surface_status,
+        no_option_candidate=no_option_candidate,
+        scored_candidates=scored_candidates,
+        selector_diagnostics=selector_diagnostics,
+    )
     score_payload: dict[str, Any] = {}
     for horizon, payload in horizon_payloads.items():
         suffix = _suffix(horizon)
@@ -155,7 +171,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "model_id": MODEL_ID,
         "model_step": MODEL_STEP,
         "model_version": model_version,
-        "unified_decision_vector_ref": row.get("unified_decision_vector_ref") or underlying_intent.get("unified_decision_vector_ref"),
+        "unified_decision_vector_ref": thesis_ref,
         "option_expression_plan_ref": expression_plan_ref,
         "option_chain_snapshot_ref": replay_context["option_chain_snapshot_ref"],
         "option_quote_available_time": replay_context["option_quote_available_time"],
@@ -166,6 +182,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         **score_payload,
         **resolved_payload,
         "expression_vector": {**score_payload, **resolved_payload},
+        CANDIDATE_SET_OUTPUT: candidate_set,
         "option_expression_plan": {
             "selected_expression_type": expression_type,
             "selected_option_right": option_right,
@@ -178,7 +195,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "selected_contract": _selected_contract_payload(selected),
             "contract_constraints": _contract_constraints(option_right, handoff, policy),
             "premium_risk_plan": _premium_risk_plan(selected, handoff, dominant, policy, expression_type),
-            "underlying_thesis_ref": row.get("unified_decision_vector_ref") or underlying_intent.get("unified_decision_vector_ref"),
+            "underlying_thesis_ref": thesis_ref,
             "underlying_path_assumptions": handoff,
             "option_surface_status": option_surface_status,
             "reason_codes": reason_codes,
@@ -187,9 +204,12 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
                 "candidate_count_after_filter": len(eligible_candidates),
                 "pending_option_exposure_context": pending,
                 "no_future_label_used": True,
-                "scored_candidates": scored_candidates,
-                "no_option_candidate": no_option_candidate,
+                "candidate_filter_reason_counts": _candidate_filter_reason_counts(scored_candidates),
+                "no_option_candidate_score": no_option_candidate["score"],
+                "no_option_proxy_expression_type": no_option_candidate["proxy_expression_type"],
                 "expression_selector": _selector_diagnostics_payload(selector_diagnostics),
+                "expression_candidate_set_ref": candidate_set["candidate_set_ref"],
+                "expression_candidate_count": candidate_set["candidate_count"],
                 "horizon_scores": horizon_payloads,
             },
         },
@@ -544,6 +564,253 @@ def _selector_diagnostics_payload(selector_diagnostics: Mapping[str, Any]) -> di
     }
 
 
+def _expression_candidate_set(
+    *,
+    expression_plan_ref: str,
+    target_candidate_id: str,
+    available_time: str,
+    model_version: str,
+    thesis_ref: Any,
+    direction: str,
+    handoff: Mapping[str, Any],
+    market: Mapping[str, Any],
+    event: Mapping[str, Any],
+    option_surface_status: str,
+    no_option_candidate: Mapping[str, Any],
+    scored_candidates: Sequence[Mapping[str, Any]],
+    selector_diagnostics: Mapping[str, Any],
+) -> dict[str, Any]:
+    underlying = _underlying_expression_candidate_vector(
+        expression_plan_ref=expression_plan_ref,
+        thesis_ref=thesis_ref,
+        direction=direction,
+        handoff=handoff,
+        market=market,
+        event=event,
+        no_option_candidate=no_option_candidate,
+        selected=selector_diagnostics.get("selected_expression_type") in {"no_option_expression", "underlying_only_expression"},
+    )
+    option_candidates = [
+        _option_expression_candidate_vector(
+            expression_plan_ref=expression_plan_ref,
+            thesis_ref=thesis_ref,
+            direction=direction,
+            handoff=handoff,
+            market=market,
+            event=event,
+            candidate=candidate,
+            selected=str(selector_diagnostics.get("best_contract_ref") or "") == str(candidate.get("contract_ref") or "")
+            and selector_diagnostics.get("selected_expression_type") in {"long_call", "long_put"},
+        )
+        for candidate in scored_candidates
+    ]
+    candidate_vectors = [underlying, *option_candidates]
+    selected_candidate_id = next(
+        (candidate["candidate_id"] for candidate in candidate_vectors if candidate.get("selected_by_compatibility_selector")),
+        None,
+    )
+    return {
+        "candidate_set_ref": _stable_id("ecs", expression_plan_ref, model_version),
+        "schema_ref": "expression_candidate_set",
+        "source_model": "model_05_option_expression",
+        "source_m04_decision_ref": thesis_ref,
+        "target_candidate_id": target_candidate_id,
+        "available_time": available_time,
+        "model_version": model_version,
+        "option_surface_status": option_surface_status,
+        "candidate_count": len(candidate_vectors),
+        "eligible_candidate_count": sum(1 for candidate in candidate_vectors if candidate.get("eligibility_status") == "eligible"),
+        "candidate_vectors": candidate_vectors,
+        "selector_result": {
+            **_selector_diagnostics_payload(selector_diagnostics),
+            "selected_candidate_id": selected_candidate_id,
+            "selector_mode": "compatibility_contract_fit_shadow_candidate_set",
+            "production_behavior_changed": False,
+        },
+        "compatibility_option_expression_plan_ref": expression_plan_ref,
+        "no_future_label_used": True,
+    }
+
+
+def _underlying_expression_candidate_vector(
+    *,
+    expression_plan_ref: str,
+    thesis_ref: Any,
+    direction: str,
+    handoff: Mapping[str, Any],
+    market: Mapping[str, Any],
+    event: Mapping[str, Any],
+    no_option_candidate: Mapping[str, Any],
+    selected: bool,
+) -> dict[str, Any]:
+    vector = _shared_expression_vector(
+        direction=direction,
+        handoff=handoff,
+        market=market,
+        event=event,
+        expression_cost_score=0.98,
+        liquidity_score=no_option_candidate["liquidity_fit_score"],
+        fill_quality_score=no_option_candidate["fill_quality_score"],
+        reward_risk_score=no_option_candidate["contract_fit_score"],
+        downside_risk_adjustment=0.0,
+        confidence_score=no_option_candidate["expression_confidence_score"],
+        horizon_fit_score=1.0,
+        exposure_equivalence_score=1.0,
+        policy_penalty=0.0,
+    )
+    return {
+        "candidate_id": _stable_id("expr", expression_plan_ref, "underlying_equity"),
+        "expression_type": "underlying_equity",
+        "instrument_ref": "underlying_equity_proxy",
+        "source_thesis_ref": thesis_ref,
+        "option_right": "none",
+        "eligibility_status": "eligible",
+        "rejection_reasons": [],
+        "selected_by_compatibility_selector": bool(selected),
+        "comparable_vector": vector,
+        "selector_utility": vector["selector_utility"],
+        "components": {
+            "inherited_m04_fields": _inherited_m04_summary(direction, handoff),
+            "expression_adjustments": {
+                "expression_cost_score": 0.98,
+                "liquidity_score": no_option_candidate["liquidity_fit_score"],
+                "fill_quality_score": no_option_candidate["fill_quality_score"],
+                "proxy_expression_type": "underlying_equity",
+            },
+        },
+    }
+
+
+def _option_expression_candidate_vector(
+    *,
+    expression_plan_ref: str,
+    thesis_ref: Any,
+    direction: str,
+    handoff: Mapping[str, Any],
+    market: Mapping[str, Any],
+    event: Mapping[str, Any],
+    candidate: Mapping[str, Any],
+    selected: bool,
+) -> dict[str, Any]:
+    eligible = bool(candidate.get("eligible"))
+    policy_penalty = 0.0 if eligible else 0.35
+    vector = _shared_expression_vector(
+        direction=direction,
+        handoff=handoff,
+        market=market,
+        event=event,
+        expression_cost_score=_clip01(1.0 - float(candidate.get("spread_pct") or 1.0)),
+        liquidity_score=_score(candidate, "liquidity_fit_score", default=0.0),
+        fill_quality_score=_score(candidate, "fill_quality_score", default=0.0),
+        reward_risk_score=_score(candidate, "reward_risk_score", default=0.0),
+        downside_risk_adjustment=_score(candidate, "theta_risk_score", default=1.0) * 0.35,
+        confidence_score=_score(candidate, "contract_fit_score", default=0.0),
+        horizon_fit_score=_score(candidate, "dte_fit_score", default=0.0),
+        exposure_equivalence_score=_clip01(abs(float(candidate.get("delta") or 0.0))),
+        policy_penalty=policy_penalty,
+    )
+    return {
+        "candidate_id": _stable_id("expr", expression_plan_ref, candidate.get("contract_ref")),
+        "expression_type": "option_contract",
+        "instrument_ref": candidate.get("contract_ref"),
+        "source_thesis_ref": thesis_ref,
+        "option_right": candidate.get("option_right"),
+        "eligibility_status": "eligible" if eligible else "rejected",
+        "rejection_reasons": list(candidate.get("hard_filter_fail_reason_codes") or []),
+        "selected_by_compatibility_selector": bool(selected),
+        "comparable_vector": vector,
+        "selector_utility": vector["selector_utility"],
+        "components": {
+            "inherited_m04_fields": _inherited_m04_summary(direction, handoff),
+            "expression_adjustments": {
+                "dte": candidate.get("dte"),
+                "dte_fit_score": candidate.get("dte_fit_score"),
+                "delta": candidate.get("delta"),
+                "spread_pct": candidate.get("spread_pct"),
+                "liquidity_fit_score": candidate.get("liquidity_fit_score"),
+                "iv_fit_score": candidate.get("iv_fit_score"),
+                "greek_fit_score": candidate.get("greek_fit_score"),
+                "theta_risk_score": candidate.get("theta_risk_score"),
+                "fill_quality_score": candidate.get("fill_quality_score"),
+                "reward_risk_score": candidate.get("reward_risk_score"),
+                "contract_fit_score": candidate.get("contract_fit_score"),
+            },
+        },
+    }
+
+
+def _shared_expression_vector(
+    *,
+    direction: str,
+    handoff: Mapping[str, Any],
+    market: Mapping[str, Any],
+    event: Mapping[str, Any],
+    expression_cost_score: float,
+    liquidity_score: float,
+    fill_quality_score: float,
+    reward_risk_score: float,
+    downside_risk_adjustment: float,
+    confidence_score: float,
+    horizon_fit_score: float,
+    exposure_equivalence_score: float,
+    policy_penalty: float,
+) -> dict[str, float]:
+    path_quality = _score(handoff, "path_quality_score", default=0.5)
+    direction_certainty = _score(
+        handoff,
+        "direction_certainty_score",
+        "underlying_action_confidence_score",
+        "direction_thesis_score",
+        default=0.5,
+    )
+    reversal = _score(handoff, "reversal_risk_score", default=0.35)
+    drawdown = _score(handoff, "drawdown_risk_score", default=0.35)
+    event_uncertainty = _score(event, "6_event_uncertainty_score_1W", "3_event_uncertainty_score_1W", default=0.15)
+    risk_pressure = _clip01(max(reversal, drawdown, event_uncertainty) + downside_risk_adjustment)
+    market_liquidity = _score(market, "1_market_liquidity_support_score", default=0.65)
+    direction_score = 1.0 if direction == "bullish" else -1.0 if direction == "bearish" else 0.0
+    expected_return = _clip01(0.45 * path_quality + 0.25 * reward_risk_score + 0.20 * confidence_score + 0.10 * horizon_fit_score)
+    after_cost_edge = _clip01(expected_return * expression_cost_score - 0.25 * risk_pressure)
+    liquidity = _clip01(0.50 * liquidity_score + 0.30 * fill_quality_score + 0.20 * market_liquidity)
+    action_confidence = _clip01(0.35 * confidence_score + 0.30 * direction_certainty + 0.20 * liquidity + 0.15 * path_quality - 0.20 * risk_pressure)
+    selector_utility = _clip01(
+        0.35 * after_cost_edge
+        + 0.20 * action_confidence
+        + 0.15 * liquidity
+        + 0.15 * exposure_equivalence_score
+        + 0.15 * horizon_fit_score
+        - policy_penalty
+    )
+    return {
+        "direction_score": round(direction_score, 6),
+        "direction_certainty_score": round(direction_certainty, 6),
+        "expected_return_score": round(expected_return, 6),
+        "after_cost_edge_score": round(after_cost_edge, 6),
+        "downside_risk_score": round(risk_pressure, 6),
+        "risk_budget_score": round(_clip01(1.0 - risk_pressure), 6),
+        "liquidity_score": round(liquidity, 6),
+        "fill_quality_score": round(fill_quality_score, 6),
+        "confidence_score": round(action_confidence, 6),
+        "exposure_equivalence_score": round(exposure_equivalence_score, 6),
+        "horizon_fit_score": round(horizon_fit_score, 6),
+        "expression_cost_score": round(expression_cost_score, 6),
+        "policy_penalty_score": round(policy_penalty, 6),
+        "selector_utility": round(selector_utility, 6),
+    }
+
+
+def _inherited_m04_summary(direction: str, handoff: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "direction_thesis": handoff.get("direction_thesis") or direction,
+        "underlying_path_direction": handoff.get("underlying_path_direction") or direction,
+        "direction_thesis_score": _round_optional(_first_float(handoff, "direction_thesis_score")),
+        "direction_certainty_score": _round_optional(_first_float(handoff, "direction_certainty_score", "underlying_action_confidence_score")),
+        "trade_eligibility_status": handoff.get("trade_eligibility_status"),
+        "expected_holding_time_minutes": _round_optional(_first_float(handoff, "expected_holding_time_minutes")),
+        "path_quality_score": _round_optional(_first_float(handoff, "path_quality_score")),
+    }
+
+
 def _horizon_payload(
     horizon: str,
     expression_type: str,
@@ -781,6 +1048,13 @@ def _candidate_filter_reason_summary(scored_candidates: Sequence[Mapping[str, An
         for reason in candidate.get("hard_filter_fail_reason_codes") or []:
             reasons.append(str(reason))
     return reasons
+
+
+def _candidate_filter_reason_counts(scored_candidates: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for reason in _candidate_filter_reason_summary(scored_candidates):
+        counts[reason] = counts.get(reason, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def _preferred_dte_range(holding_minutes: float) -> tuple[int, int]:
