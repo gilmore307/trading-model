@@ -15,12 +15,12 @@ action eligibility are M04 responsibilities.
 M04's primary model output is the final posterior probability function:
 
 ```text
-D4(y, tau) = calibrate(A03(A01(D2(y, tau))))
+D4(y, tau) = calibrate(A3(A1(D2(y, tau))))
 ```
 
 - `D2` is the M02 target base distribution.
-- `A01` is the M01 market/sector background distribution operator.
-- `A03` is the M03 event distribution operator.
+- `A1` is the M01 market/sector background distribution operator.
+- `A3` is the M03 event distribution operator.
 - `D4` is the M04 posterior `thesis_distribution_surface`.
 
 M04 derives `unified_decision_vector` and `direct_underlying_intent` from this
@@ -97,8 +97,8 @@ Each horizon distribution records the operator chain used to build the posterior
 
 ```text
 target_base_distribution      # D2
-m01_distribution_operator     # A01
-m03_distribution_operator     # A03
+m01_distribution_operator     # A1
+m03_distribution_operator     # A3
 posterior_distribution_inputs # combined operator inputs used by D4
 ```
 

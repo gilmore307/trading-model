@@ -1,26 +1,25 @@
 # Contracts
 
-Status: accepted six-model architecture
+Status: accepted M01-M05 probability architecture with event-governance compatibility
 Date: 2026-06-10
 
 ## Acceptance Scope
 
-`trading-model` has accepted contracts for the current six-model offline stack.
+`trading-model` has accepted contracts for the current M01-M05 offline probability stack. Event-governance compatibility surfaces still use existing `model_06_*` physical names until their routes are migrated into M03 taxonomy/effect-model ownership.
 
 | Model | Stable id | Output(s) | Acceptance state |
 |---|---|---|---|
 | `M01` Background Context | `background_context_model` | `background_context_state` | deterministic pilot present; promotion evidence deferred |
 | `M02` Target State | `target_state_model` | `target_context_state` | deterministic pilot present; promotion evidence deferred |
 | `M03` Event State | `event_state_model` | `event_state_vector` | deterministic pilot present; promotion evidence deferred |
-| `M04` Unified Decision | `unified_decision_model` | `unified_decision_vector` with structured edge/risk/exposure/action heads | deterministic pilot present; promotion evidence deferred |
-| `M05` Option Expression | `option_expression_model` | optional `option_expression_plan` / `expression_vector` | deterministic pilot present; promotion evidence deferred |
-| `M06` Residual Event Governance | `residual_event_governance_model` | `event_risk_intervention` / event-adjusted risk guidance / future event-family packet eligibility | deterministic pilot present; promotion evidence deferred |
+| `M04` Unified Decision | `unified_decision_model` | `thesis_distribution_surface` plus derived `unified_decision_vector` | deterministic pilot present; promotion evidence deferred |
+| `M05` Option Expression | `option_expression_model` | `expression_probability_surface` plus derived `option_expression_plan` / `expression_vector` | deterministic pilot present; promotion evidence deferred |
 
-This closes the model-design re-scope to six model contracts and provides deterministic pilots for every current model surface. It does not approve production promotion.
+This closes the model-design re-scope to the five active probability model contracts and preserves event-governance compatibility evidence for M03. It does not approve production promotion.
 
-`current_model_chain_receipt` is the local smoke-evidence contract for the deterministic M01-M06 route. It verifies current handoff refs, label-leakage checks, and retired-field absence, while explicitly disallowing production activation and promotion.
+`current_model_chain_receipt` is the local smoke-evidence contract for the deterministic M01-M05 route plus any compatibility event-governance diagnostics still emitted under `model_06_*` names. It verifies current handoff refs, label-leakage checks, and retired-field absence, while explicitly disallowing production activation and promotion.
 
-`model_realtime_decision_route_plan` is the current fixture/shadow route-plan contract for execution-side replay/live capture refs. Its execution unit is `runtime_component`; it emits `component_routes` for the accepted execution C-components and lists the current M01-M06 model surfaces each component may need. M05 remains optional when the route is direct-underlying-only or option expression is not applicable. It does not activate production inference or authorize broker/account mutation.
+`model_realtime_decision_route_plan` is the current fixture/shadow route-plan contract for execution-side replay/live capture refs. Its execution unit is `runtime_component`; it emits `component_routes` for the accepted execution C-components and lists the current M01-M05 model surfaces each component may need. M05 remains optional when the route is direct-underlying-only or option expression is not applicable. It does not activate production inference or authorize broker/account mutation.
 
 `tradable_time_return_distribution_surface` is the accepted research contract for replacing scalar score-first prediction paths with a calendar-aware conditional return distribution surface. Its training unit is a point-in-time anchor plus equal-step future target rows on the instrument's tradable-time grid. Each target row carries both `tau_trading_minutes` and calendar/session context such as session gaps, open-window, and close-window flags. The current implementation is a shape-constrained quantile/CDF surface, not a Gaussian, skew-normal, or other fixed parametric density family. Open, close, overnight, and multi-session effects are context features and validation slices inside the same surface function, not separate label heads.
 
@@ -30,13 +29,13 @@ Historical retired serial package and script names are no longer current contrac
 
 For residual event governance specifically, architecture acceptance is not production evidence completion. An event family may enter current event-state/governance workflows only after the normal event-family workflow is satisfied for its accepted use: event-family packet, canonical parser/source routing, matched controls, impact-window backtest, fold evidence, and leakage/upstream-overlap review.
 
-`docs/23_model_learning_design.md` owns the closed-loop evidence lifecycle for the accepted six-model stack. The loop is closed through three separated paths: point-in-time inference, post-fold evaluation labels/utilities, and review-gated promotion feedback into later-fold artifacts. It does not create a live recursive learning loop, same-fold upstream mutation, production activation, broker/account mutation, or a new model layer.
+`docs/23_model_learning_design.md` owns the closed-loop evidence lifecycle for the accepted M01-M05 probability stack plus event-governance compatibility evidence. The loop is closed through three separated paths: point-in-time inference, post-fold evaluation labels/utilities, and review-gated promotion feedback into later-fold artifacts. It does not create a live recursive learning loop, same-fold upstream mutation, production activation, broker/account mutation, or a new model layer.
 
 ## Boundary Acceptance
 
-After M06, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
+After M05 and accepted M03 event governance, work crosses into downstream review / execution-owned boundaries. Broker order construction, routing, time-in-force, send/cancel/replace, fills, broker order ids, account mutation, live scheduling, lifecycle retries, and paper/live order placement remain outside this repository.
 
-M04 produces the base direct-underlying action thesis. M05 may compose optional offline trading guidance and option-expression context from that thesis. M06 may intervene for high-severity residual event risk by blocking new entries, capping exposure, reducing exposure, or nominating flatten/halt/human-review actions. M06 must not directly send broker orders or mutate accounts; execution risk-control owns any resulting broker action.
+M04 produces the base direct-underlying posterior surface and derived action thesis. M05 may compose optional offline trading guidance and option-expression context from that thesis. High-severity event risk must enter through M03 event-state/effect-model channels or execution-owned risk-control gates; compatibility `model_06_*` helpers may provide review evidence but must not act as an active sixth probability layer, send broker orders, or mutate accounts.
 
 ## Historical-Training Readiness Classification
 
@@ -51,4 +50,4 @@ There are no active model-stack boundary work items for the no-broker historical
 
 Execution-facing unified decision-record artifacts remain outside the current no-broker historical-training scope unless explicitly accepted later.
 
-`trading-model` should be treated as structurally closed for the accepted six-model architecture boundary. Future changes should be scoped as objective-contract implementation, production hardening, evidence/promotion work, bug fixes, or explicitly accepted contract changes.
+`trading-model` should be treated as structurally closed for the accepted M01-M05 probability architecture boundary plus M03 event-governance compatibility boundary. Future changes should be scoped as objective-contract implementation, production hardening, evidence/promotion work, bug fixes, or explicitly accepted contract changes.

@@ -18,16 +18,15 @@ Cross-repository names, shared fields, artifact types, statuses, templates, and 
 Date: 2026-04-27
 Status: Accepted
 
-`trading-model` is the offline modeling home for the current six-model decision stack:
+`trading-model` is the offline modeling home for the current M01-M05 probability decision stack. Existing `model_06_*` routes are compatibility event-governance surfaces feeding M03 taxonomy/effect-model evidence, not an active sixth probability layer.
 
 | Model | Stable id | Role |
 |---|---|---|
 | `M01 Background Context` | `background_context_model` | Broad market plus sector/industry context state. |
 | `M02 Target State` | `target_state_model` | Target selection, ranking, and anonymous target-state evidence. |
 | `M03 Event State` | `event_state_model` | Accepted event-family/window/exposure/uncertainty conditioning. |
-| `M04 Unified Decision` | `unified_decision_model` | Direct-underlying edge, risk, exposure, no-trade, and action thesis with structured heads. |
-| `M05 Option Expression` | `option_expression_model` | Optional option/underlying expression from M04 `direct_underlying_intent` and point-in-time option-chain context. |
-| `M06 Residual Event Governance` | `residual_event_governance_model` | Residual event-risk intervention, missed-event attribution, and future event-family evidence. |
+| `M04 Unified Decision` | `unified_decision_model` | Direct-underlying posterior probability surface plus derived edge, risk, exposure, no-trade, and action thesis. |
+| `M05 Option Expression` | `option_expression_model` | Option/underlying expression probability surface from M04 `direct_underlying_intent` and point-in-time option-chain context. |
 
 Live/paper order placement remains outside this repository and no layer should be renamed live `ExecutionModel`.
 
@@ -49,14 +48,13 @@ M03 EventStateModel
   -> event_state_vector
 
 M04 UnifiedDecisionModel
+  -> thesis_distribution_surface
   -> unified_decision_vector
   -> direct_underlying_intent
 
 M05 OptionExpressionModel
+  -> expression_probability_surface
   -> option_expression_plan / expression_vector
-
-M06 ResidualEventGovernanceModel
-  -> event_risk_intervention
 ```
 
 Hard separation rules:
@@ -68,23 +66,22 @@ Hard separation rules:
 - Model-facing fitting rows for target work must anonymize ticker/company identity.
 - Real symbols may remain in audit/routing metadata and decision records, but not in model-facing identity features.
 
-## D004 - Current six-model contracts are the only active model-contract standard
+## D004 - Current M01-M05 probability contracts are the active model-contract standard
 
 Date: 2026-06-10
 Status: Accepted
 
-The current model-contract standard is M01 through M06 only. Historical retired serial package names, old layer terminology, and serial alpha/risk/position/action handoffs are not active contracts, active entrypoints, or maintained source surfaces in the repository.
+The current probability model-contract standard is M01 through M05 only. Historical retired serial package names, old layer terminology, serial alpha/risk/position/action handoffs, and compatibility `model_06_*` event-governance helpers are not active probability-layer contracts.
 
 Accepted current model contracts:
 
 - M01 `background_context_model`: broad market plus sector/industry background state.
 - M02 `target_state_model`: target eligibility, ranking, and anonymous target-state evidence.
 - M03 `event_state_model`: accepted event-family/window/exposure/uncertainty conditioning.
-- M04 `unified_decision_model`: direct-underlying edge, risk, exposure, no-trade, allocation, and action thesis with structured heads.
-- M05 `option_expression_model`: optional option/underlying expression from M04 direct intent and point-in-time option-chain context.
-- M06 `residual_event_governance_model`: residual event-risk intervention, missed-event attribution, and future event-family evidence.
+- M04 `unified_decision_model`: direct-underlying posterior probability surface plus derived edge, risk, exposure, no-trade, allocation, and action thesis.
+- M05 `option_expression_model`: option/underlying expression probability surface plus derived expression plan/vector from M04 direct intent and point-in-time option-chain context.
 
-Any new model-facing route, doc, script, test, table, or registry proposal must use these six contracts directly.
+Any new probability-model-facing route, doc, script, test, table, or registry proposal must use these five contracts directly. Event taxonomy, residual attribution, and event-family modelability evidence must route into M03 event-state/effect-model contracts instead of creating or preserving an active M06 probability layer.
 
 ## D005 - M04 owns allocation and forbids tactical increase actions
 
@@ -119,7 +116,7 @@ Deterministic pilots and local chain smoke tests prove structural contracts only
 Date: 2026-06-28
 Status: Accepted
 
-The active model-framework route is replayable cumulative learning. Each M01-M06 layer has exactly one active learned model scheme at a time. The system standardizes checkpoint, replay, rollback, point-in-time safety, target-anonymity, output contracts, and promotion evidence; it does not standardize every layer on the same model structure.
+The active model-framework route is replayable cumulative learning. Each M01-M05 probability layer has exactly one active learned model scheme at a time. The system standardizes checkpoint, replay, rollback, point-in-time safety, target-anonymity, output contracts, and promotion evidence; it does not standardize every layer on the same model structure.
 
 The rule is not "keep several models and compare them at runtime." The rule is "one active scheme per layer." Once a layer selects its active scheme, prior alternatives for that layer are retired from runtime use and no parallel challenger route is maintained for that layer. Offline research may still produce evidence for a future replacement, but replacement must retire the previous active scheme for that layer in the same acceptance batch.
 

@@ -2,16 +2,15 @@
 
 ## Purpose
 
-`trading-model` is the offline modeling home for the current six-model trading decision stack.
+`trading-model` is the offline modeling home for the current M01-M05 probability trading decision stack, plus compatibility event-governance evidence that feeds M03.
 
 It owns point-in-time model research, model-local generators/evaluators, validation workflows, promotion evidence, model outputs, and decision-record prototypes for:
 
 1. `BackgroundContextModel` -> `background_context_state`;
 2. `TargetStateModel` -> `target_context_state`;
 3. `EventStateModel` -> `event_state_vector`;
-4. `UnifiedDecisionModel` -> `unified_decision_vector`;
-5. `OptionExpressionModel` -> optional `option_expression_plan` / `expression_vector`;
-6. `ResidualEventGovernanceModel` -> `event_risk_intervention` / event-adjusted risk guidance.
+4. `UnifiedDecisionModel` -> `thesis_distribution_surface` plus derived `unified_decision_vector`;
+5. `OptionExpressionModel` -> `expression_probability_surface` plus derived `option_expression_plan` / `expression_vector`.
 
 The repository does **not** place orders, mutate accounts, own provider acquisition, or become the global registry. It produces offline model artifacts and review evidence for downstream systems.
 
@@ -23,7 +22,7 @@ The repository does **not** place orders, mutate accounts, own provider acquisit
 - Event-state modeling from accepted event-family and strategy-failure relationships without mutating event-family parameters.
 - Unified direct-underlying decision modeling with structured edge, risk, exposure, and action heads.
 - Option-expression modeling from unified direct-underlying intent plus optional option-chain context; this may choose offline expression/contract constraints, not routes or broker orders.
-- Residual event-governance modeling after the direct-underlying thesis is known, including missed-event checks, residual attribution, event-risk intervention, and future event-family packet eligibility without directly mutating broker/account state.
+- Compatibility event-governance evidence, including missed-event checks, residual attribution, event-family modelability, and future event-family packet eligibility, only as evidence that feeds M03 taxonomy/effect-model contracts.
 - Model-local labels, diagnostics, explainability, fixtures, and acceptance gates.
 - Proposing shared names/contracts to `trading-manager` when model outputs need cross-repository consumption.
 

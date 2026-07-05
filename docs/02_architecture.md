@@ -1,19 +1,20 @@
 # Architecture
 
-Status: accepted six-model topology
-Owner intent: reduce serial model-error propagation while keeping target selection, event reasoning, decision, option expression, and residual event governance explicit.
+Status: accepted M01-M05 probability stack plus event-governance compatibility surfaces
+Owner intent: reduce serial model-error propagation while keeping target selection, event reasoning, decision, option expression, and event governance explicit.
 
 ## Module Map
 
 | Docs band | Implementation surface | Purpose |
 |---|---|---|
-| `10_*` through `15_*` | `src/models/model_01_background_context/` through `src/models/model_06_residual_event_governance/`; matching `scripts/models/model_*/` | Current six model contracts and local builders. |
+| `10_*` through `14_*` | `src/models/model_01_background_context/` through `src/models/model_05_option_expression/`; matching `scripts/models/model_*/` | Current M01-M05 probability model contracts and local builders. |
+| `15_*` and `50_*` | `src/models/model_06_residual_event_governance/`; matching `scripts/models/model_06_residual_event_governance/` | Compatibility event-governance helpers feeding M03 taxonomy/effect-model contracts. |
 | `20_*` | shared model-contract/taxonomy helpers | Model decomposition, vector taxonomy, state-vector feature registry, and framework-readiness policy. |
 | `30_*` | `src/model_governance/promotion/`, `scripts/model_governance/` | Promotion readiness and acceptance evidence. |
 | `40_*` | historical/realtime handoff docs and governance code | Dataset scope and realtime decision handoff boundaries. |
 | `50_*` | event-family research helpers | Event-family scouting, packets, and final event-layer judgment. |
 
-The active implementation surface is the current M01-M06 package and script set. Historical retired serial package names are not current model contracts or maintained source surfaces.
+The active probability-model implementation surface is the current M01-M05 package and script set. Existing `model_06_*` physical names are compatibility event-governance surfaces until migrated into M03-owned taxonomy/effect-model routes. Historical retired serial package names are not current model contracts or maintained source surfaces.
 
 ## Architecture Summary
 
@@ -24,7 +25,6 @@ point-in-time data foundation
   -> M03 Event State / Event Conditioning
   -> M04 Unified Decision
   -> optional M05 Option Expression
-  -> M06 Residual Event Governance
   -> unified decision record / downstream execution handoff
 ```
 
@@ -33,9 +33,9 @@ point-in-time data foundation
 | `M01` Background Context | `background_context_model` | `model_01_background_context` | `background_context_state` | Broad market plus sector/industry background state. |
 | `M02` Target State | `target_state_model` | `model_02_target_state` | `target_context_state` | Target eligibility, ranking, and anonymous target-state evidence. |
 | `M03` Event State | `event_state_model` | `model_03_event_state` | `event_state_vector` | Accepted event-family/window exposure, uncertainty, relevance, and event-conditioned response/risk. |
-| `M04` Unified Decision | `unified_decision_model` | `model_04_unified_decision` | `unified_decision_vector` | Direct-underlying decision with structured edge, risk, exposure, and action heads. |
-| `M05` Option Expression | `option_expression_model` | `model_05_option_expression` | `option_expression_plan`, `expression_vector` | Optional option/underlying expression from clean direct-underlying intent and option-chain context. |
-| `M06` Residual Event Governance | `residual_event_governance_model` | `model_06_residual_event_governance` | `event_risk_intervention` / future event-family packet eligibility | Missed-event checks, residual intervention, attribution, and event-family promotion evidence. |
+| `M04` Unified Decision | `unified_decision_model` | `model_04_unified_decision` | `thesis_distribution_surface`, derived `unified_decision_vector` | Direct-underlying posterior probability surface with derived edge, risk, exposure, and action heads. |
+| `M05` Option Expression | `option_expression_model` | `model_05_option_expression` | `expression_probability_surface`, derived `option_expression_plan`, `expression_vector` | Optional option/underlying expression probability surface from clean direct-underlying intent and option-chain context. |
+| Event governance compatibility | `residual_event_governance_model` | `model_06_residual_event_governance` | event-family packets / effect-model evidence for M03 | Compatibility surface for taxonomy, residual attribution, and event-family promotion evidence; not an active sixth probability layer. |
 
 ## Separation Rules
 
@@ -44,7 +44,7 @@ point-in-time data foundation
 - M03 consumes accepted event contracts as frozen event parameters; it estimates event response/risk but does not mutate event-family identity, scope, visibility, or impact windows.
 - M04 owns the direct-underlying decision and must keep structured heads for edge, risk, exposure, and action rather than collapsing the decision into one opaque score.
 - M05 remains separate because option-chain, liquidity, volatility, theta, spread, DTE, and structure constraints are a distinct expression domain.
-- M06 remains separate and auditable; it is residual event governance, not a hidden alpha/action model.
+- Event-governance compatibility helpers remain auditable, but accepted event taxonomy, event-effect models, and PIT event-state projection feed M03 rather than forming an active sixth probability layer.
 - Broker mutation and live/paper order placement are outside `trading-model`.
 
 ## Model Artifact Rule
