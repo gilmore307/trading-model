@@ -42,7 +42,7 @@ LAYER_ACTIVE_SCHEME_MATRIX: tuple[dict[str, str], ...] = (
         "layer": "M03 EventStateModel",
         "active_scheme": "continual_gru_event_risk_scorer",
         "structure": "CPU-friendly short-window GRU event-risk scorer over reviewed structured event streams, decay state, event clusters, and point-in-time context",
-        "deciding_metrics": "event calibration; response/risk loss; tail-risk recall; no same-fold M06 leakage",
+        "deciding_metrics": "event calibration; response/risk loss; tail-risk recall; no same-fold event hindsight leakage",
     },
     {
         "layer": "M04 UnifiedDecisionModel",
@@ -55,12 +55,6 @@ LAYER_ACTIVE_SCHEME_MATRIX: tuple[dict[str, str], ...] = (
         "active_scheme": "continual_residual_mlp_option_chain_ranker",
         "structure": "residual MLP option-chain ranker over option-relative features, Greeks, liquidity, spread, surface, horizon, and expression state",
         "deciding_metrics": "option after-cost utility; fill realism; top-k ranking; no-option calibration",
-    },
-    {
-        "layer": "M06 ResidualEventGovernanceModel",
-        "active_scheme": "continual_gru_residual_risk_gate",
-        "structure": "CPU-friendly short-window GRU residual-risk gate over recent model outputs, residual event state, failure traces, and anomaly sequences plus deterministic hard guardrails",
-        "deciding_metrics": "missed-event loss; overblock cost; attribution precision/recall; packet quality",
     },
 )
 

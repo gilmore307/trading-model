@@ -39,8 +39,8 @@ The same pattern applies to events and governance:
 
 ```text
 no accepted event -> M03 neutral/no-event state
-no residual event concern -> M06 no_intervention state
-uncertain attribution -> M06 low-confidence attribution state
+no accepted event concern -> M03 neutral/no-event state
+uncertain attribution -> M03 low-confidence event-attribution state
 ```
 
 Models may use loss masks, class weights, and evaluation buckets so rare positive cases remain visible. The mask changes how the row contributes to a specific objective; it must not erase the minute from the ledger.
@@ -72,7 +72,7 @@ implicit live model inputs.
 | `M03 EventStateModel` | Full-minute background/target state paired with accepted event/strategy-failure evidence when present and explicit neutral/no-event rows when absent. Includes observe-only, entry-block, exposure-cap, disable, and adverse-path examples when point-in-time labels exist. | Current M01/M02 state plus accepted event/strategy-failure evidence or explicit neutral/no-event state for routed candidates. |
 | `M04 UnifiedDecisionModel` | Dense minute-level rows whenever M01-M03 context, quote/liquidity/borrow, costs, replay-safe portfolio/risk context, and exposure state can be constructed. Include trade and no-trade minutes, action alternatives, risk limits, churn, and adverse examples. | Current routed target/event/background stack plus replay-safe portfolio/risk and quote/liquidity context. |
 | `M05 OptionExpressionModel` | Full-minute M04 thesis ledger with option-expression candidate rows when point-in-time option-chain snapshots exist, plus explicit surface-status rows for missing-chain, non-optionable, direct-underlying-only, and crypto routes. | Current M04 decision intent plus current option-chain context only when `optionable_chain_available`; missing-chain, direct-underlying, and crypto/non-optionable routes may bypass heavy option-chain work while preserving `optionable_chain_missing` or `non_optionable_underlying` status. |
-| `M06 ResidualEventGovernanceModel` | Full-minute residual-governance rows, including event/no-event, intervention/no-intervention, effective/ineffective, sector-confirmed/sector-divergent, abnormal activity, news, earnings, macro, and price-action/false-breakout cases, joined point-in-time to the M04 direct-underlying decision. Attribution confidence is a state, not an admission prerequisite. | Residual events or neutral residual state attached to the current routed target/context stack and direct-underlying thesis for warning/intervention only; option-expression context is not required. |
+| `M03 EventStateModel` | Full-minute event-state rows, including event/no-event, effect/no-effect, sector-confirmed/sector-divergent, abnormal activity, news, earnings, macro, and price-action/false-breakout cases, joined point-in-time to M01/M02 context and M04 downstream review evidence. Attribution confidence is a state, not an admission prerequisite. | Accepted events or neutral event state attached to the current routed target/context stack and direct-underlying thesis as distribution-effect evidence only; component controls are execution-owned. |
 
 ## Target-State Special Rule
 

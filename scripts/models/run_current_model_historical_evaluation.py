@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run a read-only historical evaluation pass for the current M01-M06 chain."""
+"""Run a read-only historical evaluation pass for the current M01-M05 chain."""
 from __future__ import annotations
 
 import argparse

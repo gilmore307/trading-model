@@ -8,7 +8,6 @@ from models.model_02_target_state import contract as model_02_contract
 from models.model_03_event_state import contract as model_03_contract
 from models.model_04_unified_decision import contract as model_04_contract
 from models.model_05_option_expression import contract as model_05_option_contract
-from models.model_06_residual_event_governance import contract as m06_residual_event_governance_contract
 
 
 class StateVectorFeatureRegistryTests(unittest.TestCase):
@@ -25,8 +24,8 @@ class StateVectorFeatureRegistryTests(unittest.TestCase):
         self.assertEqual(by_field["4_direction_thesis_score_<horizon>"].high_value_meaning, "signed")
         self.assertEqual(by_field["4_direction_certainty_score_<horizon>"].score_class, "direction_strength")
         self.assertEqual(by_field["4_downside_risk_score_<horizon>"].high_value_meaning, "bad")
-        self.assertEqual(by_field["6_event_direction_bias_score_<horizon>"].high_value_meaning, "signed")
-        self.assertEqual(by_field["6_event_gap_risk_score_<horizon>"].high_value_meaning, "bad")
+        self.assertEqual(by_field["3_event_symbol_impact_score_<horizon>"].high_value_meaning, "signed")
+        self.assertEqual(by_field["3_event_scope_escalation_risk_score_<horizon>"].high_value_meaning, "bad")
         self.assertEqual(by_field["5_option_expression_direction_score_<horizon>"].high_value_meaning, "signed")
         self.assertEqual(by_field["5_option_theta_risk_score_<horizon>"].high_value_meaning, "bad")
         self.assertEqual(by_field["5_option_liquidity_fit_score_<horizon>"].score_class, "liquidity")
@@ -47,8 +46,6 @@ class StateVectorFeatureRegistryTests(unittest.TestCase):
             + model_03_contract.SCORE_FAMILIES
             + model_04_contract.SCORE_FAMILIES
             + model_05_option_contract.SCORE_FAMILIES
-            + m06_residual_event_governance_contract.CORE_SCORE_FAMILIES
-            + m06_residual_event_governance_contract.IMPACT_SCORE_FAMILIES
         )
 
         missing = [field for field in required_fields if field not in by_field]

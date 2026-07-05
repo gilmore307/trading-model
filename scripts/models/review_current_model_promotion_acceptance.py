@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Codex-reviewed production-promotion acceptance for current M03-M06.
+"""Codex-reviewed production-promotion acceptance for current M03-M05.
 
-M01-M02 have real database evaluation paths. M03-M06 do not yet have production
+M01-M02 have real database evaluation paths. M03-M05 do not yet have production
 evaluation substrate for their accepted contracts. This script builds blocked
 evaluation artifacts, creates model-side promotion candidate evidence, and calls
 Codex CLI for reviewer evidence. Durable promotion decisions and activation
@@ -58,18 +58,6 @@ MODEL_ACCEPTANCES: tuple[dict[str, Any], ...] = (
         "required_next_steps": [
             "Create production option-expression rows from accepted M04 decisions plus option-chain evidence.",
             "Generate option-chain replay labels, premium-risk outcomes, and expression baseline comparisons.",
-            "Run baseline, stability, leakage, calibration, and promotion-metric evaluation before re-review.",
-        ],
-    },
-    {
-        "model_number": 6,
-        "model_id": "residual_event_governance_model",
-        "model_name": "ResidualEventGovernanceModel",
-        "feature_key": "event_risk_intervention",
-        "blocker": "no production residual event governance evaluation run or reviewed residual event-risk labels exist",
-        "required_next_steps": [
-            "Create production ResidualEventGovernanceModel inference rows from reviewed M06 data and feature evidence.",
-            "Generate direction-neutral event-risk, intervention-quality, residual-warning, and event-adjusted outcome labels.",
             "Run baseline, stability, leakage, calibration, and promotion-metric evaluation before re-review.",
         ],
     },
@@ -281,8 +269,8 @@ def build_rows(acceptance: Mapping[str, Any]) -> tuple[dict[str, list[dict[str, 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model-number", type=int, choices=[3, 4, 5, 6], help="Current model number to review. Omit with --all.")
-    parser.add_argument("--all", action="store_true", help="Review M03-M06.")
+    parser.add_argument("--model-number", type=int, choices=[3, 4, 5], help="Current model number to review. Omit with --all.")
+    parser.add_argument("--all", action="store_true", help="Review M03-M05.")
     parser.add_argument("--dry-run", action="store_true", help="Print evidence/prompt without invoking agent or writing manager-control-plane SQL.")
     parser.add_argument("--codex-bin", default="codex")
     parser.add_argument("--model", default=DEFAULT_CODEX_MODEL, help="Codex model override. Defaults to gpt-5.5.")
@@ -292,7 +280,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.all and args.model_number is None:
         raise SystemExit("provide --model-number or --all")
-    acceptances = [acceptance_for_model_number(model_number) for model_number in range(3, 7)] if args.all else [acceptance_for_model_number(int(args.model_number))]
+    acceptances = [acceptance_for_model_number(model_number) for model_number in range(3, 6)] if args.all else [acceptance_for_model_number(int(args.model_number))]
     receipts: list[dict[str, Any]] = []
     for acceptance in acceptances:
         artifacts, summary, config_row, candidate_row, prompt = build_rows(acceptance)

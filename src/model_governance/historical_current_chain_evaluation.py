@@ -1,6 +1,6 @@
-"""Historical evaluation pass for the current six-model chain.
+"""Historical evaluation pass for the current five-model chain.
 
-This module builds current M01-M06 rows from existing point-in-time historical
+This module builds current M01-M05 rows from existing point-in-time historical
 feature rows. It is model-side evidence only: it reads historical data,
 builds chronological folds, may train a local baseline utility artifact, and
 never promotes, activates, writes broker/account state, or mutates SQL.
@@ -25,8 +25,8 @@ CURRENT_MODEL_HISTORICAL_SCHEMA = "current_model_historical_evaluation_artifact"
 TARGET_STATE_SOURCE_TABLE = "model_03_target_state_vector_data_acquisition"
 TARGET_STATE_FEATURE_TABLE = "model_03_target_state_vector_feature_generation"
 OPTION_CHAIN_SOURCE_TABLE = "option_chain_state_source"
-RESIDUAL_EVENT_SOURCE_TABLE = "model_06_residual_event_governance_data_acquisition"
-RESIDUAL_EVENT_FEATURE_TABLE = "model_06_residual_event_governance_feature_generation"
+EVENT_STATE_SOURCE_TABLE = "model_03_event_state_data_acquisition"
+EVENT_STATE_FEATURE_TABLE = "model_03_event_state_feature_generation"
 HORIZONS = ("10min", "1h", "1D", "1W")
 BASELINE_FEATURE_NAMES = (
     "m01_market_risk_stress_1w",
@@ -37,7 +37,6 @@ BASELINE_FEATURE_NAMES = (
     "m04_after_cost_edge_1w",
     "m04_materiality_adjusted_action_1w",
     "m05_expression_confidence_1w",
-    "m06_intervention_severity",
 )
 
 
@@ -257,8 +256,8 @@ def _load_event_observations(cursor: Any, *, schema_data: str, symbol: str, sect
           da.reference,
           fg.feature_payload_json,
           fg.feature_quality_diagnostics
-        FROM "{schema_data}"."{RESIDUAL_EVENT_SOURCE_TABLE}" da
-        LEFT JOIN "{schema_data}"."{RESIDUAL_EVENT_FEATURE_TABLE}" fg
+        FROM "{schema_data}"."{EVENT_STATE_SOURCE_TABLE}" da
+        LEFT JOIN "{schema_data}"."{EVENT_STATE_FEATURE_TABLE}" fg
           ON fg.event_id = da.event_id
         WHERE da.available_time <= %s::timestamptz
           AND da.available_time >= %s::timestamptz - interval '7 days'
@@ -732,7 +731,6 @@ def _example_from_chain(historical_row: HistoricalInputRow, rows: Mapping[str, l
     by_surface = {surface: surface_rows[0] for surface, surface_rows in rows.items() if surface_rows}
     decision = by_surface["model_04_unified_decision"]
     option = by_surface["model_05_option_expression"]
-    residual = by_surface["model_06_residual_event_governance"]
     label = dict(historical_row.label_payload)
     return {
         "available_time": historical_row.payload["background_input"]["available_time"],
@@ -751,11 +749,10 @@ def _example_from_chain(historical_row: HistoricalInputRow, rows: Mapping[str, l
             "event_state_vector_ref": by_surface["model_03_event_state"]["event_state_vector_ref"],
             "unified_decision_vector_ref": decision["unified_decision_vector_ref"],
             "option_expression_plan_ref": option["option_expression_plan_ref"],
-            "event_risk_intervention_ref": residual["event_risk_intervention_ref"],
             "resolved_underlying_action": decision["4_resolved_underlying_action_type"],
             "resolved_option_expression": option["5_resolved_expression_type"],
             "resolved_option_surface_status": option["5_resolved_option_surface_status"],
-            "resolved_event_intervention": residual["6_resolved_intervention_action"],
+            "resolved_event_absorption_mode": decision.get("event_absorption_mode", "unknown"),
         },
     }
 
@@ -766,7 +763,6 @@ def _baseline_features(rows: Mapping[str, Mapping[str, Any]]) -> list[float]:
     event = rows["model_03_event_state"]
     decision = rows["model_04_unified_decision"]
     option = rows["model_05_option_expression"]
-    residual = rows["model_06_residual_event_governance"]
     return [
         _float(background.get("1_market_risk_stress_score_1W"), 0.0),
         _float(background.get("1_market_liquidity_support_score_1W"), 0.0),
@@ -776,7 +772,6 @@ def _baseline_features(rows: Mapping[str, Mapping[str, Any]]) -> list[float]:
         _float(decision.get("4_after_cost_edge_score_1W"), 0.0),
         _float(decision.get("4_materiality_adjusted_action_score_1W"), 0.0),
         _float(option.get("5_option_expression_confidence_score_1W"), 0.0),
-        _float(residual.get("6_resolved_intervention_severity_score"), 0.0),
     ]
 
 
@@ -878,7 +873,9 @@ def _fold_metrics(
                 "resolved_underlying_action_counts": dict(Counter(example["resolved_outputs"]["resolved_underlying_action"] for example in fold_examples)),
                 "resolved_option_expression_counts": dict(Counter(example["resolved_outputs"]["resolved_option_expression"] for example in fold_examples)),
                 "resolved_option_surface_status_counts": dict(Counter(example["resolved_outputs"]["resolved_option_surface_status"] for example in fold_examples)),
-                "resolved_event_intervention_counts": dict(Counter(example["resolved_outputs"]["resolved_event_intervention"] for example in fold_examples)),
+                "resolved_event_absorption_mode_counts": dict(
+                    Counter(example["resolved_outputs"]["resolved_event_absorption_mode"] for example in fold_examples)
+                ),
             }
         )
     return metrics
@@ -914,7 +911,7 @@ def _warning_reasons(examples: Sequence[Mapping[str, Any]]) -> list[str]:
     symbol_count = len({str(example["routing_symbol"]) for example in examples})
     action_counts = Counter(example["resolved_outputs"]["resolved_underlying_action"] for example in examples)
     option_counts = Counter(example["resolved_outputs"]["resolved_option_expression"] for example in examples)
-    intervention_counts = Counter(example["resolved_outputs"]["resolved_event_intervention"] for example in examples)
+    event_absorption_counts = Counter(example["resolved_outputs"]["resolved_event_absorption_mode"] for example in examples)
     if target_count == 1 and len(examples) > 1:
         warnings.append("low_target_candidate_diversity")
     if symbol_count == 1 and len(examples) > 1:
@@ -923,8 +920,8 @@ def _warning_reasons(examples: Sequence[Mapping[str, Any]]) -> list[str]:
         warnings.append("degenerate_underlying_action_distribution")
     if len(option_counts) == 1:
         warnings.append("degenerate_option_expression_distribution")
-    if len(intervention_counts) == 1:
-        warnings.append("degenerate_event_intervention_distribution")
+    if len(event_absorption_counts) == 1:
+        warnings.append("degenerate_event_absorption_mode_distribution")
     return warnings
 
 
@@ -964,7 +961,7 @@ def _artifact_tables(
         "model_dataset_request": [
             {
                 "request_id": f"request_{run_id}",
-                "model_id": "current_six_model_chain",
+                "model_id": "current_five_model_chain",
                 "purpose": "historical_current_chain_evaluation",
                 "required_data_start_time": start,
                 "required_data_end_time": end,
@@ -979,7 +976,7 @@ def _artifact_tables(
         "model_dataset_snapshot": [
             {
                 "snapshot_id": snapshot_id,
-                "model_id": "current_six_model_chain",
+                "model_id": "current_five_model_chain",
                 "request_id": f"request_{run_id}",
                 "feature_schema": CURRENT_MODEL_HISTORICAL_SCHEMA,
                 "feature_table": f"trading_data.{TARGET_STATE_FEATURE_TABLE}",
@@ -1022,7 +1019,7 @@ def _artifact_tables(
         "model_eval_run": [
             {
                 "eval_run_id": eval_run_id,
-                "model_id": "current_six_model_chain",
+                "model_id": "current_five_model_chain",
                 "snapshot_id": snapshot_id,
                 "run_name": "historical_current_chain_evaluation",
                 "model_version": "deterministic_current_chain_plus_baseline",

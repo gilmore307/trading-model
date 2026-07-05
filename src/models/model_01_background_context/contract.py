@@ -30,7 +30,6 @@ FORBIDDEN_OUTPUT_FIELDS: Final[frozenset[str]] = frozenset(
         "event_state_vector",
         "unified_decision_vector",
         "option_expression_plan",
-        "event_risk_intervention",
         "underlying_action_plan",
         "order_type",
         "broker_order_id",

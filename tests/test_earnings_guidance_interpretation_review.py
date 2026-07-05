@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_06_residual_event_governance.earnings_guidance_interpretation_review import (
+from models.model_03_event_state.event_governance.earnings_guidance_interpretation_review import (
     GuidanceInterpretationReviewInputs,
     run_guidance_interpretation_review,
 )

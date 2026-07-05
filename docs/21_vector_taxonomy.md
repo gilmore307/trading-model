@@ -1,6 +1,6 @@
 # Vector and State Taxonomy
 
-Status: accepted vocabulary for the current six-model stack
+Status: accepted vocabulary for the current five-model stack
 
 ## Vocabulary
 
@@ -25,7 +25,6 @@ Status: accepted vocabulary for the current six-model stack
 | `M03 Event State` | `event_state_vector` |
 | `M04 Unified Decision` | `unified_decision_vector` |
 | `M05 Option Expression` | `option_expression_plan`, `expression_vector` |
-| `M06 Residual Event Governance` | `event_risk_intervention`, future event-family packet eligibility |
 
 ## Model-Specific Notes
 
@@ -39,7 +38,7 @@ M02 owns target eligibility, ranking, and anonymous target-state evidence. `anon
 
 ### M03 Event State
 
-M03 owns event-conditioned response/risk state from accepted event contracts. It may emit response strength, response direction tendency, uncertainty, path risk, entry/cap/disable pressure, and applicability confidence. It must not emit standalone event alpha or change M06 event parameters. M03 may consume M01/M02 as fixed applicability context, but its output must remain the event residual factor; it must not re-count market/background or target-base contribution.
+M03 owns event-conditioned response/risk state from accepted event contracts. It may emit response strength, response direction tendency, uncertainty, path risk, entry/cap/disable pressure, applicability confidence, and distribution-effect channels. It must not emit standalone event alpha, component-control actions, or mutate event taxonomy/effect-model parameters. M03 may consume M01/M02 as fixed applicability context, but its output must remain the event residual factor; it must not re-count market/background or target-base contribution.
 
 ### M04 Unified Decision
 
@@ -63,10 +62,10 @@ calibration belong here, not inside M01-M03.
 
 M05 owns optional option/underlying expression after M04 direct-underlying intent exists. It is offline guidance only and must not become broker execution.
 
-### M06 Residual Event Governance
+### M03 Event-Governance Tooling
 
-M06 owns missed-event checks, residual event-risk intervention, attribution, and future event-family packet eligibility. It may warn, cap, block, review, or nominate reduce/flatten review actions, but it must not send orders or mutate accounts.
+M03 event-governance tooling prepares taxonomy, modelability, impact-window, residual-attribution, and packet evidence for M03 `event_effect_model` work. It is not a model output vocabulary and must not emit runtime component actions such as warn, cap, block, reduce, or flatten.
 
 ## Compatibility Boundary
 
-Current model-facing payloads use only the M01-M06 vocabulary above. Historical artifact names belong to immutable evidence or Git history, not active contracts, scripts, docs, or model outputs.
+Current model-facing payloads use only the M01-M05 vocabulary above. Historical artifact names belong to immutable evidence or Git history, not active contracts, scripts, docs, or model outputs.

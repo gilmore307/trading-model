@@ -6,7 +6,7 @@ import unittest
 from datetime import date, timedelta
 from pathlib import Path
 
-from models.model_06_residual_event_governance.earnings_guidance_event_alone import EventAloneInputs, run_event_alone_study
+from models.model_03_event_state.event_governance.earnings_guidance_event_alone import EventAloneInputs, run_event_alone_study
 
 
 class EarningsGuidanceEventAloneTests(unittest.TestCase):

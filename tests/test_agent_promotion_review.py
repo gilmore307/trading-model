@@ -85,12 +85,10 @@ class AgentPromotionReviewTests(unittest.TestCase):
     def test_current_model_acceptance_uses_current_model_map(self) -> None:
         by_model = {item["model_number"]: item for item in current_model_review_script.MODEL_ACCEPTANCES}
 
-        self.assertEqual(sorted(by_model), list(range(3, 7)))
+        self.assertEqual(sorted(by_model), list(range(3, 6)))
         self.assertEqual(by_model[3]["model_id"], "event_state_model")
         self.assertEqual(by_model[4]["model_name"], "UnifiedDecisionModel")
         self.assertEqual(by_model[5]["model_id"], "option_expression_model")
-        self.assertEqual(by_model[6]["model_id"], "residual_event_governance_model")
-        self.assertEqual(by_model[6]["feature_key"], "event_risk_intervention")
 
     def test_current_model_dry_run_builds_blocked_artifacts_without_agent(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]

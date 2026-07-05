@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_06_residual_event_governance.event_family_batch_catalog import (
+from models.model_03_event_state.event_governance.event_family_batch_catalog import (
     build_event_family_batch_catalog,
     write_catalog_artifacts,
 )

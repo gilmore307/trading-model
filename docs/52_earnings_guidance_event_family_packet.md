@@ -263,7 +263,7 @@ Require review for:
 - high-impact mega-cap releases with broad market read-through;
 - major sector bellwether read-through claims;
 - low-confidence consensus/surprise values;
-- any event-risk intervention stronger than `explain_only`.
+- any event-risk control stronger than `explain_only`.
 
 ## `accepted_examples`
 
@@ -521,7 +521,7 @@ Scope:
 - consensus or accepted expectation baselines: 0;
 - signed-direction-ready rows: 0.
 
-Conclusion: the family has now cleared the local official-document-text coverage prerequisite for this 12-event diagnostic slice, but it has not cleared interpretation or expectation gates. The official documents are `official_document_text_present_uninterpreted`; they must not be treated as guidance raise/cut, beat/miss, signed alpha, or EventRiskGovernor escalation until a reviewed guidance/result interpretation and point-in-time expectation baseline are added.
+Conclusion: the family has now cleared the local official-document-text coverage prerequisite for this 12-event diagnostic slice, but it has not cleared interpretation or expectation gates. The official documents are `official_document_text_present_uninterpreted`; they must not be treated as guidance raise/cut, beat/miss, signed alpha, or M03 Event State escalation until a reviewed guidance/result interpretation and point-in-time expectation baseline are added.
 
 ## Official guidance-text candidate scout
 
@@ -539,7 +539,7 @@ Scope:
 - consensus or accepted expectation baselines: 0;
 - signed-direction-ready rows: 0.
 
-Conclusion: official filing text contains guidance/outlook-like candidate spans, but the extraction is intentionally conservative and review-required because SEC filings include safe-harbor, accounting, and generic expectation language. These candidates narrow the review queue only. They do not establish guidance raise/cut, beat/miss, signed alpha, or EventRiskGovernor escalation without reviewed interpretation and point-in-time expectation baselines.
+Conclusion: official filing text contains guidance/outlook-like candidate spans, but the extraction is intentionally conservative and review-required because SEC filings include safe-harbor, accounting, and generic expectation language. These candidates narrow the review queue only. They do not establish guidance raise/cut, beat/miss, signed alpha, or M03 Event State escalation without reviewed interpretation and point-in-time expectation baselines.
 
 ## Official guidance interpretation review
 
@@ -556,7 +556,7 @@ Scope:
 - consensus or accepted expectation baselines: 0;
 - signed-direction-ready rows: 0.
 
-Conclusion: the review creates partial official guidance context only. It does not establish beat/miss, guidance raise/cut, or signed direction because expectation baselines are still absent. EventRiskGovernor consumption remains direction-neutral context only unless a later reviewed policy accepts stronger intervention evidence.
+Conclusion: the review creates partial official guidance context only. It does not establish beat/miss, guidance raise/cut, or signed direction because expectation baselines are still absent. M03 Event State consumption remains direction-neutral context only unless a later reviewed policy accepts stronger effect-model evidence.
 
 ## Point-in-time expectation baseline readiness gate
 
@@ -709,7 +709,7 @@ Result:
 - reviewed no prior-guidance context events: 5;
 - signed-direction-ready rows: 0.
 
-Conclusion: exhibit-level official filing text materially improves the `prior_company_guidance` baseline route versus arbitrary prior official filings. Accepted spans remain baseline context only. They do not establish guidance surprise, raise/cut, beat/miss, signed alpha, model activation, broker/account mutation, or stronger EventRiskGovernor intervention. Current guidance/result comparison and revenue-consensus or other accepted expectation baselines remain required before signed earnings/guidance claims.
+Conclusion: exhibit-level official filing text materially improves the `prior_company_guidance` baseline route versus arbitrary prior official filings. Accepted spans remain baseline context only. They do not establish guidance surprise, raise/cut, beat/miss, signed alpha, model activation, broker/account mutation, or stronger M03 Event State effect-model evidence. Current guidance/result comparison and revenue-consensus or other accepted expectation baselines remain required before signed earnings/guidance claims.
 
 ## Current-vs-prior guidance comparison readiness
 
@@ -726,7 +726,7 @@ Result:
 - accepted guidance raise/cut rows: 0;
 - signed-direction-ready rows: 0.
 
-Conclusion: the prior-guidance route is partially available, but current comparable guidance context is still missing. The next acceptable evidence route is current earnings-release/exhibit/transcript guidance text plus PIT expectation baselines, not comparison against post-event pages or market reaction. EventRiskGovernor use remains direction-neutral context only.
+Conclusion: the prior-guidance route is partially available, but current comparable guidance context is still missing. The next acceptable evidence route is current earnings-release/exhibit/transcript guidance text plus PIT expectation baselines, not comparison against post-event pages or market reaction. M03 Event State use remains direction-neutral context only.
 
 ## Revenue-consensus route decision
 
@@ -743,4 +743,4 @@ Acceptance requirements for any future Trading Economics revenue-consensus route
 - stop for operator action if cookie, login, captcha, MFA, WAF, or permission prompts block access;
 - remain a baseline artifact only, not a beat/miss or signed-direction interpretation.
 
-Until such artifacts exist, signed revenue beat/miss, guidance raise/cut, signed alpha, model activation, and stronger EventRiskGovernor intervention remain blocked.
+Until such artifacts exist, signed revenue beat/miss, guidance raise/cut, signed alpha, model activation, and stronger M03 Event State effect-model evidence remain blocked.

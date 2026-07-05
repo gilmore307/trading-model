@@ -33,30 +33,18 @@ def _runtime_component_manifest() -> dict[str, object]:
 def _decision_input_snapshot() -> dict[str, object]:
     components = [
         ("component_01_intake", "C01", "Intake", ("model_01_background_context", "model_02_target_state"), ()),
-        (
-            "component_02_entry",
-            "C02",
-            "Entry",
-            ("model_03_event_state", "model_04_unified_decision"),
-            ("model_06_residual_event_governance",),
-        ),
-        (
-            "component_03_lifecycle",
-            "C03",
-            "Lifecycle",
-            ("model_03_event_state", "model_04_unified_decision"),
-            ("model_06_residual_event_governance",),
-        ),
+        ("component_02_entry", "C02", "Entry", ("model_03_event_state", "model_04_unified_decision"), ()),
+        ("component_03_lifecycle", "C03", "Lifecycle", ("model_03_event_state", "model_04_unified_decision"), ()),
         (
             "component_04_expression_review",
             "C04",
             "Expression Review",
             (),
-            ("model_05_option_expression", "model_06_residual_event_governance"),
+            ("model_05_option_expression",),
         ),
         ("component_05_order_intent", "C05", "Order Intent", (), ()),
         ("component_06_execution_gate", "C06", "Execution Gate", (), ()),
-        ("component_07_failure_review", "C07", "Failure Review", (), ("model_06_residual_event_governance",)),
+        ("component_07_failure_review", "C07", "Failure Review", (), ()),
     ]
     return {
         "contract_type": "execution_model_decision_input_snapshot",
@@ -139,17 +127,17 @@ class RealtimeDecisionHandoffTests(unittest.TestCase):
         entry = plan["component_routes"][1]
         self.assertEqual(entry["component_id"], "component_02_entry")
         self.assertEqual(entry["required_model_surfaces"], ["model_03_event_state", "model_04_unified_decision"])
-        self.assertEqual(entry["optional_model_surfaces"], ["model_06_residual_event_governance"])
+        self.assertEqual(entry["optional_model_surfaces"], [])
         option = plan["component_routes"][3]
         self.assertEqual(option["component_id"], "component_04_expression_review")
-        self.assertEqual(option["optional_model_surfaces"], ["model_05_option_expression", "model_06_residual_event_governance"])
+        self.assertEqual(option["optional_model_surfaces"], ["model_05_option_expression"])
         order_intent = plan["component_routes"][4]
         self.assertEqual(order_intent["component_id"], "component_05_order_intent")
         self.assertEqual(order_intent["required_model_surfaces"], [])
         self.assertEqual(order_intent["model_entrypoint_refs"], [])
         residual = plan["component_routes"][-1]
         self.assertEqual(residual["component_id"], "component_07_failure_review")
-        self.assertEqual(residual["optional_model_surfaces"], ["model_06_residual_event_governance"])
+        self.assertEqual(residual["optional_model_surfaces"], [])
         validation = validate_realtime_decision_route_plan(plan)
         self.assertTrue(validation["valid"], validation["row_errors"])
 

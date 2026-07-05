@@ -24,15 +24,16 @@ class CurrentModelChainRunnerTests(unittest.TestCase):
         self.assertEqual(receipt["model_order"], [model["model_surface"] for model in CURRENT_CHAIN_MODELS])
         self.assertTrue(all(check["passed"] for check in receipt["handoff_checks"]))
         handoff_names = {check["name"] for check in receipt["handoff_checks"]}
-        self.assertIn("m01_to_m06_background_ref", handoff_names)
-        self.assertIn("m03_to_m06_event_ref", handoff_names)
+        self.assertIn("m01_to_m04_background_ref", handoff_names)
+        self.assertIn("m03_to_m04_event_ref", handoff_names)
         self.assertIn("m04_to_m05_thesis_surface_ref", handoff_names)
         self.assertIn("m04_surface_to_m05_candidate_set_summary", handoff_names)
         self.assertTrue(receipt["retired_field_check_passed"])
         self.assertTrue(receipt["label_leakage_check_passed"])
         self.assertEqual(set(receipt["promotion_gate_states"].values()), {"deferred"})
+        self.assertIn("thesis_distribution_surface_ref", receipt["resolved_outputs"])
         self.assertIn("unified_decision_vector_ref", receipt["resolved_outputs"])
-        self.assertIn("event_risk_intervention_ref", receipt["resolved_outputs"])
+        self.assertIn("expression_probability_surface_ref", receipt["resolved_outputs"])
 
     def test_current_chain_closes_return_surface_handoff(self) -> None:
         payload = run_current_chain(

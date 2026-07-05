@@ -4,7 +4,7 @@ Status: deterministic pilot present; production promotion deferred.
 
 ## Role
 
-`M03 Event State` owns event-conditioned response, uncertainty, failure-risk mapping, distribution-effect channel state, and point-in-time event impact-channel state from accepted event-universe contracts. It consumes frozen event-family identity, point-in-time clocks, scope, visibility, selected impact windows, allowed use, and M06-governed event impact attributes. It must not mutate those event parameters or create a competing event taxonomy.
+`M03 Event State` owns event-conditioned response, uncertainty, failure-risk mapping, distribution-effect channel state, and point-in-time event impact-channel state from accepted event-universe contracts. It consumes frozen event-family identity, point-in-time clocks, scope, visibility, selected impact windows, allowed use, and reviewed event-impact attributes. It must not mutate those event parameters or create a competing event taxonomy.
 
 The current event route is:
 
@@ -118,7 +118,7 @@ M03 publishes the active per-event models in
 
 Some event families affect option prices more than the underlying price. Scheduled option-expiration events, triple witching, expiry/gamma flow, volatility-surface dislocation, and option liquidity/spread disruption are event attributes, not component logic and not local M05 taxonomy.
 
-M03 is the runtime surface that applies these M06-governed attributes point-in-time. It must represent them as simultaneous channels rather than a binary underlying-vs-option label:
+M03 is the runtime surface that applies these reviewed event attributes point-in-time. It must represent them as simultaneous channels rather than a binary underlying-vs-option label:
 
 - `underlying_price`
 - `option_price`
@@ -132,7 +132,7 @@ M03 is the runtime surface that applies these M06-governed attributes point-in-t
 
 - `background_context_state`.
 - `target_context_state`.
-- Accepted event-family contracts from `M06 Residual Event Governance`.
+- Accepted event-family contracts and M03 event-effect-model evidence.
 - Matched-control and impact-window evidence frozen before current-fold inference.
 
 ## Review Path

@@ -25,7 +25,7 @@ class ModelSequenceEntry:
 
 
 def model_sequence() -> tuple[ModelSequenceEntry, ...]:
-    """Return the accepted six-model stack sequence."""
+    """Return the accepted five-model stack sequence."""
 
     return (
         ModelSequenceEntry(
@@ -63,18 +63,11 @@ def model_sequence() -> tuple[ModelSequenceEntry, ...]:
             model_surface="model_05_option_expression",
             conceptual_output="option_expression_plan",
         ),
-        ModelSequenceEntry(
-            model_step="M06",
-            model_name="Residual Event Governance",
-            model_id="residual_event_governance_model",
-            model_surface="model_06_residual_event_governance",
-            conceptual_output="event_risk_intervention",
-        ),
     )
 
 
 def model_sequence_rows() -> list[dict[str, Any]]:
-    """Return serializable six-model sequence rows."""
+    """Return serializable five-model sequence rows."""
 
     return [entry.to_dict() for entry in model_sequence()]
 

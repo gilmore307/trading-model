@@ -27,7 +27,6 @@ from models.model_03_event_state.evaluation import (
 )
 from models.model_04_unified_decision import generate_rows as generate_unified_decision
 from models.model_05_option_expression import generate_rows as generate_option_expression
-from models.model_06_residual_event_governance import generate_rows as generate_residual_event_governance
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -464,8 +463,8 @@ class EventStateModelTests(unittest.TestCase):
                             "event_id": "evt_triple_witching_fixture",
                             "canonical_event_id": "evt_triple_witching_fixture",
                             "event_family_key": "triple_witching_calendar",
-                            "event_time": "2026-06-19T09:30:00-04:00",
-                            "available_time": "2026-06-19T09:30:00-04:00",
+                            "event_time": "2026-05-07T10:10:00-04:00",
+                            "available_time": "2026-05-07T10:12:00-04:00",
                             "event_intensity_score": 0.70,
                             "direction_bias_score": 0.0,
                             "target_relevance_score": 0.80,
@@ -531,29 +530,28 @@ class EventStateModelTests(unittest.TestCase):
         self.assertEqual(script._column_type("4_after_cost_edge_score_1W"), "TEXT")
 
 
-class CurrentSixModelChainTests(unittest.TestCase):
-    def test_current_m01_to_m06_chain_passes_refs_between_contracts(self) -> None:
+class CurrentFiveModelChainTests(unittest.TestCase):
+    def test_current_m01_to_m05_chain_passes_refs_between_contracts(self) -> None:
         background = generate_background_context([_background_input()])[0]
         target = generate_target_state([_target_input(background)])[0]
         event = generate_event_state([_event_input(background, target)])[0]
         decision = generate_unified_decision([_decision_input(background, target, event)])[0]
         option = generate_option_expression([_option_input(background, event, decision)])[0]
-        residual = generate_residual_event_governance([_residual_input(target, decision, option)])[0]
 
         self.assertEqual(decision["background_context_state_ref"], background["background_context_state_ref"])
         self.assertEqual(decision["target_context_state_ref"], target["target_context_state_ref"])
         self.assertEqual(decision["event_state_vector_ref"], event["event_state_vector_ref"])
         self.assertEqual(option["unified_decision_vector_ref"], decision["unified_decision_vector_ref"])
-        self.assertEqual(residual["unified_decision_vector_ref"], decision["unified_decision_vector_ref"])
-        self.assertEqual(residual["option_expression_plan_ref"], option["option_expression_plan_ref"])
-        for row in (background, target, event, decision, option, residual):
+        for row in (background, target, event, decision, option):
             self.assert_no_retired_chain_fields(row)
         self.assertIn("background_context_state", background)
         self.assertIn("target_context_state", target)
         self.assertIn("event_state_vector", event)
+        self.assertIn("thesis_distribution_surface", decision)
         self.assertIn("unified_decision_vector", decision)
+        self.assertIn("expression_probability_surface", option)
         self.assertIn("option_expression_plan", option)
-        self.assertIn("event_risk_intervention", residual)
+        self.assertIn("scope_projection_scores", event["event_state_vector"])
 
     def assert_no_retired_chain_fields(self, value: object) -> None:
         if isinstance(value, dict):
@@ -751,40 +749,6 @@ def _option_input(background: dict[str, object], event: dict[str, object], decis
                 "volume": 1200,
                 "open_interest": 6500,
                 "contract_multiplier": 100,
-            }
-        ],
-    }
-
-
-def _residual_input(target: dict[str, object], decision: dict[str, object], option: dict[str, object]) -> dict[str, object]:
-    return {
-        "available_time": decision["available_time"],
-        "tradeable_time": decision["tradeable_time"],
-        "target_candidate_id": decision["target_candidate_id"],
-        "symbol_for_join_only": "AAPL",
-        "sector_type": "technology",
-        "target_context_state_ref": target["target_context_state_ref"],
-        "unified_decision_vector_ref": decision["unified_decision_vector_ref"],
-        "option_expression_plan_ref": option["option_expression_plan_ref"],
-        "target_context_state": target["target_context_state"]["score_payload"],  # type: ignore[index]
-        "direct_underlying_intent": decision["direct_underlying_intent"],
-        "option_expression_plan": option["option_expression_plan"],
-        "event_observations": [
-            {
-                "event_id": "evt_fixture_canonical",
-                "canonical_event_id": "evt_fixture_canonical",
-                "dedup_status": "new_information",
-                "source_priority": 1,
-                "event_time": "2026-05-07T10:10:00-04:00",
-                "available_time": "2026-05-07T10:12:00-04:00",
-                "event_category_type": "sec_filing",
-                "scope_type": "symbol",
-                "symbol": "AAPL",
-                "sector_type": "technology",
-                "event_intensity_score": 0.9,
-                "direction_bias_score": -0.7,
-                "target_relevance_score": 1.0,
-                "scope_confidence_score": 0.9,
             }
         ],
     }

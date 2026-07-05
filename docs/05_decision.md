@@ -18,7 +18,7 @@ Cross-repository names, shared fields, artifact types, statuses, templates, and 
 Date: 2026-04-27
 Status: Accepted
 
-`trading-model` is the offline modeling home for the current M01-M05 probability decision stack. Existing `model_06_*` routes are compatibility event-governance surfaces feeding M03 taxonomy/effect-model evidence, not an active sixth probability layer.
+`trading-model` is the offline modeling home for the current M01-M05 probability decision stack. Event taxonomy, residual attribution, and event-family modelability evidence are M03-owned tooling, not a separate model layer.
 
 | Model | Stable id | Role |
 |---|---|---|
@@ -71,7 +71,7 @@ Hard separation rules:
 Date: 2026-06-10
 Status: Accepted
 
-The current probability model-contract standard is M01 through M05 only. Historical retired serial package names, old layer terminology, serial alpha/risk/position/action handoffs, and compatibility `model_06_*` event-governance helpers are not active probability-layer contracts.
+The current probability model-contract standard is M01 through M05 only. Historical retired serial package names, old layer terminology, serial alpha/risk/position/action handoffs, and standalone M03 event-governance tooling helpers are not active probability-layer contracts.
 
 Accepted current model contracts:
 
@@ -81,7 +81,7 @@ Accepted current model contracts:
 - M04 `unified_decision_model`: direct-underlying posterior probability surface plus derived edge, risk, exposure, no-trade, allocation, and action thesis.
 - M05 `option_expression_model`: option/underlying expression probability surface plus derived expression plan/vector from M04 direct intent and point-in-time option-chain context.
 
-Any new probability-model-facing route, doc, script, test, table, or registry proposal must use these five contracts directly. Event taxonomy, residual attribution, and event-family modelability evidence must route into M03 event-state/effect-model contracts instead of creating or preserving an active M06 probability layer.
+Any new probability-model-facing route, doc, script, test, table, or registry proposal must use these five contracts directly. Event taxonomy, residual attribution, and event-family modelability evidence must route into M03 event-state/effect-model contracts instead of creating or preserving another probability layer.
 
 ## D005 - M04 owns allocation and forbids tactical increase actions
 
@@ -129,8 +129,7 @@ The selected layer schemes are:
 - M03: `continual_gru_event_risk_scorer`
 - M04: `continual_residual_mlp_policy_value`
 - M05: `continual_residual_mlp_option_chain_ranker`
-- M06: `continual_gru_residual_risk_gate`
 
 The current small cumulative residual MLP validation proves that a residual-MLP implementation can train, checkpoint, restore, and emit bounded target-anonymous predictions. It is scheme viability evidence for the residual-MLP layers only and not promotion evidence for any layer.
 
-The selected route follows `docs/24_model_framework_readiness.md`. Every learned checkpoint must first prove replay eligibility: checkpoint restore must reproduce predictions; weights, scalers, normalizers, feature maps, calibration state, and update state must be checkpointed; raw identity, surrogate identity dominance, future labels, same-fold downstream outcomes, and M06 hindsight feedback must be rejected. Promotion requires downstream-neutral or downstream-positive full-chain replay evidence, not only layer-local scores.
+The selected route follows `docs/24_model_framework_readiness.md`. Every learned checkpoint must first prove replay eligibility: checkpoint restore must reproduce predictions; weights, scalers, normalizers, feature maps, calibration state, and update state must be checkpointed; raw identity, surrogate identity dominance, future labels, same-fold downstream outcomes, and hindsight event-feedback must be rejected. Promotion requires downstream-neutral or downstream-positive full-chain replay evidence, not only layer-local scores.

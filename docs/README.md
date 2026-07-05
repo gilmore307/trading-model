@@ -16,7 +16,6 @@ This directory contains the current documentation spine for `trading-model`.
 - `12_model_03_event_state.md` — `M03` Event State.
 - `13_model_04_unified_decision.md` — `M04` Unified Decision.
 - `14_model_05_option_expression.md` — `M05` Option Expression.
-- `15_model_06_residual_event_governance.md` — `M06` Residual Event Governance.
 - `20_model_decomposition.md` — Model Decomposition Framework.
 - `21_vector_taxonomy.md` — Vector and State Taxonomy.
 - `22_state_vector_feature_registry.md` — State Vector Feature Semantics Registry.

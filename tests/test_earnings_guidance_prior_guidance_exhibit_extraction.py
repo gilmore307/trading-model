@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_06_residual_event_governance.earnings_guidance_prior_guidance_exhibit_extraction import (
+from models.model_03_event_state.event_governance.earnings_guidance_prior_guidance_exhibit_extraction import (
     PriorGuidanceExhibitExtractionInputs,
     extract_prior_guidance_spans,
     run_prior_guidance_exhibit_extraction,

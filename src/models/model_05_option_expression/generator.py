@@ -469,7 +469,7 @@ def _score_no_option_candidate(
     reversal = _score(handoff, "reversal_risk_score", default=0.35)
     drawdown = _score(handoff, "drawdown_risk_score", default=0.35)
     market_liquidity = _score(market, "1_market_liquidity_support_score", default=0.65)
-    event_uncertainty = _score(event, "6_event_uncertainty_score_1W", "3_event_uncertainty_score_1W", default=0.15)
+    event_uncertainty = _score(event, "3_event_uncertainty_score_1W", default=0.15)
     direction_confidence = _score(
         handoff,
         "direction_certainty_score",
@@ -816,7 +816,7 @@ def _shared_expression_vector(
     )
     reversal = _score(handoff, "reversal_risk_score", default=0.35)
     drawdown = _score(handoff, "drawdown_risk_score", default=0.35)
-    event_uncertainty = _score(event, "6_event_uncertainty_score_1W", "3_event_uncertainty_score_1W", default=0.15)
+    event_uncertainty = _score(event, "3_event_uncertainty_score_1W", default=0.15)
     risk_pressure = _clip01(max(reversal, drawdown, event_uncertainty) + downside_risk_adjustment)
     market_liquidity = _score(market, "1_market_liquidity_support_score", default=0.65)
     direction_score = 1.0 if direction == "bullish" else -1.0 if direction == "bearish" else 0.0
@@ -990,7 +990,7 @@ def _horizon_payload(
         reversal = _score(handoff, "reversal_risk_score", default=0.35)
         drawdown = _score(handoff, "drawdown_risk_score", default=0.35)
         market_liquidity = _score(market, "1_market_liquidity_support_score", default=0.65)
-        event_uncertainty = _score(event, f"6_event_uncertainty_score_{_suffix(horizon)}", default=0.15)
+        event_uncertainty = _score(event, fdefault=0.15)
         direction_score = 1.0 if direction == "bullish" else -1.0 if direction == "bearish" else 0.0
         confidence = _clip01(0.45 * path_quality + 0.25 * market_liquidity - 0.20 * max(reversal, drawdown, event_uncertainty))
         return {
@@ -1022,7 +1022,7 @@ def _horizon_payload(
     reversal = _score(handoff, "reversal_risk_score", default=0.35)
     drawdown = _score(handoff, "drawdown_risk_score", default=0.35)
     market_liquidity = _score(market, "1_market_liquidity_support_score", default=0.65)
-    event_uncertainty = _score(event, f"6_event_uncertainty_score_{_suffix(horizon)}", default=0.15)
+    event_uncertainty = _score(event, f"3_event_uncertainty_score_{horizon}", default=0.15)
     eligibility = _clip01(0.35 * selected["contract_fit_score"] + 0.20 * selected["liquidity_fit_score"] + 0.20 * selected["iv_fit_score"] + 0.15 * path_quality + 0.10 * market_liquidity)
     confidence = _clip01(0.35 * eligibility + 0.25 * selected["reward_risk_score"] + 0.20 * selected["fill_quality_score"] + 0.20 * path_quality - 0.20 * max(reversal, drawdown, event_uncertainty))
     direction_score = 1.0 if expression_type == "long_call" else -1.0 if expression_type == "long_put" else 0.0
@@ -1242,7 +1242,7 @@ def _target_dte(holding_minutes: float) -> int:
 
 def _target_delta(handoff: Mapping[str, Any], event: Mapping[str, Any]) -> float:
     path_quality = _score(handoff, "path_quality_score", default=0.5)
-    event_gap = _score(event, "6_event_gap_risk_score_1W", default=0.0)
+    event_gap = _score(event, "3_event_path_risk_score_1W", default=0.0)
     return _clip01(0.40 + 0.15 * path_quality + 0.10 * event_gap)
 
 
@@ -1264,7 +1264,7 @@ def _iv_rank_ceiling(market: Mapping[str, Any], event: Mapping[str, Any], policy
     if explicit is not None:
         return _clip01(explicit)
     market_stress = _score(market, "1_market_risk_stress_score", default=0.25)
-    event_gap = _score(event, "6_event_gap_risk_score_1W", default=0.0)
+    event_gap = _score(event, "3_event_path_risk_score_1W", default=0.0)
     return _clip01(0.65 + 0.15 * max(market_stress, event_gap))
 
 

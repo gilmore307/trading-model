@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_06_residual_event_governance.earnings_guidance_baseline_source_audit import (
+from models.model_03_event_state.event_governance.earnings_guidance_baseline_source_audit import (
     BaselineSourceAuditInputs,
     run_baseline_source_audit,
 )

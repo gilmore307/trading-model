@@ -60,14 +60,6 @@ LAYER_PROMOTION_READINESS_MATRIX = (
         "production_promotion_status": "deferred_deterministic_pilot_only",
         "blocking_gap": "option-chain replay labels, cost/fill/theta/IV validation, and baseline evidence missing",
     },
-    {
-        "layer": 6,
-        "model_id": "residual_event_governance_model",
-        "output": "event_risk_intervention",
-        "design_status": "design_closed",
-        "production_promotion_status": "deferred_deterministic_pilot_only",
-        "blocking_gap": "residual event-governance evaluation run, overblock/accounting metrics, and calibrated residual-risk labels missing",
-    },
 )
 
 _APPROVABLE_STATUS_VALUES = {"approved", "accepted", "production_approved"}

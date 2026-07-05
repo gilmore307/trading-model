@@ -43,10 +43,6 @@ _MODEL_ENTRYPOINTS = {
     "model_03_event_state": "trading-model/scripts/models/model_03_event_state/generate_model_03_event_state.py",
     "model_04_unified_decision": "trading-model/scripts/models/model_04_unified_decision/generate_model_04_unified_decision.py",
     "model_05_option_expression": "trading-model/scripts/models/model_05_option_expression/generate_model_05_option_expression.py",
-    "model_06_residual_event_governance": (
-        "trading-model/scripts/models/model_06_residual_event_governance/"
-        "generate_model_06_residual_event_governance.py"
-    ),
 }
 
 FORBIDDEN_HANDOFF_ACTIONS = (
@@ -64,7 +60,7 @@ FORBIDDEN_HANDOFF_ACTIONS = (
 ACCEPTED_HANDOFF_MODES = ("fixture_replay", "shadow_monitoring")
 ACCEPTED_DATASET_ROLES = ("fixture_replay", "forward_holdout", "shadow_monitoring")
 ACCEPTED_RUNTIME_COMPONENT_MANIFEST_VERSION = "2026-06-19"
-ACCEPTED_RUNTIME_COMPONENT_MANIFEST_CHECKSUM = "f9c59a1a19f89e5d"
+ACCEPTED_RUNTIME_COMPONENT_MANIFEST_CHECKSUM = "c11cc5db0f4cbb70"
 
 
 @dataclass(frozen=True)
@@ -191,7 +187,7 @@ def _validate_runtime_component_manifest(manifest: Any) -> dict[str, Any]:
             if component_id in components_by_id:
                 errors.append(f"duplicate runtime component manifest row for {component_id}")
             components_by_id[component_id] = row
-            for forbidden in ("called_model_layers", "m06_residual_event_governance_policy"):
+            for forbidden in ("called_model_layers", "event_risk_control_policy"):
                 if forbidden in row:
                     errors.append(f"runtime_component_manifest.components[{index}].{forbidden} forbidden")
             for field in (
@@ -296,7 +292,7 @@ def validate_execution_model_decision_input_snapshot(candidate: Mapping[str, Any
             provided_optional = _tuple_of_strings(row.get("optional_model_surfaces"))
             if provided_optional and provided_optional != expected_optional:
                 row_errors.append(f"component_input_refs[{index}].optional_model_surfaces mismatch for {component}")
-            for forbidden in ("called_model_layers", "m06_residual_event_governance_policy"):
+            for forbidden in ("called_model_layers", "event_risk_control_policy"):
                 if forbidden in row:
                     row_errors.append(f"component_input_refs[{index}].{forbidden} forbidden")
 

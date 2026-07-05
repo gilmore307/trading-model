@@ -14,7 +14,6 @@ MODEL_SURFACES = {
     "model_03_event_state": ("event_state", 3),
     "model_04_unified_decision": ("unified_decision", 4),
     "model_05_option_expression": ("option_expression", 5),
-    "model_06_residual_event_governance": ("residual_event_governance", 6),
 }
 
 

@@ -5,7 +5,7 @@ Date: 2026-06-28
 
 ## Principle
 
-The current six-model stack selects learned model schemes per layer. Each layer has exactly one active cumulative/replayable scheme at a time. The shared standard is lifecycle and evidence, not identical model architecture: every layer must be checkpointable, replayable, rollbackable, point-in-time safe, target-anonymous, and calibrated to its public output contract.
+The current five-model stack selects learned model schemes per layer. Each layer has exactly one active cumulative/replayable scheme at a time. The shared standard is lifecycle and evidence, not identical model architecture: every layer must be checkpointable, replayable, rollbackable, point-in-time safe, target-anonymous, and calibrated to its public output contract.
 
 The route is selected for cumulative data absorption, future online deployment, and auditable model-state replay. It is not selected because one early validation receipt proves promotion readiness. Promotion still requires layer-specific labels, walk-forward replay, calibration, cost/fill stress, leakage checks, checkpoint replay, rollback evidence, and full-chain utility evidence.
 
@@ -32,10 +32,10 @@ Deterministic behavior remains valid for hard guardrails, schema validation, rou
 |---|---|---|---|
 | `M01 BackgroundContextModel` | `continual_gru_context_estimator` | CPU-friendly short-window GRU context estimator over point-in-time market, sector, liquidity, volatility, macro, and cross-asset state sequences. | Calibration, regime-transition accuracy, volatility/liquidity error, stability across regimes, downstream lift to M02-M04. |
 | `M02 TargetStateModel` | `continual_pairwise_residual_mlp_target_ranker` | Pairwise/listwise residual MLP ranker over anonymous target-state vectors; no raw symbol identity. | Rank IC/NDCG, calibrated eligibility, persistence/reversion error, liquidity/tradability error, identity-leakage checks, downstream target-selection utility. |
-| `M03 EventStateModel` | `continual_gru_event_risk_scorer` | CPU-friendly short-window GRU event-risk scorer over reviewed structured event streams, decay state, event clusters, and point-in-time context. | Event-bucket calibration, response/risk Brier or log loss, tail-risk recall at fixed false-block cost, stability by event family, no same-fold M06 leakage. |
+| `M03 EventStateModel` | `continual_gru_event_risk_scorer` | CPU-friendly short-window GRU event-risk scorer over reviewed structured event streams, decay state, event clusters, and point-in-time context. | Event-bucket calibration, response/risk Brier or log loss, tail-risk recall at fixed false-block cost, stability by event family, no same-fold event-governance leakage. |
 | `M04 UnifiedDecisionModel` | `continual_residual_mlp_policy_value` | Conservative supervised/off-policy residual MLP policy-value model over M01-M03 state, cost, risk, exposure, portfolio context, and no-trade context. | After-cost utility, no-trade calibration, downside/path risk, turnover/churn, exposure regret, fill/cost sensitivity, chain-level PnL/risk improvement. |
 | `M05 OptionExpressionModel` | `continual_residual_mlp_option_chain_ranker` | Residual MLP option-chain ranker over option-relative features, Greeks, liquidity, spread, surface, horizon, and expression-state vectors. | Option after-cost utility, slippage/theta/IV-adjusted return, fill realism, top-k candidate ranking, no-option calibration, underlying-only counterfactual comparison. |
-| `M06 ResidualEventGovernanceModel` | `continual_gru_residual_risk_gate` | CPU-friendly short-window GRU residual-risk gate over recent model outputs, residual event state, failure traces, and anomaly sequences, plus deterministic hard guardrails. | Missed-event loss reduction, overblock cost, attribution precision/recall, intervention utility, future-packet quality, strict quarantine from same-fold upstream mutation. |
+| `M03 EventStateModel` | `continual_gru_event_risk_scorer` | CPU-friendly short-window GRU residual-risk gate over recent model outputs, residual event state, failure traces, and anomaly sequences, plus deterministic hard guardrails. | Missed-event loss reduction, overblock cost, attribution precision/recall, component control utility, future-packet quality, strict quarantine from same-fold upstream mutation. |
 
 These are active scheme choices, not promotion claims. GRU is selected where sequence memory and state persistence matter, while staying CPU-friendly for this server. Residual MLP is selected where nonlinear dense state interaction is the main task. Transformer-style attention is not the current active route because the server has no GPU and the checkpoint/replay cost is not yet justified.
 
@@ -70,7 +70,7 @@ A layer-selected scheme must pass these gates before promotion:
 
 - checkpoint restore reproduces predictions;
 - weights, scalers, normalizers, feature maps, calibration state, and update state are checkpointed;
-- no future labels, raw identity, same-fold downstream outcomes, or M06 hindsight feedback enter inference;
+- no future labels, raw identity, same-fold downstream outcomes, or hindsight event-governance feedback enter inference;
 - surrogate identity dominance is diagnosed and understood;
 - walk-forward improvement holds across folds, symbols, and regimes;
 - probabilities and utilities are calibrated near decision thresholds;

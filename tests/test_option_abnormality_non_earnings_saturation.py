@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_06_residual_event_governance.option_abnormality_non_earnings_saturation import (
+from models.model_03_event_state.event_governance.option_abnormality_non_earnings_saturation import (
     NonEarningsSaturationInputs,
     run_non_earnings_saturation_study,
 )

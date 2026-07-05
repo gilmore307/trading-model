@@ -20,7 +20,7 @@ These are the accepted current learned schemes. They define the route to train a
 | `M03 EventStateModel` | `continual_gru_event_risk_scorer` | Event impact depends on ordered event/state evolution; GRU captures persistence and decay in a compact recurrent state. |
 | `M04 UnifiedDecisionModel` | `continual_residual_mlp_policy_value` | Final trade utility is nonlinear dense-state interaction across upstream layer outputs, costs, risk, and exposure. |
 | `M05 OptionExpressionModel` | `continual_residual_mlp_option_chain_ranker` | Option expression is candidate ranking over chain attributes and M04 intent; dense residual scoring is the direct fit. |
-| `M06 ResidualEventGovernanceModel` | `continual_gru_residual_risk_gate` | Residual risk is sequence-sensitive governance; GRU keeps event/risk memory while deterministic guardrails remain hard constraints. |
+| `M03 EventStateModel` | `continual_gru_event_risk_scorer` | Residual risk is sequence-sensitive governance; GRU keeps event/risk memory while deterministic guardrails remain hard constraints. |
 
 ## Required Evidence Package
 
@@ -58,7 +58,7 @@ Promotion reviews should distinguish:
 | `M03 EventStateModel` | `event_state_vector` | deferred: active learned scheme selected; deterministic pilot and current-chain historical replay support exist | GRU event-family labels, event persistence/decay validation, leakage checks, calibration, and stability evidence missing |
 | `M04 UnifiedDecisionModel` | `unified_decision_vector` | deferred: active learned scheme selected; deterministic pilot and non-degenerate current-chain replay behavior exist | residual-MLP utility labels, broader walk-forward replay, no-trade calibration, cost/fill sensitivity, leakage checks, and promotion metrics missing |
 | `M05 OptionExpressionModel` | `option_expression_plan` / `expression_vector` | deferred: active learned scheme selected; deterministic option-expression replay behavior exists | residual-MLP option-expression labels, cost/fill/theta/IV validation, leakage checks, ranking calibration, and stability evidence missing |
-| `M06 ResidualEventGovernanceModel` | `event_risk_intervention` / packet eligibility | deferred: active learned scheme selected; deterministic guardrails and standardized-event replay behavior exist | GRU residual-event labels, overblock/accounting metrics, calibration, leakage checks, stability, and hard-guardrail interaction evidence missing |
+| `M03 EventStateModel` | `component_event_risk_control` / packet eligibility | deferred: active learned scheme selected; deterministic guardrails and standardized-event replay behavior exist | GRU residual-event labels, overblock/accounting metrics, calibration, leakage checks, stability, and hard-guardrail interaction evidence missing |
 
 No model in this matrix is currently production-approved by this document.
 
@@ -92,6 +92,6 @@ Promotion readiness evidence targets the six current model contracts directly.
 
 `src/model_governance/promotion/readiness.py` owns the lightweight reusable validation helper for this checklist. It verifies required evidence fields and gate results; it does not approve models by itself.
 
-`scripts/models/run_current_model_historical_evaluation.py` is the historical replay/training evidence runner for the current six-model chain. It can produce `current_model_historical_evaluation_receipt`, governance table-shaped evidence rows, input-coverage diagnostics, non-degenerate M04/M05/M06 distribution evidence, and a local cumulative residual-MLP utility baseline artifact from bounded point-in-time historical rows. This runner is evidence production only; passing it does not satisfy the full per-model promotion package or authorize activation.
+`scripts/models/run_current_model_historical_evaluation.py` is the historical replay/training evidence runner for the current five-model chain. It can produce `current_model_historical_evaluation_receipt`, governance table-shaped evidence rows, input-coverage diagnostics, non-degenerate M04/M05 distribution evidence, and a local cumulative residual-MLP utility baseline artifact from bounded point-in-time historical rows. This runner is evidence production only; passing it does not satisfy the full per-model promotion package or authorize activation.
 
 Latest existing-data replay evidence: `current_chain_retrain_replay_20260622T0903_et` produced 750 current-chain rows over 2021Q1, trained the local cumulative residual-MLP utility baseline artifact, joined mature labels for every row, covered 19 unique routing symbols, and returned `evaluation_status = passed` with `warning_reasons = []`. Activation and production promotion remained disallowed. The artifact is stored at `/root/projects/trading-storage/storage/03_model_artifacts/current_chain_retrain_replay_20260622T0903_et/current_model_historical_evaluation.json`.

@@ -9,11 +9,11 @@ from model_governance.evaluation.layer_metric_contracts import (
 
 
 class LayerMetricContractTests(unittest.TestCase):
-    def test_contract_covers_current_six_models(self) -> None:
+    def test_contract_covers_current_five_models(self) -> None:
         contracts = all_layer_metric_contracts()
 
-        self.assertEqual([contract.layer for contract in contracts], list(range(1, 7)))
-        self.assertEqual(len({contract.model_id for contract in contracts}), 6)
+        self.assertEqual([contract.layer for contract in contracts], list(range(1, 6)))
+        self.assertEqual(len({contract.model_id for contract in contracts}), 5)
         for contract in contracts:
             self.assertTrue(contract.tests_for_role("primary"), contract.model_id)
             self.assertTrue(contract.tests_for_role("guardrail"), contract.model_id)
@@ -43,7 +43,7 @@ class LayerMetricContractTests(unittest.TestCase):
         payload = layer_metric_contract_payload()
 
         self.assertIn("group_contribution", METRIC_FAMILY_DESCRIPTIONS)
-        self.assertEqual(len(payload["layers"]), 6)
+        self.assertEqual(len(payload["layers"]), 5)
         self.assertTrue(payload["model_group_supplemental_tests"])
 
 

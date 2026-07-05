@@ -22,9 +22,6 @@ CURRENT_MODEL_OUTPUT_TABLES: tuple[str, ...] = (
     "model_05_option_expression",
     "model_05_option_expression_explainability",
     "model_05_option_expression_diagnostics",
-    "model_06_residual_event_governance",
-    "model_06_residual_event_governance_explainability",
-    "model_06_residual_event_governance_diagnostics",
 )
 
 MODEL_OUTPUT_TABLES: tuple[str, ...] = CURRENT_MODEL_OUTPUT_TABLES

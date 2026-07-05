@@ -2,7 +2,7 @@
 
 This study tests whether abnormal activity has a stable, point-in-time relationship to subsequent price/path outcomes across different company sizes, sectors, and event families.
 
-It is the required proof gate before `event_activity_bridge` can be promoted into `EventActivityBridgeModel` or used as `EventRiskGovernor` risk-intervention evidence.
+It is the required proof gate before `event_activity_bridge` can be promoted into `EventActivityBridgeModel` or used as `M03 Event State` risk-control evidence.
 
 ## Purpose
 
@@ -390,7 +390,7 @@ If the study passes:
 1. create `EventActivityBridgeModel` as a candidate layer;
 2. define bridge vector outputs and deterministic baseline scorer;
 3. run family-specific and cross-family evaluations;
-4. only then allow `EventRiskGovernor` to consume bridge outputs for risk intervention.
+4. only then allow `M03 Event State` to consume bridge outputs for risk control.
 
 If the study fails:
 

@@ -7,7 +7,7 @@ Date: 2026-06-10
 
 Realtime execution capture can produce `execution_model_decision_input_snapshot` envelopes. `trading-model` needs a model-side entry boundary that accepts those envelopes for fixture/shadow routing into the historical model stack without accidentally activating production inference or execution.
 
-This document defines that boundary for the current six-model stack.
+This document defines that boundary for the current five-model stack.
 
 ## Accepted Chain
 
@@ -19,7 +19,7 @@ trading-execution realtime capture
   -> fixture/shadow historical-model generation route
 ```
 
-`model_realtime_decision_route_plan` is a route plan, not a model output. Its execution unit is the accepted execution runtime component (`C01`, `C02`, and so on), not a retired serial route and not a model contract renamed as a component. It validates required runtime-component input refs, records the current M01-M06 model surfaces each component may need, and records the handoff mode. Direct-underlying routes must not require M05 option-expression refs; C04 Expression Review may emit a direct-underlying pass-through or structural no-option state.
+`model_realtime_decision_route_plan` is a route plan, not a model output. Its execution unit is the accepted execution runtime component (`C01`, `C02`, and so on), not a retired serial route and not a model contract renamed as a component. It validates required runtime-component input refs, records the current M01-M05 model surfaces each component may need, and records the handoff mode. Direct-underlying routes must not require M05 option-expression refs; C04 Expression Review may emit a direct-underlying pass-through or structural no-option state.
 
 The execution-side `runtime_component_manifest` is the authoritative component
 catalog for this handoff. `trading-model` validates the manifest carried by the
@@ -53,12 +53,12 @@ Each component input must include the execution `component_id`, feature ref, fro
 | Runtime component | Required model surfaces | Optional model surfaces | Invocation policy |
 |---|---|---|---|
 | `component_01_intake` / `C01 Intake` | `model_01_background_context`, `model_02_target_state` | none | required runtime component |
-| `component_02_entry` / `C02 Entry` | `model_03_event_state`, `model_04_unified_decision` | `model_06_residual_event_governance` | required for candidate entries |
-| `component_03_lifecycle` / `C03 Lifecycle` | `model_03_event_state`, `model_04_unified_decision` | `model_06_residual_event_governance` | required for open positions |
-| `component_04_expression_review` / `C04 Expression Review` | none | `model_05_option_expression`, `model_06_residual_event_governance` | conditional for optionable routes, held options, or direct-underlying pass-through |
+| `component_02_entry` / `C02 Entry` | `model_03_event_state`, `model_04_unified_decision` | none | required for candidate entries |
+| `component_03_lifecycle` / `C03 Lifecycle` | `model_03_event_state`, `model_04_unified_decision` | none | required for open positions |
+| `component_04_expression_review` / `C04 Expression Review` | none | `model_05_option_expression` | conditional for optionable routes, held options, or direct-underlying pass-through |
 | `component_05_order_intent` / `C05 Order Intent` | none | none | required after an accepted entry, lifecycle, or option decision |
 | `component_06_execution_gate` / `C06 Execution Gate` | none | none | required before live or replay execution adapter |
-| `component_07_failure_review` / `C07 Failure Review` | none | `model_06_residual_event_governance` | conditional after observed failure, deviation, or residual event risk |
+| `component_07_failure_review` / `C07 Failure Review` | none | none | conditional after observed failure, deviation, or residual event risk |
 
 Historical retired serial route mappings are not current realtime route contracts.
 

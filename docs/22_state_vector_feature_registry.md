@@ -1,6 +1,6 @@
 # State Vector Feature Semantics Registry
 
-Status: accepted semantics guardrail for the current six-model stack
+Status: accepted semantics guardrail for the current five-model stack
 
 This file owns semantic guardrails for score families and vector fields used by current model contracts. Exact registry-backed field names must still route through `trading-manager` before cross-repository dependency.
 
@@ -16,7 +16,7 @@ M01 score families should keep these axes separate:
 - liquidity pressure/support;
 - coverage and data quality.
 
-M01 fields must not directly encode target selection, action, option expression, or event-governance intervention.
+M01 fields must not directly encode target selection, action, option expression, or event-governance component-control.
 
 ## M02 Target State
 
@@ -42,7 +42,7 @@ M03 score families should keep these axes separate:
 - entry-block, exposure-cap, disable, and review pressure;
 - source/context quality.
 
-M03 consumes accepted event parameters from M06. It must not mutate event-family identity, scope, visibility, selected impact windows, or allowed use.
+M03 consumes accepted event parameters from M03 event-governance tooling and reviewed event evidence. It must not mutate event-family identity, scope, visibility, selected impact windows, or allowed use during inference.
 
 ## M04 Unified Decision
 
@@ -68,19 +68,19 @@ M05 score families should keep these axes separate:
 
 M05 is offline expression guidance, not live execution.
 
-## M06 Residual Event Governance
+## M03 Event-Governance Tooling
 
-M06 score families should keep these axes separate:
+M03 event-governance tooling evidence should keep these axes separate before it becomes M03 input:
 
 - residual event presence and attribution confidence;
 - event severity, timing proximity, scope, and target relevance;
-- residual intervention utility;
+- residual component control utility;
 - overblock/opportunity cost;
 - stale regime/decay state;
 - future event-family packet eligibility.
 
-M06 may emit warning/cap/block/review/reduce/flatten-review guidance and future M03 promotion packets, but it must not send orders or mutate accounts.
+M03 event-governance tooling may propose future event-family packets and reviewed effect-model evidence. Runtime warning/cap/block/reduce/flatten actions are component-owned and must not be represented as M03 model outputs.
 
 ## Retired Field Prefixes
 
-Historical score prefixes may appear in immutable artifacts, but active feature-registry entries must define the current M01-M06 contracts only.
+Historical score prefixes may appear in immutable artifacts, but active feature-registry entries must define the current M01-M05 contracts only.

@@ -1,6 +1,6 @@
-"""Current six-model chain runner for local fixture evidence.
+"""Current five-model chain runner for local fixture evidence.
 
-This module owns the smallest executable M01->M06 route for the current model
+This module owns the smallest executable M01->M05 route for the current model
 contracts. It is intentionally local/fixture evidence only: it proves contract
 handoffs, label-leakage checks, and retired-field absence without implying
 production promotion or runtime activation.
@@ -26,9 +26,6 @@ from models.model_04_unified_decision import generate_rows as generate_unified_d
 from models.model_05_option_expression import MODEL_ID as M05_ID
 from models.model_05_option_expression import MODEL_SURFACE as M05_SURFACE
 from models.model_05_option_expression import generate_rows as generate_option_expression
-from models.model_06_residual_event_governance import MODEL_ID as M06_ID
-from models.model_06_residual_event_governance import MODEL_SURFACE as M06_SURFACE
-from models.model_06_residual_event_governance import generate_rows as generate_residual_event_governance
 
 CURRENT_CHAIN_MODELS: tuple[dict[str, Any], ...] = (
     {"layer": 1, "model_surface": M01_SURFACE, "model_id": M01_ID, "module_name": "models.model_01_background_context", "label_builder_name": "build_background_context_labels"},
@@ -36,7 +33,6 @@ CURRENT_CHAIN_MODELS: tuple[dict[str, Any], ...] = (
     {"layer": 3, "model_surface": M03_SURFACE, "model_id": M03_ID, "module_name": "models.model_03_event_state", "label_builder_name": "build_event_state_labels"},
     {"layer": 4, "model_surface": M04_SURFACE, "model_id": M04_ID, "module_name": "models.model_04_unified_decision", "label_builder_name": "build_unified_decision_labels"},
     {"layer": 5, "model_surface": M05_SURFACE, "model_id": M05_ID, "module_name": "models.model_05_option_expression", "label_builder_name": "build_option_expression_labels"},
-    {"layer": 6, "model_surface": M06_SURFACE, "model_id": M06_ID, "module_name": "models.model_06_residual_event_governance", "label_builder_name": "build_residual_event_governance_labels"},
 )
 
 RETIRED_CHAIN_FIELDS: frozenset[str] = frozenset(
@@ -57,7 +53,7 @@ RETIRED_CHAIN_FIELDS: frozenset[str] = frozenset(
 
 
 def run_current_chain(*, input_payload: Mapping[str, Any] | None = None, evidence_source: str = "fixture_current_chain") -> dict[str, Any]:
-    """Run the current M01-M06 deterministic chain and return a receipt."""
+    """Run the current M01-M05 deterministic chain and return a receipt."""
 
     rows = build_current_chain_rows(input_payload)
     background = rows[M01_SURFACE][0]
@@ -65,7 +61,6 @@ def run_current_chain(*, input_payload: Mapping[str, Any] | None = None, evidenc
     event = rows[M03_SURFACE][0]
     decision = rows[M04_SURFACE][0]
     option = rows[M05_SURFACE][0]
-    residual = rows[M06_SURFACE][0]
     evaluations = {
         model["model_surface"]: evaluate_layer(
             module_name=model["module_name"],
@@ -79,7 +74,7 @@ def run_current_chain(*, input_payload: Mapping[str, Any] | None = None, evidenc
         )
         for model in CURRENT_CHAIN_MODELS
     }
-    handoff_checks = _handoff_checks(background, target, event, decision, option, residual)
+    handoff_checks = _handoff_checks(background, target, event, decision, option)
     retired_violations = _retired_field_violations(rows)
     leakage_failures = [
         {
@@ -118,12 +113,12 @@ def run_current_chain(*, input_payload: Mapping[str, Any] | None = None, evidenc
             "background_context_state_ref": background["background_context_state_ref"],
             "target_context_state_ref": target["target_context_state_ref"],
             "event_state_vector_ref": event["event_state_vector_ref"],
+            "thesis_distribution_surface_ref": decision["thesis_distribution_surface_ref"],
             "unified_decision_vector_ref": decision["unified_decision_vector_ref"],
+            "expression_probability_surface_ref": option["expression_probability_surface_ref"],
             "option_expression_plan_ref": option.get("option_expression_plan_ref"),
-            "event_risk_intervention_ref": residual["event_risk_intervention_ref"],
             "resolved_underlying_action": decision["4_resolved_underlying_action_type"],
             "resolved_option_expression": option["5_resolved_expression_type"],
-            "resolved_event_intervention": residual["6_resolved_intervention_action"],
         },
     }
     return {
@@ -138,7 +133,7 @@ def build_current_chain_rows(
     *,
     use_fixture_defaults: bool = True,
 ) -> dict[str, list[dict[str, Any]]]:
-    """Generate current M01-M06 rows from one point-in-time input payload."""
+    """Generate current M01-M05 rows from one point-in-time input payload."""
 
     payload = _fixture_payload(input_payload or {}) if use_fixture_defaults else dict(input_payload or {})
     _validate_surface_scope(payload)
@@ -147,14 +142,12 @@ def build_current_chain_rows(
     event = generate_event_state([_event_input(payload, background, target)])[0]
     decision = generate_unified_decision([_decision_input(payload, background, target, event)])[0]
     option = generate_option_expression([_option_input(payload, background, event, decision)])[0]
-    residual = generate_residual_event_governance([_residual_input(payload, background, target, event, decision, option)])[0]
     return {
         M01_SURFACE: [background],
         M02_SURFACE: [target],
         M03_SURFACE: [event],
         M04_SURFACE: [decision],
         M05_SURFACE: [option],
-        M06_SURFACE: [residual],
     }
 
 
@@ -294,6 +287,7 @@ def _event_input(payload: Mapping[str, Any], background: Mapping[str, Any], targ
         "target_context_state_ref": target["target_context_state_ref"],
         "target_context_state": target["target_context_state"]["score_payload"],
         "accepted_event_contracts": payload["accepted_event_contracts"],
+        "event_observations": payload.get("event_observations", []),
     }
 
 
@@ -343,41 +337,12 @@ def _option_input(payload: Mapping[str, Any], background: Mapping[str, Any], eve
     }
 
 
-def _residual_input(
-    payload: Mapping[str, Any],
-    background: Mapping[str, Any],
-    target: Mapping[str, Any],
-    event: Mapping[str, Any],
-    decision: Mapping[str, Any],
-    option: Mapping[str, Any],
-) -> dict[str, Any]:
-    return {
-        "available_time": decision["available_time"],
-        "tradeable_time": decision["tradeable_time"],
-        "target_candidate_id": decision["target_candidate_id"],
-        "symbol_for_join_only": payload["routing_symbol"],
-        "sector_type": payload["sector_type"],
-        "background_context_state_ref": background["background_context_state_ref"],
-        "target_context_state_ref": target["target_context_state_ref"],
-        "event_state_vector_ref": event["event_state_vector_ref"],
-        "unified_decision_vector_ref": decision["unified_decision_vector_ref"],
-        "option_expression_plan_ref": option["option_expression_plan_ref"],
-        "background_context_state": background["background_context_state"]["score_payload"],
-        "target_context_state": target["target_context_state"]["score_payload"],
-        "event_state_vector": event["event_state_vector"]["score_payload"],
-        "direct_underlying_intent": decision["direct_underlying_intent"],
-        "option_expression_plan": option["option_expression_plan"],
-        "event_observations": payload["event_observations"],
-    }
-
-
 def _handoff_checks(
     background: Mapping[str, Any],
     target: Mapping[str, Any],
     event: Mapping[str, Any],
     decision: Mapping[str, Any],
     option: Mapping[str, Any],
-    residual: Mapping[str, Any],
 ) -> list[dict[str, Any]]:
     return [
         _check("m01_to_m02_background_ref", target.get("background_context_state_ref") == background.get("background_context_state_ref")),
@@ -395,10 +360,6 @@ def _handoff_checks(
                 .get("available")
             ),
         ),
-        _check("m01_to_m06_background_ref", residual.get("background_context_state_ref") == background.get("background_context_state_ref")),
-        _check("m03_to_m06_event_ref", residual.get("event_state_vector_ref") == event.get("event_state_vector_ref")),
-        _check("m04_to_m06_unified_decision_ref", residual.get("unified_decision_vector_ref") == decision.get("unified_decision_vector_ref")),
-        _check("m05_to_m06_option_expression_ref", residual.get("option_expression_plan_ref") == option.get("option_expression_plan_ref")),
     ]
 
 

@@ -1,6 +1,6 @@
 # Model Decomposition Framework
 
-Status: accepted six-model decomposition spine; production promotion remains evidence-gated
+Status: accepted five-model decomposition spine; production promotion remains evidence-gated
 Owner intent: every current model contract must keep the same reviewable decomposition before implementation or promotion expands.
 
 ## Nine-Part Structure
@@ -25,7 +25,6 @@ M02 Target State / Selection    -> target_context_state
 M03 Event State / Conditioning  -> event_state_vector
 M04 Unified Decision            -> unified_decision_vector
 M05 Option Expression           -> option_expression_plan / expression_vector
-M06 Residual Event Governance   -> event_risk_intervention / future event-family packet eligibility
 ```
 
 ## Cross-Model Rules
@@ -85,7 +84,6 @@ Local generator scripts may emit nested JSON/JSONL fixture rows for smoke eviden
 | `M03` Event State | Event-conditioned response/risk estimator | Does accepted event-state evidence improve failure-risk and path-risk handling without becoming standalone event alpha? |
 | `M04` Unified Decision | Direct-underlying policy/utility optimizer | Does one decision model improve after-cost utility, drawdown/CVaR, turnover, no-trade calibration, action stability, and explainability versus the retired serial route? |
 | `M05` Option Expression | Option/expression utility optimizer | Does option-expression selection improve realistic after-cost expression utility without best-contract hindsight or broker leakage? |
-| `M06` Residual Event Governance | Residual governance and attribution model | Does residual event intervention reduce tail failures and attribution misses without excessive overblocking or same-fold upstream mutation? |
 
 ## Post-Replay Review Responsibility
 

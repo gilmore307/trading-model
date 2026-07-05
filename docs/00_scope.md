@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`trading-model` is the offline modeling home for the current M01-M05 probability trading decision stack, plus compatibility event-governance evidence that feeds M03.
+`trading-model` is the offline modeling home for the current M01-M05 probability trading decision stack, plus M03 event taxonomy/effect-model evidence tooling.
 
 It owns point-in-time model research, model-local generators/evaluators, validation workflows, promotion evidence, model outputs, and decision-record prototypes for:
 
@@ -22,7 +22,7 @@ The repository does **not** place orders, mutate accounts, own provider acquisit
 - Event-state modeling from accepted event-family and strategy-failure relationships without mutating event-family parameters.
 - Unified direct-underlying decision modeling with structured edge, risk, exposure, and action heads.
 - Option-expression modeling from unified direct-underlying intent plus optional option-chain context; this may choose offline expression/contract constraints, not routes or broker orders.
-- Compatibility event-governance evidence, including missed-event checks, residual attribution, event-family modelability, and future event-family packet eligibility, only as evidence that feeds M03 taxonomy/effect-model contracts.
+- M03 event-governance evidence, including missed-event checks, residual attribution, event-family modelability, and future event-family packet eligibility, only as evidence that feeds M03 taxonomy/effect-model contracts.
 - Model-local labels, diagnostics, explainability, fixtures, and acceptance gates.
 - Proposing shared names/contracts to `trading-manager` when model outputs need cross-repository consumption.
 

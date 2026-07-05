@@ -1,4 +1,4 @@
-"""Model-local evaluation metric contracts for the current six-model stack.
+"""Model-local evaluation metric contracts for the current five-model stack.
 
 The contract is about metric eligibility, not metric values. A model may report
 a metric only when its label and point-in-time evidence satisfy the relevant
@@ -59,7 +59,7 @@ METRIC_FAMILY_DESCRIPTIONS: dict[str, str] = {
     "event_state": "Event-state recall, attribution, timing, and impact-channel quality.",
     "decision_utility": "Unified decision utility, abstention, risk, and action-thesis quality.",
     "option_expression": "Option contract/expression fit, feasibility, and payoff quality.",
-    "event_attribution": "Residual event-risk recall, intervention, and opportunity-cost quality.",
+    "event_attribution": "Residual event-risk recall, component-control evidence, and opportunity-cost quality.",
     "integrity": "Point-in-time, leakage, lineage, and feasibility guardrails.",
     "group_contribution": "Ablation/counterfactual contribution tests owned by the model group.",
 }
@@ -133,27 +133,14 @@ LAYER_METRIC_CONTRACTS: tuple[LayerMetricContract, ...] = (
             _test("underlying_only_pnl_as_option_score", "Underlying-only PnL", "option_expression", "avoid", "Only valid as comparison context.", "M05 must be judged on option expression outcomes and feasibility."),
         ),
     ),
-    LayerMetricContract(
-        6,
-        "residual_event_governance_model",
-        "Residual Event Governance",
-        ("event_attribution", "integrity", "group_contribution"),
-        (
-            _test("residual_event_attribution_accuracy", "Residual event attribution accuracy", "event_attribution", "primary", "Requires post-replay event-failure attribution labels.", "Measures whether residual failures are attributed to the right event family."),
-            _test("intervention_precision_recall", "Intervention precision/recall", "event_attribution", "primary", "Requires reviewed intervention/failure labels.", "Measures false block and false allow quality."),
-            _test("avoided_loss_opportunity_cost", "Avoided loss / opportunity cost", "event_attribution", "primary", "Requires counterfactual and opportunity-cost accounting.", "Balances avoided losses against missed winners."),
-            _test("post_replay_to_inference_leakage", "Post-replay leakage", "integrity", "guardrail", "Requires explicit inference-time route separation.", "Blocks replay-only evidence from entering live inference."),
-            _test("causal_avoided_loss_claim", "Causal avoided-loss claim", "event_attribution", "avoid", "Requires counterfactual evidence before causality.", "Avoided loss cannot be counted as causal proof by default."),
-        ),
-    ),
 )
 
 
 MODEL_GROUP_SUPPLEMENTAL_TESTS: tuple[LayerMetricTest, ...] = (
     _test("model_ablation", "Model ablation", "group_contribution", "primary", "Requires replay with one model removed/frozen.", "Measures end-to-end impact of a model without relabeling group PnL as model-local."),
     _test("model_replacement_baseline", "Model replacement baseline", "group_contribution", "primary", "Requires null, heuristic, or previous-version substitute.", "Compares each model against a controlled baseline."),
-    _test("sequential_contribution", "Sequential contribution", "group_contribution", "primary", "Requires M01->M06 incremental replay.", "Measures marginal contribution as models are added."),
-    _test("cross_model_consistency", "Cross-model consistency", "group_contribution", "guardrail", "Requires full decision audit trail.", "Detects contradictions such as strong M04 entry and hard M06 intervention."),
+    _test("sequential_contribution", "Sequential contribution", "group_contribution", "primary", "Requires M01->M05 incremental replay.", "Measures marginal contribution as models are added."),
+    _test("cross_model_consistency", "Cross-model consistency", "group_contribution", "guardrail", "Requires full decision audit trail.", "Detects contradictions across M01-M05 probability surfaces."),
 )
 
 

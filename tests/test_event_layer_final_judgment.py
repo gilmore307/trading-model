@@ -7,7 +7,7 @@ from pathlib import Path
 
 from event_family_fixtures import build_event_family_fixture
 
-from models.model_06_residual_event_governance.event_layer_final_judgment import (
+from models.model_03_event_state.event_governance.event_layer_final_judgment import (
     build_event_layer_final_judgment,
     write_event_layer_final_judgment_artifacts,
 )

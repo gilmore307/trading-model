@@ -2,24 +2,23 @@
 
 ## Why This Repository Exists
 
-The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the direction-neutral trading decision system. The current model stack has six contracts:
+The trading platform is split across multiple repositories so each major responsibility has a clear owner. `trading-model` exists as the offline modeling home for the direction-neutral trading decision system. The current model stack has five contracts:
 
 1. BackgroundContextModel (`background_context_model`);
 2. TargetStateModel (`target_state_model`);
 3. EventStateModel (`event_state_model`);
 4. UnifiedDecisionModel (`unified_decision_model`);
-5. OptionExpressionModel (`option_expression_model`);
-6. ResidualEventGovernanceModel (`residual_event_governance_model`).
+5. OptionExpressionModel (`option_expression_model`).
 
-M04, M05, and M06 plans remain offline and broker mutation stays outside this repository.
+M04 and M05 plans remain offline and broker mutation stays outside this repository. M03 event-governance tooling is evidence tooling for M03, not a separate model contract.
 
 Current structural boundary:
 
 ```text
-background context -> target state -> event state -> unified decision -> optional option expression -> residual event governance
+background context -> target state -> event state -> unified decision -> optional option expression
 ```
 
-`BackgroundContextModel` describes broad market and sector/industry background in one model. `TargetStateModel` builds anonymous target candidates and evaluates target state. `EventStateModel` applies accepted event-family and strategy-failure conditioning without changing event parameters. `UnifiedDecisionModel` produces the direct-underlying decision with structured edge, risk, exposure, and action heads. `OptionExpressionModel` composes optional offline trading guidance and option-expression context from that intent. `ResidualEventGovernanceModel` may intervene on the direct-underlying/spot thesis with point-in-time residual event risk while treating option-expression context as optional. Later decision/expression/governance layers may map back to real symbols only for audit, routing, and decision records.
+`BackgroundContextModel` describes broad market and sector/industry background in one model. `TargetStateModel` builds anonymous target candidates and evaluates target state. `EventStateModel` applies accepted event-family and strategy-failure conditioning without changing event parameters. `UnifiedDecisionModel` produces the direct-underlying posterior probability surface with derived edge, risk, exposure, and action summaries. `OptionExpressionModel` composes optional expression probability surfaces from that intent. Later decision and expression records may map back to real symbols only for audit, routing, and decision records.
 
 Historical retired serial package names are not a parallel current standard.
 

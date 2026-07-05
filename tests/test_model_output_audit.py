@@ -24,9 +24,8 @@ class ModelOutputAuditTests(unittest.TestCase):
         self.assertIn("model_02_target_state", MODEL_OUTPUT_TABLES)
         self.assertIn("model_03_event_state", MODEL_OUTPUT_TABLES)
         self.assertIn("model_05_option_expression", MODEL_OUTPUT_TABLES)
-        self.assertIn("model_06_residual_event_governance", MODEL_OUTPUT_TABLES)
         self.assertTrue(all(table.startswith("model_0") for table in MODEL_OUTPUT_TABLES))
-        self.assertTrue(all(table[6:8] in {"01", "02", "03", "04", "05", "06"} for table in MODEL_OUTPUT_TABLES))
+        self.assertTrue(all(table[6:8] in {"01", "02", "03", "04", "05"} for table in MODEL_OUTPUT_TABLES))
         self.assertEqual(MODEL_OUTPUT_TABLES, CURRENT_MODEL_OUTPUT_TABLES)
         self.assertEqual(ALL_MODEL_OUTPUT_TABLES, CURRENT_MODEL_OUTPUT_TABLES)
         primary_tables = [
@@ -34,7 +33,7 @@ class ModelOutputAuditTests(unittest.TestCase):
             for table in MODEL_OUTPUT_TABLES
             if not table.endswith(("_explainability", "_diagnostics"))
         ]
-        self.assertEqual(len(primary_tables), 6)
+        self.assertEqual(len(primary_tables), 5)
 
     def test_audit_cli_supports_current_table_audit(self) -> None:
         result = subprocess.run(

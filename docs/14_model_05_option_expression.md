@@ -6,7 +6,7 @@ Status: accepted current model contract; deterministic implementation present; p
 
 `M05 Option Expression` owns optional option/underlying expression after `M04 Unified Decision` has produced clean direct-underlying intent. It remains separate because option chains, liquidity, volatility, theta, spread, DTE, and structure constraints are a distinct domain.
 
-M05 does not own event-family identity or event-impact taxonomy. Option-sensitive event attributes, such as triple witching, expiry/gamma flow, volatility-surface dislocation, IV crush, and option liquidity/spread disruption, are governed by M06 and applied point-in-time by M03. M05 consumes those M03 event-state channels to decide expression consequences.
+M05 does not own event-family identity or event-impact taxonomy. Option-sensitive event attributes, such as triple witching, expiry/gamma flow, volatility-surface dislocation, IV crush, and option liquidity/spread disruption, are governed by M03 event-governance tooling and applied point-in-time by M03. M05 consumes those M03 event-state channels to decide expression consequences.
 
 ## Output
 
@@ -51,7 +51,7 @@ candidate payoff probabilities while preserving the M04/M05 boundary: M05 must
 not redefine the M04 target-level direction thesis or use future realized
 outcomes at decision time.
 
-The local M01-M06 chain receipt now checks the surface handoff explicitly:
+The local M01-M05 chain receipt now checks the surface handoff explicitly:
 M05's `thesis_distribution_surface_ref` must match M04's emitted surface ref,
 and the `expression_candidate_set.source_thesis_distribution_surface_summary`
 must be available. This closes the read-only surface path from

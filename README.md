@@ -1,12 +1,12 @@
 # trading-model
 
-`trading-model` is the offline modeling repository for the current six-model trading decision stack.
+`trading-model` is the offline modeling repository for the current five-model trading decision stack.
 
 It owns point-in-time model research, model-local generators/evaluators, promotion evidence, and model outputs. It does **not** own raw source acquisition, global registry authority, durable storage policy, dashboards, live/paper order placement, broker/account mutation, generated runtime artifacts committed to Git, or secrets.
 
 ## Current Route
 
-The accepted topology is six model contracts:
+The accepted topology is five model contracts:
 
 ```text
 M01 Background Context
@@ -14,7 +14,6 @@ M02 Target State / Selection
 M03 Event State / Event Conditioning
 M04 Unified Decision
 M05 Option Expression
-M06 Residual Event Governance
 ```
 
 ```text
@@ -35,12 +34,9 @@ M04 Unified Decision
 
 M05 Option Expression
   -> optional option_expression_plan / expression_vector
-
-M06 Residual Event Governance
-  -> event_risk_intervention / event-adjusted risk guidance
 ```
 
-M01 owns broad market and sector/industry background as one model. M02 owns target selection/state and keeps ticker/company identity out of model-facing fitting vectors. M03 owns accepted event-state conditioning without changing event-family parameters. M04 owns the full direct-underlying decision and exposes structured edge, risk, exposure, and action heads. M05 owns optional option expression after direct-underlying intent exists. M06 owns residual event governance and future event-family evidence. Broker orders and account mutation stay outside this repository.
+M01 owns broad market and sector/industry background as one model. M02 owns target selection/state and keeps ticker/company identity out of model-facing fitting vectors. M03 owns accepted event-state conditioning and event-effect-model projection. M04 owns the final direct-underlying posterior probability surface and derives structured edge, risk, exposure, and action summaries. M05 owns optional option-expression probability surfaces after direct-underlying intent exists. Broker orders, account mutation, and component-control execution stay outside this repository.
 
 The accepted learned-model route is replayable cumulative learning with one active learned scheme per layer:
 
@@ -50,15 +46,14 @@ M02 -> continual_pairwise_residual_mlp_target_ranker
 M03 -> continual_gru_event_risk_scorer
 M04 -> continual_residual_mlp_policy_value
 M05 -> continual_residual_mlp_option_chain_ranker
-M06 -> continual_gru_residual_risk_gate
 ```
 
-M01, M03, and M06 use CPU-friendly short-window GRU schemes because they need sequence memory and state persistence. M02, M04, and M05 use residual-MLP ranking/policy schemes because they need nonlinear dense-state interaction over anonymous target, decision, and option-chain state. Every learned scheme must be checkpointable, replayable, rollbackable, target-anonymous, and point-in-time safe.
+M01 and M03 use CPU-friendly short-window GRU schemes because they need sequence memory and state persistence. M02, M04, and M05 use residual-MLP ranking/policy schemes because they need nonlinear dense-state interaction over anonymous target, decision, and option-chain state. Every learned scheme must be checkpointable, replayable, rollbackable, target-anonymous, and point-in-time safe.
 
 ## Top-Level Structure
 
 ```text
-docs/        Scope, current six-model contracts, architecture, decisions, tasks, and promotion readiness.
+docs/        Scope, current five-model contracts, architecture, decisions, tasks, and promotion readiness.
 src/         Importable model packages and shared governance/promotion helpers.
 scripts/     Stable executable entrypoints for model generation, evaluation, review, and governance.
 tests/       First-party unit tests and CLI smoke checks using local rows/fake cursors.
@@ -75,19 +70,19 @@ Runtime path defaults preserve the OpenClaw `/root/projects` layout but can be o
 ## Implementation Packages
 
 ```text
-src/models/model_sequence.py                       M01-M06 display/order metadata.
+src/models/model_sequence.py                       M01-M05 display/order metadata.
 src/models/model_01_background_context/            M01 Background Context.
 src/models/model_02_target_state/                  M02 Target State.
 src/models/model_03_event_state/                   M03 Event State.
 src/models/model_04_unified_decision/              M04 Unified Decision.
 src/models/model_05_option_expression/             M05 Option Expression.
-src/models/model_06_residual_event_governance/     M06 Residual Event Governance.
+src/models/model_03_event_state/event_governance/  M03 event taxonomy/effect-model evidence tooling.
 src/model_governance/                     Shared evaluation, promotion, SQL, and current-model helpers.
 ```
 
 ## Script Entry Points
 
-Model-specific scripts should live under `scripts/models/model_NN_<six_model_slug>/` and follow the six-model order. Shared governance scripts live under `scripts/model_governance/`.
+Model-specific scripts should live under `scripts/models/model_NN_<five_model_slug>/` and follow the five-model order. Shared governance scripts live under `scripts/model_governance/`.
 
 Important paths:
 
@@ -97,7 +92,7 @@ scripts/models/model_02_target_state/
 scripts/models/model_03_event_state/
 scripts/models/model_04_unified_decision/
 scripts/models/model_05_option_expression/
-scripts/models/model_06_residual_event_governance/
+scripts/models/model_03_event_state/event_governance/
 scripts/models/run_current_model_chain.py
 scripts/models/run_current_model_historical_evaluation.py
 scripts/models/audit_model_output_tables.py
@@ -105,7 +100,7 @@ scripts/models/run_model_output_quality_gate.py
 scripts/model_governance/
 ```
 
-Only the six-model script paths above are maintained current entrypoints. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
+Only the five-model script paths above are maintained current entrypoints. No script may imply production promotion unless the accepted governance evidence package and reviewed activation path are present.
 
 ## Docs Spine
 
@@ -122,7 +117,6 @@ docs/11_model_02_target_state.md
 docs/12_model_03_event_state.md
 docs/13_model_04_unified_decision.md
 docs/14_model_05_option_expression.md
-docs/15_model_06_residual_event_governance.md
 docs/20_model_decomposition.md
 docs/21_vector_taxonomy.md
 docs/22_state_vector_feature_registry.md
@@ -140,7 +134,7 @@ docs/52_earnings_guidance_event_family_packet.md
 docs/53_event_state_final_judgment.md
 ```
 
-Model workflow and acceptance live in the numbered model files. Architecture and decomposition docs describe the current six-model route, not historical detours.
+Model workflow and acceptance live in the numbered model files. Architecture and decomposition docs describe the current five-model route, not historical detours.
 
 ## Platform Boundaries
 

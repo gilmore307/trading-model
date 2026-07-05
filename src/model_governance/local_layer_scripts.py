@@ -311,48 +311,6 @@ FIXTURE_INPUT_ROWS: dict[str, list[dict[str, Any]]] = {
             "policy_gate_state": {"direct_underlying_action_allowed": True, "preferred_decision_horizon": "1W"},
         }
     ],
-    "model_06_residual_event_governance": [
-        {
-            "available_time": "2026-05-07T10:30:00-04:00",
-            "tradeable_time": "2026-05-07T10:31:00-04:00",
-            "target_candidate_id": "anon_target_001",
-            "symbol_for_join_only": "AAPL",
-            "sector_type": "technology",
-            "background_context_state_ref": "bcs_fixture",
-            "target_context_state_ref": "tcs_fixture",
-            "event_state_vector_ref": "esv_fixture",
-            "unified_decision_vector_ref": "udv_fixture",
-            "option_expression_plan_ref": "oep_fixture",
-            "target_context_state": {"2_target_direction_score_1W": 0.5, "2_target_direction_score_1h": 0.4},
-            "direct_underlying_intent": {
-                "underlying_action_type": "open_long",
-                "action_side": "long",
-                "dominant_horizon": "1W",
-            },
-            "option_expression_plan": {
-                "selected_expression_type": "long_call",
-                "option_surface_status": "optionable_chain_available",
-            },
-            "event_observations": [
-                {
-                    "event_id": "evt_fixture_canonical",
-                    "canonical_event_id": "evt_fixture_canonical",
-                    "dedup_status": "new_information",
-                    "source_priority": 1,
-                    "event_time": "2026-05-07T10:10:00-04:00",
-                    "available_time": "2026-05-07T10:12:00-04:00",
-                    "event_category_type": "sec_filing",
-                    "scope_type": "symbol",
-                    "symbol": "AAPL",
-                    "sector_type": "technology",
-                    "event_intensity_score": 0.9,
-                    "direction_bias_score": -0.7,
-                    "target_relevance_score": 1.0,
-                    "scope_confidence_score": 0.9,
-                }
-            ],
-        }
-    ],
     "model_05_option_expression": [
         {
             "available_time": "2026-05-07T10:30:00-04:00",
@@ -400,7 +358,6 @@ FIXTURE_OUTCOME_ROWS: dict[str, list[dict[str, Any]]] = {
     "model_02_target_state": [{"target_context_state_ref": "tcs_fixture", "future_target_return_1W": 0.04, "future_target_path_stability_1W": 0.82, "future_target_liquidity_1W": 0.90, "target_state_realized_utility_1W": 0.13}],
     "model_03_event_state": [{"event_state_vector_ref": "esv_fixture", "realized_event_response_1W": -0.02, "realized_event_path_risk_1W": 0.25, "realized_event_entry_block_utility_1W": 0.03, "event_state_realized_utility_1W": 0.04}],
     "model_04_unified_decision": [{"unified_decision_vector_ref": "udv_a6cc0189ed496c7e", "realized_decision_utility": 0.12, "realized_max_drawdown": -0.03}],
-    "model_06_residual_event_governance": [{"event_risk_intervention_ref": "eri_fixture", "realized_residual_event_loss_1W": -0.04, "realized_intervention_utility_1W": 0.05}],
     "model_05_option_expression": [{"option_expression_plan_ref": "oep_0efeeb3e99931e42", "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True}],
 }
 
@@ -418,8 +375,6 @@ def fixture_outcome_rows(model_surface: str, model_rows: list[dict[str, Any]]) -
             rows.append({"event_state_vector_ref": row.get("event_state_vector_ref"), "realized_event_response_1W": -0.02, "realized_event_path_risk_1W": 0.25, "realized_event_entry_block_utility_1W": 0.03, "event_state_realized_utility_1W": 0.04})
         elif model_surface == "model_04_unified_decision":
             rows.append({"unified_decision_vector_ref": row.get("unified_decision_vector_ref"), "realized_decision_utility": 0.12, "realized_max_drawdown": -0.03})
-        elif model_surface == "model_06_residual_event_governance":
-            rows.append({"event_risk_intervention_ref": row.get("event_risk_intervention_ref"), "realized_residual_event_loss_1W": -0.04, "realized_intervention_utility_1W": 0.05})
         elif model_surface == "model_05_option_expression":
             rows.append({"option_expression_plan_ref": row.get("option_expression_plan_ref"), "realized_option_return_1W": 0.42, "target_premium_hit_before_stop_label_1W": True})
     return rows

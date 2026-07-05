@@ -6,7 +6,7 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-from models.model_06_residual_event_governance.event_family_impact_window_real_inputs import (
+from models.model_03_event_state.event_governance.event_family_impact_window_real_inputs import (
     cpi_events_from_trading_economics,
     _temporal_form_for_family,
     triple_witching_events,

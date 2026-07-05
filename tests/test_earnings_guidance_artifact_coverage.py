@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_06_residual_event_governance.earnings_guidance_artifact_coverage import (
+from models.model_03_event_state.event_governance.earnings_guidance_artifact_coverage import (
     GuidanceArtifactCoverageInputs,
     run_guidance_artifact_coverage_scout,
 )

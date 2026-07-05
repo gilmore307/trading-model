@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the current M01-M06 deterministic model chain and emit a local receipt."""
+"""Run the current M01-M05 deterministic model chain and emit a local receipt."""
 from __future__ import annotations
 
 import argparse

@@ -97,7 +97,7 @@ class ContinualResidualMlpTests(unittest.TestCase):
                 "continual_gru_event_risk_scorer",
                 "continual_residual_mlp_policy_value",
                 "continual_residual_mlp_option_chain_ranker",
-                "continual_gru_residual_risk_gate",
+                "continual_gru_event_risk_scorer",
             ],
         )
         self.assertIn(VALIDATED_MODEL_SCHEME_ID, receipt["scheme_verdict"])

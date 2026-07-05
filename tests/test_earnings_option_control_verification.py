@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from models.model_06_residual_event_governance.earnings_option_control_verification import (
+from models.model_03_event_state.event_governance.earnings_option_control_verification import (
     EarningsOptionControlVerificationInputs,
     summarize_earnings_option_control_verification,
 )
