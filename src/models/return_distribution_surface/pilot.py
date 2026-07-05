@@ -573,6 +573,18 @@ def _predict_quantiles(
     )
 
 
+def _prediction_cache_key(
+    row: TargetLabelRow,
+    context_model: Mapping[str, Any] | None,
+) -> tuple[Any, ...]:
+    if not context_model:
+        return (row.tau_trading_minutes,)
+    return (
+        row.tau_trading_minutes,
+        _context_signature(row, context_model["context_feature_names"]),
+    )
+
+
 def _cdf_from_quantiles(value: float, quantiles: Mapping[str, float], levels: Sequence[float]) -> float:
     points = [(0.0, -math.inf)]
     for key, level in zip(_quantile_keys(levels), levels):
@@ -605,6 +617,7 @@ def _validation_rows(
         for tau in validation_taus
         if tau in returns_by_tau
     }
+    prediction_cache: dict[tuple[Any, ...], dict[str, float] | None] = {}
     for tau in validation_taus:
         tau_rows = [row for row in label_rows if row.tau_trading_minutes == tau]
         values = returns_by_tau.get(tau, ())
@@ -614,7 +627,10 @@ def _validation_rows(
             predicted: list[float] = []
             hits = 0
             for row in tau_rows:
-                quantiles = _predict_quantiles(row, surface, levels, context_model)
+                cache_key = _prediction_cache_key(row, context_model)
+                if cache_key not in prediction_cache:
+                    prediction_cache[cache_key] = _predict_quantiles(row, surface, levels, context_model)
+                quantiles = prediction_cache[cache_key]
                 if quantiles is None:
                     continue
                 predicted.append(quantiles[key])
@@ -680,11 +696,15 @@ def _slice_validation(
         if not rows:
             continue
         errors: list[float] = []
+        prediction_cache: dict[tuple[Any, ...], dict[str, float] | None] = {}
         for key, level in zip(_quantile_keys(levels), levels):
             hits = 0
             total = 0
             for row in rows:
-                quantiles = _predict_quantiles(row, surface, levels, context_model)
+                cache_key = _prediction_cache_key(row, context_model)
+                if cache_key not in prediction_cache:
+                    prediction_cache[cache_key] = _predict_quantiles(row, surface, levels, context_model)
+                quantiles = prediction_cache[cache_key]
                 if not quantiles:
                     continue
                 total += 1

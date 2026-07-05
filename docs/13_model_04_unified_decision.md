@@ -61,8 +61,26 @@ default research mode because it preserves one model object while letting
 market-structure effects condition the distribution. The context fit is shape
 constrained: it predicts the lower quantile and positive adjacent quantile
 spacings, so quantiles are ordered by construction instead of relying on a
-post-hoc crossing repair. Candidate production adoption still requires a larger
-walk-forward sample and slice calibration beyond the SPY/QQQ pilot.
+post-hoc crossing repair.
+
+The accepted research route is the shape-constrained `context` surface. A
+read-only SPY/QQQ pilot over 2024-01-01 through 2025-02-01 used 10-minute
+anchors, 10-minute tradable-time target steps through 1,170 trading minutes,
+272 sessions per symbol, and about 1.23 million label rows per symbol. It
+kept CDF monotonicity failures at zero and reduced the open/close/intraday
+slice calibration errors versus the tau-only `baseline`.
+
+| Symbol | Fit | Quantile crossing repairs | Overall coverage error | Intraday | Near open | Near close | Cross-session |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| SPY | baseline | 0 | 0.0017 | 0.0321 | 0.0243 | 0.0210 | 0.0060 |
+| SPY | context | 0 | 0.0015 | 0.0009 | 0.0007 | 0.0006 | 0.0001 |
+| QQQ | baseline | 0 | 0.0015 | 0.0329 | 0.0240 | 0.0255 | 0.0063 |
+| QQQ | context | 0 | 0.0017 | 0.0008 | 0.0006 | 0.0007 | 0.0001 |
+
+The next promotion toward production is not another scalar-score wrapper. It is
+a formal label-builder and training route for this surface over optionable
+targets and walk-forward months, with slice gates for open, close, session
+gaps, and multi-day horizons.
 
 Reusable pilot code lives in `src/models/return_distribution_surface/`; the
 read-only SQL entrypoint is

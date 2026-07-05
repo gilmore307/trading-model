@@ -22,6 +22,15 @@ The current pilot has two modes:
 tradable-time distribution function conditioned by market-calendar context,
 instead of separate models for close/open/overnight labels.
 
-The package is not a production model layer. It provides reusable label-grid,
-surface-fitting, and validation code so M01 through M05 can adopt the same
-surface contract without recreating incompatible local pilots.
+The accepted research route is the shape-constrained `context` surface. The
+current evidence gate is a read-only 2024-01 through 2025-01 SPY/QQQ pilot over
+272 sessions per symbol and about 1.23 million label rows per symbol. That gate
+kept CDF monotonicity failures at zero and showed that open, close, intraday,
+and session-gap calibration slices need context features inside the same
+surface function.
+
+The package is not yet a production model layer. It provides reusable
+label-grid, surface-fitting, and validation code so M01 through M05 can adopt
+the same surface contract without recreating incompatible local pilots. The
+next formal step is a label-builder/training route for optionable targets and
+walk-forward months, not a return to scalar scores.
