@@ -218,6 +218,14 @@ def _horizon_decision(
     event_path_risk = _score(event, f"3_event_path_risk_score_{suffix}", f"4_event_path_risk_amplifier_score_{suffix}", "event_path_risk_score", default=0.0)
     event_uncertainty = _score(event, f"3_event_uncertainty_score_{suffix}", f"4_event_uncertainty_score_{suffix}", "event_uncertainty_score", default=0.0)
     event_response = _signed(event, f"3_event_response_direction_score_{suffix}", f"4_event_response_direction_score_{suffix}", "event_response_direction_score", default=0.0)
+    event_mean_shift = _signed(event, f"3_event_mean_shift_score_{suffix}", "event_mean_shift_score", default=0.0)
+    event_directional_contribution = _signed(event, f"3_event_directional_contribution_score_{suffix}", "event_directional_contribution_score", default=0.0)
+    event_variance = _score(event, f"3_event_variance_multiplier_score_{suffix}", "event_variance_multiplier_score", default=0.0)
+    event_left_tail = _score(event, f"3_event_left_tail_delta_score_{suffix}", "event_left_tail_delta_score", default=0.0)
+    event_right_tail = _score(event, f"3_event_right_tail_delta_score_{suffix}", "event_right_tail_delta_score", default=0.0)
+    event_skew = _signed(event, f"3_event_skew_delta_score_{suffix}", "event_skew_delta_score", default=0.0)
+    event_confidence_discount = _score(event, f"3_event_confidence_discount_score_{suffix}", "event_confidence_discount_score", default=0.0)
+    event_gate = _score(event, f"3_event_gate_pressure_score_{suffix}", "event_gate_pressure_score", default=0.0)
     applicability = _score(event, f"3_event_applicability_confidence_score_{suffix}", f"4_event_applicability_confidence_score_{suffix}", "event_applicability_confidence_score", default=0.0)
 
     market_stress = _score(background, f"1_market_risk_stress_score_{suffix}", "1_market_risk_stress_score", "market_risk_stress_score", default=0.25)
@@ -227,9 +235,14 @@ def _horizon_decision(
     ood = _score(quality, "out_of_distribution_score", "model_disagreement_score", default=0.15)
 
     risk_budget = _risk_budget_score(portfolio, account, risk, market_stress, event_path_risk, event_disable)
-    permission = _new_exposure_permission(policy, risk_budget, event_pressure, event_disable, hard_gate_reasons)
+    permission = _new_exposure_permission(policy, risk_budget, max(event_pressure, event_gate), event_disable, hard_gate_reasons)
     cost_drag = _cost_drag(friction, quote_state)
-    edge_direction = _clip_signed(target_direction * (1.0 - 0.30 * applicability * event_uncertainty) + 0.20 * applicability * event_response)
+    center_shift = _clip_signed(0.60 * event_mean_shift + 0.40 * event_directional_contribution)
+    edge_direction = _clip_signed(
+        target_direction * (1.0 - 0.30 * applicability * event_uncertainty)
+        + 0.20 * applicability * event_response
+        + 0.20 * applicability * center_shift
+    )
     edge_strength = _clip01(
         0.30 * abs(edge_direction)
         + 0.18 * trend_quality
@@ -238,10 +251,10 @@ def _horizon_decision(
         + 0.12 * tradability
         + 0.10 * (1.0 - target_noise)
     )
-    downside = _clip01(0.26 * transition_risk + 0.24 * event_path_risk + 0.18 * event_pressure + 0.14 * market_stress + 0.10 * ood + 0.08 * (1.0 - market_liquidity))
-    confidence = _clip01(0.30 * data_quality + 0.25 * calibration + 0.20 * path_quality + 0.15 * support_quality + 0.10 * (1.0 - ood))
+    downside = _clip01(0.22 * transition_risk + 0.20 * event_path_risk + 0.16 * max(event_pressure, event_gate) + 0.12 * market_stress + 0.10 * ood + 0.08 * (1.0 - market_liquidity) + 0.12 * max(event_left_tail, event_variance))
+    confidence = _clip01(0.28 * data_quality + 0.23 * calibration + 0.18 * path_quality + 0.14 * support_quality + 0.09 * (1.0 - ood) + 0.08 * (1.0 - event_confidence_discount))
     direction_certainty = _clip01(edge_strength * confidence)
-    expected_return = _clip_signed(edge_direction * edge_strength * risk_budget * (1.0 - 0.55 * downside) * (1.0 - cost_drag) * 0.12)
+    expected_return = _clip_signed(edge_direction * edge_strength * risk_budget * (1.0 - 0.55 * downside) * (1.0 - cost_drag) * 0.12 + 0.03 * applicability * event_mean_shift)
     after_cost_edge = _clip01(0.5 + expected_return * 5.0)
     price_multiplier = _price_location_multiplier(edge_direction, price_location)
     target_exposure = _clip_signed(edge_direction * edge_strength * confidence * risk_budget * permission * (1.0 - 0.60 * downside) * (1.0 - 0.60 * event_cap) * price_multiplier)
@@ -308,6 +321,10 @@ def _horizon_decision(
         "entry_quality_score": round(entry_quality, 6),
         "action_confidence_score": round(action_confidence, 6),
         "cost_drag_score": round(cost_drag, 6),
+        "event_variance_multiplier_score": round(event_variance, 6),
+        "event_left_tail_delta_score": round(event_left_tail, 6),
+        "event_right_tail_delta_score": round(event_right_tail, 6),
+        "event_skew_delta_score": round(event_skew, 6),
         "reason_codes": sorted(set(reasons)),
     }
 
@@ -410,7 +427,11 @@ def _horizon_return_distribution(horizon: str, detail: Mapping[str, Any]) -> dic
     mean = float(detail["expected_return_score"])
     downside = float(detail["downside_risk_score"])
     confidence = float(detail["edge_confidence_score"])
-    spread = max(0.003, 0.012 + 0.060 * downside + 0.025 * (1.0 - confidence))
+    event_variance = float(detail.get("event_variance_multiplier_score", 0.0))
+    event_left_tail = float(detail.get("event_left_tail_delta_score", 0.0))
+    event_right_tail = float(detail.get("event_right_tail_delta_score", 0.0))
+    event_skew = float(detail.get("event_skew_delta_score", 0.0))
+    spread = max(0.003, 0.012 + 0.050 * downside + 0.022 * (1.0 - confidence) + 0.030 * event_variance)
     quantile_multipliers = {
         "p05": -1.65,
         "p10": -1.28,
@@ -421,7 +442,7 @@ def _horizon_return_distribution(horizon: str, detail: Mapping[str, Any]) -> dic
         "p95": 1.65,
     }
     quantiles = {
-        name: round(_clip_signed(mean + spread * multiplier), 6)
+        name: round(_clip_signed(mean + _tail_adjusted_spread(spread, multiplier, event_left_tail, event_right_tail) * multiplier), 6)
         for name, multiplier in quantile_multipliers.items()
     }
     cdf = {
@@ -441,10 +462,18 @@ def _horizon_return_distribution(horizon: str, detail: Mapping[str, Any]) -> dic
         "downside_probability": downside_probability,
         "tail_loss_probability": tail_loss_probability,
         "expected_shortfall_proxy": round(expected_shortfall_proxy, 6),
-        "skew_proxy": round(float(detail["direction_thesis_score"]) * float(detail["direction_certainty_score"]), 6),
+        "skew_proxy": round(_clip_signed(float(detail["direction_thesis_score"]) * float(detail["direction_certainty_score"]) + 0.25 * event_skew), 6),
         "confidence_score": round(confidence, 6),
         "point_in_time_input_only": True,
     }
+
+
+def _tail_adjusted_spread(spread: float, multiplier: float, left_tail: float, right_tail: float) -> float:
+    if multiplier < 0:
+        return spread * (1.0 + 0.55 * left_tail)
+    if multiplier > 0:
+        return spread * (1.0 + 0.55 * right_tail)
+    return spread
 
 
 def _normal_cdf(value: float) -> float:

@@ -8,7 +8,16 @@ from datetime import datetime
 from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
-from .contract import EVENT_IMPACT_CHANNELS, FORBIDDEN_OUTPUT_FIELDS, HORIZONS, MODEL_ID, MODEL_STEP, MODEL_VERSION
+from .contract import (
+    DEFAULT_ALLOWED_EFFECT_PROFILE,
+    EVENT_DISTRIBUTION_EFFECT_CHANNELS,
+    EVENT_IMPACT_CHANNELS,
+    FORBIDDEN_OUTPUT_FIELDS,
+    HORIZONS,
+    MODEL_ID,
+    MODEL_STEP,
+    MODEL_VERSION,
+)
 
 ET = ZoneInfo("America/New_York")
 
@@ -44,6 +53,8 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "event_state_vector": {
             "score_payload": scores,
             "impact_channel_scores": _impact_channel_vector(scores),
+            "distribution_effect_scores": _distribution_effect_vector(scores),
+            "allowed_effect_profiles": _event_effect_profile_refs(events),
             "frozen_event_contract_refs": _event_refs(events),
             "accepted_event_count": len(events),
             "event_parameter_mutation_allowed": False,
@@ -52,6 +63,8 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "accepted_event_count": len(events),
             "only_point_in_time_accepted_events": True,
             "no_standalone_event_alpha": True,
+            "distribution_channel_permission_enforced": True,
+            "directional_center_shift_default_forbidden": True,
         },
     }
     _validate_no_forbidden_output(output)
@@ -72,10 +85,11 @@ def _horizon_payload(row: Mapping[str, Any], events: Sequence[Mapping[str, Any]]
             "event_strategy_disable_pressure_score": 0.0,
             "event_applicability_confidence_score": 0.0,
             **_empty_impact_channel_scores(),
+            **_empty_distribution_effect_scores(),
         }
     intensities = [_score(event, "event_intensity_score", "intensity_score", default=0.35) for event in events]
     uncertainties = [_score(event, "uncertainty_score", "revision_risk_score", default=0.25) for event in events]
-    direction_biases = [_signed(event, "event_response_direction_score", "direction_bias_score", "surprise_score", default=0.0) for event in events]
+    direction_biases = [_directional_signal(event) for event in events]
     relevance = [_score(event, "target_relevance_score", "applicability_confidence_score", default=0.50) for event in events]
     risk_scores = [_score(event, "path_risk_score", "gap_risk_score", "event_path_risk_score", default=intensity * (0.45 + 0.35 * uncertainty)) for event, intensity, uncertainty in zip(events, intensities, uncertainties)]
     intensity = _average(intensities)
@@ -97,6 +111,7 @@ def _horizon_payload(row: Mapping[str, Any], events: Sequence[Mapping[str, Any]]
         "event_strategy_disable_pressure_score": disable,
         "event_applicability_confidence_score": applicability,
         **_impact_channel_scores(events),
+        **_distribution_effect_scores(events),
     }
 
 
@@ -147,6 +162,10 @@ def _empty_impact_channel_scores() -> dict[str, float]:
     return {f"event_{channel}_impact_score": 0.0 for channel in EVENT_IMPACT_CHANNELS}
 
 
+def _empty_distribution_effect_scores() -> dict[str, float]:
+    return {f"event_{channel}_score": 0.0 for channel in EVENT_DISTRIBUTION_EFFECT_CHANNELS}
+
+
 def _average_channel(events: Sequence[Mapping[str, Any]], channel: str, *keys: str) -> float:
     values: list[float] = []
     for event in events:
@@ -172,6 +191,142 @@ def _impact_channel_vector(scores: Mapping[str, float]) -> dict[str, dict[str, f
             for channel in EVENT_IMPACT_CHANNELS
         }
     return output
+
+
+def _distribution_effect_scores(events: Sequence[Mapping[str, Any]]) -> dict[str, float]:
+    mean_shifts: list[float] = []
+    mode_shifts: list[float] = []
+    contributions: list[float] = []
+    variances: list[float] = []
+    left_tails: list[float] = []
+    right_tails: list[float] = []
+    skews: list[float] = []
+    confidence_discounts: list[float] = []
+    gates: list[float] = []
+    for event in events:
+        permissions = _allowed_effect_profile(event)
+        intensity = _score(event, "event_intensity_score", "intensity_score", default=0.35)
+        uncertainty = _score(event, "uncertainty_score", "revision_risk_score", default=0.25)
+        path_risk = _score(event, "path_risk_score", "gap_risk_score", "event_path_risk_score", default=intensity * (0.45 + 0.35 * uncertainty))
+        relevance = _score(event, "target_relevance_score", "applicability_confidence_score", default=0.50)
+        raw_direction = _signed(event, "event_response_direction_score", "direction_bias_score", "surprise_score", default=0.0)
+        directional_signal = _directional_signal(event)
+        if permissions["can_change_mean"]:
+            mean_shifts.append(_signed_or_default(event, directional_signal * intensity * relevance, "mean_shift_score", "event_mean_shift_score"))
+        if permissions["can_change_mode"]:
+            mode_shifts.append(_signed_or_default(event, directional_signal * intensity * relevance, "mode_shift_score", "event_mode_shift_score"))
+        if permissions["can_add_directional_contribution"]:
+            contributions.append(_signed_or_default(event, directional_signal * intensity * relevance, "directional_contribution_score", "event_directional_contribution_score"))
+        if permissions["can_change_variance"]:
+            variances.append(_score(event, "variance_multiplier_score", "event_variance_multiplier_score", default=_clip01(0.55 * uncertainty + 0.45 * path_risk)))
+        if permissions["can_change_left_tail"]:
+            left_tails.append(_score(event, "left_tail_delta_score", "event_left_tail_delta_score", default=_clip01(path_risk * (1.0 + 0.35 * max(0.0, -raw_direction)))))
+        if permissions["can_change_right_tail"]:
+            right_tails.append(_score(event, "right_tail_delta_score", "event_right_tail_delta_score", default=_clip01(path_risk * (1.0 + 0.35 * max(0.0, raw_direction)))))
+        if permissions["can_change_skew"]:
+            skews.append(_signed_or_default(event, raw_direction * intensity * relevance, "skew_delta_score", "event_skew_delta_score"))
+        if permissions["can_change_confidence"]:
+            confidence_discounts.append(_score(event, "confidence_discount_score", "event_confidence_discount_score", default=_clip01(uncertainty * relevance)))
+        if permissions["can_raise_gate"]:
+            gates.append(_score(event, "gate_pressure_score", "event_gate_pressure_score", default=_clip01(_average([path_risk, uncertainty, intensity * 0.5]))))
+    return {
+        "event_mean_shift_score": _clip_signed(_average(mean_shifts)),
+        "event_mode_shift_score": _clip_signed(_average(mode_shifts)),
+        "event_directional_contribution_score": _clip_signed(_average(contributions)),
+        "event_variance_multiplier_score": _clip01(_average(variances)),
+        "event_left_tail_delta_score": _clip01(_average(left_tails)),
+        "event_right_tail_delta_score": _clip01(_average(right_tails)),
+        "event_skew_delta_score": _clip_signed(_average(skews)),
+        "event_confidence_discount_score": _clip01(_average(confidence_discounts)),
+        "event_gate_pressure_score": _clip01(_average(gates)),
+    }
+
+
+def _distribution_effect_vector(scores: Mapping[str, float]) -> dict[str, dict[str, float]]:
+    output: dict[str, dict[str, float]] = {}
+    for horizon in HORIZONS:
+        output[horizon] = {
+            channel: float(scores.get(f"3_event_{channel}_score_{horizon}", 0.0))
+            for channel in EVENT_DISTRIBUTION_EFFECT_CHANNELS
+        }
+    return output
+
+
+def _event_effect_profile_refs(events: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    profiles: list[dict[str, Any]] = []
+    for event in events:
+        profiles.append(
+            {
+                "event_ref": event.get("event_family_contract_ref") or event.get("canonical_event_id") or event.get("event_id"),
+                "event_family_key": event.get("event_family_key") or event.get("mechanism_family") or event.get("normalized_event_type"),
+                "projection_mode": event.get("projection_mode") or event.get("event_projection_mode") or "unreviewed_risk_shape_default",
+                "allowed_effect_profile": _allowed_effect_profile(event),
+            }
+        )
+    return profiles
+
+
+def _directional_signal(event: Mapping[str, Any]) -> float:
+    permissions = _allowed_effect_profile(event)
+    if not (
+        permissions["can_change_mean"]
+        or permissions["can_change_mode"]
+        or permissions["can_add_directional_contribution"]
+    ):
+        return 0.0
+    return _signed(event, "event_response_direction_score", "direction_bias_score", "surprise_score", default=0.0)
+
+
+def _allowed_effect_profile(event: Mapping[str, Any]) -> dict[str, bool]:
+    profile = dict(DEFAULT_ALLOWED_EFFECT_PROFILE)
+    raw_profile = (
+        event.get("allowed_effect_profile")
+        or event.get("distribution_effect_profile")
+        or event.get("event_family_allowed_effect_profile")
+        or {}
+    )
+    if isinstance(raw_profile, Mapping):
+        for key in profile:
+            if key in raw_profile:
+                profile[key] = _bool_value(raw_profile.get(key))
+        allowed_channels = raw_profile.get("allowed_channels") or raw_profile.get("channels")
+        if isinstance(allowed_channels, Sequence) and not isinstance(allowed_channels, (str, bytes, bytearray)):
+            allowed = {str(channel).strip() for channel in allowed_channels}
+            profile = {key: _profile_key_to_channel(key) in allowed for key in profile}
+    directional_flag = event.get("directional_effect_allowed") or event.get("directional_mean_shift_allowed")
+    if directional_flag is not None and _bool_value(directional_flag):
+        profile["can_change_mean"] = True
+        profile["can_change_mode"] = True
+        profile["can_add_directional_contribution"] = True
+    return profile
+
+
+def _profile_key_to_channel(key: str) -> str:
+    return {
+        "can_change_mean": "mean_shift",
+        "can_change_mode": "mode_shift",
+        "can_add_directional_contribution": "directional_contribution",
+        "can_change_variance": "variance_multiplier",
+        "can_change_left_tail": "left_tail_delta",
+        "can_change_right_tail": "right_tail_delta",
+        "can_change_skew": "skew_delta",
+        "can_change_confidence": "confidence_discount",
+        "can_raise_gate": "gate_pressure",
+    }[key]
+
+
+def _bool_value(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y", "allowed", "allow"}
+    return bool(value)
+
+
+def _signed_or_default(row: Mapping[str, Any], default: float, *keys: str) -> float:
+    for key in keys:
+        value = _safe_float(row.get(key))
+        if value is not None:
+            return _clip_signed(value)
+    return _clip_signed(default)
 
 
 def _event_rows(row: Mapping[str, Any]) -> list[Mapping[str, Any]]:

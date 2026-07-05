@@ -20,6 +20,30 @@ EVENT_IMPACT_CHANNELS: Final[tuple[str, ...]] = (
     "expiry_gamma_flow",
 )
 
+EVENT_DISTRIBUTION_EFFECT_CHANNELS: Final[tuple[str, ...]] = (
+    "mean_shift",
+    "mode_shift",
+    "directional_contribution",
+    "variance_multiplier",
+    "left_tail_delta",
+    "right_tail_delta",
+    "skew_delta",
+    "confidence_discount",
+    "gate_pressure",
+)
+
+DEFAULT_ALLOWED_EFFECT_PROFILE: Final[dict[str, bool]] = {
+    "can_change_mean": False,
+    "can_change_mode": False,
+    "can_add_directional_contribution": False,
+    "can_change_variance": True,
+    "can_change_left_tail": True,
+    "can_change_right_tail": True,
+    "can_change_skew": True,
+    "can_change_confidence": True,
+    "can_raise_gate": True,
+}
+
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "3_event_response_direction_score_<horizon>",
     "3_event_response_strength_score_<horizon>",
@@ -34,6 +58,15 @@ SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "3_event_volatility_surface_impact_score_<horizon>",
     "3_event_option_liquidity_spread_impact_score_<horizon>",
     "3_event_expiry_gamma_flow_impact_score_<horizon>",
+    "3_event_mean_shift_score_<horizon>",
+    "3_event_mode_shift_score_<horizon>",
+    "3_event_directional_contribution_score_<horizon>",
+    "3_event_variance_multiplier_score_<horizon>",
+    "3_event_left_tail_delta_score_<horizon>",
+    "3_event_right_tail_delta_score_<horizon>",
+    "3_event_skew_delta_score_<horizon>",
+    "3_event_confidence_discount_score_<horizon>",
+    "3_event_gate_pressure_score_<horizon>",
 )
 
 FORBIDDEN_OUTPUT_FIELDS: Final[frozenset[str]] = frozenset(

@@ -392,8 +392,59 @@ class EventStateModelTests(unittest.TestCase):
         self.assertGreater(output["3_event_path_risk_score_1W"], 0.0)
         self.assertFalse(output["event_state_vector"]["event_parameter_mutation_allowed"])
         self.assertIn("impact_channel_scores", output["event_state_vector"])
+        self.assertIn("distribution_effect_scores", output["event_state_vector"])
+        self.assertEqual(output["3_event_response_direction_score_1W"], 0.0)
+        self.assertEqual(output["3_event_mean_shift_score_1W"], 0.0)
+        self.assertEqual(output["3_event_directional_contribution_score_1W"], 0.0)
+        self.assertGreater(output["3_event_left_tail_delta_score_1W"], 0.0)
+        self.assertGreater(output["3_event_variance_multiplier_score_1W"], 0.0)
         self.assertNotIn("standalone_event_alpha", output)
         assert_no_m03_label_leakage(output)
+
+    def test_directional_event_family_profile_can_move_distribution_center(self) -> None:
+        background = generate_background_context([_background_input()])[0]
+        target = generate_target_state([_target_input(background)])[0]
+        output = generate_event_state(
+            [
+                _event_input(
+                    background,
+                    target,
+                    accepted_event_contracts=[
+                        {
+                            "event_id": "evt_directional_fixture",
+                            "canonical_event_id": "evt_directional_fixture",
+                            "event_family_key": "regulatory_forced_shutdown",
+                            "event_time": "2026-05-07T10:10:00-04:00",
+                            "available_time": "2026-05-07T10:12:00-04:00",
+                            "event_intensity_score": 0.90,
+                            "direction_bias_score": -0.80,
+                            "target_relevance_score": 0.95,
+                            "uncertainty_score": 0.25,
+                            "path_risk_score": 0.85,
+                            "allowed_effect_profile": {
+                                "can_change_mean": True,
+                                "can_change_mode": True,
+                                "can_add_directional_contribution": True,
+                                "can_change_variance": True,
+                                "can_change_left_tail": True,
+                                "can_change_right_tail": False,
+                                "can_change_skew": True,
+                                "can_change_confidence": True,
+                                "can_raise_gate": True,
+                            },
+                        }
+                    ],
+                )
+            ]
+        )[0]
+
+        self.assertLess(output["3_event_response_direction_score_1W"], 0.0)
+        self.assertLess(output["3_event_mean_shift_score_1W"], 0.0)
+        self.assertLess(output["3_event_directional_contribution_score_1W"], 0.0)
+        self.assertEqual(output["3_event_right_tail_delta_score_1W"], 0.0)
+        profile = output["event_state_vector"]["allowed_effect_profiles"][0]
+        self.assertTrue(profile["allowed_effect_profile"]["can_change_mean"])
+        self.assertFalse(profile["allowed_effect_profile"]["can_change_right_tail"])
 
     def test_option_sensitive_event_attributes_are_runtime_state_channels(self) -> None:
         background = generate_background_context([_background_input()])[0]

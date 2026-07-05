@@ -102,6 +102,7 @@ LAYER_METRIC_CONTRACTS: tuple[LayerMetricContract, ...] = (
         (
             _test("event_visibility_recall", "Event visibility recall", "event_state", "primary", "Requires PIT event visibility and realized event labels.", "Measures whether relevant events are visible before decisions."),
             _test("impact_channel_calibration", "Impact-channel calibration", "event_state", "primary", "Requires reviewed event channel labels.", "Checks whether underlying, option, volatility, liquidity, and gamma-flow channels are calibrated."),
+            _test("distribution_effect_channel_calibration", "Distribution-effect calibration", "event_state", "primary", "Requires reviewed event-family effect-profile masks and channel labels.", "Checks whether mean/mode/contribution, variance, tail, skew, confidence, and gate channels are calibrated only where the family profile allows them."),
             _test("post_event_article_leakage", "Post-event article leakage", "integrity", "guardrail", "Requires article/source timestamps.", "Blocks using later coverage to score pre-decision event state."),
             _test("standalone_event_alpha", "Standalone event alpha", "event_state", "avoid", "Only allowed as separate research after acceptance.", "M03 describes event state; it does not own a standalone event-alpha route."),
         ),

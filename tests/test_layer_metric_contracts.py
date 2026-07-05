@@ -26,6 +26,12 @@ class LayerMetricContractTests(unittest.TestCase):
         self.assertIn("target_allocation_calibration", metric_ids)
         self.assertIn("uncosted_action_win_rate", {test.metric_id for test in model_four.tests_for_role("avoid")})
 
+    def test_event_state_contract_covers_distribution_effect_channels(self) -> None:
+        model_three = layer_metric_contract(3)
+        metric_ids = {test.metric_id for test in model_three.tests}
+
+        self.assertIn("distribution_effect_channel_calibration", metric_ids)
+
     def test_option_expression_contract_does_not_use_underlying_only_pnl(self) -> None:
         model_five = layer_metric_contract(5)
 

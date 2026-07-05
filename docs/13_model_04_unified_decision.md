@@ -12,6 +12,14 @@ factor into the final tradable decision surface. Cross-factor interaction,
 double-count prevention, final posterior calibration, no-trade thresholding, and
 action eligibility are M04 responsibilities.
 
+M04 consumes M03 event effects by distribution channel. Risk-shape channels such
+as variance, left/right tail, skew, confidence discount, and gate pressure may
+change uncertainty spread, tail quantiles, confidence, downside risk, and
+eligibility. They do not move the distribution center. M04 may move edge,
+expected return, mean, or mode only from M03 channels that were permissioned by
+the event-family `allowed_effect_profile`, such as `mean_shift`,
+`mode_shift`, or `directional_contribution`.
+
 ## Output
 
 ```text
