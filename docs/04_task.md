@@ -14,7 +14,7 @@ This is the active model task ledger. Keep it operational and tied to current ga
 - Model learning redesign: use `docs/23_model_learning_design.md` as the active route for model expansion. Before changing a model implementation, write or verify its objective contract: target or utility, horizon, labels/costs, allowed inputs, forbidden inputs, baseline, walk-forward metric, leakage test, and downstream consumer.
 - Full-minute training coverage: historical training/evaluation should preserve every eligible minute as point-in-time state coverage, including no-event, no-action, structural no-option, temporary option-chain-missing, and no-intervention rows. Live component invocation remains separate and may be gated by M04 or applicability checks.
 - Model framework readiness: use `docs/24_model_framework_readiness.md` as the active rule for learned schemes. The current accepted schemes are CPU-friendly GRU for M01/M03/M06 and residual MLP for M02/M04/M05; every layer still needs layer-specific labels, replay, leakage, calibration, rollback, and promotion evidence before activation.
-- Tradable-time return distribution surface: `src/models/return_distribution_surface/` and `scripts/models/build_tradable_time_return_distribution_surface.py` own the current read-only label/surface route for `tradable_time_return_distribution_surface`. The accepted research shape is a single shape-constrained quantile/CDF surface over equal-step tradable-time target rows, with session-gap/open/close context inside the same function. This is not a skew-normal or fixed Gaussian family. Remaining work is to extend the route from SPY/QQQ validation into optionable target label building, walk-forward months, and M01-M05 surface consumption.
+- Tradable-time return distribution surface: `src/models/return_distribution_surface/`, `scripts/models/build_tradable_time_return_distribution_surface.py`, and `scripts/models/build_tradable_time_return_distribution_surface_bundle.py` own the current read-only label/surface route for `tradable_time_return_distribution_surface`. The accepted shape is a single shape-constrained quantile/CDF surface over equal-step tradable-time target rows, with session-gap/open/close context inside the same function. This is not a skew-normal or fixed Gaussian family. The bundle route builds symbol/window surface artifacts, writes `surface_bundle_manifest.json`, and can run M04/M05 current-chain handoff smoke for each ready summary. Remaining work is to train/evaluate M01-M05 against walk-forward optionable-target surface bundles instead of scalar scores.
 - Model-output table quality gate: `scripts/models/audit_model_output_tables.py` remains read-only and inspects current model output/support table families. `scripts/models/run_model_output_quality_gate.py` converts that audit into a pass/block decision for post-generation acceptance. Both paths are read-only; they do not drop columns or rewrite model rows.
 - Current-chain surface closure gate: `scripts/models/run_current_model_chain.py --return-surface-summary-json <surface_summary.json>` verifies that a scoped surface summary can enter M04, that M04 records it in `thesis_distribution_surface`, and that M05 receives a matching thesis surface summary in `expression_candidate_set`. The gate blocks symbol/scope mismatch and remains read-only fixture evidence only.
 - Event-risk evidence lane: current `M06 Residual Event Governance` owns missed-event checks, residual event intervention, attribution, and future event-family packet eligibility. It does not emit standalone directional-alpha event families.
@@ -22,6 +22,16 @@ This is the active model task ledger. Keep it operational and tied to current ga
 - Realtime decision handoff remains parked until at least one model has an approved/promotable version.
 
 The six model contracts have accepted boundaries, learning roles, deterministic current pilots, selected cumulative learned schemes, and a read-only historical current-chain replay route that can train a local cumulative residual-MLP utility artifact without provider, broker, activation, or SQL mutation. The next work is promotion evidence only: broader existing-data replay, calibration/baseline/stability/leakage evidence, and manager-side promotion review preparation.
+
+Latest return-surface closure smoke: an optionable-target bundle over `AAPL`,
+`MSFT`, and `NVDA` for `2016-01` from
+`trading_data.model_03_target_state_vector_data_acquisition` produced three
+ready surfaces, each with zero CDF monotonicity failures and zero quantile
+crossing repairs. Label rows were `79,794` per symbol; mean coverage error was
+about `0.0084` for AAPL, `0.0065` for MSFT, and `0.0065` for NVDA. The local
+M04/M05 current-chain surface handoff smoke passed for all three summaries.
+No provider call, broker/account mutation, SQL mutation, storage-source
+mutation, or model activation occurred.
 
 ## Historical-Training Evidence Requirements
 

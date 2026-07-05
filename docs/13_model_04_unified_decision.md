@@ -78,13 +78,17 @@ slice calibration errors versus the tau-only `baseline`.
 | QQQ | context | 0 | 0.0017 | 0.0008 | 0.0006 | 0.0007 | 0.0001 |
 
 The next promotion toward production is not another scalar-score wrapper. It is
-a formal label-builder and training route for this surface over optionable
+a training/evaluation route that consumes surface bundles over optionable
 targets and walk-forward months, with slice gates for open, close, session
 gaps, and multi-day horizons.
 
 Reusable surface code lives in `src/models/return_distribution_surface/`; the
 read-only SQL entrypoint is
 `scripts/models/build_tradable_time_return_distribution_surface.py`.
+The batch closure entrypoint is
+`scripts/models/build_tradable_time_return_distribution_surface_bundle.py`; it
+builds symbol/window surface artifacts, writes `surface_bundle_manifest.json`,
+and can run a local M04/M05 current-chain handoff smoke for each ready summary.
 `scripts/models/run_current_model_chain.py` can consume that entrypoint's
 `surface_summary.json` through `--return-surface-summary-json`. The chain
 rejects symbol/scope mismatch, records the source surface summary inside M04's

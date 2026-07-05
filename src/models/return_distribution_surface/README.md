@@ -31,5 +31,11 @@ surface function.
 The package is not yet a production model layer. It provides reusable
 label-grid, surface-fitting, and validation code so M01 through M05 can adopt
 the same surface contract without recreating incompatible local routes. The
-next formal step is a label-builder/training route for optionable targets and
-walk-forward months, not a return to scalar scores.
+batch entrypoint
+`scripts/models/build_tradable_time_return_distribution_surface_bundle.py`
+is the current closure route: it builds symbol/window surface artifacts, writes
+`surface_bundle_manifest.json`, and can run the local M04/M05 surface handoff
+smoke for each ready summary.
+
+The remaining promotion path is to train and evaluate M01 through M05 against
+walk-forward optionable-target surface bundles, not to return to scalar scores.
