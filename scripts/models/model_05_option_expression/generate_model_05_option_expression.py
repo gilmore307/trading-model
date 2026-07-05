@@ -46,7 +46,8 @@ TEXT_5_COLUMNS = {
     "5_resolved_selected_contract_ref",
 }
 PROGRESS_HEARTBEAT_SECONDS = 60.0
-DATABASE_BATCH_SIZE = 5000
+DATABASE_BATCH_SIZE = 500
+OPTION_CANDIDATE_SNAPSHOT_TYPES = ("entry", "source_cache")
 
 
 def _database_url(explicit: str | None) -> str:
@@ -348,8 +349,10 @@ def _fetch_option_candidate_rows(
         table_exists = bool(exists and exists[0] is not None)
     if not table_exists:
         return []
-    where: list[str] = ['lower(coalesce(f."snapshot_type", \'\')) = \'entry\'']
-    params: list[Any] = []
+    snapshot_type_sql = "lower(coalesce(f.\"snapshot_type\", '')) = ANY(%s)"
+    where: list[str] = [snapshot_type_sql]
+    snapshot_type_params = [list(OPTION_CANDIDATE_SNAPSHOT_TYPES)]
+    params: list[Any] = [*snapshot_type_params]
     if source_start:
         where.append('f."snapshot_time" >= %s::timestamptz')
         params.append(source_start)
@@ -387,8 +390,8 @@ def _fetch_option_candidate_rows(
             keys,
         )
         cursor.execute("ANALYZE m05_option_candidate_keys")
-        where = ['lower(coalesce(f."snapshot_type", \'\')) = \'entry\'']
-        params = []
+        where = [snapshot_type_sql]
+        params = [*snapshot_type_params]
         from_sql = f"""
         FROM m05_option_candidate_keys AS k
         JOIN LATERAL (
@@ -440,7 +443,7 @@ def _time_key(value: Any) -> str:
 def _candidate_index(candidate_rows: Sequence[Mapping[str, Any]]) -> dict[tuple[str, str], list[dict[str, Any]]]:
     index: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for row in candidate_rows:
-        if str(row.get("snapshot_type") or "entry").lower() != "entry":
+        if str(row.get("snapshot_type") or "entry").lower() not in OPTION_CANDIDATE_SNAPSHOT_TYPES:
             continue
         underlying = str(row.get("underlying") or "").upper()
         snapshot_time = _time_key(row.get("snapshot_time"))

@@ -312,6 +312,11 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(script._column_type("5_resolved_expression_type"), "TEXT")
         self.assertEqual(script._column_type("4_option_expression_confidence_score_1W"), "TEXT")
 
+    def test_database_generation_default_batch_is_candidate_vector_safe(self) -> None:
+        script = _load_generator_script()
+
+        self.assertLessEqual(script.DATABASE_BATCH_SIZE, 500)
+
     def test_database_fetch_projects_only_m05_input_columns(self) -> None:
         script = _load_generator_script()
         cursor = _FakeCursor(
@@ -329,6 +334,40 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertIn('e."direct_underlying_intent"', select_sql)
         self.assertNotIn("u.*", select_sql)
         self.assertNotIn('e."unified_decision_vector"', select_sql)
+
+    def test_database_option_candidate_fetch_accepts_source_cache_feature_rows(self) -> None:
+        script = _load_generator_script()
+        cursor = _FakeCursor(
+            fetchone_rows=[{"table_ref": "trading_data.model_05_option_expression_feature_generation"}],
+            fetchall_rows=[],
+        )
+
+        script._fetch_option_candidate_rows(cursor, source_start="2016-01-01T00:00:00-05:00", source_end="2016-02-01T00:00:00-05:00")
+
+        select_sql = cursor.executed_sql[1]
+        self.assertIn('lower(coalesce(f."snapshot_type", \'\')) = ANY(%s)', select_sql)
+        self.assertNotIn("= 'entry'", select_sql)
+        self.assertIn("source_cache", script.OPTION_CANDIDATE_SNAPSHOT_TYPES)
+
+    def test_candidate_index_keeps_source_cache_option_surface_rows(self) -> None:
+        script = _load_generator_script()
+
+        index = script._candidate_index(
+            [
+                {
+                    "underlying": "AAPL",
+                    "snapshot_time": "2016-01-04T09:30:00-05:00",
+                    "snapshot_type": "source_cache",
+                    "option_symbol": "AAPL_2016-01-08_C_100",
+                    "feature_payload_json": {"option_right": "call", "dte": 4, "mid_price": 1.25},
+                    "feature_quality_diagnostics": {"has_required_fields": True},
+                }
+            ]
+        )
+
+        candidates = index[("AAPL", "2016-01-04T09:30:00-05:00")]
+        self.assertEqual(candidates[0]["contract_ref"], "AAPL_2016-01-08_C_100")
+        self.assertEqual(candidates[0]["option_right"], "call")
 
     def test_database_generation_refreshes_manager_task_progress(self) -> None:
         script = _load_generator_script()
