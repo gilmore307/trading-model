@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run a read-only tradable-time return distribution surface pilot."""
+"""Build a read-only tradable-time return distribution surface."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from models.return_distribution_surface import (
     bucket_regular_session_closes,
     build_tradable_time_label_rows,
     fit_tradable_time_distribution_surface,
-    summarize_pilot_result,
+    summarize_surface_result,
 )
 
 ET = ZoneInfo("America/New_York")
@@ -129,7 +129,7 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     surface_csv = output_dir / "surface.csv"
     _write_surface_csv(surface_csv, result)
-    summary = summarize_pilot_result(
+    summary = summarize_surface_result(
         symbol=args.symbol,
         source_table=ALLOWED_SOURCE_TABLES[args.source],
         source_timeframe=args.timeframe if args.source == "m01" else None,
@@ -141,7 +141,7 @@ def main() -> int:
         result=result,
         surface_csv=str(surface_csv),
     )
-    (output_dir / "pilot_summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
+    (output_dir / "surface_summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
     (output_dir / "validation_rows.json").write_text(json.dumps(result.validation_rows, indent=2, sort_keys=True), encoding="utf-8")
     (output_dir / "cdf_rows.json").write_text(json.dumps(result.cdf_rows, indent=2, sort_keys=True), encoding="utf-8")
     print(json.dumps(summary, indent=2, sort_keys=True))

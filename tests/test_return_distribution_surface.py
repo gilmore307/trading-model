@@ -14,7 +14,7 @@ from models.return_distribution_surface import (
 ET = ZoneInfo("America/New_York")
 
 
-class ReturnDistributionSurfacePilotTests(unittest.TestCase):
+class ReturnDistributionSurfaceTests(unittest.TestCase):
     def test_label_grid_skips_closed_session_time_and_tracks_calendar_gap(self) -> None:
         rows = []
         price = 100.0

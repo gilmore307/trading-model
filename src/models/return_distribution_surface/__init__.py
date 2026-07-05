@@ -1,21 +1,21 @@
-"""Tradable-time return distribution surface pilot utilities."""
+"""Tradable-time return distribution surface utilities."""
 
-from .pilot import (
+from .surface import (
     BucketClose,
-    DistributionSurfacePilotResult,
+    DistributionSurfaceResult,
     TargetLabelRow,
     build_tradable_time_label_rows,
     bucket_regular_session_closes,
     fit_tradable_time_distribution_surface,
-    summarize_pilot_result,
+    summarize_surface_result,
 )
 
 __all__ = [
     "BucketClose",
-    "DistributionSurfacePilotResult",
+    "DistributionSurfaceResult",
     "TargetLabelRow",
     "build_tradable_time_label_rows",
     "bucket_regular_session_closes",
     "fit_tradable_time_distribution_surface",
-    "summarize_pilot_result",
+    "summarize_surface_result",
 ]

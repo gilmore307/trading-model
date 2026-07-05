@@ -46,7 +46,7 @@ labels only and must not enter the emitted surface.
 
 The accepted research migration target is
 `tradable_time_return_distribution_surface`: a single calendar-aware conditional
-surface over an equal-step tradable-time target grid. For US equity pilots the
+surface over an equal-step tradable-time target grid. For US equity validation the
 current grid uses 10-minute anchors and 10-minute future target steps through
 the configured future window. Closed-session time does not advance
 `tau_trading_minutes`; the row still records `tau_calendar_minutes`,
@@ -54,7 +54,7 @@ session-gap counts, and open/close context. Open, close, overnight, 2D, and 3D
 effects are target-row context features and validation slices, not separate
 label heads or independent models.
 
-The current read-only pilot supports two fit modes. `baseline` fits one smooth
+The current read-only surface builder supports two fit modes. `baseline` fits one smooth
 curve over `tau_trading_minutes` only. `context` fits the same surface function
 with open, close, session-gap, and overnight context features. `context` is the
 default research mode because it preserves one model object while letting
@@ -64,7 +64,7 @@ spacings, so quantiles are ordered by construction instead of relying on a
 post-hoc crossing repair.
 
 The accepted research route is the shape-constrained `context` surface. A
-read-only SPY/QQQ pilot over 2024-01-01 through 2025-02-01 used 10-minute
+read-only SPY/QQQ validation over 2024-01-01 through 2025-02-01 used 10-minute
 anchors, 10-minute tradable-time target steps through 1,170 trading minutes,
 272 sessions per symbol, and about 1.23 million label rows per symbol. It
 kept CDF monotonicity failures at zero and reduced the open/close/intraday
@@ -82,9 +82,9 @@ a formal label-builder and training route for this surface over optionable
 targets and walk-forward months, with slice gates for open, close, session
 gaps, and multi-day horizons.
 
-Reusable pilot code lives in `src/models/return_distribution_surface/`; the
+Reusable surface code lives in `src/models/return_distribution_surface/`; the
 read-only SQL entrypoint is
-`scripts/models/run_tradable_time_distribution_surface_pilot.py`.
+`scripts/models/build_tradable_time_return_distribution_surface.py`.
 
 The current pilot lives in `src/models/model_04_unified_decision/` and emits `4_*` fields plus `unified_decision_vector_ref`. It keeps the edge, risk, exposure, and action heads inside one output and does not expose retired `alpha_confidence_vector`, `dynamic_risk_policy_state`, `position_projection_vector`, or `underlying_action_plan` outputs. Local generate/evaluate/review entrypoints live under `scripts/models/model_04_unified_decision/`.
 

@@ -7,12 +7,12 @@ Owner intent: reduce serial model-error propagation while preserving the live/pa
 
 Each model contract must do exactly one of these jobs:
 
-- estimate a point-in-time conditional distribution or calibrated score;
+- estimate a point-in-time conditional distribution, including calendar-aware return distribution surfaces;
 - optimize a declared utility or policy under constraints;
 - enforce deterministic hard constraints, accounting, timestamps, schemas, and safety gates;
 - produce post-hoc attribution or future evidence packets.
 
-A model contract must not mix prediction, policy, hard enforcement, and attribution in the same score. Deterministic code may own contracts, feature assembly, timestamps, schemas, safety gates, and validation checks. It must not preserve an alternate scoring route for a contract whose current role is trained estimation or policy optimization.
+A model contract must not mix prediction, policy, hard enforcement, and attribution in the same score. When the canonical prediction object is a distribution surface, scalar scores are only derived summaries and must not become an alternate canonical route. Deterministic code may own contracts, feature assembly, timestamps, schemas, safety gates, and validation checks. It must not preserve an alternate scoring route for a contract whose current role is trained estimation or policy optimization.
 
 Learned-model design is direct-to-final. Do not introduce temporary learned contracts, compatibility bridges, or learned-looking deterministic substitutes for any learned model. A final-contract artifact may pass through lifecycle evidence states such as `defined`, `trained_offline`, `replay_validated`, `shadow_candidate`, `promoted`, or `rejected`; those states are evidence gates, not architecture versions. Only promoted artifacts may affect production decisions.
 
@@ -23,11 +23,13 @@ Learned-model design is direct-to-final. Do not introduce temporary learned cont
 | `M01` Background Context | `continual_gru_context_estimator` | CPU-friendly short-window sequence estimator for shared market/sector/industry context and regime persistence. |
 | `M02` Target State | `continual_pairwise_residual_mlp_target_ranker` | Pairwise/listwise anonymous target eligibility, ranking, and target-state estimator. |
 | `M03` Event State | `continual_gru_event_risk_scorer` | CPU-friendly short-window sequence scorer for event-conditioned response/risk, event decay, and event-cluster state under frozen event-governance contracts. |
-| `M04` Unified Decision | `continual_residual_mlp_policy_value` | Direct downstream decision/utility model with structured edge, risk, exposure, no-trade, and action heads. |
-| `M05` Option Expression | `continual_residual_mlp_option_chain_ranker` | Separate option/expression utility ranker consuming clean direct-underlying decision intent and point-in-time option-chain context. |
+| `M04` Unified Decision | `continual_residual_mlp_policy_value` | Direct downstream thesis model that composes the target-level tradable-time return distribution surface with structured edge, risk, exposure, no-trade, and action heads. |
+| `M05` Option Expression | `continual_residual_mlp_option_chain_ranker` | Separate expression utility ranker that projects the M04 distribution surface into comparable underlying, call, and put expression candidates. |
 | `M06` Residual Event Governance | `continual_gru_residual_risk_gate` | CPU-friendly short-window residual-risk sequence gate for residual event governance, attribution, intervention, and future-packet routing. |
 
 The active scheme choices are not promotion claims. GRU is selected where sequence memory and state persistence are central to the layer. Residual MLP is selected where nonlinear dense-state interaction or structured ranking is central to the layer. Transformer-style attention is not the active route on the current CPU-only server.
+
+The accepted return-prediction object is `tradable_time_return_distribution_surface`: a conditional return distribution surface over equal-step target rows on the instrument's tradable-time grid. The current builder uses shape-constrained quantile/CDF fitting with market-calendar context features; it is not a Gaussian, skew-normal, or other fixed density-family assumption.
 
 ## Cross-Model Rules
 

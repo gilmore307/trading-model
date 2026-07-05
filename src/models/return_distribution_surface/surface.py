@@ -1,10 +1,11 @@
-"""Pilot builder for tradable-time return distribution surfaces.
+"""Builder for tradable-time return distribution surfaces.
 
-The pilot intentionally models one market-calendar family first: regular-session
-US equity bars. It keeps raw bars on their native 1-minute source grain, samples
-point-in-time anchors at a 10-minute tradable-time grid, expands each anchor to
-an equal-step target grid through a bounded future trading window, and fits a
-smooth return quantile/CDF surface over ``tau_trading_minutes``.
+The current implementation models one market-calendar family first:
+regular-session US equity bars. It keeps raw bars on their native 1-minute
+source grain, samples point-in-time anchors at a 10-minute tradable-time grid,
+expands each anchor to an equal-step target grid through a bounded future
+trading window, and fits a smooth return quantile/CDF surface over
+``tau_trading_minutes``.
 
 Open/close/overnight effects remain target-row context and validation slices.
 They are not separate label heads.
@@ -74,8 +75,8 @@ class TargetLabelRow:
 
 
 @dataclass(frozen=True)
-class DistributionSurfacePilotResult:
-    """Fitted pilot surface and validation diagnostics."""
+class DistributionSurfaceResult:
+    """Fitted surface and validation diagnostics."""
 
     quantile_levels: tuple[float, ...]
     cdf_thresholds: tuple[float, ...]
@@ -179,7 +180,7 @@ def fit_tradable_time_distribution_surface(
     validation_stride: int = 2,
     polynomial_degree: int = 5,
     fit_mode: str = "context",
-) -> DistributionSurfacePilotResult:
+) -> DistributionSurfaceResult:
     """Fit and validate a smooth quantile/CDF surface over tradable time."""
 
     if fit_mode not in {"baseline", "context"}:
@@ -241,7 +242,7 @@ def fit_tradable_time_distribution_surface(
     )
     cdf_rows = _cdf_rows(surface, cdf_thresholds, quantile_levels)
     slice_validation = _slice_validation(label_rows, surface, quantile_levels, validation_taus, context_model)
-    return DistributionSurfacePilotResult(
+    return DistributionSurfaceResult(
         quantile_levels=tuple(float(level) for level in quantile_levels),
         cdf_thresholds=tuple(float(threshold) for threshold in cdf_thresholds),
         horizon_axis_minutes=taus,
@@ -270,7 +271,7 @@ def fit_tradable_time_distribution_surface(
     )
 
 
-def summarize_pilot_result(
+def summarize_surface_result(
     *,
     symbol: str,
     source_table: str,
@@ -280,16 +281,16 @@ def summarize_pilot_result(
     bar_rows_loaded: int,
     bucket_close_count: int,
     label_rows: Sequence[TargetLabelRow],
-    result: DistributionSurfacePilotResult,
+    result: DistributionSurfaceResult,
     surface_csv: str,
 ) -> dict[str, Any]:
-    """Build a stable JSON summary for a pilot run."""
+    """Build a stable JSON summary for one surface build."""
 
     validation_errors = [row["abs_quantile_error"] for row in result.validation_rows]
     coverage_errors = [row["abs_coverage_error"] for row in result.validation_rows]
     sessions = {row.anchor_session_date for row in label_rows}
     return {
-        "contract_type": "tradable_time_return_distribution_surface_pilot_summary",
+        "contract_type": "tradable_time_return_distribution_surface_summary",
         "symbol": symbol.upper(),
         "source_table": source_table,
         "source_timeframe": source_timeframe,

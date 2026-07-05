@@ -22,6 +22,8 @@ This closes the model-design re-scope to six model contracts and provides determ
 
 `model_realtime_decision_route_plan` is the current fixture/shadow route-plan contract for execution-side replay/live capture refs. Its execution unit is `runtime_component`; it emits `component_routes` for the accepted execution C-components and lists the current M01-M06 model surfaces each component may need. M05 remains optional when the route is direct-underlying-only or option expression is not applicable. It does not activate production inference or authorize broker/account mutation.
 
+`tradable_time_return_distribution_surface` is the accepted research contract for replacing scalar score-first prediction paths with a calendar-aware conditional return distribution surface. Its training unit is a point-in-time anchor plus equal-step future target rows on the instrument's tradable-time grid. Each target row carries both `tau_trading_minutes` and calendar/session context such as session gaps, open-window, and close-window flags. The current implementation is a shape-constrained quantile/CDF surface, not a Gaussian, skew-normal, or other fixed parametric density family. Open, close, overnight, and multi-session effects are context features and validation slices inside the same surface function, not separate label heads.
+
 Historical retired serial package and script names are no longer current contracts or maintained entrypoints. New model work must target the six accepted contracts directly.
 
 ## Event-Governance Acceptance

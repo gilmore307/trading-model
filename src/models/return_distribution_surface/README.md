@@ -1,7 +1,6 @@
 # return_distribution_surface
 
-Shared pilot contracts and builders for tradable-time return distribution
-surfaces.
+Shared contracts and builders for tradable-time return distribution surfaces.
 
 This package owns the current research path for replacing scalar model scores
 with a calendar-aware conditional return distribution surface. The native
@@ -10,7 +9,7 @@ target grid. Market events such as opens, closes, overnight gaps, and multi-day
 targets are target-row context features and evaluation slices, not separate
 label heads.
 
-The current pilot has two modes:
+The current builder has two modes:
 
 - `baseline`: one smooth quantile surface over `tau_trading_minutes`.
 - `context`: the same surface with target-row context terms for session gaps,
@@ -23,7 +22,7 @@ tradable-time distribution function conditioned by market-calendar context,
 instead of separate models for close/open/overnight labels.
 
 The accepted research route is the shape-constrained `context` surface. The
-current evidence gate is a read-only 2024-01 through 2025-01 SPY/QQQ pilot over
+current evidence gate is a read-only 2024-01 through 2025-01 SPY/QQQ validation over
 272 sessions per symbol and about 1.23 million label rows per symbol. That gate
 kept CDF monotonicity failures at zero and showed that open, close, intraday,
 and session-gap calibration slices need context features inside the same
@@ -31,6 +30,6 @@ surface function.
 
 The package is not yet a production model layer. It provides reusable
 label-grid, surface-fitting, and validation code so M01 through M05 can adopt
-the same surface contract without recreating incompatible local pilots. The
+the same surface contract without recreating incompatible local routes. The
 next formal step is a label-builder/training route for optionable targets and
 walk-forward months, not a return to scalar scores.
