@@ -15,6 +15,10 @@ model_02_target_state
 
 The output should preserve audit/routing metadata separately from model-facing fitting vectors. Raw ticker/company identity must not become a fitted feature.
 
+M02 owns only the target residual factor. M01 background state may condition
+eligibility, applicability, or calibration slices, but M02 must not re-count
+M01's market/background contribution as target alpha.
+
 Current local implementation emits:
 
 - `target_context_state_ref`
@@ -34,6 +38,19 @@ Current local implementation emits:
 - Anonymous target-local feature vectors.
 - Point-in-time target liquidity, tradability, volatility, cost, optionability, event/risk, and quality evidence.
 - Candidate-universe evidence available at or before `available_time`.
+
+## Review Path
+
+Post-replay review must score M02 independently on the full visible
+same-timestamp candidate set, not only the target eventually selected
+downstream. The review joins each candidate row to candidate forward-return,
+rank, tradability, and selection-quality labels for the same decision timestamp
+and horizon.
+
+Missing same-timestamp candidate labels are a review evidence gap, not evidence
+that M04 is responsible. If M02 rows are independently acceptable while final
+selected performance is poor, attribution moves downstream to M04 unless M03 has
+its own local defect or an explicit M02-to-M04 handoff defect is shown.
 
 ## Current Local Scripts
 

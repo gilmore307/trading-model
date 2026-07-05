@@ -6,6 +6,12 @@ Status: accepted current model contract; deterministic implementation pilot pres
 
 `M04 Unified Decision` owns the direct-underlying decision that previously passed through separate alpha, dynamic risk, position projection, and underlying action contracts. It is the main merge intended to reduce serial error propagation.
 
+M04 is the only current owner of calibrated fusion across M01-M03 factors. It
+composes the market/background prior, target residual factor, and event residual
+factor into the final tradable decision surface. Cross-factor interaction,
+double-count prevention, final posterior calibration, no-trade thresholding, and
+action eligibility are M04 responsibilities.
+
 ## Output
 
 ```text
@@ -114,6 +120,19 @@ expression.
 M04 owns the source thesis and distribution surface. M05 may consume the surface
 to compare expression candidates, but M05 must not relitigate M04's target-level
 direction thesis.
+
+## Review Path
+
+Post-replay review scores M04 after M01-M03 have each been reviewed on their
+own evidence boundary. If M01, M02, and M03 are independently acceptable but the
+final selected path underperforms, the first model-layer attribution moves to
+M04 fusion, weighting, calibration, thresholding, or action timing. If an
+upstream layer is missing its own independent label join, M04 responsibility is
+not proven yet; the run carries an upstream review evidence gap.
+
+M04 must not hide upstream errors by absorbing them into a generic decision
+score. It may consume M01-M03 factors, but it owns the interaction and final
+decision consequences of that composition.
 
 ## Inputs
 

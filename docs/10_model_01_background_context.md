@@ -15,6 +15,10 @@ model_01_background_context
 
 The output should include structured market, sector, industry, liquidity, volatility, breadth, dispersion, stress, and data-quality heads. It must not choose final targets, actions, options, broker routes, or event-family parameters.
 
+M01 owns only the market/background factor. It must not include M02 target
+selection evidence, M03 event evidence, M04 final decision evidence, or M05
+expression evidence in its model-facing output.
+
 Current local implementation emits:
 
 - `background_context_state_ref`
@@ -34,6 +38,17 @@ Current local implementation emits:
 - Sector/industry/ETF/basket behavior features.
 - Liquidity, volatility, breadth, correlation, crowding, dispersion, and macro-sensitive context.
 - Only data available at or before `available_time`.
+
+## Review Path
+
+Post-replay review must score M01 independently at replay-time background-state
+granularity. The review joins each published `background_context_state` to
+market/context outcome labels for the same replay timestamp and horizon. Missing
+joined labels are a review evidence gap, not evidence that M04 is responsible.
+
+If M01 rows are independently acceptable while final selected trades perform
+poorly, attribution moves downstream to M04 fusion/thresholding unless M02 or
+M03 has its own local defect or an explicit handoff defect is shown.
 
 ## Current Local Scripts
 

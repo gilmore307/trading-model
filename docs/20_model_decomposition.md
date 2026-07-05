@@ -30,6 +30,30 @@ M06 Residual Event Governance   -> event_risk_intervention / future event-family
 
 ## Cross-Model Rules
 
+### Probabilistic Factor Ownership
+
+M01-M03 publish independent point-in-time probabilistic factors in a shared
+review language. They are not three unrelated probability spaces, and they must
+not progressively mutate one hidden decision curve. M04 is the only current
+owner of calibrated fusion, interaction, final trade posterior, and action
+thresholding.
+
+```text
+M01 Background Context -> market/background prior and uncertainty
+M02 Target State       -> target residual likelihood / target base curve
+M03 Event State        -> event residual log-odds delta, gate, and uncertainty
+M04 Unified Decision   -> calibrated fusion and final tradable decision surface
+M05 Option Expression  -> expression/payoff/instrument translation
+```
+
+M02 and M03 may consume upstream state only as fixed point-in-time context,
+applicability metadata, or conditional keys. They must not re-model or
+re-count the upstream probability contribution as their own evidence. M04 owns
+cross-factor interaction and composition. If post-replay review finds M01, M02,
+and M03 independently acceptable but final selected performance is poor, the
+first model-layer attribution should move to M04 fusion, weighting, calibration,
+or thresholding unless an interface/handoff defect is shown earlier.
+
 ### Model Artifact Split
 
 Each implemented current model contract should separate three artifact classes:
@@ -62,6 +86,27 @@ Local generator scripts may emit nested JSON/JSONL fixture rows for smoke eviden
 | `M04` Unified Decision | Direct-underlying policy/utility optimizer | Does one decision model improve after-cost utility, drawdown/CVaR, turnover, no-trade calibration, action stability, and explainability versus the retired serial route? |
 | `M05` Option Expression | Option/expression utility optimizer | Does option-expression selection improve realistic after-cost expression utility without best-contract hindsight or broker leakage? |
 | `M06` Residual Event Governance | Residual governance and attribution model | Does residual event intervention reduce tail failures and attribution misses without excessive overblocking or same-fold upstream mutation? |
+
+## Post-Replay Review Responsibility
+
+Each M01-M03 row must have its own review path and outcome-label join before
+the pipeline can claim the upstream factor was correct:
+
+- M01 review joins background states to replay-time market/context outcome
+  labels.
+- M02 review joins every visible same-timestamp candidate row to candidate
+  forward-return/rank labels, not only the selected target.
+- M03 review joins each point-in-time event-pool row to event-window outcome,
+  overblock, underblock, and path-deviation labels.
+
+Missing M01-M03 labels are review evidence gaps, not evidence that M04 is at
+fault. Once M01-M03 factor rows are independently acceptable, M04 owns poor
+final decision performance unless the evidence shows an explicit interface or
+handoff defect.
+
+M05 is reviewed after M04 against point-in-time option-expression candidates,
+realistic cost/fill/theta/IV outcomes, and direction consistency. M05 may expose
+an expression failure, but it must not relitigate the target-level M04 thesis.
 
 ## Learning Role
 

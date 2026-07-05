@@ -14,6 +14,7 @@ Status: accepted vocabulary for the current six-model stack
 | label / outcome | Training/evaluation-only future evidence; never an inference feature. |
 | diagnostics | Acceptance, monitoring, missingness, calibration, leakage, and quality evidence. |
 | explainability | Human-review support: feature attribution, reason codes, and evidence refs. |
+| probabilistic factor | A layer-owned PIT probability/logit/uncertainty/gate contribution that stays inside that layer's evidence boundary. |
 
 ## Current Model Outputs
 
@@ -34,11 +35,11 @@ M01 describes broad market plus sector/industry background. It may expose market
 
 ### M02 Target State
 
-M02 owns target eligibility, ranking, and anonymous target-state evidence. `anonymous_target_feature_vector` is an input feature vector for target-state fitting, not a final model output. Raw ticker/company identity is audit/routing metadata and must not become a fitted feature.
+M02 owns target eligibility, ranking, and anonymous target-state evidence. `anonymous_target_feature_vector` is an input feature vector for target-state fitting, not a final model output. Raw ticker/company identity is audit/routing metadata and must not become a fitted feature. M02 may consume M01 as fixed context, but its output must remain the target residual factor; it must not re-count M01 market/background contribution as target alpha.
 
 ### M03 Event State
 
-M03 owns event-conditioned response/risk state from accepted event contracts. It may emit response strength, response direction tendency, uncertainty, path risk, entry/cap/disable pressure, and applicability confidence. It must not emit standalone event alpha or change M06 event parameters.
+M03 owns event-conditioned response/risk state from accepted event contracts. It may emit response strength, response direction tendency, uncertainty, path risk, entry/cap/disable pressure, and applicability confidence. It must not emit standalone event alpha or change M06 event parameters. M03 may consume M01/M02 as fixed applicability context, but its output must remain the event residual factor; it must not re-count market/background or target-base contribution.
 
 ### M04 Unified Decision
 
@@ -53,6 +54,10 @@ no-trade and invalidation profile
 ```
 
 These heads are fields of one current model contract, not separate current model contracts.
+
+M04 is the only owner of calibrated fusion across M01-M03 factors. Cross-factor
+interaction, final trade posterior, final action threshold, and no-trade
+calibration belong here, not inside M01-M03.
 
 ### M05 Option Expression
 

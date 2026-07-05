@@ -15,6 +15,11 @@ model_03_event_state
 
 The output may include event response strength, direction tendency, uncertainty, path risk, entry/cap/disable pressure, applicability confidence, and impact-channel scores. It must not emit standalone event alpha or choose exposures/actions/options.
 
+M03 owns only the event residual factor. M01 background and M02 target state may
+condition event applicability, scope, and calibration slices, but M03 must not
+re-count market/background contribution or target-base contribution as event
+alpha.
+
 Current local implementation emits:
 
 - `event_state_vector_ref`
@@ -55,6 +60,19 @@ M03 is the runtime surface that applies these M06-governed attributes point-in-t
 - `target_context_state`.
 - Accepted event-family contracts from `M06 Residual Event Governance`.
 - Matched-control and impact-window evidence frozen before current-fold inference.
+
+## Review Path
+
+Post-replay review must score M03 independently on the point-in-time event pool,
+one event row at a time. The review joins each event-state row to event-window
+outcome, overblock, underblock, path-deviation, and applicability labels. It
+must use the pre-replay event ledger and must not create new same-fold event
+inputs from selected replay trades or failures.
+
+Missing event outcome labels are a review evidence gap, not evidence that M04 is
+responsible. If M03 rows are independently acceptable while final selected
+performance is poor, attribution moves downstream to M04 unless an explicit
+M03-to-M04 handoff defect is shown.
 
 ## Current Local Scripts
 
