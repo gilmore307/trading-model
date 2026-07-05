@@ -20,6 +20,25 @@ expected return, mean, or mode only from M03 channels that were approved by the
 taxonomy node's `event_effect_model`, such as `mean_shift`, `mode_shift`, or
 `directional_contribution`.
 
+M04 absorbs the two M03 event-modeling cases differently:
+
+1. If M03 identifies a probability function for the effect-model node and that
+   function owns center channels, M04 treats `mean_shift`, `mode_shift`, and
+   `directional_contribution` as distribution-center inputs. They may shift
+   edge direction, expected return, thesis mean/mode, and final action
+   confidence after calibration.
+2. If M03 cannot support a center-moving probability function for the semantic
+   node and falls back to distribution-shape evidence, M04 treats the event as
+   risk-shape only. `variance_multiplier`, tail deltas, `skew_delta`,
+   `confidence_discount`, and `gate_pressure` may widen the surface, thicken
+   tails, lower confidence, raise no-trade pressure, reduce exposure
+   permission, or alter thresholding. They must not change the most likely
+   direction by themselves.
+
+M04 diagnostics record this as `event_absorption_mode` inside horizon decisions:
+`center_shift_and_risk_shape`, `center_shift_only`, `risk_shape_only`, or
+`no_event_effect`.
+
 ## Output
 
 ```text

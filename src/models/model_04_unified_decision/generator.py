@@ -238,6 +238,8 @@ def _horizon_decision(
     permission = _new_exposure_permission(policy, risk_budget, max(event_pressure, event_gate), event_disable, hard_gate_reasons)
     cost_drag = _cost_drag(friction, quote_state)
     center_shift = _clip_signed(0.60 * event_mean_shift + 0.40 * event_directional_contribution)
+    shape_pressure = max(event_variance, event_left_tail, event_right_tail, abs(event_skew), event_confidence_discount, event_gate)
+    event_absorption_mode = _event_absorption_mode(center_shift=center_shift, shape_pressure=shape_pressure)
     edge_direction = _clip_signed(
         target_direction * (1.0 - 0.30 * applicability * event_uncertainty)
         + 0.20 * applicability * event_response
@@ -321,12 +323,27 @@ def _horizon_decision(
         "entry_quality_score": round(entry_quality, 6),
         "action_confidence_score": round(action_confidence, 6),
         "cost_drag_score": round(cost_drag, 6),
+        "event_absorption_mode": event_absorption_mode,
+        "event_center_shift_score": round(center_shift, 6),
+        "event_shape_pressure_score": round(shape_pressure, 6),
         "event_variance_multiplier_score": round(event_variance, 6),
         "event_left_tail_delta_score": round(event_left_tail, 6),
         "event_right_tail_delta_score": round(event_right_tail, 6),
         "event_skew_delta_score": round(event_skew, 6),
         "reason_codes": sorted(set(reasons)),
     }
+
+
+def _event_absorption_mode(*, center_shift: float, shape_pressure: float) -> str:
+    has_center = abs(center_shift) >= 0.000001
+    has_shape = shape_pressure >= 0.000001
+    if has_center and has_shape:
+        return "center_shift_and_risk_shape"
+    if has_center:
+        return "center_shift_only"
+    if has_shape:
+        return "risk_shape_only"
+    return "no_event_effect"
 
 
 def _vector_payload(horizon_details: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:

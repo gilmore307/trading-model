@@ -144,6 +144,43 @@ class UnifiedDecisionModelTests(unittest.TestCase):
         self.assertEqual(output["4_action_eligibility_score_1W"], 0.0)
         self.assertIn("halt_status_not_active", output["4_resolved_reason_codes"])
 
+    def test_event_risk_shape_absorbs_without_center_shift(self) -> None:
+        output = generate_rows(
+            [
+                _base_row(
+                    event_state_vector={
+                        "3_event_variance_multiplier_score_1W": 0.40,
+                        "3_event_left_tail_delta_score_1W": 0.55,
+                        "3_event_confidence_discount_score_1W": 0.30,
+                        "3_event_gate_pressure_score_1W": 0.25,
+                    }
+                )
+            ]
+        )[0]
+
+        detail = output["unified_decision_diagnostics"]["horizon_decisions"]["1W"]
+        self.assertEqual(detail["event_absorption_mode"], "risk_shape_only")
+        self.assertEqual(detail["event_center_shift_score"], 0.0)
+        self.assertGreater(detail["event_shape_pressure_score"], 0.0)
+
+    def test_event_center_shift_absorption_is_separate_from_shape_pressure(self) -> None:
+        output = generate_rows(
+            [
+                _base_row(
+                    event_state_vector={
+                        "3_event_mean_shift_score_1W": -0.40,
+                        "3_event_directional_contribution_score_1W": -0.20,
+                        "3_event_left_tail_delta_score_1W": 0.50,
+                    }
+                )
+            ]
+        )[0]
+
+        detail = output["unified_decision_diagnostics"]["horizon_decisions"]["1W"]
+        self.assertEqual(detail["event_absorption_mode"], "center_shift_and_risk_shape")
+        self.assertLess(detail["event_center_shift_score"], 0.0)
+        self.assertGreater(detail["event_shape_pressure_score"], 0.0)
+
     def test_bearish_flat_without_short_borrow_does_not_choose_option_contract(self) -> None:
         output = generate_rows(
             [
