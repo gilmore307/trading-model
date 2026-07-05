@@ -421,16 +421,20 @@ class EventStateModelTests(unittest.TestCase):
                             "target_relevance_score": 0.95,
                             "uncertainty_score": 0.25,
                             "path_risk_score": 0.85,
-                            "allowed_effect_profile": {
-                                "can_change_mean": True,
-                                "can_change_mode": True,
-                                "can_add_directional_contribution": True,
-                                "can_change_variance": True,
-                                "can_change_left_tail": True,
-                                "can_change_right_tail": False,
-                                "can_change_skew": True,
-                                "can_change_confidence": True,
-                                "can_raise_gate": True,
+                            "event_effect_model": {
+                                "event_effect_model_type": "directional_mean_shift_event",
+                                "projection_mode": "impact_function_projection",
+                                "directional_mean_shift_status": "validated_negative",
+                                "distribution_channels": [
+                                    "mean_shift",
+                                    "mode_shift",
+                                    "directional_contribution",
+                                    "variance_multiplier",
+                                    "left_tail_delta",
+                                    "skew_delta",
+                                    "confidence_discount",
+                                    "gate_pressure",
+                                ],
                             },
                         }
                     ],
@@ -442,9 +446,10 @@ class EventStateModelTests(unittest.TestCase):
         self.assertLess(output["3_event_mean_shift_score_1W"], 0.0)
         self.assertLess(output["3_event_directional_contribution_score_1W"], 0.0)
         self.assertEqual(output["3_event_right_tail_delta_score_1W"], 0.0)
-        profile = output["event_state_vector"]["allowed_effect_profiles"][0]
-        self.assertTrue(profile["allowed_effect_profile"]["can_change_mean"])
-        self.assertFalse(profile["allowed_effect_profile"]["can_change_right_tail"])
+        profile = output["event_state_vector"]["event_effect_models"][0]
+        self.assertEqual(profile["event_effect_model"]["event_effect_model_type"], "directional_mean_shift_event")
+        self.assertIn("mean_shift", profile["event_effect_model"]["distribution_channels"])
+        self.assertNotIn("right_tail_delta", profile["event_effect_model"]["distribution_channels"])
 
     def test_option_sensitive_event_attributes_are_runtime_state_channels(self) -> None:
         background = generate_background_context([_background_input()])[0]

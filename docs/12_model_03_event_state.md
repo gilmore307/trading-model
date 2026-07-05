@@ -9,14 +9,17 @@ Status: deterministic pilot present; production promotion deferred.
 The current event route is:
 
 1. Materialize the full point-in-time event universe inside the fold window.
-2. Run semantic interpretation and assign the event to the reviewed multi-level
-   taxonomy: source category, domain node, mechanism family, optional child
-   family, and optional dossier.
-3. For each event family, test whether its PIT parameters can identify a
+2. Run semantic interpretation and assign the event to the finest reviewed
+   point-in-time taxonomy node on the fixed
+   `Domain -> Kingdom -> Phylum -> Class -> Order -> Family -> Genus -> Species`
+   spine. This is the `semantic_node`.
+3. Select the deepest evidence-supported `effect_model_node` for training or
+   fallback. It may be the semantic node or a conservative ancestor.
+4. For the effect-model node, test whether its PIT parameters can identify a
    probability function for later market/sector/target impact.
-4. If a stable probability function is identifiable, M03 may expose the
-   reviewed distribution channels that the family is allowed to affect.
-5. If no stable probability function is identifiable, M03 may still expose
+5. If a stable probability function is identifiable, M03 may expose the
+   reviewed distribution channels owned by that node's `event_effect_model`.
+6. If no stable probability function is identifiable, M03 may still expose
    risk-shape channels such as variance, tail, confidence, and gate pressure,
    but it must not move the center of the distribution.
 
@@ -66,48 +69,49 @@ Current local implementation emits:
 - `3_event_confidence_discount_score_<horizon>`
 - `3_event_gate_pressure_score_<horizon>`
 
-## Distribution Effect Permissions
+## Event Effect Models
 
-Each accepted event row carries or inherits an `allowed_effect_profile`. The
-profile is a permission mask, not the learned effect. M03 training estimates and
-validates magnitudes only inside allowed channels.
+Each accepted event row carries or inherits an `event_effect_model` from the
+evidence-supported taxonomy node. This is an impact-mode contract, not a
+permission mask.
 
-Default profile:
+The default effect model is risk-shape only:
 
 ```text
-can_change_variance=true
-can_change_left_tail=true
-can_change_right_tail=true
-can_change_skew=true
-can_change_confidence=true
-can_raise_gate=true
-can_change_mean=false
-can_change_mode=false
-can_add_directional_contribution=false
+event_effect_model_type=variance_tail_event
+projection_mode=context_only_projection
+distribution_channels=
+  variance_multiplier
+  left_tail_delta
+  right_tail_delta
+  skew_delta
+  confidence_discount
+  gate_pressure
+directional_mean_shift_status=not_identifiable
 ```
 
 This means ordinary events default to distribution-shape and risk-control
 effects. They may widen variance, thicken tails, discount confidence, or raise
 entry/gate pressure. They do not move the mean, mode, or directional
-contribution unless the event family has passed a separate directional
-modelability review.
+contribution unless the effect-model node has passed directional modelability
+review and lists the center channels in its distribution channel contract.
 
-Directional channels are opt-in:
+Directional effect models may include:
 
 ```text
-can_change_mean=true
-can_change_mode=true
-can_add_directional_contribution=true
+mean_shift
+mode_shift
+directional_contribution
 ```
 
-These permissions are reserved for reviewed event families or dossiers with
-stable PIT-identifiable direction after M01/M02 controls. Examples include hard
-negative corporate/regulatory events when the family evidence supports a signed
-effect. A raw `direction_bias_score` on an event row is not enough to move the
-distribution center; the profile must grant the directional channel first.
+These channels are reserved for taxonomy nodes with stable PIT-identifiable
+signed residual effects after M01/M02 controls. A raw `direction_bias_score` on
+an event row is not enough to move the distribution center; the node's
+`event_effect_model` must be directional and fold-frozen before M03 can emit
+center-moving summaries.
 
-M03 publishes the active per-event permissions in
-`event_state_vector.allowed_effect_profiles` and the horizon summaries in
+M03 publishes the active per-event models in
+`event_state_vector.event_effect_models` and the horizon summaries in
 `event_state_vector.distribution_effect_scores`.
 
 ## Impact Channels

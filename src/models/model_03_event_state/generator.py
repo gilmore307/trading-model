@@ -9,7 +9,7 @@ from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 from .contract import (
-    DEFAULT_ALLOWED_EFFECT_PROFILE,
+    DEFAULT_EVENT_EFFECT_MODEL,
     EVENT_DISTRIBUTION_EFFECT_CHANNELS,
     EVENT_IMPACT_CHANNELS,
     FORBIDDEN_OUTPUT_FIELDS,
@@ -54,7 +54,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "score_payload": scores,
             "impact_channel_scores": _impact_channel_vector(scores),
             "distribution_effect_scores": _distribution_effect_vector(scores),
-            "allowed_effect_profiles": _event_effect_profile_refs(events),
+            "event_effect_models": _event_effect_model_refs(events),
             "frozen_event_contract_refs": _event_refs(events),
             "accepted_event_count": len(events),
             "event_parameter_mutation_allowed": False,
@@ -63,7 +63,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "accepted_event_count": len(events),
             "only_point_in_time_accepted_events": True,
             "no_standalone_event_alpha": True,
-            "distribution_channel_permission_enforced": True,
+            "event_effect_model_channel_enforced": True,
             "directional_center_shift_default_forbidden": True,
         },
     }
@@ -204,30 +204,30 @@ def _distribution_effect_scores(events: Sequence[Mapping[str, Any]]) -> dict[str
     confidence_discounts: list[float] = []
     gates: list[float] = []
     for event in events:
-        permissions = _allowed_effect_profile(event)
+        channels = _event_effect_channel_policy(event)
         intensity = _score(event, "event_intensity_score", "intensity_score", default=0.35)
         uncertainty = _score(event, "uncertainty_score", "revision_risk_score", default=0.25)
         path_risk = _score(event, "path_risk_score", "gap_risk_score", "event_path_risk_score", default=intensity * (0.45 + 0.35 * uncertainty))
         relevance = _score(event, "target_relevance_score", "applicability_confidence_score", default=0.50)
         raw_direction = _signed(event, "event_response_direction_score", "direction_bias_score", "surprise_score", default=0.0)
         directional_signal = _directional_signal(event)
-        if permissions["can_change_mean"]:
+        if channels["mean_shift"]:
             mean_shifts.append(_signed_or_default(event, directional_signal * intensity * relevance, "mean_shift_score", "event_mean_shift_score"))
-        if permissions["can_change_mode"]:
+        if channels["mode_shift"]:
             mode_shifts.append(_signed_or_default(event, directional_signal * intensity * relevance, "mode_shift_score", "event_mode_shift_score"))
-        if permissions["can_add_directional_contribution"]:
+        if channels["directional_contribution"]:
             contributions.append(_signed_or_default(event, directional_signal * intensity * relevance, "directional_contribution_score", "event_directional_contribution_score"))
-        if permissions["can_change_variance"]:
+        if channels["variance_multiplier"]:
             variances.append(_score(event, "variance_multiplier_score", "event_variance_multiplier_score", default=_clip01(0.55 * uncertainty + 0.45 * path_risk)))
-        if permissions["can_change_left_tail"]:
+        if channels["left_tail_delta"]:
             left_tails.append(_score(event, "left_tail_delta_score", "event_left_tail_delta_score", default=_clip01(path_risk * (1.0 + 0.35 * max(0.0, -raw_direction)))))
-        if permissions["can_change_right_tail"]:
+        if channels["right_tail_delta"]:
             right_tails.append(_score(event, "right_tail_delta_score", "event_right_tail_delta_score", default=_clip01(path_risk * (1.0 + 0.35 * max(0.0, raw_direction)))))
-        if permissions["can_change_skew"]:
+        if channels["skew_delta"]:
             skews.append(_signed_or_default(event, raw_direction * intensity * relevance, "skew_delta_score", "event_skew_delta_score"))
-        if permissions["can_change_confidence"]:
+        if channels["confidence_discount"]:
             confidence_discounts.append(_score(event, "confidence_discount_score", "event_confidence_discount_score", default=_clip01(uncertainty * relevance)))
-        if permissions["can_raise_gate"]:
+        if channels["gate_pressure"]:
             gates.append(_score(event, "gate_pressure_score", "event_gate_pressure_score", default=_clip01(_average([path_risk, uncertainty, intensity * 0.5]))))
     return {
         "event_mean_shift_score": _clip_signed(_average(mean_shifts)),
@@ -252,73 +252,47 @@ def _distribution_effect_vector(scores: Mapping[str, float]) -> dict[str, dict[s
     return output
 
 
-def _event_effect_profile_refs(events: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    profiles: list[dict[str, Any]] = []
+def _event_effect_model_refs(events: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    models: list[dict[str, Any]] = []
     for event in events:
-        profiles.append(
+        models.append(
             {
                 "event_ref": event.get("event_family_contract_ref") or event.get("canonical_event_id") or event.get("event_id"),
                 "event_family_key": event.get("event_family_key") or event.get("mechanism_family") or event.get("normalized_event_type"),
-                "projection_mode": event.get("projection_mode") or event.get("event_projection_mode") or "unreviewed_risk_shape_default",
-                "allowed_effect_profile": _allowed_effect_profile(event),
+                "semantic_taxonomy_node_ref": event.get("semantic_taxonomy_node_ref") or event.get("taxonomy_node_ref"),
+                "effect_model_node_ref": event.get("effect_model_node_ref") or event.get("event_family_key") or event.get("mechanism_family"),
+                "event_effect_model": _event_effect_model(event),
             }
         )
-    return profiles
+    return models
 
 
 def _directional_signal(event: Mapping[str, Any]) -> float:
-    permissions = _allowed_effect_profile(event)
-    if not (
-        permissions["can_change_mean"]
-        or permissions["can_change_mode"]
-        or permissions["can_add_directional_contribution"]
-    ):
+    channels = _event_effect_channel_policy(event)
+    if not (channels["mean_shift"] or channels["mode_shift"] or channels["directional_contribution"]):
         return 0.0
     return _signed(event, "event_response_direction_score", "direction_bias_score", "surprise_score", default=0.0)
 
 
-def _allowed_effect_profile(event: Mapping[str, Any]) -> dict[str, bool]:
-    profile = dict(DEFAULT_ALLOWED_EFFECT_PROFILE)
-    raw_profile = (
-        event.get("allowed_effect_profile")
-        or event.get("distribution_effect_profile")
-        or event.get("event_family_allowed_effect_profile")
-        or {}
-    )
-    if isinstance(raw_profile, Mapping):
-        for key in profile:
-            if key in raw_profile:
-                profile[key] = _bool_value(raw_profile.get(key))
-        allowed_channels = raw_profile.get("allowed_channels") or raw_profile.get("channels")
-        if isinstance(allowed_channels, Sequence) and not isinstance(allowed_channels, (str, bytes, bytearray)):
-            allowed = {str(channel).strip() for channel in allowed_channels}
-            profile = {key: _profile_key_to_channel(key) in allowed for key in profile}
-    directional_flag = event.get("directional_effect_allowed") or event.get("directional_mean_shift_allowed")
-    if directional_flag is not None and _bool_value(directional_flag):
-        profile["can_change_mean"] = True
-        profile["can_change_mode"] = True
-        profile["can_add_directional_contribution"] = True
-    return profile
+def _event_effect_model(event: Mapping[str, Any]) -> dict[str, Any]:
+    model = dict(DEFAULT_EVENT_EFFECT_MODEL)
+    raw_model = event.get("event_effect_model") or event.get("event_family_effect_model") or {}
+    if isinstance(raw_model, Mapping):
+        for key in ("event_effect_model_type", "projection_mode", "directional_mean_shift_status"):
+            if key in raw_model:
+                model[key] = str(raw_model.get(key) or "").strip()
+        for key in ("distribution_channels", "impact_channels"):
+            channels = raw_model.get(key)
+            if isinstance(channels, Sequence) and not isinstance(channels, (str, bytes, bytearray)):
+                model[key] = tuple(str(channel).strip() for channel in channels if str(channel).strip())
+    return model
 
 
-def _profile_key_to_channel(key: str) -> str:
-    return {
-        "can_change_mean": "mean_shift",
-        "can_change_mode": "mode_shift",
-        "can_add_directional_contribution": "directional_contribution",
-        "can_change_variance": "variance_multiplier",
-        "can_change_left_tail": "left_tail_delta",
-        "can_change_right_tail": "right_tail_delta",
-        "can_change_skew": "skew_delta",
-        "can_change_confidence": "confidence_discount",
-        "can_raise_gate": "gate_pressure",
-    }[key]
-
-
-def _bool_value(value: Any) -> bool:
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes", "y", "allowed", "allow"}
-    return bool(value)
+def _event_effect_channel_policy(event: Mapping[str, Any]) -> dict[str, bool]:
+    model = _event_effect_model(event)
+    distribution_channels = model.get("distribution_channels")
+    allowed = set(distribution_channels) if isinstance(distribution_channels, Sequence) else set()
+    return {channel: channel in allowed for channel in EVENT_DISTRIBUTION_EFFECT_CHANNELS}
 
 
 def _signed_or_default(row: Mapping[str, Any], default: float, *keys: str) -> float:

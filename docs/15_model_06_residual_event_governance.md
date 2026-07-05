@@ -36,7 +36,7 @@ The accepted impact channels are:
 - `option_liquidity_spread`
 - `expiry_gamma_flow`
 
-M06 owns the taxonomy, promotion criteria, and failure/residual evidence for these attributes. M03 applies the accepted attributes into point-in-time `event_state_vector` rows. M04 and M05 consume that state. M05 may price the option-expression consequence of a volatility-surface or expiry-flow state, but it must not create its own raw event ontology.
+M06 owns the taxonomy, promotion criteria, and failure/residual evidence for these attributes. M03 applies the accepted attributes into point-in-time `event_state_vector` rows. M04 and M05 consume that state. M05 may price the option-expression consequence of a volatility-surface or expiry-flow state, but it must not create its own raw event taxonomy.
 
 Option-sensitive does not mean option-only. A scheduled expiry-flow event may have both underlying-price and option-surface channels through hedging, liquidity, dealer positioning, and spread behavior. M06 must preserve multi-channel intensity and confidence instead of forcing a single binary label.
 
