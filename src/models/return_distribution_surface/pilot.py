@@ -178,9 +178,12 @@ def fit_tradable_time_distribution_surface(
     cdf_thresholds: Sequence[float] = DEFAULT_CDF_THRESHOLDS,
     validation_stride: int = 2,
     polynomial_degree: int = 5,
+    fit_mode: str = "context",
 ) -> DistributionSurfacePilotResult:
     """Fit and validate a smooth quantile/CDF surface over tradable time."""
 
+    if fit_mode not in {"baseline", "context"}:
+        raise ValueError(f"unsupported fit_mode: {fit_mode!r}")
     returns_by_tau: dict[int, list[float]] = defaultdict(list)
     for row in label_rows:
         returns_by_tau[row.tau_trading_minutes].append(row.return_label)
@@ -201,25 +204,45 @@ def fit_tradable_time_distribution_surface(
     x_all = _fit_axis(taus)
     surface: dict[int, dict[str, float]] = {tau: dict(empirical[tau]) for tau in taus}
     degree = max(0, min(polynomial_degree, len(train_taus) - 1))
-    for key in _quantile_keys(quantile_levels):
-        y_train = np.asarray([empirical[tau][key] for tau in train_taus], dtype=float)
-        if degree == 0:
-            y_pred = np.repeat(y_train[0], len(taus))
-        else:
-            coeff = np.polyfit(x_train, y_train, deg=degree)
-            y_pred = np.polyval(coeff, x_all)
-        for tau, value in zip(taus, y_pred):
-            surface[tau][key] = float(value)
+    context_model: dict[str, Any] | None = None
+    if fit_mode == "baseline":
+        for key in _quantile_keys(quantile_levels):
+            y_train = np.asarray([empirical[tau][key] for tau in train_taus], dtype=float)
+            if degree == 0:
+                y_pred = np.repeat(y_train[0], len(taus))
+            else:
+                coeff = np.polyfit(x_train, y_train, deg=degree)
+                y_pred = np.polyval(coeff, x_all)
+            for tau, value in zip(taus, y_pred):
+                surface[tau][key] = float(value)
+    else:
+        context_model = _fit_context_quantile_model(
+            label_rows,
+            train_taus=train_taus,
+            quantile_levels=quantile_levels,
+            degree=degree,
+        )
+        for tau in taus:
+            neutral_features = _design_vector_for_context(
+                tau=tau,
+                degree=degree,
+                context_values={name: 0.0 for name in context_model["context_feature_names"]},
+                feature_names=context_model["feature_names"],
+            )
+            for key in _quantile_keys(quantile_levels):
+                surface[tau][key] = float(np.dot(context_model["coefficients"][key], neutral_features))
 
     crossing_repairs = _repair_crossing(surface, quantile_levels)
     validation_rows = _validation_rows(
         returns_by_tau,
         surface,
+        label_rows,
         validation_taus,
         quantile_levels,
+        context_model,
     )
     cdf_rows = _cdf_rows(surface, cdf_thresholds, quantile_levels)
-    slice_validation = _slice_validation(label_rows, surface, quantile_levels, validation_taus)
+    slice_validation = _slice_validation(label_rows, surface, quantile_levels, validation_taus, context_model)
     return DistributionSurfacePilotResult(
         quantile_levels=tuple(float(level) for level in quantile_levels),
         cdf_thresholds=tuple(float(threshold) for threshold in cdf_thresholds),
@@ -231,11 +254,20 @@ def fit_tradable_time_distribution_surface(
         validation_rows=validation_rows,
         slice_validation=slice_validation,
         fit_metadata={
-            "fit_type": "single_tradable_time_quantile_polynomial",
+            "fit_type": (
+                "single_context_conditioned_tradable_time_quantile_polynomial"
+                if fit_mode == "context"
+                else "single_tradable_time_quantile_polynomial"
+            ),
             "fit_x": "sqrt(tau_trading_minutes)",
             "polynomial_degree": degree,
             "quantile_crossing_repairs": crossing_repairs,
-            "event_context_role": "target_row_features_and_validation_slices",
+            "event_context_role": (
+                "target_row_features_in_same_surface_function"
+                if fit_mode == "context"
+                else "target_row_features_and_validation_slices"
+            ),
+            **({"context_model": _context_model_metadata(context_model)} if context_model else {}),
         },
     )
 
@@ -347,6 +379,164 @@ def _repair_crossing(surface: dict[int, dict[str, float]], levels: Sequence[floa
     return repairs
 
 
+def _context_feature_names() -> tuple[str, ...]:
+    return (
+        "crosses_session_gap",
+        "target_near_open",
+        "target_near_close",
+        "one_session_gap",
+        "two_plus_session_gaps",
+        "near_open_cross_gap",
+        "near_close_intraday",
+    )
+
+
+def _context_values(row: TargetLabelRow) -> dict[str, float]:
+    crosses = float(row.crosses_session_gap)
+    near_open = float(row.target_near_open)
+    near_close = float(row.target_near_close)
+    one_gap = float(row.session_gap_count == 1)
+    two_plus = float(row.session_gap_count >= 2)
+    return {
+        "crosses_session_gap": crosses,
+        "target_near_open": near_open,
+        "target_near_close": near_close,
+        "one_session_gap": one_gap,
+        "two_plus_session_gaps": two_plus,
+        "near_open_cross_gap": float(row.target_near_open and row.crosses_session_gap),
+        "near_close_intraday": float(row.target_near_close and not row.crosses_session_gap),
+    }
+
+
+def _context_signature(row: TargetLabelRow, names: Sequence[str]) -> tuple[int, ...]:
+    values = _context_values(row)
+    return tuple(int(values[name]) for name in names)
+
+
+def _feature_names(degree: int, context_names: Sequence[str]) -> list[str]:
+    names = [f"tau_sqrt_power_{power}" for power in range(degree + 1)]
+    names.extend(context_names)
+    names.extend(f"{name}_x_sqrt_tau" for name in context_names)
+    return names
+
+
+def _design_vector_for_context(
+    *,
+    tau: int,
+    degree: int,
+    context_values: Mapping[str, float],
+    feature_names: Sequence[str],
+) -> np.ndarray:
+    sqrt_tau = math.sqrt(float(tau))
+    powers = {f"tau_sqrt_power_{power}": sqrt_tau**power for power in range(degree + 1)}
+    values: dict[str, float] = dict(powers)
+    for name, value in context_values.items():
+        values[name] = float(value)
+        values[f"{name}_x_sqrt_tau"] = float(value) * sqrt_tau
+    return np.asarray([values.get(name, 0.0) for name in feature_names], dtype=float)
+
+
+def _fit_context_quantile_model(
+    label_rows: Sequence[TargetLabelRow],
+    *,
+    train_taus: Sequence[int],
+    quantile_levels: Sequence[float],
+    degree: int,
+    min_cell_count: int = 30,
+    ridge_lambda: float = 1e-5,
+) -> dict[str, Any]:
+    context_names = _context_feature_names()
+    feature_names = _feature_names(degree, context_names)
+    train_tau_set = set(train_taus)
+    groups: dict[tuple[int, tuple[int, ...]], list[float]] = defaultdict(list)
+    for row in label_rows:
+        if row.tau_trading_minutes not in train_tau_set:
+            continue
+        groups[(row.tau_trading_minutes, _context_signature(row, context_names))].append(row.return_label)
+
+    observations: list[tuple[int, tuple[int, ...], int, dict[str, float]]] = []
+    for (tau, signature), values in sorted(groups.items()):
+        if len(values) < min_cell_count:
+            continue
+        observations.append((tau, signature, len(values), _empirical_quantiles(values, quantile_levels)))
+    if len(observations) < len(feature_names):
+        raise ValueError("not enough context cells to fit context-conditioned surface")
+
+    x_rows: list[np.ndarray] = []
+    weights: list[float] = []
+    for tau, signature, count, _ in observations:
+        context_values = {name: float(value) for name, value in zip(context_names, signature)}
+        x_rows.append(
+            _design_vector_for_context(
+                tau=tau,
+                degree=degree,
+                context_values=context_values,
+                feature_names=feature_names,
+            )
+        )
+        weights.append(math.sqrt(count))
+    x = np.vstack(x_rows)
+    w = np.asarray(weights, dtype=float)
+    x_weighted = x * w[:, None]
+    penalty = np.sqrt(ridge_lambda) * np.eye(len(feature_names))
+    penalty[0, 0] = 0.0
+    x_augmented = np.vstack([x_weighted, penalty])
+
+    coefficients: dict[str, np.ndarray] = {}
+    for key in _quantile_keys(quantile_levels):
+        y = np.asarray([quantiles[key] for _, _, _, quantiles in observations], dtype=float)
+        y_augmented = np.concatenate([y * w, np.zeros(len(feature_names), dtype=float)])
+        coeff, *_ = np.linalg.lstsq(x_augmented, y_augmented, rcond=None)
+        coefficients[key] = coeff
+
+    return {
+        "degree": degree,
+        "context_feature_names": list(context_names),
+        "feature_names": feature_names,
+        "coefficients": coefficients,
+        "observation_count": len(observations),
+        "min_cell_count": min_cell_count,
+        "ridge_lambda": ridge_lambda,
+    }
+
+
+def _context_model_metadata(context_model: Mapping[str, Any] | None) -> dict[str, Any]:
+    if not context_model:
+        return {}
+    return {
+        "context_feature_names": list(context_model["context_feature_names"]),
+        "degree": context_model["degree"],
+        "feature_count": len(context_model["feature_names"]),
+        "observation_count": context_model["observation_count"],
+        "min_cell_count": context_model["min_cell_count"],
+        "ridge_lambda": context_model["ridge_lambda"],
+        "coefficient_schema": "omitted_from_summary",
+    }
+
+
+def _predict_quantiles(
+    row: TargetLabelRow,
+    surface: Mapping[int, Mapping[str, float]],
+    levels: Sequence[float],
+    context_model: Mapping[str, Any] | None,
+) -> dict[str, float] | None:
+    base = surface.get(row.tau_trading_minutes)
+    if base is None:
+        return None
+    if not context_model:
+        return dict(base)
+    design = _design_vector_for_context(
+        tau=row.tau_trading_minutes,
+        degree=int(context_model["degree"]),
+        context_values=_context_values(row),
+        feature_names=context_model["feature_names"],
+    )
+    keys = _quantile_keys(levels)
+    values = [float(np.dot(context_model["coefficients"][key], design)) for key in keys]
+    repaired = np.maximum.accumulate(values)
+    return {key: float(value) for key, value in zip(keys, repaired)}
+
+
 def _cdf_from_quantiles(value: float, quantiles: Mapping[str, float], levels: Sequence[float]) -> float:
     points = [(0.0, -math.inf)]
     for key, level in zip(_quantile_keys(levels), levels):
@@ -367,8 +557,10 @@ def _cdf_from_quantiles(value: float, quantiles: Mapping[str, float], levels: Se
 def _validation_rows(
     returns_by_tau: Mapping[int, Sequence[float]],
     surface: Mapping[int, Mapping[str, float]],
+    label_rows: Sequence[TargetLabelRow],
     validation_taus: Sequence[int],
     levels: Sequence[float],
+    context_model: Mapping[str, Any] | None,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     keys = _quantile_keys(levels)
@@ -378,12 +570,24 @@ def _validation_rows(
         if tau in returns_by_tau
     }
     for tau in validation_taus:
+        tau_rows = [row for row in label_rows if row.tau_trading_minutes == tau]
         values = returns_by_tau.get(tau, ())
-        if not values:
+        if not values or not tau_rows:
             continue
         for key, level in zip(keys, levels):
-            smooth_quantile = float(surface[tau][key])
-            empirical_coverage = sum(1 for value in values if value <= smooth_quantile) / len(values)
+            predicted: list[float] = []
+            hits = 0
+            for row in tau_rows:
+                quantiles = _predict_quantiles(row, surface, levels, context_model)
+                if quantiles is None:
+                    continue
+                predicted.append(quantiles[key])
+                if row.return_label <= quantiles[key]:
+                    hits += 1
+            if not predicted:
+                continue
+            smooth_quantile = float(np.mean(predicted))
+            empirical_coverage = hits / len(predicted)
             rows.append(
                 {
                     "tau_trading_minutes": tau,
@@ -425,6 +629,7 @@ def _slice_validation(
     surface: Mapping[int, Mapping[str, float]],
     levels: Sequence[float],
     validation_taus: Sequence[int],
+    context_model: Mapping[str, Any] | None,
 ) -> dict[str, dict[str, Any]]:
     by_slice: dict[str, list[TargetLabelRow]] = defaultdict(list)
     validation_tau_set = set(validation_taus)
@@ -443,7 +648,7 @@ def _slice_validation(
             hits = 0
             total = 0
             for row in rows:
-                quantiles = surface.get(row.tau_trading_minutes)
+                quantiles = _predict_quantiles(row, surface, levels, context_model)
                 if not quantiles:
                     continue
                 total += 1

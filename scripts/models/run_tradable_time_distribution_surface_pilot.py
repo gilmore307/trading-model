@@ -107,6 +107,7 @@ def main() -> int:
     parser.add_argument("--timeframe", default="1Min")
     parser.add_argument("--anchor-minutes", type=int, default=10)
     parser.add_argument("--max-trading-minutes", type=int, default=1170)
+    parser.add_argument("--fit-mode", choices=("baseline", "context"), default="context")
     parser.add_argument("--output-dir", required=True)
     args = parser.parse_args()
 
@@ -124,7 +125,7 @@ def main() -> int:
         anchor_minutes=args.anchor_minutes,
         max_trading_minutes=args.max_trading_minutes,
     )
-    result = fit_tradable_time_distribution_surface(label_rows)
+    result = fit_tradable_time_distribution_surface(label_rows, fit_mode=args.fit_mode)
     output_dir.mkdir(parents=True, exist_ok=True)
     surface_csv = output_dir / "surface.csv"
     _write_surface_csv(surface_csv, result)
