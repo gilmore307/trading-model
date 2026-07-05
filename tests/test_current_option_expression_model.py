@@ -67,23 +67,6 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         output = generate_rows(
             [
                 _base_row(
-                    direct_underlying_intent={
-                        "underlying_action_type": "open_long",
-                        "action_side": "long",
-                        "dominant_horizon": "1W",
-                        "handoff_to_model_05": {
-                            **_handoff(),
-                            "path_quality_score": 0.10,
-                            "reversal_risk_score": 0.95,
-                            "drawdown_risk_score": 0.90,
-                            "underlying_action_confidence_score": 0.15,
-                        },
-                    },
-                    background_context_state={
-                        "1_market_risk_stress_score": 0.80,
-                        "1_market_liquidity_support_score": 0.15,
-                    },
-                    event_state_vector={"3_event_uncertainty_score_1W": 0.85},
                     option_contract_candidates=[
                         {
                             **_call_candidate(),
@@ -103,7 +86,9 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         diagnostics = output["option_expression_plan"]["diagnostics"]
 
         self.assertEqual(output["5_resolved_expression_type"], "no_option_expression")
+        self.assertGreater(output["5_option_expression_direction_score_1W"], 0.0)
         self.assertEqual(diagnostics["candidate_count_after_filter"], 1)
+        self.assertEqual(diagnostics["no_option_candidate"]["proxy_expression_type"], "underlying_equity")
         self.assertGreater(diagnostics["no_option_candidate"]["score"], diagnostics["expression_selector"]["best_contract_score"])
         self.assertEqual(diagnostics["expression_selector"]["selection_reason"], "no_option_won_policy_adjusted_score")
         self.assertIn("no_option_won_policy_adjusted_score", output["5_resolved_reason_codes"])

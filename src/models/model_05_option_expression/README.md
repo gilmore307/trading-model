@@ -9,3 +9,8 @@ The current generator consumes `direct_underlying_intent` / `unified_decision_ve
 M05 reads the path direction from the M04 handoff before falling back to
 `action_side`. This preserves bearish option-expression routing when M04 has a
 bearish thesis but direct-underlying shorting is blocked.
+
+When M05 compares option contracts with `no_option_expression`, the no-option
+candidate is scored as the pure underlying-equity proxy for the M04 thesis. It
+is not a cash/no-trade shortcut; no-trade remains owned by the upstream M04
+action state.

@@ -432,11 +432,10 @@ def _score_no_option_candidate(
     no_eligible_penalty = 0.18 if eligible_candidate_count == 0 else 0.0
     risk_pressure = max(reversal, drawdown, event_uncertainty)
     score = _clip01(
-        0.10
-        + 0.25 * risk_pressure
-        + 0.20 * (1.0 - path_quality)
-        + 0.15 * (1.0 - market_liquidity)
-        + 0.15 * (1.0 - direction_confidence)
+        0.50 * path_quality
+        + 0.25 * direction_confidence
+        + 0.15 * market_liquidity
+        - 0.25 * risk_pressure
         + singleton_penalty
         + no_eligible_penalty
         + surface_penalty
@@ -444,11 +443,14 @@ def _score_no_option_candidate(
         + policy_bonus
     )
     score = max(score, policy_floor)
+    direction_score = 1.0 if direction == "bullish" else -1.0 if direction == "bearish" else 0.0
     return {
         "expression_type": "no_option_expression",
+        "proxy_expression_type": "underlying_equity",
         "option_right": "none",
         "score": round(score, 6),
         "expression_eligibility_score": round(score, 6),
+        "expression_direction_score": direction_score,
         "expression_confidence_score": round(score, 6),
         "contract_fit_score": round(score, 6),
         "liquidity_fit_score": round(market_liquidity, 6),
@@ -463,7 +465,7 @@ def _score_no_option_candidate(
         "eligible_candidate_count": eligible_candidate_count,
         "reason_codes": _dedupe(
             [
-                "scored_no_option_expression_baseline",
+                "scored_no_option_underlying_proxy_baseline",
                 "singleton_candidate_set_penalty" if eligible_candidate_count == 1 else "",
                 "no_eligible_option_contract_candidate" if eligible_candidate_count == 0 else "",
                 "pending_option_exposure_detected" if pending.get("has_pending_option_exposure") else "",
@@ -576,7 +578,7 @@ def _horizon_payload(
     if expression_type == "no_option_expression" or selected is None:
         return {
             "expression_eligibility_score": no_option_candidate["expression_eligibility_score"],
-            "expression_direction_score": 0.0,
+            "expression_direction_score": no_option_candidate["expression_direction_score"],
             "contract_fit_score": no_option_candidate["contract_fit_score"],
             "liquidity_fit_score": no_option_candidate["liquidity_fit_score"],
             "iv_fit_score": no_option_candidate["iv_fit_score"],
