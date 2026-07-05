@@ -25,6 +25,9 @@ from .contract import (
     MODEL_STEP,
     MODEL_VERSION,
     PLANNED_ACTION_TYPES,
+    RETURN_DISTRIBUTION_CDF_THRESHOLDS,
+    RETURN_DISTRIBUTION_QUANTILES,
+    THESIS_DISTRIBUTION_SURFACE_OUTPUT,
 )
 
 ET = ZoneInfo("America/New_York")
@@ -122,6 +125,14 @@ def _model_row(row: Mapping[str, Any], *, model_version: str, validate_output: b
     vector_payload.update(resolved_payload)
 
     ref = _stable_id("udv", target_candidate_id, available_time, model_version)
+    thesis_surface = _thesis_distribution_surface(
+        decision_ref=ref,
+        target_candidate_id=target_candidate_id,
+        available_time=available_time,
+        model_version=model_version,
+        horizon_details=horizon_details,
+        resolved_horizon=resolved_horizon,
+    )
     direct_intent = _direct_underlying_intent(
         action=action,
         dominant=dominant,
@@ -129,6 +140,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str, validate_output: b
         quote_state=quote_state,
         resolved_horizon=resolved_horizon,
         reason_codes=resolved_reason_codes,
+        thesis_distribution_surface_ref=thesis_surface["surface_ref"],
     )
     output = {
         "available_time": available_time,
@@ -146,11 +158,14 @@ def _model_row(row: Mapping[str, Any], *, model_version: str, validate_output: b
         "pending_exposure_state_ref": row.get("pending_exposure_state_ref") or row.get("pending_position_state_ref"),
         "quote_snapshot_ref": quote.get("quote_snapshot_ref"),
         "unified_decision_vector_ref": ref,
+        "thesis_distribution_surface_ref": thesis_surface["surface_ref"],
         **vector_payload,
         "unified_decision_vector": vector_payload,
+        THESIS_DISTRIBUTION_SURFACE_OUTPUT: thesis_surface,
         "direct_underlying_intent": direct_intent,
         "unified_decision_diagnostics": {
             "head_topology": ["edge", "risk", "exposure", "action"],
+            "thesis_distribution_surface_ref": thesis_surface["surface_ref"],
             "serial_model_outputs_exposed": False,
             "hard_gate_reason_codes": hard_gate_reasons,
             "effective_current_underlying_exposure_score": exposure["effective_current_underlying_exposure_score"],
@@ -320,6 +335,89 @@ def _vector_payload(horizon_details: Mapping[str, Mapping[str, Any]]) -> dict[st
     return payload
 
 
+def _thesis_distribution_surface(
+    *,
+    decision_ref: str,
+    target_candidate_id: str,
+    available_time: str,
+    model_version: str,
+    horizon_details: Mapping[str, Mapping[str, Any]],
+    resolved_horizon: str,
+) -> dict[str, Any]:
+    horizon_surfaces = {
+        horizon: _horizon_return_distribution(horizon, detail)
+        for horizon, detail in horizon_details.items()
+    }
+    return {
+        "surface_ref": _stable_id("tds", decision_ref, model_version),
+        "schema_ref": "thesis_distribution_surface",
+        "source_model": "model_04_unified_decision",
+        "source_unified_decision_vector_ref": decision_ref,
+        "target_candidate_id": target_candidate_id,
+        "available_time": available_time,
+        "model_version": model_version,
+        "axes": {
+            "x": "underlying_return_bucket",
+            "t": "forecast_horizon",
+            "y": "conditional_probability",
+        },
+        "horizons": list(HORIZONS),
+        "resolved_horizon": resolved_horizon,
+        "return_quantiles": list(RETURN_DISTRIBUTION_QUANTILES),
+        "cdf_thresholds": list(RETURN_DISTRIBUTION_CDF_THRESHOLDS),
+        "horizon_distributions": horizon_surfaces,
+        "surface_type": "discrete_horizon_return_distribution",
+        "point_in_time_input_only": True,
+        "future_label_used": False,
+    }
+
+
+def _horizon_return_distribution(horizon: str, detail: Mapping[str, Any]) -> dict[str, Any]:
+    del horizon
+    mean = float(detail["expected_return_score"])
+    downside = float(detail["downside_risk_score"])
+    confidence = float(detail["edge_confidence_score"])
+    spread = max(0.003, 0.012 + 0.060 * downside + 0.025 * (1.0 - confidence))
+    quantile_multipliers = {
+        "p05": -1.65,
+        "p10": -1.28,
+        "p25": -0.67,
+        "p50": 0.0,
+        "p75": 0.67,
+        "p90": 1.28,
+        "p95": 1.65,
+    }
+    quantiles = {
+        name: round(_clip_signed(mean + spread * multiplier), 6)
+        for name, multiplier in quantile_multipliers.items()
+    }
+    cdf = {
+        f"return_lte_{threshold:+.2%}": round(_normal_cdf((threshold - mean) / spread), 6)
+        for threshold in RETURN_DISTRIBUTION_CDF_THRESHOLDS
+    }
+    downside_probability = cdf["return_lte_+0.00%"]
+    upside_probability = round(1.0 - downside_probability, 6)
+    tail_loss_probability = cdf["return_lte_-5.00%"]
+    expected_shortfall_proxy = min(0.0, quantiles["p05"])
+    return {
+        "expected_return": round(mean, 6),
+        "uncertainty_spread": round(spread, 6),
+        "return_quantiles": quantiles,
+        "cdf": cdf,
+        "upside_probability": upside_probability,
+        "downside_probability": downside_probability,
+        "tail_loss_probability": tail_loss_probability,
+        "expected_shortfall_proxy": round(expected_shortfall_proxy, 6),
+        "skew_proxy": round(float(detail["direction_thesis_score"]) * float(detail["direction_certainty_score"]), 6),
+        "confidence_score": round(confidence, 6),
+        "point_in_time_input_only": True,
+    }
+
+
+def _normal_cdf(value: float) -> float:
+    return _clip01(0.5 * (1.0 + math.erf(value / math.sqrt(2.0))))
+
+
 def _resolve_horizon(details: Mapping[str, Mapping[str, Any]], policy: Mapping[str, Any]) -> str:
     requested = str(policy.get("preferred_decision_horizon") or "").strip()
     if requested in details:
@@ -375,6 +473,7 @@ def _direct_underlying_intent(
     quote_state: Mapping[str, Any],
     resolved_horizon: str,
     reason_codes: Sequence[str],
+    thesis_distribution_surface_ref: str,
 ) -> dict[str, Any]:
     action_type = action["underlying_action_type"]
     action_side = action["action_side"]
@@ -406,6 +505,7 @@ def _direct_underlying_intent(
         "expected_target_price": target_price,
         "thesis_invalidation_price": stop_price,
         "expected_holding_time_minutes": HORIZON_MINUTES[resolved_horizon],
+        "thesis_distribution_surface_ref": thesis_distribution_surface_ref,
         "handoff_to_model_05": {
             "underlying_path_direction": direction,
             "direction_thesis": direction,
@@ -417,6 +517,7 @@ def _direct_underlying_intent(
             "stop_loss_price": stop_price,
             "thesis_invalidation_price": stop_price,
             "expected_holding_time_minutes": HORIZON_MINUTES[resolved_horizon],
+            "thesis_distribution_surface_ref": thesis_distribution_surface_ref,
             "path_quality_score": round(1.0 - float(dominant["downside_risk_score"]), 6),
             "expected_favorable_move_pct": round(favorable_move, 6),
             "expected_adverse_move_pct": round(-adverse_move, 6),

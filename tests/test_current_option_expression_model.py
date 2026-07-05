@@ -35,6 +35,7 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(output["model_id"], "option_expression_model")
         self.assertEqual(output["model_step"], "M05")
         self.assertEqual(output["unified_decision_vector_ref"], "udv_fixture")
+        self.assertEqual(output["thesis_distribution_surface_ref"], "tds_fixture")
         self.assertEqual(output["5_resolved_expression_type"], "long_call")
         self.assertEqual(output["5_resolved_option_right"], "call")
         self.assertEqual(output["5_resolved_selected_contract_ref"], "AAPL_CALL_GOOD")
@@ -43,6 +44,9 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual(plan["underlying_path_assumptions"]["underlying_path_direction"], "bullish")
         candidate_set = output[CANDIDATE_SET_OUTPUT]
         self.assertEqual(candidate_set["source_m04_decision_ref"], "udv_fixture")
+        self.assertEqual(candidate_set["source_thesis_distribution_surface_ref"], "tds_fixture")
+        self.assertTrue(candidate_set["source_thesis_distribution_surface_summary"]["available"])
+        self.assertEqual(candidate_set["source_thesis_distribution_surface_summary"]["resolved_horizon"], "1W")
         self.assertFalse(candidate_set["selector_result"]["production_behavior_changed"])
         self.assertEqual(candidate_set["selector_result"]["selected_expression_type"], "long_call")
         self.assertEqual(plan["diagnostics"]["expression_candidate_set_ref"], candidate_set["candidate_set_ref"])
@@ -51,6 +55,8 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertEqual({candidate["expression_type"] for candidate in candidates}, {"underlying_equity", "option_contract"})
         self.assertEqual(_selected_candidate(candidate_set)["instrument_ref"], "AAPL_CALL_GOOD")
         self.assertEqual(_selected_candidate(candidate_set)["expression_type"], "option_contract")
+        self.assertEqual(_selected_candidate(candidate_set)["source_thesis_distribution_surface_ref"], "tds_fixture")
+        self.assertTrue(_selected_candidate(candidate_set)["components"]["inherited_thesis_distribution_surface"]["available"])
         self.assertIn("underlying_equity_proxy", {candidate["instrument_ref"] for candidate in candidates})
         rejected_put = next(candidate for candidate in candidates if candidate["instrument_ref"] == "AAPL_PUT_GOOD")
         self.assertEqual(rejected_put["eligibility_status"], "rejected")
@@ -468,6 +474,8 @@ def _base_row(**overrides: object) -> dict[str, object]:
         "tradeable_time": "2026-05-07T10:31:00-04:00",
         "target_candidate_id": "anon_target_001",
         "unified_decision_vector_ref": "udv_fixture",
+        "thesis_distribution_surface_ref": "tds_fixture",
+        "thesis_distribution_surface": _thesis_surface(),
         "option_chain_snapshot_ref": "chain_snapshot_fixture",
         "option_quote_available_time": "2026-05-07T10:30:05-04:00",
         "underlying_quote_snapshot_ref": "underlying_quote_fixture",
@@ -543,6 +551,28 @@ def _call_candidate() -> dict[str, object]:
         "extrinsic_value": 0.475,
         "breakeven_price": 104.475,
         "theoretical_value": 2.49,
+    }
+
+
+def _thesis_surface() -> dict[str, object]:
+    return {
+        "surface_ref": "tds_fixture",
+        "schema_ref": "thesis_distribution_surface",
+        "source_model": "model_04_unified_decision",
+        "source_unified_decision_vector_ref": "udv_fixture",
+        "surface_type": "discrete_horizon_return_distribution",
+        "resolved_horizon": "1W",
+        "horizons": ["10min", "1h", "1D", "1W"],
+        "point_in_time_input_only": True,
+        "future_label_used": False,
+        "horizon_distributions": {
+            "1W": {
+                "expected_return": 0.035,
+                "uncertainty_spread": 0.04,
+                "upside_probability": 0.72,
+                "tail_loss_probability": 0.08,
+            }
+        },
     }
 
 

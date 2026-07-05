@@ -56,6 +56,12 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     )
     market = _payload(row, "background_context_state") or _payload(row, "market_context_state")
     event = _payload(row, "event_state_vector")
+    thesis_surface = _payload(row, "thesis_distribution_surface") or _payload(row, "m04_thesis_distribution_surface")
+    thesis_surface_ref = (
+        row.get("thesis_distribution_surface_ref")
+        or thesis_surface.get("surface_ref")
+        or handoff.get("thesis_distribution_surface_ref")
+    )
     policy = _payload(row, "option_expression_policy")
     pending = _pending_option_context(row)
     candidates = _candidate_rows(row)
@@ -114,6 +120,8 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         available_time=available_time,
         model_version=model_version,
         thesis_ref=thesis_ref,
+        thesis_surface_ref=thesis_surface_ref,
+        thesis_surface=thesis_surface,
         direction=direction,
         handoff=handoff,
         market=market,
@@ -172,6 +180,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         "model_step": MODEL_STEP,
         "model_version": model_version,
         "unified_decision_vector_ref": thesis_ref,
+        "thesis_distribution_surface_ref": thesis_surface_ref,
         "option_expression_plan_ref": expression_plan_ref,
         "option_chain_snapshot_ref": replay_context["option_chain_snapshot_ref"],
         "option_quote_available_time": replay_context["option_quote_available_time"],
@@ -196,6 +205,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "contract_constraints": _contract_constraints(option_right, handoff, policy),
             "premium_risk_plan": _premium_risk_plan(selected, handoff, dominant, policy, expression_type),
             "underlying_thesis_ref": thesis_ref,
+            "underlying_thesis_distribution_surface_ref": thesis_surface_ref,
             "underlying_path_assumptions": handoff,
             "option_surface_status": option_surface_status,
             "reason_codes": reason_codes,
@@ -571,6 +581,8 @@ def _expression_candidate_set(
     available_time: str,
     model_version: str,
     thesis_ref: Any,
+    thesis_surface_ref: Any,
+    thesis_surface: Mapping[str, Any],
     direction: str,
     handoff: Mapping[str, Any],
     market: Mapping[str, Any],
@@ -583,6 +595,8 @@ def _expression_candidate_set(
     underlying = _underlying_expression_candidate_vector(
         expression_plan_ref=expression_plan_ref,
         thesis_ref=thesis_ref,
+        thesis_surface_ref=thesis_surface_ref,
+        thesis_surface=thesis_surface,
         direction=direction,
         handoff=handoff,
         market=market,
@@ -594,6 +608,8 @@ def _expression_candidate_set(
         _option_expression_candidate_vector(
             expression_plan_ref=expression_plan_ref,
             thesis_ref=thesis_ref,
+            thesis_surface_ref=thesis_surface_ref,
+            thesis_surface=thesis_surface,
             direction=direction,
             handoff=handoff,
             market=market,
@@ -614,6 +630,8 @@ def _expression_candidate_set(
         "schema_ref": "expression_candidate_set",
         "source_model": "model_05_option_expression",
         "source_m04_decision_ref": thesis_ref,
+        "source_thesis_distribution_surface_ref": thesis_surface_ref,
+        "source_thesis_distribution_surface_summary": _thesis_surface_summary(thesis_surface),
         "target_candidate_id": target_candidate_id,
         "available_time": available_time,
         "model_version": model_version,
@@ -636,6 +654,8 @@ def _underlying_expression_candidate_vector(
     *,
     expression_plan_ref: str,
     thesis_ref: Any,
+    thesis_surface_ref: Any,
+    thesis_surface: Mapping[str, Any],
     direction: str,
     handoff: Mapping[str, Any],
     market: Mapping[str, Any],
@@ -663,6 +683,7 @@ def _underlying_expression_candidate_vector(
         "expression_type": "underlying_equity",
         "instrument_ref": "underlying_equity_proxy",
         "source_thesis_ref": thesis_ref,
+        "source_thesis_distribution_surface_ref": thesis_surface_ref,
         "option_right": "none",
         "eligibility_status": "eligible",
         "rejection_reasons": [],
@@ -671,6 +692,7 @@ def _underlying_expression_candidate_vector(
         "selector_utility": vector["selector_utility"],
         "components": {
             "inherited_m04_fields": _inherited_m04_summary(direction, handoff),
+            "inherited_thesis_distribution_surface": _thesis_surface_summary(thesis_surface),
             "expression_adjustments": {
                 "expression_cost_score": 0.98,
                 "liquidity_score": no_option_candidate["liquidity_fit_score"],
@@ -685,6 +707,8 @@ def _option_expression_candidate_vector(
     *,
     expression_plan_ref: str,
     thesis_ref: Any,
+    thesis_surface_ref: Any,
+    thesis_surface: Mapping[str, Any],
     direction: str,
     handoff: Mapping[str, Any],
     market: Mapping[str, Any],
@@ -714,6 +738,7 @@ def _option_expression_candidate_vector(
         "expression_type": "option_contract",
         "instrument_ref": candidate.get("contract_ref"),
         "source_thesis_ref": thesis_ref,
+        "source_thesis_distribution_surface_ref": thesis_surface_ref,
         "option_right": candidate.get("option_right"),
         "eligibility_status": "eligible" if eligible else "rejected",
         "rejection_reasons": list(candidate.get("hard_filter_fail_reason_codes") or []),
@@ -722,6 +747,7 @@ def _option_expression_candidate_vector(
         "selector_utility": vector["selector_utility"],
         "components": {
             "inherited_m04_fields": _inherited_m04_summary(direction, handoff),
+            "inherited_thesis_distribution_surface": _thesis_surface_summary(thesis_surface),
             "expression_adjustments": {
                 "dte": candidate.get("dte"),
                 "dte_fit_score": candidate.get("dte_fit_score"),
@@ -808,6 +834,33 @@ def _inherited_m04_summary(direction: str, handoff: Mapping[str, Any]) -> dict[s
         "trade_eligibility_status": handoff.get("trade_eligibility_status"),
         "expected_holding_time_minutes": _round_optional(_first_float(handoff, "expected_holding_time_minutes")),
         "path_quality_score": _round_optional(_first_float(handoff, "path_quality_score")),
+    }
+
+
+def _thesis_surface_summary(surface: Mapping[str, Any]) -> dict[str, Any]:
+    if not surface:
+        return {
+            "surface_ref": None,
+            "surface_type": None,
+            "resolved_horizon": None,
+            "available": False,
+        }
+    resolved = str(surface.get("resolved_horizon") or "").strip()
+    distributions = surface.get("horizon_distributions")
+    resolved_payload = distributions.get(resolved) if isinstance(distributions, Mapping) else None
+    if not isinstance(resolved_payload, Mapping):
+        resolved_payload = {}
+    return {
+        "surface_ref": surface.get("surface_ref"),
+        "surface_type": surface.get("surface_type"),
+        "resolved_horizon": resolved or None,
+        "horizons": list(surface.get("horizons") or []),
+        "resolved_expected_return": _round_optional(_first_float(resolved_payload, "expected_return")),
+        "resolved_uncertainty_spread": _round_optional(_first_float(resolved_payload, "uncertainty_spread")),
+        "resolved_upside_probability": _round_optional(_first_float(resolved_payload, "upside_probability")),
+        "resolved_tail_loss_probability": _round_optional(_first_float(resolved_payload, "tail_loss_probability")),
+        "point_in_time_input_only": bool(surface.get("point_in_time_input_only", True)),
+        "available": True,
     }
 
 
@@ -1162,6 +1215,8 @@ def _normalize_input_row(row: Mapping[str, Any]) -> dict[str, Any]:
         "background_context_state",
         "market_context_state",
         "event_state_vector",
+        "thesis_distribution_surface",
+        "m04_thesis_distribution_surface",
         "option_expression_policy",
     ):
         output[key] = _coerce_payload(output.get(key))

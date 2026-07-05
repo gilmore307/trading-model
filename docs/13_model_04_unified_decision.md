@@ -11,6 +11,7 @@ Status: accepted current model contract; deterministic implementation pilot pres
 ```text
 model_04_unified_decision
   -> unified_decision_vector
+  -> thesis_distribution_surface
 ```
 
 The vector must expose structured heads for:
@@ -22,6 +23,27 @@ The vector must expose structured heads for:
 - direct-underlying action eligibility, including no-trade and invalidation profile.
 
 Those heads are fields of one current model contract, not separate current model contracts.
+
+`thesis_distribution_surface` is the current PIT forecast contract for the
+underlying thesis. It is not a static two-dimensional PDF. It is a discrete
+horizon conditional return distribution surface:
+
+```text
+P(underlying return bucket at horizon tau | PIT context, target, asof)
+```
+
+The current axis contract is:
+
+- `x`: underlying return bucket;
+- `t`: forecast horizon;
+- `y`: conditional probability.
+
+The first accepted implementation uses the existing M04 horizons
+`10min`, `1h`, `1D`, and `1W`; it exposes horizon-level return quantiles,
+CDF thresholds, upside/downside probability, tail-loss probability, uncertainty
+spread, and skew proxy. This is deliberately a calibrated discrete surface, not
+a smooth continuous price-time PDF. Future realized returns are evaluation
+labels only and must not enter the emitted surface.
 
 The current pilot lives in `src/models/model_04_unified_decision/` and emits `4_*` fields plus `unified_decision_vector_ref`. It keeps the edge, risk, exposure, and action heads inside one output and does not expose retired `alpha_confidence_vector`, `dynamic_risk_policy_state`, `position_projection_vector`, or `underlying_action_plan` outputs. Local generate/evaluate/review entrypoints live under `scripts/models/model_04_unified_decision/`.
 
@@ -39,6 +61,10 @@ the direct-underlying action is eligible or blocked by no-trade, materiality, or
 short policy. A blocked direct short must not erase a bearish thesis before M05 option
 expression.
 
+M04 owns the source thesis and distribution surface. M05 may consume the surface
+to compare expression candidates, but M05 must not relitigate M04's target-level
+direction thesis.
+
 ## Inputs
 
 - `background_context_state`.
@@ -48,4 +74,4 @@ expression.
 
 ## Current Gate
 
-The pilot is a deterministic contract implementation and local fixture generator. Production promotion still requires point-in-time training data, direct utility labels, walk-forward replay, no-trade calibration, cost/fill sensitivity, leakage checks, and manager-side promotion review.
+The pilot is a deterministic contract implementation and local fixture generator. Production promotion still requires point-in-time training data, multi-horizon distribution labels, direct utility labels, walk-forward replay, no-trade calibration, cost/fill sensitivity, leakage checks, and manager-side promotion review.

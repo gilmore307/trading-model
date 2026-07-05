@@ -28,10 +28,25 @@ class UnifiedDecisionModelTests(unittest.TestCase):
         output = generate_rows([_base_row()])[0]
         vector = output["unified_decision_vector"]
         intent = output["direct_underlying_intent"]
+        surface = output["thesis_distribution_surface"]
 
         self.assertEqual(output["model_id"], "unified_decision_model")
         self.assertEqual(output["model_step"], "M04")
         self.assertIn("unified_decision_vector_ref", output)
+        self.assertEqual(surface["schema_ref"], "thesis_distribution_surface")
+        self.assertEqual(surface["source_unified_decision_vector_ref"], output["unified_decision_vector_ref"])
+        self.assertEqual(surface["surface_type"], "discrete_horizon_return_distribution")
+        self.assertEqual(surface["axes"]["t"], "forecast_horizon")
+        self.assertEqual(surface["resolved_horizon"], "1W")
+        self.assertEqual(surface["future_label_used"], False)
+        self.assertEqual(set(surface["horizon_distributions"]), {"10min", "1h", "1D", "1W"})
+        self.assertIn("p50", surface["horizon_distributions"]["1W"]["return_quantiles"])
+        self.assertIn("return_lte_+0.00%", surface["horizon_distributions"]["1W"]["cdf"])
+        self.assertEqual(intent["thesis_distribution_surface_ref"], surface["surface_ref"])
+        self.assertEqual(
+            intent["handoff_to_model_05"]["thesis_distribution_surface_ref"],
+            surface["surface_ref"],
+        )
         self.assertGreater(vector["4_after_cost_edge_score_1W"], 0.5)
         self.assertGreater(vector["4_risk_budget_score_1W"], 0.0)
         self.assertGreater(vector["4_target_exposure_score_1W"], 0.0)
