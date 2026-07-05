@@ -15,9 +15,11 @@ model_02_target_state
 
 The output should preserve audit/routing metadata separately from model-facing fitting vectors. Raw ticker/company identity must not become a fitted feature.
 
-M02 owns only the target residual factor. M01 background state may condition
-eligibility, applicability, or calibration slices, but M02 must not re-count
-M01's market/background contribution as target alpha.
+M02 owns only the target residual factor and is the source of M04's target base
+distribution `D2`. M01 background state may condition eligibility,
+applicability, or calibration slices, but M02 must not re-count M01's
+market/background contribution as target alpha. M04 later applies M01/M03
+distribution operators to this M02 base distribution.
 
 Current local implementation emits:
 

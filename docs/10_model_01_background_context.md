@@ -19,6 +19,12 @@ M01 owns only the market/background factor. It must not include M02 target
 selection evidence, M03 event evidence, M04 final decision evidence, or M05
 expression evidence in its model-facing output.
 
+M04 consumes M01 as a market/sector distribution operator `A01`, not as a
+standalone target alpha. By default M01 shapes variance, tails, skew,
+confidence, gates, and exposure permission around the M02 target base
+distribution. It may move mean/mode only through explicit reviewed directional
+regime-shift channels.
+
 Current local implementation emits:
 
 - `background_context_state_ref`

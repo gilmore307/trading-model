@@ -12,6 +12,21 @@ factor into the final tradable decision surface. Cross-factor interaction,
 double-count prevention, final posterior calibration, no-trade thresholding, and
 action eligibility are M04 responsibilities.
 
+M04's primary model output is the final posterior probability function:
+
+```text
+D4(y, tau) = calibrate(A03(A01(D2(y, tau))))
+```
+
+- `D2` is the M02 target base distribution.
+- `A01` is the M01 market/sector background distribution operator.
+- `A03` is the M03 event distribution operator.
+- `D4` is the M04 posterior `thesis_distribution_surface`.
+
+M04 derives `unified_decision_vector` and `direct_underlying_intent` from this
+posterior surface. They are decision summaries and handoff records, not the
+primary probability function.
+
 M04 consumes M03 event effects by distribution channel. Risk-shape channels such
 as variance, left/right tail, skew, confidence discount, and gate pressure may
 change uncertainty spread, tail quantiles, confidence, downside risk, and
@@ -43,8 +58,9 @@ M04 diagnostics record this as `event_absorption_mode` inside horizon decisions:
 
 ```text
 model_04_unified_decision
-  -> unified_decision_vector
-  -> thesis_distribution_surface
+  -> thesis_distribution_surface      # primary posterior probability function
+  -> unified_decision_vector          # derived decision summary
+  -> direct_underlying_intent         # downstream handoff, not an order
 ```
 
 The vector must expose structured heads for:
@@ -76,6 +92,21 @@ horizons `10min`, `1h`, `1D`, and `1W`; it exposes horizon-level return
 quantiles, CDF thresholds, upside/downside probability, tail-loss probability,
 uncertainty spread, and skew proxy. Future realized returns are evaluation
 labels only and must not enter the emitted surface.
+
+Each horizon distribution records the operator chain used to build the posterior:
+
+```text
+target_base_distribution      # D2
+m01_distribution_operator     # A01
+m03_distribution_operator     # A03
+posterior_distribution_inputs # combined operator inputs used by D4
+```
+
+M01/M03 risk-shape operators may widen the surface, alter tail mass, skew the
+surface, discount confidence, or raise gates. They do not move the distribution
+center. M01/M03 center-shift operators may move mean/mode only when the
+upstream layer has a reviewed directional effect model and emits explicit
+center channels.
 
 The accepted research migration target is
 `tradable_time_return_distribution_surface`: a single calendar-aware conditional

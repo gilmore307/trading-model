@@ -40,8 +40,21 @@ class UnifiedDecisionModelTests(unittest.TestCase):
         self.assertEqual(surface["resolved_horizon"], "1W")
         self.assertEqual(surface["future_label_used"], False)
         self.assertEqual(set(surface["horizon_distributions"]), {"10min", "1h", "1D", "1W"})
-        self.assertIn("p50", surface["horizon_distributions"]["1W"]["return_quantiles"])
-        self.assertIn("return_lte_+0.00%", surface["horizon_distributions"]["1W"]["cdf"])
+        one_week_distribution = surface["horizon_distributions"]["1W"]
+        self.assertIn("p50", one_week_distribution["return_quantiles"])
+        self.assertIn("return_lte_+0.00%", one_week_distribution["cdf"])
+        self.assertIn("target_base_distribution", one_week_distribution)
+        self.assertIn("m01_distribution_operator", one_week_distribution)
+        self.assertIn("m03_distribution_operator", one_week_distribution)
+        self.assertIn("posterior_distribution_inputs", one_week_distribution)
+        self.assertIn("mean", one_week_distribution["target_base_distribution"])
+        self.assertIn("variance_multiplier", one_week_distribution["m01_distribution_operator"])
+        self.assertIn("variance_multiplier", one_week_distribution["m03_distribution_operator"])
+        self.assertIn(
+            "combined_variance_multiplier",
+            one_week_distribution["posterior_distribution_inputs"],
+        )
+        self.assertIn("posterior_center_shift", one_week_distribution["posterior_distribution_inputs"])
         self.assertEqual(intent["thesis_distribution_surface_ref"], surface["surface_ref"])
         self.assertEqual(
             intent["handoff_to_model_05"]["thesis_distribution_surface_ref"],
@@ -180,6 +193,26 @@ class UnifiedDecisionModelTests(unittest.TestCase):
         self.assertEqual(detail["event_absorption_mode"], "center_shift_and_risk_shape")
         self.assertLess(detail["event_center_shift_score"], 0.0)
         self.assertGreater(detail["event_shape_pressure_score"], 0.0)
+
+    def test_m01_center_shift_enters_posterior_without_event_absorption(self) -> None:
+        output = generate_rows(
+            [
+                _base_row(
+                    background_context_state={
+                        "1_market_risk_stress_score": 0.20,
+                        "1_market_liquidity_support_score": 0.85,
+                        "1_background_mean_shift_score_1W": 0.30,
+                    }
+                )
+            ]
+        )[0]
+
+        detail = output["unified_decision_diagnostics"]["horizon_decisions"]["1W"]
+        surface = output["thesis_distribution_surface"]["horizon_distributions"]["1W"]
+        self.assertEqual(detail["event_absorption_mode"], "no_event_effect")
+        self.assertEqual(detail["event_center_shift_score"], 0.0)
+        self.assertGreater(detail["posterior_center_shift_score"], 0.0)
+        self.assertGreater(surface["posterior_distribution_inputs"]["posterior_center_shift"], 0.0)
 
     def test_bearish_flat_without_short_borrow_does_not_choose_option_contract(self) -> None:
         output = generate_rows(
