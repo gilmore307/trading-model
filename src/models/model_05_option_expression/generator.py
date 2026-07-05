@@ -69,9 +69,29 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
     scored_candidates = [_score_candidate(candidate, option_right, handoff, market, event, policy) for candidate in candidates]
     eligible_candidates = [candidate for candidate in scored_candidates if candidate["option_right"] == option_right and candidate["eligible"]]
     selected = max(eligible_candidates, key=lambda candidate: candidate["contract_fit_score"], default=None)
+    no_option_candidate = _score_no_option_candidate(
+        direction=direction,
+        handoff=handoff,
+        market=market,
+        event=event,
+        policy=policy,
+        pending=pending,
+        option_surface_status=option_surface_status,
+        eligible_candidate_count=len(eligible_candidates),
+    )
+    selector_diagnostics = _select_expression_candidate(
+        expression_type=expression_type,
+        option_right=option_right,
+        selected=selected,
+        no_option_candidate=no_option_candidate,
+        policy=policy,
+    )
+    expression_type = selector_diagnostics["selected_expression_type"]
+    option_right = selector_diagnostics["selected_option_right"]
+    selected = selector_diagnostics["selected_contract"]
 
     horizon_payloads = {
-        horizon: _horizon_payload(horizon, expression_type, direction, selected, handoff, market, event, policy)
+        horizon: _horizon_payload(horizon, expression_type, direction, selected, no_option_candidate, handoff, market, event, policy)
         for horizon in HORIZONS
     }
     dominant_horizon = _dominant_horizon(horizon_payloads, underlying_intent)
@@ -80,7 +100,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         expression_type = _underlying_only_or_no_option(direction, underlying_intent, policy, pending)
         option_right = "none"
         horizon_payloads = {
-            horizon: _horizon_payload(horizon, expression_type, direction, None, handoff, market, event, policy)
+            horizon: _horizon_payload(horizon, expression_type, direction, None, no_option_candidate, handoff, market, event, policy)
             for horizon in HORIZONS
         }
         dominant_horizon = _dominant_horizon(horizon_payloads, underlying_intent)
@@ -104,7 +124,18 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
                 f"5_option_expression_confidence_score_{suffix}": payload["expression_confidence_score"],
             }
         )
-    reason_codes = _reason_codes(expression_type, selected, dominant, scored_candidates, option_right, policy, underlying_intent, pending, option_surface_status)
+    reason_codes = _reason_codes(
+        expression_type,
+        selected,
+        dominant,
+        scored_candidates,
+        option_right,
+        policy,
+        underlying_intent,
+        pending,
+        option_surface_status,
+        selector_diagnostics,
+    )
     no_option_reason_codes = [code for code in reason_codes if expression_type == "no_option_expression"]
     resolved_payload = {
         "5_resolved_expression_type": expression_type,
@@ -157,6 +188,8 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
                 "pending_option_exposure_context": pending,
                 "no_future_label_used": True,
                 "scored_candidates": scored_candidates,
+                "no_option_candidate": no_option_candidate,
+                "expression_selector": _selector_diagnostics_payload(selector_diagnostics),
                 "horizon_scores": horizon_payloads,
             },
         },
@@ -368,11 +401,153 @@ def _score_candidate(
     }
 
 
+def _score_no_option_candidate(
+    *,
+    direction: str,
+    handoff: Mapping[str, Any],
+    market: Mapping[str, Any],
+    event: Mapping[str, Any],
+    policy: Mapping[str, Any],
+    pending: Mapping[str, Any],
+    option_surface_status: str,
+    eligible_candidate_count: int,
+) -> dict[str, Any]:
+    path_quality = _score(handoff, "path_quality_score", default=0.5)
+    reversal = _score(handoff, "reversal_risk_score", default=0.35)
+    drawdown = _score(handoff, "drawdown_risk_score", default=0.35)
+    market_liquidity = _score(market, "1_market_liquidity_support_score", default=0.65)
+    event_uncertainty = _score(event, "6_event_uncertainty_score_1W", "3_event_uncertainty_score_1W", default=0.15)
+    direction_confidence = _score(
+        handoff,
+        "direction_certainty_score",
+        "underlying_action_confidence_score",
+        "direction_thesis_score",
+        default=0.5,
+    )
+    policy_floor = _score(policy, "no_option_expression_score_floor", default=0.0)
+    policy_bonus = _score(policy, "no_option_expression_score_bonus", default=0.0)
+    surface_penalty = 0.20 if option_surface_status in {"optionable_chain_missing", "non_optionable_underlying"} else 0.0
+    pending_penalty = 0.25 if pending.get("has_pending_option_exposure") else 0.0
+    singleton_penalty = 0.08 if eligible_candidate_count == 1 else 0.0
+    no_eligible_penalty = 0.18 if eligible_candidate_count == 0 else 0.0
+    risk_pressure = max(reversal, drawdown, event_uncertainty)
+    score = _clip01(
+        0.10
+        + 0.25 * risk_pressure
+        + 0.20 * (1.0 - path_quality)
+        + 0.15 * (1.0 - market_liquidity)
+        + 0.15 * (1.0 - direction_confidence)
+        + singleton_penalty
+        + no_eligible_penalty
+        + surface_penalty
+        + pending_penalty
+        + policy_bonus
+    )
+    score = max(score, policy_floor)
+    return {
+        "expression_type": "no_option_expression",
+        "option_right": "none",
+        "score": round(score, 6),
+        "expression_eligibility_score": round(score, 6),
+        "expression_confidence_score": round(score, 6),
+        "contract_fit_score": round(score, 6),
+        "liquidity_fit_score": round(market_liquidity, 6),
+        "iv_fit_score": 0.0,
+        "greek_fit_score": 0.0,
+        "reward_risk_score": 0.0,
+        "theta_risk_score": 0.0,
+        "fill_quality_score": round(_clip01(1.0 - risk_pressure), 6),
+        "risk_pressure_score": round(risk_pressure, 6),
+        "path_quality_score": round(path_quality, 6),
+        "direction_confidence_score": round(direction_confidence, 6),
+        "eligible_candidate_count": eligible_candidate_count,
+        "reason_codes": _dedupe(
+            [
+                "scored_no_option_expression_baseline",
+                "singleton_candidate_set_penalty" if eligible_candidate_count == 1 else "",
+                "no_eligible_option_contract_candidate" if eligible_candidate_count == 0 else "",
+                "pending_option_exposure_detected" if pending.get("has_pending_option_exposure") else "",
+                "option_surface_unavailable" if option_surface_status == "optionable_chain_missing" else "",
+                "non_optionable_underlying" if option_surface_status == "non_optionable_underlying" else "",
+            ]
+        ),
+    }
+
+
+def _select_expression_candidate(
+    *,
+    expression_type: str,
+    option_right: str,
+    selected: Mapping[str, Any] | None,
+    no_option_candidate: Mapping[str, Any],
+    policy: Mapping[str, Any],
+) -> dict[str, Any]:
+    contract_score = _safe_float((selected or {}).get("contract_fit_score")) if selected is not None else None
+    no_option_score = _score(no_option_candidate, "score", "contract_fit_score", default=0.0)
+    margin = _score(policy, "no_option_expression_min_margin", default=0.02)
+    if expression_type in {"long_call", "long_put"}:
+        if selected is None:
+            return {
+                "selected_expression_type": "no_option_expression",
+                "selected_option_right": "none",
+                "selected_contract": None,
+                "selection_reason": "no_option_won_no_eligible_contract",
+                "best_contract_score": None,
+                "no_option_score": no_option_score,
+                "score_margin": None,
+                "no_option_min_margin": margin,
+            }
+        score_margin = no_option_score - float(contract_score)
+        if score_margin >= margin:
+            return {
+                "selected_expression_type": "no_option_expression",
+                "selected_option_right": "none",
+                "selected_contract": None,
+                "selection_reason": "no_option_won_policy_adjusted_score",
+                "best_contract_score": round(float(contract_score), 6),
+                "best_contract_ref": selected.get("contract_ref"),
+                "no_option_score": no_option_score,
+                "score_margin": round(score_margin, 6),
+                "no_option_min_margin": margin,
+            }
+        return {
+            "selected_expression_type": expression_type,
+            "selected_option_right": option_right,
+            "selected_contract": selected,
+            "selection_reason": "contract_won_policy_adjusted_score",
+            "best_contract_score": round(float(contract_score), 6),
+            "best_contract_ref": selected.get("contract_ref"),
+            "no_option_score": no_option_score,
+            "score_margin": round(score_margin, 6),
+            "no_option_min_margin": margin,
+        }
+    return {
+        "selected_expression_type": expression_type,
+        "selected_option_right": option_right,
+        "selected_contract": selected,
+        "selection_reason": "option_contract_comparison_not_applicable",
+        "best_contract_score": None if contract_score is None else round(float(contract_score), 6),
+        "best_contract_ref": None if selected is None else selected.get("contract_ref"),
+        "no_option_score": no_option_score,
+        "score_margin": None if contract_score is None else round(no_option_score - float(contract_score), 6),
+        "no_option_min_margin": margin,
+    }
+
+
+def _selector_diagnostics_payload(selector_diagnostics: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in selector_diagnostics.items()
+        if key != "selected_contract"
+    }
+
+
 def _horizon_payload(
     horizon: str,
     expression_type: str,
     direction: str,
     selected: Mapping[str, Any] | None,
+    no_option_candidate: Mapping[str, Any],
     handoff: Mapping[str, Any],
     market: Mapping[str, Any],
     event: Mapping[str, Any],
@@ -400,16 +575,16 @@ def _horizon_payload(
         }
     if expression_type == "no_option_expression" or selected is None:
         return {
-            "expression_eligibility_score": 0.0,
+            "expression_eligibility_score": no_option_candidate["expression_eligibility_score"],
             "expression_direction_score": 0.0,
-            "contract_fit_score": 0.0,
-            "liquidity_fit_score": 0.0,
-            "iv_fit_score": 0.0,
-            "greek_fit_score": 0.0,
-            "reward_risk_score": 0.0,
-            "theta_risk_score": 0.0,
-            "fill_quality_score": 0.0,
-            "expression_confidence_score": 0.0,
+            "contract_fit_score": no_option_candidate["contract_fit_score"],
+            "liquidity_fit_score": no_option_candidate["liquidity_fit_score"],
+            "iv_fit_score": no_option_candidate["iv_fit_score"],
+            "greek_fit_score": no_option_candidate["greek_fit_score"],
+            "reward_risk_score": no_option_candidate["reward_risk_score"],
+            "theta_risk_score": no_option_candidate["theta_risk_score"],
+            "fill_quality_score": no_option_candidate["fill_quality_score"],
+            "expression_confidence_score": no_option_candidate["expression_confidence_score"],
         }
     path_quality = _score(handoff, "path_quality_score", default=0.5)
     reversal = _score(handoff, "reversal_risk_score", default=0.35)
@@ -555,6 +730,7 @@ def _reason_codes(
     underlying_intent: Mapping[str, Any],
     pending: Mapping[str, Any],
     option_surface_status: str,
+    selector_diagnostics: Mapping[str, Any],
 ) -> list[str]:
     reasons: list[str] = []
     action_type = str(underlying_intent.get("underlying_action_type") or underlying_intent.get("planned_underlying_action_type") or "").lower()
@@ -591,6 +767,9 @@ def _reason_codes(
         reasons.extend(_candidate_filter_reason_summary(scored_candidates))
     if selected is not None:
         reasons.append("point_in_time_contract_candidate_selected")
+    selection_reason = str(selector_diagnostics.get("selection_reason") or "")
+    if selection_reason:
+        reasons.append(selection_reason)
     return _dedupe(reasons)
 
 

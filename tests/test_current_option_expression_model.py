@@ -63,6 +63,72 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertIn("underlying_action_no_trade", output["5_resolved_no_option_reason_codes"])
         self.assertGreater(output["option_expression_plan"]["diagnostics"]["candidate_count_before_filter"], 0)
 
+    def test_no_option_expression_is_scored_against_eligible_contracts(self) -> None:
+        output = generate_rows(
+            [
+                _base_row(
+                    direct_underlying_intent={
+                        "underlying_action_type": "open_long",
+                        "action_side": "long",
+                        "dominant_horizon": "1W",
+                        "handoff_to_model_05": {
+                            **_handoff(),
+                            "path_quality_score": 0.10,
+                            "reversal_risk_score": 0.95,
+                            "drawdown_risk_score": 0.90,
+                            "underlying_action_confidence_score": 0.15,
+                        },
+                    },
+                    background_context_state={
+                        "1_market_risk_stress_score": 0.80,
+                        "1_market_liquidity_support_score": 0.15,
+                    },
+                    event_state_vector={"3_event_uncertainty_score_1W": 0.85},
+                    option_contract_candidates=[
+                        {
+                            **_call_candidate(),
+                            "contract_ref": "AAPL_CALL_FRAGILE",
+                            "dte": 45,
+                            "delta": 0.35,
+                            "bid": 1.00,
+                            "ask": 1.18,
+                            "volume": 0,
+                            "open_interest": 0,
+                            "iv_rank": 0.74,
+                        }
+                    ],
+                )
+            ]
+        )[0]
+        diagnostics = output["option_expression_plan"]["diagnostics"]
+
+        self.assertEqual(output["5_resolved_expression_type"], "no_option_expression")
+        self.assertEqual(diagnostics["candidate_count_after_filter"], 1)
+        self.assertGreater(diagnostics["no_option_candidate"]["score"], diagnostics["expression_selector"]["best_contract_score"])
+        self.assertEqual(diagnostics["expression_selector"]["selection_reason"], "no_option_won_policy_adjusted_score")
+        self.assertIn("no_option_won_policy_adjusted_score", output["5_resolved_reason_codes"])
+
+    def test_no_option_comparison_does_not_expand_dte_policy(self) -> None:
+        output = generate_rows(
+            [
+                _base_row(
+                    option_contract_candidates=[
+                        {
+                            **_call_candidate(),
+                            "contract_ref": "AAPL_CALL_OUTSIDE_DTE",
+                            "dte": 90,
+                        }
+                    ]
+                )
+            ]
+        )[0]
+        diagnostics = output["option_expression_plan"]["diagnostics"]
+
+        self.assertEqual(output["5_resolved_expression_type"], "no_option_expression")
+        self.assertEqual(diagnostics["candidate_count_after_filter"], 0)
+        self.assertEqual(diagnostics["expression_selector"]["selection_reason"], "no_option_won_no_eligible_contract")
+        self.assertIn("dte_outside_policy_range", diagnostics["scored_candidates"][0]["hard_filter_fail_reason_codes"])
+
     def test_bearish_no_direct_short_intent_selects_long_put(self) -> None:
         row = _base_row(
             direct_underlying_intent={
