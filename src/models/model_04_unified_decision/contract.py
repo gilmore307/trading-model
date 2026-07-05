@@ -7,10 +7,11 @@ from typing import Final
 MODEL_STEP: Final[str] = "M04"
 MODEL_ID: Final[str] = "unified_decision_model"
 MODEL_SURFACE: Final[str] = "model_04_unified_decision"
-CONCEPTUAL_OUTPUT: Final[str] = "unified_decision_vector"
 THESIS_DISTRIBUTION_SURFACE_OUTPUT: Final[str] = "thesis_distribution_surface"
-MODEL_VERSION: Final[str] = "unified_decision_vector_contract"
-VECTOR_OUTPUT: Final[str] = CONCEPTUAL_OUTPUT
+CONCEPTUAL_OUTPUT: Final[str] = THESIS_DISTRIBUTION_SURFACE_OUTPUT
+PRIMARY_OUTPUT: Final[str] = THESIS_DISTRIBUTION_SURFACE_OUTPUT
+MODEL_VERSION: Final[str] = "thesis_distribution_surface_contract"
+VECTOR_OUTPUT: Final[str] = "unified_decision_vector"
 HORIZONS: Final[tuple[str, ...]] = ("10min", "1h", "1D", "1W")
 RETURN_DISTRIBUTION_QUANTILES: Final[tuple[str, ...]] = ("p05", "p10", "p25", "p50", "p75", "p90", "p95")
 RETURN_DISTRIBUTION_CDF_THRESHOLDS: Final[tuple[float, ...]] = (-0.05, -0.02, 0.0, 0.02, 0.05)

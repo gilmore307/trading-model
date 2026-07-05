@@ -23,8 +23,10 @@ For each current model contract, define:
 M01 Background Context          -> background_context_state
 M02 Target State / Selection    -> target_context_state
 M03 Event State / Conditioning  -> event_state_vector
-M04 Unified Decision            -> unified_decision_vector
-M05 Option Expression           -> option_expression_plan / expression_vector
+M04 Unified Decision            -> thesis_distribution_surface
+                                 -> unified_decision_vector (derived summary)
+M05 Option Expression           -> expression_probability_surface
+                                 -> option_expression_plan / expression_vector (derived summary)
 ```
 
 ## Cross-Model Rules

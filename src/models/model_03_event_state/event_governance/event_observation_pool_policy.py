@@ -159,7 +159,7 @@ def build_event_observation_pool_policy(*, generated_at_utc: str | None = None) 
         ),
         PromotionRuleRow(
             rule_key="correction_layer_acceptance",
-            applies_to="event_risk_governor",
+            applies_to="event_effect_model",
             minimum_requirement="residual anomaly explanation, canonical event clocks, relevance, matched controls, and stability support risk/path correction",
             allowed_result="uncertainty, path-risk, gate pressure, exposure pressure, or human-review evidence",
             agent_review_required=True,

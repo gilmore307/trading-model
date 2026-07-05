@@ -26,7 +26,7 @@ CPI_SURPRISE_REPORT = model_storage_root() / "cpi_surprise_correlation_study_202
 TE_CPI_SURPRISE_REPORT = model_storage_root() / "te_cpi_surprise_correlation_study_20260516" / "te_cpi_surprise_summary.json"
 OPTION_MATCHED_CONTROL_REPORT = model_storage_root() / "option_activity_matched_control_study_20260515" / "report.json"
 
-FINAL_MODEL_POSTURE = "build_event_risk_governor_not_standalone_event_alpha"
+FINAL_MODEL_POSTURE = "build_event_effect_model_not_standalone_event_alpha"
 FINAL_ALPHA_DECISION = "reject_standalone_directional_event_alpha_for_current_evidence"
 FINAL_RISK_DECISION = "accept_bounded_event_risk_intelligence_overlay"
 FINAL_TRAINING_DECISION = "do_not_train_or_activate_event_alpha_model"

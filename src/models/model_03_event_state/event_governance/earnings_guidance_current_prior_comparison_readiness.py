@@ -137,7 +137,7 @@ def run_current_prior_comparison_readiness(inputs: CurrentPriorComparisonReadine
                 "accepted_guidance_raise_cut_status": "missing_not_established",
                 "beat_miss_status": "missing_expectation_baseline",
                 "signed_direction_readiness": signed_readiness,
-                "event_risk_governor_readiness": "direction_neutral_context_only",
+                "event_effect_model_readiness": "direction_neutral_context_only",
                 "provider_calls_performed_by_study": 0,
                 "review_note": note,
             }

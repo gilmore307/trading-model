@@ -26,7 +26,7 @@ class EventLayerFinalJudgmentTests(unittest.TestCase):
         payload = judgment.to_dict()
 
         self.assertEqual(payload["contract_type"], "event_layer_final_judgment")
-        self.assertEqual(payload["final_model_posture"], "build_event_risk_governor_not_standalone_event_alpha")
+        self.assertEqual(payload["final_model_posture"], "build_event_effect_model_not_standalone_event_alpha")
         self.assertEqual(payload["final_alpha_decision"], "reject_standalone_directional_event_alpha_for_current_evidence")
         self.assertEqual(payload["final_risk_decision"], "accept_bounded_event_risk_intelligence_overlay")
         self.assertEqual(payload["summary"]["standalone_alpha_families_now"], [])

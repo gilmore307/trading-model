@@ -990,7 +990,7 @@ def _horizon_payload(
         reversal = _score(handoff, "reversal_risk_score", default=0.35)
         drawdown = _score(handoff, "drawdown_risk_score", default=0.35)
         market_liquidity = _score(market, "1_market_liquidity_support_score", default=0.65)
-        event_uncertainty = _score(event, fdefault=0.15)
+        event_uncertainty = _score(event, default=0.15)
         direction_score = 1.0 if direction == "bullish" else -1.0 if direction == "bearish" else 0.0
         confidence = _clip01(0.45 * path_quality + 0.25 * market_liquidity - 0.20 * max(reversal, drawdown, event_uncertainty))
         return {

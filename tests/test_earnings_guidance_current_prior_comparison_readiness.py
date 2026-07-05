@@ -70,7 +70,7 @@ class EarningsGuidanceCurrentPriorComparisonReadinessTests(unittest.TestCase):
                 row = next(csv.DictReader(handle))
             self.assertEqual(row["guidance_comparison_readiness"], "blocked_missing_current_comparable_guidance_context")
             self.assertEqual(row["signed_direction_readiness"], "blocked_missing_current_guidance_comparison")
-            self.assertEqual(row["event_risk_governor_readiness"], "direction_neutral_context_only")
+            self.assertEqual(row["event_effect_model_readiness"], "direction_neutral_context_only")
 
     def test_even_comparable_context_remains_unsigned_without_pit_baselines(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:

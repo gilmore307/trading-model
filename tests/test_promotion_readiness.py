@@ -18,9 +18,9 @@ class PromotionReadinessTests(unittest.TestCase):
         self.assertEqual(by_layer[1]["model_id"], "background_context_model")
         self.assertEqual(by_layer[1]["output"], "background_context_state")
         self.assertEqual(by_layer[4]["model_id"], "unified_decision_model")
-        self.assertEqual(by_layer[4]["output"], "unified_decision_vector")
+        self.assertEqual(by_layer[4]["output"], "thesis_distribution_surface")
         self.assertEqual(by_layer[5]["model_id"], "option_expression_model")
-        self.assertEqual(by_layer[5]["output"], "option_expression_plan")
+        self.assertEqual(by_layer[5]["output"], "expression_probability_surface")
         self.assertTrue(all(row["design_status"] == "design_closed" for row in LAYER_PROMOTION_READINESS_MATRIX))
         statuses = {row["production_promotion_status"] for row in LAYER_PROMOTION_READINESS_MATRIX}
         self.assertNotIn("production_approved", statuses)

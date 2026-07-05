@@ -173,7 +173,7 @@ def _event_summary(candidate_row: Mapping[str, str], reviewed_spans: Sequence[Ma
         "beat_miss_status": "missing_expectation_baseline",
         "expectation_baseline_status": "missing_consensus_or_accepted_expectation_baseline",
         "signed_direction_readiness": "blocked_missing_expectation_baseline",
-        "event_risk_governor_readiness": "direction_neutral_context_only" if partial else "not_actionable_guidance_context",
+        "event_effect_model_readiness": "direction_neutral_context_only" if partial else "not_actionable_guidance_context",
         "provider_calls_performed_by_study": 0,
     }
 

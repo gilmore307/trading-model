@@ -32,13 +32,13 @@ class EventModelAcceptanceTests(unittest.TestCase):
         self.assertIn("model_03_event_state", governor["next_evidence_gate"])
         self.assertNotIn("source_08", governor["next_evidence_gate"])
         self.assertNotIn("feature_08", governor["next_evidence_gate"])
-        self.assertNotIn("model_" + "08_" + "event_risk_governor", governor["next_evidence_gate"])
+        self.assertNotIn("model_" + "08_" + "event_effect_model", governor["next_evidence_gate"])
 
         self.assertIn("M03-event-dependent outputs", row["downstream_regeneration_policy"])
         self.assertIn("model_03_event_state", row["downstream_regeneration_policy"])
         self.assertNotIn("source_08", row["downstream_regeneration_policy"])
         self.assertNotIn("feature_08", row["downstream_regeneration_policy"])
-        self.assertNotIn("model_" + "08_" + "event_risk_governor", row["downstream_regeneration_policy"])
+        self.assertNotIn("model_" + "08_" + "event_effect_model", row["downstream_regeneration_policy"])
 
     def test_writes_report_file(self) -> None:
         with tempfile.TemporaryDirectory() as raw_tmp:

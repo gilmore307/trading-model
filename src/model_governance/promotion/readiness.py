@@ -47,7 +47,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
     {
         "layer": 4,
         "model_id": "unified_decision_model",
-        "output": "unified_decision_vector",
+        "output": "thesis_distribution_surface",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_deterministic_pilot_only",
         "blocking_gap": "unified decision training/evaluation run, direct utility labels, and replay evidence missing",
@@ -55,7 +55,7 @@ LAYER_PROMOTION_READINESS_MATRIX = (
     {
         "layer": 5,
         "model_id": "option_expression_model",
-        "output": "option_expression_plan",
+        "output": "expression_probability_surface",
         "design_status": "design_closed",
         "production_promotion_status": "deferred_deterministic_pilot_only",
         "blocking_gap": "option-chain replay labels, cost/fill/theta/IV validation, and baseline evidence missing",

@@ -54,14 +54,14 @@ def model_sequence() -> tuple[ModelSequenceEntry, ...]:
             model_name="Unified Decision",
             model_id="unified_decision_model",
             model_surface="model_04_unified_decision",
-            conceptual_output="unified_decision_vector",
+            conceptual_output="thesis_distribution_surface",
         ),
         ModelSequenceEntry(
             model_step="M05",
             model_name="Option Expression",
             model_id="option_expression_model",
             model_surface="model_05_option_expression",
-            conceptual_output="option_expression_plan",
+            conceptual_output="expression_probability_surface",
         ),
     )
 

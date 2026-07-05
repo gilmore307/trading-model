@@ -23,8 +23,8 @@ Status: accepted vocabulary for the current five-model stack
 | `M01 Background Context` | `background_context_state` |
 | `M02 Target State` | `target_context_state` |
 | `M03 Event State` | `event_state_vector` |
-| `M04 Unified Decision` | `unified_decision_vector` |
-| `M05 Option Expression` | `option_expression_plan`, `expression_vector` |
+| `M04 Unified Decision` | `thesis_distribution_surface`, derived `unified_decision_vector` |
+| `M05 Option Expression` | `expression_probability_surface`, derived `option_expression_plan`, `expression_vector` |
 
 ## Model-Specific Notes
 
