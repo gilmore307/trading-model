@@ -58,8 +58,19 @@ class ReturnDistributionSurfacePilotTests(unittest.TestCase):
 
         self.assertGreater(len(result.horizon_axis_minutes), 4)
         self.assertTrue(all(row["cdf_monotone"] for row in result.cdf_rows))
-        self.assertEqual(result.fit_metadata["fit_type"], "single_context_conditioned_tradable_time_quantile_polynomial")
+        self.assertEqual(
+            result.fit_metadata["fit_type"],
+            "single_context_conditioned_shape_constrained_tradable_time_quantile_surface",
+        )
         self.assertIn("context_model", result.fit_metadata)
+        self.assertEqual(
+            result.fit_metadata["context_model"]["shape_constraint"],
+            "adjacent_quantile_spacings_are_positive_by_construction",
+        )
+        self.assertEqual(
+            result.fit_metadata["context_model"]["spacing_link"],
+            "positive_floor_adjacent_quantile_spacing",
+        )
         self.assertIn("all", result.slice_validation)
         self.assertIn("crosses_session_gap", result.slice_validation)
 

@@ -58,9 +58,11 @@ The current read-only pilot supports two fit modes. `baseline` fits one smooth
 curve over `tau_trading_minutes` only. `context` fits the same surface function
 with open, close, session-gap, and overnight context features. `context` is the
 default research mode because it preserves one model object while letting
-market-structure effects condition the distribution. Quantile monotonicity is
-validated after prediction; candidate production adoption still requires a
-larger walk-forward sample and slice calibration beyond the SPY/QQQ pilot.
+market-structure effects condition the distribution. The context fit is shape
+constrained: it predicts the lower quantile and positive adjacent quantile
+spacings, so quantiles are ordered by construction instead of relying on a
+post-hoc crossing repair. Candidate production adoption still requires a larger
+walk-forward sample and slice calibration beyond the SPY/QQQ pilot.
 
 Reusable pilot code lives in `src/models/return_distribution_surface/`; the
 read-only SQL entrypoint is

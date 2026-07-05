@@ -223,14 +223,12 @@ def fit_tradable_time_distribution_surface(
             degree=degree,
         )
         for tau in taus:
-            neutral_features = _design_vector_for_context(
+            surface[tau] = _predict_context_quantiles_for_values(
                 tau=tau,
-                degree=degree,
                 context_values={name: 0.0 for name in context_model["context_feature_names"]},
-                feature_names=context_model["feature_names"],
+                levels=quantile_levels,
+                context_model=context_model,
             )
-            for key in _quantile_keys(quantile_levels):
-                surface[tau][key] = float(np.dot(context_model["coefficients"][key], neutral_features))
 
     crossing_repairs = _repair_crossing(surface, quantile_levels)
     validation_rows = _validation_rows(
@@ -255,7 +253,7 @@ def fit_tradable_time_distribution_surface(
         slice_validation=slice_validation,
         fit_metadata={
             "fit_type": (
-                "single_context_conditioned_tradable_time_quantile_polynomial"
+                "single_context_conditioned_shape_constrained_tradable_time_quantile_surface"
                 if fit_mode == "context"
                 else "single_tradable_time_quantile_polynomial"
             ),
@@ -482,18 +480,33 @@ def _fit_context_quantile_model(
     penalty[0, 0] = 0.0
     x_augmented = np.vstack([x_weighted, penalty])
 
-    coefficients: dict[str, np.ndarray] = {}
-    for key in _quantile_keys(quantile_levels):
-        y = np.asarray([quantiles[key] for _, _, _, quantiles in observations], dtype=float)
-        y_augmented = np.concatenate([y * w, np.zeros(len(feature_names), dtype=float)])
-        coeff, *_ = np.linalg.lstsq(x_augmented, y_augmented, rcond=None)
-        coefficients[key] = coeff
+    keys = _quantile_keys(quantile_levels)
+    base_key = keys[0]
+    base_y = np.asarray([quantiles[base_key] for _, _, _, quantiles in observations], dtype=float)
+    base_augmented = np.concatenate([base_y * w, np.zeros(len(feature_names), dtype=float)])
+    base_coefficients, *_ = np.linalg.lstsq(x_augmented, base_augmented, rcond=None)
+
+    spacing_coefficients: dict[str, np.ndarray] = {}
+    for lower_key, upper_key in zip(keys, keys[1:]):
+        spacing_y = np.asarray(
+            [
+                max(quantiles[upper_key] - quantiles[lower_key], 1e-8)
+                for _, _, _, quantiles in observations
+            ],
+            dtype=float,
+        )
+        spacing_augmented = np.concatenate([spacing_y * w, np.zeros(len(feature_names), dtype=float)])
+        coeff, *_ = np.linalg.lstsq(x_augmented, spacing_augmented, rcond=None)
+        spacing_coefficients[f"{lower_key}_to_{upper_key}"] = coeff
 
     return {
         "degree": degree,
         "context_feature_names": list(context_names),
         "feature_names": feature_names,
-        "coefficients": coefficients,
+        "base_quantile_key": base_key,
+        "base_coefficients": base_coefficients,
+        "spacing_coefficients": spacing_coefficients,
+        "spacing_link": "positive_floor_adjacent_quantile_spacing",
         "observation_count": len(observations),
         "min_cell_count": min_cell_count,
         "ridge_lambda": ridge_lambda,
@@ -507,11 +520,38 @@ def _context_model_metadata(context_model: Mapping[str, Any] | None) -> dict[str
         "context_feature_names": list(context_model["context_feature_names"]),
         "degree": context_model["degree"],
         "feature_count": len(context_model["feature_names"]),
+        "shape_constraint": "adjacent_quantile_spacings_are_positive_by_construction",
+        "base_quantile_key": context_model["base_quantile_key"],
+        "spacing_link": context_model["spacing_link"],
         "observation_count": context_model["observation_count"],
         "min_cell_count": context_model["min_cell_count"],
         "ridge_lambda": context_model["ridge_lambda"],
         "coefficient_schema": "omitted_from_summary",
     }
+
+
+def _predict_context_quantiles_for_values(
+    *,
+    tau: int,
+    context_values: Mapping[str, float],
+    levels: Sequence[float],
+    context_model: Mapping[str, Any],
+) -> dict[str, float]:
+    design = _design_vector_for_context(
+        tau=tau,
+        degree=int(context_model["degree"]),
+        context_values=context_values,
+        feature_names=context_model["feature_names"],
+    )
+    keys = _quantile_keys(levels)
+    values = [float(np.dot(context_model["base_coefficients"], design))]
+    for lower_key, upper_key in zip(keys, keys[1:]):
+        raw_spacing = float(
+            np.dot(context_model["spacing_coefficients"][f"{lower_key}_to_{upper_key}"], design)
+        )
+        spacing = max(1e-8, raw_spacing)
+        values.append(values[-1] + spacing)
+    return {key: float(value) for key, value in zip(keys, values)}
 
 
 def _predict_quantiles(
@@ -525,16 +565,12 @@ def _predict_quantiles(
         return None
     if not context_model:
         return dict(base)
-    design = _design_vector_for_context(
+    return _predict_context_quantiles_for_values(
         tau=row.tau_trading_minutes,
-        degree=int(context_model["degree"]),
         context_values=_context_values(row),
-        feature_names=context_model["feature_names"],
+        levels=levels,
+        context_model=context_model,
     )
-    keys = _quantile_keys(levels)
-    values = [float(np.dot(context_model["coefficients"][key], design)) for key in keys]
-    repaired = np.maximum.accumulate(values)
-    return {key: float(value) for key, value in zip(keys, repaired)}
 
 
 def _cdf_from_quantiles(value: float, quantiles: Mapping[str, float], levels: Sequence[float]) -> float:

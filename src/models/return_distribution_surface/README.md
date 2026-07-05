@@ -14,7 +14,9 @@ The current pilot has two modes:
 
 - `baseline`: one smooth quantile surface over `tau_trading_minutes`.
 - `context`: the same surface with target-row context terms for session gaps,
-  open windows, close windows, and overnight/multi-session structure.
+  open windows, close windows, and overnight/multi-session structure. The
+  context fit is shape constrained: it fits the lower quantile plus positive
+  adjacent quantile spacings so predicted quantiles are ordered by construction.
 
 `context` is the default because it tests the intended contract: one
 tradable-time distribution function conditioned by market-calendar context,
