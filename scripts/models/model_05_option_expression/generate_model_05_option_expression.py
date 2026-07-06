@@ -14,6 +14,7 @@ import json
 import os
 import re
 import threading
+import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -49,6 +50,7 @@ TEXT_5_COLUMNS = {
     "5_resolved_selected_contract_ref",
 }
 PROGRESS_HEARTBEAT_SECONDS = 60.0
+PROGRESS_COMMIT_SECONDS = 600.0
 DATABASE_BATCH_SIZE = 500
 OPTION_CANDIDATE_SNAPSHOT_TYPES = ("entry", "source_cache")
 ET = ZoneInfo("America/New_York")
@@ -623,6 +625,17 @@ def _database_batch_size() -> int:
     return max(1, value)
 
 
+def _progress_commit_seconds() -> float:
+    raw = os.environ.get("TRADING_MODEL_DATABASE_PROGRESS_COMMIT_SECONDS", "").strip()
+    if not raw:
+        return PROGRESS_COMMIT_SECONDS
+    try:
+        value = float(raw)
+    except ValueError:
+        return PROGRESS_COMMIT_SECONDS
+    return max(0.0, value)
+
+
 def generate_from_database(
     *,
     database_url: str,
@@ -635,8 +648,8 @@ def generate_from_database(
     resume_existing: bool = False,
 ) -> int:
     psycopg, dict_row = _load_psycopg()
-    with psycopg.connect(database_url, row_factory=dict_row) as conn:
-        with conn.cursor() as cursor:
+    with psycopg.connect(database_url, row_factory=dict_row) as read_conn, psycopg.connect(database_url, row_factory=dict_row) as write_conn:
+        with read_conn.cursor() as setup_cursor, write_conn.cursor() as write_cursor:
             with _ProgressHeartbeat(
                 node_id="fetch_database_input_rows",
                 node_label="Fetch database input rows",
@@ -651,12 +664,14 @@ def generate_from_database(
                 total_model_rows = 0
                 total_skipped_rows = 0
                 batch_size = _database_batch_size()
+                commit_interval_seconds = _progress_commit_seconds()
+                last_commit_monotonic = time.monotonic()
                 sql, params = _model_04_select_sql(
                     source_start=source_start,
                     source_end=source_end,
-                    support_exists=_model_04_support_exists(cursor),
+                    support_exists=_model_04_support_exists(setup_cursor),
                 )
-                with conn.cursor(name="m05_model_04_input_rows", row_factory=dict_row) as model_04_cursor:
+                with read_conn.cursor(name="m05_model_04_input_rows", row_factory=dict_row) as model_04_cursor:
                     model_04_cursor.itersize = batch_size
                     model_04_cursor.execute(sql, params)
                     while True:
@@ -671,7 +686,7 @@ def generate_from_database(
                             month_progress_payload=month_progress_from_rows(model_04_rows, source_start=source_start, source_end=source_end),
                         )
                         option_candidate_rows = _fetch_option_candidate_rows(
-                            cursor,
+                            write_cursor,
                             source_start=source_start,
                             source_end=source_end,
                             model_04_rows=model_04_rows,
@@ -687,7 +702,7 @@ def generate_from_database(
                         input_rows = _model_05_input_rows(model_04_rows, option_candidate_rows)
                         if resume_existing and input_rows:
                             input_rows, skipped_rows = _filter_existing_input_rows(
-                                cursor,
+                                write_cursor,
                                 input_rows,
                                 target_schema=target_schema,
                                 target_table=target_table,
@@ -744,10 +759,22 @@ def generate_from_database(
                             expected_count=None,
                             month_progress_payload=month_progress_from_rows(input_rows, source_start=source_start, source_end=source_end),
                         )
-                        _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
+                        _write_sql(write_cursor, model_rows, target_schema=target_schema, target_table=target_table)
                         if output_jsonl and model_rows:
                             _append_jsonl(output_jsonl, model_rows)
                         total_model_rows += len(model_rows)
+                        if commit_interval_seconds == 0 or time.monotonic() - last_commit_monotonic >= commit_interval_seconds:
+                            write_conn.commit()
+                            last_commit_monotonic = time.monotonic()
+                            progress.update(
+                                node_id="save_model_rows",
+                                node_label="Save model rows",
+                                current_activity=f"Saved {total_model_rows} M05 option-expression rows; skipped {total_skipped_rows} existing rows",
+                                processed_count=total_model_rows + total_skipped_rows,
+                                expected_count=None,
+                                month_progress_payload=month_progress_from_rows(input_rows, source_start=source_start, source_end=source_end),
+                            )
+                write_conn.commit()
                 progress.update(
                     node_id="model_rows_written",
                     node_label="Model rows written",

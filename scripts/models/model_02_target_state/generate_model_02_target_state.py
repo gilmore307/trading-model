@@ -7,6 +7,7 @@ import json
 import os
 import re
 import threading
+import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -27,6 +28,7 @@ EXPLAINABILITY_COLUMNS = {"target_context_state"}
 DIAGNOSTICS_COLUMNS = {"target_state_diagnostics"}
 TEXT_2_COLUMNS: set[str] = set()
 PROGRESS_HEARTBEAT_SECONDS = 60.0
+PROGRESS_COMMIT_SECONDS = 600.0
 DATABASE_BATCH_SIZE = 1000
 
 
@@ -369,6 +371,17 @@ def _write_sql(cursor: Any, rows: Sequence[Mapping[str, Any]], *, target_schema:
     )
 
 
+def _progress_commit_seconds() -> float:
+    raw = os.environ.get("TRADING_MODEL_DATABASE_PROGRESS_COMMIT_SECONDS", "").strip()
+    if not raw:
+        return PROGRESS_COMMIT_SECONDS
+    try:
+        value = float(raw)
+    except ValueError:
+        return PROGRESS_COMMIT_SECONDS
+    return max(0.0, value)
+
+
 def generate_from_database(
     *,
     database_url: str,
@@ -393,6 +406,8 @@ def generate_from_database(
                 processed_count=0,
                 month_progress_payload=month_progress(source_start=source_start, source_end=source_end),
             ) as progress:
+                commit_interval_seconds = _progress_commit_seconds()
+                last_commit_monotonic = time.monotonic()
                 for input_rows in _iter_database_input_row_batches(
                     read_cursor,
                     source_schema=source_schema,
@@ -405,13 +420,19 @@ def generate_from_database(
                     if output_jsonl:
                         output_rows.extend(model_rows)
                     total_count += len(model_rows)
+                    current_activity = f"Wrote {total_count} M02 target-state rows"
+                    if commit_interval_seconds == 0 or time.monotonic() - last_commit_monotonic >= commit_interval_seconds:
+                        write_conn.commit()
+                        last_commit_monotonic = time.monotonic()
+                        current_activity = f"Saved {total_count} M02 target-state rows"
                     progress.update(
                         node_id="model_rows_written",
                         node_label="Model rows written",
-                        current_activity=f"Wrote {total_count} M02 target-state rows",
+                        current_activity=current_activity,
                         processed_count=total_count,
                         month_progress_payload=month_progress_from_rows(input_rows, source_start=source_start, source_end=source_end),
                     )
+                write_conn.commit()
                 progress.update(
                     node_id="model_rows_written",
                     node_label="Model rows written",

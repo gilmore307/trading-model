@@ -346,6 +346,20 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
 
         self.assertLessEqual(script.DATABASE_BATCH_SIZE, 500)
 
+    def test_database_generation_progress_commit_interval_is_configurable(self) -> None:
+        script = _load_generator_script()
+        previous = os.environ.get("TRADING_MODEL_DATABASE_PROGRESS_COMMIT_SECONDS")
+        try:
+            os.environ.pop("TRADING_MODEL_DATABASE_PROGRESS_COMMIT_SECONDS", None)
+            self.assertEqual(script._progress_commit_seconds(), 600.0)
+            os.environ["TRADING_MODEL_DATABASE_PROGRESS_COMMIT_SECONDS"] = "0"
+            self.assertEqual(script._progress_commit_seconds(), 0.0)
+        finally:
+            if previous is None:
+                os.environ.pop("TRADING_MODEL_DATABASE_PROGRESS_COMMIT_SECONDS", None)
+            else:
+                os.environ["TRADING_MODEL_DATABASE_PROGRESS_COMMIT_SECONDS"] = previous
+
     def test_database_fetch_projects_only_m05_input_columns(self) -> None:
         script = _load_generator_script()
         cursor = _FakeCursor(

@@ -326,6 +326,7 @@ class TargetStateModelTests(unittest.TestCase):
                 )
                 self.write_cursor = Cursor()
                 self.cursor_names: list[str | None] = []
+                self.commit_count = 0
 
             def __enter__(self) -> "Connection":
                 return self
@@ -336,6 +337,9 @@ class TargetStateModelTests(unittest.TestCase):
             def cursor(self, *, name: str | None = None) -> Cursor:
                 self.cursor_names.append(name)
                 return self.read_cursor if name else self.write_cursor
+
+            def commit(self) -> None:
+                self.commit_count += 1
 
         connection = Connection()
         writes: list[list[dict[str, object]]] = []
@@ -366,6 +370,7 @@ class TargetStateModelTests(unittest.TestCase):
         self.assertEqual(count, 1001)
         self.assertEqual(connection.cursor_names, ["model_02_target_state_input_rows", None])
         self.assertEqual([len(batch) for batch in writes], [1000, 1])
+        self.assertEqual(connection.commit_count, 1)
 
     def assert_no_key(self, value: object, forbidden: str) -> None:
         if isinstance(value, dict):
