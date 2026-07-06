@@ -50,7 +50,7 @@ TEXT_5_COLUMNS = {
     "5_resolved_selected_contract_ref",
 }
 PROGRESS_HEARTBEAT_SECONDS = 60.0
-PROGRESS_COMMIT_SECONDS = 600.0
+PROGRESS_COMMIT_SECONDS = 300.0
 DATABASE_BATCH_SIZE = 500
 OPTION_CANDIDATE_SNAPSHOT_TYPES = ("entry", "source_cache")
 ET = ZoneInfo("America/New_York")

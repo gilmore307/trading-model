@@ -351,7 +351,7 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         previous = os.environ.get("TRADING_MODEL_DATABASE_PROGRESS_COMMIT_SECONDS")
         try:
             os.environ.pop("TRADING_MODEL_DATABASE_PROGRESS_COMMIT_SECONDS", None)
-            self.assertEqual(script._progress_commit_seconds(), 600.0)
+            self.assertEqual(script._progress_commit_seconds(), 300.0)
             os.environ["TRADING_MODEL_DATABASE_PROGRESS_COMMIT_SECONDS"] = "0"
             self.assertEqual(script._progress_commit_seconds(), 0.0)
         finally:
