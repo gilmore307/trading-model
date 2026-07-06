@@ -897,9 +897,22 @@ def _expression_probability_surface(
         for candidate in candidates
         if isinstance(candidate, Mapping)
     ]
+    selected_candidate = next(
+        (candidate for candidate in candidate_probability_functions if candidate.get("selected")),
+        None,
+    )
     selected_candidate_id = next(
         (candidate["candidate_id"] for candidate in candidate_probability_functions if candidate.get("selected")),
         None,
+    )
+    option_candidate_count = sum(
+        1 for candidate in candidate_probability_functions if candidate.get("expression_type") == "option_contract"
+    )
+    eligible_option_candidate_count = sum(
+        1
+        for candidate in candidate_probability_functions
+        if candidate.get("expression_type") == "option_contract"
+        and candidate.get("eligibility_status") == "eligible"
     )
     dominant_payload = horizon_payloads.get(dominant_horizon) or {}
     return {
@@ -923,6 +936,15 @@ def _expression_probability_surface(
         "surface_type": "candidate_payoff_probability_distribution",
         "candidate_probability_functions": candidate_probability_functions,
         "selected_candidate_id": selected_candidate_id,
+        "selected_candidate": dict(selected_candidate or {}),
+        "option_suitability_summary": {
+            "candidate_count": len(candidate_probability_functions),
+            "option_candidate_count": option_candidate_count,
+            "eligible_option_candidate_count": eligible_option_candidate_count,
+            "selected_expression_type": None if selected_candidate is None else selected_candidate.get("expression_type"),
+            "selected_instrument_ref": None if selected_candidate is None else selected_candidate.get("instrument_ref"),
+            "all_option_candidates_unsuitable": option_candidate_count > 0 and eligible_option_candidate_count == 0,
+        },
         "resolved_expression_type": dominant_payload.get("expression_type"),
         "resolved_probability_summary": {
             "expression_eligibility_probability": _round_optional(_first_float(dominant_payload, "expression_eligibility_score")),

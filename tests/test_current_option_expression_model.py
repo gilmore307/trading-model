@@ -75,6 +75,11 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
             probability_surface["selected_candidate_id"],
             _selected_candidate(candidate_set)["candidate_id"],
         )
+        self.assertEqual(probability_surface["selected_candidate"]["instrument_ref"], "AAPL_CALL_GOOD")
+        self.assertEqual(probability_surface["selected_candidate"]["expression_type"], "option_contract")
+        self.assertEqual(probability_surface["option_suitability_summary"]["option_candidate_count"], 2)
+        self.assertEqual(probability_surface["option_suitability_summary"]["eligible_option_candidate_count"], 1)
+        self.assertFalse(probability_surface["option_suitability_summary"]["all_option_candidates_unsuitable"])
         self.assertIn("underlying_equity_proxy", {candidate["instrument_ref"] for candidate in candidates})
         rejected_put = next(candidate for candidate in candidates if candidate["instrument_ref"] == "AAPL_PUT_GOOD")
         self.assertEqual(rejected_put["eligibility_status"], "rejected")
