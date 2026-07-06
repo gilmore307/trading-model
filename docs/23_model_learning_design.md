@@ -1,7 +1,7 @@
 # Model Learning Design
 
 Status: accepted five-model learning route; implementation is evidence-gated
-Owner intent: reduce serial model-error propagation while preserving the live/paper components needed for target selection, event reasoning, direct decision, option expression, and residual event governance.
+Owner intent: reduce serial model-error propagation while preserving the live/paper components needed for target selection, event reasoning, direct decision, option expression, and M03 event-effect governance.
 
 ## Core Principle
 
@@ -22,7 +22,7 @@ Learned-model design is direct-to-final. Do not introduce temporary learned cont
 |---|---|---|
 | `M01` Background Context | `continual_gru_context_estimator` | CPU-friendly short-window sequence estimator for shared market/sector/industry context and regime persistence. |
 | `M02` Target State | `continual_pairwise_residual_mlp_target_ranker` | Pairwise/listwise anonymous target eligibility, ranking, and target-state estimator. |
-| `M03` Event State | `continual_gru_event_risk_scorer` | CPU-friendly short-window sequence scorer for event-conditioned response/risk, event decay, and event-cluster state under frozen event-governance contracts. |
+| `M03` Event State | `continual_gru_event_risk_scorer` | CPU-friendly short-window sequence scorer for event-conditioned response/risk, event decay, and event-cluster state under frozen event-effect governance contracts. |
 | `M04` Unified Decision | `continual_residual_mlp_policy_value` | Direct downstream thesis model that composes the target-level tradable-time return distribution surface with structured edge, risk, exposure, no-trade, and action heads. |
 | `M05` Option Expression | `continual_residual_mlp_option_chain_ranker` | Separate expression utility ranker that projects the M04 distribution surface into comparable underlying, call, and put expression candidates. |
 
@@ -38,7 +38,7 @@ The accepted return-prediction object is `tradable_time_return_distribution_surf
 - Real ticker/company identity remains audit/routing metadata, not a fitting feature.
 - Stable identity surrogates must be tested, not only banned by column name.
 - Score thresholds should not hide model weakness. Where a score has a natural neutral point, training should produce that score directly.
-- Same-fold event-governance discoveries are quarantined from same-fold upstream training. Accepted discoveries may become future M03 inputs only after evidence packet review.
+- Same-fold event-effect discoveries are quarantined from same-fold upstream training. Accepted discoveries may become future M03 inputs only after evidence packet review.
 - Validation must beat a realistic baseline, not just show historical fit.
 
 ## Full-Minute Training Coverage
@@ -75,7 +75,7 @@ Promotion feedback path:
   finalized evaluation evidence -> review/promotion gate -> later checkpoint update, shadow promotion, or rejection
 ```
 
-No future label, realized utility, downstream failure, broker outcome, same-fold event-governance discovery, or post-event interpretation may feed back into the same fold's inference features. A model can learn from failure only through finalized training events, frozen artifact lineage, immutable checkpoints, and accepted review gates.
+No future label, realized utility, downstream failure, broker outcome, same-fold event-effect discovery, or post-event interpretation may feed back into the same fold's inference features. A model can learn from failure only through finalized training events, frozen artifact lineage, immutable checkpoints, and accepted review gates.
 
 Every cumulative model backend must expose the same control contract:
 
@@ -96,15 +96,15 @@ M03 has one special event-feedback route:
 
 ```text
 M04/M05 replay failure
-  -> M03 event-governance tooling residual event attribution
+  -> component-owned failure review and M03 event-effect attribution
   -> reviewed event-family or strategy-failure packet
   -> future M03 candidate training/evaluation
   -> future-fold M03 acceptance only after review
 ```
 
-M03 event-governance tooling must not become a generic hindsight corrector. It owns residual event attribution, component control utility, and future M03 packet eligibility only. Non-event model misses remain the evaluation/promotion evidence of their owning model.
+M03 event-effect tooling must not become a generic hindsight corrector. It owns event-family attribution evidence and future M03 packet eligibility only. Component warn, cap, block, reduce, flatten, and failure-review actions remain component owned. Non-event model misses remain the evaluation/promotion evidence of their owning model.
 
-M03 consumes accepted event-governance focus-pool event contracts as frozen qualitative/time-parameter inputs. M03 event-governance tooling owns event-family identity, point-in-time clocks, scope, visibility, selected impact windows, allowed use, and later demotion/split/reweight/parameter revision. M03 owns only the quantitative conditional response and failure-risk mapping inside that frozen contract. It may output event-conditioned response strength, direction tendency, uncertainty, failure risk, path risk, entry/cap/disable pressure, and evidence/applicability confidence; it must not output standalone event alpha or change M03 event-governance tooling event parameters.
+M03 consumes accepted event-effect focus-pool event contracts as frozen qualitative/time-parameter inputs. M03 event-effect tooling owns event-family identity, point-in-time clocks, scope, visibility, selected impact windows, allowed use, and later demotion/split/reweight/parameter revision. M03 owns only the quantitative conditional response and distribution-shaping mapping inside that frozen contract. It may output event-conditioned response strength, direction tendency when validated, uncertainty, path risk, tail/variance/confidence/gate pressure, and evidence/applicability confidence; it must not output standalone event alpha or perform component-control actions.
 
 M04 must consume reviewed M03 event-conditioning fields as formal inputs and let training learn their weight, sign, uncertainty, risk penalty, or near-zero contribution. Event-family removal, demotion, split, or time-window revision remains an M03 review outcome, not a no-event baseline substitution. A no-M03 decision baseline is not a default evaluation route unless M04/M05 are also rerun as a full counterfactual chain.
 
@@ -112,9 +112,9 @@ M04 must consume reviewed M03 event-conditioning fields as formal inputs and let
 |---|---|---|---|---|---|
 | `M01` Background Context | Broad-market, sector/industry, liquidity, volatility, and macro-sensitive point-in-time features. | `background_context_state` | Future broad/sector state, volatility, liquidity, transition, downstream calibration-lift labels. | M01 evaluation and promotion evidence. | Target choices, action labels, portfolio outcomes, and future market/sector labels as same-fold inputs. |
 | `M02` Target State | `background_context_state` plus anonymous target-local features and candidate policy. | `target_context_state` | Future target path, persistence/reversion, liquidity/tradability, state-transition, and candidate-ranking labels. | M02 evaluation and promotion evidence. | Raw ticker/company identity, future selected-target outcomes, alpha/action labels, and downstream trade results as same-fold inputs. |
-| `M03` Event State | Background/target state plus accepted event-family or strategy-failure evidence and frozen M03 event-governance tooling focus-pool event contracts. | `event_state_vector` | Reviewed event-conditioned response, uncertainty, strategy-failure, entry-block, exposure-cap, disable, path-risk, and session-gap labels. | M03 evaluation and event-strategy promotion review; contract-stress diagnostics route back to M03 event-governance tooling. | Raw news/provider text, unreviewed event candidates, same-fold same-fold residual attribution, standalone event-alpha labels, event-parameter mutation, and future realized impact labels as same-fold inputs. |
+| `M03` Event State | Background/target state plus accepted event-family or strategy-failure evidence and frozen M03 event-effect focus-pool event contracts. | `event_state_vector` | Reviewed event-conditioned response, uncertainty, distribution shape, path-risk, gate-pressure, and session-gap labels. | M03 evaluation and event-effect promotion review; contract-stress diagnostics route back to M03 event-effect tooling. | Raw news/provider text, unreviewed event candidates, same-fold residual attribution, standalone event-alpha labels, event-parameter mutation, component actions, and future realized impact labels as same-fold inputs. |
 | `M04` Unified Decision | Background, target, event state, quality/calibration evidence, replay-safe portfolio/risk context, cost/friction, quote/liquidity/borrow, and exposure state. | `thesis_distribution_surface`, derived `unified_decision_vector` | After-cost alpha, residual return, downside/path risk, portfolio/risk-budget utility, exposure regret, no-trade/maintain calibration, action utility, fill-realism, churn, and path labels. | M04 unified decision evaluation and promotion evidence. | Account/broker mutation, future returns as inference fields, future event revisions, order/fill outcomes as inference features, historical action imitation, final order quantities, option contract choice, alpha relearning inside action heads, and hard-limit overrides. |
-| `M05` Option Expression | Completed M04 decision intent plus option-surface status, timestamped option candidates, and option exposure context. | `expression_probability_surface`, derived `option_expression_plan` and `expression_vector` when optionable. | Candidate expression utility, realistic option after-cost return, fill/slippage/theta/IV, underlying-only labels for evaluated option surfaces, and no-option status labels for unavailable routes. | M05 option replay evaluation and promotion evidence. | Best-contract hindsight, future option paths, realized fills, broker order ids, final quantities, and same-fold event-governance discoveries. |
+| `M05` Option Expression | Completed M04 decision intent plus option-surface status, timestamped option candidates, and option exposure context. | `expression_probability_surface`, derived `option_expression_plan` and `expression_vector` when optionable. | Candidate expression utility, realistic option after-cost return, fill/slippage/theta/IV, underlying-only labels for evaluated option surfaces, and no-option status labels for unavailable routes. | M05 option replay evaluation and promotion evidence. | Best-contract hindsight, future option paths, realized fills, broker order ids, final quantities, and same-fold event-effect discoveries. |
 
 The loop is closed only when every emitted field can be classified as one of:
 
@@ -144,7 +144,7 @@ M05 option-expression model chooses the expression.
 
 Policy and expression models require stronger validation than ordinary supervised models. M04 and M05 must use walk-forward replay, off-policy evaluation where applicable, and sensitivity checks for costs, fills, turnover, and liquidity.
 
-M03 event-governance tooling must not become a hindsight oracle. Residual discoveries from replay are attribution and future evidence, not same-fold upstream features.
+M03 event-effect tooling must not become a hindsight oracle. Replay discoveries are attribution and future evidence, not same-fold upstream features.
 
 ## Minimal Implementation Gate
 

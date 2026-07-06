@@ -27,7 +27,7 @@ Historical retired serial package and script names are no longer current contrac
 
 ## Event-Governance Acceptance
 
-For residual event governance specifically, architecture acceptance is not production evidence completion. An event family may enter current event-state/governance workflows only after the normal event-family workflow is satisfied for its accepted use: event-family packet, canonical parser/source routing, matched controls, impact-window backtest, fold evidence, and leakage/upstream-overlap review.
+For M03 event-effect governance specifically, architecture acceptance is not production evidence completion. An event family may enter current event-state/governance workflows only after the normal event-family workflow is satisfied for its accepted use: event-family packet, canonical parser/source routing, matched controls, impact-window backtest, fold evidence, and leakage/upstream-overlap review.
 
 `docs/23_model_learning_design.md` owns the closed-loop evidence lifecycle for the accepted M01-M05 probability stack plus M03 event-family evidence. The loop is closed through three separated paths: point-in-time inference, post-fold evaluation labels/utilities, and review-gated promotion feedback into later-fold artifacts. It does not create a live recursive learning loop, same-fold upstream mutation, production activation, broker/account mutation, or a new model layer.
 
