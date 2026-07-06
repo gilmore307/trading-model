@@ -378,6 +378,26 @@ class CurrentOptionExpressionModelTests(unittest.TestCase):
         self.assertNotIn("= 'entry'", select_sql)
         self.assertIn("source_cache", script.OPTION_CANDIDATE_SNAPSHOT_TYPES)
 
+    def test_resume_existing_uses_model_primary_key(self) -> None:
+        script = _load_generator_script()
+        row = _base_row()
+        output = generate_rows([row])[0]
+        cursor = _FakeCursor(
+            fetchone_rows=[{"table_ref": "trading_model.model_05_option_expression"}],
+            fetchall_rows=[{"option_expression_plan_ref": output["option_expression_plan_ref"]}],
+        )
+
+        remaining, skipped = script._filter_existing_input_rows(
+            cursor,
+            [row],
+            target_schema="trading_model",
+            target_table="model_05_option_expression",
+            model_version=output["model_version"],
+        )
+
+        self.assertEqual(skipped, 1)
+        self.assertEqual(remaining, [])
+
     def test_candidate_index_keeps_source_cache_option_surface_rows(self) -> None:
         script = _load_generator_script()
 

@@ -9,6 +9,7 @@ M05 no-provider case: it consumes completed M04 rows and emits
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -17,6 +18,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+from zoneinfo import ZoneInfo
 
 from model_runtime.config import database_url_file
 
@@ -49,6 +51,7 @@ TEXT_5_COLUMNS = {
 PROGRESS_HEARTBEAT_SECONDS = 60.0
 DATABASE_BATCH_SIZE = 500
 OPTION_CANDIDATE_SNAPSHOT_TYPES = ("entry", "source_cache")
+ET = ZoneInfo("America/New_York")
 
 
 def _database_url(explicit: str | None) -> str:
@@ -450,6 +453,64 @@ def _time_key(value: Any) -> str:
     return parsed.isoformat() if parsed is not None else str(value or "")
 
 
+def _stable_option_expression_plan_ref(row: Mapping[str, Any], *, model_version: str) -> str:
+    parsed_time = _parse_time(row.get("available_time") or row.get("decision_time") or row.get("tradeable_time"))
+    if parsed_time is None:
+        parsed_time = datetime(1970, 1, 1, tzinfo=ET)
+    if parsed_time.tzinfo is None:
+        parsed_time = parsed_time.replace(tzinfo=ET)
+    available_time = parsed_time.astimezone(ET).isoformat()
+    target_candidate_id = str(row.get("target_candidate_id") or "").strip()
+    digest = hashlib.sha256("|".join((target_candidate_id, available_time, model_version)).encode("utf-8")).hexdigest()[:16]
+    return f"oep_{digest}"
+
+
+def _existing_model_refs(
+    cursor: Any,
+    refs: Sequence[str],
+    *,
+    target_schema: str,
+    target_table: str,
+) -> set[str]:
+    if not refs:
+        return set()
+    cursor.execute("SELECT to_regclass(%s) AS table_ref", (f"{target_schema}.{target_table}",))
+    exists = cursor.fetchone()
+    table_exists = exists.get("table_ref") is not None if isinstance(exists, Mapping) else bool(exists and exists[0] is not None)
+    if not table_exists:
+        return set()
+    cursor.execute(
+        f"""
+        SELECT "option_expression_plan_ref"
+        FROM {_qualified(target_schema, target_table)}
+        WHERE "option_expression_plan_ref" = ANY(%s)
+        """,
+        (list(refs),),
+    )
+    return {str(row["option_expression_plan_ref"] if isinstance(row, Mapping) else row[0]) for row in cursor.fetchall()}
+
+
+def _filter_existing_input_rows(
+    cursor: Any,
+    input_rows: Sequence[Mapping[str, Any]],
+    *,
+    target_schema: str,
+    target_table: str,
+    model_version: str,
+) -> tuple[list[dict[str, Any]], int]:
+    refs_by_row = [
+        (dict(row), _stable_option_expression_plan_ref(row, model_version=model_version))
+        for row in input_rows
+    ]
+    existing_refs = _existing_model_refs(
+        cursor,
+        [ref for _, ref in refs_by_row],
+        target_schema=target_schema,
+        target_table=target_table,
+    )
+    return [row for row, ref in refs_by_row if ref not in existing_refs], len(existing_refs)
+
+
 def _candidate_index(candidate_rows: Sequence[Mapping[str, Any]]) -> dict[tuple[str, str], list[dict[str, Any]]]:
     index: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for row in candidate_rows:
@@ -571,6 +632,7 @@ def generate_from_database(
     target_table: str,
     model_version: str,
     output_jsonl: Path | None,
+    resume_existing: bool = False,
 ) -> int:
     psycopg, dict_row = _load_psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as conn:
@@ -587,6 +649,7 @@ def generate_from_database(
                     _write_jsonl(output_jsonl, [])
                 total_model_04_rows = 0
                 total_model_rows = 0
+                total_skipped_rows = 0
                 batch_size = _database_batch_size()
                 sql, params = _model_04_select_sql(
                     source_start=source_start,
@@ -622,6 +685,24 @@ def generate_from_database(
                             month_progress_payload=month_progress_from_rows(model_04_rows, source_start=source_start, source_end=source_end),
                         )
                         input_rows = _model_05_input_rows(model_04_rows, option_candidate_rows)
+                        if resume_existing and input_rows:
+                            input_rows, skipped_rows = _filter_existing_input_rows(
+                                cursor,
+                                input_rows,
+                                target_schema=target_schema,
+                                target_table=target_table,
+                                model_version=model_version,
+                            )
+                            total_skipped_rows += skipped_rows
+                            if skipped_rows:
+                                progress.update(
+                                    node_id="skip_existing_model_rows",
+                                    node_label="Skip existing model rows",
+                                    current_activity=f"Skipped {total_skipped_rows} existing M05 option-expression rows",
+                                    processed_count=total_model_rows + total_skipped_rows,
+                                    expected_count=None,
+                                    month_progress_payload=month_progress_from_rows(model_04_rows, source_start=source_start, source_end=source_end),
+                                )
                         progress.update(
                             node_id="build_model_input_rows",
                             node_label="Build model input rows",
@@ -670,9 +751,9 @@ def generate_from_database(
                 progress.update(
                     node_id="model_rows_written",
                     node_label="Model rows written",
-                    current_activity=f"Wrote {total_model_rows} M05 option-expression rows",
-                    processed_count=total_model_rows,
-                    expected_count=max(total_model_rows, 1),
+                    current_activity=f"Wrote {total_model_rows} M05 option-expression rows; skipped {total_skipped_rows} existing rows",
+                    processed_count=total_model_rows + total_skipped_rows,
+                    expected_count=max(total_model_rows + total_skipped_rows, 1),
                     month_progress_payload=month_progress(source_start=source_start, source_end=source_end, completed=True),
                 )
     return total_model_rows
@@ -689,6 +770,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-end")
     parser.add_argument("--target-schema", default="trading_model")
     parser.add_argument("--target-table", default="model_05_option_expression")
+    parser.add_argument(
+        "--resume-existing",
+        action="store_true",
+        help="Skip rows whose deterministic option_expression_plan_ref already exists in the target table.",
+    )
     args = parser.parse_args(argv)
 
     if args.from_database:
@@ -700,6 +786,7 @@ def main(argv: list[str] | None = None) -> int:
             target_table=args.target_table,
             model_version=args.model_version,
             output_jsonl=args.output_jsonl,
+            resume_existing=args.resume_existing,
         )
         print(f"generated {count} rows into {args.target_schema}.{args.target_table}")
         return 0
