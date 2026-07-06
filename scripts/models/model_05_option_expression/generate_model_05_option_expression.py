@@ -22,6 +22,7 @@ from model_runtime.config import database_url_file
 
 from model_governance.model_output_support import write_model_output_with_support
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
+from model_governance.progress_months import month_progress, month_progress_from_rows
 from models.model_05_option_expression import CANDIDATE_SET_OUTPUT, MODEL_SURFACE, MODEL_VERSION, generate_rows
 
 DEFAULT_DB_URL_FILE = database_url_file()
@@ -112,6 +113,7 @@ def _write_stage_progress(
     current_activity: str,
     processed_count: int | None = None,
     expected_count: int | None = None,
+    month_progress_payload: Mapping[str, Any] | None = None,
 ) -> None:
     env = _progress_env()
     if env is None:
@@ -135,6 +137,8 @@ def _write_stage_progress(
             }.items()
             if value
         }
+    if month_progress_payload:
+        extra["month_progress"] = dict(month_progress_payload)
     payload: dict[str, Any] = {
         "activity_details": [],
         "contract_type": "manager_worker_task_progress",
@@ -185,12 +189,14 @@ class _ProgressHeartbeat:
         current_activity: str,
         processed_count: int | None = None,
         expected_count: int | None = None,
+        month_progress_payload: Mapping[str, Any] | None = None,
     ) -> None:
         self.node_id = node_id
         self.node_label = node_label
         self.current_activity = current_activity
         self.processed_count = processed_count
         self.expected_count = expected_count
+        self.month_progress_payload = month_progress_payload
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name=f"{node_id}_progress_heartbeat", daemon=True)
@@ -212,6 +218,7 @@ class _ProgressHeartbeat:
         current_activity: str | None = None,
         processed_count: int | None = None,
         expected_count: int | None = None,
+        month_progress_payload: Mapping[str, Any] | None = None,
     ) -> None:
         with self._lock:
             if node_id is not None:
@@ -224,20 +231,23 @@ class _ProgressHeartbeat:
                 self.processed_count = processed_count
             if expected_count is not None:
                 self.expected_count = expected_count
+            if month_progress_payload is not None:
+                self.month_progress_payload = month_progress_payload
         self._write()
 
-    def _snapshot(self) -> tuple[str, str, str, int | None, int | None]:
+    def _snapshot(self) -> tuple[str, str, str, int | None, int | None, Mapping[str, Any] | None]:
         with self._lock:
-            return self.node_id, self.node_label, self.current_activity, self.processed_count, self.expected_count
+            return self.node_id, self.node_label, self.current_activity, self.processed_count, self.expected_count, self.month_progress_payload
 
     def _write(self) -> None:
-        node_id, node_label, current_activity, processed_count, expected_count = self._snapshot()
+        node_id, node_label, current_activity, processed_count, expected_count, month_progress_payload = self._snapshot()
         _write_stage_progress(
             node_id=node_id,
             node_label=node_label,
             current_activity=current_activity,
             processed_count=processed_count,
             expected_count=expected_count,
+            month_progress_payload=month_progress_payload,
         )
 
     def _run(self) -> None:
@@ -571,6 +581,7 @@ def generate_from_database(
                 current_activity="Generating M05 option-expression rows from database inputs",
                 processed_count=0,
                 expected_count=1,
+                month_progress_payload=month_progress(source_start=source_start, source_end=source_end),
             ) as progress:
                 if output_jsonl:
                     _write_jsonl(output_jsonl, [])
@@ -594,6 +605,7 @@ def generate_from_database(
                             current_activity=f"Fetched {total_model_04_rows} M04 unified-decision rows",
                             processed_count=total_model_04_rows,
                             expected_count=None,
+                            month_progress_payload=month_progress_from_rows(model_04_rows, source_start=source_start, source_end=source_end),
                         )
                         option_candidate_rows = _fetch_option_candidate_rows(
                             cursor,
@@ -607,6 +619,7 @@ def generate_from_database(
                             current_activity=f"Fetched {len(option_candidate_rows)} M05 option candidate rows for current batch",
                             processed_count=total_model_04_rows,
                             expected_count=None,
+                            month_progress_payload=month_progress_from_rows(model_04_rows, source_start=source_start, source_end=source_end),
                         )
                         input_rows = _model_05_input_rows(model_04_rows, option_candidate_rows)
                         progress.update(
@@ -615,6 +628,7 @@ def generate_from_database(
                             current_activity=f"Built {len(input_rows)} M05 model input rows for current batch",
                             processed_count=total_model_04_rows,
                             expected_count=None,
+                            month_progress_payload=month_progress_from_rows(input_rows, source_start=source_start, source_end=source_end),
                         )
                         if not input_rows:
                             model_rows = []
@@ -629,6 +643,7 @@ def generate_from_database(
                                         current_activity=f"Generated {total_model_rows + processed_count} M05 option-expression rows",
                                         processed_count=total_model_rows + processed_count,
                                         expected_count=None,
+                                        month_progress_payload=month_progress_from_rows(input_rows, source_start=source_start, source_end=source_end),
                                     )
 
                             progress.update(
@@ -637,6 +652,7 @@ def generate_from_database(
                                 current_activity=f"Generating next {len(input_rows)} M05 option-expression rows",
                                 processed_count=total_model_rows,
                                 expected_count=None,
+                                month_progress_payload=month_progress_from_rows(input_rows, source_start=source_start, source_end=source_end),
                             )
                             model_rows = generate_rows(input_rows, model_version=model_version, progress_callback=on_row_progress)
                         progress.update(
@@ -645,6 +661,7 @@ def generate_from_database(
                             current_activity=f"Writing {len(model_rows)} M05 option-expression rows for current batch",
                             processed_count=total_model_rows,
                             expected_count=None,
+                            month_progress_payload=month_progress_from_rows(input_rows, source_start=source_start, source_end=source_end),
                         )
                         _write_sql(cursor, model_rows, target_schema=target_schema, target_table=target_table)
                         if output_jsonl and model_rows:
@@ -656,6 +673,7 @@ def generate_from_database(
                     current_activity=f"Wrote {total_model_rows} M05 option-expression rows",
                     processed_count=total_model_rows,
                     expected_count=max(total_model_rows, 1),
+                    month_progress_payload=month_progress(source_start=source_start, source_end=source_end, completed=True),
                 )
     return total_model_rows
 

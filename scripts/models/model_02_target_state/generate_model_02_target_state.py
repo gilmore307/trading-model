@@ -15,6 +15,7 @@ from typing import Any, Iterator, Mapping, Sequence
 from model_runtime.config import database_url_file
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
 from model_governance.model_output_support import write_model_output_with_support
+from model_governance.progress_months import month_progress, month_progress_from_rows
 from models.model_02_target_state import MODEL_SURFACE, MODEL_VERSION, generate_rows
 
 DEFAULT_DB_URL_FILE = database_url_file()
@@ -74,6 +75,7 @@ def _write_stage_progress(
     current_activity: str,
     processed_count: int | None = None,
     expected_count: int | None = None,
+    month_progress_payload: Mapping[str, Any] | None = None,
 ) -> None:
     env = _progress_env()
     if env is None:
@@ -97,6 +99,8 @@ def _write_stage_progress(
             }.items()
             if value
         }
+    if month_progress_payload:
+        extra["month_progress"] = dict(month_progress_payload)
     payload: dict[str, Any] = {
         "activity_details": [],
         "contract_type": "manager_worker_task_progress",
@@ -139,15 +143,28 @@ def _write_stage_progress(
 
 
 class _ProgressHeartbeat:
-    def __init__(self, *, node_id: str, node_label: str, current_activity: str) -> None:
+    def __init__(
+        self,
+        *,
+        node_id: str,
+        node_label: str,
+        current_activity: str,
+        processed_count: int | None = None,
+        expected_count: int | None = None,
+        month_progress_payload: Mapping[str, Any] | None = None,
+    ) -> None:
         self.node_id = node_id
         self.node_label = node_label
         self.current_activity = current_activity
+        self.processed_count = processed_count
+        self.expected_count = expected_count
+        self.month_progress_payload = month_progress_payload
+        self._lock = threading.Lock()
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name=f"{node_id}_progress_heartbeat", daemon=True)
 
     def __enter__(self) -> "_ProgressHeartbeat":
-        _write_stage_progress(node_id=self.node_id, node_label=self.node_label, current_activity=self.current_activity)
+        self._write()
         self._thread.start()
         return self
 
@@ -155,9 +172,49 @@ class _ProgressHeartbeat:
         self._stop.set()
         self._thread.join(timeout=1.0)
 
+    def update(
+        self,
+        *,
+        node_id: str | None = None,
+        node_label: str | None = None,
+        current_activity: str | None = None,
+        processed_count: int | None = None,
+        expected_count: int | None = None,
+        month_progress_payload: Mapping[str, Any] | None = None,
+    ) -> None:
+        with self._lock:
+            if node_id is not None:
+                self.node_id = node_id
+            if node_label is not None:
+                self.node_label = node_label
+            if current_activity is not None:
+                self.current_activity = current_activity
+            if processed_count is not None:
+                self.processed_count = processed_count
+            if expected_count is not None:
+                self.expected_count = expected_count
+            if month_progress_payload is not None:
+                self.month_progress_payload = month_progress_payload
+        self._write()
+
+    def _snapshot(self) -> tuple[str, str, str, int | None, int | None, Mapping[str, Any] | None]:
+        with self._lock:
+            return self.node_id, self.node_label, self.current_activity, self.processed_count, self.expected_count, self.month_progress_payload
+
+    def _write(self) -> None:
+        node_id, node_label, current_activity, processed_count, expected_count, month_progress_payload = self._snapshot()
+        _write_stage_progress(
+            node_id=node_id,
+            node_label=node_label,
+            current_activity=current_activity,
+            processed_count=processed_count,
+            expected_count=expected_count,
+            month_progress_payload=month_progress_payload,
+        )
+
     def _run(self) -> None:
         while not self._stop.wait(PROGRESS_HEARTBEAT_SECONDS):
-            _write_stage_progress(node_id=self.node_id, node_label=self.node_label, current_activity=self.current_activity)
+            self._write()
 
 
 def _database_url(explicit: str | None) -> str:
@@ -333,7 +390,9 @@ def generate_from_database(
                 node_id="fetch_database_input_rows",
                 node_label="Fetch database input rows",
                 current_activity="Streaming M02 target-state feature rows",
-            ):
+                processed_count=0,
+                month_progress_payload=month_progress(source_start=source_start, source_end=source_end),
+            ) as progress:
                 for input_rows in _iter_database_input_row_batches(
                     read_cursor,
                     source_schema=source_schema,
@@ -346,12 +405,21 @@ def generate_from_database(
                     if output_jsonl:
                         output_rows.extend(model_rows)
                     total_count += len(model_rows)
-                    _write_stage_progress(
+                    progress.update(
                         node_id="model_rows_written",
                         node_label="Model rows written",
                         current_activity=f"Wrote {total_count} M02 target-state rows",
                         processed_count=total_count,
+                        month_progress_payload=month_progress_from_rows(input_rows, source_start=source_start, source_end=source_end),
                     )
+                progress.update(
+                    node_id="model_rows_written",
+                    node_label="Model rows written",
+                    current_activity=f"Wrote {total_count} M02 target-state rows",
+                    processed_count=total_count,
+                    expected_count=max(total_count, 1),
+                    month_progress_payload=month_progress(source_start=source_start, source_end=source_end, completed=True),
+                )
     if output_jsonl:
         write_rows(output_rows, output_jsonl)
     return total_count

@@ -17,6 +17,7 @@ from model_runtime.config import database_url_file
 
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
 from model_governance.model_output_support import write_model_output_with_support
+from model_governance.progress_months import month_progress, month_progress_from_rows
 from models.model_04_unified_decision import MODEL_SURFACE, MODEL_VERSION, generate_rows
 
 DEFAULT_DB_URL_FILE = database_url_file()
@@ -78,6 +79,7 @@ def _write_stage_progress(
     current_activity: str,
     processed_count: int | None = None,
     expected_count: int | None = None,
+    month_progress_payload: Mapping[str, Any] | None = None,
 ) -> None:
     env = _progress_env()
     if env is None:
@@ -101,6 +103,8 @@ def _write_stage_progress(
             }.items()
             if value
         }
+    if month_progress_payload:
+        extra["month_progress"] = dict(month_progress_payload)
     payload: dict[str, Any] = {
         "activity_details": [],
         "contract_type": "manager_worker_task_progress",
@@ -151,12 +155,14 @@ class _ProgressHeartbeat:
         current_activity: str,
         processed_count: int | None = None,
         expected_count: int | None = None,
+        month_progress_payload: Mapping[str, Any] | None = None,
     ) -> None:
         self.node_id = node_id
         self.node_label = node_label
         self.current_activity = current_activity
         self.processed_count = processed_count
         self.expected_count = expected_count
+        self.month_progress_payload = month_progress_payload
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name=f"{node_id}_progress_heartbeat", daemon=True)
@@ -178,6 +184,7 @@ class _ProgressHeartbeat:
         current_activity: str | None = None,
         processed_count: int | None = None,
         expected_count: int | None = None,
+        month_progress_payload: Mapping[str, Any] | None = None,
     ) -> None:
         with self._lock:
             if node_id is not None:
@@ -190,20 +197,23 @@ class _ProgressHeartbeat:
                 self.processed_count = processed_count
             if expected_count is not None:
                 self.expected_count = expected_count
+            if month_progress_payload is not None:
+                self.month_progress_payload = month_progress_payload
         self._write()
 
-    def _snapshot(self) -> tuple[str, str, str, int | None, int | None]:
+    def _snapshot(self) -> tuple[str, str, str, int | None, int | None, Mapping[str, Any] | None]:
         with self._lock:
-            return self.node_id, self.node_label, self.current_activity, self.processed_count, self.expected_count
+            return self.node_id, self.node_label, self.current_activity, self.processed_count, self.expected_count, self.month_progress_payload
 
     def _write(self) -> None:
-        node_id, node_label, current_activity, processed_count, expected_count = self._snapshot()
+        node_id, node_label, current_activity, processed_count, expected_count, month_progress_payload = self._snapshot()
         _write_stage_progress(
             node_id=node_id,
             node_label=node_label,
             current_activity=current_activity,
             processed_count=processed_count,
             expected_count=expected_count,
+            month_progress_payload=month_progress_payload,
         )
 
     def _run(self) -> None:
@@ -475,6 +485,7 @@ def generate_from_database(
                 node_label="Count database input rows",
                 current_activity="Counting M04 unified-decision input rows",
                 processed_count=0,
+                month_progress_payload=month_progress(source_start=source_start, source_end=source_end),
             ) as progress:
                 input_count = _count_database_input_rows(write_cursor, source_start=source_start, source_end=source_end)
                 if input_count <= 0:
@@ -485,6 +496,7 @@ def generate_from_database(
                     current_activity=f"Streaming {input_count} M04 unified-decision input rows",
                     processed_count=0,
                     expected_count=input_count,
+                    month_progress_payload=month_progress(source_start=source_start, source_end=source_end),
                 )
                 for source_rows in _iter_database_input_row_batches(read_cursor, source_start=source_start, source_end=source_end):
                     model_rows = generate_rows(_model_04_input_rows(source_rows), model_version=model_version)
@@ -499,6 +511,7 @@ def generate_from_database(
                         current_activity=f"Wrote {total_count}/{input_count} M04 unified-decision rows",
                         processed_count=total_count,
                         expected_count=input_count,
+                        month_progress_payload=month_progress_from_rows(source_rows, source_start=source_start, source_end=source_end),
                     )
                 progress.update(
                     node_id="model_rows_written",
@@ -506,6 +519,7 @@ def generate_from_database(
                     current_activity=f"Wrote {total_count} M04 unified-decision rows",
                     processed_count=total_count,
                     expected_count=input_count,
+                    month_progress_payload=month_progress(source_start=source_start, source_end=source_end, completed=True),
                 )
     return total_count
 
