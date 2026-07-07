@@ -383,6 +383,65 @@ class TargetStateModelTests(unittest.TestCase):
 
 
 class EventStateModelTests(unittest.TestCase):
+    def test_model_03_database_generation_refreshes_manager_task_progress(self) -> None:
+        script = _load_script("scripts/models/model_03_event_state/generate_model_03_event_state.py")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            previous_env = {
+                key: os.environ.get(key)
+                for key in (
+                    "TRADING_MANAGER_TASK_PROGRESS_ROOT",
+                    "TRADING_MANAGER_TASK_PROGRESS_WORKER_ID",
+                    "TRADING_MANAGER_TASK_PROGRESS_TASK_UID",
+                    "TRADING_MANAGER_TASK_PROGRESS_STAGE_ID",
+                    "TRADING_MODEL_DATASET_SPLIT_NAME",
+                    "TRADING_MODEL_DATASET_SPLIT_POLICY",
+                )
+            }
+            try:
+                os.environ.update(
+                    {
+                        "TRADING_MANAGER_TASK_PROGRESS_ROOT": tmpdir,
+                        "TRADING_MANAGER_TASK_PROGRESS_WORKER_ID": "model_worker_1",
+                        "TRADING_MANAGER_TASK_PROGRESS_TASK_UID": "2016-01..2017-06:model_03_event_state.model_generation.train",
+                        "TRADING_MANAGER_TASK_PROGRESS_STAGE_ID": "model_03_event_state.model_generation.train",
+                        "TRADING_MODEL_DATASET_SPLIT_NAME": "train",
+                        "TRADING_MODEL_DATASET_SPLIT_POLICY": "chronological_cumulative_walk_forward_12_3_3",
+                    }
+                )
+
+                script._write_stage_progress(
+                    node_id="model_rows_written",
+                    node_label="Model rows written",
+                    current_activity="Wrote 5000/12500 M03 event-state rows",
+                    processed_count=5000,
+                    expected_count=12500,
+                    month_progress_payload={
+                        "completed_months": 2,
+                        "current_month": "2016-03",
+                        "expected_months": 12,
+                        "unit_label": "dataset months",
+                    },
+                )
+
+                progress = json.loads((Path(tmpdir) / "model_worker_1.json").read_text(encoding="utf-8"))
+                self.assertEqual(progress["contract_type"], "manager_worker_task_progress")
+                self.assertEqual(progress["status"], "running")
+                self.assertEqual(progress["stage_id"], "model_03_event_state.model_generation.train")
+                self.assertEqual(progress["processed_count"], 5000)
+                self.assertEqual(progress["expected_count"], 12500)
+                self.assertEqual(progress["unit_label"], "rows")
+                self.assertEqual(progress["extra"]["dataset_split"]["split_name"], "train")
+                self.assertEqual(progress["extra"]["source"], "model_03_event_state_database_generator")
+                self.assertEqual(progress["extra"]["month_progress"]["completed_months"], 2)
+                self.assertEqual(progress["extra"]["month_progress"]["expected_months"], 12)
+            finally:
+                for key, value in previous_env.items():
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
+
     def test_generates_current_event_state_vector_from_accepted_events(self) -> None:
         background = generate_background_context([_background_input()])[0]
         target = generate_target_state([_target_input(background)])[0]

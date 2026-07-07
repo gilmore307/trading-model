@@ -8,7 +8,7 @@ import os
 import re
 from collections import deque
 from collections.abc import Iterator, Mapping, Sequence
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +16,7 @@ from model_runtime.config import database_url_file
 
 from model_governance.local_layer_scripts import FIXTURE_INPUT_ROWS, generate_layer, read_rows, write_rows
 from model_governance.model_output_support import write_model_output_with_support
+from model_governance.progress_months import month_progress, month_progress_from_rows
 from models.model_03_event_state import MODEL_SURFACE, MODEL_VERSION, generate_rows
 
 COLUMN_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
@@ -27,6 +28,90 @@ DIAGNOSTICS_COLUMNS = {"event_state_diagnostics"}
 DEFAULT_DB_URL_FILE = database_url_file()
 DATABASE_BATCH_SIZE = 5000
 DEFAULT_EVENT_LOOKBACK_DAYS = 7
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _safe_worker_id(worker_id: str) -> str:
+    return "".join(char if char.isalnum() or char in {"_", "-"} else "_" for char in worker_id) or "worker"
+
+
+def _progress_env() -> tuple[Path, str, str, str] | None:
+    root = os.environ.get("TRADING_MANAGER_TASK_PROGRESS_ROOT", "").strip()
+    worker_id = os.environ.get("TRADING_MANAGER_TASK_PROGRESS_WORKER_ID", "").strip()
+    task_uid = os.environ.get("TRADING_MANAGER_TASK_PROGRESS_TASK_UID", "").strip()
+    stage_id = os.environ.get("TRADING_MANAGER_TASK_PROGRESS_STAGE_ID", "").strip()
+    if not all((root, worker_id, task_uid, stage_id)):
+        return None
+    return Path(root), worker_id, task_uid, stage_id
+
+
+def _write_stage_progress(
+    *,
+    node_id: str,
+    node_label: str,
+    current_activity: str,
+    processed_count: int | None = None,
+    expected_count: int | None = None,
+    month_progress_payload: Mapping[str, Any] | None = None,
+) -> None:
+    env = _progress_env()
+    if env is None:
+        return
+    progress_root, worker_id, task_uid, stage_id = env
+    progress_root.mkdir(parents=True, exist_ok=True)
+    now = _utc_now_iso()
+    split_name = os.environ.get("TRADING_MODEL_DATASET_SPLIT_NAME", "").strip()
+    split_policy = os.environ.get("TRADING_MODEL_DATASET_SPLIT_POLICY", "").strip()
+    extra: dict[str, Any] = {
+        "progress_basis": "chronological 12+3+3 train/validation/test month coverage required by the walk-forward fold",
+        "source": "model_03_event_state_database_generator",
+    }
+    if split_name or split_policy:
+        extra["dataset_split"] = {
+            key: value
+            for key, value in {
+                "split_name": split_name,
+                "split_policy": split_policy,
+            }.items()
+            if value
+        }
+    if month_progress_payload:
+        extra["month_progress"] = dict(month_progress_payload)
+    payload: dict[str, Any] = {
+        "activity_details": [],
+        "contract_type": "manager_worker_task_progress",
+        "current_activity": current_activity,
+        "elapsed_seconds": None,
+        "expected_count": expected_count,
+        "expected_seconds": None,
+        "extra": extra,
+        "nodes": [
+            {
+                "elapsed_seconds": None,
+                "expected_count": expected_count,
+                "expected_seconds": None,
+                "node_id": node_id,
+                "node_label": node_label,
+                "processed_count": processed_count,
+                "status": "running",
+                "updated_at_utc": now,
+            }
+        ],
+        "processed_count": processed_count,
+        "stage_id": stage_id,
+        "status": "running",
+        "task_uid": task_uid,
+        "unit_label": "rows",
+        "updated_at_utc": now,
+        "worker_id": worker_id,
+    }
+    path = progress_root / f"{_safe_worker_id(worker_id)}.json"
+    temp_path = path.with_suffix(path.suffix + f".{os.getpid()}.tmp")
+    temp_path.write_text(json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(temp_path, path)
 
 
 def _column_type(column: str) -> str:
@@ -237,6 +322,14 @@ def generate_from_database(
             )
             if input_count <= 0:
                 raise ValueError("at least one M03 event state input row is required")
+            _write_stage_progress(
+                node_id="fetch_database_input_rows",
+                node_label="Fetch database input rows",
+                current_activity="Streaming M03 event-state input rows",
+                processed_count=0,
+                expected_count=input_count,
+                month_progress_payload=month_progress(source_start=source_start, source_end=source_end),
+            )
             events = _fetch_event_rows(
                 write_cursor,
                 source_start=source_start,
@@ -257,7 +350,23 @@ def generate_from_database(
                 if output_jsonl:
                     _write_jsonl(output_jsonl, model_rows, append=True)
                 total_count += len(model_rows)
+                _write_stage_progress(
+                    node_id="model_rows_written",
+                    node_label="Model rows written",
+                    current_activity=f"Wrote {total_count}/{input_count} M03 event-state rows",
+                    processed_count=total_count,
+                    expected_count=input_count,
+                    month_progress_payload=month_progress_from_rows(source_rows, source_start=source_start, source_end=source_end),
+                )
                 print(f"wrote {total_count}/{input_count} M03 event-state rows", flush=True)
+            _write_stage_progress(
+                node_id="model_rows_written",
+                node_label="Model rows written",
+                current_activity=f"Wrote {total_count}/{input_count} M03 event-state rows",
+                processed_count=total_count,
+                expected_count=input_count,
+                month_progress_payload=month_progress(source_start=source_start, source_end=source_end, completed=True),
+            )
     return total_count
 
 
