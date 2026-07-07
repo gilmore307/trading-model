@@ -160,6 +160,41 @@ class ModelOutputSupportTests(unittest.TestCase):
 
         self.assertEqual([len(params) for _, params in cursor.executemany_calls], [2, 1])
         self.assertTrue(all("INSERT INTO" in sql for sql, _ in cursor.executemany_calls))
+        self.assertFalse(any("CREATE TEMP TABLE" in sql for sql, _ in cursor.executed))
+
+    def test_write_rows_dedupes_duplicate_primary_keys_before_upsert(self) -> None:
+        class FakeCursor:
+            def __init__(self) -> None:
+                self.executemany_calls: list[tuple[str, list[list[object]]]] = []
+
+            def execute(self, sql: str, params: object | None = None) -> None:
+                pass
+
+            def executemany(self, sql: str, params: list[list[object]]) -> None:
+                self.executemany_calls.append((sql, params))
+
+            def fetchone(self):
+                return (1,)
+
+            def fetchall(self):
+                return []
+
+        cursor = FakeCursor()
+        model_output_support._write_rows(
+            cursor,
+            [
+                {"model_output_ref": "out_1", "score": 0.1},
+                {"model_output_ref": "out_1", "score": 0.2},
+                {"model_output_ref": "out_2", "score": 0.3},
+            ],
+            schema="trading_model",
+            table="model_04_unified_decision",
+            primary_key=("model_output_ref",),
+            drop_columns=set(),
+        )
+
+        params = cursor.executemany_calls[0][1]
+        self.assertEqual(params, [["out_1", 0.2], ["out_2", 0.3]])
 
 
 if __name__ == "__main__":

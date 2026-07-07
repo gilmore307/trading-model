@@ -161,6 +161,7 @@ def _write_rows(
 ) -> None:
     if not rows:
         return
+    rows = _dedupe_primary_key_rows(rows, primary_key)
     columns = list(rows[0].keys())
     column_types = _column_types(rows, columns)
     q_table = qualified(schema, table)
@@ -206,6 +207,20 @@ def _write_rows(
             batch = []
     if batch:
         cursor.executemany(insert_sql, batch)
+
+
+def _dedupe_primary_key_rows(
+    rows: Sequence[Mapping[str, Any]],
+    primary_key: Sequence[str],
+) -> list[Mapping[str, Any]]:
+    by_key: dict[tuple[Any, ...], Mapping[str, Any]] = {}
+    order: list[tuple[Any, ...]] = []
+    for row in rows:
+        key = tuple(row.get(column) for column in primary_key)
+        if key not in by_key:
+            order.append(key)
+        by_key[key] = row
+    return [by_key[key] for key in order]
 
 
 def _ensure_primary_key(cursor: Any, *, schema: str, table: str, primary_key: Sequence[str]) -> None:
