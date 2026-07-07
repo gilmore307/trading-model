@@ -499,6 +499,82 @@ class EventStateModelTests(unittest.TestCase):
         self.assertEqual(output["3_event_option_price_impact_score_1W"], 0.0)
         self.assertEqual(output["event_state_vector"]["accepted_event_count"], 0)
 
+    def test_no_impact_events_remain_visible_but_neutral(self) -> None:
+        background = generate_background_context([_background_input()])[0]
+        target = generate_target_state([_target_input(background)])[0]
+        output = generate_event_state(
+            [
+                _event_input(
+                    background,
+                    target,
+                    accepted_event_contracts=[
+                        {
+                            "event_id": "evt_no_impact_fixture",
+                            "canonical_event_id": "evt_no_impact_fixture",
+                            "event_family_key": "routine_market_commentary",
+                            "event_time": "2026-05-07T10:10:00-04:00",
+                            "available_time": "2026-05-07T10:12:00-04:00",
+                            "event_intensity_score": 0.90,
+                            "direction_bias_score": -0.80,
+                            "target_relevance_score": 0.95,
+                            "uncertainty_score": 0.70,
+                            "path_risk_score": 0.85,
+                            "impact_evidence_status": "no_admissible_impact",
+                        }
+                    ],
+                )
+            ]
+        )[0]
+
+        self.assertEqual(output["event_state_vector"]["accepted_event_count"], 1)
+        self.assertEqual(output["event_state_vector"]["event_impact_disposition_counts"], {"no_impact": 1})
+        self.assertEqual(output["event_state_diagnostics"]["event_impact_disposition_counts"], {"no_impact": 1})
+        self.assertEqual(output["3_event_path_risk_score_1W"], 0.0)
+        self.assertEqual(output["3_event_response_direction_score_1W"], 0.0)
+        self.assertEqual(output["3_event_left_tail_delta_score_1W"], 0.0)
+        self.assertEqual(output["3_event_gate_pressure_score_1W"], 0.0)
+        profile = output["event_state_vector"]["event_effect_models"][0]
+        self.assertEqual(profile["event_impact_disposition"], "no_impact")
+        self.assertEqual(profile["event_effect_model"]["event_effect_model_type"], "no_impact_event")
+        self.assertEqual(profile["event_effect_model"]["distribution_channels"], ())
+
+    def test_no_impact_event_does_not_mask_later_impact_event(self) -> None:
+        background = generate_background_context([_background_input()])[0]
+        target = generate_target_state([_target_input(background)])[0]
+        output = generate_event_state(
+            [
+                _event_input(
+                    background,
+                    target,
+                    accepted_event_contracts=[
+                        {
+                            "event_id": "evt_no_impact_fixture",
+                            "canonical_event_id": "evt_no_impact_fixture",
+                            "event_family_key": "routine_market_commentary",
+                            "event_time": "2026-05-07T10:10:00-04:00",
+                            "available_time": "2026-05-07T10:12:00-04:00",
+                            "impact_evidence_status": "no_impact",
+                            "impact_channels": {"option_price": 1.0},
+                        },
+                        {
+                            "event_id": "evt_risk_fixture",
+                            "canonical_event_id": "evt_risk_fixture",
+                            "event_family_key": "triple_witching_calendar",
+                            "event_time": "2026-05-07T10:11:00-04:00",
+                            "available_time": "2026-05-07T10:12:00-04:00",
+                            "path_risk_score": 0.80,
+                            "left_tail_delta_score": 0.60,
+                            "impact_channels": {"option_price": 0.75},
+                        },
+                    ],
+                )
+            ]
+        )[0]
+
+        self.assertEqual(output["event_state_vector"]["event_impact_disposition_counts"], {"no_impact": 1, "risk_shape": 1})
+        self.assertAlmostEqual(output["3_event_option_price_impact_score_10min"], 0.75)
+        self.assertAlmostEqual(output["3_event_left_tail_delta_score_10min"], 0.60)
+
     def test_labels_are_offline_and_join_by_event_ref(self) -> None:
         background = generate_background_context([_background_input()])[0]
         target = generate_target_state([_target_input(background)])[0]

@@ -16,6 +16,7 @@ class EventModelAcceptanceTests(unittest.TestCase):
         self.assertEqual(row["contract_type"], "event_model_acceptance_report")
         self.assertEqual(row["architecture_status"], "accepted_m03_event_effect_model_governance")
         self.assertIn("event_effect_model_distribution_and_gate_channels", row["accepted_build_boundary"])
+        self.assertIn("explicit_no_impact_event_effect_disposition", row["accepted_build_boundary"])
         self.assertIn("component_owned_block_cap_reduce_flatten_controls", row["accepted_build_boundary"])
         self.assertIn("trading-model/docs/12_model_03_event_state.md", row["source_documents"])
         self.assertIn("signed_earnings_guidance_alpha_without_pit_expectation_baselines", row["rejected_routes"])

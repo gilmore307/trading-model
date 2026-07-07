@@ -19,7 +19,11 @@ The current event route is:
    probability function for later market/sector/target impact.
 5. If a stable probability function is identifiable, M03 may expose the
    reviewed distribution channels owned by that node's `event_effect_model`.
-6. If no stable probability function is identifiable, M03 may still expose
+6. If reviewed evidence supports no admissible event impact, M03 emits an
+   explicit `no_impact` disposition. The row remains in review/audit coverage
+   but contributes zero event weight to response, risk, impact, and distribution
+   channels.
+7. If no stable probability function is identifiable, M03 may still expose
    risk-shape channels such as variance, tail, confidence, and gate pressure,
    but it must not move the center of the distribution.
 
@@ -95,6 +99,22 @@ effects. They may widen variance, thicken tails, discount confidence, or raise
 entry/gate pressure. They do not move the mean, mode, or directional
 contribution unless the effect-model node has passed directional modelability
 review and lists the center channels in its distribution channel contract.
+
+Event groups with reviewed no-impact evidence use a separate neutral effect
+model:
+
+```text
+event_effect_model_type=no_impact_event
+projection_mode=no_impact_projection
+distribution_channels=()
+impact_channels=()
+directional_mean_shift_status=not_applicable
+event_impact_disposition=no_impact
+```
+
+`no_impact` is not missing data. It means the event remains part of the
+interpreted event/effect ledger and Replay Decisions coverage, but its event
+weight is zero and it does not affect M04/M05 inputs.
 
 Directional effect models may include:
 

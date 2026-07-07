@@ -17,6 +17,7 @@ from .contract import (
     MODEL_ID,
     MODEL_STEP,
     MODEL_VERSION,
+    NO_IMPACT_EVENT_EFFECT_MODEL,
 )
 
 ET = ZoneInfo("America/New_York")
@@ -60,11 +61,13 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
             "event_effect_models": _event_effect_model_refs(events),
             "frozen_event_contract_refs": _event_refs(events),
             "accepted_event_count": len(events),
+            "event_impact_disposition_counts": _event_impact_disposition_counts(events),
             "event_parameter_mutation_allowed": False,
         },
         "event_state_diagnostics": {
             "accepted_event_count": len(events),
             "visible_event_ids": [event.get("event_id") for event in events],
+            "event_impact_disposition_counts": _event_impact_disposition_counts(events),
             "canonical_event_count": sum(
                 1
                 for event in events
@@ -187,19 +190,22 @@ def _empty_distribution_effect_scores() -> dict[str, float]:
 
 def _average_channel(events: Sequence[Mapping[str, Any]], weights: Sequence[float], channel: str, *keys: str) -> float:
     values: list[float] = []
-    for event in events:
+    channel_weights: list[float] = []
+    for index, event in enumerate(events):
         impact_channels = event.get("impact_channels")
         if isinstance(impact_channels, Mapping):
             value = _safe_float(impact_channels.get(channel))
             if value is not None:
                 values.append(_clip01(value))
+                channel_weights.append(weights[index] if index < len(weights) else 1.0)
                 continue
         for key in keys:
             value = _safe_float(event.get(key))
             if value is not None:
                 values.append(_clip01(value))
+                channel_weights.append(weights[index] if index < len(weights) else 1.0)
                 break
-    return _clip01(_weighted_average(values, weights[: len(values)]))
+    return _clip01(_weighted_average(values, channel_weights))
 
 
 def _impact_channel_vector(scores: Mapping[str, float]) -> dict[str, dict[str, float]]:
@@ -222,8 +228,18 @@ def _distribution_effect_scores(events: Sequence[Mapping[str, Any]], weights: Se
     skews: list[float] = []
     confidence_discounts: list[float] = []
     gates: list[float] = []
-    for event in events:
+    mean_shift_weights: list[float] = []
+    mode_shift_weights: list[float] = []
+    contribution_weights: list[float] = []
+    variance_weights: list[float] = []
+    left_tail_weights: list[float] = []
+    right_tail_weights: list[float] = []
+    skew_weights: list[float] = []
+    confidence_discount_weights: list[float] = []
+    gate_weights: list[float] = []
+    for index, event in enumerate(events):
         channels = _event_effect_channel_policy(event)
+        event_weight = weights[index] if index < len(weights) else 1.0
         intensity = _score(event, "event_intensity_score", "intensity_score", default=0.35)
         uncertainty = _score(event, "uncertainty_score", "revision_risk_score", default=0.25)
         path_risk = _score(event, "path_risk_score", "gap_risk_score", "event_path_risk_score", default=intensity * (0.45 + 0.35 * uncertainty))
@@ -232,32 +248,41 @@ def _distribution_effect_scores(events: Sequence[Mapping[str, Any]], weights: Se
         directional_signal = _directional_signal(event)
         if channels["mean_shift"]:
             mean_shifts.append(_signed_or_default(event, directional_signal * intensity * relevance, "mean_shift_score", "event_mean_shift_score"))
+            mean_shift_weights.append(event_weight)
         if channels["mode_shift"]:
             mode_shifts.append(_signed_or_default(event, directional_signal * intensity * relevance, "mode_shift_score", "event_mode_shift_score"))
+            mode_shift_weights.append(event_weight)
         if channels["directional_contribution"]:
             contributions.append(_signed_or_default(event, directional_signal * intensity * relevance, "directional_contribution_score", "event_directional_contribution_score"))
+            contribution_weights.append(event_weight)
         if channels["variance_multiplier"]:
             variances.append(_score(event, "variance_multiplier_score", "event_variance_multiplier_score", default=_clip01(0.55 * uncertainty + 0.45 * path_risk)))
+            variance_weights.append(event_weight)
         if channels["left_tail_delta"]:
             left_tails.append(_score(event, "left_tail_delta_score", "event_left_tail_delta_score", default=_clip01(path_risk * (1.0 + 0.35 * max(0.0, -raw_direction)))))
+            left_tail_weights.append(event_weight)
         if channels["right_tail_delta"]:
             right_tails.append(_score(event, "right_tail_delta_score", "event_right_tail_delta_score", default=_clip01(path_risk * (1.0 + 0.35 * max(0.0, raw_direction)))))
+            right_tail_weights.append(event_weight)
         if channels["skew_delta"]:
             skews.append(_signed_or_default(event, raw_direction * intensity * relevance, "skew_delta_score", "event_skew_delta_score"))
+            skew_weights.append(event_weight)
         if channels["confidence_discount"]:
             confidence_discounts.append(_score(event, "confidence_discount_score", "event_confidence_discount_score", default=_clip01(uncertainty * relevance)))
+            confidence_discount_weights.append(event_weight)
         if channels["gate_pressure"]:
             gates.append(_score(event, "gate_pressure_score", "event_gate_pressure_score", default=_clip01(_average([path_risk, uncertainty, intensity * 0.5]))))
+            gate_weights.append(event_weight)
     return {
-        "event_mean_shift_score": _clip_signed(_weighted_average(mean_shifts, weights[: len(mean_shifts)])),
-        "event_mode_shift_score": _clip_signed(_weighted_average(mode_shifts, weights[: len(mode_shifts)])),
-        "event_directional_contribution_score": _clip_signed(_weighted_average(contributions, weights[: len(contributions)])),
-        "event_variance_multiplier_score": _clip01(_weighted_average(variances, weights[: len(variances)])),
-        "event_left_tail_delta_score": _clip01(_weighted_average(left_tails, weights[: len(left_tails)])),
-        "event_right_tail_delta_score": _clip01(_weighted_average(right_tails, weights[: len(right_tails)])),
-        "event_skew_delta_score": _clip_signed(_weighted_average(skews, weights[: len(skews)])),
-        "event_confidence_discount_score": _clip01(_weighted_average(confidence_discounts, weights[: len(confidence_discounts)])),
-        "event_gate_pressure_score": _clip01(_weighted_average(gates, weights[: len(gates)])),
+        "event_mean_shift_score": _clip_signed(_weighted_average(mean_shifts, mean_shift_weights)),
+        "event_mode_shift_score": _clip_signed(_weighted_average(mode_shifts, mode_shift_weights)),
+        "event_directional_contribution_score": _clip_signed(_weighted_average(contributions, contribution_weights)),
+        "event_variance_multiplier_score": _clip01(_weighted_average(variances, variance_weights)),
+        "event_left_tail_delta_score": _clip01(_weighted_average(left_tails, left_tail_weights)),
+        "event_right_tail_delta_score": _clip01(_weighted_average(right_tails, right_tail_weights)),
+        "event_skew_delta_score": _clip_signed(_weighted_average(skews, skew_weights)),
+        "event_confidence_discount_score": _clip01(_weighted_average(confidence_discounts, confidence_discount_weights)),
+        "event_gate_pressure_score": _clip01(_weighted_average(gates, gate_weights)),
     }
 
 
@@ -322,6 +347,8 @@ def _event_effect_model_refs(events: Sequence[Mapping[str, Any]]) -> list[dict[s
                 "event_family_key": event.get("event_family_key") or event.get("mechanism_family") or event.get("normalized_event_type"),
                 "semantic_taxonomy_node_ref": event.get("semantic_taxonomy_node_ref") or event.get("taxonomy_node_ref"),
                 "effect_model_node_ref": event.get("effect_model_node_ref") or event.get("event_family_key") or event.get("mechanism_family"),
+                "impact_evidence_status": event.get("impact_evidence_status") or event.get("event_impact_evidence_status"),
+                "event_impact_disposition": _event_impact_disposition(event),
                 "event_effect_model": _event_effect_model(event),
             }
         )
@@ -336,7 +363,10 @@ def _directional_signal(event: Mapping[str, Any]) -> float:
 
 
 def _event_effect_model(event: Mapping[str, Any]) -> dict[str, Any]:
-    model = dict(DEFAULT_EVENT_EFFECT_MODEL)
+    if _has_explicit_no_impact_disposition(event):
+        model = dict(NO_IMPACT_EVENT_EFFECT_MODEL)
+    else:
+        model = dict(DEFAULT_EVENT_EFFECT_MODEL)
     raw_model = event.get("event_effect_model") or event.get("event_family_effect_model") or {}
     if isinstance(raw_model, Mapping):
         for key in ("event_effect_model_type", "projection_mode", "directional_mean_shift_status"):
@@ -346,6 +376,8 @@ def _event_effect_model(event: Mapping[str, Any]) -> dict[str, Any]:
             channels = raw_model.get(key)
             if isinstance(channels, Sequence) and not isinstance(channels, (str, bytes, bytearray)):
                 model[key] = tuple(str(channel).strip() for channel in channels if str(channel).strip())
+    if _has_no_impact_effect_model(model):
+        model.update(NO_IMPACT_EVENT_EFFECT_MODEL)
     return model
 
 
@@ -354,6 +386,51 @@ def _event_effect_channel_policy(event: Mapping[str, Any]) -> dict[str, bool]:
     distribution_channels = model.get("distribution_channels")
     allowed = set(distribution_channels) if isinstance(distribution_channels, Sequence) else set()
     return {channel: channel in allowed for channel in EVENT_DISTRIBUTION_EFFECT_CHANNELS}
+
+
+def _has_explicit_no_impact_disposition(event: Mapping[str, Any]) -> bool:
+    values = (
+        event.get("event_impact_disposition"),
+        event.get("impact_disposition"),
+        event.get("event_effect_disposition"),
+        event.get("effect_model_disposition"),
+        event.get("impact_evidence_status"),
+        event.get("event_impact_evidence_status"),
+    )
+    return any(str(value or "").strip().lower() in {"no_impact", "no_event_effect", "no_admissible_impact"} for value in values)
+
+
+def _has_no_impact_effect_model(model: Mapping[str, Any]) -> bool:
+    values = (
+        model.get("event_effect_model_type"),
+        model.get("projection_mode"),
+        model.get("directional_mean_shift_status"),
+    )
+    return any(str(value or "").strip().lower() in {"no_impact_event", "no_impact_projection", "no_event_effect", "no_admissible_impact"} for value in values)
+
+
+def _event_impact_disposition(event: Mapping[str, Any]) -> str:
+    if _has_explicit_no_impact_disposition(event):
+        return "no_impact"
+    model = _event_effect_model(event)
+    if _has_no_impact_effect_model(model):
+        return "no_impact"
+    channels = _event_effect_channel_policy(event)
+    if channels["mean_shift"] or channels["mode_shift"] or channels["directional_contribution"]:
+        return "directional_effect"
+    if any(channels[channel] for channel in ("variance_multiplier", "left_tail_delta", "right_tail_delta", "skew_delta", "confidence_discount", "gate_pressure")):
+        return "risk_shape"
+    if str(model.get("projection_mode") or "").strip().lower() == "context_only_projection":
+        return "context_only"
+    return "unresolved_insufficient_evidence"
+
+
+def _event_impact_disposition_counts(events: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for event in events:
+        disposition = _event_impact_disposition(event)
+        counts[disposition] = counts.get(disposition, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def _signed_or_default(row: Mapping[str, Any], default: float, *keys: str) -> float:
@@ -533,6 +610,8 @@ def _impact_scores(
 
 
 def _event_weight(event: Mapping[str, Any], horizon: str) -> float:
+    if _event_impact_disposition(event) == "no_impact":
+        return 0.0
     horizon_minutes = HORIZON_MINUTES[horizon]
     age_minutes = abs(float(event.get("age_minutes") or 0.0))
     time_weight = _clip01(math.exp(-age_minutes / max(float(horizon_minutes), 1.0)))

@@ -8,4 +8,6 @@ The current deterministic pilot consumes `background_context_state`, `target_con
 
 The default event effect model is risk-shape only: variance, tail, skew, confidence, and gate effects. Mean, mode, and directional contribution remain zero unless the accepted effect-model node explicitly owns those channels after modelability review.
 
+Reviewed no-impact groups use `event_impact_disposition=no_impact` and the neutral `no_impact_event` effect model. They remain visible in review coverage but contribute zero event weight to response, risk, impact, and distribution channels.
+
 Historical event-failure-risk package names are not maintained current surfaces.

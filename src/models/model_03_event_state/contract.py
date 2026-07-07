@@ -47,6 +47,14 @@ DEFAULT_EVENT_EFFECT_MODEL: Final[dict[str, object]] = {
     "directional_mean_shift_status": "not_identifiable",
 }
 
+NO_IMPACT_EVENT_EFFECT_MODEL: Final[dict[str, object]] = {
+    "event_effect_model_type": "no_impact_event",
+    "projection_mode": "no_impact_projection",
+    "distribution_channels": (),
+    "impact_channels": (),
+    "directional_mean_shift_status": "not_applicable",
+}
+
 SCORE_FAMILIES: Final[tuple[str, ...]] = (
     "3_event_response_direction_score_<horizon>",
     "3_event_response_strength_score_<horizon>",

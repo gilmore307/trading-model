@@ -53,7 +53,7 @@ This does not require every model component to be invoked in the same way during
 M03: no event -> explicit neutral/no-event event_state_vector
 M04: no action -> explicit no_trade or maintain decision state
 M05: structural no optionability -> `non_optionable_underlying` with direct-underlying/no-option expression state; temporary missing chain -> `optionable_chain_missing`; neither may become fabricated option selection or zero-valued option signal
-M03: uncertain event attribution -> explicit low_confidence / no_event_effect / attribution_unknown state
+M03: uncertain event attribution -> explicit low_confidence / no_impact / no_event_effect / attribution_unknown state
 ```
 
 Training loss, metrics, and promotion evidence may still use masks, weights, and sub-buckets so rare event/action/option/event-effect cases are not drowned by neutral minutes. Those masks are optimization and reporting controls; they are not permission to remove blank minutes from the point-in-time ledger.
@@ -104,7 +104,7 @@ M04/M05 replay failure
 
 M03 event-effect tooling must not become a generic hindsight corrector. It owns event-family attribution evidence and future M03 packet eligibility only. Component warn, cap, block, reduce, flatten, and failure-review actions remain component owned. Non-event model misses remain the evaluation/promotion evidence of their owning model.
 
-M03 consumes accepted event-effect focus-pool event contracts as frozen qualitative/time-parameter inputs. M03 event-effect tooling owns event-family identity, point-in-time clocks, scope, visibility, selected impact windows, allowed use, and later demotion/split/reweight/parameter revision. M03 owns only the quantitative conditional response and distribution-shaping mapping inside that frozen contract. It may output event-conditioned response strength, direction tendency when validated, uncertainty, path risk, tail/variance/confidence/gate pressure, and evidence/applicability confidence; it must not output standalone event alpha or perform component-control actions.
+M03 consumes accepted event-effect focus-pool event contracts as frozen qualitative/time-parameter inputs. M03 event-effect tooling owns event-family identity, point-in-time clocks, scope, visibility, selected impact windows, allowed use, no-impact disposition, and later demotion/split/reweight/parameter revision. M03 owns only the quantitative conditional response and distribution-shaping mapping inside that frozen contract. It may output event-conditioned response strength, direction tendency when validated, uncertainty, path risk, tail/variance/confidence/gate pressure, and evidence/applicability confidence; it must not output standalone event alpha or perform component-control actions. A `no_impact` event remains in review coverage but contributes zero event weight to response, risk, impact, and distribution channels.
 
 M04 must consume reviewed M03 event-conditioning fields as formal inputs and let training learn their weight, sign, uncertainty, risk penalty, or near-zero contribution. Event-family removal, demotion, split, or time-window revision remains an M03 review outcome, not a no-event baseline substitution. A no-M03 decision baseline is not a default evaluation route unless M04/M05 are also rerun as a full counterfactual chain.
 

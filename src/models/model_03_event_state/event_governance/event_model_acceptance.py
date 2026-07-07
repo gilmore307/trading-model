@@ -103,6 +103,7 @@ def build_event_model_acceptance_report(*, generated_at_utc: str | None = None) 
             "point_in_time_event_interpretation_when_reviewed",
             "event_activity_bridge_as_provenance_and_risk_context",
             "event_effect_model_distribution_and_gate_channels",
+            "explicit_no_impact_event_effect_disposition",
             "component_owned_block_cap_reduce_flatten_controls",
             "m01_m05_probability_stack_preserved_with_m03_event_operator",
         ),
