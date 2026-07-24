@@ -13,8 +13,9 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
-from typing import Any, Callable, Iterable, Mapping, Sequence
+from typing import Any, Callable
 from zoneinfo import ZoneInfo
 
 from .contract import (
@@ -83,7 +84,11 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
 
     direction = _underlying_direction(underlying_intent, handoff)
     expression_type, option_right = _expression_type(direction, underlying_intent, policy, pending, option_surface_status)
-    scored_candidates = [_score_candidate(candidate, option_right, handoff, market, event, policy) for candidate in candidates]
+    scored_candidates = (
+        [_score_candidate(candidate, option_right, handoff, market, event, policy) for candidate in candidates]
+        if option_right != "none"
+        else []
+    )
     eligible_candidates = [candidate for candidate in scored_candidates if candidate["option_right"] == option_right and candidate["eligible"]]
     selected = max(eligible_candidates, key=lambda candidate: candidate["contract_fit_score"], default=None)
     no_option_candidate = _score_no_option_candidate(
@@ -179,6 +184,7 @@ def _model_row(row: Mapping[str, Any], *, model_version: str) -> dict[str, Any]:
         pending,
         option_surface_status,
         selector_diagnostics,
+        candidate_count=len(candidates),
     )
     no_option_reason_codes = [code for code in reason_codes if expression_type == "no_option_expression"]
     resolved_payload = {
@@ -1185,6 +1191,7 @@ def _reason_codes(
     pending: Mapping[str, Any],
     option_surface_status: str,
     selector_diagnostics: Mapping[str, Any],
+    candidate_count: int,
 ) -> list[str]:
     reasons: list[str] = []
     action_type = str(underlying_intent.get("underlying_action_type") or underlying_intent.get("planned_underlying_action_type") or "").lower()
@@ -1205,7 +1212,7 @@ def _reason_codes(
         reasons.append(f"{expression_type}_selected")
     if selected is None and option_right != "none":
         reasons.append("no_eligible_option_contract_candidate")
-    if not scored_candidates and option_surface_status != "non_optionable_underlying":
+    if not scored_candidates and candidate_count == 0 and option_surface_status != "non_optionable_underlying":
         reasons.append("missing_option_chain_candidates")
     if dominant.get("theta_risk_score", 0.0) >= 0.65:
         reasons.append("theta_risk_pressure")
@@ -1458,12 +1465,17 @@ def _dedupe(values: Iterable[str]) -> list[str]:
 
 
 def _validate_no_forbidden_output(value: Any, path: str = "output") -> None:
-    if isinstance(value, Mapping):
-        for key, nested in value.items():
-            key_l = str(key).lower()
-            if key_l in FORBIDDEN_OUTPUT_FIELDS:
-                raise ValueError(f"forbidden M05 output field at {path}.{key}: {key}")
-            _validate_no_forbidden_output(nested, f"{path}.{key}")
-    elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
-        for index, nested in enumerate(value):
-            _validate_no_forbidden_output(nested, f"{path}[{index}]")
+    stack = [value]
+    while stack:
+        current = stack.pop()
+        if isinstance(current, Mapping):
+            for key, nested in current.items():
+                key_l = str(key).lower()
+                if key_l in FORBIDDEN_OUTPUT_FIELDS:
+                    raise ValueError(f"forbidden M05 output field under {path}: {key}")
+                if isinstance(nested, Mapping) or (
+                    isinstance(nested, Sequence) and not isinstance(nested, (str, bytes, bytearray))
+                ):
+                    stack.append(nested)
+        elif isinstance(current, Sequence) and not isinstance(current, (str, bytes, bytearray)):
+            stack.extend(current)
